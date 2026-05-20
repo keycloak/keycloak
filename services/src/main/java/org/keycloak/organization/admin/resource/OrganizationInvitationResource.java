@@ -265,6 +265,7 @@ public class OrganizationInvitationResource {
             @QueryParam("search") String search,
             @QueryParam("firstName") String firstName,
             @QueryParam("lastName") String lastName) {
+        auth.orgs().requireManage(organization);
 
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         Map<Filter, String> filters = new HashMap<>();
@@ -305,6 +306,7 @@ public class OrganizationInvitationResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public OrganizationInvitationRepresentation getInvitation(@PathParam("id") String id) {
+        auth.orgs().requireManage(organization);
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
 
@@ -320,7 +322,7 @@ public class OrganizationInvitationResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response deleteInvitation(@PathParam("id") String id) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
 
@@ -340,7 +342,7 @@ public class OrganizationInvitationResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response resendInvitation(@PathParam("id") String id) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
 
         if (!organization.isEnabled()) {
             throw ErrorResponse.error("Organization is disabled", Status.BAD_REQUEST);

@@ -74,6 +74,8 @@ import org.infinispan.factories.GlobalComponentRegistry;
 import org.infinispan.health.CacheHealth;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.remoting.transport.Transport;
+import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
@@ -256,6 +258,14 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         }
 
         var cm = getDefaultCacheManager(session, holder);
+        if (cm.getCacheManagerConfiguration().metrics().enabled()) {
+            var transport = GlobalComponentRegistry.componentOf(cm, Transport.class);
+            if (transport != null) {
+                // we miss some messages stats (aka state transfer) by enabling this late.
+                // but here works for all stacks, including custom ones by users.
+                ((JGroupsTransport) transport).getChannel().getProtocolStack().getTransport().enableStats(true);
+            }
+        }
         cm.getCache(KEYS_CACHE_NAME, true);
         cm.getCache(CRL_CACHE_NAME, true);
 

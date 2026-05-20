@@ -680,14 +680,43 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             }
 
             invitationId = manageOrgsResource.organizations().get(orgId).invitations().list().get(0).getId();
+            assertThat(manageOrgsResource.organizations().get(orgId).invitations().get(invitationId), Matchers.notNullValue());
         }
 
-        // view-orgs-manage-users-admin cannot delete or resend invitations
+        // view-orgs-admin (view-organizations only) cannot list or get invitations
+        try (
+                Keycloak viewOrgsClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("view-orgs-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            RealmResource viewOrgsResource = viewOrgsClient.realm(realm.getName());
+
+            try {
+                viewOrgsResource.organizations().get(orgId).invitations().list();
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+
+            try {
+                viewOrgsResource.organizations().get(orgId).invitations().get(invitationId);
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+        }
+
+        // view-orgs-manage-users-admin cannot list, get, delete, or resend invitations
         try (
                 Keycloak viewOrgsManageUsersClient = adminClientFactory.create()
                         .realm(realm.getName()).username("view-orgs-manage-users-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
         ) {
             RealmResource viewOrgsManageUsersResource = viewOrgsManageUsersClient.realm(realm.getName());
+
+            try {
+                viewOrgsManageUsersResource.organizations().get(orgId).invitations().list();
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+
+            try {
+                viewOrgsManageUsersResource.organizations().get(orgId).invitations().get(invitationId);
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
 
             try (Response response = viewOrgsManageUsersResource.organizations().get(orgId).invitations().delete(invitationId)) {
                 assertThat(response.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));

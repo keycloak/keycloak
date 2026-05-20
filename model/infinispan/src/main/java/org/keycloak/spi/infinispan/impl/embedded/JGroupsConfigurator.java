@@ -68,6 +68,7 @@ import org.jgroups.Global;
 import org.jgroups.JChannel;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.conf.ProtocolConfiguration;
+import org.jgroups.protocols.FD_SOCK2;
 import org.jgroups.protocols.TCP;
 import org.jgroups.protocols.TCP_NIO2;
 import org.jgroups.protocols.UDP;
@@ -99,6 +100,9 @@ public final class JGroupsConfigurator {
     private static final String TLS_PROTOCOL_VERSION = "TLSv1.3";
     private static final String TLS_PROTOCOL = "TLS";
     public static final String JGROUPS_ADDRESS_SEQUENCE = "JGROUPS_ADDRESS_SEQUENCE";
+
+    private static final String FD_SOCK_ENABLED_NAME = "fdSockEnabled";
+    private static final boolean FD_SOCK_ENABLED_DEFAULT = true;
 
     private JGroupsConfigurator() {
     }
@@ -147,8 +151,9 @@ public final class JGroupsConfigurator {
             transportOf(holder).stack(stack);
         }
         configureTransport(config);
-        boolean tracingEnabled = config.getBoolean(TRACING, false);
-        configureDiscovery(holder, session, tracingEnabled);
+        var tracingEnabled = config.getBoolean(TRACING, false);
+        var fdSockEnabled = config.getBoolean(FD_SOCK_ENABLED_NAME, FD_SOCK_ENABLED_DEFAULT);
+        configureDiscovery(holder, session, tracingEnabled, fdSockEnabled);
         configureTls(holder, session);
         warnDeprecatedStack(holder);
     }
@@ -190,6 +195,13 @@ public final class JGroupsConfigurator {
         Util.copyFromOption(builder, SystemProperties.BIND_PORT.configKey, "port", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT, false);
         Util.copyFromOption(builder, SystemProperties.EXTERNAL_ADDRESS.configKey, "address", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS, false);
         Util.copyFromOption(builder, SystemProperties.EXTERNAL_PORT.configKey, "port", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT, false);
+
+        builder.property()
+                .name(FD_SOCK_ENABLED_NAME)
+                .helpText("Enables FD_SOCK2 failure detection. It uses a TCP connection and listens for the connection closing abruptly. It is optional because heartbeat-based failure detection is always enabled. It only affects the jdbc-ping stack.")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue(FD_SOCK_ENABLED_DEFAULT)
+                .add();
     }
 
     private static void configureTransport(Config.Scope config) {
@@ -227,7 +239,7 @@ public final class JGroupsConfigurator {
         return socketFactory;
     }
 
-    private static void configureDiscovery(ConfigurationBuilderHolder holder, KeycloakSession session, boolean tracingEnabled) {
+    private static void configureDiscovery(ConfigurationBuilderHolder holder, KeycloakSession session, boolean tracingEnabled, boolean fdSockEnabled) {
         var stackXmlAttribute = transportStackOf(holder);
         if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get())) {
             logger.debugf("Custom stack configured (%s). JDBC_PING discovery disabled.", stackXmlAttribute.get());
@@ -244,7 +256,7 @@ public final class JGroupsConfigurator {
         var stackName = transportStackOf(holder).get();
         var isUdp = stackName.endsWith("udp");
         var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
-        var stack = getProtocolConfigurations(tableName, isUdp, tracingEnabled);
+        var stack = getProtocolConfigurations(tableName, isUdp, tracingEnabled, fdSockEnabled);
         var connectionFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
 
         String clusterName = transportOf(holder).attributes().attribute(CLUSTER_NAME).get();
@@ -321,8 +333,8 @@ public final class JGroupsConfigurator {
         return address;
     }
 
-    private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean udp, boolean tracingEnabled) {
-        var list = new ArrayList<ProtocolConfiguration>(udp ? 1 : 2);
+    private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean udp, boolean tracingEnabled, boolean fdSockEnabled) {
+        var list = new ArrayList<ProtocolConfiguration>(4);
         list.add(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(),
               Map.of(
                     // Leave initialize_sql blank as table is already created by Keycloak
@@ -343,14 +355,23 @@ public final class JGroupsConfigurator {
               ))
         );
 
-        if (!udp && InfinispanUtils.isVirtualThreadsEnabled())
-            list.add(new ProtocolConfiguration(TCP.class.getSimpleName(), Map.of("bundler_type", "per-destination")));
+        if (!udp && InfinispanUtils.isVirtualThreadsEnabled()) {
+            list.add(new ProtocolConfiguration(TCP.class.getSimpleName(),
+                    Map.of(
+                            "bundler_type", "per-destination",
+                            "bundler.use_single_sender_thread", "false"
+                    ))
+            );
+        }
 
         if (tracingEnabled) {
             list.add(new ProtocolConfiguration(OPEN_TELEMETRY.class.getName(), Map.of(
                     "stack.combine", "INSERT_ABOVE",
                     "stack.position", udp ? "UDP" : "TCP"
             )));
+        }
+        if (!fdSockEnabled) {
+            list.add(new ProtocolConfiguration(FD_SOCK2.class.getSimpleName(), Map.of("stack.combine", "REMOVE")));
         }
         return list;
     }

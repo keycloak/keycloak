@@ -37,6 +37,7 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
@@ -54,6 +55,7 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
@@ -72,6 +74,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.JsonSerialization;
 
@@ -116,6 +119,8 @@ import static org.keycloak.protocol.oidc.mappers.RoleNameMapper.ROLE_CONFIG;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 
+import static org.junit.Assert.assertEquals;
+
 public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     private static final Logger logger = Logger.getLogger(LightWeightAccessTokenTest.class);
 
@@ -128,6 +133,31 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(TEST_CLIENT).directAccessGrant(true).setServiceAccountsEnabled(true);
         ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(RESOURCE_SERVER_CLIENT_ID).directAccessGrant(true);
         ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(RESOURCE_SERVER_CLIENT_ID).updateAttribute(Constants.SUPPORT_JWT_CLAIM_IN_INTROSPECTION_RESPONSE_ENABLED, "true");
+
+        // Assign resource-server role to both users and service account
+        // This allows the audience-resolve mapper to add resource-server to the audience
+        RealmResource realm = adminClient.realm(REALM_NAME);
+        String resourceServerId = realm.clients().findByClientId(RESOURCE_SERVER_CLIENT_ID).get(0).getId();
+
+        // Create rs-role on resource-server if it doesn't exist
+        try {
+            realm.clients().get(resourceServerId).roles().get("rs-role").toRepresentation();
+        } catch (NotFoundException e) {
+            RoleRepresentation newRole = new RoleRepresentation();
+            newRole.setName("rs-role");
+            realm.clients().get(resourceServerId).roles().create(newRole);
+        }
+
+        RoleRepresentation role = realm.clients().get(resourceServerId).roles().get("rs-role").toRepresentation();
+
+        // Assign the role to TEST_CLIENT service account
+        String testClientId = realm.clients().findByClientId(TEST_CLIENT).get(0).getId();
+        UserRepresentation serviceAccount = realm.clients().get(testClientId).getServiceAccountUser();
+        realm.users().get(serviceAccount.getId()).roles().clientLevel(resourceServerId).add(Collections.singletonList(role));
+
+        // Assign the role to test-user@localhost for user flows
+        UserRepresentation testUser = realm.users().search("test-user@localhost").get(0);
+        realm.users().get(testUser.getId()).roles().clientLevel(resourceServerId).add(Collections.singletonList(role));
     }
 
     @Override
@@ -856,6 +886,14 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             put(INCLUDED_CLIENT_AUDIENCE, "account-console");
         }});
         protocolMapperList.add(audienceProtocolMapper);
+        // Always include resource-server in audience for introspection validation
+        ProtocolMapperRepresentation resourceServerAudienceMapper = createClaimMapper("audience-resource-server", AudienceProtocolMapper.PROVIDER_ID, new HashMap<>() {{
+            put(INCLUDE_IN_ACCESS_TOKEN, "true");
+            put(INCLUDE_IN_INTROSPECTION, "true");
+            put(INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN, String.valueOf(isIncludeLightweightAccessToken));
+            put(INCLUDED_CLIENT_AUDIENCE, RESOURCE_SERVER_CLIENT_ID);
+        }});
+        protocolMapperList.add(resourceServerAudienceMapper);
         ProtocolMapperRepresentation roleNameMapper = createClaimMapper("role-name", RoleNameMapper.PROVIDER_ID, new HashMap<>(config) {{
             put(ROLE_CONFIG, "user");
             put(NEW_ROLE_NAME, "new-role");
@@ -899,7 +937,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     private void deleteProtocolMappers(ProtocolMappersResource protocolMappers) {
-        List<String> mapperNames = new ArrayList<>(Arrays.asList("reference", "audience", "role-name", "group-member", "hardcoded-claim", "hardcoded-role", "user-session-note", "pairwise-sub-mapper", "session-state-mapper"));
+        List<String> mapperNames = new ArrayList<>(Arrays.asList("reference", "audience", "audience-resource-server", "role-name", "group-member", "hardcoded-claim", "hardcoded-role", "user-session-note", "pairwise-sub-mapper", "session-state-mapper"));
         List<ProtocolMapperRepresentation> mappers = new ArrayList<>();
         for (String mapperName : mapperNames) {
             mappers.add(ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, mapperName));
@@ -952,5 +990,131 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
     private void alwaysUseLightWeightAccessToken(boolean enable){
         ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(TEST_CLIENT).alwaysUseLightweightAccessToken(enable);
+    }
+
+    private void allowUserinfoWithLightweightAccessToken(boolean allow) {
+        getTestingClient().testing().setSystemPropertyOnServer("oidc.allow-userinfo-with-lightweight-access-token", String.valueOf(allow));
+        getTestingClient().testing().reinitializeProviderFactoryWithSystemPropertiesScope(org.keycloak.protocol.LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc.");
+    }
+
+    @Test
+    public void testUserInfoWithLightweightTokenRejected() {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
+        try {
+            oauth.scope("openid address");
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+
+            UserInfoResponse userInfoResponse = oauth.userInfoRequest(accessToken).send();
+            assertEquals(401, userInfoResponse.getStatusCode());
+        } finally {
+            deleteProtocolMappers(protocolMappers);
+            alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
+    @Test
+    public void testUserInfoWithLightweightTokenAllowedPerClient() {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
+        try {
+            // Enable per-client option
+            ClientManager.realm(adminClient.realm(REALM_NAME))
+                    .clientId(TEST_CLIENT)
+                    .updateAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, "true");
+
+            oauth.scope("openid address");
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+
+            // UserInfo request should succeed with per-client option enabled
+            UserInfoResponse userInfoResponse = oauth.userInfoRequest(accessToken).send();
+            assertEquals(200, userInfoResponse.getStatusCode());
+            assertEquals("test-user@localhost", userInfoResponse.getUserInfo().getPreferredUsername());
+
+        } finally {
+            // Disable per-client option
+            ClientManager.realm(adminClient.realm(REALM_NAME))
+                    .clientId(TEST_CLIENT)
+                    .updateAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, "false");
+            deleteProtocolMappers(protocolMappers);
+            alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
+    @Test
+    public void testUserInfoWithLightweightTokenAllowedServerWide() throws Exception {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
+        try {
+            // Enable server-wide option
+            allowUserinfoWithLightweightAccessToken(true);
+
+            oauth.scope("openid address");
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+
+            // UserInfo request should succeed with server-wide option enabled
+            UserInfoResponse userInfoResponse = oauth.userInfoRequest(accessToken).send();
+            assertEquals(200, userInfoResponse.getStatusCode());
+            assertEquals("test-user@localhost", userInfoResponse.getUserInfo().getPreferredUsername());
+
+        } finally {
+            // Disable server-wide option
+            allowUserinfoWithLightweightAccessToken(false);
+            deleteProtocolMappers(protocolMappers);
+            alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
+    @Test
+    public void testUserInfoWithLightweightTokenServerWideOverridesClient() throws Exception {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
+        try {
+            // Enable server-wide option
+            allowUserinfoWithLightweightAccessToken(true);
+
+            // Explicitly disable per-client option
+            ClientManager.realm(adminClient.realm(REALM_NAME))
+                    .clientId(TEST_CLIENT)
+                    .updateAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, "false");
+
+            oauth.scope("openid address");
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+
+            // Should succeed - server-wide overrides per-client false
+            UserInfoResponse userInfoResponse = oauth.userInfoRequest(accessToken).send();
+            assertEquals(200, userInfoResponse.getStatusCode());
+            assertEquals("test-user@localhost", userInfoResponse.getUserInfo().getPreferredUsername());
+
+            // Remove per-client option (not set)
+            ClientManager.realm(adminClient.realm(REALM_NAME))
+                    .clientId(TEST_CLIENT)
+                    .updateAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, null);
+
+            // Reuse same token - server-wide should still allow
+            userInfoResponse = oauth.userInfoRequest(accessToken).send();
+            assertEquals(200, userInfoResponse.getStatusCode());
+            assertEquals("test-user@localhost", userInfoResponse.getUserInfo().getPreferredUsername());
+
+        } finally {
+            allowUserinfoWithLightweightAccessToken(false);
+            ClientManager.realm(adminClient.realm(REALM_NAME))
+                    .clientId(TEST_CLIENT)
+                    .updateAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, "false");
+            deleteProtocolMappers(protocolMappers);
+            alwaysUseLightWeightAccessToken(false);
+        }
     }
 }
