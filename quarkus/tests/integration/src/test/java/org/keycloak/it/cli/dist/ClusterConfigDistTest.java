@@ -255,6 +255,24 @@ public class ClusterConfigDistTest {
         result.assertNoMessage("Ignoring unbounded max-count for cache 'sessions'");
     }
 
+    @Test
+    @Launch({ "start-dev", "--cache=ispn", "--log-level=org.infinispan.remoting.transport.jgroups.JGroupsTransport:DEBUG" })
+    void testFD_SOCK2EnabledByDefault(CLIResult result) {
+        result.assertMessage(":FD_SOCK2");
+    }
+
+    @Test
+    @Launch({ "start-dev", "--cache=ispn", "--spi-cache-embedded--default--fd-sock-enabled=true", "--log-level=org.infinispan.remoting.transport.jgroups.JGroupsTransport:DEBUG" })
+    void testFD_SOCK2Enabled(CLIResult result) {
+        result.assertMessage(":FD_SOCK2");
+    }
+
+    @Test
+    @Launch({ "start-dev", "--cache=ispn", "--spi-cache-embedded--default--fd-sock-enabled=false", "--log-level=org.infinispan.remoting.transport.jgroups.JGroupsTransport:DEBUG" })
+    void testFD_SOCK2Disabled(CLIResult result) {
+        result.assertNoMessage(":FD_SOCK2");
+    }
+
     public static class ConfigureCacheUsingAsyncEncryption implements Consumer<KeycloakDistribution> {
 
         @Override
