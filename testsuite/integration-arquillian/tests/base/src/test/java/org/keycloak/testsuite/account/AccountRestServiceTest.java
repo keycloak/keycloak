@@ -77,6 +77,7 @@ import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -1865,6 +1866,63 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             testRealm().update(realm);
         }
     }
+
+    @Test
+    public void testAccountAccessWithRealmNotBeforeAndClientNotBefore() throws IOException {
+        String accessToken = tokenUtil.getToken();
+
+        int status = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
+                .auth(accessToken)
+                .acceptJson()
+                .asStatus();
+        assertEquals(200, status);
+
+        int currentTime = (int) (System.currentTimeMillis() / 1000);
+
+        org.keycloak.representations.idm.ClientRepresentation clientRep = ApiUtil.findClientByClientId(adminClient.realm("test"), "direct-grant").toRepresentation();
+        int originalClientNotBefore = clientRep.getNotBefore() != null ? clientRep.getNotBefore() : 0;
+
+        try {
+            clientRep.setNotBefore(currentTime + 100);
+            ApiUtil.findClientByClientId(testRealm(), "direct-grant").update(clientRep);
+
+            status = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
+                    .auth(accessToken)
+                    .acceptJson()
+                    .asStatus();
+            assertEquals(401, status);
+
+            clientRep.setNotBefore(currentTime - 100);
+            ApiUtil.findClientByClientId(testRealm(), "direct-grant").update(clientRep);
+
+            status = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
+                    .auth(accessToken)
+                    .acceptJson()
+                    .asStatus();
+            assertEquals(200, status);
+
+            // Set realm notBefore to future
+            try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setNotBefore(currentTime + 100).update()) {
+
+                status = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
+                        .auth(accessToken)
+                        .acceptJson()
+                        .asStatus();
+                assertEquals(401, status);
+            }
+
+            status = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
+                    .auth(accessToken)
+                    .acceptJson()
+                    .asStatus();
+            assertEquals(200, status);
+
+        } finally {
+            clientRep.setNotBefore(originalClientNotBefore);
+            ApiUtil.findClientByClientId(testRealm(), "direct-grant").update(clientRep);
+        }
+    }
+
 
     protected void setUserProfileConfiguration(String configuration) {
         UserProfileUtil.setUserProfileConfiguration(testRealm(), configuration);

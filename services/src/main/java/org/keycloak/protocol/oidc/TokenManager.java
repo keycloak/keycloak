@@ -223,7 +223,7 @@ public class TokenManager {
 
         try {
             TokenVerifier.createWithoutSignature(oldToken)
-                    .withChecks(NotBeforeCheck.forModel(client), NotBeforeCheck.forModel(session, realm, user))
+                    .withChecks(NotBeforeCheck.forModel(realm), NotBeforeCheck.forModel(client), NotBeforeCheck.forModel(session, realm, user))
                     .verify();
         } catch (VerificationException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
@@ -267,6 +267,10 @@ public class TokenManager {
             logger.debugf("User '%s' is disabled", user.getUsername());
             return false;
         }
+        return validateUserNotBefore(session, realm, token, user);
+    }
+
+    public static boolean validateUserNotBefore(KeycloakSession session, RealmModel realm, AccessToken token, UserModel user) {
         try {
             TokenVerifier.createWithoutSignature(token)
                     .withChecks(NotBeforeCheck.forModel(session ,realm, user))
@@ -487,7 +491,7 @@ public class TokenManager {
                     .withChecks(new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName())));
 
             if (checkExpiration) {
-                tokenVerifier.withChecks(NotBeforeCheck.forModel(realm), TokenVerifier.IS_ACTIVE);
+                tokenVerifier.withChecks(NotBeforeCheck.forModel(realm), NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE);
             }
 
             try {
