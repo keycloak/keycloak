@@ -18,6 +18,7 @@ public class DefaultAdminApi implements AdminApi {
         this.session = session;
         var authInfo = AdminRoot.authenticateRealmAdminRequest(session);
         RealmModel realm = session.realms().getRealmByName(realmName);
+        if (realm == null) throw new NotFoundException("Realm not found.");
         session.getContext().setRealm(realm);
         this.realm = realm;
         this.permissions = AdminPermissions.evaluator(session, realm, authInfo);
