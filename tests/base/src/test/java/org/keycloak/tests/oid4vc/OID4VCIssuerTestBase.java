@@ -43,8 +43,10 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.EventType;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicyExecutorFactory;
@@ -122,6 +124,7 @@ import org.junit.jupiter.api.BeforeEach;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.models.Constants.CREATE_DEFAULT_CLIENT_SCOPES;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
@@ -266,7 +269,32 @@ public abstract class OID4VCIssuerTestBase {
         driver.open("about:blank");
     }
 
-    public static KeyWrapper getKeyFromSession(KeycloakSession keycloakSession) {
+    protected static void configureTrustIdentityProvider(RealmModel realm, String alias, String providerId, Map<String, String> config) {
+        IdentityProviderModel trustIdp = realm.getIdentityProviderByAlias(alias);
+        if (trustIdp == null) {
+            trustIdp = new IdentityProviderModel();
+            trustIdp.setAlias(alias);
+            trustIdp.setProviderId(providerId);
+            trustIdp.setEnabled(true);
+            trustIdp.setConfig(config);
+            realm.addIdentityProvider(trustIdp);
+        } else {
+            trustIdp.setProviderId(providerId);
+            trustIdp.setEnabled(true);
+            trustIdp.setConfig(config);
+            realm.updateIdentityProvider(trustIdp);
+        }
+    }
+
+    protected void setClientTrustSource(String alias) {
+        Map<String, String> attributes = new HashMap<>(Optional.ofNullable(abcaClient.getAttributes()).orElse(Map.of()));
+        attributes.put(OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS, alias);
+        abcaClient.setAttributes(attributes);
+        testRealm.admin().clients().get(abcaClient.getId()).update(abcaClient);
+        abcaClient = testRealm.admin().clients().get(abcaClient.getId()).toRepresentation();
+    }
+
+    protected static KeyWrapper getKeyFromSession(KeycloakSession keycloakSession) {
         String realmName = keycloakSession.getContext().getRealm().getName();
         Logger logger = Logger.getLogger(OID4VCIssuerTestBase.class);
         KeyManager keyManager = keycloakSession.keys();
@@ -280,7 +308,7 @@ public abstract class OID4VCIssuerTestBase {
         return kw;
     }
 
-    public static String getKeyIdFromSession(KeycloakSession keycloakSession) {
+    protected static String getKeyIdFromSession(KeycloakSession keycloakSession) {
         return getKeyFromSession(keycloakSession).getKid();
     }
 
