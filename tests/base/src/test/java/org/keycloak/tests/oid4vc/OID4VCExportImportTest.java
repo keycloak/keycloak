@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
@@ -62,11 +63,9 @@ public class OID4VCExportImportTest extends OID4VCIssuerTestBase {
                 .findFirst().orElseThrow();
 
         List<UserVerifiableCredentialRepresentation> verifiableCreds = testRealm.admin().users().get(john.getId()).verifiableCredentials().getCredentials();
-        assertUserCredentials(verifiableCreds, jwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, jwtTypeNaturalPersonScopeName, sdJwtTypeNaturalPersonScopeName);
-
-        for (UserVerifiableCredentialRepresentation cred : verifiableCreds) {
-            assertNotNull(cred.getUserAttributes(), "User attributes should be stored in verifiable credential " + cred.getCredentialScopeName());
-        }
+        Map<String, List<String>> userAttributes = john.getRawAttributes();
+        assertNotNull(userAttributes);
+        assertUserCredentials(verifiableCreds, userAttributes, jwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, jwtTypeNaturalPersonScopeName, sdJwtTypeNaturalPersonScopeName);
 
         // Export realm
         exportRealm("oid4vc-test-realm.json");
@@ -82,24 +81,15 @@ public class OID4VCExportImportTest extends OID4VCIssuerTestBase {
         UserRepresentation userAfterImport = testRealm.admin().users().search(TEST_USER).stream().findFirst().orElseThrow();
         List<UserVerifiableCredentialRepresentation> importedVerifiableCreds = testRealm.admin().users().get(userAfterImport.getId()).verifiableCredentials().getCredentials();
 
-        // Verify same number of credentials
-        assertEquals(verifiableCreds.size(), importedVerifiableCreds.size());
+        // Verify same verifiable credentials
+        assertEquals(verifiableCreds, importedVerifiableCreds);
 
         // Verify each credential's userAttributes are preserved
-        for (UserVerifiableCredentialRepresentation originalCred : verifiableCreds) {
-            UserVerifiableCredentialRepresentation importedCred = importedVerifiableCreds.stream()
-                    .filter(c -> c.getCredentialScopeName().equals(originalCred.getCredentialScopeName()))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Credential scope not found after import: " + originalCred.getCredentialScopeName()));
-
-            assertNotNull(importedCred.getUserAttributes(), "Imported credential should have userAttributes");
-            assertEquals(originalCred.getUserAttributes(), importedCred.getUserAttributes(),
-                    "User attributes in verifiable credential " + originalCred.getCredentialScopeName() + " should be preserved during export/import");
-        }
+        assertUserCredentials(importedVerifiableCreds, userAttributes, jwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, jwtTypeNaturalPersonScopeName, sdJwtTypeNaturalPersonScopeName);
 
     }
 
-    private void assertUserCredentials(List<UserVerifiableCredentialRepresentation> userCreds, String... expectedCredentialNames) {
+    private void assertUserCredentials(List<UserVerifiableCredentialRepresentation> userCreds, Map<String, List<String>> expectedUserAttributes, String... expectedCredentialNames) {
         assertEquals(userCreds.size(), expectedCredentialNames.length);
         for (String expectedName : expectedCredentialNames) {
             UserVerifiableCredentialRepresentation rep = userCreds.stream()
@@ -108,6 +98,7 @@ public class OID4VCExportImportTest extends OID4VCIssuerTestBase {
                     .orElseThrow(() -> new RuntimeException("Not found credential scope " + expectedName + " on user"));
             assertNotNull(rep.getCreatedDate());
             assertNotNull(rep.getRevision());
+            assertEquals(expectedUserAttributes, rep.getUserAttributes());
         }
     }
 
