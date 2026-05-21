@@ -152,6 +152,7 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
@@ -501,8 +502,8 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
    // Signed JWT for client authentication utility
 
     protected void allowMultipleAudiencesForClientJWTOnServer(boolean allowMultipleAudiences) {
-        getTestingClient().testing().setSystemPropertyOnServer("oidc." + OIDCLoginProtocolFactory.CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION, String.valueOf(allowMultipleAudiences));
-        getTestingClient().testing().reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc.");
+        runOnServerMaster.run(RunHelpers.setSystemPropertyOnServer("oidc." + OIDCLoginProtocolFactory.CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION, String.valueOf(allowMultipleAudiences)));
+        runOnServerMaster.run(RunHelpers.reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc."));
     }
 
     protected String createSignedRequestToken(String clientId, PrivateKey privateKey, PublicKey publicKey, String algorithm) {

@@ -502,9 +502,9 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         Assertions.assertTrue(offlineToken.isActive());
 
         // Assert userSession expired
-        testingClient.testing().removeExpired("test");
+        runOnServer.run(RunHelpers.removeExpired());
         try {
-            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
+            runOnServer.run(RunHelpers.removeUserSession(sessionId));
         } catch (RunOnServerException nfe) {
             if (!(nfe.getCause() instanceof NotFoundException)) {
                 throw nfe;

@@ -9,6 +9,14 @@ The wildcard comparison for valid redirect URIs does not affect the hostname any
 
 Note that OAuth 2.0 recommends exact string matching in the link:https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics#name-protecting-redirect-based-f[Security Best Current Practice] and draft for OAuth 2.1 enforces it. {project_name} recommends to not use any wildcard valid redirect URI for clients. See link:{adminguide_link}#unspecific-redirect-uris_server_administration_guide[Unspecific redirect URIs] in the {adminguide_name} for more information.
 
+=== Client scope evaluation now enforces access to the user when generating tokens
+
+In previous versions of {project_name}, client scope evaluation allow generating tokens without necessarily having
+the necessary admin roles or permissions to access the user.
+
+In this release, client scope evaluation now requires at the very least the `view-users` admin role granted to the
+realm administrator or any permission that grants the `view` scope on the user.
+
 == Notable changes
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.

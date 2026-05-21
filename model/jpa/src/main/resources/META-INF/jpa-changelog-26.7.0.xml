@@ -60,6 +60,9 @@
                 <constraints nullable="false"/>
             </column>
             <column name="CREATED_DATE" type="BIGINT"/>
+            <column name="USER_ATTRIBUTES" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
         </createTable>
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_VCRED_PM" tableName="USER_VER_CREDENTIAL"/>
         <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="USER_VER_CREDENTIAL" constraintName="FK_VCRED_USER" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>

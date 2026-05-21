@@ -941,6 +941,15 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
+    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String credentialScopeName) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().updateVerifiableCredential(userId, credentialScopeName);
+        } else {
+            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+        }
+    }
+
+    @Override
     public boolean removeVerifiableCredential(String userId, String credentialScopeName) {
         if (StorageId.isLocalStorage(userId)) {
             return localStorage().removeVerifiableCredential(userId, credentialScopeName);

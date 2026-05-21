@@ -51,6 +51,7 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -78,7 +79,6 @@ import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.TestEventsLogger;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
-import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -100,6 +100,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
@@ -138,6 +139,7 @@ public abstract class AbstractKeycloakTest {
 
     protected KeycloakTestingClient testingClient;
 
+    protected KeycloakTestingClient.Server runOnServerMaster;
     protected KeycloakTestingClient.Server runOnServer;
 
     protected TimeOffSet timeOffSet = new TimeOffSet(this);
@@ -187,7 +189,8 @@ public abstract class AbstractKeycloakTest {
         }
 
         getTestingClient();
-        runOnServer = testingClient.server();
+        runOnServerMaster = testingClient.server();
+        runOnServer = testingClient.server(TEST);
 
         setDefaultPageUriParameters();
 
@@ -251,7 +254,10 @@ public abstract class AbstractKeycloakTest {
         } else {
             log.info("calling all TestCleanup");
             // Remove all sessions
-            testContext.getTestRealmReps().stream().forEach((r)->runOnServer.run(RunHelpers.removeUserSessions(r.getRealm())));
+            testContext.getTestRealmReps().stream().map(RealmRepresentation::getRealm).forEach((r)-> runOnServerMaster.run(session -> {
+                RealmModel realm = session.realms().getRealmByName(r);
+                session.sessions().removeUserSessions(realm);
+            }));
 
             // Cleanup objects
             for (TestCleanup cleanup : testContext.getCleanups().values()) {

@@ -7,6 +7,7 @@ import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -128,6 +129,41 @@ public class UserVerifiableCredentialResource {
         return session.users().getVerifiableCredentialsByUser(user.getId())
                 .map(ModelToRepresentation::toRepresentation)
                 .toList();
+    }
+
+    @PUT
+    @Path("credentials/{credentialScopeName}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(summary = "Update verifiable credential - refreshes user attributes snapshot and increments revision")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UserVerifiableCredentialRepresentation.class))),
+            @APIResponse(responseCode = "400", description = "Bad request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public UserVerifiableCredentialRepresentation updateCredential(@PathParam("credentialScopeName") String credentialScopeName) {
+        auth.users().requireManage(user);
+        checkOid4VCIEnabled();
+
+        try {
+            UserVerifiableCredentialModel updatedModel = session.users().updateVerifiableCredential(user.getId(), credentialScopeName);
+
+            UserVerifiableCredentialRepresentation updatedRep = ModelToRepresentation.toRepresentation(updatedModel);
+
+            adminEvent.operation(OperationType.UPDATE)
+                    .resourcePath(session.getContext().getUri(), credentialScopeName)
+                    .representation(updatedRep)
+                    .success();
+
+            return updatedRep;
+
+        } catch (ModelException e) {
+            logger.warn(String.format("Verifiable credential '%s' not found for user '%s' in the realm '%s'.",
+                    credentialScopeName, user.getUsername(), realm.getName()));
+            throw new NotFoundException("Verifiable credential not found");
+        }
     }
 
     @DELETE

@@ -40,6 +40,9 @@ public class UserVerifiableCredentialEntity {
     @Column(name="REVISION")
     protected String revision;
 
+    @Column(name = "USER_ATTRIBUTES")
+    protected String userAttributes;
+
     @Column(name = "CREATED_DATE")
     private Long createdDate;
 
@@ -82,6 +85,10 @@ public class UserVerifiableCredentialEntity {
     public void setCreatedDate(Long createdDate) {
         this.createdDate = createdDate;
     }
+
+    public String getUserAttributes() { return userAttributes; }
+
+    public void setUserAttributes(String userAttributes) { this.userAttributes = userAttributes; }
 
     @Override
     public boolean equals(Object o) {

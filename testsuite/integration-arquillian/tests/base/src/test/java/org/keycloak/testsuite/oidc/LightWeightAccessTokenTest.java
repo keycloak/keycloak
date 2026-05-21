@@ -390,7 +390,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             AccessToken token = oauth.verifyToken(accessToken);
             assertAccessToken(token, true, true, true);
 
-            AccessTokenContext ctx = testingClient.testing("test").getTokenContext(token.getId());
+            AccessTokenContext ctx = runOnServer.fetch(RunHelpers.getTokenContext(token.getId()));
             Assertions.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.ONLINE);
             Assertions.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.LIGHTWEIGHT);
             Assertions.assertEquals(ctx.getGrantType(), OAuth2Constants.AUTHORIZATION_CODE);
@@ -677,15 +677,15 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
         // Verify lightweight token
         AccessToken token = oauth.verifyToken(response.getAccessToken());
-        AccessTokenContext ctx = testingClient.testing(REALM_NAME).getTokenContext(token.getId());
+        AccessTokenContext ctx = runOnServer.fetch(RunHelpers.getTokenContext(token.getId()));
         Assertions.assertEquals(AccessTokenContext.TokenType.LIGHTWEIGHT, ctx.getTokenType());
         Assertions.assertEquals(TEST_USER_PASSWORD, ctx.getGrantType());
     }
 
     private void removeSession(final String sessionId) {
-        testingClient.testing().removeExpired(REALM_NAME);
+        runOnServer.run(RunHelpers.removeExpired());
         try {
-            runOnServer.run(RunHelpers.removeUserSession(REALM_NAME, sessionId));
+            runOnServer.run(RunHelpers.removeUserSession(sessionId));
         } catch (RunOnServerException nfe) {
             if (!(nfe.getCause() instanceof NotFoundException)) {
                 throw nfe;
@@ -993,8 +993,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     private void allowUserinfoWithLightweightAccessToken(boolean allow) {
-        getTestingClient().testing().setSystemPropertyOnServer("oidc.allow-userinfo-with-lightweight-access-token", String.valueOf(allow));
-        getTestingClient().testing().reinitializeProviderFactoryWithSystemPropertiesScope(org.keycloak.protocol.LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc.");
+        runOnServerMaster.run(RunHelpers.setSystemPropertyOnServer("oidc.allow-userinfo-with-lightweight-access-token", String.valueOf(allow)));
+        runOnServerMaster.run(RunHelpers.reinitializeProviderFactoryWithSystemPropertiesScope(org.keycloak.protocol.LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc."));
     }
 
     @Test

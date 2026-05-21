@@ -61,6 +61,7 @@ import org.keycloak.testframework.remote.providers.runonserver.RunOnServerExcept
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.Creator;
@@ -659,9 +660,10 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         assertTrue(offlineToken.isActive());
 
         // Assert userSession expired
-        testingClient.testing().removeExpired(bc.consumerRealmName());
+        KeycloakTestingClient.Server runOnServerConsumer = testingClient.server(bc.consumerRealmName());
+        runOnServerConsumer.run(RunHelpers.removeExpired());
         try {
-            runOnServer.run(RunHelpers.removeUserSession(bc.consumerRealmName(), sessionId));
+            runOnServerConsumer.run(RunHelpers.removeUserSession(sessionId));
         } catch (RunOnServerException nfe) {
             if (!(nfe.getCause() instanceof NotFoundException)) {
                 throw nfe;

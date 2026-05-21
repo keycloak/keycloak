@@ -64,6 +64,10 @@ public class OID4VCExportImportTest extends OID4VCIssuerTestBase {
         List<UserVerifiableCredentialRepresentation> verifiableCreds = testRealm.admin().users().get(john.getId()).verifiableCredentials().getCredentials();
         assertUserCredentials(verifiableCreds, jwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, jwtTypeNaturalPersonScopeName, sdJwtTypeNaturalPersonScopeName);
 
+        for (UserVerifiableCredentialRepresentation cred : verifiableCreds) {
+            assertNotNull(cred.getUserAttributes(), "User attributes should be stored in verifiable credential " + cred.getCredentialScopeName());
+        }
+
         // Export realm
         exportRealm("oid4vc-test-realm.json");
 
@@ -74,8 +78,25 @@ public class OID4VCExportImportTest extends OID4VCIssuerTestBase {
         // Import the realm. Verify same verifiable credentials
         importRealm("oid4vc-test-realm.json");
         assertRealmExists(true);
-        List<UserVerifiableCredentialRepresentation> importedVerifiableCreds = testRealm.admin().users().get(john.getId()).verifiableCredentials().getCredentials();
-        assertEquals(verifiableCreds, importedVerifiableCreds);
+
+        UserRepresentation userAfterImport = testRealm.admin().users().search(TEST_USER).stream().findFirst().orElseThrow();
+        List<UserVerifiableCredentialRepresentation> importedVerifiableCreds = testRealm.admin().users().get(userAfterImport.getId()).verifiableCredentials().getCredentials();
+
+        // Verify same number of credentials
+        assertEquals(verifiableCreds.size(), importedVerifiableCreds.size());
+
+        // Verify each credential's userAttributes are preserved
+        for (UserVerifiableCredentialRepresentation originalCred : verifiableCreds) {
+            UserVerifiableCredentialRepresentation importedCred = importedVerifiableCreds.stream()
+                    .filter(c -> c.getCredentialScopeName().equals(originalCred.getCredentialScopeName()))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Credential scope not found after import: " + originalCred.getCredentialScopeName()));
+
+            assertNotNull(importedCred.getUserAttributes(), "Imported credential should have userAttributes");
+            assertEquals(originalCred.getUserAttributes(), importedCred.getUserAttributes(),
+                    "User attributes in verifiable credential " + originalCred.getCredentialScopeName() + " should be preserved during export/import");
+        }
+
     }
 
     private void assertUserCredentials(List<UserVerifiableCredentialRepresentation> userCreds, String... expectedCredentialNames) {

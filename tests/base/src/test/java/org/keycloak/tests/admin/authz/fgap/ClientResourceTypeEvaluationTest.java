@@ -34,6 +34,7 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -54,6 +55,8 @@ import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedClient;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -69,6 +72,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @KeycloakIntegrationTest
@@ -220,6 +224,41 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         // can list & view all clients
         found = realmAdminClient.realm(realm.getName()).clients().findAll();
         assertThat(found, not(empty()));
+    }
+
+    @Test
+    public void testClientScopeEvaluation() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+
+        ClientRepresentation newClient = new ClientRepresentation();
+        newClient.setClientId("newClient");
+        newClient.setProtocol("openid-connect");
+
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        createAllPermission(client, clientsType, onlyMyAdminUserPolicy, Set.of(VIEW, MANAGE));
+
+        realmAdminClient.realm(realm.getName()).clients().create(newClient).close();
+        List<ClientRepresentation> found = realmAdminClient.realm(realm.getName()).clients().findByClientId("newClient");
+        assertThat(found, hasSize(1));
+
+        UserRepresentation user = UserBuilder.create()
+                .username(KeycloakModelUtils.generateId())
+                .build();
+        try (Response response = realm.admin().users().create(user)) {
+            user.setId(ApiUtil.getCreatedId(response));
+        }
+
+        ClientResource clientApi = realmAdminClient.realm(realm.getName()).clients().get(found.get(0).getId());
+
+        try {
+            clientApi.clientScopesEvaluate().generateAccessToken("openid", user.getId(), null);
+            fail("no permissions to view the user.");
+        } catch (ForbiddenException e) {
+            assertEquals("You have no access to this user", e.getResponse().readEntity(OAuth2ErrorRepresentation.class).getError());
+        }
+
+        createPermission(client, user.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW), onlyMyAdminUserPolicy);
+        clientApi.clientScopesEvaluate().generateAccessToken("openid", user.getId(), null);
     }
 
     @Test
