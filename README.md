@@ -74,10 +74,10 @@ We are committed to providing a safe, welcoming, and constructive environment fo
 To protect this space, we actively enforce our [Code of Conduct](https://github.com/keycloak/.github/blob/main/CODE_OF_CONDUCT.md).
 If you wish to report an incident or appeal a moderation decision, please email `keycloak-coc@googlegroups.com`.
 
-## Other Keycloak Projects
+## Related Projects
 
-* [Keycloak](https://github.com/keycloak/keycloak) - Keycloak Server and Java adapters
 * [Keycloak QuickStarts](https://github.com/keycloak/keycloak-quickstarts) - QuickStarts for getting started with Keycloak
+* [Keycloak Client](https://github.com/keycloak/keycloak-client) - Keycloak client library
 * [Keycloak Node.js Connect](https://github.com/keycloak/keycloak-nodejs-connect) - Node.js adapter for Keycloak
 
 
