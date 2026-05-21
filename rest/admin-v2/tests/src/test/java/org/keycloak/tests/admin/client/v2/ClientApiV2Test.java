@@ -960,7 +960,6 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         OIDCClientRepresentation.Auth putAuth = getResultingAuthConfigPut(auth, clientId);
         assertThat(putAuth, notNullValue());
         assertThat(putAuth.getSecret(), is(createdAuth.getSecret()));
-        assertThat(updatedAuth.getSecret(), is(clientId));
     }
 
     @ParameterizedTest

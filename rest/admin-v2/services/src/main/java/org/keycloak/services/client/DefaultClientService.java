@@ -302,7 +302,6 @@ public class DefaultClientService implements ClientService {
                         permissions.clients().requireConfigure(model);
                         // Must run before bean validation: PutClient requires a non-blank secret for client-secret methods
                         generateClientSecretIfNeeded(client, model, strategy, patchExplicitNullSecret);
-                        }
                         validator.validate(client, strategy.getValidationGroup(), Default.class);
                         var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper);
                         session.clientPolicy().triggerOnEvent(new AdminClientUpdateContext(proposedRepresentation, model, permissions.adminAuth()));
@@ -437,24 +436,6 @@ public class DefaultClientService implements ClientService {
                         auth.setSecret(model.getSecret());
                     } else {
                         auth.setSecret(KeycloakModelUtils.generateSecret(model));
-            }
-        }
-    }
-
-    /**
-     * PUT sends a full resource; a null/blank {@code auth.secret} means "leave unchanged", but
-     * {@link org.keycloak.representations.admin.v2.validation.ClientSecretNotBlank} (PutClient) runs before secret
-     * generation. Copy the stored secret so validation and mapping see a concrete value.
-     */
-    private void populateBlankClientSecretFromExistingModel(BaseClientRepresentation client, ClientModel model) {
-        if (client instanceof OIDCClientRepresentation oidcClient
-                && OIDCClientRepresentation.PROTOCOL.equals(client.getProtocol())) {
-            var auth = oidcClient.getAuth();
-            if (auth != null && isClientSecret(auth.getMethod()) && isBlank(auth.getSecret())) {
-                String existing = model.getSecret();
-                if (!isBlank(existing)) {
-                    auth.setSecret(existing);
-                }
                     }
                 }
             }
