@@ -26,4 +26,4 @@ Email theme::
   Whenever {project_name} has to send out an email, it uses templates defined in this theme to craft the email.
 
 .Additional resources
-* The link:{developerguide_link}[{developerguide_name}] describes how to create a new theme or modify existing ones.
+* The link:{developerguide_deploying_themes}[UI Customization Guide] describes how to create a new theme or modify existing ones.
