@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -79,7 +80,10 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.jpa.JpaHashUtils;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.storage.jpa.JpaHashUtils.predicateForFilteringUsersByAttributes;
@@ -382,6 +386,21 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         vcEntity.setCreatedDate(createdDate);
 
         vcEntity.setCredentialScopeName(verifCredentialModel.getCredentialScopeName());
+
+        Map<String, List<String>> userAttributes;
+        if (verifCredentialModel.getUserAttributes() != null) {
+            userAttributes = verifCredentialModel.getUserAttributes();
+        } else {
+            UserModel user = getUserById(session.getContext().getRealm(), userId);
+            userAttributes = user.getAttributes();
+        }
+
+        try {
+            String attributesJson = JsonSerialization.writeValueAsString(userAttributes);
+            vcEntity.setUserAttributes(attributesJson);
+        } catch (IOException e) {
+            throw new ModelException("Failed to serialize user attributes", e);
+        }
         em.persist(vcEntity);
         em.flush();
 
@@ -409,16 +428,63 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                 .sorted(Comparator.comparing(UserVerifiableCredentialModel::getCredentialScopeName));
     }
 
+    @Override
+    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String credentialScopeName) {
+        UserEntity userEntity = em.find(UserEntity.class, userId);
+        if (userEntity == null || !session.getContext().getRealm().getId().equals(userEntity.getRealmId())) {
+            throw new ModelException("User not found: " + userId);
+        }
+        UserModel user = new UserAdapter(session, session.getContext().getRealm(), em, userEntity);
+        TypedQuery<UserVerifiableCredentialEntity> query = getVerifiableCredentialsEntitiesByUser();
+        query.setParameter("userId", userId);
+
+        UserVerifiableCredentialEntity entity = query.getResultStream()
+                .filter(vc -> credentialScopeName.equals(vc.getCredentialScopeName()))
+                .findFirst()
+                .orElseThrow(() -> new ModelException(
+                        "Verifiable credential not found: " + credentialScopeName));
+
+
+        Map<String, List<String>> userAttributes = user.getAttributes();
+        try {
+            String attributesJson = JsonSerialization.writeValueAsString(userAttributes);
+            entity.setUserAttributes(attributesJson);
+        } catch (IOException e) {
+            throw new ModelException("Failed to serialize user attributes", e);
+        }
+
+        String newRevision = SecretGenerator.getInstance().generateSecureID();
+        entity.setRevision(newRevision);
+        UserVerifiableCredentialEntity mergedEntity = em.merge(entity);
+        em.flush();
+
+        return toVerifiableCredentialModel(mergedEntity);
+    }
+
     private Stream<UserVerifiableCredentialEntity> getVerifiableCredentialsEntitiesByUser(String userId) {
-        TypedQuery<UserVerifiableCredentialEntity> query = em.createNamedQuery("verifiableCredentialsByUser", UserVerifiableCredentialEntity.class);
+        TypedQuery<UserVerifiableCredentialEntity> query = getVerifiableCredentialsEntitiesByUser();
         query.setParameter("userId", userId);
         return closing(query.getResultStream());
+    }
+
+    private TypedQuery<UserVerifiableCredentialEntity> getVerifiableCredentialsEntitiesByUser() {
+        return em.createNamedQuery("verifiableCredentialsByUser", UserVerifiableCredentialEntity.class);
     }
 
     private UserVerifiableCredentialModel toVerifiableCredentialModel(UserVerifiableCredentialEntity entity) {
         UserVerifiableCredentialModel model = new UserVerifiableCredentialModel(entity.getCredentialScopeName());
         model.setRevision(entity.getRevision());
         model.setCreatedDate(entity.getCreatedDate());
+
+        if (entity.getUserAttributes() != null) {
+            try {
+                TypeReference<Map<String, List<String>>> typeRef = new TypeReference<>() {};
+                Map<String, List<String>> attrs = JsonSerialization.readValue(entity.getUserAttributes(), typeRef);
+                model.setUserAttributes(attrs);
+            } catch (IOException e) {
+                throw new ModelException("Failed to deserialize user attributes", e);
+            }
+        }
         return model;
     }
 

@@ -183,6 +183,16 @@ public interface UserProvider extends Provider,
      */
     Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId);
 
+    /**
+     * Update verifiable credential by refreshing user attributes snapshot and incrementing revision
+     *
+     * @param userId id of the user
+     * @param credentialScopeName credential scope name to update
+     * @return updated credential model
+     * @throws ModelException if credential doesn't exist
+     */
+    UserVerifiableCredentialModel updateVerifiableCredential(String userId, String credentialScopeName);
+
     /* FEDERATED IDENTITIES methods */
 
     /**

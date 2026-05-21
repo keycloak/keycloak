@@ -871,6 +871,11 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     @Override
+    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String credentialScopeName) {
+        return getDelegate().updateVerifiableCredential(userId, credentialScopeName);
+    }
+
+    @Override
     public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
         if (!isRegisteredForInvalidation(realm, user.getId())) {
             UserModel foundUser = getUserById(realm, user.getId());

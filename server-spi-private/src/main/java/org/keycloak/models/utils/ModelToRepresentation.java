@@ -1042,6 +1042,7 @@ public class ModelToRepresentation {
         rep.setCredentialScopeName(model.getCredentialScopeName());
         rep.setRevision(model.getRevision());
         rep.setCreatedDate(model.getCreatedDate());
+        rep.setUserAttributes(model.getUserAttributes());
         return rep;
     }
 
