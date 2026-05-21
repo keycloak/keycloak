@@ -222,6 +222,9 @@ public class AccountRestService {
     @Path("/resources")
     public ResourcesService resources() {
         checkAccountApiEnabled();
+        if (!realm.isUserManagedAccessAllowed()) {
+            throw ErrorResponse.error("User-managed access not enabled", Response.Status.FORBIDDEN);
+        }
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
         return new ResourcesService(session, user, auth, request);
     }

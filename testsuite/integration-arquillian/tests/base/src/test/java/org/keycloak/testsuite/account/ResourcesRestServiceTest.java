@@ -501,6 +501,38 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
+    public void testResourceEndpointsBlockedWhenUmaDisabled() throws Exception {
+        Resource resource = getMyResources().get(0);
+        String resourceId = resource.getId();
+
+        final String resourcesUrl = getAccountUrl("resources");
+        final String sharedWithOthersUrl = resourcesUrl + "/shared-with-others";
+        final String sharedWithMeUrl = resourcesUrl + "/shared-with-me";
+        final String resourceUrl = resourcesUrl + "/" + encodePathAsIs(resourceId);
+        final String permissionsUrl = resourceUrl + "/permissions";
+        final String requestsUrl = resourceUrl + "/permissions/requests";
+
+        RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+        try {
+            realmRep.setUserManagedAccessAllowed(false);
+            adminClient.realm("test").update(realmRep);
+
+            for (String url : Arrays.asList(resourcesUrl, sharedWithOthersUrl, sharedWithMeUrl, resourceUrl, permissionsUrl, requestsUrl)) {
+                assertEquals("UMA disabled GET " + url, 403,
+                        SimpleHttpDefault.doGet(url, httpClient).acceptJson().auth(tokenUtil.getToken()).asStatus());
+            }
+
+            List<Permission> permissions = new ArrayList<>();
+            permissions.add(new Permission("jdoe", "Scope A"));
+            assertEquals("UMA disabled PUT " + permissionsUrl, 403,
+                    SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(tokenUtil.getToken()).json(permissions).asStatus());
+        } finally {
+            realmRep.setUserManagedAccessAllowed(true);
+            adminClient.realm("test").update(realmRep);
+        }
+    }
+
+    @Test
     public void testRevokePermission() throws Exception {
         List<String> users = Arrays.asList("jdoe", "alice");
         List<Permission> permissions = new ArrayList<>();
