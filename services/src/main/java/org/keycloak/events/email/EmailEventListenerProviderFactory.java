@@ -30,12 +30,14 @@ import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.KeycloakProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@KeycloakProvider
 public class EmailEventListenerProviderFactory implements EventListenerProviderFactory {
 
     private static final Set<EventType> SUPPORTED_EVENTS = new HashSet<>();

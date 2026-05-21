@@ -26,6 +26,7 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.KeycloakProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
@@ -34,6 +35,7 @@ import org.jboss.logging.Logger;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@KeycloakProvider
 public class JBossLoggingEventListenerProviderFactory implements EventListenerProviderFactory {
 
     public static final String ID = "jboss-logging";
