@@ -255,7 +255,10 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         }
         UriBuilder location = session.getContext().getUri().getAbsolutePathBuilder();
         if (resource.getId() != null) {
-            location.path(resource.getId());
+            String path = session.getContext().getUri().getAbsolutePath().getPath();
+            if (!path.endsWith("/" + resource.getId())) {
+                location.path(resource.getId());
+            }
         }
         meta.setLocation(location.build().toString());
         resource.setMeta(meta);

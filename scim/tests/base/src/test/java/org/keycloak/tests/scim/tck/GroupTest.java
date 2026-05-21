@@ -130,6 +130,42 @@ public class GroupTest extends AbstractScimTest {
     }
 
     @Test
+    public void testMetaLocationUrl() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        String id = group.getId();
+
+        // location from create response should end with /Groups/{id}
+        assertNotNull(group.getMeta());
+        assertTrue(group.getMeta().getLocation().endsWith("/Groups/" + id),
+                "Create location should end with /Groups/" + id + " but was: " + group.getMeta().getLocation());
+        assertFalse(group.getMeta().getLocation().contains(id + "/" + id),
+                "Create location should not contain duplicated ID: " + group.getMeta().getLocation());
+
+        // location from single-resource GET should also be correct
+        Group fetched = client.groups().get(id);
+        assertNotNull(fetched.getMeta());
+        assertTrue(fetched.getMeta().getLocation().endsWith("/Groups/" + id),
+                "GET location should end with /Groups/" + id + " but was: " + fetched.getMeta().getLocation());
+        assertFalse(fetched.getMeta().getLocation().contains(id + "/" + id),
+                "GET location should not contain duplicated ID: " + fetched.getMeta().getLocation());
+
+        // location from list response should match
+        String filter = ResourceFilter.filter().eq("displayName", group.getDisplayName()).build();
+        ListResponse<Group> response = client.groups().getAll(filter);
+        assertFalse(response.getResources().isEmpty());
+        Group listed = response.getResources().get(0);
+        assertNotNull(listed.getMeta());
+        assertTrue(listed.getMeta().getLocation().endsWith("/Groups/" + id),
+                "List location should end with /Groups/" + id + " but was: " + listed.getMeta().getLocation());
+
+        // all three locations should be equal
+        assertEquals(group.getMeta().getLocation(), fetched.getMeta().getLocation());
+        assertEquals(group.getMeta().getLocation(), listed.getMeta().getLocation());
+    }
+
+    @Test
     public void testMetaTimestamps() {
         Group group = new Group();
         group.setDisplayName(KeycloakModelUtils.generateId());
