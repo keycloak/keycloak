@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.client;
 
+import java.io.IOException;
 import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
@@ -174,7 +175,7 @@ public class KeycloakTestingClient implements AutoCloseable {
             try {
                 String s = fetchString(function);
                 return s==null ? null : JsonSerialization.readValue(s, clazz);
-            } catch (Exception e) {
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }

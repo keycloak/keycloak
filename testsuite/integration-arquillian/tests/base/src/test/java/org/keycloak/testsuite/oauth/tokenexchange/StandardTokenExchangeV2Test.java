@@ -84,6 +84,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.TokenExchangeRequest;
 import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.TokenUtil;
 
@@ -891,7 +892,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                 .update()) {
             String accessToken = resourceOwnerLogin("mike", "password", "subject-client", "secret").getAccessToken();
             String sessionId = TokenVerifier.create(accessToken, AccessToken.class).parse().getToken().getSessionId();
-            Assertions.assertEquals(testingClient.testing(TEST).getClientSessionsCountInUserSession(TEST, sessionId), Integer.valueOf(1));
+            Assertions.assertEquals(runOnServer.fetch(RunHelpers.getClientSessionsCountInUserSession(sessionId)), Integer.valueOf(1));
 
             oauth.scope("offline_access");
             AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of("target-client1"), OAuth2Constants.REFRESH_TOKEN_TYPE);
@@ -900,7 +901,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             assertEquals("Scope offline_access not allowed for token exchange", response.getErrorDescription());
 
             // Check that client session was not created
-            Assertions.assertEquals(testingClient.testing(TEST).getClientSessionsCountInUserSession(TEST, sessionId), Integer.valueOf(1));
+            Assertions.assertEquals(runOnServer.fetch(RunHelpers.getClientSessionsCountInUserSession(sessionId)), Integer.valueOf(1));
         }
     }
 
@@ -920,7 +921,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(accessToken, AccessToken.class);
             AccessToken originalToken = verifier.parse().getToken();
 
-            AccessTokenContext ctx = getTestingClient().testing().getTokenContext(originalToken.getId());
+            AccessTokenContext ctx = runOnServerMaster.fetch(RunHelpers.getTokenContext(originalToken.getId()));
             assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.OFFLINE);
 
             // normal access token exchange is allowed for the offline session
@@ -1438,7 +1439,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
 
     private void assertAccessTokenContext(String jti, AccessTokenContext.SessionType sessionType,
                                           AccessTokenContext.TokenType tokenType, String grantType) {
-        AccessTokenContext ctx = testingClient.testing(TEST).getTokenContext(jti);
+        AccessTokenContext ctx = runOnServer.fetch(RunHelpers.getTokenContext(jti));
         assertEquals(sessionType, ctx.getSessionType());
         assertEquals(tokenType, ctx.getTokenType());
         assertEquals(grantType, ctx.getGrantType());
