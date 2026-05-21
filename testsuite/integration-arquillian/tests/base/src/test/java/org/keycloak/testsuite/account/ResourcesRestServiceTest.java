@@ -449,6 +449,35 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
+    public void testShareResourceRejectsAmbiguousUsernameEmail() throws Exception {
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
+        realm.setLoginWithEmailAllowed(false);
+        managedRealm.admin().update(realm);
+
+        UserRepresentation alice = findUser("alice");
+
+        // Create an attacker user whose username matches the email of a legitimate user.
+        UserRepresentation attacker = createUser("alice@test.com", "password", "Attacker", "X", "attacker@test.com");
+        managedRealm.admin().users().create(attacker);
+
+        alice.setEmail("alice@test.com");
+        managedRealm.admin().users().get(alice.getId()).update(alice);
+
+        // The resource owner shares with "alice@test.com" intending alice (by email) but there is a clash as "alice@test.com" 
+        // is also the attacker's username -> reject the request due to unambiguity
+        List<Permission> permissions = new ArrayList<>();
+        permissions.add(new Permission("alice@test.com", "Scope A"));
+
+        String resourceId = getMyResources().get(0).getId();
+        SimpleHttpResponse response = SimpleHttpDefault.doPut(
+                getAccountUrl("resources/" + encodePathAsIs(resourceId) + "/permissions"), httpClient)
+                .auth(tokenUtil.getToken())
+                .json(permissions).asResponse();
+
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    }
+
+    @Test
     public void failShareResourceInvalidPermissions() throws Exception {
         List<Permission> permissions = new ArrayList<>();
 
