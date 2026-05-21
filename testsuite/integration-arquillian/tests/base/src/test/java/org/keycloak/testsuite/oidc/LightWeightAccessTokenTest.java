@@ -993,8 +993,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     private void allowUserinfoWithLightweightAccessToken(boolean allow) {
-        getTestingClient().testing().setSystemPropertyOnServer("oidc.allow-userinfo-with-lightweight-access-token", String.valueOf(allow));
-        getTestingClient().testing().reinitializeProviderFactoryWithSystemPropertiesScope(org.keycloak.protocol.LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc.");
+        runOnServerMaster.run(RunHelpers.setSystemPropertyOnServer("oidc.allow-userinfo-with-lightweight-access-token", String.valueOf(allow)));
+        runOnServerMaster.run(RunHelpers.reinitializeProviderFactoryWithSystemPropertiesScope(org.keycloak.protocol.LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc."));
     }
 
     @Test
