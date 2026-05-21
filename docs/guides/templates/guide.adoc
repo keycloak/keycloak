@@ -12,8 +12,7 @@
 
 include::${attributes}
 
-[[${id}]]
-= ${title}
+[id="$title"] 
 
 ifeval::["${preview}" == "true"]
 WARNING: This {section} is describing a feature which is currently in preview.
