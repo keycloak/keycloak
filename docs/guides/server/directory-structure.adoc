@@ -33,6 +33,6 @@ Under the {project_name} install root there exists a number of folders:
 ** *logs/* - default directory for file logging - see <@links.server id="logging"/>
 * *lib/* - used internally
 * *providers/* - directory for user provided dependencies - see <@links.server id="configuration-provider"/> for extending the server and <@links.server id="db"/> for an example of adding a JDBC driver.
-* *themes/* - directory for customizations to the Admin Console, Account Console, and login page - see {ui_customization_guide_link}themes[Working with themes]
+* *themes/* - directory for customizations to the Admin Console, Account Console, and login page - see the <@links.uicustomization id="themes"/> {section}.
 
 </@tmpl.guide>
