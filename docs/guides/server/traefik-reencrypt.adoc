@@ -1,0 +1,157 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide title="Traefik with TLS re-encrypt"
+summary="Configure Traefik as a TLS re-encrypt load balancer for {project_name}."
+includedOptions="proxy-headers health-enabled metrics-enabled https-certificate-file https-certificate-key-file https-client-auth https-trust-store-file https-management-client-auth shutdown-delay"
+tileVisible="false">
+
+This {section} describes how to configure link:https://traefik.io/[Traefik] as a TLS re-encrypt load balancer in front of {project_name}.
+
+In TLS re-encrypt mode, Traefik terminates the incoming TLS connection and establishes a new encrypted connection to {project_name}.
+Traefik operates at Layer 7 (HTTP).
+Unlike passthrough, end-to-end TLS encryption between client and {project_name} is not preserved, but the proxy gains the ability to inspect and modify HTTP traffic.
+
+For a general overview of TLS re-encrypt and how it compares to passthrough, see the <@links.server id="reverseproxy"/> {section}.
+
+A ready-to-run example with Docker Compose is available in the link:https://github.com/keycloak/keycloak-quickstarts/tree/main/proxy/traefik/reencrypt[quickstart repository].
+
+[[traefik-configuration-reencrypt]]
+== Traefik configuration
+
+Traefik separates its configuration into two files:
+
+* A *static configuration* file (`traefik.yaml`) that defines entrypoints and providers, loaded once at startup.
+* A *dynamic configuration* file (`keycloak.yaml`) that defines routing, TLS, and backend transport settings, hot-reloaded by Traefik at runtime.
+
+=== Static configuration (`traefik.yaml`)
+
+[source,yaml]
+----
+entryPoints:
+  keycloak: # <1>
+    address: ":8443"
+api:
+  dashboard: true
+  insecure: true
+log:
+  level: INFO
+providers:
+  file:
+    directory: "/mnt" # <2>
+----
+
+<1> Defines an entrypoint named `keycloak` that listens for TLS connections on port `8443`.
+The name `keycloak` is used in the dynamic configuration to bind routers to this entrypoint.
+<2> Instructs Traefik to watch the `/mnt` directory for dynamic configuration files.
+The `keycloak.yaml` dynamic configuration file is mounted here.
+
+=== Dynamic configuration (`keycloak.yaml`)
+
+[source,yaml]
+----
+tls:
+  certificates:
+    - certFile: /certs/traefik-external/cert.pem # <1>
+      keyFile: /certs/traefik-external/key.pem
+
+http:
+  serversTransports:
+    keycloak-transport:
+      certificates:
+        - certFile: /certs/traefik-internal/cert.pem # <2>
+          keyFile: /certs/traefik-internal/key.pem
+      rootCAs:
+        - /certs/keycloak1-cert.pem # <3>
+        - /certs/keycloak2-cert.pem
+
+  routers:
+    keycloak:
+      entryPoints:
+        - keycloak
+      rule: "PathPrefix(`/`)" # <4>
+      tls: {} # <5>
+      service: keycloak
+
+  services:
+    keycloak:
+      loadBalancer:
+        serversTransport: keycloak-transport # <6>
+        healthCheck:
+          path: /health/ready # <7>
+          port: 9000
+          scheme: https
+          interval: "5s"
+          timeout: "3s"
+        servers:
+          - url: "https://keycloak1:8443" # <8>
+          - url: "https://keycloak2:8443"
+----
+
+<1> The certificate Traefik presents to clients on the frontend TLS connection.
+This is the externally trusted certificate that browsers verify.
+<2> The certificate Traefik presents to {project_name} on the backend mTLS connection.
+{project_name} is configured to require client authentication and will verify this certificate against its truststore.
+<3> The public certificates of each {project_name} backend server.
+Traefik verifies each backend server's TLS certificate against these entries, ensuring the connection goes to a trusted {project_name} instance and not an impersonator.
+<4> Routes all incoming requests to the {project_name} service.
+<5> Enables TLS on the router, allowing Traefik to terminate the incoming TLS connection from the client and inspect HTTP traffic.
+<6> Links the load balancer to the named transport above, activating mTLS for all connections to the backend {project_name} servers.
+<7> Configures link:https://doc.traefik.io/traefik/reference/routing-configuration/http/service/#health-check[HTTP health checks] against {project_name}'s readiness endpoint on the management port (`9000`) over HTTPS.
+The management port does not require client authentication, so no mTLS client certificate is needed for health check connections.
+<8> The backend {project_name} servers.
+Traefik load-balances requests across both instances using round-robin.
+
+[[keycloak-configuration-traefik-reencrypt]]
+== {project_name} configuration
+
+With TLS re-encrypt, {project_name} requires the following configuration:
+
+<@kc.start parameters="--proxy-headers xforwarded --health-enabled true --metrics-enabled true --https-certificate-file=/path/to/certificate --https-certificate-key-file=/path/to/key --https-client-auth=required --https-trust-store-file=/path/to/https-truststore --https-management-client-auth=none"/>
+
+`--proxy-headers xforwarded`::
+Instructs {project_name} to read the client IP address and protocol from the `X-Forwarded-*` headers set by Traefik.
+In re-encrypt mode, Traefik overwrites any incoming `X-Forwarded-*` headers with the correct client values before forwarding requests to {project_name}, preventing clients from injecting misleading header values.
+Do not set `--proxy-protocol-enabled` when using TLS re-encrypt.
+The PROXY protocol is only relevant for TLS passthrough (TCP mode).
+
+`--health-enabled true`::
+Enables the health check endpoints on the management port (`9000`).
+Without this, the `/health/ready` endpoint that Traefik polls will not be available, and Traefik will mark all {project_name} instances as down.
+
+`--metrics-enabled true`::
+Enables the metrics endpoints on the management port.
+Enabling metrics also enables an additional status check for the database, so it is recommended to enable metrics.
+
+`--https-certificate-file=/path/to/certificate` and `--https-certificate-key-file=/path/to/key`::
+Configure the certificate and the private key {project_name} will use for HTTPS.
+See the <@links.server id="enabletls"/> guide for additional details.
+
+`--https-client-auth=required`::
+Configures {project_name} to require client authentication, for mutual TLS.
+
+`--https-trust-store-file=/path/to/https-truststore`::
+Configures a truststore for client authentication.
+In this case the truststore should contain the public certificate of the Traefik proxy.
+See the <@links.server id="mutual-tls"/> guide for additional details.
+
+`--https-management-client-auth=none`::
+Disables the client authentication requirement for the management endpoint.
+This allows Traefik to perform HTTPS health checks against the management port (`9000`) without needing to present the mTLS client certificate.
+
+[[graceful-shutdown-considerations-traefik-reencrypt]]
+== Graceful shutdown considerations
+
+The Traefik health check settings determine how long it takes for the proxy to detect that a {project_name} instance is shutting down and that connections should no longer be routed to it.
+
+With the health check settings from the <<dynamic-configuration-keycloak-yaml, configuration above>> (`interval: 5s`, `timeout: 3s`), it takes up to 8 seconds (`interval + timeout`) for Traefik to mark a {project_name} instance as down.
+During this period, {project_name} must remain running to serve in-flight requests.
+Therefore, you need to configure the `--shutdown-delay` to be at least as long as the detection time:
+
+<@kc.start parameters="--proxy-headers xforwarded --health-enabled true --metrics-enabled true --https-certificate-file=/path/to/certificate --https-certificate-key-file=/path/to/key --https-client-auth=required --https-trust-store-file=/path/to/https-truststore --https-management-client-auth=none --shutdown-delay=8s"/>
+
+For a detailed explanation of shutdown phases and how to tune the delay and timeout values, see the Graceful HTTP shutdown section in the <@links.server id="reverseproxy"/> {section}.
+
+</@tmpl.guide>
