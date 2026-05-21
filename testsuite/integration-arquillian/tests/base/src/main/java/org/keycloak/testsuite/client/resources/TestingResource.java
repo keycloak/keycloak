@@ -130,9 +130,6 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     public UserRepresentation getUserByServiceAccountClient(@QueryParam("realmName") String realmName, @QueryParam("clientId") String clientId);
 
-    @Path("export-import")
-    TestingExportImportResource exportImport();
-
     @GET
     @Path("/test-amphibian-component")
     @Produces(MediaType.APPLICATION_JSON)
