@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
@@ -340,9 +341,17 @@ public class ClientScopeEvaluateResource {
         }
 
         UserModel user = session.users().getUserById(realm, userId);
+
+        try {
+            auth.users().requireView(user);
+        } catch (ForbiddenException e) {
+            throw new ForbiddenException("You have no access to this user");
+        }
+
         if (user == null) {
             throw new NotFoundException("No user found");
         }
+
         return user;
     }
 
