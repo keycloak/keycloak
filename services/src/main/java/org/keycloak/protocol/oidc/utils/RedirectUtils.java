@@ -150,8 +150,11 @@ public class RedirectUtils {
     }
 
     // any access to parent folder /../ is unsafe with or without encoding
+    //   <sep>             = / | %2F | %5C | \
+    //   <dots>            = "..", including %2E and %252E (double-encoded) variants
+    //   <terminator>      = / | %2F | %5C | \ | ; | %3B | %09 | %0A | %0D | %00 | end-of-input
     private final static Pattern UNSAFE_PATH_PATTERN = Pattern.compile(
-            "(/|%2[fF]|%5[cC]|\\\\)(%2[eE]|\\.){2}(/|%2[fF]|%5[cC]|\\\\|;)|(/|%2[fF]|%5[cC]|\\\\)(%2[eE]|\\.){2}$");
+            "(/|%2[fF]|%5[cC]|\\\\)(%2[eE]|%252[eE]|\\.){2}(/|%2[fF]|%5[cC]|\\\\|;|%3[bB]|%09|%0[aAdD]|%00|$)");
 
     private static boolean areWildcardsAllowed(URI redirectUri) {
         // wildcars are only allowed if no user-info and no unparsed authority and no unsafe pattern in path
