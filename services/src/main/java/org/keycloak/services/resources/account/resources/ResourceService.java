@@ -244,11 +244,15 @@ public class ResourceService extends AbstractResourceService {
 
     private UserModel getUser(String requester) {
         UserProvider users = provider.getKeycloakSession().users();
-        UserModel user = users.getUserByUsername(provider.getRealm(), requester);
+        UserModel userByUsername = users.getUserByUsername(provider.getRealm(), requester);
+        UserModel userByEmail = users.getUserByEmail(provider.getRealm(), requester);
 
-        if (user == null) {
-            user = users.getUserByEmail(provider.getRealm(), requester);
+        if (userByUsername != null && userByEmail != null
+                && !userByUsername.getId().equals(userByEmail.getId())) {
+            throw new BadRequestException("ambiguous_user");
         }
+
+        UserModel user = userByUsername != null ? userByUsername : userByEmail;
 
         if (user == null) {
             throw new NotFoundException(requester);
