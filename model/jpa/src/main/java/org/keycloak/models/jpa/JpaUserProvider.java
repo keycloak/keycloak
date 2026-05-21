@@ -435,10 +435,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
             throw new ModelException("User not found: " + userId);
         }
         UserModel user = new UserAdapter(session, session.getContext().getRealm(), em, userEntity);
-        TypedQuery<UserVerifiableCredentialEntity> query = getVerifiableCredentialsEntitiesByUser();
-        query.setParameter("userId", userId);
 
-        UserVerifiableCredentialEntity entity = query.getResultStream()
+        UserVerifiableCredentialEntity entity = getVerifiableCredentialsEntitiesByUser(userId)
                 .filter(vc -> credentialScopeName.equals(vc.getCredentialScopeName()))
                 .findFirst()
                 .orElseThrow(() -> new ModelException(
@@ -462,13 +460,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     }
 
     private Stream<UserVerifiableCredentialEntity> getVerifiableCredentialsEntitiesByUser(String userId) {
-        TypedQuery<UserVerifiableCredentialEntity> query = getVerifiableCredentialsEntitiesByUser();
+        TypedQuery<UserVerifiableCredentialEntity> query = em.createNamedQuery("verifiableCredentialsByUser", UserVerifiableCredentialEntity.class);
         query.setParameter("userId", userId);
         return closing(query.getResultStream());
-    }
-
-    private TypedQuery<UserVerifiableCredentialEntity> getVerifiableCredentialsEntitiesByUser() {
-        return em.createNamedQuery("verifiableCredentialsByUser", UserVerifiableCredentialEntity.class);
     }
 
     private UserVerifiableCredentialModel toVerifiableCredentialModel(UserVerifiableCredentialEntity entity) {
