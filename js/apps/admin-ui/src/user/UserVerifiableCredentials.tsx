@@ -13,6 +13,7 @@ import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { emptyFormatter } from "../util";
 import useFormatDate from "../utils/useFormatDate";
 import { CreateVerifiableCredentialModal } from "./CreateVerifiableCredentialModal";
+import { UserAttributesDialog } from "./UserAttributesDialog";
 
 type UserVerifiableCredentialsProps = {
   userId: string;
@@ -29,6 +30,8 @@ export const UserVerifiableCredentials = ({
   const [selectedCredential, setSelectedCredential] =
     useState<UserVerifiableCredentialRepresentation>();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [attributesDialogCredential, setAttributesDialogCredential] =
+    useState<UserVerifiableCredentialRepresentation>();
 
   const refresh = () => setKey(new Date().getTime());
 
@@ -60,9 +63,41 @@ export const UserVerifiableCredentials = ({
     },
   });
 
+  const [toggleUpdateDialog, UpdateConfirm] = useConfirmDialog({
+    titleKey: "updateVerifiableCredentialTitle",
+    messageKey: t("updateVerifiableCredentialConfirm", {
+      credentialScopeName: selectedCredential?.credentialScopeName,
+    }),
+    continueButtonLabel: "update",
+    continueButtonVariant: ButtonVariant.primary,
+    onConfirm: async () => {
+      try {
+        await adminClient.users.updateVerifiableCredential({
+          id: userId,
+          credentialScopeName: selectedCredential!.credentialScopeName!,
+        });
+        refresh();
+        addAlert(t("updateVerifiableCredentialSuccess"), AlertVariant.success);
+      } catch (error) {
+        addError("updateVerifiableCredentialError", error);
+      }
+    },
+  });
+
   return (
     <>
       <DeleteConfirm />
+      <UpdateConfirm />
+      {attributesDialogCredential?.userAttributes &&
+        Object.keys(attributesDialogCredential.userAttributes).length > 0 && (
+          <UserAttributesDialog
+            credentialScopeName={
+              attributesDialogCredential.credentialScopeName ?? ""
+            }
+            userAttributes={attributesDialogCredential.userAttributes}
+            onClose={() => setAttributesDialogCredential(undefined)}
+          />
+        )}
       {isCreateModalOpen && (
         <CreateVerifiableCredentialModal
           userId={userId}
@@ -88,23 +123,55 @@ export const UserVerifiableCredentials = ({
             name: "credentialScopeName",
             displayKey: "credentialScopeName",
             cellFormatters: [emptyFormatter()],
-            transforms: [cellWidth(40)],
+            transforms: [cellWidth(25)],
           },
           {
             name: "revision",
             displayKey: "revision",
             cellFormatters: [emptyFormatter()],
-            transforms: [cellWidth(30)],
+            transforms: [cellWidth(15)],
           },
           {
             name: "createdDate",
             displayKey: "created",
-            transforms: [cellWidth(30)],
+            transforms: [cellWidth(20)],
             cellRenderer: ({ createdDate }) =>
               createdDate ? formatDate(new Date(createdDate)) : "—",
           },
+          {
+            name: "userAttributes",
+            displayKey: "userAttributes",
+            transforms: [cellWidth(40)],
+            cellRenderer: (credential) => {
+              if (
+                !credential.userAttributes ||
+                Object.keys(credential.userAttributes).length === 0
+              ) {
+                return (
+                  <span className="pf-v5-u-color-200">
+                    {t("credentialNoUserAttributes")}
+                  </span>
+                );
+              }
+              return (
+                <Button
+                  variant="link"
+                  onClick={() => setAttributesDialogCredential(credential)}
+                >
+                  {t("credentialViewAttributes")}
+                </Button>
+              );
+            },
+          },
         ]}
         actions={[
+          {
+            title: t("updateCredential"),
+            onRowClick: (credential) => {
+              setSelectedCredential(credential);
+              toggleUpdateDialog();
+            },
+          } as Action<UserVerifiableCredentialRepresentation>,
           {
             title: t("revoke"),
             onRowClick: (credential) => {
