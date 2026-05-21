@@ -24,37 +24,38 @@ export function borderRadiusToCss({
 }: FormFields | Record<string, string>) {
   return `
 .pf-v5-c-login__main {
-  ${borderRadiusMain ? "border-radius:" + borderRadiusMain : ""}
+  ${borderRadiusMain ? "border-radius:" + borderRadiusMain : ""};
 }
 .pf-v5-c-login__main-header {
-  ${borderRadiusMain ? "border-radius:" + borderRadiusMain : ""}
+  ${borderRadiusMain ? "border-radius:" + borderRadiusMain : ""};
 }
 .pf-v5-c-button {
-  ${borderRadiusMain ? "border-radius:" + borderRadiusMain : ""}
+  ${borderRadiusButton ? "border-radius:" + borderRadiusButton : ""};
+  --pf-v5-c-button--after--BorderRadius: ${borderRadiusButton};
 }
 .pf-v5-c-form-control {
-  ${borderRadiusMain ? "border-radius:" + borderRadiusMain : ""}
+  ${borderRadiusMain ? "border-radius:" + borderRadiusMain : ""};
 }
 .pf-v5-c-form-control input {
-  ${borderRadiusInput ? "border-radius:" + borderRadiusInput : ""}
+  ${borderRadiusInput ? "border-radius:" + borderRadiusInput : ""};
 }
 .pf-v5-c-form-control::after {
-  ${borderRadiusButton ? "border-radius:" + borderRadiusButton : ""}
+  ${borderRadiusButton ? "border-radius:" + borderRadiusButton : ""};
 }
 .pf-v5-c-button.pf-m-control::after {
-  ${borderRadiusButton ? "border-radius:" + borderRadiusButton : ""}
+  ${borderRadiusButton ? "border-radius:" + borderRadiusButton : ""};
 }
   `;
 }
 function pxToNumber(value: string) {
-  return parseInt(value.replaceAll("px", ""), 10);
+  return parseInt(value.replaceAll("px", ""), 10) || 0;
 }
 
 export const BorderRadiusControl = () => {
   const { t } = useTranslation();
   const { control, setValue, register } = useFormContext();
   const [expanded, setExpanded] = useState(false);
-  const [dependend, setDependend] = useState([
+  const [dependent, setDependent] = useState([
     "borderRadiusInput",
     "borderRadiusButton",
   ]);
@@ -66,10 +67,10 @@ export const BorderRadiusControl = () => {
   });
 
   useEffect(() => {
-    dependend.map((d) =>
+    dependent.map((d) =>
       setValue(d, `${Math.floor(pxToNumber(mainBorderValue) / 2)}px`),
     );
-  }, [mainBorderValue, dependend]);
+  }, [mainBorderValue]);
 
   return (
     <>
@@ -97,8 +98,8 @@ export const BorderRadiusControl = () => {
                 <TextInput
                   {...register("borderRadiusInput", {
                     onChange: () =>
-                      setDependend(
-                        dependend.filter((d) => d !== "borderRadiusInput"),
+                      setDependent(
+                        dependent.filter((d) => d !== "borderRadiusInput"),
                       ),
                   })}
                   id="borderRadiusInput"
@@ -112,12 +113,11 @@ export const BorderRadiusControl = () => {
                 <TextInput
                   {...register("borderRadiusButton", {
                     onChange: () =>
-                      setDependend(
-                        dependend.filter((d) => d !== "borderRadiusButton"),
+                      setDependent(
+                        dependent.filter((d) => d !== "borderRadiusButton"),
                       ),
                   })}
                   id="borderRadiusButton"
-                  label={t("borderRadiusButton")}
                   placeholder="4px"
                 />
               </FormGroup>
