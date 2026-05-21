@@ -146,11 +146,9 @@ This allows Traefik to perform HTTPS health checks against the management port (
 
 The Traefik health check settings determine how long it takes for the proxy to detect that a {project_name} instance is shutting down and that connections should no longer be routed to it.
 
-With the health check settings from the configuration above (`interval: 5s`, `timeout: 3s`), it takes up to 8 seconds (`interval + timeout`) for Traefik to mark a {project_name} instance as down.
-During this period, {project_name} must remain running to serve in-flight requests.
-Therefore, you need to configure the `--shutdown-delay` to be at least as long as the detection time:
+Configure the `shutdown-delay` to give traefik enough time to detect that the instance is shutting down and stop routing the traffic to it:
 
-<@kc.start parameters="--proxy-headers xforwarded --health-enabled true --metrics-enabled true --https-certificate-file=/path/to/certificate --https-certificate-key-file=/path/to/key --https-client-auth=required --https-trust-store-file=/path/to/https-truststore --https-management-client-auth=none --shutdown-delay=30s"/>
+<@kc.start parameters="--proxy-headers xforwarded --health-enabled true --metrics-enabled true --https-certificate-file=/path/to/certificate --https-certificate-key-file=/path/to/key --https-client-auth=required --https-trust-store-file=/path/to/https-truststore --https-management-client-auth=none --shutdown-delay=8s"/>
 
 For a detailed explanation of shutdown phases and how to tune the delay and timeout values, see the Graceful HTTP shutdown section in the <@links.server id="reverseproxy"/> {section}.
 
