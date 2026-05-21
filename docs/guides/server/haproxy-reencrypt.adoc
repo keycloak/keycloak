@@ -58,16 +58,30 @@ frontend https_front
     http-request del-header uber-trace-id
     http-request del-header x-ot-span-context
 
+    # Public paths. Revisit the reverse proxy guide for the latest guidance. # <4>
+    # With these settings, the redirect to the welcome screen or Admin UI will not work from external IP addresses, and this is expected.
+    acl is_public_path path_beg /realms/
+    acl is_public_path path_beg /resources/
+    acl is_public_path path_beg /.well-known/
+
+    # Allowed source IP ranges. Replace with your internal IP address ranges. # <4>
+    acl is_allowed_src src 192.168.0.0/16
+    acl is_allowed_src src 172.16.0.0/12
+    acl is_allowed_src src 10.0.0.0/8
+    acl is_allowed_src src 127.0.0.0/8
+
+    http-request deny unless is_public_path or is_allowed_src # <4>
+
     default_backend keycloak_back
 
 backend keycloak_back
-    mode http # <4>
-    balance roundrobin # <5>
-    option forwarded host by by_port for # <6>
-    option httpchk GET /health/ready # <7>
+    mode http # <5>
+    balance roundrobin # <6>
+    option forwarded host by by_port for # <7>
+    option httpchk GET /health/ready # <8>
     http-check expect status 200
 
-    server keycloak1 keycloak1:8443 ssl verify required crt /path/to/haproxy-internal-certificate ca-file /path/to/keycloak-1-certificate check port 9000 check-ssl verify none inter 5s fall 3 rise 2 # <8>
+    server keycloak1 keycloak1:8443 ssl verify required crt /path/to/haproxy-internal-certificate ca-file /path/to/keycloak-1-certificate check port 9000 check-ssl verify none inter 5s fall 3 rise 2 # <9>
 
     server keycloak2 keycloak2:8443 ssl verify required crt /path/to/haproxy-internal-certificate ca-file /path/to/keycloak-2-certificate check port 9000 check-ssl verify none inter 5s fall 3 rise 2
 
@@ -81,11 +95,12 @@ HAProxy has access to the plaintext HTTP traffic in this mode.
 <3> The `http-request del-header` directives remove HTTP headers from incoming requests before forwarding them to {project_name}.
 This prevents external clients from spoofing proxy identity headers (such as `Forwarded`, `+X-Forwarded-*+`, and `X-Real-IP`), injecting authentication-related headers (such as `X-Forwarded-Access-Token`), or injecting distributed tracing context (such as W3C Trace Context, Zipkin B3, or Jaeger headers).
 For the full list of recommended headers to filter, see the <@links.server id="reverseproxy" anchor="header-filtering-recommendations"/> {section}.
-<4> The backend must also use HTTP mode to match the frontend.
-<5> Distributes connections across backend servers using link:https://docs.haproxy.org/3.2/configuration.html#4-balance[round-robin] load balancing.
-<6> This option adds a `Forwarded` header containing the correct client information.
-<7> Configures link:https://docs.haproxy.org/3.2/configuration.html#4.2-option%20httpchk[HTTP health checks] against {project_name}'s readiness endpoint.
-<8> Defines a backend {project_name} server.
+<4> Restricts access so that only public {project_name} paths are reachable from external networks. Requests to non-public paths (such as the Admin API or Admin Console) are only allowed from the configured internal IP ranges. For the full list of paths and recommendations, see the <@links.server id="reverseproxy" anchor="_exposed_path_recommendations"/> {section}.
+<5> The backend must also use HTTP mode to match the frontend.
+<6> Distributes connections across backend servers using link:https://docs.haproxy.org/3.2/configuration.html#4-balance[round-robin] load balancing.
+<7> This option adds a `Forwarded` header containing the correct client information.
+<8> Configures link:https://docs.haproxy.org/3.2/configuration.html#4.2-option%20httpchk[HTTP health checks] against {project_name}'s readiness endpoint.
+<9> Defines a backend {project_name} server.
 The parameters on this line control mTLS settings, health checks, and failure detection:
 
 The `server` directive parameters are explained below:
