@@ -303,8 +303,6 @@ public class KeycloakServer {
    * Detects the {@code jboss.server.data.dir} to use.
    * If the System property {@code jboss.server.data.dir} is already set then the property value is used,
    * otherwise a temporary data dir is created that will be deleted on JVM exit.
-   *
-   * @return
    */
   public static String detectDataDirectory() {
 
@@ -313,7 +311,7 @@ public class KeycloakServer {
         if (dataPath != null){
             // we assume jboss.server.data.dir is managed externally so just use it as is.
             File dataDir = new File(dataPath);
-            if (!dataDir.exists() || !dataDir.isDirectory()) {
+            if (!dataDir.exists() && !dataDir.mkdirs() || !dataDir.isDirectory()) {
                 throw new RuntimeException("Invalid " + JBOSS_SERVER_DATA_DIR + " resources directory: " + dataPath);
             }
 
