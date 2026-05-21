@@ -60,7 +60,7 @@ export const QuickTheme = ({ realm, theme }: QuickThemeProps) => {
     if (logo && typeof logo !== "string") {
       zip.file(`theme/${themeNameClean}/common/resources/${logoName}`, logo);
     }
-    if (bgimage) {
+    if (bgimage && typeof bgimage !== "string") {
       zip.file(
         `theme/${themeNameClean}/common/resources/${bgimageName}`,
         bgimage,
