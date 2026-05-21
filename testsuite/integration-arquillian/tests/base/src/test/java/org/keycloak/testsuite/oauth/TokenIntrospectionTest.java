@@ -33,6 +33,8 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -749,6 +751,74 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             clientRep.setNotBefore(originalClientNotBefore);
             AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app").update(clientRep);
         }
+    }
+
+    private void allowTokenIntrospectionWithoutAudienceCheck(boolean allow) {
+        runOnServerMaster.run(RunHelpers.setSystemPropertyOnServer("oidc.allow-token-introspection-without-audience-check", String.valueOf(allow)));
+        runOnServerMaster.run(RunHelpers.reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc."));
+    }
+
+    @Test
+    public void testIntrospectionAudienceCheckDefault() throws Exception {
+        // Default behavior: introspection should fail when client not in audience
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        events.clear();
+
+        oauth.client("no-scope", "password");
+        IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
+        assertFalse(introspectionResponse.asJsonNode().get("active").asBoolean());
+    }
+
+    @Test
+    public void testIntrospectionPerClientOption() throws Exception {
+        ClientRepresentation noScopeRep = AdminApiUtil.findClientByClientId(managedRealm.admin(), "no-scope").toRepresentation();
+
+        try {
+            // Enable per-client option
+            noScopeRep.getAttributes().put(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, "true");
+            AdminApiUtil.findClientByClientId(managedRealm.admin(), "no-scope").update(noScopeRep);
+
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            events.clear();
+
+            //succeed
+            oauth.client("no-scope", "password");
+            IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
+            assertTrue(introspectionResponse.asJsonNode().get("active").asBoolean());
+            assertEquals("test-app", introspectionResponse.asJsonNode().get("client_id").asText());
+
+        } finally {
+            noScopeRep.getAttributes().put(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, "false");
+            AdminApiUtil.findClientByClientId(managedRealm.admin(), "no-scope").update(noScopeRep);
+        }
+    }
+
+    @Test
+    public void testIntrospectionServerWideOptionOverridesClient() throws Exception {
+        ClientRepresentation noScopeRep = AdminApiUtil.findClientByClientId(managedRealm.admin(), "no-scope").toRepresentation();
+            allowTokenIntrospectionWithoutAudienceCheck(true);
+
+            // Explicitly disable per-client option
+            noScopeRep.getAttributes().put(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, "false");
+            AdminApiUtil.findClientByClientId(managedRealm.admin(), "no-scope").update(noScopeRep);
+
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            events.clear();
+
+            // Should succeed - server-wide overrides per-client, even for no-scope (not in audience)
+            oauth.client("no-scope", "password");
+            IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
+            assertTrue(introspectionResponse.asJsonNode().get("active").asBoolean());
+
+            allowTokenIntrospectionWithoutAudienceCheck(false);
+            introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
+            assertFalse(introspectionResponse.asJsonNode().get("active").asBoolean());
     }
 
     private String introspectUnknownTokenType(String clientId, String clientSecret, String tokenToIntrospect) {
