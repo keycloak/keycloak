@@ -40,7 +40,9 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
             ${Object.entries(cssVars)
               .filter(
                 ([key]) =>
-                  !["logoWidth", "logoHeight", "borderRadius"].includes(key),
+                  !["logoWidth", "logoHeight", "borderRadius"].findIndex((e) =>
+                    e.includes(key),
+                  ),
               )
               .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
               .join("\n")}
