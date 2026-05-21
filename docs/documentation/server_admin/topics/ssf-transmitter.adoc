@@ -1,0 +1,97 @@
+[[_ssf_transmitter]]
+= Configuring Secure Shared Framework (SSF) Transmitter
+
+The {project_name} SSF Transmitter implements the Secure Shared Framework (SSF) to enable secure event sharing between identity providers and relying parties. SSF provides a standardized way to transmit security events such as credential changes, session revocations, and other identity-related notifications.
+
+== What is SSF?
+
+Secure Shared Framework (SSF) is an open standard developed by the IETF for sharing security events. It defines:
+
+* A common format for security event tokens (SETs)
+* Multiple delivery methods (push, poll, and stream)
+* Metadata discovery for SSF endpoints
+* Subject identification and management
+
+== Enabling SSF Transmitter in a Realm
+
+.Procedure
+
+. Log in to the {project_name} Admin Console.
+. Select the realm from the realm drop-down menu.
+. Navigate to *Realm settings* in the menu.
+. Click the *SSF Transmitter* tab.
+. Toggle the *Enabled* switch to enable the SSF Transmitter for this realm.
+. Click *Save*.
+
+== Configuring Event Streams
+
+SSF supports multiple event delivery methods. You can configure streams to emit events to relying parties.
+
+.Procedure
+
+. In the *SSF Transmitter* tab, click *Create stream*.
+. Configure the stream settings:
++
+* *Stream name* - A unique identifier for this stream.
+* *Delivery method* - Choose between push (HTTP POST) or poll (client-pull) delivery.
+* *Event types* - Select the security events to emit on this stream.
+* *Subject filters* - Optionally filter which users' events are emitted.
++
+. Click *Create*.
+
+== Push Delivery
+
+With push delivery, {project_name} actively sends security events to a configured endpoint via HTTP POST.
+
+.Procedure
+
+. Create a new stream and select *Push* as the delivery method.
+. Enter the *Endpoint URL* where events should be delivered.
+. Configure authentication (optional):
++
+* *Client ID* - OAuth 2.0 client identifier for the receiving endpoint.
+* *Client Secret* - OAuth 2.0 client secret.
++
+. Click *Save*.
+
+== Poll Delivery
+
+With poll delivery, relying parties periodically check for new events from {project_name}.
+
+.Procedure
+
+. Create a new stream and select *Poll* as the delivery method.
+. Configure the poll endpoint settings.
+. Share the poll URL with relying parties.
+. Relying parties authenticate using OAuth 2.0 tokens.
+
+== SSF Metadata Discovery
+
+{project_name} exposes SSF metadata at the well-known endpoint:
+
+----
+https://{server_host}/realms/{realm_name}/.well-known/ssf-configuration
+----
+
+This endpoint returns:
+
+* Supported event types
+* Available delivery methods
+* Authentication requirements
+* Endpoint URLs
+
+== Supported Event Types
+
+{project_name} SSF Transmitter supports the following security event types:
+
+* *Credential Change* - Notifies when a user's credentials have been changed.
+* *Session Revocation* - Notifies when a user's session has been revoked.
+* *Identifier Change* - Notifies when a user's identifier has been changed.
+* *Account Enabled/Disabled* - Notifies when a user account is enabled or disabled.
+
+== Additional resources
+
+* link:{developerguide_link}#_action_token_handler_spi[Action Token Handler SPI]
+* link:{adminguide_link}#_events[Events and Auditing]
+* https://www.rfc-editor.org/rfc/rfc8417 [RFC 8417 - Security Event Token (SET)]
+* https://datatracker.ietf.org/wg/ssf/about/ [Secure Shared Framework (SSF) IETF Working Group]
