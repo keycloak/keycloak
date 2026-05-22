@@ -523,4 +523,21 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     private boolean isUserCacheKeyInvalid(String cacheKey) {
         return userCache.isInvalid(cacheKey);
     }
+
+    @Override
+    public boolean isAnyOrganizationExists() {
+        if (realmCache == null) {
+            return getDelegate().isAnyOrganizationExists();
+        }
+
+        String cacheKey = cacheKeyOrgCount(getRealm());
+        CachedCount cached = realmCache.getCache().get(cacheKey, CachedCount.class);
+
+        // cached and not invalidated
+        if (cached != null && !isRealmCacheKeyInvalid(cacheKey)) {
+            return cached.getCount() > 0;
+        }
+
+        return getDelegate().isAnyOrganizationExists();
+    }
 }

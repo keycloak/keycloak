@@ -420,4 +420,21 @@ public interface OrganizationProvider extends Provider {
      * @return the invitation manager
      */
     InvitationManager getInvitationManager();
+
+    /**
+     * Used to provide an optimized check if any organization exists in the realm.
+     *
+     * @return true if any organization exists in the realm
+     */
+    default boolean isAnyOrganizationExists() {
+        return count() > 0;
+    }
+
+    /**
+     * Just an easy-to-read alias for the negated version of {@link #isAnyOrganizationExists()}
+     * @return true if no organization exists in the realm
+     */
+    default boolean isNoOrganizationExists() {
+        return !isAnyOrganizationExists();
+    }
 }
