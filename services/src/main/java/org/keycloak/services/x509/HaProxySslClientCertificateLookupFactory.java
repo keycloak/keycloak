@@ -20,7 +20,6 @@ package org.keycloak.services.x509;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 
 import org.jboss.logging.Logger;
 
@@ -29,41 +28,26 @@ import org.jboss.logging.Logger;
  * @version $Revision: 1 $
  * @since 4/4/2017
  */
+public class HaProxySslClientCertificateLookupFactory extends AbstractClientCertificateFromHttpHeadersLookupFactory {
 
-public class HaProxySslClientCertificateLookupFactory implements X509ClientCertificateLookupFactory {
-
-    private final static Logger logger = Logger.getLogger(HaProxySslClientCertificateLookupFactory.class);
-    private final static String PROVIDER = "haproxy";
-
-    private final static String HTTP_HEADER_CLIENT_CERT = "sslClientCert";
-    private final static String HTTP_HEADER_CLIENT_CERT_DEFAULT = "Client-Cert";
-    private final static String HTTP_HEADER_CERT_CHAIN = "sslCertChain";
-    private final static String HTTP_HEADER_CERT_CHAIN_DEFAULT = "Client-Cert-Chain";
-    private final static String HTTP_HEADER_CERT_CHAIN_LENGTH = "certificateChainLength";
-    private final static int HTTP_HEADER_CERT_CHAIN_LENGTH_DEFAULT = 1;
+    private static final Logger logger = Logger.getLogger(HaProxySslClientCertificateLookupFactory.class);
+    private static final String PROVIDER = "haproxy";
+    private static final String HTTP_HEADER_CERT_CHAIN = "sslCertChain";
 
     private X509ClientCertificateLookup certLookup;
 
     @Override
     public void init(Config.Scope config) {
-        int certificateChainLength = config.getInt(HTTP_HEADER_CERT_CHAIN_LENGTH, HTTP_HEADER_CERT_CHAIN_LENGTH_DEFAULT);
-        String sslClientCertHttpHeader = config.get(HTTP_HEADER_CLIENT_CERT, HTTP_HEADER_CLIENT_CERT_DEFAULT);
-        String sslChainHttpHeader = config.get(HTTP_HEADER_CERT_CHAIN, HTTP_HEADER_CERT_CHAIN_DEFAULT);
+        super.init(config);
 
-        logger.tracev("{0}:   ''{1}''", HTTP_HEADER_CLIENT_CERT, sslClientCertHttpHeader);
-        logger.tracev("{0}:   ''{1}''", HTTP_HEADER_CERT_CHAIN, sslChainHttpHeader);
-        logger.tracev("{0}:   ''{1}''", HTTP_HEADER_CERT_CHAIN_LENGTH, certificateChainLength);
-
-        if (sslClientCertHttpHeader == null || sslClientCertHttpHeader.isEmpty()) {
-            throw new IllegalArgumentException("sslClientCertHttpHeader cannot be null or empty");
+        String sslCertChainHttpHeader = config.get(HTTP_HEADER_CERT_CHAIN, null);
+        if (sslCertChainHttpHeader != null) {
+            logger.tracev("{0}:  ''{1}''", HTTP_HEADER_CERT_CHAIN, sslCertChainHttpHeader);
         }
 
-        if (certificateChainLength < 0) {
-            throw new IllegalArgumentException("certificateChainLength must be greater or equal to zero");
-        }
-        certLookup = new HaProxySslClientCertificateLookup(sslClientCertHttpHeader, sslChainHttpHeader, certificateChainLength);
+        certLookup = new HaProxySslClientCertificateLookup(sslClientCertHttpHeader,
+                sslChainHttpHeaderPrefix, sslCertChainHttpHeader, certificateChainLength);
     }
-
 
     @Override
     public X509ClientCertificateLookup create(KeycloakSession session) {
@@ -73,13 +57,5 @@ public class HaProxySslClientCertificateLookupFactory implements X509ClientCerti
     @Override
     public String getId() {
         return PROVIDER;
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-    }
-
-    @Override
-    public void close() {
     }
 }
