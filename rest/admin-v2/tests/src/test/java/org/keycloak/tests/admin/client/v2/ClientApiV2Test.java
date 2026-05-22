@@ -371,6 +371,42 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
+    public void getClientsSortByMultipleFields() {
+        createSortTestClient("sort-b", "B", "beta");
+        createSortTestClient("sort-a", "A", "alpha");
+        createSortTestClient("sort-c", "A", "gamma");
+
+        try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(
+                Set.of("clientId", "displayName"), "displayName,clientId", null)) {
+            List<String> sortTestClientIds = clients
+                    .map(BaseClientRepresentation::getClientId)
+                    .filter(id -> id.startsWith("sort-"))
+                    .toList();
+            assertThat(sortTestClientIds, is(List.of("sort-a", "sort-c", "sort-b")));
+        }
+    }
+
+    @Test
+    public void getClientsSortByInvalidField() {
+        BadRequestException e = assertThrows(BadRequestException.class,
+                () -> getClientsApi().getClients(Set.of("clientId"), "displayName,unknown", null));
+        assertThat(e.getResponse().readEntity(String.class), containsString("unknown is not a sortable field"));
+    }
+
+    private void createSortTestClient(String clientId, String displayName, String description) {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setDisplayName(displayName);
+        rep.setDescription(description);
+        try (var response = getClientsApi().createClient(rep)) {
+            assertEquals(201, response.getStatus());
+            BaseClientRepresentation created = response.readEntity(BaseClientRepresentation.class);
+            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+        }
+    }
+
+    @Test
     public void OIDCClientRepresentationValidation() {
         OIDCClientRepresentation oidcRep = new OIDCClientRepresentation();
         oidcRep.setDisplayName("something");

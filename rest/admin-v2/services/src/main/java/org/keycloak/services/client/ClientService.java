@@ -1,8 +1,11 @@
 package org.keycloak.services.client;
 
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -36,26 +39,34 @@ public interface ClientService extends Service {
     }
 
     class ClientSortAndSliceOptions {
-        private final ClientSortField sortField;
+        private final List<ClientSortField> sortFields;
         private final boolean ascending;
 
-        private ClientSortAndSliceOptions(ClientSortField sortField, boolean ascending) {
-            this.sortField = sortField;
+        private ClientSortAndSliceOptions(List<ClientSortField> sortFields, boolean ascending) {
+            this.sortFields = List.copyOf(sortFields);
             this.ascending = ascending;
         }
 
         public static ClientSortAndSliceOptions fromQuery(String sortBy, String sortOrder) {
-            ClientSortField field = isBlank(sortBy)
-                    ? ClientSortField.defaultField()
+            List<ClientSortField> fields = isBlank(sortBy)
+                    ? List.of(ClientSortField.defaultField())
                     : parseSortBy(sortBy);
-            return new ClientSortAndSliceOptions(field, parseSortOrder(sortOrder));
+            return new ClientSortAndSliceOptions(fields, parseSortOrder(sortOrder));
         }
 
-        private static ClientSortField parseSortBy(String sortBy) {
-            if (sortBy.contains(",")) {
-                throw new ServiceException("Only a single sort field is supported", Response.Status.BAD_REQUEST);
+        private static List<ClientSortField> parseSortBy(String sortBy) {
+            List<ClientSortField> fields = Arrays.stream(sortBy.split(","))
+                    .map(String::trim)
+                    .filter(field -> !field.isEmpty())
+                    .map(ClientSortAndSliceOptions::parseSortField)
+                    .toList();
+            if (fields.isEmpty()) {
+                throw new ServiceException("sortBy must specify at least one field", Response.Status.BAD_REQUEST);
             }
-            String field = sortBy.trim();
+            return fields;
+        }
+
+        private static ClientSortField parseSortField(String field) {
             ClientSortField.validateApiName(field).ifPresent(msg -> {
                 throw new ServiceException(msg, Response.Status.BAD_REQUEST);
             });
@@ -72,12 +83,11 @@ public interface ClientService extends Service {
             throw new ServiceException("sortOrder must be asc or desc", Response.Status.BAD_REQUEST);
         }
 
-        public ClientSortField getSortField() {
-            return sortField;
-        }
-
-        public boolean isAscending() {
-            return ascending;
+        public Comparator<BaseClientRepresentation> getSortComparator() {
+            return sortFields.stream()
+                    .map(field -> field.comparator(ascending))
+                    .reduce(Comparator::thenComparing)
+                    .orElseThrow();
         }
 
         // offset / limit — #48289

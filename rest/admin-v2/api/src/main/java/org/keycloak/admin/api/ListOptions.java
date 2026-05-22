@@ -8,10 +8,10 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
 public class ListOptions {
 
-    @Parameter(description = "Field to sort by. Allowed values: clientId, displayName, description, protocol, enabled, appUrl. Defaults to clientId when omitted.")
+    @Parameter(description = "Field(s) to sort by, comma-separated for multi-field sort (e.g. displayName,clientId). Allowed values: clientId, displayName, description, protocol, enabled, appUrl. Defaults to clientId when omitted.")
     @QueryParam("sortBy")
     protected String sortBy;
-
+    
     @Parameter(description = "Sort direction. Allowed values: asc (default), desc.")
     @QueryParam("sortOrder")
     protected String sortOrder;

@@ -139,8 +139,7 @@ public class DefaultClientService implements ClientService {
         ClientSortAndSliceOptions sortOptions = sortAndSliceOptions != null
                 ? sortAndSliceOptions
                 : ClientSortAndSliceOptions.fromQuery(null, null);
-        Comparator<BaseClientRepresentation> sortComparator =
-                sortOptions.getSortField().comparator(sortOptions.isAscending());
+        Comparator<BaseClientRepresentation> sortComparator = sortOptions.getSortComparator();
         try {
             Stream<BaseClientRepresentation> stream = realm.getClientsStream()
                     .filter(client -> canView || permissions.clients().canView(client))
