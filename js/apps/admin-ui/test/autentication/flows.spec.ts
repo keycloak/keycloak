@@ -219,6 +219,35 @@ test.describe("Authentication flow details", () => {
     await assertNotificationMessage(page, "Flow successfully updated");
   });
 
+  test("drags execution into subflow using horizontal indent", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed();
+
+    await adminClient.copyFlow("browser", flowName, testBed.realm);
+    await login(page, { to: toAuthentication({ realm: testBed.realm }) });
+
+    await clickTableRowItem(page, flowName);
+
+    const sourceRow = page.getByRole("row", { name: /^Cookie/ }).first();
+    const sourceHandle = sourceRow.locator(
+      ".keycloak__authentication__drag-handle",
+    );
+    const subflowRow = page.getByRole("row", { name: /forms/i }).first();
+    const targetBox = await subflowRow.boundingBox();
+    expect(targetBox).not.toBeNull();
+
+    await sourceHandle.dragTo(subflowRow, {
+      steps: 25,
+      targetPosition: {
+        x: Math.min(targetBox!.width * 0.4, 120),
+        y: targetBox!.height * 0.5,
+      },
+    });
+
+    await assertNotificationMessage(page, "Flow successfully updated");
+  });
+
   test("edits flow details", async ({ page }) => {
     await using testBed = await createTestBed();
 
