@@ -428,6 +428,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.users().get(user.getId()).revokeConsent("testclient"), Resource.USER, true);
 
         invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().getCredentials(), Resource.USER, false);
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().getIssuedCredentials(), Resource.USER, false);
         UserVerifiableCredentialRepresentation verifCred = new UserVerifiableCredentialRepresentation();
         verifCred.setCredentialScopeName("nosuch");
         invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().createCredential(verifCred), Resource.USER, true);

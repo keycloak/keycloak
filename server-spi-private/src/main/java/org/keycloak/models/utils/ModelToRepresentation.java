@@ -69,6 +69,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.models.IdentityProviderType;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
@@ -127,6 +128,7 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.storage.StorageId;
 import org.keycloak.util.JsonSerialization;
@@ -1473,4 +1475,17 @@ public class ModelToRepresentation {
         representation.setVerified(model.isVerified());
         return representation;
     }
+
+    public static IssuedVerifiableCredentialRepresentation toRepresentation(IssuedVerifiableCredentialModel model) {
+        IssuedVerifiableCredentialRepresentation rep = new IssuedVerifiableCredentialRepresentation();
+        rep.setId(model.getId());
+        rep.setUserId(model.getUserId());
+        rep.setCredentialType(model.getCredentialType());
+        rep.setRevision(model.getRevision());
+        rep.setIssuedAt(model.getIssuedAt());
+        rep.setExpiresAt(model.getExpiresAt());
+        rep.setClientId(model.getClientId());
+        return rep;
+    }
+
 }
