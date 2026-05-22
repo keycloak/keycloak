@@ -51,6 +51,7 @@ import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.runonserver.CacheHelper;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -200,7 +201,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         // Assert item in publicKey cache for client1
         String expectedCacheKey = PublicKeyStorageUtils.getClientModelCacheKey(
                 adminClient.realm(REALM_NAME).toRepresentation().getId(), response.getClientId());
-        Assertions.assertTrue(testingClient.testing().cache(InfinispanConnectionProvider.KEYS_CACHE_NAME).contains(expectedCacheKey));
+        Assertions.assertTrue(runOnServerMaster.fetch(CacheHelper.contains(InfinispanConnectionProvider.KEYS_CACHE_NAME, expectedCacheKey)));
 
         // Assert it's not possible to authenticate as client2 with the same "kid" like client1
         assertAuthenticateClientError(generatedKeys, clientRep2, "a1");
@@ -219,7 +220,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         // Assert item in publicKey cache for client1
         String expectedCacheKey = PublicKeyStorageUtils.getClientModelCacheKey(
                 adminClient.realm(REALM_NAME).toRepresentation().getId(), response.getClientId());
-        Assertions.assertTrue(testingClient.testing().cache(InfinispanConnectionProvider.KEYS_CACHE_NAME).contains(expectedCacheKey));
+        Assertions.assertTrue(runOnServerMaster.fetch(CacheHelper.contains(InfinispanConnectionProvider.KEYS_CACHE_NAME, expectedCacheKey)));
 
 
 
@@ -230,7 +231,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
                 .oidc().update(response);
 
         // Assert item not any longer for client1
-        Assertions.assertFalse(testingClient.testing().cache(InfinispanConnectionProvider.KEYS_CACHE_NAME).contains(expectedCacheKey));
+        Assertions.assertFalse(runOnServerMaster.fetch(CacheHelper.contains(InfinispanConnectionProvider.KEYS_CACHE_NAME, expectedCacheKey)));
 
         // Assert it's not possible to authenticate as client1
         assertAuthenticateClientError(generatedKeys, response, "a1");

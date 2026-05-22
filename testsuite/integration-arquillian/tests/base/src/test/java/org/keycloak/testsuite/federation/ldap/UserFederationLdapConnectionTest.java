@@ -31,9 +31,12 @@ import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
 import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.LDAPRule;
+import org.keycloak.testsuite.util.runonserver.LdapHelper;
 
 import org.hamcrest.Matchers;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -48,6 +51,13 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
 
     @ClassRule
     public static LDAPRule ldapRule = new LDAPRule();
+
+    KeycloakTestingClient.Server runOnServerAdminClientTest;
+
+    @Before
+    public void setup() {
+        runOnServerAdminClientTest = testingClient.server(REALM_NAME);
+    }
 
     @Test
     public void testLdapConnections() {
@@ -64,7 +74,7 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         assertStatus(response, 204);
 
         // Connection success with invalid credentials
-        String ldapModelId = testingClient.testing().ldap(REALM_NAME).createLDAPProvider(ldapRule.getConfig(), false);
+        String ldapModelId = runOnServerAdminClientTest.fetchString(LdapHelper.createLDAPProvider(ldapRule.getConfig(), false)).replace("\"", "");
         getCleanup().addCleanup(() -> {
             adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);;
         });
@@ -162,7 +172,7 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         Map<String, String> cfg = ldapRule.getConfig();
         cfg.put(LDAPConstants.CONNECTION_URL, "ldap://invalid:10389 ldap://localhost:10389");
         cfg.put(LDAPConstants.CONNECTION_TIMEOUT, "1000");
-        String ldapModelId = testingClient.testing().ldap(REALM_NAME).createLDAPProvider(cfg, false);
+        String ldapModelId = runOnServerAdminClientTest.fetchString(LdapHelper.createLDAPProvider(cfg, false)).replace("\"", "");
 
         // Only 2nd server works with stored LDAP federation provider
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION,
@@ -179,7 +189,7 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         cfg.put(LDAPConstants.CONNECTION_URL, "ldaps://localhost:10636");
         cfg.put(LDAPConstants.START_TLS, "false");
         cfg.put(LDAPConstants.USE_TRUSTSTORE_SPI, "true");
-        String ldapModelId = testingClient.testing().ldap(REALM_NAME).createLDAPProvider(cfg, false);
+        String ldapModelId = runOnServerAdminClientTest.fetchString(LdapHelper.createLDAPProvider(cfg, false)).replace("\"", "");
         try {
             // test passing everything with password included
             Response response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION,

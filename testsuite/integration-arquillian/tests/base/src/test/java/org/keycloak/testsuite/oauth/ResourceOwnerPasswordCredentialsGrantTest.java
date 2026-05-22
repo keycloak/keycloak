@@ -68,6 +68,7 @@ import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
+import org.keycloak.testsuite.util.runonserver.CacheHelper;
 import org.keycloak.util.TokenUtil;
 
 import org.apache.http.NameValuePair;
@@ -821,6 +822,6 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     }
 
     private int getAuthenticationSessionsCount() {
-        return testingClient.testing().cache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME).size();
+        return runOnServerMaster.fetch(CacheHelper.size(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME));
     }
 }
