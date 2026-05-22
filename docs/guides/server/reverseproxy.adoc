@@ -422,13 +422,55 @@ Common options for configuring providers are:
 | The prefix of the headers holding additional certificates in the chain and used to retrieve individual
 certificates according to the length of the chain. For instance, a value `CERT_CHAIN` will tell the server
 to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if `certificate-chain-length` is set to `10`.
-| `apache`, `haproxy`, `nginx`
+| `apache`, `nginx`
+
+|ssl-cert-chain
+| The name of the header holding the full certificate chain as a single value.
+All chain certificates are contained in one header rather than split across indexed headers.
+| `haproxy`, `rfc9440`
 
 |certificate-chain-length
 | The maximum length of the certificate chain beyond the client certificate
 | all but `envoy` (defaults to 1)
 
 |===
+
+==== Configuring the HAProxy provider
+
+HAProxy can forward client certificates as base64-encoded DER using its `ssl_c_der,base64` and `ssl_c_chain_der,base64` sample fetches.
+The `haproxy` provider reads the client certificate from the `ssl-client-cert` header and the certificate chain from the `ssl-cert-chain` header.
+
+The options and defaults specific to `haproxy` are as follows:
+
+[%autowidth]
+|===
+|Option|Description|Default
+
+|ssl-client-cert
+| The name of the header holding the client certificate.
+| (empty)
+
+|ssl-cert-chain
+| The name of the header holding the full certificate chain as a single base64-encoded DER value. HAProxy's `ssl_c_chain_der,base64` produces the concatenated DER encoding of all CA certificates in one value.
+| (none)
+
+|certificate-chain-length
+| The maximum number of certificates to load from the chain header.
+| 1
+
+|===
+
+Example HAProxy configuration:
+
+[source]
+----
+http-request set-header Client-Cert %[ssl_c_der,base64] if { ssl_c_used } { ssl_c_verify 0 }
+http-request set-header Client-Cert-Chain %[ssl_c_chain_der,base64] if { ssl_c_used } { ssl_c_verify 0 }
+----
+
+Corresponding {project_name} configuration:
+
+<@kc.start parameters="--spi-x509cert-lookup--provider=haproxy --spi-x509cert-lookup--haproxy--ssl-client-cert=Client-Cert --spi-x509cert-lookup--haproxy--ssl-cert-chain=Client-Cert-Chain --spi-x509cert-lookup--haproxy--certificate-chain-length=2"/>
 
 ==== Configuring the NGINX provider
 
