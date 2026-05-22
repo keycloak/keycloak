@@ -58,15 +58,29 @@ public final class SsfNotifyAttributes {
     // -- user --
 
     public static void setForUser(UserModel user, String clientId) {
-        user.setSingleAttribute(attributeKey(clientId), ATTRIBUTE_VALUE_TRUE);
+        String attributeKey = attributeKey(clientId);
+        if (!Boolean.parseBoolean(user.getFirstAttribute(attributeKey))) {
+            // only write the attribute if it's not already set or is set to false
+            user.setSingleAttribute(attributeKey, ATTRIBUTE_VALUE_TRUE);
+        }
     }
 
     public static void excludeForUser(UserModel user, String clientId) {
-        user.setSingleAttribute(attributeKey(clientId), ATTRIBUTE_VALUE_FALSE);
+        String attributeKey = attributeKey(clientId);
+        if (!ATTRIBUTE_VALUE_FALSE.equals(user.getFirstAttribute(attributeKey))) {
+            // write the exclude marker unless it is already false — an unset
+            // subject must still get an explicit "false" so the exclusion
+            // overrides a default_subjects=ALL stream or an org notify=true
+            user.setSingleAttribute(attributeKey, ATTRIBUTE_VALUE_FALSE);
+        }
     }
 
     public static void clearForUser(UserModel user, String clientId) {
-        user.removeAttribute(attributeKey(clientId));
+        String attributeKey = attributeKey(clientId);
+        if (user.getFirstAttribute(attributeKey) != null) {
+            // only clear the attribute if it's set
+            user.removeAttribute(attributeKey);
+        }
     }
 
     public static boolean isUserNotified(UserModel user, String clientId) {
@@ -104,7 +118,11 @@ public final class SsfNotifyAttributes {
     }
 
     public static void clearRemovedAtForUser(UserModel user, String clientId) {
-        user.removeAttribute(removedAtKey(clientId));
+        String removedAtKey = removedAtKey(clientId);
+        if (user.getFirstAttribute(removedAtKey) != null) {
+            // only clear the tombstone if it's set
+            user.removeAttribute(removedAtKey);
+        }
     }
 
     /**
@@ -134,20 +152,33 @@ public final class SsfNotifyAttributes {
     // -- organization --
 
     public static void setForOrganization(OrganizationModel org, String clientId) {
+        if (isOrganizationNotified(org, clientId)) {
+            // already notified — skip the redundant attribute write
+            return;
+        }
         Map<String, List<String>> attrs = new HashMap<>(org.getAttributes());
         attrs.put(attributeKey(clientId), List.of(ATTRIBUTE_VALUE_TRUE));
         org.setAttributes(attrs);
     }
 
     public static void excludeForOrganization(OrganizationModel org, String clientId) {
+        if (isOrganizationExcluded(org, clientId)) {
+            // already excluded — skip the redundant attribute write
+            return;
+        }
         Map<String, List<String>> attrs = new HashMap<>(org.getAttributes());
         attrs.put(attributeKey(clientId), List.of(ATTRIBUTE_VALUE_FALSE));
         org.setAttributes(attrs);
     }
 
     public static void clearForOrganization(OrganizationModel org, String clientId) {
+        String attributeKey = attributeKey(clientId);
+        if (!org.getAttributes().containsKey(attributeKey)) {
+            // nothing to clear
+            return;
+        }
         Map<String, List<String>> attrs = new HashMap<>(org.getAttributes());
-        attrs.remove(attributeKey(clientId));
+        attrs.remove(attributeKey);
         org.setAttributes(attrs);
     }
 
@@ -181,8 +212,13 @@ public final class SsfNotifyAttributes {
     }
 
     public static void clearRemovedAtForOrganization(OrganizationModel org, String clientId) {
+        String removedAtKey = removedAtKey(clientId);
+        if (!org.getAttributes().containsKey(removedAtKey)) {
+            // nothing to clear
+            return;
+        }
         Map<String, List<String>> attrs = new HashMap<>(org.getAttributes());
-        attrs.remove(removedAtKey(clientId));
+        attrs.remove(removedAtKey);
         org.setAttributes(attrs);
     }
 
