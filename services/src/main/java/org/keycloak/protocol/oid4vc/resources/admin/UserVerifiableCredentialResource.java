@@ -1,6 +1,7 @@
 package org.keycloak.protocol.oid4vc.resources.admin;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -11,38 +12,55 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Time;
 import org.keycloak.constants.OID4VCIConstants;
+import org.keycloak.email.EmailException;
+import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserVerifiableCredentialModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.oid4vc.issuance.requiredactions.CredentialOfferActionToken;
+import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
+import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.oid4vc.CredentialOfferActionConfig;
 import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.UserResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+
+import static org.keycloak.services.resources.admin.UserResource.verifySendEmailParams;
 
 public class UserVerifiableCredentialResource {
 
@@ -169,6 +187,8 @@ public class UserVerifiableCredentialResource {
 
     @DELETE
     @Path("credentials/{credentialScopeName}")
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(summary = "Revoke verifiable credential for particular user")
     @APIResponses(value = {
             @APIResponse(responseCode = "204", description = "No Content"),
@@ -209,6 +229,7 @@ public class UserVerifiableCredentialResource {
 
     @DELETE
     @Path("issued-credentials/{id}")
+    @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(summary = "Revoke an issued verifiable credential")
     @APIResponses(value = {
@@ -228,6 +249,74 @@ public class UserVerifiableCredentialResource {
         }
 
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+    }
+
+    @PUT
+    @Path("credentials/send-credential-offer")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(summary = "Send credential offer of specified credential to this user")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "404", description = "Not Found"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
+    })
+    public Response sendCredentialOffer(@Parameter(description = "Client id. Optional parameter. If it is set, then once user clicks on 'Continue' button from credential offer page (which is displayed to him after he clicks on the link from the email), the Base URL of this client might be displayed, which means user is guided to be redirected to that specified client application") @QueryParam("client_id") String clientId,
+                                    @Parameter(description = "Redirect uri. Optional parameter. If it is set, it needs to be valid redirect URI for the client specified by 'client ID' parameter. It allows to use different URL than client base URL on the screen, which is displayed to the user after continue from credential offer page.") @QueryParam("redirect_uri") String redirectUri,
+                                    @Parameter(description = "Number of seconds after which the generated token expires. If not set, the default value is realm option 'Default Admin-Initiated Action Lifespan', which defaults to 12 hours.") @QueryParam("lifespan") Integer lifespan,
+                                    @Parameter(description = "Configuration of the requested credential offer. This is required parameter, but only credential_configuration_id needs to be filled inside this offer") CredentialOfferActionConfig credentialOfferConfig) {
+        auth.users().requireManage(user);
+        checkOid4VCIEnabled();
+
+        UserResource.SendEmailParams result = verifySendEmailParams(session, realm, user, redirectUri, clientId, lifespan);
+
+        // Additional configuration verifications
+        if (credentialOfferConfig == null) {
+            throw ErrorResponse.error("Credential offer configuration missing", Response.Status.BAD_REQUEST);
+        }
+        if (credentialOfferConfig.getCredentialConfigurationId() == null) {
+            logger.warnf("Credential configuration ID was missing. KC action parameter value was: %s", credentialOfferConfig);
+            throw ErrorResponse.error("Credential configuration ID was missing", Response.Status.BAD_REQUEST);
+        }
+        String credentialConfigId = credentialOfferConfig.getCredentialConfigurationId();
+        CredentialScopeModel credScope = CredentialScopeUtils.findCredentialScopeModelByConfigurationId(
+                realm, () -> session.clientScopes().getClientScopesStream(realm), credentialConfigId);
+        if (credScope == null) {
+            logger.warnf("Client scope was not found for credential configuration ID: %s", credentialConfigId);
+            throw ErrorResponse.error("Client scope was not found for specified credential configuration ID", Response.Status.BAD_REQUEST);
+        }
+        if (!OID4VCUtil.hasVerifiableCredential(session, user, credScope)) {
+            logger.warnf("User '%s' in the realm '%s' does not have requested credential scope '%s'", user.getUsername(), realm.getName(), credScope.getName());
+            throw ErrorResponse.error("User does not have requested credential scope", Response.Status.BAD_REQUEST);
+        }
+
+        int expiration = Time.currentTime() + result.getLifespan();
+        CredentialOfferActionToken token = new CredentialOfferActionToken(user.getId(), user.getEmail(), expiration, credentialOfferConfig, result.getRedirectUri(), result.getClientId());
+
+        try {
+            UriBuilder builder = LoginActionsService.actionTokenProcessor(session.getContext().getUri());
+            builder.queryParam("key", token.serialize(session, realm, session.getContext().getUri()));
+
+            String link = builder.build(realm.getName()).toString();
+            String credentialDisplayName = CredentialScopeUtils.getCredentialDisplayName(session, user, credScope);
+
+            this.session.getProvider(EmailTemplateProvider.class)
+                    .setAttribute(OID4VCIConstants.EMAIL_TEMPLATE_ATTR_CREDENTIAL_SCOPE_DISPLAY_NAME, credentialDisplayName)
+                    .setAttribute(Constants.IGNORE_ACCEPT_LANGUAGE_HEADER, true)
+                    .setRealm(realm)
+                    .setUser(user)
+                    .sendVerifiableCredentialOffer(link, TimeUnit.SECONDS.toMinutes(result.getLifespan()));
+
+            adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
+
+            return Response.noContent().build();
+        } catch (EmailException e) {
+            ServicesLogger.LOGGER.failedToSendActionsEmail(e);
+            throw ErrorResponse.error("Failed to send email for credential offer: " + e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        }
     }
 
     private void checkOid4VCIEnabled() {
