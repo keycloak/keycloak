@@ -322,6 +322,7 @@
         <module>scim</module>
         <module>ssf</module>
         <module>authzen</module>
+        <module>djolof-id-themes-module</module>
     </modules>
 
     <dependencyManagement>

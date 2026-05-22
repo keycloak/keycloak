@@ -44,6 +44,12 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-smallrye-openapi</artifactId>
         </dependency>
+        <!-- DJOLOF ID THEME DEPENDENCY -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>djolof-id-themes-module</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <properties>

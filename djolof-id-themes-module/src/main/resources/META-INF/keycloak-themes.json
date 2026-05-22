@@ -1,0 +1,8 @@
+{
+  "themes": [
+    {
+      "name": "djolof",
+      "types": ["login"]
+    }
+  ]
+}

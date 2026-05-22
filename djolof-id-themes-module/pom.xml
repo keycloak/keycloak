@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- 1. INHERIT FROM THE KEYCLOAK CORE PARENT -->
+    <parent>
+        <groupId>org.keycloak</groupId>
+        <artifactId>keycloak-parent</artifactId>
+        <version>999.0.0-SNAPSHOT</version> <!-- NOTE: Match the exact version in the root pom.xml -->
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <!-- 2. DEFINE YOUR MODULE UNIQUE IDENTIFIERS -->
+    <artifactId>djolof-id-themes-module</artifactId>
+    <name>Djolof ID Themes Module</name>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <!-- 3. DEPENDENCY FOR INTERFACES (Optional, but good if you add custom SPI code later) -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <!-- 4. ENSURE MAVEN EXPLICITLY BUNDLES EVERYTHING UNDER RESOURCES -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
+</project>
