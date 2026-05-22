@@ -48,7 +48,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
     private static final Logger logger = Logger.getLogger(SecureRequestObjectExecutor.class);
 
     public static final Integer DEFAULT_AVAILABLE_PERIOD = Integer.valueOf(3600); // (sec) from FAPI 1.0 Advanced requirement
-    public static final Integer DEAULT_ALLOWED_CLOCK_SKEW = Integer.valueOf(15); // (sec) from FAPI 2.0 requirement
+    public static final Integer DEFAULT_ALLOWED_CLOCK_SKEW = Integer.valueOf(15); // (sec) from FAPI 2.0 requirement
 
     private final KeycloakSession session;
     private Configuration configuration;
@@ -64,7 +64,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
             configuration.setVerifyNbf(Boolean.TRUE);
             configuration.setAvailablePeriod(DEFAULT_AVAILABLE_PERIOD);
             configuration.setEncryptionRequired(Boolean.FALSE);
-            configuration.setAllowedClockSkew(DEAULT_ALLOWED_CLOCK_SKEW);
+            configuration.setAllowedClockSkew(DEFAULT_ALLOWED_CLOCK_SKEW);
         } else {
             configuration = config;
             if (config.isVerifyNbf() == null) {
@@ -77,7 +77,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
                 configuration.setEncryptionRequired(Boolean.FALSE);
             }
             if (config.getAllowedClockSkew() == null) {
-                configuration.setAllowedClockSkew(DEAULT_ALLOWED_CLOCK_SKEW);
+                configuration.setAllowedClockSkew(DEFAULT_ALLOWED_CLOCK_SKEW);
             }
         }
     }
@@ -160,7 +160,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
         String requestParam = params.getFirst(OIDCLoginProtocol.REQUEST_PARAM);
         String requestUriParam = params.getFirst(OIDCLoginProtocol.REQUEST_URI_PARAM);
 
-        // check whether whether request object exists
+        // check whether the request object exists
         if (requestParam == null && requestUriParam == null) {
             logger.trace("request object not exist.");
             throwClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Missing parameter: 'request' or 'request_uri'",
@@ -185,7 +185,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
 
         // check whether "exp" claim exists
         if (requestObject.get("exp") == null) {
-            logger.trace("exp claim not incuded.");
+            logger.trace("exp claim not included.");
             throwClientPolicyException(INVALID_REQUEST_OBJECT, "Missing parameter in the 'request' object: exp", context);
         }
 

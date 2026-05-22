@@ -206,8 +206,8 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
         AuthorizationEndpointResponse authResponse = authRequest.parseLoginResponse();
 
         assertNull(authResponse.getCode(), "Expected no auth code");
-        assertEquals("invalid_request", authResponse.getError());
-        assertEquals("PAR request did not include necessary parameters", authResponse.getErrorDescription());
+        assertEquals("invalid_request_object", authResponse.getError());
+        assertEquals("PAR request did not include query parameter: state", authResponse.getErrorDescription());
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
