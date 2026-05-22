@@ -5,4 +5,5 @@ export default interface UserVerifiableCredentialRepresentation {
   credentialScopeName?: string;
   revision?: string;
   createdDate?: number;
+  userAttributes?: Record<string, string[]>;
 }
