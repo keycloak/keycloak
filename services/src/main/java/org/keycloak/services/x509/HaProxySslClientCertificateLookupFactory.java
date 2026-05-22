@@ -42,15 +42,13 @@ public class HaProxySslClientCertificateLookupFactory implements X509ClientCerti
     private final static String HTTP_HEADER_CERT_CHAIN_LENGTH = "certificateChainLength";
     private final static int HTTP_HEADER_CERT_CHAIN_LENGTH_DEFAULT = 1;
 
-    private String sslClientCertHttpHeader;
-    private String sslChainHttpHeader;
-    private int certificateChainLength;
+    private X509ClientCertificateLookup certLookup;
 
     @Override
     public void init(Config.Scope config) {
-        certificateChainLength = config.getInt(HTTP_HEADER_CERT_CHAIN_LENGTH, HTTP_HEADER_CERT_CHAIN_LENGTH_DEFAULT);
-        sslClientCertHttpHeader = config.get(HTTP_HEADER_CLIENT_CERT, HTTP_HEADER_CLIENT_CERT_DEFAULT);
-        sslChainHttpHeader = config.get(HTTP_HEADER_CERT_CHAIN, HTTP_HEADER_CERT_CHAIN_DEFAULT);
+        int certificateChainLength = config.getInt(HTTP_HEADER_CERT_CHAIN_LENGTH, HTTP_HEADER_CERT_CHAIN_LENGTH_DEFAULT);
+        String sslClientCertHttpHeader = config.get(HTTP_HEADER_CLIENT_CERT, HTTP_HEADER_CLIENT_CERT_DEFAULT);
+        String sslChainHttpHeader = config.get(HTTP_HEADER_CERT_CHAIN, HTTP_HEADER_CERT_CHAIN_DEFAULT);
 
         logger.tracev("{0}:   ''{1}''", HTTP_HEADER_CLIENT_CERT, sslClientCertHttpHeader);
         logger.tracev("{0}:   ''{1}''", HTTP_HEADER_CERT_CHAIN, sslChainHttpHeader);
@@ -63,12 +61,13 @@ public class HaProxySslClientCertificateLookupFactory implements X509ClientCerti
         if (certificateChainLength < 0) {
             throw new IllegalArgumentException("certificateChainLength must be greater or equal to zero");
         }
+        certLookup = new HaProxySslClientCertificateLookup(sslClientCertHttpHeader, sslChainHttpHeader, certificateChainLength);
     }
 
 
     @Override
     public X509ClientCertificateLookup create(KeycloakSession session) {
-        return new HaProxySslClientCertificateLookup(sslClientCertHttpHeader, sslChainHttpHeader, certificateChainLength);
+        return certLookup;
     }
 
     @Override
