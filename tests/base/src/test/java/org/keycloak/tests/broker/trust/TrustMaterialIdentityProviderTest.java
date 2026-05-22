@@ -33,6 +33,7 @@ import org.keycloak.broker.provider.TrustMaterialResolver;
 import org.keycloak.broker.trust.DefaultTrustIdentityProvider;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderConfig;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
@@ -46,6 +47,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.HttpServerUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -57,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = TrustMaterialIdentityProviderTest.TrustMaterialServerConfig.class)
 public class TrustMaterialIdentityProviderTest {
 
     private static final String DEFAULT_INLINE_ALIAS = "trust-material-default-inline";
@@ -265,5 +268,13 @@ public class TrustMaterialIdentityProviderTest {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
         generator.initialize(2048);
         return generator.generateKeyPair();
+    }
+
+    public static class TrustMaterialServerConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.CLIENT_AUTH_ABCA);
+        }
     }
 }

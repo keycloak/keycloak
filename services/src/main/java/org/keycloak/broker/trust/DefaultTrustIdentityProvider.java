@@ -17,24 +17,17 @@
 
 package org.keycloak.broker.trust;
 
-import java.security.Key;
-import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.keycloak.broker.provider.TrustMaterialIdentityProvider;
 import org.keycloak.broker.provider.TrustMaterialRequest;
-import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.util.Strings;
 import org.keycloak.utils.StringUtil;
 
@@ -62,7 +55,7 @@ public class DefaultTrustIdentityProvider implements TrustMaterialIdentityProvid
                 ? keyStorage.getKeys(modelKey, loader).stream()
                 : Stream.of(keyStorage.getPublicKey(modelKey, request.getKid(), request.getAlgorithm(), loader));
 
-        return filterKeys(keys.map(this::toJwk), request);
+        return TrustKeyUtil.filterKeys(keys.map(JWKSServerUtils::toJwk), request);
     }
 
     @Override
@@ -78,40 +71,5 @@ public class DefaultTrustIdentityProvider implements TrustMaterialIdentityProvid
 
     @Override
     public void close() {
-    }
-
-    private Stream<JWK> filterKeys(Stream<JWK> keys, TrustMaterialRequest request) {
-        return keys
-                .filter(Objects::nonNull)
-                .filter(key -> Strings.isEmpty(request.getKid()) || Objects.equals(request.getKid(), key.getKeyId()))
-                .filter(key -> Strings.isEmpty(request.getAlgorithm()) || Strings.isEmpty(key.getAlgorithm())
-                        || Objects.equals(request.getAlgorithm(), key.getAlgorithm()))
-                .filter(key -> Strings.isEmpty(key.getPublicKeyUse()) || Objects.equals(JWK.Use.SIG.asString(), key.getPublicKeyUse()));
-    }
-
-    private JWK toJwk(KeyWrapper key) {
-        if (key == null || key.getPublicKey() == null) {
-            return null;
-        }
-
-        JWKBuilder builder = JWKBuilder.create()
-                .kid(key.getKid())
-                .algorithm(key.getAlgorithmOrDefault());
-        List<X509Certificate> certificates = Optional.ofNullable(key.getCertificateChain())
-                .filter(certs -> !certs.isEmpty())
-                .orElseGet(() -> Optional.ofNullable(key.getCertificate())
-                        .map(Collections::singletonList)
-                        .orElseGet(Collections::emptyList));
-        Key publicKey = key.getPublicKey();
-
-        if (Objects.equals(key.getType(), KeyType.RSA)) {
-            return builder.rsa(publicKey, certificates, key.getUse());
-        } else if (Objects.equals(key.getType(), KeyType.EC)) {
-            return builder.ec(publicKey, certificates, key.getUse());
-        } else if (Objects.equals(key.getType(), KeyType.OKP)) {
-            return builder.okp(publicKey, key.getUse());
-        }
-
-        return null;
     }
 }

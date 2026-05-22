@@ -20,12 +20,15 @@ package org.keycloak.broker.trust;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.Config;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-public class DefaultTrustIdentityProviderFactory extends AbstractIdentityProviderFactory<DefaultTrustIdentityProvider> {
+public class DefaultTrustIdentityProviderFactory extends AbstractIdentityProviderFactory<DefaultTrustIdentityProvider> implements EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "default-trust";
 
@@ -69,5 +72,10 @@ public class DefaultTrustIdentityProviderFactory extends AbstractIdentityProvide
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI) || Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_ABCA);
     }
 }

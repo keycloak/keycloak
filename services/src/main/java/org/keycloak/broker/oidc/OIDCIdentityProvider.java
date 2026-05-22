@@ -18,11 +18,8 @@ package org.keycloak.broker.oidc;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -53,11 +50,11 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
 import org.keycloak.broker.provider.TrustMaterialIdentityProvider;
 import org.keycloak.broker.provider.TrustMaterialRequest;
+import org.keycloak.broker.trust.TrustKeyUtil;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
-import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
@@ -73,7 +70,6 @@ import org.keycloak.jose.JOSEParser;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
@@ -89,6 +85,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
+import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
@@ -1105,7 +1102,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         Stream<KeyWrapper> keys = Stream.ofNullable(PublicKeyStorageManager.getIdentityProviderKeyWrapper(session,
                 session.getContext().getRealm(), getConfig(), request.getKid(), request.getAlgorithm()));
 
-        return filterTrustMaterialKeys(keys.map(this::toJwk), request);
+        return TrustKeyUtil.filterKeys(keys.map(JWKSServerUtils::toJwk), request);
     }
 
     @Override
@@ -1131,41 +1128,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
 
         return Objects.equals(request.getIssuer(), getConfig().getIssuer());
-    }
-
-    private Stream<JWK> filterTrustMaterialKeys(Stream<JWK> keys, TrustMaterialRequest request) {
-        return keys
-                .filter(Objects::nonNull)
-                .filter(key -> Strings.isEmpty(request.getKid()) || Objects.equals(request.getKid(), key.getKeyId()))
-                .filter(key -> Strings.isEmpty(request.getAlgorithm()) || Strings.isEmpty(key.getAlgorithm())
-                        || Objects.equals(request.getAlgorithm(), key.getAlgorithm()))
-                .filter(key -> Strings.isEmpty(key.getPublicKeyUse()) || Objects.equals(JWK.Use.SIG.asString(), key.getPublicKeyUse()));
-    }
-
-    private JWK toJwk(KeyWrapper key) {
-        if (key == null || key.getPublicKey() == null) {
-            return null;
-        }
-
-        JWKBuilder builder = JWKBuilder.create()
-                .kid(key.getKid())
-                .algorithm(key.getAlgorithmOrDefault());
-        List<X509Certificate> certificates = Optional.ofNullable(key.getCertificateChain())
-                .filter(certs -> !certs.isEmpty())
-                .orElseGet(() -> Optional.ofNullable(key.getCertificate())
-                        .map(Collections::singletonList)
-                        .orElseGet(Collections::emptyList));
-        Key publicKey = key.getPublicKey();
-
-        if (Objects.equals(key.getType(), KeyType.RSA)) {
-            return builder.rsa(publicKey, certificates, key.getUse());
-        } else if (Objects.equals(key.getType(), KeyType.EC)) {
-            return builder.ec(publicKey, certificates, key.getUse());
-        } else if (Objects.equals(key.getType(), KeyType.OKP)) {
-            return builder.okp(publicKey, key.getUse());
-        }
-
-        return null;
     }
 
     private Boolean getEmailVerifiedClaim(JsonWebToken token) {

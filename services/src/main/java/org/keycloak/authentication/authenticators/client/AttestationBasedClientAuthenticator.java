@@ -174,7 +174,8 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         ProviderConfigProperty trustIdps = new ProviderConfigProperty();
         trustIdps.setName(OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS);
         trustIdps.setLabel("Attester trust identity providers");
-        trustIdps.setType(ProviderConfigProperty.IDENTITY_PROVIDER_MULTI_LIST_TYPE);
+        trustIdps.setType(ProviderConfigProperty.STRING_TYPE);
+        trustIdps.setRequired(true);
         trustIdps.setHelpText("Comma-separated aliases of trust-material identity providers containing trusted attester public keys");
         return List.of(trustIdps);
     }
