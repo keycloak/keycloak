@@ -24,9 +24,6 @@
   "wireit": {
     "build": {
       "command": "tsc --pretty",
-      "dependencies": [
-        "generate:openapi"
-      ],
       "files": [
         "src",
         "tsconfig.json"
