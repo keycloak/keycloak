@@ -2,20 +2,68 @@
   background-color: var(--pf-v5-global--BackgroundColor--200);
 }
 
-tr[data-drop-mode="drop-into"] {
+tr.keycloak__authentication__flow-row {
+  position: relative;
+}
+
+tr[data-drop-mode="drop-into"],
+tr.keycloak__authentication__drop-into {
   outline: 4px solid var(--pf-v5-global--active-color--100) !important;
   outline-offset: -4px;
   background-color: var(--pf-v5-global--palette--blue-100) !important;
-  position: relative;
   z-index: 100;
 }
 
-tr[data-drop-mode="reorder-before"] {
-  box-shadow: inset 0 4px 0 0 var(--pf-v5-global--active-color--100) !important;
+tr.keycloak__authentication__drop-parent,
+tr[data-drop-mode="nest-parent"] {
+  outline: 3px solid var(--pf-v5-global--active-color--100) !important;
+  outline-offset: -3px;
+  background-color: var(--pf-v5-global--palette--blue-50) !important;
+  z-index: 99;
 }
 
-tr[data-drop-mode="reorder-after"] {
-  box-shadow: inset 0 -4px 0 0 var(--pf-v5-global--active-color--100) !important;
+tr.keycloak__authentication__drop-line--before::before,
+tr[data-drop-mode="reorder-before"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--pf-v5-global--active-color--100);
+  z-index: 101;
+  pointer-events: none;
+}
+
+tr.keycloak__authentication__drop-line--after::after,
+tr[data-drop-mode="reorder-after"]::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--pf-v5-global--active-color--100);
+  z-index: 101;
+  pointer-events: none;
+}
+
+.keycloak__authentication__flow-title-cell.keycloak__authentication__drop-indent-guide::before,
+tr.keycloak__authentication__drop-indent-guide
+  .keycloak__authentication__flow-title-cell::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--drop-indent, 0);
+  width: 3px;
+  background-color: var(--pf-v5-global--active-color--100);
+  pointer-events: none;
+  z-index: 102;
+}
+
+.keycloak__authentication__flow-title-cell {
+  position: relative;
 }
 
 .keycloak__authentication__flow-row.is-dragging {
@@ -46,33 +94,40 @@ tr[data-drop-mode="reorder-after"] {
 }
 
 .keycloak__authentication__drag-overlay {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: var(--pf-v5-global--spacer--sm);
-  min-width: 300px;
+  width: max-content;
+  max-width: 20rem;
   padding: var(--pf-v5-global--spacer--md) var(--pf-v5-global--spacer--lg);
   background-color: var(--pf-v5-global--BackgroundColor--100);
   border: 2px solid var(--pf-v5-global--active-color--100);
   border-radius: var(--pf-v5-global--BorderRadius--sm);
   box-shadow: var(--pf-v5-global--BoxShadow--lg);
   font-size: var(--pf-v5-global--FontSize--md);
-  white-space: nowrap;
+  line-height: var(--pf-v5-global--LineHeight--md);
   cursor: grabbing;
+}
+
+.keycloak__authentication__drag-overlay-handle,
+.keycloak__authentication__drag-overlay-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .keycloak__authentication__drag-overlay-handle {
   color: var(--pf-v5-global--Color--200);
-  display: flex;
-  align-items: center;
 }
 
 .keycloak__authentication__drag-overlay-icon {
   color: var(--pf-v5-global--active-color--100);
-  display: flex;
-  align-items: center;
 }
 
 .keycloak__authentication__drag-overlay-text {
+  max-width: 14rem;
   font-weight: var(--pf-v5-global--FontWeight--bold);
   color: var(--pf-v5-global--Color--100);
+  white-space: normal;
+  overflow-wrap: break-word;
 }

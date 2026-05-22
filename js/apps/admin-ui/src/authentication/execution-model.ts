@@ -28,6 +28,29 @@ export class LevelChange extends IndexChange {
   }
 }
 
+export type DropMode =
+  | "reorder"
+  | "reorder-before"
+  | "reorder-after"
+  | "drop-into";
+
+export type DropVertical = "before" | "after" | "into";
+
+export type DropInfo = {
+  targetId: string | null;
+  mode: DropMode;
+  targetLevel: number;
+  targetParentId: string | null;
+  insertIndex: number;
+};
+
+export type ResolvedDrop = {
+  kind: "reorder" | "level-change";
+  change: IndexChange | LevelChange;
+  preview: DropInfo;
+  order: string[];
+};
+
 export class ExecutionList {
   #list: ExpandableExecution[];
   expandableList: ExpandableExecution[];
@@ -103,15 +126,242 @@ export class ExecutionList {
     return undefined;
   }
 
-  #getParentNodes(level: number, index: number) {
-    let parent = undefined;
-    for (let i = 0; i < index; i++) {
-      const ex = this.#list[i];
-      if (level - 1 === ex.level) {
+  #findInTree(
+    id: string,
+    list: ExpandableExecution[] = this.expandableList,
+  ): ExpandableExecution | undefined {
+    for (const ex of list) {
+      if (ex.id === id) {
+        return ex;
+      }
+      if (ex.executionList) {
+        const found = this.#findInTree(id, ex.executionList);
+        if (found) {
+          return found;
+        }
+      }
+    }
+    return undefined;
+  }
+
+  #findParentOf(
+    id: string,
+    list: ExpandableExecution[] = this.expandableList,
+  ): ExpandableExecution | undefined {
+    for (const ex of list) {
+      if (ex.executionList?.some((child) => child.id === id)) {
+        return ex;
+      }
+      if (ex.executionList) {
+        const found = this.#findParentOf(id, ex.executionList);
+        if (found) {
+          return found;
+        }
+      }
+    }
+    return undefined;
+  }
+
+  #getParentFromVisualOrder(
+    level: number,
+    visualIndex: number,
+    visualOrder: ExpandableExecution[],
+  ): ExpandableExecution | undefined {
+    let parent: ExpandableExecution | undefined;
+    for (let i = 0; i < visualIndex && i < visualOrder.length; i++) {
+      const ex = visualOrder[i];
+      if (level - 1 === (ex.level || 0)) {
         parent = ex;
       }
     }
     return parent;
+  }
+
+  #buildOrderAfterDrop(
+    draggedId: string,
+    insertIndex: number,
+    visualOrder: ExpandableExecution[],
+  ): string[] {
+    const order = visualOrder.map((ex) => ex.id!);
+    const oldIndex = order.indexOf(draggedId);
+    if (oldIndex === -1) {
+      return order;
+    }
+    order.splice(oldIndex, 1);
+    let adjustedInsert = insertIndex;
+    if (oldIndex < insertIndex) {
+      adjustedInsert--;
+    }
+    order.splice(adjustedInsert, 0, draggedId);
+    return order;
+  }
+
+  #insertIndexAfterSubflow(
+    hoverIndex: number,
+    hoverLevel: number,
+    visualOrder: ExpandableExecution[],
+  ): number {
+    let insertIndex = hoverIndex + 1;
+    for (let i = hoverIndex + 1; i < visualOrder.length; i++) {
+      if ((visualOrder[i].level || 0) <= hoverLevel) {
+        break;
+      }
+      insertIndex = i + 1;
+    }
+    return insertIndex;
+  }
+
+  resolveDropTarget(
+    draggedId: string,
+    hoverId: string,
+    vertical: DropVertical,
+    targetLevel: number,
+  ): ResolvedDrop | null {
+    const visualOrder = this.order();
+    const hoverIndex = visualOrder.findIndex((ex) => ex.id === hoverId);
+    if (hoverIndex === -1) {
+      return null;
+    }
+
+    const dragged = this.#findInTree(draggedId);
+    const hover = visualOrder[hoverIndex];
+    if (!dragged || draggedId === hoverId) {
+      return null;
+    }
+
+    const hoverLevel = hover.level || 0;
+    let insertIndex: number;
+    let clampedLevel: number;
+    let dropMode: DropMode;
+
+    if (vertical === "into") {
+      if (!hover.authenticationFlow) {
+        return null;
+      }
+      dropMode = "drop-into";
+      clampedLevel = hoverLevel + 1;
+      insertIndex = this.#insertIndexAfterSubflow(
+        hoverIndex,
+        hoverLevel,
+        visualOrder,
+      );
+    } else {
+      dropMode = vertical === "before" ? "reorder-before" : "reorder-after";
+      insertIndex = vertical === "before" ? hoverIndex : hoverIndex + 1;
+      const maxLevel = hoverLevel + 1;
+      clampedLevel = Math.max(0, Math.min(targetLevel, maxLevel));
+    }
+
+    const targetParent =
+      vertical === "into"
+        ? hover
+        : clampedLevel > 0
+          ? this.#getParentFromVisualOrder(
+              clampedLevel,
+              insertIndex,
+              visualOrder,
+            )
+          : undefined;
+
+    const targetParentId =
+      clampedLevel > 0 && targetParent?.authenticationFlow
+        ? (targetParent.id ?? null)
+        : null;
+
+    const preview: DropInfo = {
+      targetId: hoverId,
+      mode: dropMode,
+      targetLevel: clampedLevel,
+      targetParentId,
+      insertIndex,
+    };
+
+    const order = this.#buildOrderAfterDrop(
+      draggedId,
+      insertIndex,
+      visualOrder,
+    );
+    const draggedLevel = dragged.level || 0;
+    const currentParent = this.#findParentOf(draggedId);
+
+    const needsLevelChange =
+      vertical === "into" ||
+      clampedLevel !== draggedLevel ||
+      currentParent?.id !== targetParent?.id;
+
+    if (needsLevelChange) {
+      const parent =
+        vertical === "into"
+          ? hover
+          : clampedLevel > 0
+            ? targetParent
+            : undefined;
+
+      if (clampedLevel > 0 && !parent?.authenticationFlow) {
+        return {
+          kind: "reorder",
+          change: this.getChange(dragged, order),
+          preview,
+          order,
+        };
+      }
+
+      const change =
+        clampedLevel > 0
+          ? new LevelChange(
+              parent!.executionList?.length || 0,
+              this.#siblingIndexInOrder(
+                draggedId,
+                clampedLevel,
+                parent!.id,
+                order,
+              ),
+              parent,
+            )
+          : new LevelChange(
+              this.expandableList.length,
+              this.#siblingIndexInOrder(draggedId, 0, undefined, order),
+            );
+
+      return {
+        kind: "level-change",
+        change,
+        preview,
+        order,
+      };
+    }
+
+    return {
+      kind: "reorder",
+      change: this.getChange(dragged, order),
+      preview,
+      order,
+    };
+  }
+
+  #siblingIndexInOrder(
+    changedId: string,
+    level: number,
+    parentId: string | undefined,
+    orderIds: string[],
+  ): number {
+    let siblingIndex = 0;
+    for (const id of orderIds) {
+      if (id === changedId) {
+        return siblingIndex;
+      }
+      const node = this.#findInTree(id);
+      if (!node) {
+        continue;
+      }
+      if (
+        (node.level || 0) === level &&
+        this.#findParentOf(id)?.id === parentId
+      ) {
+        siblingIndex++;
+      }
+    }
+    return siblingIndex;
   }
 
   getChange(
@@ -119,25 +369,83 @@ export class ExecutionList {
     order: string[],
   ) {
     const currentOrder = this.order();
-    const newLocIndex = order.findIndex((id) => id === changed.id);
-    const oldLocIndex = currentOrder.findIndex((ex) => ex.id === changed.id);
-    const oldLocation = currentOrder[oldLocIndex];
-    const newLocation = currentOrder[newLocIndex];
+    const changedId = changed.id!;
+    const newLocIndex = order.findIndex((id) => id === changedId);
+    const oldLocIndex = currentOrder.findIndex((ex) => ex.id === changedId);
 
-    const currentParent = this.#getParentNodes(oldLocation.level!, oldLocIndex);
-    const parent = this.#getParentNodes(newLocation.level!, newLocIndex);
-    if (currentParent?.id !== parent?.id) {
-      if (newLocation.level! > 0) {
+    const oldLocation =
+      oldLocIndex >= 0
+        ? currentOrder[oldLocIndex]
+        : this.#findInTree(changedId);
+    if (!oldLocation) {
+      return new IndexChange(0, 0);
+    }
+
+    const newLocation =
+      newLocIndex >= 0 && newLocIndex < currentOrder.length
+        ? currentOrder[newLocIndex]
+        : undefined;
+    if (!newLocation) {
+      return new IndexChange(oldLocation.index!, oldLocation.index!);
+    }
+
+    const oldLevel = oldLocation.level || 0;
+    const newLevel = newLocation.level || 0;
+
+    const currentParent =
+      oldLocIndex >= 0
+        ? this.#getParentFromVisualOrder(oldLevel, oldLocIndex, currentOrder)
+        : this.#findParentOf(changedId);
+
+    const dropParent = this.#getParentFromVisualOrder(
+      oldLevel,
+      newLocIndex,
+      currentOrder,
+    );
+    const targetParent = this.#getParentFromVisualOrder(
+      newLevel,
+      newLocIndex,
+      currentOrder,
+    );
+
+    const parentChanged = currentParent?.id !== dropParent?.id;
+    const levelChanged = oldLevel !== newLevel;
+
+    const nestedSiblingIndex = this.#siblingIndexInOrder(
+      changedId,
+      oldLevel,
+      currentParent?.id,
+      order,
+    );
+    const collapsedSameParentReorder =
+      dropParent?.id === currentParent?.id &&
+      newLevel < oldLevel &&
+      nestedSiblingIndex >= 0 &&
+      !(oldLevel > 1 && newLevel === 0);
+
+    if (collapsedSameParentReorder) {
+      return new IndexChange(oldLocation.index!, nestedSiblingIndex);
+    }
+
+    if (parentChanged || levelChanged) {
+      const parent = levelChanged ? targetParent : dropParent;
+      if (newLevel > 0) {
         return new LevelChange(
           parent?.executionList?.length || 0,
-          newLocation.index!,
+          this.#siblingIndexInOrder(changedId, newLevel, parent?.id, order),
           parent,
         );
       }
-      return new LevelChange(this.expandableList.length, newLocation.index!);
+      return new LevelChange(
+        this.expandableList.length,
+        this.#siblingIndexInOrder(changedId, 0, undefined, order),
+      );
     }
 
-    return new IndexChange(oldLocation.index!, newLocation.index!);
+    return new IndexChange(
+      oldLocation.index!,
+      this.#siblingIndexInOrder(changedId, oldLevel, currentParent?.id, order),
+    );
   }
 
   clone() {
