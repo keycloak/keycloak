@@ -524,7 +524,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
     @Test
     public void testWellKnownEndpointDisabledWhenVerifiableCredentialsOff() {
 
-        setVerifiableCredentialsEnabled(false);
+        setRealmVerifiableCredentialsEnabled(false);
         try {
             CredentialIssuerMetadataResponse response = oauth.oid4vc()
                     .issuerMetadataRequest()
@@ -537,7 +537,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
             assertEquals("OID4VCI functionality is disabled for this realm", error.getMessage());
 
         } finally {
-            setVerifiableCredentialsEnabled(true);
+            setRealmVerifiableCredentialsEnabled(true);
         }
     }
 

@@ -638,6 +638,11 @@ public class OID4VCBasicWallet {
             return this;
         }
 
+        public AuthorizationEndpointRequest state(String state) {
+            loginForm.state(state);
+            return this;
+        }
+
         public boolean openLoginForm() {
             loginForm.open();
             String currUrl = oauth.getDriver().getCurrentUrl();
