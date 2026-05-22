@@ -154,7 +154,11 @@ public class LDAPUtils {
             ldapQuery.addReturningReadOnlyLdapAttribute(kerberosPrincipalAttr);
         }
 
+        // Mark the password modification time attribute as read-only so it is not sent back on updates — it is an
+        // operational attribute managed by the LDAP server. Mappers that need to write it (e.g. the MSAD mapper writes
+        // pwdLastSet to force password expiration) can call removeReadOnlyAttributeName to override this default.
         ldapQuery.addReturningLdapAttribute(ldapProvider.getLdapIdentityStore().getPasswordModificationTimeAttributeName());
+        ldapQuery.addReturningReadOnlyLdapAttribute(ldapProvider.getLdapIdentityStore().getPasswordModificationTimeAttributeName());
 
         return ldapQuery;
     }
