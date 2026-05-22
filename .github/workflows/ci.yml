@@ -1328,6 +1328,9 @@ jobs:
       - name: Run tests
         run: ./mvnw verify -pl rest/admin-v2/tests/pom.xml
 
+      - name: Verify committed OpenAPI spec
+        run: git diff --exit-code -- js/libs/keycloak-admin-client/openapi.yaml
+
   mixed-cluster-compatibility-tests:
     name: Cluster Compatibility Tests
     if: needs.version-compatibility.outputs.matrix != 'skip'
