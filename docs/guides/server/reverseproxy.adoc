@@ -490,6 +490,7 @@ You do not need to configure additional options for the `envoy` provider.
 === Blueprints
 
 * <@links.server id="haproxy-reencrypt"/>
+* <@links.server id="traefik-reencrypt"/>
 
 [[graceful-http-shutdown]]
 == Graceful HTTP shutdown
@@ -597,11 +598,11 @@ Calculation:
 
 For production with TLS passthrough:
 
-<@kc.start parameters="--shutdown-delay=30s --shutdown-timeout=1s"/>
+<@kc.start parameters="--shutdown-delay=30s" />
 
 For load balancers that poll readiness:
 
-<@kc.start parameters="--shutdown-delay=16s --shutdown-timeout=1s"/>
+<@kc.start parameters="--shutdown-delay=16s"/>
 
 For test environments:
 

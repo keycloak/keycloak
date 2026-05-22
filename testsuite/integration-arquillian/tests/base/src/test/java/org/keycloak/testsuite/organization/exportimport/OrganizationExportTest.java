@@ -47,9 +47,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.client.resources.TestingExportImportResource;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.util.runonserver.ExportImportHelper;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -291,35 +291,34 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     }
 
     private RealmRepresentation exportRemoveImportRealm(boolean file) {
-        TestingExportImportResource exportImport = testingClient.testing().exportImport();
         String fileOrDir;
 
         //export
         if (file) {
-            exportImport.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
-            fileOrDir = exportImport.getExportImportTestDirectory() + File.separator + "org-export.json";
-            exportImport.setFile(fileOrDir);
+            runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileExportProviderFactory.PROVIDER_ID));
+            fileOrDir = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","") + File.separator + "org-export.json";
+            runOnServerMaster.run(ExportImportHelper.setFile(fileOrDir));
         } else {
-            exportImport.setProvider(DirExportProviderFactory.PROVIDER_ID);
-            fileOrDir = exportImport.getExportImportTestDirectory();
-            exportImport.setDir(fileOrDir);
+            runOnServerMaster.run(ExportImportHelper.setProvider(DirExportProviderFactory.PROVIDER_ID));
+            fileOrDir = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","");
+            runOnServerMaster.run(ExportImportHelper.setDir(fileOrDir));
         }
-        exportImport.setAction(ExportImportConfig.ACTION_EXPORT);
-        exportImport.setRealmName(managedRealm.admin().toRepresentation().getRealm());
-        exportImport.runExport();
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_EXPORT));
+        runOnServerMaster.run(ExportImportHelper.setRealmName(managedRealm.admin().toRepresentation().getRealm()));
+        runOnServerMaster.run(ExportImportHelper.runExport());
+
 
         // remove the realm and import it back
         managedRealm.admin().remove();
-        exportImport = testingClient.testing().exportImport();
         if (file) {
-            exportImport.setProvider(SingleFileImportProviderFactory.PROVIDER_ID);
-            exportImport.setFile(fileOrDir);
+            runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileImportProviderFactory.PROVIDER_ID));
+            runOnServerMaster.run(ExportImportHelper.setFile(fileOrDir));
         } else {
-            exportImport.setProvider(DirImportProviderFactory.PROVIDER_ID);
-            exportImport.setDir(fileOrDir);
+            runOnServerMaster.run(ExportImportHelper.setProvider(DirImportProviderFactory.PROVIDER_ID));
+            runOnServerMaster.run(ExportImportHelper.setDir(fileOrDir));
         }
-        exportImport.setAction(ExportImportConfig.ACTION_IMPORT);
-        exportImport.runImport();
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
+        runOnServerMaster.run(ExportImportHelper.runImport());
         getCleanup().addCleanup(() -> {
             managedRealm.admin().remove();
             getTestContext().getTestRealmReps().clear();
