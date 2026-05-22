@@ -189,7 +189,7 @@ for delivery. To configure PUSH:
 matching the receiver's endpoint.
 . On the *Stream* sub-tab, select *Push* as the delivery method and enter the receiver's endpoint URL.
 . Optionally, provide an *Authorization header* value the transmitter must send on each delivery (e.g.
-`Bearer <token>` issued by the receiver). Vault expressions like `${vault.my-secret}` are resolved at dispatch time.
+`Bearer <token>` issued by the receiver). Vault expressions like `${r"${vault.my-secret}"}` are resolved at dispatch time.
 
 Receiver-supplied URLs are validated against the per-receiver `ssf.validPushUrls` allow-list, and after a
 successful match the URL itself must use the `https` scheme and must not resolve to a loopback/link-local/
