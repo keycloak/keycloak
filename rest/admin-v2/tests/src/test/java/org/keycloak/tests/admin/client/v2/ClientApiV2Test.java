@@ -30,6 +30,7 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
+import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
@@ -347,7 +348,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         assertThat(samlClient.getFrontChannelLogout(), is(false));
         
         // test projecting only id and protocol
-        try (Stream<BaseClientRepresentation> baseClientRepresentationStream = getClientsApi().getClients(Set.of("clientId", "protocol"))) {
+        try (Stream<BaseClientRepresentation> baseClientRepresentationStream = getClientsApi().getClients(new ListOptions().fields(Set.of("clientId", "protocol")))) {
             List<BaseClientRepresentation> clients = baseClientRepresentationStream.toList();
             for (BaseClientRepresentation client : clients) {
                 BaseClientRepresentation toCompare = null;
@@ -364,7 +365,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     
     @Test
     public void invalidFieldProjection() {
-        BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(Set.of("unknown!")));
+        BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(new ListOptions().fields(Set.of("unknown!"))));
         assertEquals("{\"error\":\"unknown! is an unknown field\"}", e.getResponse().readEntity(String.class));
     }
 

@@ -1,6 +1,5 @@
 package org.keycloak.rest.admin.api.client;
 
-import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.annotation.Nonnull;
@@ -11,6 +10,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.client.ClientApi;
 import org.keycloak.admin.api.client.ClientsApi;
 import org.keycloak.models.KeycloakSession;
@@ -38,8 +38,8 @@ public class DefaultClientsApi implements ClientsApi {
     }
     
     @Override
-    public Stream<BaseClientRepresentation> getClients(Set<String> fields) {
-        return clientService.getClients(realm, new ClientProjectionOptions(fields), null, null);
+    public Stream<BaseClientRepresentation> getClients(ListOptions params) {
+        return clientService.getClients(realm, new ClientProjectionOptions(params.getFields()), null, null);
     }
 
     @POST
