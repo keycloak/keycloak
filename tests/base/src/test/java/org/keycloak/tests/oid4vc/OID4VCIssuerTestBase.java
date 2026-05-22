@@ -470,7 +470,7 @@ public abstract class OID4VCIssuerTestBase {
         realmResource.update(realm);
     }
 
-    protected void setVerifiableCredentialsEnabled(boolean enabled) {
+    protected void setRealmVerifiableCredentialsEnabled(boolean enabled) {
         RealmResource realmResource = testRealm.admin();
         RealmRepresentation realm = realmResource.toRepresentation();
         realm.setVerifiableCredentialsEnabled(enabled);

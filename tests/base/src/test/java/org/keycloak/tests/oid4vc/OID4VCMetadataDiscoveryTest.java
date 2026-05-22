@@ -54,7 +54,7 @@ public class OID4VCMetadataDiscoveryTest extends OID4VCIssuerTestBase {
     @Test
     public void testMetadataAbsentWhenOID4VCDisabled() {
         try {
-            setVerifiableCredentialsEnabled(false);
+            setRealmVerifiableCredentialsEnabled(false);
 
             OIDCConfigurationRepresentation metadata = oauth.wellknownRequest()
                     .endpoint(oauth.getBaseUrl() + "/" + oauthServerLegacyWellKnownPath())
@@ -67,7 +67,7 @@ public class OID4VCMetadataDiscoveryTest extends OID4VCIssuerTestBase {
                 assertFalse(authDetailsTypes.contains(OPENID_CREDENTIAL));
             }
         } finally {
-            setVerifiableCredentialsEnabled(true);
+            setRealmVerifiableCredentialsEnabled(true);
         }
     }
 

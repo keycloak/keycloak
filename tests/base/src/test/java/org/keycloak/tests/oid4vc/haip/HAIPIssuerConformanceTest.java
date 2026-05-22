@@ -38,6 +38,7 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_DEFAULT_TRUST_IDP_ALIAS;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_HEADER;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_POP_HEADER;
+import static org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint.AUTHORIZATION_PREFER_ERROR_ON_REDIRECT;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createRsaKeyPair;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CLIENT_ATTESTER_ATTACHMENT_KEY;
 
@@ -77,6 +78,7 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
                     DefaultTrustIdentityProviderFactory.PROVIDER_ID,
                     Map.of(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS, jwks));
         });
+        setClientAttribute(abcaClient, AUTHORIZATION_PREFER_ERROR_ON_REDIRECT, String.valueOf(true));
         setClientPolicyEnabled(VCI_CLIENT_POLICY_HAIP, true);
         oauth.client(abcaClient.getClientId(), null);
     }
