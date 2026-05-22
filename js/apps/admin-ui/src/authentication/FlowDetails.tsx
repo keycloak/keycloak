@@ -33,7 +33,7 @@ import {
   TableIcon,
 } from "@patternfly/react-icons";
 import { Table, Tbody } from "@patternfly/react-table";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
@@ -49,10 +49,12 @@ import { EmptyExecutionState } from "./EmptyExecutionState";
 import { AuthenticationProviderContextProvider } from "./components/AuthenticationProviderContext";
 import { FlowDiagram } from "./components/FlowDiagram";
 import { FlowHeader } from "./components/FlowHeader";
-import { FlowRow, DropMode } from "./components/FlowRow";
+import { FlowRow } from "./components/FlowRow";
 import { AddStepModal } from "./components/modals/AddStepModal";
 import { AddSubFlowModal, Flow } from "./components/modals/AddSubFlowModal";
 import {
+  DropInfo,
+  DropVertical,
   ExecutionList,
   ExpandableExecution,
   IndexChange,
@@ -65,11 +67,72 @@ export const providerConditionFilter = (
   value: AuthenticationProviderRepresentation,
 ) => value.displayName?.startsWith("Condition ");
 
+const DEFAULT_INDENT_STEP = 24;
+
+const emptyDropInfo = (): DropInfo => ({
+  targetId: null,
+  mode: "reorder",
+  targetLevel: 0,
+  targetParentId: null,
+  insertIndex: -1,
+});
+
+const measureIndentMetrics = () => {
+  const rows = document.querySelectorAll("tr[data-execution-id]");
+  let level0Left: number | undefined;
+  let level1Left: number | undefined;
+
+  for (const row of rows) {
+    const level = Number.parseInt(row.getAttribute("data-level") || "0", 10);
+    const executionId = row.getAttribute("data-execution-id");
+    if (!executionId) {
+      continue;
+    }
+    const title = document.querySelector(`[data-id="${executionId}"]`);
+    if (!title) {
+      continue;
+    }
+    const left = title.getBoundingClientRect().left;
+    if (level === 0) {
+      level0Left = level0Left === undefined ? left : Math.min(level0Left, left);
+    }
+    if (level === 1) {
+      level1Left = level1Left === undefined ? left : Math.min(level1Left, left);
+    }
+  }
+
+  const baseLeft = level0Left ?? 0;
+  const indentStep =
+    level0Left !== undefined && level1Left !== undefined
+      ? Math.max(16, level1Left - level0Left)
+      : DEFAULT_INDENT_STEP;
+
+  return { baseLeft, indentStep };
+};
+
+const targetLevelFromPointerX = (pointerX: number) => {
+  const { baseLeft, indentStep } = measureIndentMetrics();
+  return Math.max(0, Math.round((pointerX - baseLeft) / indentStep));
+};
+
+const dropModeToVertical = (mode: DropInfo["mode"]): DropVertical => {
+  if (mode === "reorder-before") {
+    return "before";
+  }
+  if (mode === "drop-into") {
+    return "into";
+  }
+  return "after";
+};
+
 const DragOverlayContent = ({
   execution,
+  targetParentName,
 }: {
   execution: ExpandableExecution;
+  targetParentName?: string;
 }) => {
+  const { t } = useTranslation();
   const isSubflow = execution.authenticationFlow;
   return (
     <div className="keycloak__authentication__drag-overlay">
@@ -79,9 +142,14 @@ const DragOverlayContent = ({
       <span className="keycloak__authentication__drag-overlay-icon">
         {isSubflow ? <CodeBranchIcon /> : <CogIcon />}
       </span>
-      <span className="keycloak__authentication__drag-overlay-text">
-        {execution.displayName}
-      </span>
+      <div className="keycloak__authentication__drag-overlay-text">
+        {targetParentName
+          ? t("onDragMoveIntoSubflow", {
+              item: execution.displayName,
+              subflow: targetParentName,
+            })
+          : execution.displayName}
+      </div>
     </div>
   );
 };
@@ -111,10 +179,18 @@ export default function FlowDetails() {
   const [edit, setEdit] = useState(false);
   const [bindFlowOpen, toggleBindFlow] = useToggle();
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [dropInfo, setDropInfo] = useState<{
-    targetId: string | null;
-    mode: DropMode;
-  }>({ targetId: null, mode: "reorder" });
+  const [dropInfo, setDropInfo] = useState<DropInfo>(emptyDropInfo());
+  const [indentStep, setIndentStep] = useState(DEFAULT_INDENT_STEP);
+
+  const visualIndexById = useMemo(() => {
+    const map = new Map<string, number>();
+    executionList?.order().forEach((ex, index) => {
+      if (ex.id) {
+        map.set(ex.id, index);
+      }
+    });
+    return map;
+  }, [executionList]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -144,26 +220,6 @@ export default function FlowDetails() {
     [executionList],
   );
 
-  const findSubflowById = useCallback(
-    (
-      id: string,
-      list?: ExpandableExecution[],
-    ): ExpandableExecution | undefined => {
-      const searchList = list || executionList?.expandableList || [];
-      for (const ex of searchList) {
-        if (ex.id === id && ex.authenticationFlow) {
-          return ex;
-        }
-        if (ex.executionList) {
-          const found = findSubflowById(id, ex.executionList);
-          if (found) return found;
-        }
-      }
-      return undefined;
-    },
-    [executionList],
-  );
-
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     setActiveId(active.id as string);
@@ -171,6 +227,7 @@ export default function FlowDetails() {
     const item = findExecutionById(active.id as string);
     if (item) {
       setLiveText(t("onDragStart", { item: item.displayName }));
+      setIndentStep(measureIndentMetrics().indentStep);
       if (!item.isCollapsed && item.executionList?.length) {
         item.isCollapsed = true;
         setExecutionList(executionList!.clone());
@@ -182,11 +239,20 @@ export default function FlowDetails() {
     const { activatorEvent, active } = event;
     const pointerEvent = activatorEvent as PointerEvent;
 
+    if (!executionList) {
+      return;
+    }
+
     const rows = document.querySelectorAll("tr[data-execution-id]");
-    let foundTarget: { id: string; mode: DropMode } | null = null;
+    let hoverId: string | null = null;
+    let vertical: DropVertical = "after";
+    let isSubflow = false;
+    let hoverLevel = 0;
 
     const pointerX = pointerEvent.clientX + event.delta.x;
     const pointerY = pointerEvent.clientY + event.delta.y;
+    const targetLevelFromX = targetLevelFromPointerX(pointerX);
+    setIndentStep(measureIndentMetrics().indentStep);
 
     for (const row of rows) {
       const rect = row.getBoundingClientRect();
@@ -197,38 +263,62 @@ export default function FlowDetails() {
         pointerY <= rect.bottom
       ) {
         const executionId = row.getAttribute("data-execution-id");
-        const isSubflow = row.getAttribute("data-is-subflow") === "true";
+        isSubflow = row.getAttribute("data-is-subflow") === "true";
+        hoverLevel = Number.parseInt(row.getAttribute("data-level") || "0", 10);
 
         if (executionId && executionId !== active.id) {
+          hoverId = executionId;
           const rowHeight = rect.height;
           const relativeY = pointerY - rect.top;
           const edgeZone = rowHeight * 0.25;
 
-          let mode: DropMode;
           if (relativeY < edgeZone) {
-            mode = "reorder-before";
+            vertical = "before";
           } else if (relativeY > rowHeight - edgeZone) {
-            mode = "reorder-after";
-          } else if (isSubflow) {
-            mode = "drop-into";
+            vertical = "after";
+          } else if (
+            isSubflow &&
+            Math.abs(targetLevelFromX - (hoverLevel + 1)) <= 1
+          ) {
+            vertical = "into";
           } else {
-            mode = "reorder-after";
+            vertical = "after";
           }
-
-          foundTarget = { id: executionId, mode };
         }
         break;
       }
     }
 
-    if (foundTarget) {
-      setDropInfo({ targetId: foundTarget.id, mode: foundTarget.mode });
-      const dragged = findExecutionById(active.id as string);
+    const dragged = findExecutionById(active.id as string);
+
+    if (hoverId) {
+      const resolved = executionList.resolveDropTarget(
+        active.id as string,
+        hoverId,
+        vertical,
+        targetLevelFromX,
+      );
+      if (resolved) {
+        setDropInfo(resolved.preview);
+        if (dragged) {
+          const parent = resolved.preview.targetParentId
+            ? findExecutionById(resolved.preview.targetParentId)
+            : undefined;
+          setLiveText(
+            parent
+              ? t("onDragMoveIntoSubflow", {
+                  item: dragged.displayName,
+                  subflow: parent.displayName,
+                })
+              : t("onDragMove", { item: dragged.displayName }),
+          );
+        }
+      }
+    } else {
+      setDropInfo(emptyDropInfo());
       if (dragged) {
         setLiveText(t("onDragMove", { item: dragged.displayName }));
       }
-    } else {
-      setDropInfo({ targetId: null, mode: "reorder" });
     }
   };
 
@@ -237,7 +327,7 @@ export default function FlowDetails() {
     setActiveId(null);
 
     const currentDropInfo = dropInfo;
-    setDropInfo({ targetId: null, mode: "reorder" });
+    setDropInfo(emptyDropInfo());
 
     if (!executionList) {
       setLiveText(t("onDragCancel"));
@@ -257,37 +347,31 @@ export default function FlowDetails() {
       return;
     }
 
+    const resolved = executionList.resolveDropTarget(
+      activeId,
+      currentDropInfo.targetId,
+      dropModeToVertical(currentDropInfo.mode),
+      currentDropInfo.targetLevel,
+    );
+
+    if (!resolved) {
+      setLiveText(t("onDragCancel"));
+      return;
+    }
+
+    const { change } = resolved;
+    const isNoOp =
+      change instanceof IndexChange &&
+      change.oldIndex === change.newIndex &&
+      resolved.kind === "reorder";
+
+    if (isNoOp) {
+      setLiveText(t("onDragCancel"));
+      return;
+    }
+
     setLiveText(t("onDragFinish", { list: dragged.displayName }));
-
-    if (currentDropInfo.mode === "drop-into") {
-      const targetSubflow = findSubflowById(currentDropInfo.targetId);
-      if (targetSubflow && targetSubflow.id !== dragged.id) {
-        const change = new LevelChange(
-          targetSubflow.executionList?.length || 0,
-          targetSubflow.index!,
-          targetSubflow,
-        );
-        void executeChange(dragged, change);
-        return;
-      }
-    }
-
-    const order = executionList.order().map((ex) => ex.id!);
-    const oldIndex = order.indexOf(activeId);
-    const targetIndex = order.indexOf(currentDropInfo.targetId);
-
-    if (oldIndex !== -1 && targetIndex !== -1 && oldIndex !== targetIndex) {
-      const [removed] = order.splice(oldIndex, 1);
-      let insertIndex = targetIndex;
-      if (currentDropInfo.mode === "reorder-after") {
-        insertIndex = oldIndex < targetIndex ? targetIndex : targetIndex + 1;
-      } else {
-        insertIndex = oldIndex < targetIndex ? targetIndex - 1 : targetIndex;
-      }
-      order.splice(insertIndex, 0, removed);
-      const change = executionList.getChange(dragged, order);
-      void executeChange(dragged, change);
-    }
+    void executeChange(dragged, change);
   };
 
   useFetch(
@@ -638,6 +722,8 @@ export default function FlowDetails() {
                           builtIn={!!builtIn}
                           execution={execution}
                           dropInfo={dropInfo}
+                          visualIndexById={visualIndexById}
+                          indentStep={indentStep}
                           activeId={activeId}
                           onRowClick={(execution) => {
                             execution.isCollapsed = !execution.isCollapsed;
@@ -664,6 +750,12 @@ export default function FlowDetails() {
                     <DragOverlayContent
                       execution={
                         executionList.order().find((ex) => ex.id === activeId)!
+                      }
+                      targetParentName={
+                        dropInfo.targetParentId
+                          ? findExecutionById(dropInfo.targetParentId)
+                              ?.displayName
+                          : undefined
                       }
                     />
                   ) : null}
