@@ -54,6 +54,7 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     private static final Option<String> SYNTHETIC_RUNTIME_DB_OPTION = DB.toBuilder().synthetic().buildTime(false).build();
     public static final String PG_TARGET_SERVER_TYPE = "quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType";
+    public static final String PG_LOG_SERVER_ERROR_DETAIL = "quarkus.datasource.jdbc.additional-jdbc-properties.logServerErrorDetail";
     public static final String MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = "quarkus.datasource.jdbc.additional-jdbc-properties.sendStringParametersAsUnicode";
     public static final String CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
     public static final String SOCKET_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.socketTimeout";
@@ -265,6 +266,10 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(DatabasePropertyMappers::isPostgresqlTargetServerTypeEnabled)
                         .build(),
                 fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "false")
+                        .to(PG_LOG_SERVER_ERROR_DETAIL)
+                        .isEnabled(DatabasePropertyMappers::isPostgresqlLogServerErrorDetailEnabled)
+                        .build(),
+                fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "false")
                         .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
                         .isEnabled(DatabasePropertyMappers::isMssqlSendStringParametersAsUnicode)
                         .build()
@@ -308,6 +313,19 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         }
         // targetServerType already set to same or different value in db-url, ignore
         return dbUrl == null || !dbUrl.contains("targetServerType");
+    }
+
+    public static boolean isPostgresqlLogServerErrorDetailEnabled() {
+        String db = Configuration.getConfigValue(DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElse(null);
+        if (vendor != Database.Vendor.POSTGRES) {
+            return false;
+        }
+
+        String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValue();
+
+        // logServerErrorDetail already set to same or different value in db-url, ignore
+        return dbUrl == null || !dbUrl.contains("logServerErrorDetail");
     }
 
     public static boolean isMssqlSendStringParametersAsUnicode() {
