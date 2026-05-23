@@ -32,7 +32,8 @@ public class ProfileTest {
     private static final Profile.Feature DEFAULT_FEATURE = Profile.Feature.CLIENT_POLICIES;
     private static final Profile.Feature DISABLED_BY_DEFAULT_FEATURE = Profile.Feature.DOCKER;
     private static final Profile.Feature PREVIEW_FEATURE = Profile.Feature.TOKEN_EXCHANGE;
-    private static final Profile.Feature EXPERIMENTAL_FEATURE = Profile.Feature.DYNAMIC_SCOPES;
+    private static final Profile.Feature DYNAMIC_SCOPES_FEATURE = Profile.Feature.DYNAMIC_SCOPES;
+    private static final Profile.Feature EXPERIMENTAL_FEATURE = Profile.Feature.CLIENT_TYPES;
     private static Profile.Feature DEPRECATED_FEATURE = Profile.Feature.LOGIN_V1;
 
     @TempDir
@@ -43,6 +44,7 @@ public class ProfileTest {
         Assertions.assertEquals(Profile.Feature.Type.DEFAULT, DEFAULT_FEATURE.getType());
         Assertions.assertEquals(Profile.Feature.Type.DISABLED_BY_DEFAULT, DISABLED_BY_DEFAULT_FEATURE.getType());
         Assertions.assertEquals(Profile.Feature.Type.PREVIEW, PREVIEW_FEATURE.getType());
+        Assertions.assertEquals(Profile.Feature.Type.PREVIEW, DYNAMIC_SCOPES_FEATURE.getType());
         Assertions.assertEquals(Profile.Feature.Type.EXPERIMENTAL, EXPERIMENTAL_FEATURE.getType());
 
         for (Profile.Feature feature : Profile.Feature.values()) {
@@ -73,6 +75,9 @@ public class ProfileTest {
         Assertions.assertFalse(DISABLED_BY_DEFAULT_FEATURE.isDeprecated());
         assertThat(profile.getPreviewFeatures(), Matchers.not(Matchers.hasItem(DISABLED_BY_DEFAULT_FEATURE)));
         Assertions.assertFalse(Profile.isFeatureEnabled(PREVIEW_FEATURE));
+        Assertions.assertFalse(Profile.isFeatureEnabled(DYNAMIC_SCOPES_FEATURE));
+        Assertions.assertFalse(DYNAMIC_SCOPES_FEATURE.isDeprecated());
+        assertThat(profile.getPreviewFeatures(), Matchers.hasItem(DYNAMIC_SCOPES_FEATURE));
         Assertions.assertFalse(Profile.isFeatureEnabled(EXPERIMENTAL_FEATURE));
         Assertions.assertFalse(EXPERIMENTAL_FEATURE.isDeprecated());
         assertThat(profile.getPreviewFeatures(), Matchers.not(Matchers.hasItem(EXPERIMENTAL_FEATURE)));
@@ -140,6 +145,15 @@ public class ProfileTest {
 
         Assertions.assertEquals(Profile.ProfileName.PREVIEW, Profile.getInstance().getName());
         Assertions.assertTrue(Profile.isFeatureEnabled(PREVIEW_FEATURE));
+    }
+
+    @Test
+    public void enablePreviewEnablesDynamicScopes() {
+        Properties properties = new Properties();
+        properties.setProperty("keycloak.profile", "preview");
+        Profile.configure(new PropertiesProfileConfigResolver(properties));
+
+        Assertions.assertTrue(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES));
     }
 
     @Test

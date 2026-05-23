@@ -92,7 +92,7 @@ public class Profile {
 
         PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
 
-        DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.EXPERIMENTAL),
+        DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.PREVIEW),
 
         CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
 
