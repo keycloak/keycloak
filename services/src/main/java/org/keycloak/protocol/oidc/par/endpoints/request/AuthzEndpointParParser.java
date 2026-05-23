@@ -95,6 +95,14 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
     }
 
     @Override
+    protected <T> T replaceIfNotNull(T previousVal, T newVal) {
+        // When PAR is used, the values from the pushed request must be used.
+        // Values added later to the browser redirect URL must not override
+        // or complete the pushed request.
+        return newVal;
+    }
+
+    @Override
     protected String getParameter(String paramName) {
         return requestParams.get(paramName);
     }

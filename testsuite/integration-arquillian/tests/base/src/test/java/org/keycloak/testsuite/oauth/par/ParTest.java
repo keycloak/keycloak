@@ -70,6 +70,7 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.oauth.ParRequest;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.OAuth2Constants;
 
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -1275,6 +1276,98 @@ public class ParTest extends AbstractClientPoliciesTest {
         assertEquals(400, response.getStatusCode());
         assertEquals(ClientPolicyEvent.PUSHED_AUTHORIZATION_REQUEST.toString(), response.getError());
         assertEquals("Exception thrown intentionally", response.getErrorDescription());
+    }
+
+    // Verifies that prompt=create must come from the pushed authorization request when PAR is used.
+    @Test
+    public void testPromptCreateInParRequestOpensRegistration() throws Exception {
+        try {
+            // setup PAR realm settings
+            int requestUriLifespan = 45;
+            setParRealmSettings(requestUriLifespan);
+
+            // create client dynamically
+            String clientId = createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+                clientRep.setRequirePushedAuthorizationRequests(Boolean.TRUE);
+                clientRep.setRedirectUris(new ArrayList<String>(Arrays.asList(CLIENT_REDIRECT_URI)));
+            });
+            OIDCClientRepresentation oidcCRep = getClientDynamically(clientId);
+            String clientSecret = oidcCRep.getClientSecret();
+            assertEquals(Boolean.TRUE, oidcCRep.getRequirePushedAuthorizationRequests());
+            assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
+            assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, oidcCRep.getTokenEndpointAuthMethod());
+
+            // Pushed Authorization Request with prompt=create
+            oauth.client(clientId, clientSecret);
+            oauth.redirectUri(CLIENT_REDIRECT_URI);
+            ParResponse pResp = new ParRequest(oauth) {
+                @Override
+                protected void initRequest() {
+                    super.initRequest();
+                    parameter(OAuth2Constants.PROMPT, OIDCLoginProtocol.PROMPT_VALUE_CREATE);
+                }
+            }.send();
+
+            assertEquals(201, pResp.getStatusCode());
+            String requestUri = pResp.getRequestUri();
+            assertEquals(requestUriLifespan, pResp.getExpiresIn());
+
+            // Authorization Request with request_uri of PAR
+            // remove parameters as query strings of uri
+            oauth.redirectUri(null);
+            oauth.scope(null);
+            oauth.responseType(null);
+            oauth.loginForm().requestUri(requestUri).open();
+
+            assertThat(driver.getCurrentUrl(), startsWith(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + oauth.getRealm() + "/login-actions/registration"));
+        } finally {
+            restoreParRealmSettings();
+        }
+    }
+
+    // Verifies that prompt=create appended to the final authorization URL does not complete the PAR request.
+    @Test
+    public void testPromptCreateOnAuthorizationUrlDoesNotCompleteParRequest() throws Exception {
+        try {
+            // setup PAR realm settings
+            int requestUriLifespan = 45;
+            setParRealmSettings(requestUriLifespan);
+
+            // create client dynamically
+            String clientId = createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+                clientRep.setRequirePushedAuthorizationRequests(Boolean.TRUE);
+                clientRep.setRedirectUris(new ArrayList<String>(Arrays.asList(CLIENT_REDIRECT_URI)));
+            });
+            OIDCClientRepresentation oidcCRep = getClientDynamically(clientId);
+            String clientSecret = oidcCRep.getClientSecret();
+            assertEquals(Boolean.TRUE, oidcCRep.getRequirePushedAuthorizationRequests());
+            assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
+            assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, oidcCRep.getTokenEndpointAuthMethod());
+
+            // Pushed Authorization Request without prompt=create
+            oauth.client(clientId, clientSecret);
+            oauth.redirectUri(CLIENT_REDIRECT_URI);
+            ParResponse pResp = oauth.doPushedAuthorizationRequest();
+
+            assertEquals(201, pResp.getStatusCode());
+            String requestUri = pResp.getRequestUri();
+            assertEquals(requestUriLifespan, pResp.getExpiresIn());
+
+            // Authorization Request with request_uri of PAR.
+            // prompt=create is added only to the final browser authorization request
+            // and must not complete or override the pushed authorization request.
+            oauth.redirectUri(null);
+            oauth.scope(null);
+            oauth.responseType(null);
+            oauth.loginForm()
+                    .requestUri(requestUri)
+                    .prompt(OIDCLoginProtocol.PROMPT_VALUE_CREATE)
+                    .open();
+
+            assertThat(driver.getCurrentUrl(), startsWith(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + oauth.getRealm() + "/login-actions/authenticate"));
+        } finally {
+            restoreParRealmSettings();
+        }
     }
 
     // Successful redirection to identity provider when including kc_idp_hint in the PAR request.
