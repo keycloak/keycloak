@@ -167,6 +167,11 @@ public class DatabaseOptions {
             .category(OptionCategory.DATABASE)
             .description("The type of the keystore file. Common values include 'JKS' (Java KeyStore) and 'PKCS12'. If not specified, it uses the driver's default.")
             .build();
+    
+    public static final Option<Boolean> DB_HEALTH_EXCLUDE = new OptionBuilder<>("db-health-exclude-<datasource>", Boolean.class)
+            .category(OptionCategory.DATABASE)
+            .description("If you have enabled heatlth endpoints, but want the given datasource excluded from the health check.")
+            .build();
 
     public static class Datasources {
 

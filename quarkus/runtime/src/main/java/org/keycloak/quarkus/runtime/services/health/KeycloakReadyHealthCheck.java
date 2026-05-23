@@ -16,14 +16,21 @@
  */
 package org.keycloak.quarkus.runtime.services.health;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
+import javax.sql.DataSource;
+
+import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
+import org.eclipse.microprofile.health.Readiness;
 
 import io.agroal.api.AgroalDataSource;
 import io.agroal.api.AgroalDataSourceMetrics;
@@ -31,9 +38,9 @@ import io.quarkus.agroal.runtime.health.DataSourceHealthCheck;
 import io.quarkus.smallrye.health.runtime.QuarkusAsyncHealthCheckFactory;
 import io.smallrye.health.api.AsyncHealthCheck;
 import io.smallrye.mutiny.Uni;
-import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
-import org.eclipse.microprofile.health.Readiness;
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 /**
  * Keycloak Healthcheck Readiness Probe.
@@ -57,8 +64,7 @@ public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
      */
     static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS").withZone(ZoneId.systemDefault());
 
-    @Inject
-    AgroalDataSource agroalDataSource;
+    List<AgroalDataSource> agroalDataSources;
 
     @Inject
     QuarkusAsyncHealthCheckFactory healthCheckFactory;
@@ -67,14 +73,29 @@ public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
     DataSourceHealthCheck dataSourceHealthCheck;
 
     private final AtomicReference<Instant> failingSince = new AtomicReference<>();
+    
+    @PostConstruct
+    protected void init() {
+        try {
+            Method getCheckedDataSources = dataSourceHealthCheck.getClass().getMethod("getCheckedDataSources");
+            getCheckedDataSources.setAccessible(true);
+            agroalDataSources = ((Map<String, DataSource>) getCheckedDataSources.invoke(dataSourceHealthCheck)).values().stream()
+                    .filter(AgroalDataSource.class::isInstance).map(AgroalDataSource.class::cast).toList();
+        } catch (NoSuchMethodException | SecurityException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
     public Uni<HealthCheckResponse> call() {
         HealthCheckResponseBuilder builder = HealthCheckResponse.named("Keycloak database connections async health check").up();
-        AgroalDataSourceMetrics metrics = agroalDataSource.getMetrics();
-        long activeCount = metrics.activeCount();
-        long invalidCount = metrics.invalidCount();
-        if (activeCount < 1 || invalidCount > 0) {
+        
+        if (agroalDataSources.stream().anyMatch(agroalDataSource -> {
+            AgroalDataSourceMetrics metrics = agroalDataSource.getMetrics();
+            long activeCount = metrics.activeCount();
+            long invalidCount = metrics.invalidCount();
+            return activeCount < 1 || invalidCount > 0;
+        })) {
             return healthCheckFactory.callSync(() -> {
                 HealthCheckResponse activeCheckResult = dataSourceHealthCheck.call();
                 if (activeCheckResult.getStatus() == HealthCheckResponse.Status.DOWN) {
