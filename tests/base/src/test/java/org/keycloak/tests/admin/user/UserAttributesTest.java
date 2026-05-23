@@ -274,6 +274,29 @@ public class UserAttributesTest extends AbstractUserTest {
     }
 
     @Test
+    public void updateUserOmittingReadOnlyAttributesShouldSucceed() {
+        // Create user with a read-only attribute (usercertificate is in DEFAULT_READ_ONLY_ATTRIBUTES)
+        UserRepresentation user1 = new UserRepresentation();
+        user1.setUsername("user1");
+        user1.singleAttribute("usercertificate", "cert-value");
+        String user1Id = createUser(user1);
+
+        // GET the user — read-only attribute should be present
+        user1 = managedRealm.admin().users().get(user1Id).toRepresentation();
+        assertAttributeValue("cert-value", user1.getAttributes().get("usercertificate"));
+
+        // PUT without the read-only attribute — should succeed (not treated as a change)
+        user1.getAttributes().remove("usercertificate");
+        user1.singleAttribute("someattr", "somevalue");
+        updateUser(managedRealm.admin().users().get(user1Id), user1);
+
+        // Verify the read-only attribute is preserved
+        user1 = managedRealm.admin().users().get(user1Id).toRepresentation();
+        assertAttributeValue("cert-value", user1.getAttributes().get("usercertificate"));
+        assertAttributeValue("somevalue", user1.getAttributes().get("someattr"));
+    }
+
+    @Test
     public void testImportUserWithNullAttribute() {
         RealmRepresentation rep = loadJson(UserAttributesTest.class.getResourceAsStream("testrealm-user-null-attr.json"), RealmRepresentation.class);
 
