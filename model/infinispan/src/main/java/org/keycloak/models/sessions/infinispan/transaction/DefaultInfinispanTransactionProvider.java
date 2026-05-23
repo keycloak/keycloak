@@ -17,6 +17,8 @@
 
 package org.keycloak.models.sessions.infinispan.transaction;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -27,7 +29,6 @@ import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.sessions.infinispan.changes.PersistentSessionsWorker;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
@@ -40,6 +41,8 @@ import org.infinispan.commons.util.concurrent.CompletionStages;
  * This class is not thread-safe.
  */
 public class DefaultInfinispanTransactionProvider extends AbstractKeycloakTransaction implements InfinispanTransactionProvider {
+    private static final Duration UPDATE_TIMEOUT = Duration.of(10, ChronoUnit.SECONDS);
+    private static final int UPDATE_BASE_INTERVAL_MILLIS = 1;
 
     private final List<NonBlockingTransaction> transactionList = new ArrayList<>(4);
     private final KeycloakSession session;
@@ -92,7 +95,7 @@ public class DefaultInfinispanTransactionProvider extends AbstractKeycloakTransa
                         // never retry more than 20 times
                         throw new RuntimeException("Maximum number of retries reached", t);
                     }
-                }, PersistentSessionsWorker.UPDATE_TIMEOUT, PersistentSessionsWorker.UPDATE_BASE_INTERVAL_MILLIS);
+                }, UPDATE_TIMEOUT, UPDATE_BASE_INTERVAL_MILLIS);
     }
 
     private static class DatabaseWrites implements KeycloakSessionTask, Consumer<DatabaseUpdate> {

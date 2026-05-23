@@ -19,7 +19,6 @@ package org.keycloak.models.sessions.infinispan.changes;
 
 import java.util.Collection;
 import java.util.Objects;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -44,11 +43,10 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
     private final UserSessionPersistentChangelogBasedTransaction userSessionTx;
 
     public ClientSessionPersistentChangelogBasedTransaction(KeycloakSession session,
-                                                            ArrayBlockingQueue<PersistentUpdate> batchingQueue,
                                                             CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> cacheHolder,
                                                             CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineCacheHolder,
                                                             UserSessionPersistentChangelogBasedTransaction userSessionTx) {
-        super(session, CLIENT_SESSION_CACHE_NAME, batchingQueue, cacheHolder, offlineCacheHolder);
+        super(session, CLIENT_SESSION_CACHE_NAME, cacheHolder, offlineCacheHolder);
         this.userSessionTx = userSessionTx;
     }
 
