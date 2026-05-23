@@ -455,6 +455,25 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             return exchangeNotLinked(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
 
+        if (model.getToken().startsWith("{")) {
+            try {
+                OAuthResponse previousResponse = JsonSerialization.readValue(model.getToken(), OAuthResponse.class);
+                Long exp = previousResponse.getAccessTokenExpiration();
+                if (needsRefresh(exp) && previousResponse.getRefreshToken() != null) {
+                    OAuthResponse newResponse = refreshToken(previousResponse, session);
+                    if (newResponse.getExpiresIn() != null && newResponse.getExpiresIn() > 0) {
+                        long accessTokenExpiration = Time.currentTime() + newResponse.getExpiresIn();
+                        newResponse.setAccessTokenExpiration(accessTokenExpiration);
+                    }
+                    model.setToken(JsonSerialization.writeValueAsString(newResponse));
+                    session.users().updateFederatedIdentity(realm, tokenSubject, model);
+                }
+            } catch (IOException e) {
+                logger.warnf(e, "Unable to refresh token for user %s and provider %s",
+                        tokenSubject != null ? tokenSubject.getId() : "unknown", getConfig().getAlias());
+            }
+        }
+
         String accessToken = extractTokenFromResponse(model.getToken(), getAccessTokenResponseParameter());
         if (accessToken == null) {
             model.setToken(null);
