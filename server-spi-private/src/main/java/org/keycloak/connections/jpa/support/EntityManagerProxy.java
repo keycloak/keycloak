@@ -128,27 +128,20 @@ public class EntityManagerProxy {
 
     // For JTA, the database operations are executed during the commit phase of a transaction, and DB exceptions can be propagated differently
     public static ModelException convert(Throwable t) {
-        final Predicate<Throwable> checkDuplicationMessage = throwable -> {
-            final String message = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
-            return message == null ? false : message.toLowerCase().contains("duplicate");
-        };
-
         Predicate<Throwable> throwModelDuplicateEx = throwable ->
                 throwable instanceof EntityExistsException
                 || throwable instanceof ConstraintViolationException
                 || isSqlStateClass23(throwable)
                 || throwable instanceof SQLIntegrityConstraintViolationException;
 
-        throwModelDuplicateEx = throwModelDuplicateEx.or(checkDuplicationMessage);
-
-        if (t.getCause() != null && throwModelDuplicateEx.test(t.getCause())) {
-            throw new ModelDuplicateException("Duplicate resource error", t.getCause());
-        } else if (throwModelDuplicateEx.test(t)) {
-            throw new ModelDuplicateException("Duplicate resource error", t);
+        if (throwModelDuplicateEx.test(t)) {
+            return new ModelDuplicateException("Duplicate resource error", t);
         } else if (t instanceof OptimisticLockException) {
-            throw new ModelIllegalStateException("Database operation failed", t);
+            return new ModelIllegalStateException("Database operation failed", t);
+        } else if (t.getCause() != null) {
+            return convert(t.getCause());
         } else {
-            throw new ModelException("Database operation failed", t);
+            return new ModelException("Database operation failed", t);
         }
     }
 
