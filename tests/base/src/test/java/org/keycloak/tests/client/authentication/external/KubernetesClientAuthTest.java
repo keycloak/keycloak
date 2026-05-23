@@ -18,6 +18,7 @@ import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
@@ -70,6 +71,30 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
         jwt.iat((long) (Time.currentTime() - 3550));
         assertSuccess(internalClientId, doClientGrant(jwt));
         assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
+    }
+
+    @Test
+    public void testValidTokenWithClientId() {
+        JsonWebToken jwt = createDefaultToken();
+        String jws = getIdentityProvider().encodeToken(jwt);
+        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest()
+                .client(INTERNAL_CLIENT_ID)
+                .clientJwt(jws, getClientAssertionType())
+                .send();
+        assertSuccess(internalClientId, response);
+        assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
+    }
+
+    @Test
+    public void testWrongClientIdFailsValidation() {
+        JsonWebToken jwt = createDefaultToken();
+        String jws = getIdentityProvider().encodeToken(jwt);
+        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest()
+                .client("completely-wrong-id")
+                .clientJwt(jws, getClientAssertionType())
+                .send();
+        assertFailure("client_id parameter does not match authenticated client", response);
+        assertFailure(internalClientId, expectedTokenIssuer, externalClientId, jwt.getId(), events.poll());
     }
 
     @Test
