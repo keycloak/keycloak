@@ -110,15 +110,15 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
 
         if (client == null) {
             return failure(AuthenticationFlowError.CLIENT_NOT_FOUND);
-        } else {
-            context.getEvent().client(client.getClientId());
-            context.setClient(client);
         }
 
         String clientIdParam = context.getHttpRequest().getDecodedFormParameters().getFirst(OAuth2Constants.CLIENT_ID);
         if (clientIdParam != null && !clientIdParam.equals(client.getClientId())) {
             return failure("client_id parameter does not match authenticated client");
         }
+
+        context.getEvent().client(client.getClientId());
+        context.setClient(client);
 
         if (!client.isEnabled()) {
             return failure(AuthenticationFlowError.CLIENT_DISABLED);

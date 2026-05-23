@@ -93,8 +93,8 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
                 .client("completely-wrong-id")
                 .clientJwt(jws, getClientAssertionType())
                 .send();
-        assertFailure("client_id parameter does not match authenticated client", response);
-        assertFailure(internalClientId, expectedTokenIssuer, externalClientId, jwt.getId(), events.poll());
+        assertFailure(response);
+        assertFailure("completely-wrong-id", expectedTokenIssuer, externalClientId, jwt.getId(), "client_not_found", events.poll());
     }
 
     @Test
