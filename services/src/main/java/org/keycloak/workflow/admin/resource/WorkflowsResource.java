@@ -17,6 +17,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.workflow.Workflow;
@@ -70,6 +71,10 @@ public class WorkflowsResource {
             return Response.created(session.getContext().getUri().getRequestUriBuilder().path(workflow.getId()).build()).build();
         } catch (ModelException me) {
             throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+        } catch (ComponentValidationException cve) {
+            // Surfaced by WorkflowStepProviderFactory.validateConfiguration() when the step
+            // configuration is invalid - report it as a client error instead of leaking a 500.
+            throw ErrorResponse.error(cve.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
