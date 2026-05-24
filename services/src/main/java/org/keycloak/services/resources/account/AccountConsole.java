@@ -46,6 +46,7 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.util.ViteManifest;
 import org.keycloak.services.validation.Validation;
@@ -159,6 +160,7 @@ public class AccountConsole implements AccountResourceProvider {
 
         UserModel user = null;
         if (auth != null) user = auth.getUser();
+        LocaleUtil.processLocaleParam(session, realm, null);
         Locale locale = session.getContext().resolveLocale(user);
         map.put("locale", locale.toLanguageTag());
         Properties messages = theme.getEnhancedMessages(realm, locale);
