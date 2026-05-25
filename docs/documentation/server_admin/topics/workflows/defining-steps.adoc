@@ -92,7 +92,13 @@ on the realm resource associated with the event, so that each realm resource typ
 ** `*` to unlink user from all linked Identity Providers
 | `disable-user` | Disable the user | None
 | `delete-user` | Delete the user | None
+| `invite-user` | Send an invitation email with an action token link to the user a|
+* `actions`: Required action names the user must complete. Defaults to `UPDATE_PASSWORD` and `VERIFY_EMAIL`.
+* `client-id`: Client id associated with the action token. Defaults to the realm's system client.
+* `redirect-uri`: Where to redirect the user after completing the required actions. Requires `client-id`.
 |===
+
+The `invite-user` step builds links from the configured hostname (`--hostname` or the realm `frontendUrl`). If neither is set, the step is skipped.
 
 [[_workflow_client_steps_]]
 == Client steps
