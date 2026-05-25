@@ -123,7 +123,7 @@ public class KcAdmV2ClientCLITest extends AbstractKcAdmV2CLITest {
     void testAuthNestedObjectMerged() {
         CommandResult result = kcAdmV2Cmd("client", "create", "oidc",
                 "--client-id", "test-auth-nested",
-                "--auth-method", "client_secret",
+                "--auth-method", "client-secret",
                 "--auth-secret", "my-secret-value");
 
         assertThat("create should succeed: " + result.err(), result.exitCode(), is(0));
@@ -131,7 +131,7 @@ public class KcAdmV2ClientCLITest extends AbstractKcAdmV2CLITest {
         String id = extractId(result);
         CommandResult getResult = kcAdmV2Cmd("client", "get", id);
         assertThat("get should succeed", getResult.exitCode(), is(0));
-        assertThat(getResult.out(), containsString("client_secret"));
+        assertThat(getResult.out(), containsString("client-secret"));
         assertThat(getResult.out(), containsString("my-secret-value"));
     }
 
@@ -163,7 +163,7 @@ public class KcAdmV2ClientCLITest extends AbstractKcAdmV2CLITest {
         assertThat(result.out(), containsString("role2"));
         assertThat(result.out(), containsString("STANDARD"));
         assertThat(result.out(), containsString("SERVICE_ACCOUNT"));
-        assertThat(result.out(), containsString("client_secret"));
+        assertThat(result.out(), containsString("client-secret"));
     }
 
     @Test
@@ -795,7 +795,7 @@ public class KcAdmV2ClientCLITest extends AbstractKcAdmV2CLITest {
                 "--redirect-uris", "https://example.com/callback,https://example.com/logout",
                 "--roles", "role1,role2",
                 "--login-flows", "STANDARD,SERVICE_ACCOUNT",
-                "--auth-method", "client_secret");
+                "--auth-method", "client-secret");
         assertThat("create should succeed: " + result.err(), result.exitCode(), is(0));
         return extractId(result);
     }

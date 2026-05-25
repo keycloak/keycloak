@@ -98,7 +98,7 @@
                 <artifactId>smallrye-open-api-maven-plugin</artifactId>
                 <configuration>
                     <enableStandardStaticFiles>false</enableStandardStaticFiles>
-                    <scanPackages>org.keycloak.representations.admin.v2,org.keycloak.admin.api</scanPackages>
+                    <scanPackages>org.keycloak.representations.admin.v2,org.keycloak.admin.api,jakarta.validation.constraints</scanPackages>
                     <filter>org.keycloak.admin.internal.openapi.OASModelFilter</filter>
                     <outputDirectory>${project.build.directory}</outputDirectory>
                     <outputFileTypeFilter>ALL</outputFileTypeFilter>
