@@ -122,6 +122,8 @@ public class ClientAttributeCertificateResource {
         CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
 
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
+        
+        info.setPrivateKey(null);
 
         return info;
     }
@@ -143,6 +145,7 @@ public class ClientAttributeCertificateResource {
         try {
             CertificateRepresentation info = CertificateInfoHelper.getCertificateFromRequest(session);
             updateCertFromRequest(info);
+            info.setPrivateKey(null);
             return info;
         } catch (IllegalStateException ise) {
             throw new ErrorResponseException("certificate-not-found", "Certificate or key with given alias not found in the keystore", Response.Status.BAD_REQUEST);
@@ -166,6 +169,7 @@ public class ClientAttributeCertificateResource {
         try {
             CertificateRepresentation info = CertificateInfoHelper.getCertificateFromRequest(session);
             updateCertFromRequest(info);
+            info.setPrivateKey(null);
             return info;
         } catch (IllegalStateException ise) {
             throw new ErrorResponseException("certificate-not-found", "Certificate or key with given alias not found in the keystore", Response.Status.BAD_REQUEST);
