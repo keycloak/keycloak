@@ -13,6 +13,7 @@ import {
   PaypalIcon,
   StackOverflowIcon,
   TwitterIcon,
+  SteamIcon,
 } from "@patternfly/react-icons";
 
 type IconMapperProps = {
@@ -56,6 +57,8 @@ function getIcon(icon: string) {
       return InstagramIcon;
     case "paypal":
       return PaypalIcon;
+    case "steam":
+      return SteamIcon;
     default:
       return CubeIcon;
   }
