@@ -99,6 +99,7 @@ public class ClientAttributeCertificateResource {
         auth.clients().requireView(client);
 
         CertificateRepresentation info = CertificateInfoHelper.getCertificateFromClient(client, attributePrefix);
+        info.setPrivateKey(null);
         return info;
     }
 
@@ -194,7 +195,7 @@ public class ClientAttributeCertificateResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ATTRIBUTE_CERTIFICATE)
     @Operation( summary = "Get a keystore file for the client, containing private key and public certificate")
     public byte[] getKeystore(@Parameter(description = "Keystore configuration as JSON") final KeyStoreConfig config) {
-        auth.clients().requireView(client);
+        auth.clients().requireConfigure(client);
 
         checkKeystoreFormat(config);
 
