@@ -1,13 +1,18 @@
 package org.keycloak.services.x509;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.Consumer;
+import javax.security.auth.x500.X500Principal;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
@@ -30,10 +35,14 @@ import static org.junit.Assert.assertNotNull;
 
 public class HaProxySslClientCertificateLookupTest {
 
-    private static final String TEST_CLIENT_CERT_FILE = "/org/keycloak/test/services/x509/header_value_rfc_9440_client_cert";
-    private static final String TEST_CLIENT_CHAIN_FILE = "/org/keycloak/test/services/x509/header_value_rfc_9440_client_chain";
+    private static final String TEST_CLIENT_CERT_FILE = "/org/keycloak/test/services/x509/header_value_haproxy_client_cert";
+    private static final String TEST_CLIENT_CHAIN_FILE = "/org/keycloak/test/services/x509/header_value_haproxy_client_chain";
     private static final String CLIENT_CERT_HEADER = "Client-Cert";
     private static final String CLIENT_CHAIN_HEADER = "Client-Cert-Chain";
+
+    private static final X500Principal CLIENT_CERT_DN = new X500Principal("CN=test-client");
+    private static final X500Principal CHAIN_CERT_1_DN = new X500Principal("CN=Client Intermediate CA 2");
+    private static final X500Principal CHAIN_CERT_2_DN = new X500Principal("CN=Client Intermediate CA 1");
 
     private static String clientCertBase64;
     private static String chainCert1Base64;
@@ -41,34 +50,23 @@ public class HaProxySslClientCertificateLookupTest {
     private static String concatenatedChainBase64;
 
     @BeforeClass
-    public static void init() throws IOException {
+    public static void init() throws Exception {
         CryptoIntegration.init(HaProxySslClientCertificateLookupTest.class.getClassLoader());
 
         URL certResource = HaProxySslClientCertificateLookupTest.class.getResource(TEST_CLIENT_CERT_FILE);
         assertNotNull(certResource);
-
-        String rfc9440CertValue = IOUtils.toString(certResource, StandardCharsets.UTF_8);
-        clientCertBase64 = stripByteSequenceDelimiters(rfc9440CertValue);
+        clientCertBase64 = IOUtils.toString(certResource, StandardCharsets.UTF_8).trim();
 
         URL chainResource = HaProxySslClientCertificateLookupTest.class.getResource(TEST_CLIENT_CHAIN_FILE);
         assertNotNull(chainResource);
+        concatenatedChainBase64 = IOUtils.toString(chainResource, StandardCharsets.UTF_8).trim();
 
-        String rfc9440ChainValue = IOUtils.toString(chainResource, StandardCharsets.UTF_8);
-        String[] chainEntries = rfc9440ChainValue.split(",\\s*");
-        chainCert1Base64 = stripByteSequenceDelimiters(chainEntries[0]);
-        chainCert2Base64 = stripByteSequenceDelimiters(chainEntries[1]);
-
-        byte[] derCert1 = Base64.getMimeDecoder().decode(chainCert1Base64);
-        byte[] derCert2 = Base64.getMimeDecoder().decode(chainCert2Base64);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write(derCert1);
-        baos.write(derCert2);
-        concatenatedChainBase64 = Base64.getEncoder().encodeToString(baos.toByteArray());
-    }
-
-    private static String stripByteSequenceDelimiters(String byteSequence) {
-        String trimmed = byteSequence.trim();
-        return trimmed.substring(1, trimmed.length() - 1);
+        byte[] chainDerBytes = Base64.getMimeDecoder().decode(concatenatedChainBase64);
+        CertificateFactory cf = CryptoIntegration.getProvider().getX509CertFactory();
+        Collection<? extends Certificate> certs = cf.generateCertificates(new ByteArrayInputStream(chainDerBytes));
+        List<Certificate> certList = new ArrayList<>(certs);
+        chainCert1Base64 = Base64.getEncoder().encodeToString(certList.get(0).getEncoded());
+        chainCert2Base64 = Base64.getEncoder().encodeToString(certList.get(1).getEncoded());
     }
 
     @Test
@@ -80,6 +78,7 @@ public class HaProxySslClientCertificateLookupTest {
 
         assertThat(chain, is(not(nullValue())));
         assertThat(chain, is(arrayWithSize(1)));
+        assertThat(chain[0].getSubjectX500Principal(), is(CLIENT_CERT_DN));
     }
 
     @Test
@@ -105,6 +104,9 @@ public class HaProxySslClientCertificateLookupTest {
               );
         assertThat(chain, is(not(nullValue())));
         assertThat(chain, is(arrayWithSize(3)));
+        assertThat(chain[0].getSubjectX500Principal(), is(CLIENT_CERT_DN));
+        assertThat(chain[1].getSubjectX500Principal(), is(CHAIN_CERT_1_DN));
+        assertThat(chain[2].getSubjectX500Principal(), is(CHAIN_CERT_2_DN));
     }
 
     @Test
@@ -119,6 +121,8 @@ public class HaProxySslClientCertificateLookupTest {
               );
         assertThat(chain, is(not(nullValue())));
         assertThat(chain, is(arrayWithSize(2)));
+        assertThat(chain[0].getSubjectX500Principal(), is(CLIENT_CERT_DN));
+        assertThat(chain[1].getSubjectX500Principal(), is(CHAIN_CERT_1_DN));
     }
 
     @Test
@@ -133,6 +137,7 @@ public class HaProxySslClientCertificateLookupTest {
               );
         assertThat(chain, is(not(nullValue())));
         assertThat(chain, is(arrayWithSize(1)));
+        assertThat(chain[0].getSubjectX500Principal(), is(CLIENT_CERT_DN));
     }
 
     @Test
@@ -148,6 +153,9 @@ public class HaProxySslClientCertificateLookupTest {
               );
         assertThat(chain, is(not(nullValue())));
         assertThat(chain, is(arrayWithSize(3)));
+        assertThat(chain[0].getSubjectX500Principal(), is(CLIENT_CERT_DN));
+        assertThat(chain[1].getSubjectX500Principal(), is(CHAIN_CERT_1_DN));
+        assertThat(chain[2].getSubjectX500Principal(), is(CHAIN_CERT_2_DN));
     }
 
     @Test
@@ -163,6 +171,7 @@ public class HaProxySslClientCertificateLookupTest {
               );
         assertThat(chain, is(not(nullValue())));
         assertThat(chain, is(arrayWithSize(1)));
+        assertThat(chain[0].getSubjectX500Principal(), is(CLIENT_CERT_DN));
     }
 
     private static HaProxySslClientCertificateLookup lookupWithSingleChainHeader(int certificateChainLength) {
