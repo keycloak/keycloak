@@ -207,6 +207,29 @@ public class UserVerifiableCredentialResource {
                 .toList();
     }
 
+    @DELETE
+    @Path("issued-credentials/{id}")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(summary = "Revoke an issued verifiable credential")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public void revokeIssuedCredential(@PathParam("id") String credentialId) {
+        auth.users().requireManage(user);
+        checkOid4VCIEnabled();
+
+        boolean removed = session.users().removeIssuedVerifiableCredential(credentialId);
+        if (!removed) {
+            logger.warn(String.format("Issued verifiable credential with ID '%s' not found for user '%s' in realm '%s'.",
+                    credentialId, user.getUsername(), realm.getName()));
+            throw new NotFoundException("Issued verifiable credential not found");
+        }
+
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+    }
+
     private void checkOid4VCIEnabled() {
         if (!Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) {
             throw ErrorResponse.error("Feature " + Profile.Feature.OID4VC_VCI.getKey() + " not enabled", Response.Status.BAD_REQUEST);
