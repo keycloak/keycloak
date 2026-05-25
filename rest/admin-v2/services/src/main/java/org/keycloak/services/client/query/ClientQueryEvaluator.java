@@ -67,19 +67,15 @@ public class ClientQueryEvaluator extends ScimFilterParserBaseVisitor<Boolean> {
     public Boolean visitComparisonExpression(ScimFilterParser.ComparisonExpressionContext ctx) {
         String fieldPath = ctx.ATTRPATH().getText();
         Object fieldValue = FieldResolver.resolve(fieldPath, client);
-        if (fieldValue == null) {
-            return false;
-        }
-
         String operator = ctx.compareOp().getText().toLowerCase();
         String queryValue = FilterUtils.extractCompValue(ctx.compValue());
 
         return switch (operator) {
-            case "eq" -> matchScalar(fieldValue, queryValue, Objects::equals);
-            case "ne" -> !matchScalar(fieldValue, queryValue, Objects::equals);
-            case "co" -> matchScalar(fieldValue, queryValue, (fv, qv) -> fv != null && fv.contains(qv));
-            case "sw" -> matchScalar(fieldValue, queryValue, (fv, qv) -> fv != null && fv.startsWith(qv));
-            case "ew" -> matchScalar(fieldValue, queryValue, (fv, qv) -> fv != null && fv.endsWith(qv));
+            case "eq" -> fieldValue == null ? queryValue == null : matchScalar(fieldValue, queryValue, Objects::equals);
+            case "ne" -> fieldValue == null ? queryValue != null : !matchScalar(fieldValue, queryValue, Objects::equals);
+            case "co" -> fieldValue != null && matchScalar(fieldValue, queryValue, (fv, qv) -> fv != null && fv.contains(qv));
+            case "sw" -> fieldValue != null && matchScalar(fieldValue, queryValue, (fv, qv) -> fv != null && fv.startsWith(qv));
+            case "ew" -> fieldValue != null && matchScalar(fieldValue, queryValue, (fv, qv) -> fv != null && fv.endsWith(qv));
             default -> false;
         };
     }

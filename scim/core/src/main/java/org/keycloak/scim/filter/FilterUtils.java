@@ -41,6 +41,7 @@ public class FilterUtils {
             throw new ScimFilterException("Invalid filter syntax: " + errors);
         }
 
+        validateNullCompValues(context);
         return context;
     }
 
@@ -60,6 +61,22 @@ public class FilterUtils {
         if (ctx.NULL() != null) return null;
         if (ctx.NUMBER() != null) return ctx.NUMBER().getText();
         return null;
+    }
+
+    private static void validateNullCompValues(ScimFilterParser.FilterContext filterCtx) {
+        new ScimFilterParserBaseVisitor<Void>() {
+            @Override
+            public Void visitComparisonExpression(ScimFilterParser.ComparisonExpressionContext ctx) {
+                if (ctx.compValue().NULL() != null) {
+                    String operator = ctx.compareOp().getText().toLowerCase();
+                    if (!operator.equals("eq") && !operator.equals("ne")) {
+                        throw new ScimFilterException(
+                                "Operator '%s' does not accept null values".formatted(operator));
+                    }
+                }
+                return null;
+            }
+        }.visit(filterCtx);
     }
 
     /**

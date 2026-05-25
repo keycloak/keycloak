@@ -150,8 +150,8 @@ public class DefaultClientService implements ClientService {
     }
 
     protected Stream<BaseClientRepresentation> applySearchFilter(Stream<BaseClientRepresentation> stream, ClientSearchOptions searchOptions) {
-        if (searchOptions != null && searchOptions.getQuery() != null && !searchOptions.getQuery().isBlank()) {
-            var queryCtx = QueryParseUtils.parse(searchOptions.getQuery());
+        if (searchOptions != null && searchOptions.query() != null && !searchOptions.query().isBlank()) {
+            var queryCtx = QueryParseUtils.parse(searchOptions.query());
             QueryParseUtils.validate(queryCtx);
             return stream.filter(client -> ClientQueryEvaluator.matches(queryCtx, client));
         }
@@ -160,7 +160,10 @@ public class DefaultClientService implements ClientService {
 
     protected Stream<BaseClientRepresentation> applyProjection(Stream<BaseClientRepresentation> stream, ClientProjectionOptions projectionOptions) {
         if (projectionOptions.getFields().isEmpty()) return stream;
-        return stream.peek(rep -> MAPPERS.applyProjection(rep, projectionOptions.getFields()));
+        return stream.map(rep -> {
+            MAPPERS.applyProjection(rep, projectionOptions.getFields());
+            return rep;
+        });
     }
 
     @Override

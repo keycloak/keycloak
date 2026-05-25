@@ -224,13 +224,21 @@ class ClientQueryEvaluatorTest {
     }
 
     @Test
-    void nullComparisonNeverMatches() {
+    void eqNullMatchesNullField() {
         var client = createClient("test", true);
         client.setDescription(null);
-        assertFalse(matches("description eq null", client));
+        assertTrue(matches("description eq null", client));
 
         client.setDescription("something");
         assertFalse(matches("description eq null", client));
+    }
+
+    @Test
+    void neAndNotEqConsistentOnNullField() {
+        var client = createClient("test", true);
+        client.setDescription(null);
+        assertTrue(matches("not description eq \"something\"", client));
+        assertTrue(matches("description ne \"something\"", client));
     }
 
     @Test
