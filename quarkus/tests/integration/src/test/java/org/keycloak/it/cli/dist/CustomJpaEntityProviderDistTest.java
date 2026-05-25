@@ -57,7 +57,7 @@ public class CustomJpaEntityProviderDistTest {
     void notSpecifiedDbKind(CLIResult cliResult) {
         // it is printed at build time and the check done at runtime
         cliResult.assertNoMessage(MULTIPLE_DATASOURCES_MSG);
-        cliResult.assertError("Detected additional named datasources without a DB kind set, please specify: db-kind-new-user-store");
+        cliResult.assertError("Detected additional named datasources without a DB kind set, please specify: kc.db-kind-new-user-store");
     }
 
     @Test

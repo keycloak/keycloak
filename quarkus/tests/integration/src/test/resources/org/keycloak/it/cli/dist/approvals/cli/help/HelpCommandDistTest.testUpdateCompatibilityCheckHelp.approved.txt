@@ -209,10 +209,8 @@ Database - additional datasources:
                      If the named datasource <datasource> should be enabled at runtime. Default:
                        true.
 --db-kind-<datasource> <vendor>
-                     Used for named <datasource>. The database vendor. In production mode the
-                       default value of 'dev-file' is deprecated, you should explicitly specify the
-                       db instead. Possible values are: dev-file, dev-mem, mariadb, mssql, mysql,
-                       oracle, postgres, tidb.
+                     Used for named <datasource>. The database vendor. Possible values are:
+                       dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres, tidb.
 --db-log-slow-queries-threshold-<datasource> <milliseconds>
                      Used for named <datasource>. Log SQL statements slower than the configured
                        threshold with logger org.hibernate.SQL_SLOW and log-level info. Default:
