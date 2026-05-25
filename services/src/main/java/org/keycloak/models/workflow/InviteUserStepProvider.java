@@ -17,24 +17,17 @@
 
 package org.keycloak.models.workflow;
 
+import java.net.URI;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-import jakarta.ws.rs.core.UriInfo;
-
-import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
-import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.email.ActionTokenEmail;
 import org.keycloak.email.EmailException;
-import org.keycloak.email.EmailTemplateProvider;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.SystemClientUtil;
-import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.urls.HostnameProvider;
+import org.keycloak.urls.UrlType;
 
 import org.jboss.logging.Logger;
 
@@ -44,14 +37,24 @@ public class InviteUserStepProvider implements WorkflowStepProvider {
     public static final String CONFIG_CLIENT_ID = "client-id";
     public static final String CONFIG_REDIRECT_URI = "redirect-uri";
 
+    /**
+     * Operator-facing message describing the configuration that this step requires.
+     * Used by both runtime warnings ({@link #run}) and configuration validation
+     * ({@link InviteUserStepProviderFactory#validateConfiguration}).
+     */
+    static final String HOSTNAME_NOT_CONFIGURED_MESSAGE =
+            "invite-user requires a configured Keycloak hostname: set --hostname=<full URL> "
+                    + "or the realm 'frontendUrl' attribute";
+
     private static final List<String> DEFAULT_ACTIONS = List.of(
             UserModel.RequiredAction.UPDATE_PASSWORD.name(),
             UserModel.RequiredAction.VERIFY_EMAIL.name()
     );
 
+    private static final Logger LOG = Logger.getLogger(InviteUserStepProvider.class);
+
     private final KeycloakSession session;
     private final ComponentModel stepModel;
-    private final Logger log = Logger.getLogger(InviteUserStepProvider.class);
 
     public InviteUserStepProvider(KeycloakSession session, ComponentModel model) {
         this.session = session;
@@ -66,64 +69,68 @@ public class InviteUserStepProvider implements WorkflowStepProvider {
     public void run(WorkflowExecutionContext context) {
         RealmModel realm = session.getContext().getRealm();
         UserModel user = session.users().getUserById(realm, context.getResourceId());
-
-        if (user == null || user.getEmail() == null || !user.isEnabled()) {
+        if (user == null) {
             return;
         }
 
         String clientId = stepModel.getConfig().getFirst(CONFIG_CLIENT_ID);
-        ClientModel client = clientId == null
-                ? SystemClientUtil.getSystemClient(realm)
-                : realm.getClientByClientId(clientId);
+        String redirectUri = stepModel.getConfig().getFirst(CONFIG_REDIRECT_URI);
 
-        if (client == null || !client.isEnabled()) {
+        ActionTokenEmail.Result resolved;
+        try {
+            resolved = ActionTokenEmail.resolveParams(session, realm, user, clientId, redirectUri, null);
+        } catch (IllegalArgumentException e) {
+            // Caller-supplied invalid configuration. The factory validates this at create
+            // time, so reaching here means the configuration was changed after creation.
+            LOG.warnf("Skipping invite for user %s: %s", user.getUsername(), e.getMessage());
+            return;
+        }
+        if (resolved.getParams().isEmpty()) {
+            // User/client/redirect ineligible — silently skip, this is normal for workflows
+            // (e.g. user has no email, account disabled, etc.).
             return;
         }
 
-        String redirectUri = stepModel.getConfig().getFirst(CONFIG_REDIRECT_URI);
-        if (redirectUri != null) {
-            redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUri, client);
-            if (redirectUri == null) {
-                return;
-            }
-        }
-
-        UriInfo uriInfo = resolveUriInfo();
-        if (uriInfo == null) {
+        URI baseUri = resolveBaseUri(session);
+        if (baseUri == null) {
+            // Should be unreachable because the factory rejects this configuration up-front,
+            // but keep a defensive log in case hostname configuration changes at runtime.
+            LOG.warnf("Skipping invite for user %s: %s", user.getUsername(), HOSTNAME_NOT_CONFIGURED_MESSAGE);
             return;
         }
 
         List<String> actions = stepModel.getConfig().getOrDefault(CONFIG_ACTIONS, DEFAULT_ACTIONS);
-        int lifespan = realm.getActionTokenGeneratedByAdminLifespan();
-        int expiration = Time.currentTime() + lifespan;
-
-        ExecuteActionsActionToken token = new ExecuteActionsActionToken(
-                user.getId(), user.getEmail(), expiration, actions, redirectUri, client.getClientId());
-
-        String link = LoginActionsService.actionTokenProcessor(uriInfo)
-                .queryParam("key", token.serialize(session, realm, uriInfo))
-                .build(realm.getName())
-                .toString();
 
         try {
-            session.getProvider(EmailTemplateProvider.class)
-                    .setAttribute(Constants.TEMPLATE_ATTR_REQUIRED_ACTIONS, token.getRequiredActions())
-                    .setAttribute(Constants.IGNORE_ACCEPT_LANGUAGE_HEADER, true)
-                    .setRealm(realm)
-                    .setUser(user)
-                    .sendExecuteActions(link, TimeUnit.SECONDS.toMinutes(lifespan));
+            ActionTokenEmail.send(session, realm, user, resolved.getParams().get(), actions, baseUri);
         } catch (EmailException e) {
-            log.errorv(e, "Failed to send invite email to user {0} ({1})", user.getUsername(), user.getEmail());
+            LOG.errorv(e, "Failed to send invite email to user {0} ({1})", user.getUsername(), user.getEmail());
         }
     }
 
-    private UriInfo resolveUriInfo() {
+    /**
+     * Resolves the Keycloak base URI suitable for building absolute action-token URLs.
+     * <p>
+     * Workflow steps may run on a thread without an active HTTP request, so we cannot
+     * rely on {@link org.keycloak.models.KeycloakContext#getUri()} (it is request-scoped).
+     * The {@link HostnameProvider} can still produce a base URI provided that
+     * {@code --hostname=<full URL>} or the realm {@code frontendUrl} attribute is
+     * configured; otherwise it has no fallback and indicates this by throwing a
+     * {@link NullPointerException} when called with a {@code null} {@code originalUriInfo}.
+     * <p>
+     * Note: {@code org.keycloak.ssf.transmitter.support.SsfUtil#getIssuerUrl} solves a
+     * closely related problem for the Shared Signals Framework, with its own fallback
+     * chain (realm {@code frontendUrl} → {@code KC_HOSTNAME_URL} env → {@code hostname}
+     * config → request URI). Unifying both into a single public helper would be a useful
+     * follow-up refactoring but is intentionally out of scope for this change.
+     *
+     * @return the resolved base URI, or {@code null} when no static hostname is configured
+     */
+    static URI resolveBaseUri(KeycloakSession session) {
         try {
-            return session.getContext().getUri();
+            return session.getProvider(HostnameProvider.class).getBaseUri(null, UrlType.FRONTEND);
         } catch (NullPointerException e) {
-            // No active HTTP request and neither --hostname=<full URL> nor realm frontendUrl set:
-            // KeycloakUriInfo cannot resolve a base URI. Skip rather than crash the workflow.
-            log.warn("Cannot build invite link without --hostname or realm frontendUrl configured");
+            LOG.debugv(e, "HostnameProvider could not resolve a base URI without an active request");
             return null;
         }
     }

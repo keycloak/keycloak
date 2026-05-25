@@ -27,8 +27,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
-import org.keycloak.urls.HostnameProvider;
-import org.keycloak.urls.UrlType;
 
 public class InviteUserStepProviderFactory implements WorkflowStepProviderFactory<InviteUserStepProvider> {
 
@@ -72,11 +70,13 @@ public class InviteUserStepProviderFactory implements WorkflowStepProviderFactor
             throw new ComponentValidationException("Invalid required action configured for 'actions'");
         }
 
-        try {
-            session.getProvider(HostnameProvider.class).getBaseUri(null, UrlType.FRONTEND);
-        } catch (NullPointerException e) {
-            throw new ComponentValidationException(
-                    "invite-user requires a configured hostname: set --hostname=<full URL> or the realm 'frontendUrl' attribute");
+        // The step may run on a workflow executor thread without an active HTTP request,
+        // so the HostnameProvider must be able to resolve a base URI without an
+        // 'original' UriInfo. That requires either --hostname=<full URL> or the realm
+        // 'frontendUrl' attribute to be configured. Reject the configuration up-front
+        // so the operator gets a meaningful error instead of silently dropped invites.
+        if (InviteUserStepProvider.resolveBaseUri(session) == null) {
+            throw new ComponentValidationException(InviteUserStepProvider.HOSTNAME_NOT_CONFIGURED_MESSAGE);
         }
     }
 
