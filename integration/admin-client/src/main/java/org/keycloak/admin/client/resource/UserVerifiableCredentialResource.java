@@ -12,6 +12,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
+import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 
 /**
@@ -40,5 +41,8 @@ public interface UserVerifiableCredentialResource {
     @Produces(MediaType.APPLICATION_JSON)
     UserVerifiableCredentialRepresentation updateCredential(@PathParam("credentialScopeName") String credentialScopeName);
 
-    // TODO: Issued credentials
+    @GET
+    @Path("issued-credentials")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<IssuedVerifiableCredentialRepresentation> getIssuedCredentials();
 }

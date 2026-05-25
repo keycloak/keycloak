@@ -80,6 +80,7 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -130,6 +131,7 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.util.JsonSerialization;
@@ -1771,5 +1773,17 @@ public class RepresentationToModel {
 
     public static OrganizationDomainModel toModel(OrganizationDomainRepresentation domainRepresentation) {
         return new OrganizationDomainModel(domainRepresentation.getName(), domainRepresentation.isVerified());
+    }
+
+    public static IssuedVerifiableCredentialModel toModel(IssuedVerifiableCredentialRepresentation representation) {
+        IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel();
+        model.setId(representation.getId());
+        model.setUserId(representation.getUserId());
+        model.setCredentialType(representation.getCredentialType());
+        model.setIssuedAt(representation.getIssuedAt());
+        model.setExpiresAt(representation.getExpiresAt());
+        model.setClientId(representation.getClientId());
+        model.setRevision(representation.getRevision());
+        return model;
     }
 }

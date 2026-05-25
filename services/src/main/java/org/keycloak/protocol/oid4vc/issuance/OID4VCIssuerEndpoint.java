@@ -68,6 +68,7 @@ import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -1022,6 +1023,9 @@ public class OID4VCIssuerEndpoint {
         eventBuilder.detail(Details.SCOPE, supportedCredential.getScope())
                 .detail(Details.VERIFIABLE_CREDENTIAL_FORMAT, supportedCredential.getFormat())
                 .detail(Details.VERIFIABLE_CREDENTIALS_ISSUED, String.valueOf(responseVO.getCredentials().size()));
+
+        recordIssuedVerifiableCredentials(userModel, clientModel, supportedCredential.getScope(), responseVO.getCredentials().size());
+
         eventBuilder.success();
 
         // Clean up offer state after successful credential issuance
@@ -1032,6 +1036,18 @@ public class OID4VCIssuerEndpoint {
         }
 
         return response;
+    }
+
+    private void recordIssuedVerifiableCredentials(UserModel userModel, ClientModel clientModel, String credentialScope, int count) {
+        try {
+            if (count > 0) {
+                IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(userModel.getId(), credentialScope, clientModel.getId());
+                session.users().addIssuedVerifiableCredential(model);
+                LOGGER.debugf("Recorded VC issuance: user=%s, client=%s, type=%s, credentials=%d", userModel.getUsername(), clientModel.getClientId(), credentialScope, count);
+            }
+        } catch (Exception e) {
+            LOGGER.warnf(e, "Failed to record VC issuance for user=%s, client=%s, type=%s", userModel.getUsername(), clientModel.getClientId(), credentialScope);
+        }
     }
 
     private List<OID4VCAuthorizationDetail> getAuthorizationDetailsResponse(AccessToken accessToken) {

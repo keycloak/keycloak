@@ -44,6 +44,7 @@ import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
@@ -964,6 +965,24 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             return localStorage().getVerifiableCredentialsByUser(userId);
         } else {
             throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+        }
+    }
+
+    @Override
+    public void addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc) {
+        if (StorageId.isLocalStorage(issuedVc.getUserId())) {
+            localStorage().addIssuedVerifiableCredential(issuedVc);
+        } else {
+            throw new UnsupportedOperationException("Issued verifiable credential operations not yet supported on federated users");
+        }
+    }
+
+    @Override
+    public Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().getIssuedVerifiableCredentialsStreamByUser(userId);
+        } else {
+            throw new UnsupportedOperationException("Issued verifiable credential operations not yet supported on federated users");
         }
     }
 
