@@ -19,6 +19,7 @@ package org.keycloak.models.session;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -73,6 +74,19 @@ public interface UserSessionPersisterProvider extends Provider {
      * @return
      */
     Stream<UserSessionModel> loadUserSessionsStream(RealmModel realm, UserModel user, boolean offline, Integer firstResult, Integer maxResults);
+
+    /**
+     * Returns user-session ids and their associated client UUIDs for the given {@link UserModel}, without applying the
+     * {@code lastSessionRefresh} idle-timeout filter.
+     *
+     * @param realm   The {@link RealmModel}.
+     * @param user    The {@link UserModel} whose sessions are queried.
+     * @param offline If {@code true}, returns offline sessions, otherwise online sessions.
+     * @return A map of user-session id to the set of associated client UUIDs (the set may be empty).
+     */
+    default Map<String, Set<String>> findUserSessionsByUserId(RealmModel realm, UserModel user, boolean offline) {
+        throw new IllegalStateException("not implemented");
+    }
 
     /**
      * Loads the user sessions for the given {@link ClientModel} in the given {@link RealmModel} if present.

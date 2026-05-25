@@ -378,6 +378,18 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         return loadExactUserSessionsWithClientSessions(query, offlineStr);
     }
 
+    @Override
+    public Map<String, Set<String>> findUserSessionsByUserId(RealmModel realm, UserModel user, boolean offline) {
+        var query = em.createNamedQuery("findUserAndClientSessionsByUserId", UserSessionIdAndClientSessionId.class)
+                .setParameter("offline", offlineToString(offline))
+                .setParameter("realmId", realm.getId())
+                .setParameter("userId", user.getId());
+        return closing(query.getResultStream())
+                .collect(Collectors.groupingBy(
+                        UserSessionIdAndClientSessionId::userSessionId,
+                        Collectors.mapping(JpaSessionUtil::getClientId, Collectors.filtering(Objects::nonNull, Collectors.toSet()))));
+    }
+
     public Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
                                                            String lastUserSessionId) {
         String offlineStr = offlineToString(offline);
