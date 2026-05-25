@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.ClientInitialAccessResource;
 import org.keycloak.common.util.Time;
@@ -152,6 +153,28 @@ public class InitialAccessTokenResourceTest {
             Assertions.assertEquals("Invalid value for expiration", error.getError());
             Assertions.assertEquals("The expiration time interval cannot be less than 0", error.getErrorDescription());
         }
+    }
+
+    @Test
+    public void testCreateReturns201WithLocationHeader() {
+        ClientInitialAccessCreatePresentation rep = new ClientInitialAccessCreatePresentation();
+        rep.setCount(1);
+        rep.setExpiration(100);
+
+        String id;
+        try (Response response = resource.doCreate(rep)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+
+            String location = response.getHeaderString("Location");
+            assertNotNull(location, "Location header must be present on 201 Created");
+
+            ClientInitialAccessPresentation entity = response.readEntity(ClientInitialAccessPresentation.class);
+            id = entity.getId();
+            assertNotNull(id);
+            assertNotNull(entity.getToken());
+            assertThat(location, org.hamcrest.Matchers.endsWith("/clients-initial-access/" + id));
+        }
+        resource.delete(id);
     }
 
     private void removeExpired(String realmUuid) {

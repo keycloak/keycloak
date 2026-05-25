@@ -27,6 +27,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
@@ -40,7 +41,12 @@ public interface ClientInitialAccessResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     ClientInitialAccessPresentation create(ClientInitialAccessCreatePresentation rep);
-    
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    Response doCreate(ClientInitialAccessCreatePresentation rep);
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<ClientInitialAccessPresentation> list();
