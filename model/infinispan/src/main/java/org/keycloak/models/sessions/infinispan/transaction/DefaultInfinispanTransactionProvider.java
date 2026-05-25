@@ -90,12 +90,7 @@ public class DefaultInfinispanTransactionProvider extends AbstractKeycloakTransa
         }
         Retry.executeWithBackoff(
                 iteration -> KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), databaseWrites),
-                (iteration, t) -> {
-                    if (iteration > 20) {
-                        // never retry more than 20 times
-                        throw new RuntimeException("Maximum number of retries reached", t);
-                    }
-                }, UPDATE_TIMEOUT, UPDATE_BASE_INTERVAL_MILLIS);
+                UPDATE_TIMEOUT, UPDATE_BASE_INTERVAL_MILLIS);
     }
 
     private static class DatabaseWrites implements KeycloakSessionTask, Consumer<DatabaseUpdate> {

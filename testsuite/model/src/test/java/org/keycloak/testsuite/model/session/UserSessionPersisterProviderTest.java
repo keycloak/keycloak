@@ -647,8 +647,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
                 });
                 Assert.fail("Exception expected");
             } catch (RuntimeException e) {
-                assertThat(e.getMessage(), Matchers.containsString("Maximum number of retries reached"));
-                assertThat(e.getCause().getMessage(), Matchers.containsString("User ID of the session does not match"));
+                assertThat(e.getMessage(), Matchers.containsString("User ID of the session does not match"));
             }
         }
 
