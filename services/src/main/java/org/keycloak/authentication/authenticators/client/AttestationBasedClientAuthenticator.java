@@ -34,6 +34,8 @@ import org.keycloak.Config;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.broker.provider.TrustMaterialRequest;
+import org.keycloak.broker.provider.TrustMaterialResolver;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.KeyUse;
@@ -46,7 +48,6 @@ import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -58,7 +59,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.saml.RandomSecret;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.Strings;
 import org.keycloak.wellknown.WellKnownProvider;
 
@@ -92,20 +92,9 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
     public static final String OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE = "oauth-client-attestation-pop+jwt";
 
     /**
-     * The ClientAuthenticator needs to be aware of the public keys from the various Attesters it can trust.
-     *
-     * [
-     *     {
-     *       "kty": "RSA",
-     *       "kid": "openid-abca-attester-key",
-     *       "use": "sig",
-     *       "alg": "PS256",
-     *       "n": "uVd8mEqXMp...aaVZNQ",
-     *       "e": "AQAB"
-     *     }
-     * ]
+     * Comma-separated aliases of trust-material identity providers that expose the trusted attester keys.
      */
-    public static final String OAUTH_CLIENT_ATTESTATION_CONFIG_ATTESTER_JWKS = "attester_jwks";
+    public static final String OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS = "attester_trust_idps";
 
     @Override
     public String getId() {
@@ -172,22 +161,23 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
     @Override
     public boolean isConfigurable() {
-        return true;
+        return false;
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        ProviderConfigProperty jwks = new ProviderConfigProperty();
-        jwks.setName(OAUTH_CLIENT_ATTESTATION_CONFIG_ATTESTER_JWKS);
-        jwks.setLabel("Attester JWKS");
-        jwks.setType(ProviderConfigProperty.TEXT_TYPE);
-        jwks.setHelpText("JWKS containing trusted attester public keys");
-        return List.of(jwks);
+        return List.of();
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigPropertiesPerClient() {
-        return List.of();
+        ProviderConfigProperty trustIdps = new ProviderConfigProperty();
+        trustIdps.setName(OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS);
+        trustIdps.setLabel("Attester trust identity providers");
+        trustIdps.setType(ProviderConfigProperty.STRING_TYPE);
+        trustIdps.setRequired(true);
+        trustIdps.setHelpText("Comma-separated aliases of trust-material identity providers containing trusted attester public keys");
+        return List.of(trustIdps);
     }
 
     @Override
@@ -314,24 +304,23 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
     // Private ---------------------------------------------------------------------------------------------------------
 
-    private KeyWrapper findAttesterKey(ClientAuthenticationFlowContext context, String kid) {
+    private KeyWrapper findAttesterKey(ClientAuthenticationFlowContext context, String kid, String algorithm, String issuer) {
 
         if (Strings.isEmpty(kid))
             throw new IllegalArgumentException("Invalid attester kid: " + kid);
 
-        AuthenticatorConfigModel configModel = context.getRealm().getAuthenticatorConfigByAlias(PROVIDER_ID);
-        if (configModel == null)
-            throw new IllegalStateException("No config for client authenticator: " + PROVIDER_ID);
+        String configValue = Optional.ofNullable(context.getClient())
+                .map(client -> client.getAttribute(OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS))
+                .orElse(null);
+        if (Strings.isEmpty(configValue))
+            throw new IllegalStateException("Cannot load attester keys: " + OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS);
 
-        String configValue = Optional.ofNullable(configModel.getConfig()).orElse(Map.of())
-                .get(OAUTH_CLIENT_ATTESTATION_CONFIG_ATTESTER_JWKS);
-        if (configValue == null)
-            throw new IllegalStateException("Cannot load attester keys: " + OAUTH_CLIENT_ATTESTATION_CONFIG_ATTESTER_JWKS);
-
-        ABCAConfig attesterKeys = JsonSerialization.valueFromString(configValue, ABCAConfig.class);
-        JWK jwk = attesterKeys.getKeys().stream()
-                .filter(k -> kid.equals(k.getKeyId()))
-                .findAny()
+        TrustMaterialRequest request = TrustMaterialRequest.builder()
+                .kid(kid)
+                .algorithm(algorithm)
+                .issuer(issuer)
+                .build();
+        JWK jwk = new TrustMaterialResolver().resolveKey(context.getSession(), configValue, request)
                 .orElseThrow(() -> new IllegalStateException("No matching key found for kid: " + kid));
 
         return toPublicKeyWrapper(jwk);
@@ -401,7 +390,7 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
         // The signature of the Client Attestation JWT verifies with the public key of a known and trusted Attester
         //
-        KeyWrapper attesterKey = findAttesterKey(context, jws.getHeader().getKeyId());
+        KeyWrapper attesterKey = findAttesterKey(context, jws.getHeader().getKeyId(), jws.getHeader().getRawAlgorithm(), attestationJwt.getIssuer());
 
         // Client Attestation JWT verification without signature check
         //
@@ -505,24 +494,6 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
         // [TODO] If the server provided a challenge value to the client, the challenge claim is present in the Client Attestation PoP JWT and matches the server-provided challenge value.
         // [TODO] Additional checks to guarantee replay protection for the Client Attestation PoP JWT might need to be applied
-    }
-
-    /**
-     * The AttestationBasedClientAuthenticator config
-     */
-    public static class ABCAConfig {
-
-        @JsonProperty
-        private List<JWK> keys;
-
-        public List<JWK> getKeys() {
-            return keys;
-        }
-
-        public ABCAConfig setKeys(List<JWK> keys) {
-            this.keys = keys;
-            return this;
-        }
     }
 
     public static class ABCAResult {
