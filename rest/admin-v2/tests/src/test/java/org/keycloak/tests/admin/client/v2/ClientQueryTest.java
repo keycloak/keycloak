@@ -74,6 +74,7 @@ public class ClientQueryTest extends AbstractClientApiV2Test {
         oidcClient.setLoginFlows(Set.of(
                 OIDCClientRepresentation.Flow.STANDARD,
                 OIDCClientRepresentation.Flow.DIRECT_GRANT));
+        oidcClient.setRedirectUris(Set.of("http://localhost/callback"));
         oidcClient.setRoles(Set.of("admin", "user", "viewer"));
         try (var response = clients.createClient(oidcClient)) {
             var created = response.readEntity(OIDCClientRepresentation.class);
