@@ -45,4 +45,8 @@ public interface UserVerifiableCredentialResource {
     @Path("issued-credentials")
     @Produces(MediaType.APPLICATION_JSON)
     List<IssuedVerifiableCredentialRepresentation> getIssuedCredentials();
+
+    @DELETE
+    @Path("issued-credentials/{id}")
+    void revokeIssuedCredential(@PathParam("id") String credentialId);
 }

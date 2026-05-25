@@ -178,6 +178,26 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
         }
     }
 
+    @Test
+    @DatabaseTest
+    public void testRevokeIssuedCredential() {
+        String userId = createUser();
+        createIssuedVcViaModelLayer(userId, CREDENTIAL_TYPE_1, "wallet-123", "rev-001");
+
+        UserResource userResource = managedRealm.admin().users().get(userId);
+        List<IssuedVerifiableCredentialRepresentation> issuedCreds = userResource.verifiableCredentials().getIssuedCredentials();
+        assertThat(issuedCreds, hasSize(1));
+
+        String credentialId = issuedCreds.get(0).getId();
+
+        // Revoke the credential
+        userResource.verifiableCredentials().revokeIssuedCredential(credentialId);
+
+        // Verify
+        List<IssuedVerifiableCredentialRepresentation> afterRevoke = userResource.verifiableCredentials().getIssuedCredentials();
+        assertThat(afterRevoke, empty());
+    }
+
     // Helper methods
 
     protected void createIssuedVcViaModelLayer(String userId, String credentialType,
