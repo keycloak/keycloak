@@ -239,7 +239,11 @@ public class CertificateInfoHelper {
             return info;
         }
 
-        String keyAlias = uploadForm.getFirst("keyAlias").asString();
+        FormPartValue keyAliasPart = uploadForm.getFirst("keyAlias");
+        if (keyAliasPart == null) {
+            throw new BadRequestException("keyAlias is required when uploading a keystore");
+        }
+        String keyAlias = keyAliasPart.asString();
         FormPartValue keyPasswordPart = uploadForm.getFirst("keyPassword");
         char[] keyPassword = keyPasswordPart != null ? keyPasswordPart.asString().toCharArray() : null;
 

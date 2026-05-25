@@ -26,7 +26,9 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
@@ -66,6 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  *
@@ -225,6 +228,30 @@ public class CredentialsTest {
         cert = certRsc.getKeyInfo();
         assertEquals(certificate2, cert.getCertificate(), "cert properly set");
         assertNull(cert.getPrivateKey(), "privateKey nullified");
+    }
+
+    @Test
+    @DatabaseTest
+    public void testUploadKeystoreWithoutKeyAlias() throws Exception {
+        ClientAttributeCertificateResource certRsc = managedClient.admin().getCertficateResource("jwt.credential");
+
+        KeystoreUtil.KeystoreFormat preferredKeystoreType = KeystoreUtil.KeystoreFormat.valueOf(adminClient.serverInfo().getInfo().getCryptoInfo().getSupportedKeystoreTypes().get(0));
+
+        KeystoreInfo generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, preferredKeystoreType, "clientkey", "storepass", "keypass");
+        MultipartFormDataOutput form = new MultipartFormDataOutput();
+
+        form.addFormData("keystoreFormat", preferredKeystoreType.toString(), MediaType.TEXT_PLAIN_TYPE);
+        // intentionally no "keyAlias" part
+        form.addFormData("keyPassword", "keypass", MediaType.TEXT_PLAIN_TYPE);
+        form.addFormData("storePassword", "storepass", MediaType.TEXT_PLAIN_TYPE);
+
+        try (FileInputStream fs = new FileInputStream(generatedKeystore.getKeystoreFile())) {
+            form.addFormData("file", fs.readAllBytes(), MediaType.APPLICATION_OCTET_STREAM_TYPE);
+        }
+
+        // Missing keyAlias must be rejected with 400, not a 500 (NPE)
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> certRsc.uploadJks(form));
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), ex.getResponse().getStatus());
     }
 
     @Test
