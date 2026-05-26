@@ -40,27 +40,33 @@ import org.jboss.logging.Logger;
 /**
  * Extracts X.509 client certificates forwarded by an HAProxy reverse proxy.
  *
+ * <p>HAProxy is not RFC 9440 compliant as it is currently only possible to Base64 encode the entire chain, whereas
+ * RFC 9440 expects each certificate to be Base64 encoded individually, surrounded by `:` and provided as a CSV when multiple values exist.
+ * If HAProxy adds support generating headers in this format, then it will be possible to deprecate and remove this
+ * provider in favor of {@link Rfc9440ClientCertificateLookup} <a href="https://github.com/haproxy/haproxy/issues/2235">...</a>.
+ *
  * <p>Header values must be base64-encoded DER certificates, matching the output of HAProxy's
  * {@code ssl_c_der,base64} and {@code ssl_c_chain_der,base64} sample fetches.
  *
- * <p>Two modes are supported for reading the certificate chain:
+ * <p>Two modes are provided for reading the certificate chain:
  *
  * <ul>
- *   <li><b>Indexed headers</b> (legacy, via {@code sslCertChainPrefix}): each chain certificate is
- *       in a separate header named {@code {prefix}_{index}}, e.g. {@code Client-Cert-Chain_0},
- *       {@code Client-Cert-Chain_1}. This is problematic when more than one intermediate cert exists as HAProxy does not
- *       provide a built-in mechanism to define a header per intermediate cert in the chain . Example HAProxy config:
- *       <pre>
- * http-request set-header Client-Cert %[ssl_c_der,base64]
- * http-request set-header Client-Cert-Chain_0 %[ssl_c_chain_der,base64]
- *       </pre>
- *   </li>
  *   <li><b>Single header</b> (via {@code sslCertChain}): the entire chain is in one header as
  *       concatenated DER certificates, base64-encoded. Only the first {@code certificateChainLength}
  *       certificates are loaded. Example HAProxy config:
  *       <pre>
  * http-request set-header Client-Cert %[ssl_c_der,base64]
  * http-request set-header Client-Cert-Chain %[ssl_c_chain_der,base64]
+ *       </pre>
+ *   </li>
+ *   <li><b>Indexed headers</b> (deprecated, based upon {@code sslCertChainPrefix}): each chain certificate is
+ *       in a separate header named {@code {prefix}_{index}}, e.g. {@code Client-Cert-Chain_0},
+ *       {@code Client-Cert-Chain_1}. This is problematic when more than one intermediate cert exists as HAProxy does not
+ *       provide a built-in mechanism to define a header per intermediate cert in the chain, so this will only work as
+ *       expected if a single intermediate certificate exists in the chain. Example HAProxy config:
+ *       <pre>
+ * http-request set-header Client-Cert %[ssl_c_der,base64]
+ * http-request set-header Client-Cert-Chain_0 %[ssl_c_chain_der,base64]
  *       </pre>
  *   </li>
  * </ul>
@@ -96,7 +102,7 @@ public class HaProxySslClientCertificateLookup extends AbstractClientCertificate
         chain.add(cert);
         if (sslCertChainHttpHeader != null) {
             try {
-                chain.addAll(getCertificateChainFromSingleHeader(httpRequest));
+                addCertificateChainFromSingleHeader(httpRequest, chain);
             } catch (GeneralSecurityException e) {
                 logger.warn(e.getMessage(), e);
             }
@@ -105,14 +111,14 @@ public class HaProxySslClientCertificateLookup extends AbstractClientCertificate
         }
     }
 
-    private List<X509Certificate> getCertificateChainFromSingleHeader(HttpRequest httpRequest) throws GeneralSecurityException {
+    private void addCertificateChainFromSingleHeader(HttpRequest httpRequest, List<X509Certificate> chain) throws GeneralSecurityException {
         if (certificateChainLength == 0) {
-            return List.of();
+            return;
         }
 
         String headerValue = getHeaderValue(httpRequest, sslCertChainHttpHeader);
         if (headerValue == null || headerValue.isEmpty()) {
-            return List.of();
+            return;
         }
 
         byte[] derBytes;
@@ -125,16 +131,16 @@ public class HaProxySslClientCertificateLookup extends AbstractClientCertificate
         try (InputStream is = new ByteArrayInputStream(derBytes)) {
             CertificateFactory cf = CryptoIntegration.getProvider().getX509CertFactory();
             Collection<? extends Certificate> certs = cf.generateCertificates(is);
-            List<X509Certificate> result = new ArrayList<>();
+            List<X509Certificate> intermediateChain = new ArrayList<>();
             for (Certificate c : certs) {
-                if (result.size() >= certificateChainLength) {
+                if (intermediateChain.size() >= certificateChainLength) {
                     break;
                 }
                 X509Certificate x509Cert = (X509Certificate) c;
                 logger.debugf("Parsed chain certificate: Subject DN=[%s]", x509Cert.getSubjectX500Principal());
-                result.add(x509Cert);
+                intermediateChain.add(x509Cert);
             }
-            return result;
+            chain.addAll(intermediateChain);
         } catch (IOException e) {
             throw new GeneralSecurityException("Failed to parse certificate chain from header " + sslCertChainHttpHeader, e);
         }

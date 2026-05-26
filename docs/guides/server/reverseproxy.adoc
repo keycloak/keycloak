@@ -448,7 +448,7 @@ The options and defaults specific to `haproxy` are as follows:
 
 |ssl-client-cert
 | The name of the header holding the client certificate.
-| (empty)
+| (none)
 
 |ssl-cert-chain
 | The name of the header holding the full certificate chain as a single base64-encoded DER value. HAProxy's `ssl_c_chain_der,base64` produces the concatenated DER encoding of all CA certificates in one value.
@@ -471,6 +471,9 @@ http-request set-header Client-Cert-Chain %[ssl_c_chain_der,base64] if { ssl_c_u
 Corresponding {project_name} configuration:
 
 <@kc.start parameters="--spi-x509cert-lookup--provider=haproxy --spi-x509cert-lookup--haproxy--ssl-client-cert=Client-Cert --spi-x509cert-lookup--haproxy--ssl-cert-chain=Client-Cert-Chain --spi-x509cert-lookup--haproxy--certificate-chain-length=2"/>
+
+If the number of intermediate certificates in your certificate chain is longer than the default, you must set the
+`certificate-chain-length` option to an appropriate value. Otherwise, the provider will discard the request.
 
 ==== Configuring the NGINX provider
 
@@ -513,8 +516,8 @@ The options and defaults specific to `rfc9440` are as follows:
 
 |===
 
-If your certificate chain is longer than the default, you must set the `certificate-chain-length` option to an appropriate value.
-Otherwise, the provider will discard the request.
+If the number of intermediate certificates in your certificate chain is longer than the default, you must set the
+`certificate-chain-length` option to an appropriate value. Otherwise, the provider will discard the request.
 
 ==== Configuring the Traefik provider
 

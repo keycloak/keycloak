@@ -18,6 +18,7 @@
 
 package org.keycloak.services.x509;
 
+
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 
@@ -39,6 +40,11 @@ public class HaProxySslClientCertificateLookupFactory extends AbstractClientCert
     @Override
     public void init(Config.Scope config) {
         super.init(config);
+
+        if (sslChainHttpHeaderPrefix != null) {
+            logger.warnf("The '%s' option is deprecated and will be removed in a future release. Configure '%s' instead.",
+                    HTTP_HEADER_CERT_CHAIN_PREFIX, HTTP_HEADER_CERT_CHAIN);
+        }
 
         String sslCertChainHttpHeader = config.get(HTTP_HEADER_CERT_CHAIN, null);
         if (sslCertChainHttpHeader != null) {
