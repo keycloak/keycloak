@@ -19,7 +19,6 @@ package org.keycloak.quarkus.runtime.integration.resteasy;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransactionManager;
-import org.keycloak.utils.KeycloakSessionUtil;
 
 import io.quarkus.arc.Arc;
 import io.quarkus.arc.ClientProxy;
@@ -43,7 +42,6 @@ public final class TransactionalSessionHandler implements ServerRestHandler, org
                 // This handler is always running in a blocking thread.
                 beginTransaction(currentSession);
             }
-            KeycloakSessionUtil.setKeycloakSession(currentSession);
         }
     }
 }
