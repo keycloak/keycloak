@@ -426,10 +426,6 @@ public class SamlService extends AuthorizationEndpointBase {
                 executor.execute(task);
 
                 logger.tracef("ArtifactResolutionRunnable scheduled, current transaction will be rolled back");
-                // Current transaction must be ignored due to asyncResponse.
-                session.getTransactionManager().rollback();
-                // Remove the thread local - this thread will be returned, but KeycloakBeanProducer will only fire after the response is resumed.
-                KeycloakSessionUtil.setKeycloakSession(null);
             } catch (URISyntaxException | ProcessingException | ParsingException | ConfigurationException e) {
                 event.event(EventType.LOGIN);
                 event.detail(Details.REASON, e.getMessage());
