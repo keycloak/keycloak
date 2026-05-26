@@ -28,10 +28,7 @@ public interface HttpResponse {
     /**
      * Gets the current status code.
      *
-     * <p><strong>Warning:</strong> when a JAX-RS resource method returns a plain object (not a
-     * {@link jakarta.ws.rs.core.Response}), the JAX-RS runtime overwrites any status code set here
-     * with 200. To return a non-200 status reliably, return a
-     * {@link jakarta.ws.rs.core.Response} built with the desired status.
+     * <p><strong>Warning:</strong> this will typically not be the actual status returned as that will be managed by JAX-RS based upon the return value or exception from the endpoint method.
      */
     int getStatus();
 
