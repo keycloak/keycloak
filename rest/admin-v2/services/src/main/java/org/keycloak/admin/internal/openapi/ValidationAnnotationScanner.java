@@ -144,7 +144,7 @@ public class ValidationAnnotationScanner {
 
         // Interpolate annotation parameters into the message (e.g., {min}, {max}, {value}, {regexp})
         if (annotation != null) {
-            for (AnnotationValue value : annotation.values()) {
+            for (AnnotationValue value : getAnnotationValues(annotation)) {
                 String placeholder = "{" + value.name() + "}";
                 if (resolved.contains(placeholder)) {
                     resolved = resolved.replace(placeholder, formatAnnotationValue(value));
@@ -153,6 +153,16 @@ public class ValidationAnnotationScanner {
         }
 
         return resolved;
+    }
+
+    private List<AnnotationValue> getAnnotationValues(AnnotationInstance annotation) {
+        try {
+            // some packages like Hibernate Validator are currently not present in the index, but we still
+            // care about the defaults of these that are there, like jakarta.validation.constraints.Size
+            return annotation.valuesWithDefaults(indexView);
+        } catch (IllegalArgumentException ignored) {
+            return annotation.values();
+        }
     }
 
     private String formatAnnotationValue(AnnotationValue value) {
@@ -306,7 +316,7 @@ public class ValidationAnnotationScanner {
      * @return map of field name to validation description
      */
     public Map<String, String> buildClassLevelDescriptions(ClassInfo classInfo) {
-        Map<String, String> fieldDescriptions = new HashMap<>();
+        Map<String, List<String>> collected = new HashMap<>();
 
         for (AnnotationInstance annotation : classInfo.annotations()) {
             if (annotation.target().kind() != AnnotationTarget.Kind.CLASS) {
@@ -328,10 +338,16 @@ public class ValidationAnnotationScanner {
             }
 
             for (String affected : affectedFields) {
-                fieldDescriptions.put(affected, context + message);
+                collected.computeIfAbsent(affected, k -> new ArrayList<>()).add(context + message);
             }
         }
 
+        Map<String, String> fieldDescriptions = new HashMap<>();
+        for (var entry : collected.entrySet()) {
+            List<String> descriptions = entry.getValue();
+            descriptions.sort(String::compareTo);
+            fieldDescriptions.put(entry.getKey(), String.join("; ", descriptions));
+        }
         return fieldDescriptions;
     }
 

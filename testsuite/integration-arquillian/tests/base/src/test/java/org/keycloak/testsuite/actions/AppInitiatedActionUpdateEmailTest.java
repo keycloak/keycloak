@@ -31,6 +31,7 @@ import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.UIUtils;
@@ -73,8 +74,8 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
     public void updateEmail() throws Exception {
         changeEmailUsingAIA("new@email.com");
 
-        events.expect(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-                .detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_EMAIL).details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                .details(Details.UPDATED_EMAIL, "new@email.com");
 
         assertKcActionStatus("success");
 
@@ -102,8 +103,8 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
         emailConfig.getValidations().remove(LengthValidator.ID);
         userProfile.update(upConfig);
         changeEmailUsingAIA("new@email.com");
-        events.expect(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-                .detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_EMAIL).details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                .details(Details.UPDATED_EMAIL, "new@email.com");
     }
 
     @Test
@@ -120,8 +121,8 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
 
         assertFalse(driver.getPageSource().contains(unexpectedAttributeName));
         changeEmailUsingAIA("new@email.com");
-        events.expect(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-                .detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_EMAIL).details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                .details(Details.UPDATED_EMAIL, "new@email.com");
     }
 
     @Override

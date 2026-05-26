@@ -1,6 +1,5 @@
 package org.keycloak.rest.admin.api.client;
 
-import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.annotation.Nonnull;
@@ -11,6 +10,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.client.ClientApi;
 import org.keycloak.admin.api.client.ClientsApi;
 import org.keycloak.models.KeycloakSession;
@@ -19,7 +19,6 @@ import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.ClientService.ClientProjectionOptions;
 import org.keycloak.services.client.DefaultClientService;
-import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 public class DefaultClientsApi implements ClientsApi {
@@ -29,24 +28,18 @@ public class DefaultClientsApi implements ClientsApi {
     private final RealmModel realm;
     private final ClientService clientService;
 
-    // v1 resources
-    private final RealmAdminResource realmAdminResource;
-
     public DefaultClientsApi(@Nonnull KeycloakSession session,
                              @Nonnull RealmModel realm,
-                             @Nonnull AdminPermissionEvaluator permissions,
-                             // remove v1 resource once we are not attached to API v1
-                             @Nonnull RealmAdminResource realmAdminResource) {
+                             @Nonnull AdminPermissionEvaluator permissions) {
         this.session = session;
         this.realm = realm;
         this.permissions = permissions;
-        this.realmAdminResource = realmAdminResource;
-        this.clientService = new DefaultClientService(session, realm, permissions, realmAdminResource);
+        this.clientService = new DefaultClientService(session, realm, permissions);
     }
     
     @Override
-    public Stream<BaseClientRepresentation> getClients(Set<String> fields) {
-        return clientService.getClients(realm, new ClientProjectionOptions(fields), null, null);
+    public Stream<BaseClientRepresentation> getClients(ListOptions params) {
+        return clientService.getClients(realm, new ClientProjectionOptions(params.getFields()), null, null);
     }
 
     @POST
@@ -71,7 +64,7 @@ public class DefaultClientsApi implements ClientsApi {
     @Override
     public ClientApi client(@PathParam("id") String clientId) {
         enforceAntiPhishingIfClientMissing(clientId);
-        return new DefaultClientApi(session, realm, clientId, permissions, realmAdminResource);
+        return new DefaultClientApi(session, realm, clientId, permissions);
     }
 
 }

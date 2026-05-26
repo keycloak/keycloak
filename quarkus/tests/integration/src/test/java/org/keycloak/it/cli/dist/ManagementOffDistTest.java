@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
@@ -28,7 +29,7 @@ import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.when;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@DistributionTest(keepAlive = true,
+@DistributionTest(stopServer = Mode.MANUAL,
         requestPort = 9000,
         containerExposedPorts = {9000, 8080})
 public class ManagementOffDistTest {

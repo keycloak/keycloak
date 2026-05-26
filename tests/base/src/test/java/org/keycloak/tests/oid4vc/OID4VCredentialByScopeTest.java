@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfigRestCredentialOffer.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithRestCredentialOfferEnabled.class)
 public class OID4VCredentialByScopeTest extends OID4VCIssuerTestBase {
 
     @TestSetup

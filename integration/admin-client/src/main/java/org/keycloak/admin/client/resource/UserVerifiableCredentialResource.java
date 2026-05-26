@@ -6,11 +6,13 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
+import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 
 /**
@@ -34,5 +36,17 @@ public interface UserVerifiableCredentialResource {
     @Path("credentials/{credentialScopeName}")
     void revokeCredential(@PathParam("credentialScopeName") String credentialScopeName);
 
-    // TODO: Issued credentials
+    @PUT
+    @Path("credentials/{credentialScopeName}")
+    @Produces(MediaType.APPLICATION_JSON)
+    UserVerifiableCredentialRepresentation updateCredential(@PathParam("credentialScopeName") String credentialScopeName);
+
+    @GET
+    @Path("issued-credentials")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<IssuedVerifiableCredentialRepresentation> getIssuedCredentials();
+
+    @DELETE
+    @Path("issued-credentials/{id}")
+    void revokeIssuedCredential(@PathParam("id") String credentialId);
 }

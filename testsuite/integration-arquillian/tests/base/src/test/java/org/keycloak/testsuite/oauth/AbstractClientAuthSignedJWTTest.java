@@ -107,7 +107,9 @@ import org.keycloak.testsuite.util.KeystoreUtils;
 import org.keycloak.testsuite.util.SignatureSignerUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -167,8 +169,8 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
     }
 
     protected void allowMultipleAudiencesForClientJWTOnServer(boolean allowMultipleAudiences) {
-        getTestingClient().testing().setSystemPropertyOnServer("oidc." + OIDCLoginProtocolFactory.CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION, String.valueOf(allowMultipleAudiences));
-        getTestingClient().testing().reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc.");
+        runOnServerMaster.run(RunHelpers.setSystemPropertyOnServer("oidc." + OIDCLoginProtocolFactory.CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION, String.valueOf(allowMultipleAudiences)));
+        runOnServerMaster.run(RunHelpers.reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc."));
     }
 
     @Override
@@ -368,10 +370,12 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         assertEquals(200, response.getStatusCode());
         oauth.verifyToken(response.getAccessToken());
         oauth.parseRefreshToken(response.getRefreshToken());
-        events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
-                .client(clientId)
-                .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
-                .assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(loginEvent.getSessionId())
+                .clientId(clientId)
+                .details(Details.CODE_ID, loginEvent.getDetails().get(Details.CODE_ID))
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID);
     }
 
     protected void testDirectGrantRequestSuccess(String algorithm) throws Exception {
@@ -636,13 +640,12 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
     protected void assertMessageError(AccessTokenResponse response, String clientId, String responseError, String eventError) {
         assertEquals(responseError, response.getError());
 
-        events.expectClientLogin()
-                .client(clientId)
-                .session((String) null)
-                .clearDetails()
+        EventAssertion.assertError(events.poll())
+                .type(EventType.CLIENT_LOGIN_ERROR)
+                .clientId(clientId)
+                .sessionId(null)
                 .error(eventError)
-                .user((String) null)
-                .assertEvent();
+                .userId(null);
     }
 
     protected void assertSuccess(AccessTokenResponse response, String clientId, String userId, String userName) {
@@ -651,15 +654,17 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
-        events.expectClientLogin()
-                .client(clientId)
-                .user(userId)
-                .session(accessToken.getSessionState())
-                .detail(Details.TOKEN_ID, accessToken.getId())
-                .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .detail(Details.USERNAME, userName)
-                .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.CLIENT_LOGIN)
+                .hasSessionId()
+                .clientId(clientId)
+                .userId(userId)
+                .sessionId(accessToken.getSessionState())
+                .details(Details.TOKEN_ID, accessToken.getId())
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .details(Details.USERNAME, userName)
+                .details(Details.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID);
     }
 
     protected static void assertCertificate(ClientRepresentation client, String certOld, String pem) {
@@ -691,13 +696,11 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             assertEquals(400, response.getStatusCode());
             assertEquals(error, response.getError());
 
-            events.expect(EventType.CODE_TO_TOKEN_ERROR)
-                    .client("client2")
-                    .session((String) null)
-                    .clearDetails()
+            EventAssertion.assertError(events.poll()).type(EventType.CODE_TO_TOKEN_ERROR)
+                    .clientId("client2")
+                    .sessionId(null)
                     .error(description)
-                    .user((String) null)
-                    .assertEvent();
+                    .userId(null);
         } finally {
             // Revert jwks_url settings
             revertJwksUriSettings(clientRepresentation, clientResource);
@@ -719,13 +722,11 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             assertEquals(400, response.getStatusCode());
             assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
 
-            events.expect(EventType.LOGIN_ERROR)
-                    .client("client2")
-                    .session((String) null)
-                    .clearDetails()
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR)
+                    .clientId("client2")
+                    .sessionId(null)
                     .error("client_credentials_setup_required")
-                    .user((String) null)
-                    .assertEvent();
+                    .userId(null);
         } finally {
             // Revert jwks_url settings
             revertJwksUriSettings(clientRepresentation, clientResource);

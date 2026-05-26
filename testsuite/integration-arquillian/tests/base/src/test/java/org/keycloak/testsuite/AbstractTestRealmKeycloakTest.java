@@ -20,6 +20,7 @@ package org.keycloak.testsuite;
 import java.lang.reflect.Field;
 import java.util.List;
 
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.events.Details;
 import org.keycloak.models.KeycloakSession;
@@ -28,8 +29,10 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.TokenUtil;
 
 import org.junit.Before;
 import org.junit.jupiter.api.Assertions;
@@ -125,7 +128,12 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
         Assertions.assertEquals(200, response.getStatusCode());
 
         if (eventsField != null) {
-            events.expectCodeToToken(codeId, sessionId).user(loginEvent.getUserId()).session(sessionId).assertEvent();
+            EventAssertion.expectCodeToTokenSuccess(events.poll())
+                    .sessionId(sessionId)
+                    .userId(loginEvent.getUserId())
+                    .details(Details.CODE_ID, codeId)
+                    .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                    .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
         }
 
         return response;

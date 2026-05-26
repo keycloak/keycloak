@@ -173,6 +173,7 @@ public class UsersResource {
             RepresentationToModel.createGroups(session, rep, realm, user);
 
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
+            RepresentationToModel.createVerifiableCredentials(rep, session, user);
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(user.getId()).build()).build();

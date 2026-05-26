@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -37,6 +38,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.TokenUtil;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -91,7 +93,12 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
-        EventRepresentation event = events.expectCodeToToken(codeId, sessionId).assertEvent();
+        EventRepresentation event = EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
+                .getEvent();
         assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
         assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());

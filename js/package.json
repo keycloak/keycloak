@@ -2,7 +2,7 @@
   "name": "root",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748",
+  "packageManager": "pnpm@11.1.1",
   "scripts": {
     "prepare": "cd .. && husky js/.husky",
     "build": "wireit"
@@ -52,17 +52,5 @@
     "url": "https://github.com/keycloak/keycloak.git",
     "directory": "js/"
   },
-  "homepage": "https://www.keycloak.org/",
-  "pnpm": {
-    "overrides": {
-      "picomatch@^2": "^2.3.2",
-      "flatted": "^3.4.2",
-      "minimatch@~3": "^3.1.4",
-      "minimatch@~9": "^9.0.7",
-      "@isaacs/brace-expansion@^5": "^5.0.1",
-      "serialize-javascript": "^7.0.3",
-      "diff@^4": "^4.0.4",
-      "diff@^7": "^8.0.3"
-    }
-  }
+  "homepage": "https://www.keycloak.org/"
 }

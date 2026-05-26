@@ -122,6 +122,11 @@
             <artifactId>opentelemetry-apache-httpclient-4.3</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-micrometer-opentelemetry</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.apicatalog</groupId>
             <artifactId>titanium-json-ld</artifactId>
         </dependency>
@@ -848,20 +853,6 @@
                             <artifactId>mssql-jdbc</artifactId>
                         </exclusion>
                     </exclusions>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>io.quarkus</groupId>
-                    <artifactId>quarkus-micrometer-opentelemetry</artifactId>
                 </dependency>
             </dependencies>
         </profile>

@@ -176,12 +176,12 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
             appPage.assertCurrent();
 
             // Logout
-            events.expect(EventType.UPDATE_TOTP)
-                    .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                    .user(userRep.getId()).assertEvent();
-            events.expect(EventType.UPDATE_CREDENTIAL)
-                    .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                    .user(userRep.getId()).assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_TOTP)
+                    .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
+                    .userId(userRep.getId());
+            EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL)
+                    .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
+                    .userId(userRep.getId());
             EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userRep.getId()).getEvent();
             String idTokenHint = sendTokenRequestAndGetResponse(loginEvent).getIdToken();
             appPage.logout(idTokenHint);

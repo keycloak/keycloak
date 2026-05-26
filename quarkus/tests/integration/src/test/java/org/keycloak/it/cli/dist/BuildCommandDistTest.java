@@ -22,9 +22,11 @@ import java.nio.file.Paths;
 import org.keycloak.config.database.Database;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.Test;
@@ -84,20 +86,21 @@ class BuildCommandDistTest {
 
     @Test
     @RawDistOnly(reason = "Raw is enough and we avoid issues with including custom conf file in the container")
-    public void testFailInvalidOptionInConf(KeycloakDistribution distribution) {
-        CLIResult cliResult = distribution.run(CONFIG_FILE_LONG_NAME + "=" + Paths.get("src/test/resources/BuildCommandDistTest/keycloak.conf").toAbsolutePath().normalize(), "build");
+    public void testFailInvalidOptionInConf(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run(CONFIG_FILE_LONG_NAME + "=" + Paths.get("src/test/resources/BuildCommandDistTest/keycloak.conf").toAbsolutePath().normalize(), "build");
         cliResult.assertError("Invalid value for option 'kc.db' in keycloak.conf: foo. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres");
     }
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testDoNotRecordRuntimeOptionsDuringBuild(KeycloakDistribution distribution) {
-        distribution.setProperty("db-url", "invalid");
-        CLIResult cliResult = distribution.run("build");
+    void testDoNotRecordRuntimeOptionsDuringBuild(KeycloakRunner runner) {
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        rawDist.setProperty("db-url", "invalid");
+        CLIResult cliResult = runner.run("build");
         cliResult.assertBuild();
-        distribution.removeProperty("db-url");
+        rawDist.removeProperty("db-url");
 
-        CLIResult result = distribution.run("start", "--hostname=mykeycloak", "--cache=local", "--http-enabled=true", OPTIMIZED_BUILD_OPTION_LONG);
+        CLIResult result = runner.run("start", "--hostname=mykeycloak", "--cache=local", "--http-enabled=true", OPTIMIZED_BUILD_OPTION_LONG);
         result.assertStarted();
     }
 

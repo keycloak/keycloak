@@ -532,6 +532,18 @@ export class Users extends Resource<{ realm?: string }> {
     urlParamKeys: ["id", "credentialScopeName"],
   });
 
+  /**
+   * update a verifiable credential for a user (refreshes user attributes snapshot and increments revision)
+   */
+  public updateVerifiableCredential = this.makeRequest<
+    { id: string; credentialScopeName: string },
+    UserVerifiableCredentialRepresentation
+  >({
+    method: "PUT",
+    path: "/{id}/vc/credentials/{credentialScopeName}",
+    urlParamKeys: ["id", "credentialScopeName"],
+  });
+
   public getUnmanagedAttributes = this.makeRequest<
     { id: string },
     Record<string, string[]>

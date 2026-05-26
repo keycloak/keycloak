@@ -92,7 +92,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
                     .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
@@ -135,7 +135,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
             Assertions.assertTrue(loginPage.getPasswordInputError().isEmpty());
             EventAssertion.assertError(events.poll())
                     .type(EventType.LOGIN_ERROR)
-                    .isCodeId()
+                    .hasCodeId()
                     .userId(user.getId())
                     .details(Details.USERNAME, USERNAME)
                     .error(Errors.INVALID_USER_CREDENTIALS);
@@ -149,7 +149,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, USERNAME)
                     .withoutDetails(Details.CREDENTIAL_TYPE);
 
@@ -194,7 +194,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
                     .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
@@ -221,7 +221,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
                     .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
@@ -268,7 +268,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
                     .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
@@ -290,7 +290,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
                     .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
@@ -341,7 +341,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(testUser.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, testUser.getUsername())
                     .withoutDetails(Details.CREDENTIAL_TYPE, WebAuthnConstants.USER_VERIFICATION_CHECKED);
 
@@ -410,7 +410,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
                     .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
@@ -437,7 +437,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
                     .withoutDetails(Details.CREDENTIAL_TYPE, WebAuthnConstants.USER_VERIFICATION_CHECKED);
 
@@ -482,7 +482,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
                     .details(Details.REMEMBER_ME, "true")
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
@@ -504,7 +504,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
                     .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")

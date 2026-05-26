@@ -26,9 +26,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * A Test that runs against a Keycloak distribution, which can be from a Docker container or zip (raw).
- * <br>
+ * <p>
  * Note with the raw distribution test methods are not completely isolated for performance reasons.
  * Only a single distribution will be installed and it will only have its augmentation state reset before each test class.
+ * <p>
+ * Also the test logic assumes defaults, such as local cache mode (see {@link DistributionTest#localCache()} and 
+ * a 0 second shutdown delay.
  */
 @Target(ElementType.TYPE)
 @ExtendWith({ CLITestExtension.class })
@@ -42,15 +45,10 @@ public @interface DistributionTest {
 
     boolean debug() default false;
     /**
-     * If the distribution should be left running after the launch.
+     * Controls how the server stops.
      */
-    boolean keepAlive() default false;
+    StopServer.Mode stopServer() default StopServer.Mode.AFTER_START;
     boolean enableTls() default false;
-
-    /**
-     * If any build option must be unset after the running the build command.
-     */
-    boolean removeBuildOptionsAfterBuild() default false;
 
     /**
      * If any option must be set when starting the server.
@@ -66,4 +64,9 @@ public @interface DistributionTest {
      * Default port for making HTTP requests with RestAssured
      */
     int requestPort() default 8080;
+    
+    /**
+     * If the cache should default to local even when the start command is used.
+     */
+    boolean localCache() default true;
 }

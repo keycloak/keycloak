@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,18 +15,19 @@
  * limitations under the License.
  */
 
-package org.keycloak.it.junit5.extension;
+package org.keycloak.broker.provider;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.stream.Stream;
+
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.models.IdentityProviderModel;
 
 /**
- * {@link DryRun} is used to configure a non-running, non-augmenting distribution
+ * Identity providers that expose reusable trust material for flows such as
+ * client attestation or OID4VCI key attestation.
  */
-@Target({ ElementType.METHOD, ElementType.TYPE })
-@Retention(RetentionPolicy.RUNTIME)
-public @interface DryRun {
+public interface TrustMaterialIdentityProvider<C extends IdentityProviderModel> extends IdentityProvider<C> {
+
+    Stream<JWK> resolveKeys(TrustMaterialRequest request);
 
 }

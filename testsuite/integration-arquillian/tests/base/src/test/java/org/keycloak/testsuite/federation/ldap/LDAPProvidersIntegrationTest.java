@@ -626,7 +626,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
         String userId = user.toRepresentation().getId();
 
-        events.expectRegister(username, email).assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.REGISTER).userId(userId).clientId(oauth.getClientId()).details(Details.USERNAME, username).details(Details.EMAIL, email);
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).getEvent();
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         appPage.logout(tokenResponse.getIdToken());
@@ -659,8 +659,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             requiredActionChangePasswordPage.changePassword("Password1-updated2", "Password1-updated2");
 
             appPage.assertCurrent();
-            events.expect(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).assertEvent();
-            events.expect(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId);
+            EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId);
             loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).getEvent();
             tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             appPage.logout(tokenResponse.getIdToken());

@@ -227,7 +227,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         String adapterSessionId = formParams.getFirst(AdapterConstants.CLIENT_SESSION_STATE);
         if (adapterSessionId != null) {
             String adapterSessionHost = formParams.getFirst(AdapterConstants.CLIENT_SESSION_HOST);
-            logger.debugf("Adapter Session '%s' saved in ClientSession for client '%s'. Host is '%s'", adapterSessionId, client.getClientId(), adapterSessionHost);
+            logger.debugf("Adapter Session '%s' saved in ClientSession '%s' for client '%s'. Host is '%s'",
+                    adapterSessionId, clientSession.getId(), client.getClientId(), adapterSessionHost);
 
             String oldClientSessionState = clientSession.getNote(AdapterConstants.CLIENT_SESSION_STATE);
             if (!adapterSessionId.equals(oldClientSessionState)) {
@@ -252,7 +253,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
 
         boolean validScopes;
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            AuthorizationRequestContext authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, scope);
+            AuthorizationRequestContext authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, scope);
             validScopes = TokenManager.isValidScope(session, scope, authorizationRequestContext, client, null);
         } else {
             validScopes = TokenManager.isValidScope(session, scope, client, null);

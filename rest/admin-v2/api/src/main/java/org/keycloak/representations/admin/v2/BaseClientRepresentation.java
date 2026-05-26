@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.ProtocolUnmodified;
@@ -40,12 +41,15 @@ public abstract class BaseClientRepresentation extends BaseRepresentation implem
     protected String uuid;
 
     @NotBlank
+    @Size(min = 1, max = 255)
     @JsonPropertyDescription("ID uniquely identifying this client")
     protected String clientId;
 
+    @Size(max = 255)
     @JsonPropertyDescription("Human readable name of the client")
     private String displayName;
 
+    @Size(max = 255)
     @JsonPropertyDescription("Human readable description of the client")
     private String description;
 
@@ -53,16 +57,19 @@ public abstract class BaseClientRepresentation extends BaseRepresentation implem
     private Boolean enabled;
 
     @URL
+    @Size(max = 255)
     @JsonPropertyDescription("URL to the application's homepage that is represented by this client")
     private String appUrl;
 
+    @Size(max = 100)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("URIs that the browser can redirect to after login")
-    private Set<@NotBlank String> redirectUris = new LinkedHashSet<>();
+    private Set<@NotBlank @Size(max = 255) String> redirectUris = new LinkedHashSet<>();
 
+    @Size(max = 300)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("Roles associated with this client")
-    private Set<@NotBlank String> roles = new LinkedHashSet<>();
+    private Set<@NotBlank @Size(max = 255) String> roles = new LinkedHashSet<>();
 
     @Override
     public String getUuid() {
