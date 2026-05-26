@@ -43,7 +43,7 @@ import org.jboss.logging.Logger;
  * <p>HAProxy is not RFC 9440 compliant as it is currently only possible to Base64 encode the entire chain, whereas
  * RFC 9440 expects each certificate to be Base64 encoded individually, surrounded by `:` and provided as a CSV when multiple values exist.
  * If HAProxy adds support generating headers in this format, then it will be possible to deprecate and remove this
- * provider in favor of {@link Rfc9440ClientCertificateLookup} <a href="https://github.com/haproxy/haproxy/issues/2235">...</a>.
+ * provider in favor of {@link Rfc9440ClientCertificateLookup} <a href="https://github.com/haproxy/haproxy/issues/2235">haproxy/#2235</a>.
  *
  * <p>Header values must be base64-encoded DER certificates, matching the output of HAProxy's
  * {@code ssl_c_der,base64} and {@code ssl_c_chain_der,base64} sample fetches.
