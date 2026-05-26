@@ -22,12 +22,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collection;
 import java.util.List;
 
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -129,18 +125,13 @@ public class HaProxySslClientCertificateLookup extends AbstractClientCertificate
         }
 
         try (InputStream is = new ByteArrayInputStream(derBytes)) {
-            CertificateFactory cf = CryptoIntegration.getProvider().getX509CertFactory();
-            Collection<? extends Certificate> certs = cf.generateCertificates(is);
-            List<X509Certificate> intermediateChain = new ArrayList<>();
-            for (Certificate c : certs) {
-                if (intermediateChain.size() >= certificateChainLength) {
-                    break;
-                }
-                X509Certificate x509Cert = (X509Certificate) c;
-                logger.debugf("Parsed chain certificate: Subject DN=[%s]", x509Cert.getSubjectX500Principal());
-                intermediateChain.add(x509Cert);
-            }
-            chain.addAll(intermediateChain);
+            CryptoIntegration.getProvider().getX509CertFactory()
+                  .generateCertificates(is)
+                  .stream()
+                  .limit(certificateChainLength)
+                  .map(X509Certificate.class::cast)
+                  .peek(cert -> logger.debugf("Parsed chain certificate: Subject DN=[%s]", cert.getSubjectX500Principal()))
+                  .forEach(chain::add);
         } catch (IOException e) {
             throw new GeneralSecurityException("Failed to parse certificate chain from header " + sslCertChainHttpHeader, e);
         }
