@@ -7,11 +7,19 @@ import { clickTableRowItem } from "../utils/table.ts";
 import { clickSaveButton, createDefaultTrustProvider } from "./main.ts";
 
 const alias = "default-trust";
+const addDefaultTrustProviderUrl =
+  "http://localhost:8080/admin/master/console/#/master/identity-providers/default-trust/add";
 const jwksUrl = "https://localhost/realms/test/protocol/openid-connect/certs";
 const jwks = '{"keys":[]}';
 
 test.describe.serial("Default Trust identity provider test", () => {
   test.beforeEach(async ({ page }) => {
+    try {
+      await adminClient.deleteIdentityProvider(alias);
+    } catch {
+      // The provider may not exist before the test starts.
+    }
+
     await login(page);
     await goToIdentityProviders(page);
   });
@@ -23,7 +31,7 @@ test.describe.serial("Default Trust identity provider test", () => {
   });
 
   test("should only show trust material settings", async ({ page }) => {
-    await page.getByTestId("default-trust-card").click();
+    await page.goto(addDefaultTrustProviderUrl);
 
     await expect(page.getByTestId("alias")).toHaveValue(alias);
     await expect(page.getByTestId("config.useJwksUrl")).toBeChecked();
@@ -42,8 +50,8 @@ test.describe.serial("Default Trust identity provider test", () => {
     ).toBeVisible();
     await expect(
       page.getByTestId("config.publicKeySignatureVerifierKeyId"),
-    ).toBeHidden();
-    await expect(page.getByTestId("import-certificate-button")).toBeHidden();
+    ).toBeVisible();
+    await expect(page.getByTestId("import-certificate-button")).toBeVisible();
   });
 
   test("should create and edit a Default Trust provider", async ({ page }) => {

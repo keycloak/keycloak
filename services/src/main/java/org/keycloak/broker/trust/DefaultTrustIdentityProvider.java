@@ -26,6 +26,7 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
+import org.keycloak.keys.loader.HardcodedPublicKeyLoader;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.util.Strings;
@@ -48,7 +49,7 @@ public class DefaultTrustIdentityProvider implements TrustMaterialIdentityProvid
 
     @Override
     public Stream<JWK> resolveKeys(TrustMaterialRequest request) {
-        PublicKeyLoader loader = new DefaultTrustMaterialPublicKeyLoader(session, config);
+        PublicKeyLoader loader = getPublicKeyLoader(request);
         PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
         String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), config.getInternalId());
         Stream<KeyWrapper> keys = Strings.isEmpty(request.getKid())
@@ -60,7 +61,8 @@ public class DefaultTrustIdentityProvider implements TrustMaterialIdentityProvid
 
     @Override
     public boolean reloadKeys() {
-        if (!config.isEnabled() || StringUtil.isBlank(config.getTrustedJwksUrl())) {
+        if (!config.isEnabled() || !config.isUseJwksUrl()
+                || StringUtil.isBlank(config.getTrustedJwksUrl())) {
             return false;
         }
 
@@ -71,5 +73,18 @@ public class DefaultTrustIdentityProvider implements TrustMaterialIdentityProvid
 
     @Override
     public void close() {
+    }
+
+    private PublicKeyLoader getPublicKeyLoader(TrustMaterialRequest request) {
+        if (!config.isUseJwksUrl() && StringUtil.isNotBlank(config.getTrustedJwks())
+                && !config.getTrustedJwks().trim().startsWith("{")) {
+            return new HardcodedPublicKeyLoader(
+                    StringUtil.isNotBlank(config.getTrustedJwksKeyId())
+                            ? config.getTrustedJwksKeyId().trim() : request.getKid(),
+                    config.getTrustedJwks(),
+                    request.getAlgorithm());
+        }
+
+        return new DefaultTrustMaterialPublicKeyLoader(session, config);
     }
 }

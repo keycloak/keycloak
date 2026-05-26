@@ -60,7 +60,7 @@ public class DefaultTrustIdentityProviderFactory extends AbstractIdentityProvide
         useJwksUrl.setName(USE_JWKS_URL);
         useJwksUrl.setLabel("Use JWKS URL");
         useJwksUrl.setHelpText("If enabled, trusted signing keys are downloaded from the JWKS URL. "
-                + "If disabled, the configured JSON Web Key Set is used.");
+                + "If disabled, the configured validating public key is used.");
         useJwksUrl.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         useJwksUrl.setDefaultValue(Boolean.TRUE.toString());
 
@@ -72,11 +72,18 @@ public class DefaultTrustIdentityProviderFactory extends AbstractIdentityProvide
 
         ProviderConfigProperty trustedJwks = new ProviderConfigProperty();
         trustedJwks.setName(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS);
-        trustedJwks.setLabel("JSON Web Key Set");
-        trustedJwks.setHelpText("Hardcoded JWKS containing trusted signing keys.");
+        trustedJwks.setLabel("Validating public key");
+        trustedJwks.setHelpText("The public key in PEM or JWKS format that must be used to verify signatures. "
+                + "When JWKS is used, it can contain multiple public keys.");
         trustedJwks.setType(ProviderConfigProperty.TEXT_TYPE);
 
-        return List.of(useJwksUrl, trustedJwksUrl, trustedJwks);
+        ProviderConfigProperty trustedJwksKeyId = new ProviderConfigProperty();
+        trustedJwksKeyId.setName(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS_KEY_ID);
+        trustedJwksKeyId.setLabel("Validating public key id");
+        trustedJwksKeyId.setHelpText("Explicit ID of the validating public key.");
+        trustedJwksKeyId.setType(ProviderConfigProperty.STRING_TYPE);
+
+        return List.of(useJwksUrl, trustedJwksUrl, trustedJwks, trustedJwksKeyId);
     }
 
     @Override
