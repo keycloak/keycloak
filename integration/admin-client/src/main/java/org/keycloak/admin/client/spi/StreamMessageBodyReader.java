@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
@@ -91,7 +92,11 @@ public class StreamMessageBodyReader implements MessageBodyReader<Stream<?>> {
         });
         // return a Stream also marked as an EventInput to prevent the premature closure of the result
         return (Stream<?>) Proxy.newProxyInstance(EventInput.class.getClassLoader(), new Class<?>[] {Stream.class, EventInput.class}, (proxy, method, args) -> {
-            return method.invoke(targetStream, args);
+            try {
+                return method.invoke(targetStream, args);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
         });
     }
 
