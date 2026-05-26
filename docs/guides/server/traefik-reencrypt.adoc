@@ -67,26 +67,61 @@ http:
         - /certs/keycloak1-cert.pem # <3>
         - /certs/keycloak2-cert.pem
 
+  middlewares:
+    filter-headers:
+      headers:
+        customRequestHeaders:
+          # Prevent external spoofing of proxy identity headers (IP, protocol, host, path).
+          # Traefik re-adds its own verified values after stripping client-supplied ones.
+          Forwarded: "" # <4>
+          X-Forwarded-For: ""
+          X-Forwarded-Proto: ""
+          X-Forwarded-Host: ""
+          X-Forwarded-Port: ""
+          X-Forwarded-Server: ""
+          X-Forwarded-Prefix: ""
+          X-Forwarded-Access-Token: ""
+          # Prevent external spoofing of reverse-proxy metadata headers
+          X-Original-Forwarded-For: ""
+          X-Original-URL: ""
+          X-Original-Method: ""
+          X-Real-IP: ""
+          # Prevent external tracing context injection (W3C Trace Context / Baggage)
+          Traceparent: ""
+          Tracestate: ""
+          Baggage: ""
+          # Prevent external tracing context injection (Zipkin, Jaeger, OpenTracing)
+          B3: ""
+          X-B3-Traceid: ""
+          X-B3-Spanid: ""
+          X-B3-Parentspanid: ""
+          X-B3-Sampled: ""
+          X-B3-Flags: ""
+          Uber-Trace-Id: ""
+          X-Ot-Span-Context: ""
+
   routers:
     keycloak:
       entryPoints:
         - keycloak
-      rule: "PathPrefix(`/`)" # <4>
-      tls: {} # <5>
+      rule: "PathPrefix(`/`)" # <5>
+      middlewares:
+        - filter-headers # <6>
+      tls: {} # <7>
       service: keycloak
 
   services:
     keycloak:
       loadBalancer:
-        serversTransport: keycloak-transport # <6>
+        serversTransport: keycloak-transport # <8>
         healthCheck:
-          path: /health/ready # <7>
+          path: /health/ready # <9>
           port: 9000
           scheme: https
           interval: "5s"
           timeout: "3s"
         servers:
-          - url: "https://keycloak1:8443" # <8>
+          - url: "https://keycloak1:8443" # <10>
           - url: "https://keycloak2:8443"
 ----
 
@@ -96,12 +131,17 @@ This is the externally trusted certificate that browsers verify.
 {project_name} is configured to require client authentication and will verify this certificate against its truststore.
 <3> The public certificates of each {project_name} backend server.
 Traefik verifies each backend server's TLS certificate against these entries, ensuring the connection goes to a trusted {project_name} instance and not an impersonator.
-<4> Routes all incoming requests to the {project_name} service.
-<5> Enables TLS on the router, allowing Traefik to terminate the incoming TLS connection from the client and inspect HTTP traffic.
-<6> Links the load balancer to the named transport above, activating mTLS for all connections to the backend {project_name} servers.
-<7> Configures link:https://doc.traefik.io/traefik/reference/routing-configuration/http/service/#health-check[HTTP health checks] against {project_name}'s readiness endpoint on the management port (`9000`) over HTTPS.
+<4> The `customRequestHeaders` entries with an empty string value remove HTTP headers from incoming requests before forwarding them to {project_name}.
+This prevents external clients from spoofing proxy identity headers (such as `Forwarded`, `+X-Forwarded-*+`, and `X-Real-IP`), injecting authentication-related headers (such as `X-Forwarded-Access-Token`), or injecting distributed tracing context (such as W3C Trace Context, Zipkin B3, or Jaeger headers).
+Unlike HAProxy, Traefik does not support regex-based header matching, so each header variant must be listed explicitly.
+For the full list of recommended headers to filter, see the <@links.server id="reverseproxy" anchor="header-filtering-recommendations"/> {section}.
+<5> Routes all incoming requests to the {project_name} service.
+<6> Attaches the `filter-headers` middleware to the router so it applies to all incoming requests.
+<7> Enables TLS on the router, allowing Traefik to terminate the incoming TLS connection from the client and inspect HTTP traffic.
+<8> Links the load balancer to the named transport above, activating mTLS for all connections to the backend {project_name} servers.
+<9> Configures link:https://doc.traefik.io/traefik/reference/routing-configuration/http/service/#health-check[HTTP health checks] against {project_name}'s readiness endpoint on the management port (`9000`) over HTTPS.
 The management port does not require client authentication, so no mTLS client certificate is needed for health check connections.
-<8> The backend {project_name} servers.
+<10> The backend {project_name} servers.
 Traefik load-balances requests across both instances using round-robin.
 
 [[keycloak-configuration-traefik-reencrypt]]
