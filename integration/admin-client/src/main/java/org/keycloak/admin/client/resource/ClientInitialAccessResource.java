@@ -40,7 +40,7 @@ public interface ClientInitialAccessResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     ClientInitialAccessPresentation create(ClientInitialAccessCreatePresentation rep);
-
+    
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<ClientInitialAccessPresentation> list();

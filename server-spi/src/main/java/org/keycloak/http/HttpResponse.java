@@ -26,12 +26,21 @@ import jakarta.ws.rs.core.NewCookie;
  */
 public interface HttpResponse {
     /**
-     * Gets a status code.
+     * Gets the current status code.
+     *
+     * <p><strong>Warning:</strong> when a JAX-RS resource method returns a plain object (not a
+     * {@link jakarta.ws.rs.core.Response}), the JAX-RS runtime overwrites any status code set here
+     * with 200. To return a non-200 status reliably, return a
+     * {@link jakarta.ws.rs.core.Response} built with the desired status.
      */
     int getStatus();
 
     /**
      * Sets a status code.
+     *
+     * <p><strong>Warning:</strong> this value is silently overwritten by the JAX-RS runtime when
+     * the resource method returns a plain object instead of a {@link jakarta.ws.rs.core.Response}.
+     * Use {@link jakarta.ws.rs.core.Response#status(int)} to set the status reliably.
      *
      * @param statusCode the status code
      */

@@ -191,7 +191,7 @@ public class InitialAccessTokenResourceTest {
         post.setHeader("Content-Type", "application/json");
         post.setEntity(new StringEntity(JsonSerialization.writeValueAsString(rep)));
 
-        String id;
+        String id = null;
         try (CloseableHttpResponse response = httpClient.execute(post)) {
             assertEquals(201, response.getStatusLine().getStatusCode());
 
@@ -204,8 +204,11 @@ public class InitialAccessTokenResourceTest {
             assertNotNull(id);
             assertNotNull(entity.getToken());
             assertThat(location, endsWith("/clients-initial-access/" + id));
+        } finally {
+            if (id != null) {
+                resource.delete(id);
+            }
         }
-        resource.delete(id);
     }
 
     private void removeExpired(String realmUuid) {
