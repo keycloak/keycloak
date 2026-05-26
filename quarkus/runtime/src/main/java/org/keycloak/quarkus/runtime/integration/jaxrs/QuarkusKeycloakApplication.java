@@ -38,7 +38,6 @@ import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.utils.KeycloakSessionUtil;
 import org.keycloak.utils.StringUtil;
 
 import io.quarkus.arc.Arc;
@@ -73,7 +72,6 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     }
 
     void onStartupEvent(@Observes StartupEvent event) {
-        KeycloakSessionUtil.setSessionSupplier(() -> Arc.container().instance(KeycloakSession.class).get());
         var asyncBootstrap = Configuration.getOptionalKcValue(ServerOptions.SERVER_ASYNC_BOOTSTRAP)
                 .map(Boolean::parseBoolean)
                 .orElse(Boolean.TRUE);
@@ -95,7 +93,6 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
 
     void onShutdownEvent(@Observes ShutdownEvent event) {
         shutdown();
-        KeycloakSessionUtil.setSessionSupplier(null);
     }
 
     void onShutdownDelayInitiatedEvent(@Observes ShutdownDelayInitiatedEvent event) {

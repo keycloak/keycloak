@@ -17,9 +17,6 @@
 
 package org.keycloak.utils;
 
-import java.util.Optional;
-import java.util.function.Supplier;
-
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -29,17 +26,8 @@ public class KeycloakSessionUtil {
 
     private static final String NO_REALM = "no_realm_found_in_session";
 
-    private static volatile Supplier<KeycloakSession> SESSION_SUPPLIER;
-
     private KeycloakSessionUtil() {
 
-    }
-
-    /**
-     * Should not be called directly, will be managed by Keycloak
-     */
-    public static void setSessionSupplier(Supplier<KeycloakSession> supplier) {
-        SESSION_SUPPLIER = supplier;
     }
 
     /**
@@ -48,11 +36,7 @@ public class KeycloakSessionUtil {
      * @return the current session
      */
     public static KeycloakSession getKeycloakSession() {
-        KeycloakSession result = Resteasy.getContextData(KeycloakSession.class);
-        if (result == null) {
-            return Optional.ofNullable(SESSION_SUPPLIER).map(Supplier::get).orElse(null);
-        }
-        return result;
+        return Resteasy.getContextData(KeycloakSession.class);
     }
 
     /**

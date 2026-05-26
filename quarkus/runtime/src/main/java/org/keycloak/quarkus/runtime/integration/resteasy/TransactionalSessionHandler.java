@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransactionManager;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 import io.quarkus.arc.Arc;
 import io.quarkus.arc.ClientProxy;
@@ -67,18 +68,17 @@ public final class TransactionalSessionHandler extends InvocationHandler impleme
                 // This handler is always running in a blocking thread.
                 beginTransaction(currentSession);
             }
+            KeycloakSessionUtil.setKeycloakSession(currentSession);
         }
 
         super.handle(requestContext);
         
-        // ensure the initial transaction is completed, as the thread will be used for other work
+        // check for async cases where we are now done with the initiating thread
+        // and must clean up anything that is thread bound
         if ((requestContext.getAsyncResponse() != null || Stream.of(ASYNC_TYPES)
                 .anyMatch(requestContext.getResteasyReactiveResourceInfo().getMethod().getReturnType()::equals))) {
             KeycloakSession currentSession = ClientProxy.unwrap(Arc.container().instance(KeycloakSession.class).get());
-            KeycloakTransactionManager transactionManager = currentSession.getTransactionManager();
-            if (transactionManager.isActive()) { 
-                transactionManager.commit();
-            }
+            close(currentSession);
         }
     }
 }
