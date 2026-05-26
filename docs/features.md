@@ -7,7 +7,7 @@ In most cases all significant new capabilities added to Keycloak should be wrapp
 feature is then graduated to preview when it is considered feature complete, and eventually graduates to supported
 after feedback from the community.
 
-When implementing a new feature in Keycloak it is highly recommended to define requirements and a minimum viable feature
+When implementing a new feature in Keycloak, it is highly recommended to define requirements and a minimum viable feature
 initially, with incremental value added to the feature in later stages. Keeping the scope of the feature small allows
 implementing the feature quicker and increases the quality as better test coverage and security can be provided.
 
