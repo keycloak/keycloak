@@ -12,7 +12,6 @@ runs:
     - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       name: Cache PNPM store
       with:
-        # See: https://pnpm.io/npmrc#store-dir
         path: |
           ~/.local/share/pnpm/store
           ~/AppData/Local/pnpm/store
