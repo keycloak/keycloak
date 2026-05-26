@@ -17,7 +17,11 @@
 
 package org.keycloak.admin.client;
 
+import java.util.function.Supplier;
+
 import jakarta.ws.rs.client.Client;
+
+import org.keycloak.admin.client.token.ClientAssertion;
 
 import static org.keycloak.OAuth2Constants.PASSWORD;
 
@@ -61,6 +65,7 @@ public class KeycloakBuilder {
     private String password;
     private String clientId;
     private String clientSecret;
+    private Supplier<ClientAssertion> clientAssertionSupplier;
     private String grantType;
     private Client resteasyClient;
     private String authorization;
@@ -105,6 +110,11 @@ public class KeycloakBuilder {
 
     public KeycloakBuilder clientSecret(String clientSecret) {
         this.clientSecret = clientSecret;
+        return this;
+    }
+
+    public KeycloakBuilder clientAssertion(Supplier<ClientAssertion> clientAssertionSupplier) {
+        this.clientAssertionSupplier = clientAssertionSupplier;
         return this;
     }
 
@@ -161,11 +171,11 @@ public class KeycloakBuilder {
             }
         }
 
-        if (authorization == null && clientId == null) {
+        if (authorization == null && clientAssertionSupplier == null && clientId == null) {
             throw new IllegalStateException("clientId required");
         }
 
-        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, grantType, resteasyClient, authorization, scope, useDPoP);
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, clientAssertionSupplier, grantType, resteasyClient, authorization, scope, useDPoP);
     }
 
     private KeycloakBuilder() {
