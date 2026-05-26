@@ -1,4 +1,3 @@
-import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { AlertVariant, FormGroup, Button } from "@patternfly/react-core";
 import { useFormContext, useWatch } from "react-hook-form";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
@@ -17,23 +16,40 @@ import { useAdminClient } from "../../admin-client";
 
 type JwksSettingsProps = {
   readOnly?: boolean;
+  useJwksUrlName?: string;
+  jwksUrlName?: string;
+  publicKeySignatureVerifierName?: string;
+  publicKeySignatureVerifierKeyIdName?: string;
+  publicKeyLabel?: string;
+  publicKeyHelp?: string;
+  showPublicKeyId?: boolean;
+  allowImport?: boolean;
 };
 
-export const JwksSettings = ({ readOnly = false }: JwksSettingsProps) => {
+export const JwksSettings = ({
+  readOnly = false,
+  useJwksUrlName = "config.useJwksUrl",
+  jwksUrlName = "config.jwksUrl",
+  publicKeySignatureVerifierName = "config.publicKeySignatureVerifier",
+  publicKeySignatureVerifierKeyIdName = "config.publicKeySignatureVerifierKeyId",
+  publicKeyLabel = "validatingPublicKey",
+  publicKeyHelp = "validatingPublicKeyHelp",
+  showPublicKeyId = true,
+  allowImport = true,
+}: JwksSettingsProps) => {
   const { t } = useTranslation();
-  const { control, setValue } =
-    useFormContext<IdentityProviderRepresentation>();
+  const { control, setValue } = useFormContext();
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const [openImportKeys, toggleOpenImportKeys, setOpenImportKeys] = useToggle();
   const useJwks = useWatch({
     control,
-    name: "config.useJwksUrl",
+    name: useJwksUrlName,
     defaultValue: "true",
   });
   const publicKeySignatureVerifier = useWatch({
     control,
-    name: "config.publicKeySignatureVerifier",
+    name: publicKeySignatureVerifierName,
   });
 
   const importKey = async (importFile: ImportFile) => {
@@ -51,15 +67,15 @@ export const JwksSettings = ({ readOnly = false }: JwksSettingsProps) => {
         formData,
       );
       if (info.jwks) {
-        setValue("config.publicKeySignatureVerifier", info.jwks, {
+        setValue(publicKeySignatureVerifierName, info.jwks, {
           shouldDirty: true,
         });
-        setValue("config.publicKeySignatureVerifierKeyId", "", {
+        setValue(publicKeySignatureVerifierKeyIdName, "", {
           shouldDirty: true,
         });
         addAlert(t("importSuccess"), AlertVariant.success);
       } else if (info.publicKey) {
-        setValue("config.publicKeySignatureVerifier", info.publicKey, {
+        setValue(publicKeySignatureVerifierName, info.publicKey, {
           shouldDirty: true,
         });
         addAlert(t("importSuccess"), AlertVariant.success);
@@ -74,7 +90,7 @@ export const JwksSettings = ({ readOnly = false }: JwksSettingsProps) => {
   return (
     <>
       <DefaultSwitchControl
-        name="config.useJwksUrl"
+        name={useJwksUrlName}
         label={t("useJwksUrl")}
         labelIcon={t("useJwksUrlHelp")}
         isDisabled={readOnly}
@@ -83,7 +99,7 @@ export const JwksSettings = ({ readOnly = false }: JwksSettingsProps) => {
       />
       {useJwks === "true" ? (
         <TextControl
-          name="config.jwksUrl"
+          name={jwksUrlName}
           label={t("jwksUrl")}
           labelIcon={t("jwksUrlHelp")}
           type="url"
@@ -94,7 +110,7 @@ export const JwksSettings = ({ readOnly = false }: JwksSettingsProps) => {
         />
       ) : (
         <>
-          {openImportKeys && (
+          {allowImport && openImportKeys && (
             <ImportKeyDialog
               toggleDialog={toggleOpenImportKeys}
               save={importKey}
@@ -102,22 +118,23 @@ export const JwksSettings = ({ readOnly = false }: JwksSettingsProps) => {
               description="importKeysDescription"
             />
           )}
-          {!publicKeySignatureVerifier?.trim().startsWith("{") && (
-            <TextControl
-              name="config.publicKeySignatureVerifierKeyId"
-              label={t("validatingPublicKeyId")}
-              labelIcon={t("validatingPublicKeyIdHelp")}
-              readOnly={readOnly}
-            />
-          )}
+          {showPublicKeyId &&
+            !publicKeySignatureVerifier?.trim().startsWith("{") && (
+              <TextControl
+                name={publicKeySignatureVerifierKeyIdName}
+                label={t("validatingPublicKeyId")}
+                labelIcon={t("validatingPublicKeyIdHelp")}
+                readOnly={readOnly}
+              />
+            )}
           <TextAreaControl
-            name="config.publicKeySignatureVerifier"
-            label={t("validatingPublicKey")}
-            labelIcon={t("validatingPublicKeyHelp")}
+            name={publicKeySignatureVerifierName}
+            label={t(publicKeyLabel)}
+            labelIcon={publicKeyHelp ? t(publicKeyHelp) : undefined}
             rules={{ required: t("required") }}
             readOnly={readOnly}
           />
-          {!readOnly && (
+          {allowImport && !readOnly && (
             <FormGroup fieldId="kc-import-certificate-button">
               <Button
                 variant="secondary"

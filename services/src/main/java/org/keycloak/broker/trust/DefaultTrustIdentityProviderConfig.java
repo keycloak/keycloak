@@ -21,12 +21,18 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.util.Strings;
 
+import static org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantConfig.PUBLIC_KEY_SIGNATURE_VERIFIER;
+import static org.keycloak.broker.oidc.OIDCIdentityProviderConfig.JWKS_URL;
+import static org.keycloak.broker.oidc.OIDCIdentityProviderConfig.USE_JWKS_URL;
 import static org.keycloak.common.util.UriUtils.checkUrl;
 
 public class DefaultTrustIdentityProviderConfig extends IdentityProviderModel {
 
-    public static final String TRUSTED_JWKS_URL = "trustedJwksUrl";
-    public static final String TRUSTED_JWKS = "trustedJwks";
+    public static final String TRUSTED_JWKS_URL = JWKS_URL;
+    public static final String TRUSTED_JWKS = PUBLIC_KEY_SIGNATURE_VERIFIER;
+
+    private static final String LEGACY_TRUSTED_JWKS_URL = "trustedJwksUrl";
+    private static final String LEGACY_TRUSTED_JWKS = "trustedJwks";
 
     public DefaultTrustIdentityProviderConfig() {
     }
@@ -45,35 +51,51 @@ public class DefaultTrustIdentityProviderConfig extends IdentityProviderModel {
         super.validate(realm);
         boolean hasTrustedJwksUrl = !Strings.isEmpty(getTrustedJwksUrl());
         boolean hasTrustedJwks = !Strings.isEmpty(getTrustedJwks());
-        if (hasTrustedJwksUrl == hasTrustedJwks) {
-            throw new IllegalArgumentException("Configure exactly one of trusted JWKS URL or trusted JWKS");
+        if (isUseJwksUrl()) {
+            if (!hasTrustedJwksUrl) {
+                throw new IllegalArgumentException("JWKS URL is required when 'Use JWKS URL' is enabled");
+            }
+        } else if (!hasTrustedJwks) {
+            throw new IllegalArgumentException("JSON Web Key Set is required when 'Use JWKS URL' is disabled");
         }
-        if (hasTrustedJwksUrl) {
+        if (isUseJwksUrl()) {
             checkUrl(realm.getSslRequired(), getTrustedJwksUrl(), TRUSTED_JWKS_URL);
         }
     }
 
+    public boolean isUseJwksUrl() {
+        String useJwksUrl = getConfig().get(USE_JWKS_URL);
+        return useJwksUrl == null ? !Strings.isEmpty(getTrustedJwksUrl())
+                : Boolean.parseBoolean(useJwksUrl);
+    }
+
     public String getTrustedJwksUrl() {
-        return getConfig().get(TRUSTED_JWKS_URL);
+        return getConfig().getOrDefault(TRUSTED_JWKS_URL,
+                getConfig().get(LEGACY_TRUSTED_JWKS_URL));
     }
 
     public void setTrustedJwksUrl(String trustedJwksUrl) {
         if (trustedJwksUrl == null) {
             getConfig().remove(TRUSTED_JWKS_URL);
+            getConfig().remove(LEGACY_TRUSTED_JWKS_URL);
         } else {
             getConfig().put(TRUSTED_JWKS_URL, trustedJwksUrl);
+            getConfig().remove(LEGACY_TRUSTED_JWKS_URL);
         }
     }
 
     public String getTrustedJwks() {
-        return getConfig().get(TRUSTED_JWKS);
+        return getConfig().getOrDefault(TRUSTED_JWKS,
+                getConfig().get(LEGACY_TRUSTED_JWKS));
     }
 
     public void setTrustedJwks(String trustedJwks) {
         if (trustedJwks == null) {
             getConfig().remove(TRUSTED_JWKS);
+            getConfig().remove(LEGACY_TRUSTED_JWKS);
         } else {
             getConfig().put(TRUSTED_JWKS, trustedJwks);
+            getConfig().remove(LEGACY_TRUSTED_JWKS);
         }
     }
 }

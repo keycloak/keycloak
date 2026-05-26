@@ -28,6 +28,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import static org.keycloak.broker.oidc.OIDCIdentityProviderConfig.USE_JWKS_URL;
+
 public class DefaultTrustIdentityProviderFactory extends AbstractIdentityProviderFactory<DefaultTrustIdentityProvider> implements EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "default-trust";
@@ -54,19 +56,27 @@ public class DefaultTrustIdentityProviderFactory extends AbstractIdentityProvide
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
+        ProviderConfigProperty useJwksUrl = new ProviderConfigProperty();
+        useJwksUrl.setName(USE_JWKS_URL);
+        useJwksUrl.setLabel("Use JWKS URL");
+        useJwksUrl.setHelpText("If enabled, trusted signing keys are downloaded from the JWKS URL. "
+                + "If disabled, the configured JSON Web Key Set is used.");
+        useJwksUrl.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        useJwksUrl.setDefaultValue(Boolean.TRUE.toString());
+
         ProviderConfigProperty trustedJwksUrl = new ProviderConfigProperty();
         trustedJwksUrl.setName(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS_URL);
-        trustedJwksUrl.setLabel("Trusted JWKS URL");
+        trustedJwksUrl.setLabel("JWKS URL");
         trustedJwksUrl.setHelpText("External JWKS URL containing trusted signing keys.");
         trustedJwksUrl.setType(ProviderConfigProperty.STRING_TYPE);
 
         ProviderConfigProperty trustedJwks = new ProviderConfigProperty();
         trustedJwks.setName(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS);
-        trustedJwks.setLabel("Trusted JWKS");
+        trustedJwks.setLabel("JSON Web Key Set");
         trustedJwks.setHelpText("Hardcoded JWKS containing trusted signing keys.");
         trustedJwks.setType(ProviderConfigProperty.TEXT_TYPE);
 
-        return List.of(trustedJwksUrl, trustedJwks);
+        return List.of(useJwksUrl, trustedJwksUrl, trustedJwks);
     }
 
     @Override

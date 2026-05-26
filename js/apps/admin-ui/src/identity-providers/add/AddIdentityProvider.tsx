@@ -21,6 +21,7 @@ import { useParams } from "../../utils/useParams";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import type { IdentityProviderCreateParams } from "../routes/IdentityProviderCreate";
 import { toIdentityProviders } from "../routes/IdentityProviders";
+import DefaultTrustSettings from "./DefaultTrustSettings";
 import { GeneralSettings } from "./GeneralSettings";
 
 export default function AddIdentityProvider() {
@@ -56,6 +57,7 @@ export default function AddIdentityProvider() {
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { realm } = useRealm();
+  const isDefaultTrust = providerId === "default-trust";
 
   const onSubmit = async (provider: IdentityProviderRepresentation) => {
     try {
@@ -88,7 +90,7 @@ export default function AddIdentityProvider() {
     <>
       <ViewHeader
         titleKey={t("addIdentityProvider", {
-          provider: toUpperCase(providerId),
+          provider: isDefaultTrust ? "Default Trust" : toUpperCase(providerId),
         })}
       />
       <PageSection variant="light">
@@ -98,8 +100,12 @@ export default function AddIdentityProvider() {
           onSubmit={handleSubmit(onSubmit)}
         >
           <FormProvider {...form}>
-            <GeneralSettings id={providerId} />
-            {providerInfo && (
+            {isDefaultTrust ? (
+              <DefaultTrustSettings />
+            ) : (
+              <GeneralSettings id={providerId} />
+            )}
+            {!isDefaultTrust && providerInfo && (
               <DynamicComponents
                 stringify
                 properties={providerInfo.properties}
