@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.api.ListOptions;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.PatchType;
@@ -47,11 +48,11 @@ public interface ClientService extends Service {
             this.ascending = ascending;
         }
 
-        public static ClientSortAndSliceOptions fromQuery(String sortBy, String sortOrder) {
-            List<ClientSortField> fields = isBlank(sortBy)
+        public static ClientSortAndSliceOptions fromQuery(ListOptions listOptions) {
+            List<ClientSortField> fields = isBlank(listOptions.getSortBy())
                     ? List.of(ClientSortField.defaultField())
-                    : parseSortBy(sortBy);
-            return new ClientSortAndSliceOptions(fields, parseSortOrder(sortOrder));
+                    : parseSortBy(listOptions.getSortBy());
+            return new ClientSortAndSliceOptions(fields, parseSortOrder(listOptions.getSortOrder()));
         }
 
         private static List<ClientSortField> parseSortBy(String sortBy) {

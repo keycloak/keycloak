@@ -44,10 +44,6 @@ public interface ClientsApi {
         return getClients(new ListOptions());
     }
 
-    default Stream<BaseClientRepresentation> getClients(Set<String> fields) {
-        return getClients(fields, null, null);
-    }
-
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)

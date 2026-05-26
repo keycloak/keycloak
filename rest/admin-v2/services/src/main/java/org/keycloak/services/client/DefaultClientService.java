@@ -17,6 +17,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.validation.groups.Default;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.api.ListOptions;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -138,7 +139,7 @@ public class DefaultClientService implements ClientService {
         boolean canView = AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || permissions.clients().canView();
         ClientSortAndSliceOptions sortOptions = sortAndSliceOptions != null
                 ? sortAndSliceOptions
-                : ClientSortAndSliceOptions.fromQuery(null, null);
+                : ClientSortAndSliceOptions.fromQuery(new ListOptions());
         Comparator<BaseClientRepresentation> sortComparator = sortOptions.getSortComparator();
         try {
             Stream<BaseClientRepresentation> stream = realm.getClientsStream()

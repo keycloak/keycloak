@@ -376,8 +376,11 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         createSortTestClient("sort-a", "A", "alpha");
         createSortTestClient("sort-c", "A", "gamma");
 
-        try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(
-                Set.of("clientId", "displayName"), "displayName,clientId", null)) {
+        ListOptions listOptions = new ListOptions();
+        listOptions.setFields(Set.of("clientId", "displayName"));
+        listOptions.setSortBy("displayName,clientId");
+
+        try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
             List<String> sortTestClientIds = clients
                     .map(BaseClientRepresentation::getClientId)
                     .filter(id -> id.startsWith("sort-"))
@@ -388,8 +391,10 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @Test
     public void getClientsSortByInvalidField() {
-        BadRequestException e = assertThrows(BadRequestException.class,
-                () -> getClientsApi().getClients(Set.of("clientId"), "displayName,unknown", null));
+        ListOptions listOptions = new ListOptions();
+        listOptions.setFields(Set.of("clientId", "displayName"));
+        listOptions.setSortBy("displayName,unknown");
+        BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(listOptions));
         assertThat(e.getResponse().readEntity(String.class), containsString("unknown is not a sortable field"));
     }
 
