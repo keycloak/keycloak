@@ -50,7 +50,6 @@ import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
@@ -325,36 +324,6 @@ public class AbstractBaseTokenExchangeTest {
             return mapper;
         }
 
-    }
-
-    public static class AliceConfig implements UserConfig {
-        @Override
-        public UserBuilder configure(UserBuilder user) {
-            return user.username("alice")
-                    .name("Alice", "Doe")
-                    .email("alice@email.cz")
-                    .password("password");
-        }
-    }
-
-    public static class JohnConfig implements UserConfig {
-        @Override
-        public UserBuilder configure(UserBuilder user) {
-            return user.username("john")
-                    .name("John", "Bar")
-                    .email("john@email.cz")
-                    .password("password");
-        }
-    }
-
-    public static class MikeConfig implements UserConfig {
-        @Override
-        public UserBuilder configure(UserBuilder user) {
-            return user.username("mike")
-                    .name("Mike", "Bar")
-                    .email("mike@email.cz")
-                    .password("password");
-        }
     }
 
     protected String getSessionIdFromToken(String accessToken) {

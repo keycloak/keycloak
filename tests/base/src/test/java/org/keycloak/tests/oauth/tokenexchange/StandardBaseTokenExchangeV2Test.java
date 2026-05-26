@@ -589,9 +589,6 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
         assertIntrospectSuccess(exchangedToken, "requester-client", "secret", mike.getId());
         assertIntrospectSuccess(requesterClientToken, "requester-client", "secret", mike.getId());
 
-        timeOffSet.set(0);
-
-
         subjectClient.setConsentRequired(false);
         realm.admin().clients().get(subjectClient.getId()).update(subjectClient);
     }
@@ -833,7 +830,6 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
         assertUserInfoError(exchangedTokenString, "requester-client", "secret", "invalid_token", Errors.USER_SESSION_NOT_FOUND);
 
         realm.admin().clients().get(subjectClient.getId()).removeOptionalClientScope(offlineAccessScopeId);
-        timeOffSet.set(0);
     }
 
     @Test
@@ -880,7 +876,6 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
             realm.admin().deleteSession(exchangedToken.getSessionId(), false);
             assertThrows(NotAuthorizedException.class, () -> keycloak.realm(realm.getName()).toRepresentation().getRealm());
         }
-        timeOffSet.set(0);
         // Cleanup: remove client scope
         realm.admin().clientScopes().get(clientScopeId).remove();
     }
@@ -942,7 +937,6 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
             fail("Error parsing response: ", e);
         }
         finally {
-            timeOffSet.set(0);
             // Cleanup: remove client scope
             realm.admin().clientScopes().get(clientScopeId).remove();
         }
