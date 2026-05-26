@@ -580,6 +580,19 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
+    public void testResourceOwnerCanAuthorizeOwnResourceWhenUserManagedAccessDisabled() {
+        Resource resource = getMyResources().get(0);
+        String permissionTicket = createPermissionTicket(resource.getId(), "Scope A");
+
+        setUserManagedAccessAllowed(false);
+        try {
+            assertCanAuthorizeWithUmaGrant("test-authz-user@localhost", permissionTicket);
+        } finally {
+            setUserManagedAccessAllowed(true);
+        }
+    }
+
+    @Test
     public void testRevokePermission() throws Exception {
         List<String> users = Arrays.asList("jdoe", "alice");
         List<Permission> permissions = new ArrayList<>();
@@ -952,8 +965,12 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     }
 
     private void assertCanAuthorizeWithUmaGrant(String userName, String resourceId, String scope) {
+        assertCanAuthorizeWithUmaGrant(userName, createPermissionTicket(resourceId, scope));
+    }
+
+    private void assertCanAuthorizeWithUmaGrant(String userName, String permissionTicket) {
         AuthorizationResponse response = authzClient.authorization(userName, "password")
-                .authorize(new AuthorizationRequest(createPermissionTicket(resourceId, scope)));
+                .authorize(new AuthorizationRequest(permissionTicket));
 
         assertNotNull(response.getToken());
     }
