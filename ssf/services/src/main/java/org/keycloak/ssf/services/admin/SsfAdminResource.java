@@ -458,7 +458,7 @@ public class SsfAdminResource {
             throw new NotFoundException("No SSF stream registered for client");
         }
 
-        // The ssf.lastVerifiedAt stamp is written centrally inside
+        // The ssf.stream.lastVerifiedAt stamp is written centrally inside
         // StreamVerificationService.triggerVerification so every
         // verification entry point (receiver-initiated, admin-initiated,
         // transmitter-initiated post-create auto-fire) records a
@@ -474,7 +474,7 @@ public class SsfAdminResource {
      * SSF spec-mandated {@code stream-updated} SET dispatch and the
      * outbox HELD ↔ PENDING alignment fire here too. Without this,
      * an admin flipping status from the console would just persist
-     * the {@code ssf.status} client attribute and the receiver would
+     * the {@code ssf.stream.status} client attribute and the receiver would
      * silently observe paused / enabled state on next poll without
      * the spec's transition signal.
      *

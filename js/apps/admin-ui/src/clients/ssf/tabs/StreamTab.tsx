@@ -341,7 +341,7 @@ export const StreamTab = ({
       // backend status with a stale form value (the parent's
       // useFetch refresh below is async and races the click).
       setValue(
-        convertAttributeNameToForm<FormFields>("attributes.ssf.status"),
+        convertAttributeNameToForm<FormFields>("attributes.ssf.stream.status"),
         targetStatus,
         { shouldDirty: false },
       );

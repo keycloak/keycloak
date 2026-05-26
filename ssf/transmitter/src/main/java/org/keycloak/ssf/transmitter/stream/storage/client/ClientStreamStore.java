@@ -41,7 +41,7 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_PROFILE_KEY = "ssf.profile";
     public static final String SSF_AUTO_VERIFY_STREAM_KEY = "ssf.autoVerifyStream";
     public static final String SSF_VERIFICATION_DELAY_MILLIS_KEY = "ssf.verificationDelayMillis";
-    public static final String SSF_LAST_VERIFIED_AT_KEY = "ssf.lastVerifiedAt";
+    public static final String SSF_LAST_VERIFIED_AT_KEY = "ssf.stream.lastVerifiedAt";
     public static final String SSF_STREAM_AUDIENCE_KEY = "ssf.streamAudience";
     public static final String SSF_STREAM_SUPPORTED_EVENTS_KEY = "ssf.supportedEvents";
 
@@ -153,12 +153,12 @@ public class ClientStreamStore implements SsfStreamStore {
      * check tolerates minutes of lag on. Consumed by the drainer's
      * inactivity-check pass alongside {@link #SSF_INACTIVITY_TIMEOUT_SECONDS_KEY}.
      */
-    public static final String SSF_LAST_ACTIVITY_TIMESLOT_KEY = "ssf.lastActivityTimeslot";
+    public static final String SSF_LAST_ACTIVITY_TIMESLOT_KEY = "ssf.stream.lastActivityTimeslot";
 
     // ----- Per-stream state (cleared on stream delete) -----------------------
-    public static final String SSF_STREAM_ID_KEY = "ssf.streamId";
-    public static final String SSF_STATUS_KEY = "ssf.status";
-    public static final String SSF_STATUS_REASON_KEY = "ssf.status_reason";
+    public static final String SSF_STREAM_ID_KEY = "ssf.stream.id";
+    public static final String SSF_STATUS_KEY = "ssf.stream.status";
+    public static final String SSF_STATUS_REASON_KEY = "ssf.stream.statusReason";
 
     /**
      * Legacy single-blob storage key. Previously the whole {@link StreamConfig}
@@ -401,7 +401,7 @@ public class ClientStreamStore implements SsfStreamStore {
                 .searchClientsByAttributes(realm, Map.of(SSF_STREAM_ID_KEY, streamId), 0, 2)
                 .toList();
         if (matches.size() > 1) {
-            log.warnf("Refusing to resolve SSF stream — multiple clients hold ssf.streamId=%s in realm=%s. "
+            log.warnf("Refusing to resolve SSF stream — multiple clients hold ssf.stream.id=%s in realm=%s. "
                             + "Matching clientIds: %s. Strip the duplicate via a client update/delete "
                             + "before dispatch can resume for this stream.",
                     streamId, realm.getName(),

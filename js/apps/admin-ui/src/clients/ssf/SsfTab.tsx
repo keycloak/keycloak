@@ -204,7 +204,9 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
         // paused the stream via POST /streams/status) instead of
         // showing the stale value the page loaded with.
         setValue(
-          convertAttributeNameToForm<FormFields>("attributes.ssf.status"),
+          convertAttributeNameToForm<FormFields>(
+            "attributes.ssf.stream.status",
+          ),
           stream.status,
           { shouldDirty: false },
         );
