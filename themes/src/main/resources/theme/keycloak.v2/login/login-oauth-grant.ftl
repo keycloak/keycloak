@@ -49,9 +49,9 @@
 
             <form class="${properties.kcFormClass} ${properties.kcMarginTopClass!}" action="${url.oauthAction}" method="POST">
                 <input type="hidden" name="code" value="${oauth.code}">
-                <@buttons.actionGroup>
+                <@buttons.actionGroup horizontal=true>
                     <@buttons.button id="kc-login" name="accept" label="doYes"/>
-                    <@buttons.button id="kc-cancel" name="cancel" label="doNo" class=["kcButtonSecondaryClass"]/>
+                    <@buttons.button id="kc-cancel" name="cancel" label="doNo" type="secondary"/>
                 </@buttons.actionGroup>
             </form>
         </div>

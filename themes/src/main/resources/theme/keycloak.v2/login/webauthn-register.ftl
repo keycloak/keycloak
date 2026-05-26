@@ -49,11 +49,11 @@
         </script>
 
             <@buttons.actionGroup horizontal=true>
-                <@buttons.button id="registerWebAuthn" label="doRegisterSecurityKey" class=["kcButtonPrimaryClass","kcButtonBlockClass"]/>
+                <@buttons.button id="registerWebAuthn" label="doRegisterSecurityKey"/>
                 <#if !isSetRetry?has_content && isAppInitiatedAction?has_content>
                     <form class="${properties.kcFormClass!}" action="${url.loginAction}"
                           id="kc-webauthn-settings-form" method="post">
-                        <@buttons.button id="cancelWebAuthnAIA" name="cancel-aia" label="doCancel" class=["kcButtonSecondaryClass","kcButtonBlockClass"]/>
+                        <@buttons.button id="cancelWebAuthnAIA" name="cancel-aia" label="doCancel" type="secondary"/>
                     </form>
                 </#if>
             </@buttons.actionGroup>
