@@ -64,6 +64,7 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.JsonTestUtils;
 import org.keycloak.testsuite.util.runonserver.ExportImportHelper;
@@ -94,6 +95,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 @KeycloakIntegrationTest
+@DatabaseTest
 public class ExportImportTest {
 
     @InjectRealm(ref = "test", fromJson = "/testrealm.json", config = ExportImportRealmConfig.class)

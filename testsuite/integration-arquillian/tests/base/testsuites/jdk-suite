@@ -1,7 +1,6 @@
 AccountRestServiceTest
 AuthorizationCodeTest
 DeployedScriptAuthenticatorTest
-ExportImportTest
 KcOidcBrokerTest
 KerberosLdapTest
 LDAPUserLoginTest
