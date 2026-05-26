@@ -110,7 +110,6 @@ export default function EditUser() {
     });
 
   const [activeEventsTab, setActiveEventsTab] = useState("userEvents");
-  const [activeVcTab, setActiveVcTab] = useState("vcCredentials");
 
   const settingsTab = useRoutableTab(toTab("settings"));
   const attributesTab = useRoutableTab(toTab("attributes"));
@@ -481,17 +480,7 @@ export default function EditUser() {
                   }
                   {...verifiableCredentialsTab}
                 >
-                  <Tabs
-                    activeKey={activeVcTab}
-                    onSelect={(_, key) => setActiveVcTab(key as string)}
-                  >
-                    <Tab
-                      eventKey="vcCredentials"
-                      title={<TabTitleText>{t("credentials")}</TabTitleText>}
-                    >
-                      <UserVerifiableCredentials userId={user.id!} />
-                    </Tab>
-                  </Tabs>
+                  <UserVerifiableCredentials userId={user.id!} />
                 </Tab>
               )}
               {isFeatureEnabled(Feature.Workflows) && (
