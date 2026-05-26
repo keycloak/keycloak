@@ -26,9 +26,6 @@ public class AttachToTest {
     @InjectClient
     ManagedClient managedClient;
 
-    @InjectClient(ref = "admin-cli", attachTo = "admin-cli")
-    ManagedClient attachedClient;
-
     @Test
     public void aAttachedRealm() {
         Assertions.assertEquals("master", attachedRealm.getName());
@@ -47,13 +44,7 @@ public class AttachToTest {
     }
 
     @Test
-    public void dAttachedClient() {
-        Assertions.assertEquals("admin-cli", attachedClient.getClientId());
-        Assertions.assertEquals("admin-cli", attachedClient.admin().toRepresentation().getClientId());
-    }
-
-    @Test
-    public void eManagedClient() {
+    public void dManagedClientPersists() {
         Assertions.assertEquals("default", managedClient.getClientId());
         Assertions.assertEquals("default", managedClient.admin().toRepresentation().getClientId());
     }

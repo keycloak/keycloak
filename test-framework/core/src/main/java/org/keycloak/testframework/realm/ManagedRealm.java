@@ -9,6 +9,7 @@ import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -145,6 +146,22 @@ public class ManagedRealm extends ManagedTestResource {
         UserRepresentation updated = update.update(updatedUser).build();
 
         realmResource.users().get(original.getId()).update(updated);
+    }
+
+    /**
+     * Update a client within the realm, which is automatically reset once the test is completed
+     *
+     * @param clientId the UUID of the client to update
+     * @param update the update to perform on the client
+     */
+    public void updateClientWithCleanup(String clientId, ManagedClient.ClientUpdate update) {
+        ClientRepresentation original = realmResource.clients().get(clientId).toRepresentation();
+        ClientBuilder updatedClient = ClientBuilder.update(RepresentationUtils.clone(original));
+        ClientRepresentation updated = update.update(updatedClient).build();
+
+        realmResource.clients().get(clientId).update(updated);
+
+        cleanup().add(r -> r.clients().get(clientId).update(original));
     }
 
     /**

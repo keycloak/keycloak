@@ -66,6 +66,7 @@ import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
@@ -151,8 +152,16 @@ public class RefreshTokenTest {
     @InjectUser(config = TestRealmUserConfig.class)
     protected ManagedUser user;
 
-    @InjectClient(attachTo = "test-app")
+    @InjectClient(ref = "test-app", config = RefreshTokenTestClientConfig.class)
     ManagedClient managedClient;
+
+    public static class RefreshTokenTestClientConfig implements ClientConfig {
+
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.clientId("test-app").redirectUris("http://localhost/auth");
+        }
+    }
 
     public static class RefreshTokenTestRealmConfig implements RealmConfig {
 
