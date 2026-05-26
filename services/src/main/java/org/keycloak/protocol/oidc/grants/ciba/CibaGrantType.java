@@ -270,9 +270,9 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
 
         for (AuthorizationDetails authDetails : AuthenticationManager.getClientScopeModelStream(session, client).toList()) {
             ClientScopeModel clientScope = authDetails.getClientScope();
-            String paramater = authDetails.getDynamicScopeParam();
-            if (clientScope != null && !grantedConsent.isClientScopeGranted(clientScope, paramater) && clientScope.isDisplayOnConsentScreen()) {
-                grantedConsent.addGrantedClientScope(clientScope, paramater);
+            String parameter = authDetails.getDynamicScopeParam();
+            if (clientScope != null && !grantedConsent.isClientScopeGranted(clientScope, parameter) && clientScope.isDisplayOnConsentScreen()) {
+                grantedConsent.addGrantedClientScope(clientScope, parameter);
                 updateConsentRequired = true;
             }
         }

@@ -386,8 +386,8 @@ public class JpaUserFederatedStorageProvider implements
                 }
                 if (grantedClientScopeModel != null) {
                     model.addGrantedClientScope(grantedClientScopeModel,
-                            ClientScopeModel.isDynamicScope(grantedClientScopeModel)
-                                    ? grantedClientScope.getParameter()
+                            ClientScopeModel.isDynamicScope(grantedClientScopeModel) && grantedClientScope.getParameter().isPresent()
+                                    ? grantedClientScope.getParameter().get()
                                     : null);
                 }
             }

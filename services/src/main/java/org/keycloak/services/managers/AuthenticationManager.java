@@ -1249,8 +1249,8 @@ public class AuthenticationManager {
 
             // we need to add dynamic scopes with params to the scopes to consent every time for now
             AuthorizationDetailsJSONRepresentation rep = authDetails.getAuthorizationDetails();
-            String paramater = rep != null ? rep.getDynamicScopeParamFromCustomData() : null;
-            if (grantedConsent == null || !grantedConsent.isClientScopeGranted(clientScope, paramater)) {
+            String parameter = rep != null ? rep.getDynamicScopeParamFromCustomData() : null;
+            if (grantedConsent == null || !grantedConsent.isClientScopeGranted(clientScope, parameter)) {
                 clientScopesToDisplay.add(authDetails);
             }
         }

@@ -31,7 +31,7 @@ public class UserConsentModel {
 
     private final ClientModel client;
     private final Set<ClientScopeModel> clientScopes = new HashSet<>();
-    private final MultivaluedHashMap<String, String> paramaters = new MultivaluedHashMap<>();
+    private final MultivaluedHashMap<String, String> parameters = new MultivaluedHashMap<>();
     private Long createdDate;
     private Long lastUpdatedDate;
 
@@ -53,7 +53,7 @@ public class UserConsentModel {
             if (parameter == null) {
                 throw new IllegalArgumentException("Paramater value is compulsory for Dynamic Scope " + clientScope.getName());
             }
-            paramaters.add(clientScope.getId(), parameter);
+            parameters.add(clientScope.getId(), parameter);
         }
     }
 
@@ -63,7 +63,7 @@ public class UserConsentModel {
 
     public List<String> getParameters(ClientScopeModel clientScope) {
         if (ClientScopeModel.isDynamicScope(clientScope)) {
-            return paramaters.getList(clientScope.getId());
+            return parameters.getList(clientScope.getId());
         }
         return Collections.emptyList();
     }
@@ -76,9 +76,9 @@ public class UserConsentModel {
         for (ClientScopeModel apprClientScope : clientScopes) {
             if (apprClientScope.getId().equals(clientScope.getId())) {
                 if (ClientScopeModel.isDynamicScope(clientScope)) {
-                    return parameter != null && paramaters.getList(apprClientScope.getId()).contains(parameter);
+                    return parameter != null && parameters.getList(apprClientScope.getId()).contains(parameter);
                 } else {
-                    return parameter == null && paramaters.getList(apprClientScope.getId()).isEmpty();
+                    return parameter == null && parameters.getList(apprClientScope.getId()).isEmpty();
                 }
             }
         }

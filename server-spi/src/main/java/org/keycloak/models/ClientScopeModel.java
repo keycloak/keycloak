@@ -38,7 +38,7 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
      * Returns true when dynamic scopes are enabled and the scope is defined as dynamic.
      *
      * @param scope The scope to check
-     * @return true when dynamic scopes feature is enabled and the sopce is dynamic, false otherwise
+     * @return true when the dynamic scopes feature is enabled and the scope is dynamic, false otherwise
      */
     static boolean isDynamicScope(ClientScopeModel scope) {
         return Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) && scope.isDynamicScope();

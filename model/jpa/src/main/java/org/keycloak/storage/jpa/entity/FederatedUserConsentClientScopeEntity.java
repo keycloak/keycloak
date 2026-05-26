@@ -18,6 +18,7 @@
 package org.keycloak.storage.jpa.entity;
 
 import java.io.Serializable;
+import java.util.Optional;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -78,10 +79,10 @@ public class FederatedUserConsentClientScopeEntity {
         this.scopeId = scopeId;
     }
 
-    public String getParameter() {
-        return parameter.equals(UserConsentClientScopeEntity.NOT_AVAILABLE_PARAM)
+    public Optional<String> getParameter() {
+        return Optional.ofNullable(UserConsentClientScopeEntity.NOT_AVAILABLE_PARAM.equals(parameter)
                 ? null
-                : parameter;
+                : parameter);
     }
 
     public void setParameter(String parameter) {

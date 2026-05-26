@@ -873,8 +873,8 @@ public class TokenManager {
                     session, client, scopeParam);
             for (AuthorizationDetails authDetails : ctx.getAuthorizationDetailEntries()) {
                 ClientScopeModel requestedScope = authDetails.getClientScope();
-                String paramater = authDetails.getDynamicScopeParam();
-                if (requestedScope.isDisplayOnConsentScreen() && (grantedConsent == null || !grantedConsent.isClientScopeGranted(requestedScope, paramater))) {
+                String parameter = authDetails.getDynamicScopeParam();
+                if (requestedScope.isDisplayOnConsentScreen() && (grantedConsent == null || !grantedConsent.isClientScopeGranted(requestedScope, parameter))) {
                     return false;
                 }
             }

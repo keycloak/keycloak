@@ -152,14 +152,7 @@ class LightweightConsentEntity {
     }
 
     public void addGrantedClientScopesId(String clientScopeId) {
-        if (clientScopeId == null) {
-            return;
-        }
-        if (grantedClientScopesIds == null) {
-            grantedClientScopesIds = new HashSet<>();
-        }
-        grantedClientScopesIds.add(clientScopeId);
-        this.lastUpdatedDate = Time.currentTimeMillis();
+        addGrantedClientScopesId(clientScopeId, null);
     }
 
     public Long getLastUpdatedDate() {
