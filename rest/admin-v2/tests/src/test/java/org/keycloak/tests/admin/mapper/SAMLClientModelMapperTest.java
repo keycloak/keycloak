@@ -126,7 +126,7 @@ public class SAMLClientModelMapperTest {
             SAMLClientModelMapper mapper = getModelMapper(session);
             SAMLClientRepresentation rep = (SAMLClientRepresentation) mapper.fromModel(clientModel);
 
-            assertThat(rep.getNameIdFormat(), is("username"));
+            assertThat(rep.getNameIdFormat(), is(SAMLClientRepresentation.NameIdFormat.USERNAME));
             assertThat(rep.getForceNameIdFormat(), is(true));
         } finally {
             realm.removeClient(clientModel.getId());
@@ -156,7 +156,7 @@ public class SAMLClientModelMapperTest {
             assertThat(rep.getSignDocuments(), is(true));
             assertThat(rep.getSignAssertions(), is(true));
             assertThat(rep.getClientSignatureRequired(), is(true));
-            assertThat(rep.getSignatureAlgorithm(), is("RSA_SHA256"));
+            assertThat(rep.getSignatureAlgorithm(), is(SAMLClientRepresentation.SignatureAlgorithm.RSA_SHA256));
             assertThat(rep.getSignatureCanonicalizationMethod(), is("http://www.w3.org/2001/10/xml-exc-c14n#"));
             assertThat(rep.getSigningCertificate(), is("MIICertificate"));
         } finally {
@@ -271,7 +271,7 @@ public class SAMLClientModelMapperTest {
             rep.setEnabled(true);
             rep.setClientId("test-saml-tomodel-nameid");
             rep.setRedirectUris(Set.of());
-            rep.setNameIdFormat("email");
+            rep.setNameIdFormat(SAMLClientRepresentation.NameIdFormat.EMAIL);
             rep.setForceNameIdFormat(true);
 
             SAMLClientModelMapper mapper = getModelMapper(session);
@@ -299,7 +299,7 @@ public class SAMLClientModelMapperTest {
             rep.setSignDocuments(true);
             rep.setSignAssertions(true);
             rep.setClientSignatureRequired(true);
-            rep.setSignatureAlgorithm("RSA_SHA512");
+            rep.setSignatureAlgorithm(SAMLClientRepresentation.SignatureAlgorithm.RSA_SHA512);
             rep.setSignatureCanonicalizationMethod("http://www.w3.org/2001/10/xml-exc-c14n#WithComments");
             rep.setSigningCertificate("MIINewCertificate");
 

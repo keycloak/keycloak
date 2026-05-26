@@ -3,7 +3,6 @@ import {
   HelpItem,
   KeycloakSelect,
   ListEmptyState,
-  NumberControl,
   PasswordInput,
   SelectVariant,
   useAlerts,
@@ -108,8 +107,6 @@ export type StreamTabProps = {
   setClientStream: (stream: SsfClientStream | null) => void;
   defaultSupportedEvents: string;
   nativelyEmittedEvents: string[];
-  defaultPushConnectTimeoutMillis: number;
-  defaultPushSocketTimeoutMillis: number;
   save: (options?: SaveOptions) => void;
   reset: () => void;
   refresh: () => void;
@@ -121,8 +118,6 @@ export const StreamTab = ({
   setClientStream,
   defaultSupportedEvents,
   nativelyEmittedEvents,
-  defaultPushConnectTimeoutMillis,
-  defaultPushSocketTimeoutMillis,
   save,
   reset,
   refresh,
@@ -133,15 +128,6 @@ export const StreamTab = ({
   const { control, setValue } = useFormContext<FormFields>();
   const { addAlert, addError } = useAlerts();
   const formatDate = useFormatDate();
-
-  // Watch the delivery method via useWatch so the controlled context
-  // hook plays nicely with this child component.
-  const ssfDelivery = useWatch({
-    control,
-    name: convertAttributeNameToForm<FormFields>(
-      "attributes.ssf.delivery",
-    ) as never,
-  }) as string | undefined;
 
   // The Events Requested dropdown on the create-stream form should
   // surface only events the receiver has marked as Supported, not the
@@ -1135,41 +1121,6 @@ export const StreamTab = ({
                   />
                 )}
               </FormGroup>
-              {/* Push timeouts only apply when Keycloak makes outbound
-                HTTP push requests. POLL is inbound (receivers call
-                the transmitter), so the timeout knobs have no effect
-                and we hide them to avoid suggesting otherwise. */}
-              {(ssfDelivery === "PUSH" || !ssfDelivery) &&
-                !isPollDeliveryMethod(clientStream.delivery?.method) && (
-                  <>
-                    <NumberControl
-                      name={convertAttributeNameToForm<FormFields>(
-                        "attributes.ssf.pushEndpointConnectTimeoutMillis",
-                      )}
-                      label={t("ssfPushEndpointConnectTimeout")}
-                      labelIcon={t("ssfPushEndpointConnectTimeoutHelp")}
-                      controller={{
-                        defaultValue: defaultPushConnectTimeoutMillis,
-                        rules: {
-                          min: 0,
-                        },
-                      }}
-                    />
-                    <NumberControl
-                      name={convertAttributeNameToForm<FormFields>(
-                        "attributes.ssf.pushEndpointSocketTimeoutMillis",
-                      )}
-                      label={t("ssfPushEndpointSocketTimeout")}
-                      labelIcon={t("ssfPushEndpointSocketTimeoutHelp")}
-                      controller={{
-                        defaultValue: defaultPushSocketTimeoutMillis,
-                        rules: {
-                          min: 0,
-                        },
-                      }}
-                    />
-                  </>
-                )}
               <ActionGroup>
                 <Button
                   variant="secondary"

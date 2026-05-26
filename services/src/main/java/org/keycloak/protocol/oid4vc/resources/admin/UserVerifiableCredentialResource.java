@@ -28,6 +28,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -183,6 +184,47 @@ public class UserVerifiableCredentialResource {
             logger.warn(String.format("Verifiable credential '%s' not found for user '%s' in the realm '%s'.",
                     credentialScopeName, user.getUsername(), realm.getName()));
             throw new NotFoundException("Verifiable credential not found");
+        }
+
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+    }
+
+    @GET
+    @Path("issued-credentials")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(summary = "Get issued verifiable credentials for the user")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK"),
+            @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public List<IssuedVerifiableCredentialRepresentation> getIssuedCredentials() {
+        auth.users().requireView(user);
+        checkOid4VCIEnabled();
+
+        return session.users().getIssuedVerifiableCredentialsStreamByUser(user.getId())
+                .map(ModelToRepresentation::toRepresentation)
+                .toList();
+    }
+
+    @DELETE
+    @Path("issued-credentials/{id}")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(summary = "Revoke an issued verifiable credential")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public void revokeIssuedCredential(@PathParam("id") String credentialId) {
+        auth.users().requireManage(user);
+        checkOid4VCIEnabled();
+
+        boolean removed = session.users().removeIssuedVerifiableCredential(credentialId);
+        if (!removed) {
+            logger.warn(String.format("Issued verifiable credential with ID '%s' not found for user '%s' in realm '%s'.",
+                    credentialId, user.getUsername(), realm.getName()));
+            throw new NotFoundException("Issued verifiable credential not found");
         }
 
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();

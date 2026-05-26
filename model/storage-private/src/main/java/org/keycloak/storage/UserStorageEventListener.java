@@ -39,6 +39,10 @@ public final class UserStorageEventListener implements ClusterListener, Provider
             RealmModel realm = session.realms().getRealm(realmId);
 
             if (realm == null) {
+                if (fedEvent.isRemoved()) {
+                    logger.debugf("Realm with id %s not found when handling user storage removal event, it may have been deleted already", realmId);
+                    return;
+                }
                 throw new RuntimeException("Failed to execute session task. Realm with id " + realmId + " not found.");
             }
 

@@ -144,34 +144,42 @@ export const ThemeColors = ({
   const defaultValue = (v: DefaultValueType | undefined, theme: ThemeType) =>
     typeof v === "string" ? v : v?.[theme];
 
-  const reset = () => {
-    setOverriddenColors(new Set());
-
+  const buildThemeDefaults = (themeType: ThemeType): Record<string, string> => {
+    const themeMapping = themeType === "light" ? lightTheme() : darkTheme();
     const parentDefaults: Record<string, string> = {};
-    mapping.forEach((m) => {
+    themeMapping.forEach((m) => {
       if (m.defaultValue && !m.parentName) {
-        parentDefaults[m.name] = defaultValue(m.defaultValue, theme)!;
+        parentDefaults[m.name] = defaultValue(m.defaultValue, themeType)!;
       }
     });
+    return themeMapping.reduce<Record<string, string>>((acc, m) => {
+      if (!m.variable) return acc;
+      let value = defaultValue(m.defaultValue, themeType);
+      if (m.parentName && value?.includes("{{")) {
+        const parentValue = parentDefaults[m.parentName];
+        if (parentValue) {
+          const resolved = resolveColorReferences(
+            value,
+            parentValue,
+            themeType,
+          );
+          value = resolveColorToHex(resolved);
+        }
+      }
+      if (value !== undefined) {
+        acc[defaultValue(m.variable, themeType)!] = value;
+      }
+      return acc;
+    }, {});
+  };
 
+  const reset = () => {
+    setOverriddenColors(new Set());
+    const currentValues = form.getValues();
     form.reset({
-      [theme]: mapping.reduce<Record<string, string>>((acc, m) => {
-        if (!m.variable) return acc;
-
-        let value = defaultValue(m.defaultValue, theme);
-        if (m.parentName && value?.includes("{{")) {
-          const parentValue = parentDefaults[m.parentName];
-          if (parentValue) {
-            const resolved = resolveColorReferences(value, parentValue, theme);
-            value = resolveColorToHex(resolved);
-          }
-        }
-
-        if (value !== undefined) {
-          acc[defaultValue(m.variable, theme)!] = value;
-        }
-        return acc;
-      }, {}),
+      ...currentValues,
+      light: buildThemeDefaults("light"),
+      dark: buildThemeDefaults("dark"),
     });
   };
 
@@ -222,11 +230,15 @@ export const ThemeColors = ({
 
   useEffect(() => {
     setupForm();
+  }, [realm]);
+
+  useEffect(() => {
+    setOverriddenColors(new Set());
     switchTheme(theme);
     return () => {
       switchTheme(originalTheme);
     };
-  }, [realm, theme]);
+  }, [theme]);
 
   return (
     <>
@@ -300,14 +312,14 @@ export const ThemeColors = ({
                     <DefaultColorAccordion
                       label={m.name}
                       color={defaultValue(m.defaultValue, theme)!}
-                      key={m.name}
+                      key={`${theme}-${m.name}`}
                       name={`${theme}.${m.variable}`}
                       colorName={m.name}
                       onOverride={markAsOverridden}
                     />
                   ) : (
                     <ColorControl
-                      key={m.name}
+                      key={`${theme}-${m.name}`}
                       color={defaultValue(m.defaultValue, theme)!}
                       name={`${theme}.${m.variable!}`}
                       label={m.name}
