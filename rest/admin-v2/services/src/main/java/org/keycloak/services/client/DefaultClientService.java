@@ -17,6 +17,7 @@ import jakarta.validation.groups.Default;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.events.admin.v2.AdminEventV2Builder;
@@ -134,11 +135,12 @@ public class DefaultClientService implements ClientService {
         // When disabled, we fall back to in-memory filtering by VIEW_CLIENTS role.
         boolean canView = AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || permissions.clients().canView();
         try {
-            return realm.getClientsStream()
+            Supplier<Stream<BaseClientRepresentation>> supplier = () -> realm.getClientsStream()
                     .filter(client -> canView || permissions.clients().canView(client))
                     .filter(client -> client.getProtocol() != null)
                     .map(client -> getMapper(client.getProtocol()).fromModel(client, projectionOptions.getFields()))
                     .filter(java.util.Objects::nonNull);
+            return EntityManagers.streamInBatch(session, supplier, 100);
         } catch (ModelException e) {
             throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
         }

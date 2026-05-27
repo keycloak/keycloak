@@ -21,7 +21,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -131,6 +133,44 @@ public class EntityManagers {
                         p.setEntityManager(old);
                     } // else - created during the batch run, so it's enough that it was flushed / cleared
                 });
+            }
+        }
+    }
+
+    /**
+     * For read-only operations.
+     *
+     * The presumed usage is for top-level jax-rs methods, so there's no nesting logic
+     */
+    public static <T> Stream<T> streamInBatch(KeycloakSession session, Supplier<Stream<T>> streamSupplier, int clearInterval) {
+        // TODO: not necessary if read-only
+        flush(session, false); // make sure the state entering the batch processing is committed
+
+        // TODO: hibnerate does support a read-only SessionImpl. it's not easily accessible to control that, but can be done with a nested entity manager
+        // so perhaps underneath the overall Session txn we could consider nesting a read-only Session to enforce that the business logic of endpoints are read-only
+
+        boolean isBatched = isBatchMode();
+        batchMode.set(true);
+        Runnable done = () -> {
+            if (!isBatched) {
+                batchMode.remove();
+            }
+        };
+        boolean success = false;
+        try {
+            Stream<T> result = streamSupplier.get();
+            AtomicInteger counter = new AtomicInteger();
+            result = result.map(value -> {
+                if (counter.incrementAndGet() % clearInterval == 0) {
+                    forEachEntityManager(session, EntityManager::clear);
+                }
+                return value;
+            }).onClose(done);
+            success = true;
+            return result;
+        } finally {
+            if (!success) {
+                done.run();
             }
         }
     }
