@@ -200,7 +200,24 @@
             <column name="OWNER_ID"/>
             <column name="CONTAINER_ID"/>
         </createIndex>
+    </changeSet>
 
+    <changeSet author="keycloak" id="26.7.0-9686-dynamic-scopes-consent">
+        <addColumn tableName="USER_CONSENT_CLIENT_SCOPE">
+            <column name="PARAMETER" type="VARCHAR(255)" defaultValue="#N A#">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <dropPrimaryKey tableName="USER_CONSENT_CLIENT_SCOPE" constraintName="CONSTRAINT_GRNTCSNT_CLSC_PM"/>
+        <addPrimaryKey columnNames="USER_CONSENT_ID, SCOPE_ID, PARAMETER" constraintName="CONSTRAINT_GRNTCSNT_CLSC_PM" tableName="USER_CONSENT_CLIENT_SCOPE"/>
+
+        <addColumn tableName="FED_USER_CONSENT_CL_SCOPE">
+            <column name="PARAMETER" type="VARCHAR(255)" defaultValue="#N A#">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <dropPrimaryKey tableName="FED_USER_CONSENT_CL_SCOPE" constraintName="CONSTRAINT_FGRNTCSNT_CLSC_PM"/>
+        <addPrimaryKey columnNames="USER_CONSENT_ID, SCOPE_ID, PARAMETER" constraintName="CONSTRAINT_FGRNTCSNT_CLSC_PM" tableName="FED_USER_CONSENT_CL_SCOPE"/>
     </changeSet>
 
     <changeSet author="keycloak" id="26.7.0-46204-issued-ver-credential-table">
