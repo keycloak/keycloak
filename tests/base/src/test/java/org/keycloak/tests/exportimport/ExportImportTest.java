@@ -64,7 +64,7 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.tests.suites.DatabaseTest;
+import org.keycloak.tests.common.CustomProvidersServerConfig;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.JsonTestUtils;
 import org.keycloak.testsuite.util.runonserver.ExportImportHelper;
@@ -94,8 +94,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-@KeycloakIntegrationTest
-@DatabaseTest
+@KeycloakIntegrationTest(config = CustomProvidersServerConfig.class)
 public class ExportImportTest {
 
     @InjectRealm(ref = "test", fromJson = "/testrealm.json", config = ExportImportRealmConfig.class)
@@ -565,6 +564,7 @@ public class ExportImportTest {
     }
 
     private void assertAuth(boolean expectedResult, String realmName, String username, String password) {
+        //assertEquals(expectedResult, runOnServerTest.validCredentials(realmName, username, password));
         assertEquals(expectedResult, runOnServerMaster.fetch(session -> {
             RealmModel realm = session.realms().getRealmByName(realmName);
             if (realm == null) return false;
