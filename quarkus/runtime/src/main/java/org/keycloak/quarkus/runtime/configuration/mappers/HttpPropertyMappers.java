@@ -46,7 +46,8 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
             if (exception instanceof IOException ioe) {
                 return new PropertyException("Failed to load 'https-*' material: " + ioe.getClass().getSimpleName() + " " + ioe.getMessage(), ioe);
             } else if (exception instanceof IllegalArgumentException iae) {
-                if (iae.getMessage().contains(QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE)) {
+                if (iae.getMessage().contains(QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE)
+                        || iae.getMessage().contains(ManagementPropertyMappers.QUARKUS_MANAGEMENT_HTTPS_TRUST_STORE_FILE_TYPE)) {
                     return new PropertyException("Unable to determine 'https-trust-store-type' automatically. " +
                             "Adjust the file extension or specify the property.", iae);
                 } else if (iae.getMessage().contains(QUARKUS_HTTPS_KEY_STORE_FILE_TYPE)) {
@@ -247,7 +248,7 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                 .orElse(null);
     }
 
-    private static String resolveKeyStoreType(String value,
+    static String resolveKeyStoreType(String value,
             ConfigSourceInterceptorContext configSourceInterceptorContext) {
         if (FipsMode.STRICT.toString().equals(value)) {
             return "BCFKS";

@@ -33,6 +33,8 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 public class ManagementPropertyMappers implements PropertyMapperGrouping {
 
     private static final String HTTP_MANAGEMENT_SCHEME_IS_INHERITED = "http-management-scheme is inherited";
+    private static final String QUARKUS_MANAGEMENT_HTTPS_TRUST_STORE_FILE = "quarkus.management.ssl.certificate.trust-store-file";
+    static final String QUARKUS_MANAGEMENT_HTTPS_TRUST_STORE_FILE_TYPE = "quarkus.management.ssl.certificate.trust-store-file-type";
 
     @Override
     public List<PropertyMapper<?>> getPropertyMappers() {
@@ -118,6 +120,25 @@ public class ManagementPropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(ManagementPropertyMappers::isInheritedScheme, HTTP_MANAGEMENT_SCHEME_IS_INHERITED)
                         .mapFrom(HttpOptions.HTTPS_KEY_STORE_TYPE)
                         .to("quarkus.management.ssl.certificate.key-store-file-type")
+                        .paramLabel("type")
+                        .build(),
+                fromOption(ManagementOptions.HTTPS_MANAGEMENT_TRUST_STORE_FILE)
+                        .isEnabled(ManagementPropertyMappers::isInheritedScheme, HTTP_MANAGEMENT_SCHEME_IS_INHERITED)
+                        .mapFrom(HttpOptions.HTTPS_TRUST_STORE_FILE)
+                        .to(QUARKUS_MANAGEMENT_HTTPS_TRUST_STORE_FILE)
+                        .paramLabel("file")
+                        .build(),
+                fromOption(ManagementOptions.HTTPS_MANAGEMENT_TRUST_STORE_PASSWORD)
+                        .isEnabled(ManagementPropertyMappers::isInheritedScheme, HTTP_MANAGEMENT_SCHEME_IS_INHERITED)
+                        .mapFrom(HttpOptions.HTTPS_TRUST_STORE_PASSWORD)
+                        .to("quarkus.management.ssl.certificate.trust-store-password")
+                        .paramLabel("password")
+                        .isMasked(true)
+                        .build(),
+                fromOption(ManagementOptions.HTTPS_MANAGEMENT_TRUST_STORE_TYPE)
+                        .isEnabled(ManagementPropertyMappers::isInheritedScheme, HTTP_MANAGEMENT_SCHEME_IS_INHERITED)
+                        .mapFrom(HttpOptions.HTTPS_TRUST_STORE_TYPE)
+                        .to(QUARKUS_MANAGEMENT_HTTPS_TRUST_STORE_FILE_TYPE)
                         .paramLabel("type")
                         .build()
         );
