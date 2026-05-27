@@ -3,11 +3,17 @@ package org.keycloak.tests.oauth;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.grants.ciba.CibaGrantTypeFactory;
+import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
+import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
@@ -17,7 +23,9 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.oauth.CibaProvider;
 import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectCibaProvider;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
@@ -35,6 +43,7 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.ciba.AuthenticationRequestAcknowledgement;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -67,6 +76,9 @@ public class DynamicScopesOAuthGrantTest {
 
     @InjectEvents
     protected Events events;
+
+    @InjectCibaProvider
+    protected CibaProvider ciba;
 
     @InjectPage
     protected OAuthGrantPage grantPage;
@@ -233,11 +245,68 @@ public class DynamicScopesOAuthGrantTest {
         realm.admin().localization().deleteRealmLocalizationText("en", "dynamicConsentText");
     }
 
+    @Test
+    public void cibaGrant() throws Exception {
+        // client Backchannel Authentication Request
+        oauth.client(THIRD_PARTY_APP, "password");
+        oauth.scope("foo-dynamic-scope:param1");
+        AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(DEFAULT_USERNAME)
+                .bindingMessage("asdfghjkl")
+                .clientNotificationToken("client-notification-token")
+                .additionalParams(Map.of("user_device", "mobile"))
+                .send();
+        Assertions.assertTrue(response.isSuccess());
+        Assertions.assertNotNull(response.getAuthReqId());
+
+        // client Authentication Channel Request
+        CibaProvider.CibaAuthenticationChannelRequest clientAuthenticationChannelReq = ciba.getAuthChannel("asdfghjkl");
+        Assertions.assertTrue(clientAuthenticationChannelReq.getRequest().getConsentRequired());
+        MatcherAssert.assertThat(List.of(clientAuthenticationChannelReq.getRequest().getScope().split(" ")), Matchers.hasItems("foo-dynamic-scope:param1"));
+
+        // check ping is not still there
+        ClientNotificationEndpointRequest pushedClientNotification = ciba.getPushedCibaClientNotification("client-notification-token");
+        Assertions.assertNull(pushedClientNotification.getAuthReqId());
+
+        // client Authentication Channel completed
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(),
+                oauth.ciba().doAuthenticationChannelCallback(clientAuthenticationChannelReq.getBearerToken(), AuthenticationChannelResponse.Status.SUCCEED));
+
+        // Check clientNotification exists now for our authReqId
+        pushedClientNotification = ciba.getPushedCibaClientNotification("client-notification-token");
+        Assertions.assertEquals(pushedClientNotification.getAuthReqId(), response.getAuthReqId());
+
+        // client Token Request should be OK now
+        AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
+        Assertions.assertTrue(tokenRes.isSuccess());
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.AUTHREQID_TO_TOKEN)
+                .hasSessionId()
+                .hasIpAddress()
+                .hasCodeId()
+                .hasUserId()
+                .clientId(THIRD_PARTY_APP)
+                .hasTokenId(Details.REFRESH_TOKEN_ID)
+                .hasAccessTokenId(CibaGrantTypeFactory.GRANT_SHORTCUT)
+                .details(Details.USERNAME, DEFAULT_USERNAME)
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
+        MatcherAssert.assertThat(List.of(tokenRes.getScope().split(" ")), Matchers.hasItems("foo-dynamic-scope:param1"));
+
+        // assert consent is granted
+        List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(realm.admin(), DEFAULT_USERNAME);
+        Assertions.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().anyMatch(p -> p.equals("foo-dynamic-scope:param1")));
+
+        // do a refresh
+        tokenRes = oauth.doRefreshTokenRequest(tokenRes.getRefreshToken());
+        MatcherAssert.assertThat(List.of(tokenRes.getScope().split(" ")), Matchers.hasItems("foo-dynamic-scope:param1"));
+    }
+
     public static class DynamicScopesServerConfig implements KeycloakServerConfig {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.DYNAMIC_SCOPES);
+            return config.features(Profile.Feature.DYNAMIC_SCOPES)
+                    .option("spi-ciba-auth-channel-ciba-http-auth-channel-http-authentication-channel-uri",
+                            "http://localhost:8500/ciba/request-authentication-channel");
         }
     }
 
@@ -262,7 +331,10 @@ public class DynamicScopesOAuthGrantTest {
                     .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
                     .consentRequired(Boolean.TRUE)
                     .redirectUris("*")
-                    .secret("password");
+                    .secret("password")
+                    .attribute(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "ping")
+                    .attribute(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, "http://localhost:8500/ciba/push-ciba-client-notification")
+                    .attribute(CibaConfig.OIDC_CIBA_GRANT_ENABLED, Boolean.TRUE.toString());
         }
     }
 }
