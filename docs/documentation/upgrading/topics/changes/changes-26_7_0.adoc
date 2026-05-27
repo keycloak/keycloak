@@ -4,6 +4,17 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Hardcoded role and claim mappers now validate mapper configuration
+
+The `oidc-hardcoded-role-mapper` protocol mapper now validates that the caller already holds the target role in the database.
+If the caller does not hold the role, the create or update request is rejected with HTTP 400.
+
+The `oidc-hardcoded-claim-mapper` protocol mapper now validates that `claim.name` is not set to `realm_access`, `resource_access`, or any sub-path of those claims (for example `resource_access.realm-management.roles`).
+These claim paths are managed exclusively by {project_name}'s role-resolution pipeline.
+
+If you have existing protocol mappers of either type that would be rejected by these new validation rules, you must reconfigure or remove them before or immediately after upgrading.
+Use the admin REST API or admin console to audit all protocol mappers across clients and client scopes before the upgrade.
+
 === Test Framework representation builders
 
 The test framework provides a number of builders to simplify creating representations. These can be used on their own,
@@ -36,6 +47,25 @@ Previously, although the admin console UI already treated the alias as read-only
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
+
+=== Client Policy SPI extended with protocol-mapper, scope-mapping, role-mapping, and certificate events
+
+Eight new `ClientPolicyEvent` values have been added: `REGISTER_PROTOCOL_MAPPER`, `UPDATE_PROTOCOL_MAPPER`, `UNREGISTER_PROTOCOL_MAPPER`, `REGISTER_SCOPE_MAPPING`, `UNREGISTER_SCOPE_MAPPING`, `REGISTER_ROLE_MAPPING`, `UNREGISTER_ROLE_MAPPING`, and `UPDATE_CLIENT_CERTIFICATE`.
+
+The following context interfaces are provided for executors that need to inspect the proposed change:
+
+* `ClientProtocolMapperContext` — carries the `ProtocolMapperContainerModel` and both the proposed and (for updates) existing `ProtocolMapperRepresentation`.
+* `ClientScopeMappingContext` — carries the `ScopeContainerModel`, an optional `ClientModel` for client-role mappings, and the list of `RoleRepresentation` being added or removed.
+* `RoleMappingContext` — carries the `RoleMapperModel` (user or group), an optional `ClientModel` for client-role mappings, and the list of `RoleRepresentation` being added or removed.
+* `ClientCertificateContext` — carries the target `ClientModel`, the attribute-prefix string, and the proposed `CertificateRepresentation`.
+
+All four interfaces extend `ClientPolicyContext` and expose the authenticated principal through `getAuthenticatedUser()`, `getAuthenticatedClient()`, and `getToken()`.
+
+*Impact on existing `ClientPolicyExecutorProvider` implementations:*
+
+* Implementations that guard their logic with `instanceof ClientCRUDContext` (or a similar type check) are unaffected; the new events pass through as silent no-ops.
+* Implementations that use an exhaustive `switch` statement on `ClientPolicyEvent` without a `default` branch may produce a compiler warning for unhandled enum constants and should be updated to handle or explicitly ignore the new values.
+* No existing executor is required to handle the new events; omitting a handler leaves the corresponding admin operations ungated, which matches the previous behaviour for those operations.
 
 === Verify email required before credentials setup during user self-registration
 

@@ -48,6 +48,10 @@ import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.ClientProtocolMapperRegisterContext;
+import org.keycloak.services.clientpolicy.context.ClientProtocolMapperRemoveContext;
+import org.keycloak.services.clientpolicy.context.ClientProtocolMapperUpdateContext;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
@@ -141,6 +145,11 @@ public class ProtocolMappersResource {
         try {
             model = RepresentationToModel.toModel(rep);
             validateModel(model);
+            try {
+                session.clientPolicy().triggerOnEvent(new ClientProtocolMapperRegisterContext(client, rep, auth.adminAuth()));
+            } catch (ClientPolicyException cpe) {
+                throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+            }
             model = client.addProtocolMapper(model);
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), model.getId()).representation(rep).success();
 
@@ -164,11 +173,24 @@ public class ProtocolMappersResource {
     public void createMapper(List<ProtocolMapperRepresentation> reps) {
         managePermission.require();
 
-        ProtocolMapperModel model = null;
-        for (ProtocolMapperRepresentation rep : reps) {
-            model = RepresentationToModel.toModel(rep);
+        List<ProtocolMapperModel> models = reps.stream()
+                .map(RepresentationToModel::toModel)
+                .toList();
+
+        for (ProtocolMapperModel model : models) {
             validateModel(model);
-            model = client.addProtocolMapper(model);
+        }
+
+        if (!reps.isEmpty()) {
+            try {
+                session.clientPolicy().triggerOnEvent(new ClientProtocolMapperRegisterContext(client, reps, auth.adminAuth()));
+            } catch (ClientPolicyException cpe) {
+                throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+            }
+        }
+
+        for (ProtocolMapperModel model : models) {
+            client.addProtocolMapper(model);
         }
         adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(reps).success();
     }
@@ -238,11 +260,17 @@ public class ProtocolMappersResource {
     public void update(@Parameter(description = "Mapper id") @PathParam("id") String id, ProtocolMapperRepresentation rep) {
         managePermission.require();
 
-        ProtocolMapperModel model = client.getProtocolMapperById(id);
-        if (model == null) throw new NotFoundException("Model not found");
-        model = RepresentationToModel.toModel(rep);
+        ProtocolMapperModel existing = client.getProtocolMapperById(id);
+        if (existing == null) throw new NotFoundException("Model not found");
+        ProtocolMapperModel model = RepresentationToModel.toModel(rep);
 
         validateModel(model);
+
+        try {
+            session.clientPolicy().triggerOnEvent(new ClientProtocolMapperUpdateContext(client, rep, existing, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
 
         client.updateProtocolMapper(model);
         adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
@@ -263,6 +291,11 @@ public class ProtocolMappersResource {
 
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
+        try {
+            session.clientPolicy().triggerOnEvent(new ClientProtocolMapperRemoveContext(client, model, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
         client.removeProtocolMapper(model);
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
 

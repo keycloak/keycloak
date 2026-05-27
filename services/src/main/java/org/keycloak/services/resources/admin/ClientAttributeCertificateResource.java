@@ -51,6 +51,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.ClientCertificateUpdateContext;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.util.CertificateInfoHelper;
@@ -118,6 +120,12 @@ public class ClientAttributeCertificateResource {
 
         CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId());
 
+        try {
+            session.clientPolicy().triggerOnEvent(new ClientCertificateUpdateContext(client, attributePrefix, info, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+
         CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
 
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
@@ -139,13 +147,19 @@ public class ClientAttributeCertificateResource {
     @Operation( summary = "Upload certificate and eventually private key")
     public CertificateRepresentation uploadJks() throws IOException {
         auth.clients().requireConfigure(client);
+        CertificateRepresentation info;
         try {
-            CertificateRepresentation info = CertificateInfoHelper.getCertificateFromRequest(session);
-            updateCertFromRequest(info);
-            return info;
+            info = CertificateInfoHelper.getCertificateFromRequest(session);
         } catch (IllegalStateException ise) {
             throw new ErrorResponseException("certificate-not-found", "Certificate or key with given alias not found in the keystore", Response.Status.BAD_REQUEST);
         }
+        try {
+            session.clientPolicy().triggerOnEvent(new ClientCertificateUpdateContext(client, attributePrefix, info, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+        updateCertFromRequest(info);
+        return info;
     }
 
     /**
@@ -162,13 +176,19 @@ public class ClientAttributeCertificateResource {
     @Operation( summary = "Upload only certificate, not private key")
     public CertificateRepresentation uploadJksCertificate() throws IOException {
         auth.clients().requireManage(client);
+        CertificateRepresentation info;
         try {
-            CertificateRepresentation info = CertificateInfoHelper.getCertificateFromRequest(session);
-            updateCertFromRequest(info);
-            return info;
+            info = CertificateInfoHelper.getCertificateFromRequest(session);
         } catch (IllegalStateException ise) {
             throw new ErrorResponseException("certificate-not-found", "Certificate or key with given alias not found in the keystore", Response.Status.BAD_REQUEST);
         }
+        try {
+            session.clientPolicy().triggerOnEvent(new ClientCertificateUpdateContext(client, attributePrefix, info, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+        updateCertFromRequest(info);
+        return info;
     }
 
     private void updateCertFromRequest(CertificateRepresentation info) {
@@ -259,6 +279,12 @@ public class ClientAttributeCertificateResource {
         byte[] rtn = getKeystore(config, info.getPrivateKey(), info.getCertificate());
 
         info.setPrivateKey(null);
+
+        try {
+            session.clientPolicy().triggerOnEvent(new ClientCertificateUpdateContext(client, attributePrefix, info, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
 
         CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
 

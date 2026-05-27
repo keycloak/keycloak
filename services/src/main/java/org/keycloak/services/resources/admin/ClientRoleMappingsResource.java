@@ -49,6 +49,9 @@ import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.RoleMapperAssignmentRegisterContext;
+import org.keycloak.services.clientpolicy.context.RoleMapperAssignmentRemoveContext;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.storage.ReadOnlyException;
@@ -174,13 +177,21 @@ public class ClientRoleMappingsResource {
     public void addClientRoleMapping(List<RoleRepresentation> roles) {
         managePermission.require();
 
+        List<RoleModel> roleModels = roles.stream()
+                .map(this::getValidatedClientRole)
+                .collect(Collectors.toList());
+        List<RoleRepresentation> validatedRoles = roleModels.stream()
+                .map(ModelToRepresentation::toBriefRepresentation)
+                .collect(Collectors.toList());
+
         try {
-            for (RoleRepresentation role : roles) {
-                RoleModel roleModel = client.getRole(role.getName());
-                if (roleModel == null || !roleModel.getId().equals(role.getId())) {
-                    throw new NotFoundException("Role not found");
-                }
-                auth.roles().requireMapRole(roleModel);
+            session.clientPolicy().triggerOnEvent(new RoleMapperAssignmentRegisterContext(user, client, validatedRoles, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+
+        try {
+            for (RoleModel roleModel : roleModels) {
                 user.grantRole(roleModel);
             }
         } catch (ModelIllegalStateException e) {
@@ -191,8 +202,8 @@ public class ClientRoleMappingsResource {
             throw new ErrorResponseException("invalid_request", "Could not add user role or group mappings!", Response.Status.BAD_REQUEST);
         }
 
-        if (!roles.isEmpty()) {
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
+        if (!validatedRoles.isEmpty()) {
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(validatedRoles).success();
         }
 
     }
@@ -209,34 +220,51 @@ public class ClientRoleMappingsResource {
     public void deleteClientRoleMapping(List<RoleRepresentation> roles) {
         managePermission.require();
 
+        List<RoleModel> roleModels;
         if (roles == null) {
-            roles = user.getClientRoleMappingsStream(client)
-                    .peek(roleModel -> {
-                        auth.roles().requireMapRole(roleModel);
-                        user.deleteRoleMapping(roleModel);
-                    })
-                    .map(ModelToRepresentation::toBriefRepresentation)
+            roleModels = user.getClientRoleMappingsStream(client)
+                    .filter(this::canMapRole)
                     .collect(Collectors.toList());
         } else {
-            for (RoleRepresentation role : roles) {
-                RoleModel roleModel = client.getRole(role.getName());
-                if (roleModel == null || !roleModel.getId().equals(role.getId())) {
-                    throw new NotFoundException("Role not found");
-                }
+            roleModels = roles.stream()
+                    .map(this::getValidatedClientRole)
+                    .collect(Collectors.toList());
+        }
+        List<RoleRepresentation> effectiveRoles = roleModels.stream()
+                .map(ModelToRepresentation::toBriefRepresentation)
+                .collect(Collectors.toList());
 
-                auth.roles().requireMapRole(roleModel);
-                try {
-                    user.deleteRoleMapping(roleModel);
-                } catch (ModelIllegalStateException e) {
-                    logger.error(e.getMessage(), e);
-                    throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
-                } catch (ModelException | ReadOnlyException me) {
-                    logger.warn(me.getMessage(), me);
-                    throw new ErrorResponseException("invalid_request", "Could not remove user or group role mappings!", Response.Status.BAD_REQUEST);
-                }
+        try {
+            session.clientPolicy().triggerOnEvent(new RoleMapperAssignmentRemoveContext(user, client, effectiveRoles, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+
+        for (RoleModel roleModel : roleModels) {
+            try {
+                user.deleteRoleMapping(roleModel);
+            } catch (ModelIllegalStateException e) {
+                logger.error(e.getMessage(), e);
+                throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+            } catch (ModelException | ReadOnlyException me) {
+                logger.warn(me.getMessage(), me);
+                throw new ErrorResponseException("invalid_request", "Could not remove user or group role mappings!", Response.Status.BAD_REQUEST);
             }
         }
 
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).representation(roles).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).representation(effectiveRoles).success();
+    }
+
+    private boolean canMapRole(RoleModel roleModel) {
+        return auth.roles().canMapRole(roleModel);
+    }
+
+    private RoleModel getValidatedClientRole(RoleRepresentation role) {
+        RoleModel roleModel = client.getRole(role.getName());
+        if (roleModel == null || !roleModel.getId().equals(role.getId())) {
+            throw new NotFoundException("Role not found");
+        }
+        auth.roles().requireMapRole(roleModel);
+        return roleModel;
     }
 }

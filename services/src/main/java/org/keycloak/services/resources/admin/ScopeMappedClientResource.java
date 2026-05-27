@@ -33,6 +33,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -44,6 +45,10 @@ import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.ClientScopeMappingRegisterContext;
+import org.keycloak.services.clientpolicy.context.ClientScopeMappingRemoveContext;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
@@ -69,7 +74,7 @@ public class ScopeMappedClientResource {
     protected KeycloakSession session;
     protected ClientModel scopedClient;
     protected AdminEventBuilder adminEvent;
-    
+
     public ScopeMappedClientResource(RealmModel realm, AdminPermissionEvaluator auth, ScopeContainerModel scopeContainer, KeycloakSession session, ClientModel scopedClient, AdminEventBuilder adminEvent,
                                      AdminPermissionEvaluator.RequirePermissionCheck managePermission,
                                      AdminPermissionEvaluator.RequirePermissionCheck viewPermission) {
@@ -130,7 +135,7 @@ public class ScopeMappedClientResource {
      * Returns the roles for the client that are associated with the client's scope.
      *
      * @param briefRepresentation if false, return roles with their attributes
-     * 
+     *
      * @return
      */
     @Path("composite")
@@ -162,6 +167,12 @@ public class ScopeMappedClientResource {
     public void addClientScopeMapping(List<RoleRepresentation> roles) {
         managePermission.require();
 
+        try {
+            session.clientPolicy().triggerOnEvent(new ClientScopeMappingRegisterContext(scopeContainer, scopedClient, roles, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+
         for (RoleRepresentation role : roles) {
             RoleModel roleModel = scopedClient.getRole(role.getName());
             if (roleModel == null) {
@@ -185,21 +196,29 @@ public class ScopeMappedClientResource {
     public void deleteClientScopeMapping(List<RoleRepresentation> roles) {
         managePermission.require();
 
+        List<RoleRepresentation> effectiveRoles;
         if (roles == null) {
-            roles = KeycloakModelUtils.getClientScopeMappingsStream(scopedClient, scopeContainer)
-                    .peek(scopeContainer::deleteScopeMapping)
+            effectiveRoles = KeycloakModelUtils.getClientScopeMappingsStream(scopedClient, scopeContainer)
                     .map(ModelToRepresentation::toBriefRepresentation)
                     .collect(Collectors.toList());
         } else {
-            for (RoleRepresentation role : roles) {
-                RoleModel roleModel = scopedClient.getRole(role.getName());
-                if (roleModel == null) {
-                    throw new NotFoundException("Role not found");
-                }
-                scopeContainer.deleteScopeMapping(roleModel);
-            }
+            effectiveRoles = roles;
         }
 
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(roles).success();
+        try {
+            session.clientPolicy().triggerOnEvent(new ClientScopeMappingRemoveContext(scopeContainer, scopedClient, effectiveRoles, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+
+        for (RoleRepresentation role : effectiveRoles) {
+            RoleModel roleModel = scopedClient.getRole(role.getName());
+            if (roleModel == null) {
+                throw new NotFoundException("Role not found");
+            }
+            scopeContainer.deleteScopeMapping(roleModel);
+        }
+
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(effectiveRoles).success();
     }
 }

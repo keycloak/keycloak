@@ -36,6 +36,24 @@ As part of this change, the `displayName` attribute has been promoted from a rea
 Before migrating, check the current value of the `displayName` attribute for your realms. If the current value of `displayName` attribute
 exceeds 255 characters, it will be truncated during migration.
 
+= Securing Applications
+
+== Client Policy SPI now covers protocol-mapper, scope-mapping, role-mapping, and certificate management
+
+Client policy executors can now intercept protocol-mapper CRUD, scope-mapping and role-mapping changes, and client-certificate updates through eight new `ClientPolicyEvent` values: `REGISTER_PROTOCOL_MAPPER`, `UPDATE_PROTOCOL_MAPPER`, `UNREGISTER_PROTOCOL_MAPPER`, `REGISTER_SCOPE_MAPPING`, `UNREGISTER_SCOPE_MAPPING`, `REGISTER_ROLE_MAPPING`, `UNREGISTER_ROLE_MAPPING`, and `UPDATE_CLIENT_CERTIFICATE`.
+
+Corresponding context interfaces (`ClientProtocolMapperContext`, `ClientScopeMappingContext`, `RoleMappingContext`, `ClientCertificateContext`) are available for executors that need to inspect the proposed change.
+
+See the link:{developerguide_link}[Server Developer Guide] for details on implementing `ClientPolicyExecutorProvider`.
+
+== Hardcoded role and claim mappers now validate configuration against the calling principal
+
+The `oidc-hardcoded-role-mapper` provider now validates that the configuring principal already holds the target role.
+A request to add a hardcoded-role mapper for a role the caller does not possess in the database is rejected with HTTP 400.
+
+The `oidc-hardcoded-claim-mapper` provider now validates that `claim.name` does not target the `realm_access` or `resource_access` claim paths (including sub-paths such as `resource_access.realm-management.roles`).
+These claim paths are managed exclusively by {project_name}'s role-resolution pipeline and may not be overwritten by a static value.
+
 = Configuring and Running
 
 == Deprecation of SHA1 hashing functions in {project_name} 27

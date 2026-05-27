@@ -22,11 +22,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -127,6 +133,62 @@ public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAcc
             AccessToken.Access access = RoleResolveUtil.getResolvedRealmRoles(session, clientSessionCtx, true);
             access.addRole(role);
         }
+    }
+
+    @Override
+    public void validateConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel client,
+            ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
+        Map<String, String> config = mapperModel.getConfig();
+        if (config == null || config.isEmpty()) return;
+
+        String role = config.get(ROLE_CONFIG);
+        if (role == null || role.isEmpty()) return;
+
+        UserModel configuringUser = getConfiguringUser(session, realm);
+        if (configuringUser == null) return;
+
+        String[] parts = KeycloakModelUtils.parseRole(role);
+        String clientId = parts[0];
+        String roleName = parts[1];
+
+        RoleModel roleModel;
+        if (clientId != null) {
+            ClientModel roleClient = realm.getClientByClientId(clientId);
+            if (roleClient == null) return;
+            roleModel = roleClient.getRole(roleName);
+        } else {
+            roleModel = realm.getRole(roleName);
+        }
+
+        if (roleModel == null) return;
+
+        if (!configuringUser.hasRole(roleModel)) {
+            throw hardcodedRoleRequiresRole();
+        }
+    }
+
+    private UserModel getConfiguringUser(KeycloakSession session, RealmModel realm) throws ProtocolMapperConfigException {
+        if (!(session.getContext().getBearerToken() instanceof org.keycloak.representations.JsonWebToken token)) {
+            return null;
+        }
+
+        String subject = token.getSubject();
+        if (subject == null) {
+            throw hardcodedRoleRequiresRole();
+        }
+
+        UserModel configuringUser = session.users().getUserById(realm, subject);
+        if (configuringUser == null) {
+            throw hardcodedRoleRequiresRole();
+        }
+
+        return configuringUser;
+    }
+
+    private ProtocolMapperConfigException hardcodedRoleRequiresRole() {
+        return new ProtocolMapperConfigException(
+                "Authenticated user must hold the configured role to use a hardcoded role mapper",
+                "error-hardcoded-role-requires-role");
     }
 
     public static ProtocolMapperModel create(String name,

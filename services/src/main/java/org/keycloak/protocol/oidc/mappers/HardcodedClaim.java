@@ -21,11 +21,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessTokenResponse;
@@ -43,6 +47,8 @@ public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAc
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     public static final String CLAIM_VALUE = "claim.value";
+
+    private static final Pattern RESERVED_CLAIM_NAMES = Pattern.compile("^(realm_access|resource_access)(\\..*)?$", Pattern.CASE_INSENSITIVE);
 
     static {
         OIDCAttributeMapperHelper.addTokenClaimNameConfig(configProperties);
@@ -83,6 +89,22 @@ public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAc
     @Override
     public String getHelpText() {
         return "Hardcode a claim into the token.";
+    }
+
+    @Override
+    public void validateConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel client,
+            ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
+        Map<String, String> config = mapperModel.getConfig();
+        if (config == null || config.isEmpty()) return;
+
+        String claimName = config.get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
+        if (claimName == null || claimName.isEmpty()) return;
+
+        if (RESERVED_CLAIM_NAMES.matcher(claimName).matches()) {
+            throw new ProtocolMapperConfigException(
+                    "Hardcoded claim mappers cannot target reserved claim names",
+                    "error-hardcoded-claim-reserved-name");
+        }
     }
 
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
