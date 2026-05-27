@@ -38,6 +38,7 @@ import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+import org.keycloak.testsuite.util.runonserver.LdapHelper;
 
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -61,8 +62,8 @@ public class OrganizationMemberWithLdapTest extends AbstractOrganizationTest {
 
         // add an LDAP provider with a group mapper
         Map<String, String> cfg = ldapRule.getConfig();
-        testingClient.testing().ldap(TEST_REALM_NAME).createLDAPProvider(cfg, true);
-        testingClient.testing().ldap(TEST_REALM_NAME).prepareGroupsLDAPTest();
+        runOnServer.fetchString(LdapHelper.createLDAPProvider(cfg, true));
+        runOnServer.run(LdapHelper.prepareGroupsLDAPTest());
     }
 
     @Test

@@ -54,34 +54,19 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.http.HttpRequest;
-import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.AdminEventRepresentation;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resource.RealmResourceProvider;
-import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.remote.providers.runonserver.SerializationUtil;
 import org.keycloak.testsuite.components.amphibian.TestAmphibianProvider;
 import org.keycloak.testsuite.events.TestEventsListenerProvider;
-import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
-import org.keycloak.testsuite.forms.PassThroughAuthenticator;
-import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
 import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
-import org.keycloak.testsuite.rest.representation.AuthenticatorState;
-import org.keycloak.testsuite.rest.resource.TestCacheResource;
-import org.keycloak.testsuite.rest.resource.TestLDAPResource;
 import org.keycloak.testsuite.util.FeatureDeployerUtil;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.truststore.FileTruststoreProvider;
@@ -175,105 +160,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return Response.noContent().build();
     }
 
-    @Path("/cache/{cache}")
-    public TestCacheResource getCacheResource(@PathParam("cache") String cacheName) {
-        return new TestCacheResource(session, cacheName);
-    }
-
-
-    @Path("/ldap/{realm}")
-    public TestLDAPResource ldap(@PathParam("realm") final String realmName) {
-        RealmModel realm = session.realms().getRealmByName(realmName);
-        return new TestLDAPResource(session, realm);
-    }
-
-
     @Override
     public void close() {
-    }
-
-    @POST
-    @Path("/update-pass-through-auth-state")
-    @Produces(MediaType.APPLICATION_JSON)
-    public AuthenticatorState updateAuthenticator(AuthenticatorState state) {
-        if (state.getClientId() != null) {
-            PassThroughClientAuthenticator.clientId = state.getClientId();
-        }
-        if (state.getUsername() != null) {
-            PassThroughAuthenticator.username = state.getUsername();
-        }
-
-        AuthenticatorState result = new AuthenticatorState();
-        result.setClientId(PassThroughClientAuthenticator.clientId);
-        result.setUsername(PassThroughAuthenticator.username);
-        return result;
-    }
-
-    @GET
-    @Path("/valid-credentials")
-    @Produces(MediaType.APPLICATION_JSON)
-    public boolean validCredentials(@QueryParam("realmName") String realmName, @QueryParam("userName") String userName, @QueryParam("password") String password) {
-        RealmModel realm = session.realms().getRealmByName(realmName);
-        if (realm == null) return false;
-        UserProvider userProvider = session.getProvider(UserProvider.class);
-        UserModel user = userProvider.getUserByUsername(realm, userName);
-        return user.credentialManager().isValid(UserCredentialModel.password(password));
-    }
-
-    @GET
-    @Path("/user-by-federated-identity")
-    @Produces(MediaType.APPLICATION_JSON)
-    public UserRepresentation getUserByFederatedIdentity(@QueryParam("realmName") String realmName,
-                                                         @QueryParam("identityProvider") String identityProvider,
-                                                         @QueryParam("userId") String userId,
-                                                         @QueryParam("userName") String userName) {
-        RealmModel realm = getRealmByName(realmName);
-        UserModel foundFederatedUser = session.users().getUserByFederatedIdentity(realm, new FederatedIdentityModel(identityProvider, userId, userName));
-        if (foundFederatedUser == null) return null;
-        return ModelToRepresentation.toRepresentation(session, realm, foundFederatedUser);
-    }
-
-    @GET
-    @Path("/user-by-username-from-fed-factory")
-    @Produces(MediaType.APPLICATION_JSON)
-    public UserRepresentation getUserByUsernameFromFedProviderFactory(@QueryParam("realmName") String realmName,
-                                                                      @QueryParam("userName") String userName) {
-        RealmModel realm = getRealmByName(realmName);
-        DummyUserFederationProviderFactory factory = (DummyUserFederationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, "dummy");
-        UserModel user = factory.create(session, null).getUserByUsername(realm, userName);
-        if (user == null) return null;
-        return ModelToRepresentation.toRepresentation(session, realm, user);
-    }
-
-    @GET
-    @Path("/get-client-auth-flow")
-    @Produces(MediaType.APPLICATION_JSON)
-    public AuthenticationFlowRepresentation getClientAuthFlow(@QueryParam("realmName") String realmName) {
-        RealmModel realm = getRealmByName(realmName);
-        AuthenticationFlowModel flow = realm.getClientAuthenticationFlow();
-        if (flow == null) return null;
-        return ModelToRepresentation.toRepresentation(session, realm, flow);
-    }
-
-    @GET
-    @Path("/get-reset-cred-flow")
-    @Produces(MediaType.APPLICATION_JSON)
-    public AuthenticationFlowRepresentation getResetCredFlow(@QueryParam("realmName") String realmName) {
-        RealmModel realm = getRealmByName(realmName);
-        AuthenticationFlowModel flow = realm.getResetCredentialsFlow();
-        if (flow == null) return null;
-        return ModelToRepresentation.toRepresentation(session, realm, flow);
-    }
-
-    @GET
-    @Path("/get-user-by-service-account-client")
-    @Produces(MediaType.APPLICATION_JSON)
-    public UserRepresentation getUserByServiceAccountClient(@QueryParam("realmName") String realmName, @QueryParam("clientId") String clientId) {
-        RealmModel realm = getRealmByName(realmName);
-        ClientModel client = realm.getClientByClientId(clientId);
-        UserModel user = session.users().getServiceAccount(client);
-        if (user == null) return null;
-        return ModelToRepresentation.toRepresentation(session, realm, user);
     }
 
     @GET
