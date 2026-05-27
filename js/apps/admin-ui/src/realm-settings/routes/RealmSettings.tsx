@@ -29,7 +29,7 @@ export const RealmSettingsRoute: AppRouteObject = {
   path: "/:realm/realm-settings",
   element: <RealmSettingsSection />,
   handle: {
-    access: "view-realm",
+    access: ({ hasAny }) => hasAny("view-realm", "export-realm"),
     breadcrumb: (t) => t("realmSettings"),
   },
 };

@@ -37,6 +37,11 @@ class RealmPermissions implements RealmPermissionEvaluator {
         return root.hasOneAdminRole(AdminRoles.MANAGE_REALM);
 
     }
+
+    public boolean canExportRealmDefault() {
+        return root.hasOneAdminRole(AdminRoles.EXPORT_REALM);
+    }
+
     public boolean canViewRealmDefault() {
         return root.hasOneAdminRole(AdminRoles.MANAGE_REALM, AdminRoles.VIEW_REALM);
     }
@@ -86,6 +91,19 @@ class RealmPermissions implements RealmPermissionEvaluator {
             throw new ForbiddenException();
         }
     }
+
+    @Override
+    public boolean canExportRealm() {
+        return canExportRealmDefault();
+    }
+
+    @Override
+    public void requireExportRealm() {
+        if (!canExportRealm()) {
+            throw new ForbiddenException();
+        }
+    }
+
     @Override
     public boolean canViewRealm() {
         return canViewRealmDefault();
