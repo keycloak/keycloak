@@ -18,8 +18,10 @@
 
 package org.keycloak.tests.oid4vc;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,11 +33,14 @@ import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
+import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.Assert;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,6 +48,8 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.VCFormat.JWT_VC;
 import static org.keycloak.VCFormat.SD_JWT_VC;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
+import static org.keycloak.models.ClientScopeModel.CONSENT_SCREEN_TEXT;
+import static org.keycloak.models.ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN;
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VCT;
@@ -58,6 +65,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_T
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONTEXTS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_DISPLAY;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_EXPIRY_IN_SECONDS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_EXPIRY_IN_SECONDS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT;
@@ -66,6 +74,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_INCLUDE_IN_MET
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SUPPORTED_TYPES;
+import static org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory.NATURAL_PERSON_SCOPE_CONSENT_TEXT;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -177,7 +186,7 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testCreateRealmWithDefaultClientScopes() {
+    public void testCreateRealmWithDefaultClientScopes() throws IOException {
         RealmsResource realms = keycloak.realms();
         String realmName = "aux-oid4vci-realm";
         try {
@@ -211,6 +220,9 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
                 assertEquals("oid4vc_natural_person", attrs.remove(VC_SUPPORTED_TYPES));
                 assertEquals("oid4vc_natural_person", attrs.remove(VC_CONTEXTS));
                 assertEquals("oid4vc_natural_person", attrs.remove(VCT));
+                assertEquals("true", attrs.remove(DISPLAY_ON_CONSENT_SCREEN));
+                assertEquals(NATURAL_PERSON_SCOPE_CONSENT_TEXT, attrs.remove(CONSENT_SCREEN_TEXT));
+                assertDisplay(attrs.remove(VC_DISPLAY));
 
                 switch (attrs.remove(VC_FORMAT)) {
                     case JWT_VC: {
@@ -232,5 +244,15 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         } finally {
             realms.realm(realmName).remove();
         }
+    }
+
+    private void assertDisplay(String displayStr) throws IOException {
+        DisplayObject expectedDisplay = new DisplayObject();
+        expectedDisplay.setName("Natural person verifiable credential");
+        expectedDisplay.setLocale(Locale.ENGLISH.toLanguageTag());
+
+        List<DisplayObject> display = JsonSerialization.readValue(displayStr, new TypeReference<List<DisplayObject>>() {
+        });
+        assertEquals(display, List.of(expectedDisplay));
     }
 }

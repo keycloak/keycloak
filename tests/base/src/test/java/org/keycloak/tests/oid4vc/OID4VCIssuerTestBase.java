@@ -577,7 +577,7 @@ public abstract class OID4VCIssuerTestBase {
                     List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH, OID4VCConstants.KeyAttestationResistanceLevels.MODERATE)
             );
             Map<String, String> sdJwtAttrs = Optional.ofNullable(sdJwtScope.getAttributes()).orElseGet(HashMap::new);
-            sdJwtAttrs.put(VC_BINDING_REQUIRED, "true");
+            sdJwtScope.setBindingRequired(true);
             sdJwtAttrs.put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
             sdJwtAttrs.put(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
             sdJwtScope.setAttributes(sdJwtAttrs);

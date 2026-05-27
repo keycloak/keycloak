@@ -28,6 +28,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -109,5 +110,15 @@ public interface LoginProtocolFactory extends ProviderFactory<LoginProtocol> {
      */
     default boolean allowAsClientProtocol() {
         return true;
+    }
+
+    /**
+     * Callback method invoked when consent of specified user is being revoked for the specified client
+     *
+     * @param session Keycloak session
+     * @param client Client
+     * @param user user
+     */
+    default void onConsentRevoked(KeycloakSession session, ClientModel client, UserModel user) {
     }
 }
