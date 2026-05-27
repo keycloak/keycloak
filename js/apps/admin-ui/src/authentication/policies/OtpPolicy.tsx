@@ -1,10 +1,12 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type OtpPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/otpPolicyRepresentation"
 import {
   HelpItem,
   NumberControl,
   SelectControl,
   SwitchControl,
   useAlerts,
+  useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
@@ -17,7 +19,7 @@ import {
   PageSection,
   Radio,
 } from "@patternfly/react-core";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
@@ -37,26 +39,20 @@ type OtpPolicyProps = {
   realmUpdated: (realm: RealmRepresentation) => void;
 };
 
-type FormFields = Omit<
-  RealmRepresentation,
-  "clients" | "components" | "groups" | "users" | "federatedUsers"
->;
-
 export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
-  const form = useForm<FormFields>({
+  const form = useForm<OtpPolicyRepresentation>({
     mode: "onChange",
     defaultValues: {
-      otpPolicyType: realm.otpPolicyType ?? POLICY_TYPES[0],
-      otpPolicyAlgorithm:
-        realm.otpPolicyAlgorithm ?? `Hmac${OTP_HASH_ALGORITHMS[0]}`,
-      otpPolicyDigits: realm.otpPolicyDigits ?? NUMBER_OF_DIGITS[0],
-      otpPolicyLookAheadWindow: realm.otpPolicyLookAheadWindow ?? 1,
-      otpPolicyPeriod: realm.otpPolicyPeriod ?? 30,
-      otpPolicyInitialCounter: realm.otpPolicyInitialCounter ?? 30,
-      otpPolicyCodeReusable: realm.otpPolicyCodeReusable ?? false,
+      type: POLICY_TYPES[0],
+      algorithm: `Hmac${OTP_HASH_ALGORITHMS[0]}`,
+      digits: NUMBER_OF_DIGITS[0],
+      lookAheadWindow: 1,
+      period: 30,
+      initialCounter: 30,
+      codeReusable: false,
     },
   });
   const {
@@ -68,10 +64,13 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
   const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
   const localeSort = useLocaleSort();
+  
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(new Date().getTime());
 
-  const otpType = useWatch({ name: "otpPolicyType", control });
+  const otpType = useWatch({ name: "type", control });
 
-  const setupForm = (formValues: FormFields) => reset(formValues);
+  const setupForm = (formValues: OtpPolicyRepresentation) => reset(formValues);
 
   const supportedApplications = useMemo(() => {
     const labels = (realm.otpSupportedApplications ?? []).map((key) =>
@@ -81,14 +80,22 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
     return localeSort(labels, (label) => label);
   }, [realm.otpSupportedApplications]);
 
-  const onSubmit = async (formValues: FormFields) => {
+  useFetch(
+    () => adminClient.authenticationManagement.getOtpPolicy({ realm: realmName }),
+    (otpPolicy) => {
+      setupForm(otpPolicy);
+    },
+    [key],
+  );
+
+  const onSubmit = async (formValues: OtpPolicyRepresentation) => {
     try {
-      await adminClient.realms.update({ realm: realmName }, formValues);
+      await adminClient.authenticationManagement.updateOtpPolicy({ realm: realmName }, formValues);
       const updatedRealm = await adminClient.realms.findOne({
         realm: realmName,
       });
       realmUpdated(updatedRealm!);
-      setupForm(updatedRealm!);
+      refresh();
       addAlert(t("updateOtpSuccess"), AlertVariant.success);
     } catch (error) {
       addError("updateOtpError", error);
@@ -112,7 +119,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             hasNoPaddingTop
           >
             <Controller
-              name="otpPolicyType"
+              name="type"
               data-testid="otpPolicyType"
               defaultValue={POLICY_TYPES[0]}
               control={control}
@@ -124,7 +131,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
                       id={type}
                       data-testid={type}
                       isChecked={value === type}
-                      name="otpPolicyType"
+                      name="type"
                       onChange={() => onChange(type)}
                       label={t(`policyType.${type}`)}
                       className="keycloak__otp_policies_authentication__policy-type"
@@ -135,7 +142,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             />
           </FormGroup>
           <SelectControl
-            name="otpPolicyAlgorithm"
+            name="algorithm"
             label={t("otpHashAlgorithm")}
             labelIcon={t("otpHashAlgorithmHelp")}
             options={OTP_HASH_ALGORITHMS.map((type) => ({
@@ -155,7 +162,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             hasNoPaddingTop
           >
             <Controller
-              name="otpPolicyDigits"
+              name="digits"
               data-testid="otpPolicyDigits"
               defaultValue={NUMBER_OF_DIGITS[0]}
               control={control}
@@ -167,7 +174,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
                       id={`digit-${type}`}
                       data-testid={`digit-${type}`}
                       isChecked={field.value === type}
-                      name="otpPolicyDigits"
+                      name="digits"
                       onChange={() => field.onChange(type)}
                       label={type}
                       className="keycloak__otp_policies_authentication__number-of-digits"
@@ -178,14 +185,14 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             />
           </FormGroup>
           <NumberControl
-            name="otpPolicyLookAheadWindow"
+            name="lookAheadWindow"
             label={t("lookAround")}
             labelIcon={t("lookAroundHelp")}
             controller={{ defaultValue: 1, rules: { min: 0 } }}
           />
           {otpType === POLICY_TYPES[0] && (
             <TimeSelectorControl
-              name="otpPolicyPeriod"
+              name="period"
               label={t("otpPolicyPeriod")}
               labelIcon={t("otpPolicyPeriodHelp")}
               units={["second", "minute"]}
@@ -203,7 +210,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           )}
           {otpType === POLICY_TYPES[1] && (
             <NumberControl
-              name="otpPolicyInitialCounter"
+              name="initialCounter"
               label={t("initialCounter")}
               labelIcon={t("initialCounterHelp")}
               controller={{ defaultValue: 30, rules: { min: 1, max: 120 } }}
@@ -231,7 +238,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
 
           {otpType === POLICY_TYPES[0] && (
             <SwitchControl
-              name="otpPolicyCodeReusable"
+              name="codeReusable"
               label={t("otpPolicyCodeReusable")}
               labelIcon={t("otpPolicyCodeReusableHelp")}
               labelOn={t("on")}
@@ -251,7 +258,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             <Button
               data-testid="reload"
               variant={ButtonVariant.link}
-              onClick={() => reset({ ...realm })}
+              onClick={() => refresh()}
             >
               {t("reload")}
             </Button>

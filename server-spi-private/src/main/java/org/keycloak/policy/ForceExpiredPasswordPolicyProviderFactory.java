@@ -70,7 +70,7 @@ public class ForceExpiredPasswordPolicyProviderFactory implements PasswordPolicy
 
     @Override
     public String getConfigType() {
-        return PasswordPolicyProvider.STRING_CONFIG_TYPE;
+        return PasswordPolicyProvider.INT_CONFIG_TYPE;
     }
 
     @Override

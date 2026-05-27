@@ -12,7 +12,6 @@ import {
 import { confirmModal } from "../utils/modal.ts";
 import { goToAuthentication } from "../utils/sidebar.ts";
 import {
-  assertEmptyTable,
   clickRowKebabItem,
   clickTableRowItem,
   getRowByCellText,
@@ -21,7 +20,6 @@ import {
 import {
   addCondition,
   addExecution,
-  addPolicy,
   addSubFlow,
   assertDefaultSwitchPolicyEnabled,
   assertRowExists,
@@ -39,6 +37,7 @@ import {
   goToRequiredActions,
   goToWebAuthnTab,
 } from "./flow.ts";
+import { addPolicy } from "./policies.ts"
 
 test.describe("Authentication flows", () => {
   test("searches for an existing flow", async ({ page }) => {
@@ -286,24 +285,6 @@ test.describe("Required actions", () => {
       "Updated required action successfully",
     );
     await assertSwitchPolicyChecked(page, action);
-  });
-});
-
-test.describe("Password policies tab", () => {
-  test("adds password policies", async ({ page }) => {
-    await using testBed = await createTestBed();
-
-    await login(page, {
-      to: toAuthentication({ realm: testBed.realm, tab: "policies" }),
-    });
-
-    await assertEmptyTable(page);
-    await addPolicy(page, "Not Recently Used");
-    await clickSaveButton(page);
-    await assertNotificationMessage(
-      page,
-      "Password policies successfully updated",
-    );
   });
 });
 

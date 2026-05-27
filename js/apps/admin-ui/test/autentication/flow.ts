@@ -92,10 +92,6 @@ export async function goToCIBAPolicyTab(page: Page) {
   await page.getByTestId("tab-ciba-policy").click();
 }
 
-export async function addPolicy(page: Page, value: string) {
-  await selectItem(page, page.getByTestId("add-policy"), value);
-}
-
 const toKey = (name: string) => {
   return name.replace(/\s/g, "-");
 };

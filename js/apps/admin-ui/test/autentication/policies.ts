@@ -1,6 +1,14 @@
 import { type Page, expect } from "@playwright/test";
 import { selectItem } from "../utils/form.ts";
 
+export async function goToPasswordPolicyTab(page: Page) {
+  await page.getByTestId("passwordPolicy").click();
+}
+
+export async function addPolicy(page: Page, value: string) {
+  await selectItem(page, page.getByTestId("add-policy"), value);
+}
+
 export async function goToOTPPolicyTab(page: Page) {
   await page.getByTestId("otpPolicy").click();
 }
@@ -18,7 +26,7 @@ export async function setPolicyType(page: Page, type: string) {
 }
 
 export async function increaseInitialCounter(page: Page) {
-  await page.locator("#otpPolicyInitialCounter").getByLabel("Plus").click();
+  await page.locator("#initialCounter").getByLabel("Plus").click();
 }
 
 export async function goToWebauthnPage(page: Page) {
@@ -40,5 +48,5 @@ export async function setWebAuthnPolicyCreateTimeout(
   page: Page,
   value: number,
 ) {
-  await page.getByTestId("webAuthnPolicyCreateTimeout").fill(String(value));
+  await page.getByTestId("createTimeout").fill(String(value));
 }

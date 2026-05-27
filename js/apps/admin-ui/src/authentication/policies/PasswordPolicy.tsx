@@ -1,4 +1,5 @@
 import type PasswordPolicyTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/passwordPolicyTypeRepresentation";
+import type PasswordPolicyValueRepresentation from "libs/keycloak-admin-client/lib/defs/passwordPolicyValueRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
   ActionGroup,
@@ -22,11 +23,11 @@ import {
   SelectOption,
 } from "@patternfly/react-core";
 import { PlusCircleIcon } from "@patternfly/react-icons";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -94,10 +95,13 @@ export const PasswordPolicy = ({
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
-  const { passwordPolicies } = useServerInfo();
+  const { passwordPolicies: passwordPolicyTypes } = useServerInfo();
 
   const { addAlert, addError } = useAlerts();
-  const { realm: realmName, refresh } = useRealm();
+  const { realm: realmName } = useRealm();
+
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(new Date().getTime());
 
   const [rows, setRows] = useState<PasswordPolicyTypeRepresentation[]>([]);
   const onSelect = (row: PasswordPolicyTypeRepresentation) => {
@@ -115,26 +119,31 @@ export const PasswordPolicy = ({
     formState: { isDirty },
   } = form;
 
-  const setupForm = (realm: RealmRepresentation) => {
+  const setupForm = (passwordPolicyValues: PasswordPolicyValueRepresentation[]) => {
     reset();
-    const values = parsePolicy(realm.passwordPolicy || "", passwordPolicies!);
+    const values = parsePolicy(passwordPolicyValues, passwordPolicyTypes!);
     values.forEach((v) => {
       setValue(v.id!, v.value!);
     });
     setRows(values);
   };
 
-  useEffect(() => setupForm(realm), []);
+  useFetch(
+    () => adminClient.authenticationManagement.getPasswordPolicy({ realm: realmName }),
+    (passwordPolicyValues) => {
+      setupForm(passwordPolicyValues);
+    },
+    [key],
+  );
 
   const save = async (values: SubmittedValues) => {
-    const updatedRealm = {
-      ...realm,
-      passwordPolicy: serializePolicy(rows, values),
-    };
+    const passwordPolicyValues = serializePolicy(rows, values);
     try {
-      await adminClient.realms.update({ realm: realmName }, updatedRealm);
-      realmUpdated(updatedRealm);
-      setupForm(updatedRealm);
+      await adminClient.authenticationManagement.updatePasswordPolicy({ realm: realmName }, passwordPolicyValues);
+      const updatedRealm = await adminClient.realms.findOne({
+        realm: realmName,
+      });
+      realmUpdated(updatedRealm!);
       refresh();
       addAlert(t("updatePasswordPolicySuccess"), AlertVariant.success);
     } catch (error) {
@@ -184,7 +193,7 @@ export const PasswordPolicy = ({
                   <Button
                     data-testid="reload"
                     variant={ButtonVariant.link}
-                    onClick={() => setupForm(realm)}
+                    onClick={() => refresh()}
                   >
                     {t("reload")}
                   </Button>

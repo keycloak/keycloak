@@ -6,15 +6,15 @@ import {
   ButtonVariant,
   PageSection,
 } from "@patternfly/react-core";
-import { useEffect } from "react";
+import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
+import { SelectControl, TextControl, useFetch } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import CibaPolicyRepresentation from "libs/keycloak-admin-client/lib/defs/cibaPolicyRepresentation"
 
 const CIBA_BACKHANNEL_TOKEN_DELIVERY_MODES = ["poll", "ping"] as const;
 const CIBA_EXPIRES_IN_MIN = 10;
@@ -27,37 +27,33 @@ type CibaPolicyProps = {
   realmUpdated: (realm: RealmRepresentation) => void;
 };
 
-type FormFields = Omit<
-  RealmRepresentation,
-  "clients" | "components" | "groups"
->;
-
 export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
-  const form = useForm<FormFields>({ mode: "onChange" });
+  const form = useForm<CibaPolicyRepresentation>({ mode: "onChange" });
   const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
+  const { reset } = form;
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(new Date().getTime());
 
-  const setupForm = (realm: RealmRepresentation) =>
-    convertToFormValues(realm, form.setValue);
+  const setupForm = (policy: CibaPolicyRepresentation) => reset(policy);
 
-  useEffect(() => setupForm(realm), []);
+  useFetch(
+    () => adminClient.authenticationManagement.getCibaPolicy({ realm: realmName }),
+    (policy) => {
+      setupForm(policy);
+    },
+    [key],
+  );
 
-  const onSubmit = async (formValues: FormFields) => {
+  const onSubmit = async (formValues: CibaPolicyRepresentation) => {
     try {
-      await adminClient.realms.update(
-        { realm: realmName },
-        convertFormValuesToObject(formValues),
-      );
-
-      const updatedRealm = await adminClient.realms.findOne({
-        realm: realmName,
-      });
-
+      await adminClient.authenticationManagement.updateCibaPolicy({ realm: realmName }, formValues);
+      const updatedRealm = await adminClient.realms.findOne({realm: realmName});
       realmUpdated(updatedRealm!);
-      setupForm(updatedRealm!);
+      refresh();
       addAlert(t("updateCibaSuccess"), AlertVariant.success);
     } catch (error) {
       addError("updateCibaError", error);
@@ -73,7 +69,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
       >
         <FormProvider {...form}>
           <SelectControl
-            name="attributes.cibaBackchannelTokenDeliveryMode"
+            name="backchannelTokenDeliveryMode"
             label={t("cibaBackchannelTokenDeliveryMode")}
             labelIcon={t("cibaBackchannelTokenDeliveryModeHelp")}
             options={CIBA_BACKHANNEL_TOKEN_DELIVERY_MODES.map((mode) => ({
@@ -83,7 +79,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
             controller={{ defaultValue: "" }}
           />
           <TextControl
-            name="attributes.cibaExpiresIn"
+            name="expiresIn"
             type="number"
             min={CIBA_EXPIRES_IN_MIN}
             max={CIBA_EXPIRES_IN_MAX}
@@ -104,10 +100,10 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
             }}
           />
           <TextControl
-            name="attributes.cibaInterval"
+            name="interval"
             type="number"
-            min={CIBA_EXPIRES_IN_MIN}
-            max={CIBA_EXPIRES_IN_MAX}
+            min={CIBA_INTERVAL_MIN}
+            max={CIBA_INTERVAL_MAX}
             label={t("cibaInterval")}
             labelIcon={t("cibaIntervalHelp")}
             rules={{
@@ -125,7 +121,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
             }}
           />
           <SelectControl
-            name="attributes.cibaAuthRequestedUserHint"
+            name="authRequestedUserHint"
             label={t("cibaAuthRequestedUserHint")}
             labelIcon={t("cibaAuthRequestedUserHintHelp")}
             options={["login_hint", "id_token_hint", "login_hint_token"]}
@@ -145,7 +141,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           <Button
             data-testid="reload"
             variant={ButtonVariant.link}
-            onClick={() => setupForm({ ...realm })}
+            onClick={() => refresh()}
           >
             {t("reload")}
           </Button>

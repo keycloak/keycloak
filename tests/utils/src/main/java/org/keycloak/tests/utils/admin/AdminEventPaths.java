@@ -489,6 +489,36 @@ public class AdminEventPaths {
         return uri.toString();
     }
 
+    public static String passwordPolicyPath() {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "updatePasswordPolicy")
+                .build();
+        return uri.toString();
+    }
+
+    public static String otpPolicyPath() {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "updateOTPPolicy")
+                .build();
+        return uri.toString();
+    }
+
+    public static String webAuthnPolicyPath() {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "updateWebAuthnPolicy")
+                .build();
+        return uri.toString();
+    }
+
+    public static String webAuthnPasswordlessPolicyPath() {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "updateWebAuthnPasswordlessPolicy")
+                .build();
+        return uri.toString();
+    }
+
+    public static String cibaPolicyPath() {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "updateCibaPolicy")
+                .build();
+        return uri.toString();
+    }
+
     // ATTACK DETECTION
 
     public static String attackDetectionClearBruteForceForUserPath(String username) {

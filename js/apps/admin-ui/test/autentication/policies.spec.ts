@@ -5,15 +5,42 @@ import { clickSaveButton } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import {
+  addPolicy,
   assertSupportedApplications,
   fillSelects,
   goToOTPPolicyTab,
+  goToPasswordPolicyTab,
   goToWebauthnPage,
   goToWebauthnPasswordlessPage,
   increaseInitialCounter,
   setPolicyType,
   setWebAuthnPolicyCreateTimeout,
 } from "./policies.ts";
+import { assertEmptyTable } from "../utils/table.ts"
+
+test.describe("Password policies tab", () => {
+  test("adds password policies", async ({ page }) => {
+    await using testBed = await createTestBed();
+
+    await login(page, {
+      to: toAuthentication({ realm: testBed.realm, tab: "policies" }),
+    });
+
+    await goToPasswordPolicyTab(page);
+
+    // check initial state
+    await assertEmptyTable(page);
+
+    // save a new policy
+    await addPolicy(page, "Not Recently Used");
+
+    await clickSaveButton(page);
+    await assertNotificationMessage(
+      page,
+      "Password policies successfully updated",
+    );
+  });
+});
 
 test.describe("OTP policies tab", () => {
   test("changes to hotp", async ({ page }) => {
@@ -54,9 +81,9 @@ test.describe("Webauthn policies tabs", () => {
     await goToWebauthnPage(page);
 
     await fillSelects(page, {
-      webAuthnPolicyAttestationConveyancePreference: "Indirect",
-      webAuthnPolicyRequireResidentKey: "Yes",
-      webAuthnPolicyUserVerificationRequirement: "Preferred",
+      attestationConveyancePreference: "Indirect",
+      requireResidentKey: "Yes",
+      userVerificationRequirement: "Preferred",
     });
 
     await setWebAuthnPolicyCreateTimeout(page, 30);
@@ -77,9 +104,9 @@ test.describe("Webauthn policies tabs", () => {
     await goToWebauthnPasswordlessPage(page);
 
     await fillSelects(page, {
-      webAuthnPolicyPasswordlessAttestationConveyancePreference: "Indirect",
-      webAuthnPolicyPasswordlessRequireResidentKey: "Yes",
-      webAuthnPolicyPasswordlessUserVerificationRequirement: "Preferred",
+      attestationConveyancePreference: "Indirect",
+      requireResidentKey: "Yes",
+      userVerificationRequirement: "Preferred",
     });
 
     await clickSaveButton(page);

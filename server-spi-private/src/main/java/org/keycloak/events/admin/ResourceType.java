@@ -76,6 +76,11 @@ public enum ResourceType {
     /**
      *
      */
+    , AUTHENTICATION_POLICY
+
+    /**
+     *
+     */
     , IDENTITY_PROVIDER
 
     /**

@@ -39,7 +39,7 @@ export async function clearExpiresInput(page: Page) {
   return getExpiresInput(page).clear();
 }
 
-export const expiresInput = "attributes.cibaExpiresIn";
+export const expiresInput = "expiresIn";
 function getExpiresInput(page: Page) {
   return page.getByTestId(expiresInput);
 }
@@ -58,7 +58,7 @@ export async function clearIntervalInput(page: Page) {
   return getIntervalInput(page).clear();
 }
 
-export const intervalInput = "attributes.cibaInterval";
+export const intervalInput = "interval";
 function getIntervalInput(page: Page) {
   return page.getByTestId(intervalInput);
 }

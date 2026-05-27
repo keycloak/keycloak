@@ -22,7 +22,7 @@ import {
   setExpiresInput,
   setIntervalInput,
 } from "./policies-ciba.ts";
-
+ 
 test.describe("Authentication - Policies - CIBA", () => {
   test("displays the initial state", async ({ page }) => {
     await using testBed = await createTestBed();

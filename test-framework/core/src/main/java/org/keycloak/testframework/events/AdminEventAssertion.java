@@ -4,14 +4,17 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
+import org.keycloak.representations.idm.PasswordPolicyValueRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -153,22 +156,44 @@ public class AdminEventAssertion {
             Assertions.assertNull(event.getRepresentation());
         } else {
             try {
-                if (expectedRep instanceof List) {
-                    // List of roles. All must be available in actual representation
-                    List<RoleRepresentation> expectedRoles = (List<RoleRepresentation>) expectedRep;
-                    List<RoleRepresentation> actualRoles = JsonSerialization.readValue(new ByteArrayInputStream(actualRepresentation.getBytes()), new TypeReference<>() {});
+                if (expectedRep instanceof List expectedList) {
+                    if (expectedList.isEmpty()) {
+                        List<Object> actualRep = JsonSerialization.readValue(new ByteArrayInputStream(actualRepresentation.getBytes()), new TypeReference<>() {});
+                        Assertions.assertEquals(actualRep.size(), 0);
+                    } else if (expectedList.get(0) instanceof RoleRepresentation) {
+                        // List of roles. All must be available in actual representation
+                        List<RoleRepresentation> expectedRoles = (List<RoleRepresentation>) expectedRep;
+                        List<RoleRepresentation> actualRoles = JsonSerialization.readValue(new ByteArrayInputStream(actualRepresentation.getBytes()), new TypeReference<>() {});
 
-                    Map<String, String> expectedRolesMap = new HashMap<>();
-                    for (RoleRepresentation role : expectedRoles) {
-                        expectedRolesMap.put(role.getId(), role.getName());
+                        Map<String, String> expectedRolesMap = new HashMap<>();
+                        for (RoleRepresentation role : expectedRoles) {
+                            expectedRolesMap.put(role.getId(), role.getName());
+                        }
+
+                        Map<String, String> actualRolesMap = new HashMap<>();
+                        for (RoleRepresentation role : actualRoles) {
+                            actualRolesMap.put(role.getId(), role.getName());
+                        }
+
+                        Assertions.assertEquals(expectedRolesMap, actualRolesMap);
+                    } else if (expectedList.get(0) instanceof PasswordPolicyValueRepresentation) {
+                        List<PasswordPolicyValueRepresentation> expectedReps = (List<PasswordPolicyValueRepresentation>) expectedList;
+                        List<PasswordPolicyValueRepresentation> actualReps = JsonSerialization.readValue(new ByteArrayInputStream(actualRepresentation.getBytes()), new TypeReference<>() {});
+
+                        Set<String> expectedSet = new HashSet<>();
+                        for (PasswordPolicyValueRepresentation rep : expectedReps) {
+                            expectedSet.add(rep.toString());
+                        }
+
+                        Set<String> actualSet = new HashSet<>();
+                        for (PasswordPolicyValueRepresentation rep : actualReps) {
+                            actualSet.add(rep.toString());
+                        }
+
+                        Assertions.assertEquals(expectedSet, actualSet);
+                    } else {
+                        Assertions.assertEquals(expectedList, actualRepresentation);
                     }
-
-                    Map<String, String> actualRolesMap = new HashMap<>();
-                    for (RoleRepresentation role : actualRoles) {
-                        actualRolesMap.put(role.getId(), role.getName());
-                    }
-                    Assertions.assertEquals(expectedRolesMap, actualRolesMap);
-
                 } else if (expectedRep instanceof Map<?, ?> expectedRepMap) {
                     Map<?, ?> actualRepMap = JsonSerialization.readValue(actualRepresentation, Map.class);
                     for (Map.Entry<?, ?> entry : expectedRepMap.entrySet()) {

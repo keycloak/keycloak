@@ -9,6 +9,10 @@ import type AuthenticatorConfigInfoRepresentation from "../defs/authenticatorCon
 import type RequiredActionProviderSimpleRepresentation from "../defs/requiredActionProviderSimpleRepresentation.js";
 import type RequiredActionConfigInfoRepresentation from "../defs/requiredActionConfigInfoRepresentation.js";
 import type RequiredActionConfigRepresentation from "../defs/requiredActionConfigRepresentation.js";
+import type PasswordPolicyValueRepresentation from "../defs/passwordPolicyValueRepresentation.js";
+import type OtpPolicyRepresentation from "../defs/otpPolicyRepresentation.js";
+import type WebAuthnPolicyRepresentation from "../defs/webAuthnPolicyRepresentation.js";
+import type CibaPolicyRepresentation from "../defs/cibaPolicyRepresentation.js";
 
 export class AuthenticationManagement extends Resource<{ realm?: string }> {
   /**
@@ -312,6 +316,91 @@ export class AuthenticationManagement extends Resource<{ realm?: string }> {
     method: "DELETE",
     path: "/config/{id}",
     urlParamKeys: ["id"],
+  });
+
+  public getPasswordPolicy = this.makeRequest<
+    {},
+    PasswordPolicyValueRepresentation[]
+  >({
+    method: "GET",
+    path: "/policies/password-policy",
+  });
+
+  public updatePasswordPolicy = this.makeUpdateRequest<
+    {},
+    PasswordPolicyValueRepresentation[],
+    void
+  >({
+    method: "PUT",
+    path: "/policies/password-policy",
+  });
+
+  public getOtpPolicy = this.makeRequest<
+    {},
+    OtpPolicyRepresentation
+  >({
+    method: "GET",
+    path: "/policies/otp-policy",
+  });
+
+  public updateOtpPolicy = this.makeUpdateRequest<
+    {},
+    OtpPolicyRepresentation,
+    void
+  >({
+    method: "PUT",
+    path: "/policies/otp-policy",
+  });
+
+  public getWebAuthnPolicy = this.makeRequest<
+    {},
+    WebAuthnPolicyRepresentation
+  >({
+    method: "GET",
+    path: "/policies/webauthn-policy",
+  });
+
+  public updateWebAuthnPolicy = this.makeUpdateRequest<
+    {},
+    WebAuthnPolicyRepresentation,
+    void
+  >({
+    method: "PUT",
+    path: "/policies/webauthn-policy",
+  });
+
+  public getWebAuthnPasswordlessPolicy = this.makeRequest<
+    {},
+    WebAuthnPolicyRepresentation
+  >({
+    method: "GET",
+    path: "/policies/webauthn-passwordless-policy",
+  });
+
+  public updateWebAuthnPasswordlessPolicy = this.makeUpdateRequest<
+    {},
+    WebAuthnPolicyRepresentation,
+    void
+  >({
+    method: "PUT",
+    path: "/policies/webauthn-passwordless-policy",
+  });
+
+  public getCibaPolicy = this.makeRequest<
+    {},
+    CibaPolicyRepresentation
+  >({
+    method: "GET",
+    path: "/policies/ciba-policy",
+  });
+
+  public updateCibaPolicy = this.makeUpdateRequest<
+    {},
+    CibaPolicyRepresentation,
+    void
+  >({
+    method: "PUT",
+    path: "/policies/ciba-policy",
   });
 
   constructor(client: KeycloakAdminClient) {

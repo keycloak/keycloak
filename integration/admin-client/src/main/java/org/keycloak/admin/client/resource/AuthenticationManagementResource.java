@@ -36,11 +36,15 @@ import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.CibaPolicyRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
+import org.keycloak.representations.idm.OTPPolicyRepresentation;
+import org.keycloak.representations.idm.PasswordPolicyValueRepresentation;
 import org.keycloak.representations.idm.RequiredActionConfigInfoRepresentation;
 import org.keycloak.representations.idm.RequiredActionConfigRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
+import org.keycloak.representations.idm.WebAuthnPolicyRepresentation;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -256,4 +260,54 @@ public interface AuthenticationManagementResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     void updateAuthenticatorConfig(@PathParam("id") String id, AuthenticatorConfigRepresentation config);
+
+    @Path("policies/password-policy")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<PasswordPolicyValueRepresentation> getPasswordPolicy();
+
+    @Path("policies/password-policy")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    void updatePasswordPolicy(List<PasswordPolicyValueRepresentation> rep);
+
+    @Path("policies/otp-policy")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    OTPPolicyRepresentation getOTPPolicy();
+
+    @Path("policies/otp-policy")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    void updateOTPPolicy(OTPPolicyRepresentation rep);
+
+    @Path("policies/webauthn-policy")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    WebAuthnPolicyRepresentation getWebAuthnPolicy();
+
+    @Path("policies/webauthn-policy")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    void updateWebAuthnPolicy(WebAuthnPolicyRepresentation rep);
+
+    @Path("policies/webauthn-passwordless-policy")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    WebAuthnPolicyRepresentation getWebAuthnPasswordlessPolicy();
+
+    @Path("policies/webauthn-passwordless-policy")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    void updateWebAuthnPasswordlessPolicy(WebAuthnPolicyRepresentation rep);
+
+    @Path("policies/ciba-policy")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    CibaPolicyRepresentation getCibaPolicy();
+
+    @Path("policies/ciba-policy")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    void updateCibaPolicy(CibaPolicyRepresentation rep);
 }

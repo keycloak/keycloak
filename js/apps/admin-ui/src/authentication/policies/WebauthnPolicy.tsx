@@ -1,4 +1,5 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type WebAuthnPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/webAuthnPolicyRepresentation"
 import type { FieldValues } from "react-hook-form";
 import {
   ActionGroup,
@@ -12,7 +13,7 @@ import {
   TextContent,
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { FormProvider, useForm, Validate } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
@@ -20,6 +21,7 @@ import {
   SelectControl,
   SwitchControl,
   TextControl,
+  useFetch,
   useHelp,
 } from "@keycloak/keycloak-ui-shared";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
@@ -125,8 +127,9 @@ export const WebauthnPolicy = ({
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const { enabled } = useHelp();
-  const form = useForm({ mode: "onChange" });
+  const form = useForm<WebAuthnPolicyRepresentation>({ mode: "onChange" }) 
   const {
+    reset,
     setValue,
     handleSubmit,
     watch,
@@ -136,31 +139,46 @@ export const WebauthnPolicy = ({
   const namePrefix = isPasswordLess
     ? "webAuthnPolicyPasswordless"
     : "webAuthnPolicy";
+    
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(new Date().getTime());
 
-  const setupForm = (realm: RealmRepresentation) =>
-    convertToFormValues(realm, setValue);
+  const setupForm = (formValues: WebAuthnPolicyRepresentation) => reset(formValues);
 
-  useEffect(() => setupForm(realm), []);
-
-  const onSubmit = async (realm: RealmRepresentation) => {
-    const submittedRealm = convertFormValuesToObject(realm);
-    try {
-      await adminClient.realms.update({ realm: realmName }, submittedRealm);
-      realmUpdated(submittedRealm);
-      setupForm(submittedRealm);
-      addAlert(t("webAuthnUpdateSuccess"), AlertVariant.success);
-    } catch (error) {
-      addError("webAuthnUpdateError", error);
+  useFetch(
+    () => isPasswordLess ? 
+      adminClient.authenticationManagement.getWebAuthnPasswordlessPolicy({ realm: realmName }) : 
+      adminClient.authenticationManagement.getWebAuthnPolicy({ realm: realmName }),
+    (policy) => {
+      setupForm(policy);
+    },
+    [key],
+  );
+  
+  const onSubmit = 
+    async (formValues: WebAuthnPolicyRepresentation) => {
+      try {
+        if (isPasswordLess) {
+          await adminClient.authenticationManagement.updateWebAuthnPasswordlessPolicy({ realm: realmName }, formValues);
+        } else {
+          await adminClient.authenticationManagement.updateWebAuthnPolicy({ realm: realmName }, formValues);
+        }
+        const updatedRealm = await adminClient.realms.findOne({realm: realmName});
+        realmUpdated(updatedRealm!);
+        refresh();
+        addAlert(t("webAuthnUpdateSuccess"), AlertVariant.success);
+      } catch (error) {
+        addError("webAuthnUpdateError", error);
+      }
     }
-  };
 
   const isFeatureEnabled = useIsFeatureEnabled();
-  const acceptableAAGUIDs = watch(`${namePrefix}AcceptableAaguids`, []);
+  const acceptableAAGUIDs = watch(`acceptableAaguids`, []);
 
   return (
     <PageSection variant="light">
       {enabled && (
-        <Popover bodyContent={t(`${namePrefix}FormHelp`)}>
+        <Popover bodyContent={t(`formHelp`)}>
           <TextContent className="keycloak__section_intro__help">
             <Text>
               <QuestionCircleIcon /> {t("webauthnIntro")}
@@ -177,25 +195,25 @@ export const WebauthnPolicy = ({
       >
         <FormProvider {...form}>
           <TextControl
-            name={`${namePrefix}RpEntityName`}
+            name={`rpEntityName`}
             label={t("webAuthnPolicyRpEntityName")}
             labelIcon={t("webAuthnPolicyRpEntityNameHelp")}
             rules={{ required: t("required") }}
           />
           <WebauthnSelect
-            name={`${namePrefix}SignatureAlgorithms`}
+            name={`signatureAlgorithms`}
             label={t("webAuthnPolicySignatureAlgorithms")}
             labelIcon={t("webAuthnPolicySignatureAlgorithmsHelp")}
             options={SIGNATURE_ALGORITHMS}
             isMultiSelect
           />
           <TextControl
-            name={`${namePrefix}RpId`}
+            name={`rpId`}
             label={t("webAuthnPolicyRpId")}
             labelIcon={t("webAuthnPolicyRpIdHelp")}
           />
           <WebauthnSelect
-            name={`${namePrefix}AttestationConveyancePreference`}
+            name={`attestationConveyancePreference`}
             label={t("webAuthnPolicyAttestationConveyancePreference")}
             labelIcon={t("webAuthnPolicyAttestationConveyancePreferenceHelp")}
             options={ATTESTATION_PREFERENCE}
@@ -214,28 +232,28 @@ export const WebauthnPolicy = ({
             }}
           />
           <WebauthnSelect
-            name={`${namePrefix}AuthenticatorAttachment`}
+            name={`authenticatorAttachment`}
             label={t("webAuthnPolicyAuthenticatorAttachment")}
             labelIcon={t("webAuthnPolicyAuthenticatorAttachmentHelp")}
             options={AUTHENTICATOR_ATTACHMENT}
             labelPrefix="authenticatorAttachment"
           />
           <WebauthnSelect
-            name={`${namePrefix}RequireResidentKey`}
+            name={`requireResidentKey`}
             label={t("webAuthnPolicyRequireResidentKey")}
             labelIcon={t("webAuthnPolicyRequireResidentKeyHelp")}
             options={RESIDENT_KEY_OPTIONS}
             labelPrefix="residentKey"
           />
           <WebauthnSelect
-            name={`${namePrefix}UserVerificationRequirement`}
+            name={`userVerificationRequirement`}
             label={t("webAuthnPolicyUserVerificationRequirement")}
             labelIcon={t("webAuthnPolicyUserVerificationRequirementHelp")}
             options={USER_VERIFY}
             labelPrefix="userVerify"
           />
           <TimeSelectorControl
-            name={`${namePrefix}CreateTimeout`}
+            name={`createTimeout`}
             label={t("webAuthnPolicyCreateTimeout")}
             labelIcon={t("webAuthnPolicyCreateTimeoutHelp")}
             units={["second", "minute", "hour"]}
@@ -251,7 +269,7 @@ export const WebauthnPolicy = ({
             }}
           />
           <SwitchControl
-            name={`${namePrefix}AvoidSameAuthenticatorRegister`}
+            name={`avoidSameAuthenticatorRegister`}
             label={t("webAuthnPolicyAvoidSameAuthenticatorRegister")}
             labelIcon={t("webAuthnPolicyAvoidSameAuthenticatorRegisterHelp")}
             labelOn={t("on")}
@@ -268,7 +286,7 @@ export const WebauthnPolicy = ({
             }
           >
             <MultiLineInput
-              name={`${namePrefix}AcceptableAaguids`}
+              name={`acceptableAaguids`}
               aria-label={t("webAuthnPolicyAcceptableAaguids")}
               addButtonLabel="addAaguids"
             />
@@ -284,7 +302,7 @@ export const WebauthnPolicy = ({
             }
           >
             <MultiLineInput
-              name={`${namePrefix}ExtraOrigins`}
+              name={`extraOrigins`}
               aria-label={t("webAuthnPolicyExtraOrigins")}
               addButtonLabel="addOrigins"
             />
@@ -292,15 +310,15 @@ export const WebauthnPolicy = ({
           {isPasswordLess && isFeatureEnabled(Feature.Passkeys) && (
             <>
               <SwitchControl
-                name={`${namePrefix}PasskeysEnabled`}
+                name={`passkeysEnabled`}
                 label={t("webAuthnPolicyPasskeysEnabled")}
                 labelIcon={t("webAuthnPolicyPasskeysEnabledHelp")}
                 labelOn={t("on")}
                 labelOff={t("off")}
               />
-              {watch(`${namePrefix}PasskeysEnabled`) && (
+              {watch(`passkeysEnabled`) && (
                 <WebauthnSelect
-                  name={`${namePrefix}Mediation`}
+                  name={`mediation`}
                   label={t("webAuthnPolicyMediation")}
                   labelIcon={t("webAuthnPolicyMediationHelp")}
                   options={MEDIATION_OPTIONS}
@@ -323,7 +341,7 @@ export const WebauthnPolicy = ({
           <Button
             data-testid="reload"
             variant={ButtonVariant.link}
-            onClick={() => setupForm(realm)}
+            onClick={() => refresh()}
           >
             {t("reload")}
           </Button>

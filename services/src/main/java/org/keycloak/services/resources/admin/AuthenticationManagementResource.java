@@ -57,15 +57,24 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.CibaConfig;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.WebAuthnPolicy;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.Base32;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.policy.PasswordPolicyProvider;
+import org.keycloak.policy.PasswordPolicyProviderFactory;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
@@ -74,11 +83,15 @@ import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.CibaPolicyRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.OTPPolicyRepresentation;
+import org.keycloak.representations.idm.PasswordPolicyValueRepresentation;
 import org.keycloak.representations.idm.RequiredActionConfigInfoRepresentation;
 import org.keycloak.representations.idm.RequiredActionConfigRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.WebAuthnPolicyRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
@@ -87,6 +100,8 @@ import org.keycloak.utils.CredentialHelper;
 import org.keycloak.utils.RequiredActionHelper;
 import org.keycloak.utils.ReservedCharValidator;
 
+import com.webauthn4j.data.AttestationConveyancePreference;
+import com.webauthn4j.data.AuthenticatorAttachment;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -1684,5 +1699,426 @@ public class AuthenticationManagementResource {
         exists.setConfig(RepresentationToModel.removeEmptyString(rep.getConfig()));
         realm.updateAuthenticatorConfig(exists);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.AUTHENTICATOR_CONFIG).resourcePath(session.getContext().getUri()).representation(rep).success();
+    }
+
+    @Path("policies/password-policy")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
+    @Operation(
+            summary = "Read Password Authentication Policy"
+    )
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public List<PasswordPolicyValueRepresentation> getPasswordPolicy() {
+        auth.realm().requireViewRealm();
+
+        List<PasswordPolicyValueRepresentation> values = new LinkedList<>();
+        for (String key : realm.getPasswordPolicy().getPolicies()) {
+            values.add(new PasswordPolicyValueRepresentation(key, realm.getPasswordPolicy().getPolicyConfig(key)));
+        }
+
+        return values;
+    }
+
+    @Path("policies/password-policy")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
+    @Operation(summary = "Update Password Authentication Policy")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public void updatePasswordPolicy(List<PasswordPolicyValueRepresentation> rep) {
+        auth.realm().requireManageRealm();
+
+        validatePasswordPolicyRepresentation(rep);
+
+        PasswordPolicy.Builder builder = PasswordPolicy.build();
+        rep.forEach((row) -> builder.put(row.getId(), row.getValue() != null ? row.getValue().toString() : null));
+        realm.setPasswordPolicy(builder.build(session));
+
+        adminEvent.operation(OperationType.UPDATE)
+                .resource(ResourceType.AUTHENTICATION_POLICY)
+                .resourcePath(session.getContext().getUri())
+                .representation(rep)
+                .success();
+    }
+
+    private void validatePasswordPolicyRepresentation(final List<PasswordPolicyValueRepresentation> rep) {
+        Map<String, String> config = session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(PasswordPolicyProvider.class)
+                .map(PasswordPolicyProviderFactory.class::cast)
+                .collect(Collectors.toMap(
+                        PasswordPolicyProviderFactory::getId,
+                        factory -> factory.getConfigType() == null ? "" : factory.getConfigType()
+                ));
+
+        List<String> unknownTypeIds = rep.stream()
+                .map(PasswordPolicyValueRepresentation::getId)
+                .filter(id -> !config.containsKey(id))
+                .collect(Collectors.toList());
+        if (!unknownTypeIds.isEmpty()) {
+            throw new BadRequestException("Unknown password policy type(s): " + String.join(", ", unknownTypeIds));
+        }
+
+        List<String> invalidValues = rep.stream()
+                .filter(item -> {
+                    switch (config.get(item.getId())) {
+                        case PasswordPolicyProvider.INT_CONFIG_TYPE:
+                            if (item.getValue() == null) {
+                                return true;
+                            }
+                            try {
+                                Integer.parseInt(item.getValue().toString());
+                                return false;
+                            } catch (NumberFormatException e) {
+                                return true;
+                            }
+                        case PasswordPolicyProvider.STRING_CONFIG_TYPE:
+                            return item.getValue() == null || !(item.getValue() instanceof String);
+                        default:
+                            return false;
+                    }
+                })
+                .map(item -> {
+                    return item.getId() + " got \"" + item.getValue() + "\" but expects a value of type " + config.get(item.getId());
+                })
+                .collect(Collectors.toList());
+        if (!invalidValues.isEmpty()) {
+            throw new BadRequestException("Invalid values: " + String.join(", ", invalidValues));
+        }
+    }
+
+    @Path("policies/otp-policy")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
+    @Operation(summary = "Read OTP Authentication Policy")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public OTPPolicyRepresentation getOTPPolicy() {
+        auth.realm().requireViewRealm();
+
+        OTPPolicyRepresentation policy = new OTPPolicyRepresentation();
+        policy.setType(realm.getOTPPolicy().getType());
+        policy.setAlgorithm(realm.getOTPPolicy().getAlgorithm());
+        policy.setDigits(realm.getOTPPolicy().getDigits());
+        policy.setLookAheadWindow(realm.getOTPPolicy().getLookAheadWindow());
+        policy.setPeriod(realm.getOTPPolicy().getPeriod());
+        policy.setInitialCounter(realm.getOTPPolicy().getInitialCounter());
+        policy.setCodeReusable(realm.getOTPPolicy().isCodeReusable());
+
+        return policy;
+    }
+
+    @Path("policies/otp-policy")
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
+    @Operation(summary = "Update OTP Authentication Policy")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public void updateOTPPolicy(final OTPPolicyRepresentation rep) {
+        auth.realm().requireManageRealm();
+
+        validateOtpPolicyRepresentation(rep);
+
+        OTPPolicy otpPolicy = new OTPPolicy();
+        otpPolicy.setType(rep.getType());
+        otpPolicy.setAlgorithm(rep.getAlgorithm());
+        otpPolicy.setDigits(rep.getDigits());
+        otpPolicy.setLookAheadWindow(rep.getLookAheadWindow());
+        otpPolicy.setPeriod(rep.getPeriod());
+        otpPolicy.setInitialCounter(rep.getInitialCounter());
+        otpPolicy.setCodeReusable(rep.isCodeReusable());
+
+        realm.setOTPPolicy(otpPolicy);
+
+        adminEvent.operation(OperationType.UPDATE)
+                .resource(ResourceType.AUTHENTICATION_POLICY)
+                .resourcePath(session.getContext().getUri())
+                .representation(rep)
+                .success();
+    }
+
+    private void validateOtpPolicyRepresentation(final OTPPolicyRepresentation rep) {
+        List<String> supportedTypes = List.of(OTPCredentialModel.TOTP, OTPCredentialModel.HOTP);
+        if (rep.getType() == null) {
+            throw new BadRequestException("type is required");
+        }
+        if (!supportedTypes.contains(rep.getType())) {
+            throw new BadRequestException("type must be " + String.join(", ", supportedTypes));
+        }
+        if (rep.getAlgorithm() == null) {
+            throw new BadRequestException("algorithm is required");
+        }
+        List<String> supportedAlgorithms = List.of(HmacOTP.HMAC_SHA1, HmacOTP.HMAC_SHA256, HmacOTP.HMAC_SHA512);
+        if (!supportedAlgorithms.contains(rep.getAlgorithm())) {
+            throw new BadRequestException("algorithm must be " + String.join(", ", supportedAlgorithms));
+        }
+        if (!List.of(6, 8).contains(rep.getDigits())) {
+            throw new BadRequestException("digits must be 6 or 8");
+        }
+        if (rep.getType().equals(OTPCredentialModel.TOTP) && rep.getPeriod() == null) {
+            throw new BadRequestException("period field is required in totp mode");
+        }
+        if (rep.getType().equals(OTPCredentialModel.HOTP) && rep.getInitialCounter() == null) {
+            throw new BadRequestException("initalCounter field is required in htop mode");
+        }
+    }
+
+    @Path("policies/webauthn-policy")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
+    @Operation(summary = "Read WebAuthn Authentication Policy")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public WebAuthnPolicyRepresentation getWebAuthnPolicy() {
+        auth.realm().requireViewRealm();
+
+        WebAuthnPolicyRepresentation policy = new WebAuthnPolicyRepresentation();
+        policy.setRpEntityName(realm.getWebAuthnPolicy().getRpEntityName());
+        policy.setSignatureAlgorithms(realm.getWebAuthnPolicy().getSignatureAlgorithm());
+        policy.setRpId(realm.getWebAuthnPolicy().getRpId());
+        policy.setAttestationConveyancePreference(realm.getWebAuthnPolicy().getAttestationConveyancePreference());
+        policy.setAuthenticatorAttachment(realm.getWebAuthnPolicy().getAuthenticatorAttachment());
+        policy.setRequireResidentKey(realm.getWebAuthnPolicy().getRequireResidentKey());
+        policy.setUserVerificationRequirement(realm.getWebAuthnPolicy().getUserVerificationRequirement());
+        policy.setCreateTimeout(realm.getWebAuthnPolicy().getCreateTimeout());
+        policy.setAvoidSameAuthenticatorRegister(realm.getWebAuthnPolicy().isAvoidSameAuthenticatorRegister());
+        policy.setAcceptableAaguids(realm.getWebAuthnPolicy().getAcceptableAaguids());
+        policy.setExtraOrigins(realm.getWebAuthnPolicy().getExtraOrigins());
+
+        return policy;
+    }
+
+    @Path("policies/webauthn-policy")
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
+    @Operation(summary = "Update WebAuthn Authentication Policy")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public void updateWebAuthnPolicy(final WebAuthnPolicyRepresentation rep) {
+        auth.realm().requireManageRealm();
+
+        validateWebAuthnPolicyRepresentation(rep, false);
+
+        WebAuthnPolicy webAuthnPolicy = new WebAuthnPolicy();
+        webAuthnPolicy.setRpEntityName(rep.getRpEntityName());
+        webAuthnPolicy.setSignatureAlgorithm(rep.getSignatureAlgorithms());
+        webAuthnPolicy.setRpId(rep.getRpId());
+        webAuthnPolicy.setAttestationConveyancePreference(rep.getAttestationConveyancePreference());
+        webAuthnPolicy.setAuthenticatorAttachment(rep.getAuthenticatorAttachment());
+        webAuthnPolicy.setRequireResidentKey(rep.getRequireResidentKey());
+        webAuthnPolicy.setUserVerificationRequirement(rep.getUserVerificationRequirement());
+        webAuthnPolicy.setCreateTimeout(rep.getCreateTimeout());
+        webAuthnPolicy.setAvoidSameAuthenticatorRegister(rep.getAvoidSameAuthenticatorRegister());
+        webAuthnPolicy.setAcceptableAaguids(rep.getAcceptableAaguids());
+        webAuthnPolicy.setExtraOrigins(rep.getExtraOrigins());
+
+        realm.setWebAuthnPolicy(webAuthnPolicy);
+
+        adminEvent.operation(OperationType.UPDATE)
+                .resource(ResourceType.AUTHENTICATION_POLICY)
+                .resourcePath(session.getContext().getUri())
+                .representation(rep)
+                .success();
+    }
+
+    @Path("policies/webauthn-passwordless-policy")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
+    @Operation(summary = "Read WebAuthn Passwordless Authentication Policy")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public WebAuthnPolicyRepresentation getWebAuthnPasswordlessPolicy() {
+        auth.realm().requireViewRealm();
+
+        WebAuthnPolicyRepresentation policy = new WebAuthnPolicyRepresentation();
+        policy.setRpEntityName(realm.getWebAuthnPolicyPasswordless().getRpEntityName());
+        policy.setSignatureAlgorithms(realm.getWebAuthnPolicyPasswordless().getSignatureAlgorithm());
+        policy.setRpId(realm.getWebAuthnPolicyPasswordless().getRpId());
+        policy.setAttestationConveyancePreference(realm.getWebAuthnPolicyPasswordless().getAttestationConveyancePreference());
+        policy.setAuthenticatorAttachment(realm.getWebAuthnPolicyPasswordless().getAuthenticatorAttachment());
+        policy.setRequireResidentKey(realm.getWebAuthnPolicyPasswordless().getRequireResidentKey());
+        policy.setUserVerificationRequirement(realm.getWebAuthnPolicyPasswordless().getUserVerificationRequirement());
+        policy.setCreateTimeout(realm.getWebAuthnPolicyPasswordless().getCreateTimeout());
+        policy.setAvoidSameAuthenticatorRegister(realm.getWebAuthnPolicyPasswordless().isAvoidSameAuthenticatorRegister());
+        policy.setAcceptableAaguids(realm.getWebAuthnPolicyPasswordless().getAcceptableAaguids());
+        policy.setExtraOrigins(realm.getWebAuthnPolicyPasswordless().getExtraOrigins());
+        policy.setPasskeysEnabled(realm.getWebAuthnPolicyPasswordless().isPasskeysEnabled());
+        policy.setMediation(realm.getWebAuthnPolicyPasswordless().getMediation());
+
+        return policy;
+    }
+
+    @Path("policies/webauthn-passwordless-policy")
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
+    @Operation(summary = "Update WebAuthn Passwordless Authentication Policy")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public void updateWebAuthnPasswordlessPolicy(final WebAuthnPolicyRepresentation rep) {
+        auth.realm().requireManageRealm();
+
+        validateWebAuthnPolicyRepresentation(rep, true);
+
+        WebAuthnPolicy webAuthnPolicy = new WebAuthnPolicy();
+        webAuthnPolicy.setRpEntityName(rep.getRpEntityName());
+        webAuthnPolicy.setSignatureAlgorithm(rep.getSignatureAlgorithms());
+        webAuthnPolicy.setRpId(rep.getRpId());
+        webAuthnPolicy.setAttestationConveyancePreference(rep.getAttestationConveyancePreference());
+        webAuthnPolicy.setAuthenticatorAttachment(rep.getAuthenticatorAttachment());
+        webAuthnPolicy.setRequireResidentKey(rep.getRequireResidentKey());
+        webAuthnPolicy.setUserVerificationRequirement(rep.getUserVerificationRequirement());
+        webAuthnPolicy.setCreateTimeout(rep.getCreateTimeout());
+        webAuthnPolicy.setAvoidSameAuthenticatorRegister(rep.getAvoidSameAuthenticatorRegister());
+        webAuthnPolicy.setAcceptableAaguids(rep.getAcceptableAaguids());
+        webAuthnPolicy.setExtraOrigins(rep.getExtraOrigins());
+        webAuthnPolicy.setPasskeysEnabled(rep.getPasskeysEnabled());
+        webAuthnPolicy.setMediation(rep.getMediation());
+
+        realm.setWebAuthnPolicyPasswordless(webAuthnPolicy);
+
+        adminEvent.operation(OperationType.UPDATE)
+                .resource(ResourceType.AUTHENTICATION_POLICY)
+                .resourcePath(session.getContext().getUri())
+                .representation(rep)
+                .success();
+    }
+
+    private void validateWebAuthnPolicyRepresentation(final WebAuthnPolicyRepresentation rep, boolean isPasswordless) {
+        if (rep.getRpEntityName() == null || rep.getRpEntityName().isBlank()) {
+            throw new BadRequestException("RP Entity Name is required");
+        }
+        if (rep.getSignatureAlgorithms() == null || rep.getSignatureAlgorithms().isEmpty()) {
+            throw new BadRequestException("At least one signature algorithm is required");
+        }
+        if (rep.getAttestationConveyancePreference() == null || !List.of(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED, AttestationConveyancePreference.NONE.toString(), AttestationConveyancePreference.INDIRECT.toString(), AttestationConveyancePreference.DIRECT.toString()).contains(rep.getAttestationConveyancePreference())) {
+            throw new BadRequestException("Unsupported attestation conveyance preference");
+        }
+        if (rep.getRequireResidentKey() == null || !List.of(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED, Constants.WEBAUTHN_POLICY_OPTION_YES, Constants.WEBAUTHN_POLICY_OPTION_NO).contains(rep.getRequireResidentKey())) {
+            throw new BadRequestException("Unsupported require resident key option");
+        }
+        if (rep.getAuthenticatorAttachment() == null || !List.of(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED, AuthenticatorAttachment.PLATFORM.toString(), AuthenticatorAttachment.CROSS_PLATFORM.toString()).contains(rep.getAuthenticatorAttachment())) {
+            throw new BadRequestException("Unsupported authenticator attachment");
+        }
+        if (rep.getUserVerificationRequirement() == null || !List.of(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED, Constants.WEBAUTHN_POLICY_OPTION_REQUIRED, Constants.WEBAUTHN_POLICY_OPTION_PREFERED, Constants.WEBAUTHN_POLICY_OPTION_DISCOURAGED).contains(rep.getUserVerificationRequirement())) {
+            throw new BadRequestException("Unsupported user verification requirement");
+        }
+        if (isPasswordless) {
+            if (rep.getPasskeysEnabled() != null && rep.getPasskeysEnabled()) {
+                if (rep.getMediation() == null || !List.of("conditional", "none", "optional", "required", "silent").contains(rep.getMediation())) {
+                    throw new BadRequestException("Unsupported mediation requirement");
+                }
+            }
+        }
+    }
+
+    @Path("policies/ciba-policy")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
+    @Operation(summary = "Read Ciba Authentication Policy")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public CibaPolicyRepresentation getCibaPolicy() {
+        auth.realm().requireViewRealm();
+
+        CibaPolicyRepresentation policy = new CibaPolicyRepresentation();
+        policy.setBackchannelTokenDeliveryMode(realm.getCibaPolicy().getBackchannelTokenDeliveryMode());
+        policy.setExpiresIn(realm.getCibaPolicy().getExpiresIn());
+        policy.setInterval(realm.getCibaPolicy().getPoolingInterval());
+        policy.setAuthRequestedUserHint(realm.getCibaPolicy().getAuthRequestedUserHint());
+
+        return policy;
+    }
+
+    @Path("policies/ciba-policy")
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
+    @Operation(summary = "Update Ciba Authentication Policy")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public void updateCibaPolicy(final CibaPolicyRepresentation rep) {
+        auth.realm().requireManageRealm();
+
+        validateCibaPolicyRepresentation(rep);
+
+        CibaConfig cibaPolicy = CibaConfig.fromModel(realm);
+        cibaPolicy.setBackchannelTokenDeliveryMode(rep.getBackchannelTokenDeliveryMode());
+        cibaPolicy.setExpiresIn(rep.getExpiresIn());
+        cibaPolicy.setPoolingInterval(rep.getInterval());
+        cibaPolicy.setAuthRequestedUserHint(rep.getAuthRequestedUserHint());
+
+        adminEvent.operation(OperationType.UPDATE)
+                .resource(ResourceType.AUTHENTICATION_POLICY)
+                .resourcePath(session.getContext().getUri())
+                .representation(rep)
+                .success();
+    }
+
+    private void validateCibaPolicyRepresentation(final CibaPolicyRepresentation rep) {
+        if (!CibaConfig.CIBA_SUPPORTED_MODES.contains(rep.getBackchannelTokenDeliveryMode())) {
+            throw new BadRequestException("backchannelTokenDeliveryMode only supports " + String.join(", ", CibaConfig.CIBA_SUPPORTED_MODES));
+        }
+        if (rep.getExpiresIn() < 10) {
+            throw new BadRequestException("expiresIn must be greater than or equal to 10");
+        }
+        if (rep.getExpiresIn() > 600) {
+            throw new BadRequestException("expiresIn must be less than or equal to 600");
+        }
+        if (rep.getInterval() < 0) {
+            throw new BadRequestException("interval must be greater than or equal to 0");
+        }
+        if (rep.getInterval() > 600) {
+            throw new BadRequestException("interval must be less than or equal to 600");
+        }
+        if (rep.getAuthRequestedUserHint() == null) {
+            throw new BadRequestException("authRequestedUserHint is required");
+        }
+        if (!rep.getAuthRequestedUserHint().equals(CibaConfig.DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT)) {
+            throw new BadRequestException("authRequestedUserHint currently only supports \"login_hint\".");
+        }
     }
 }
