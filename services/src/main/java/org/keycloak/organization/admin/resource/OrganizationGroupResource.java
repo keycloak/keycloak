@@ -62,6 +62,9 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.RoleMapperResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -308,9 +311,13 @@ public class OrganizationGroupResource {
     }
 
     private MemberRepresentation toMemberRepresentation(RealmModel realm, UserModel user, Boolean briefRepresentation) {
-        UserRepresentation userRep = Boolean.TRUE.equals(briefRepresentation)
-                ? ModelToRepresentation.toBriefRepresentation(user)
-                : ModelToRepresentation.toRepresentation(session, realm, user);
+        boolean briefRepresentationB = Boolean.TRUE.equals(briefRepresentation);
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = provider.create(UserProfileContext.USER_API, user);
+        UserRepresentation rep = profile.toRepresentation(!briefRepresentationB);
+        UserRepresentation userRep = briefRepresentationB
+                ? ModelToRepresentation.toBriefRepresentation(user, rep, false)
+                : ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
 
         MemberRepresentation memberRep = new MemberRepresentation(userRep);
         memberRep.setMembershipType(
