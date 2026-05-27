@@ -47,7 +47,7 @@ import { useRealm } from "../../../context/realm-context/RealmContext";
 import { addTrailingSlash, convertAttributeNameToForm } from "../../../util";
 import { getAuthorizationHeaders } from "../../../utils/getAuthorizationHeaders";
 import useFormatDate from "../../../utils/useFormatDate";
-import type { FormFields, SaveOptions } from "../../ClientDetails";
+import type { FormFields } from "../../ClientDetails";
 
 const DELIVERY_METHOD_PUSH_URI = "urn:ietf:rfc:8935";
 const DELIVERY_METHOD_POLL_URI = "urn:ietf:rfc:8936";
@@ -147,8 +147,6 @@ export type StreamTabProps = {
   setClientStream: (stream: SsfClientStream | null) => void;
   defaultSupportedEvents: string;
   nativelyEmittedEvents: string[];
-  save: (options?: SaveOptions) => void;
-  reset: () => void;
   refresh: () => void;
 };
 
@@ -158,8 +156,6 @@ export const StreamTab = ({
   setClientStream,
   defaultSupportedEvents,
   nativelyEmittedEvents,
-  save,
-  reset,
   refresh,
 }: StreamTabProps) => {
   const { t } = useTranslation();
@@ -1268,44 +1264,30 @@ export const StreamTab = ({
                   ))}
                 </KeycloakSelect>
               </FormGroup>
-              {canEditStream && (
-                <ActionGroup>
-                  <Button
-                    type="button"
-                    variant="primary"
-                    onClick={() => submitStreamEdit()}
-                    isDisabled={!streamEditDirty || streamEditSubmitting}
-                    isLoading={streamEditSubmitting}
-                    data-testid="ssfStreamSaveChanges"
-                  >
-                    {t("ssfStreamSaveChanges")}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={() => discardStreamEdit()}
-                    isDisabled={!streamEditDirty || streamEditSubmitting}
-                    data-testid="ssfStreamDiscardChanges"
-                  >
-                    {t("ssfStreamDiscardChanges")}
-                  </Button>
-                </ActionGroup>
-              )}
               <ActionGroup>
-                <Button
-                  variant="secondary"
-                  onClick={() => save()}
-                  data-testid="ssfStreamSave"
-                >
-                  {t("save")}
-                </Button>
-                <Button
-                  variant="link"
-                  onClick={reset}
-                  data-testid="ssfStreamRevert"
-                >
-                  {t("revert")}
-                </Button>
+                {canEditStream && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={() => submitStreamEdit()}
+                      isDisabled={!streamEditDirty || streamEditSubmitting}
+                      isLoading={streamEditSubmitting}
+                      data-testid="ssfStreamSave"
+                    >
+                      {t("save")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="link"
+                      onClick={() => discardStreamEdit()}
+                      isDisabled={!streamEditDirty || streamEditSubmitting}
+                      data-testid="ssfStreamRevert"
+                    >
+                      {t("revert")}
+                    </Button>
+                  </>
+                )}
                 <Button
                   variant="tertiary"
                   onClick={triggerVerifyStream}

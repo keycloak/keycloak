@@ -284,8 +284,6 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
           setClientStream={setClientStream}
           defaultSupportedEvents={defaultSupportedEvents}
           nativelyEmittedEvents={nativelyEmittedEvents}
-          save={save}
-          reset={reset}
           refresh={refresh}
         />
       )}
