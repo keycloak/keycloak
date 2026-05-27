@@ -5,7 +5,7 @@ import { joinPath } from "../../utils/joinPath";
 import { LogoContext } from "./LogoContext";
 import { ThemeColors } from "./ThemeColors";
 import { BackgroundContext } from "./BackgroundContext";
-import { Environment } from "../../environment";
+import type { Environment } from "../../environment-types";
 
 export type ThemeRealmRepresentation = RealmRepresentation & {
   themeName?: string;
