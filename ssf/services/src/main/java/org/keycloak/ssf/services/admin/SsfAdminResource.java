@@ -19,7 +19,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -166,10 +165,25 @@ public class SsfAdminResource {
      */
     protected Response invalidRequest(String errorCode, String message, String fallback,
                                       Map<String, String> params) {
-        return Response.status(Response.Status.BAD_REQUEST)
-                .entity(new SsfErrorRepresentation(errorCode,
-                        message != null ? message : fallback,
-                        params))
+        return errorResponse(Response.Status.BAD_REQUEST, errorCode,
+                message != null ? message : fallback, params);
+    }
+
+    /**
+     * Builds an SSF error {@link Response} carrying an
+     * {@link SsfErrorRepresentation} JSON body. Sets the
+     * {@code APPLICATION_JSON} media type explicitly so the error body is
+     * never dropped — a response with no Content-Type is rejected by
+     * {@link org.keycloak.headers.DefaultSecurityHeadersProvider}
+     * ("MediaType not set ...") and surfaces as an opaque 500 instead of
+     * the actionable error. Returned by {@link #invalidRequest} and the
+     * stream create/update error paths.
+     */
+    protected Response errorResponse(Response.Status status, String errorCode, String message,
+                                          Map<String, String> params) {
+        return Response.status(status)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(new SsfErrorRepresentation(errorCode, message, params))
                 .build();
     }
 
@@ -357,14 +371,10 @@ public class SsfAdminResource {
                     .build();
         } catch (DuplicateStreamConfigException dsce) {
             log.debugf(dsce, "Admin stream create rejected for client %s: duplicate stream", clientId);
-            throw new WebApplicationException(Response.status(Response.Status.CONFLICT)
-                    .entity(new SsfErrorRepresentation("stream_error", dsce.getMessage()))
-                    .build());
+            return errorResponse(Response.Status.CONFLICT, "stream_error", dsce.getMessage(), null);
         } catch (SsfException e) {
             log.debugf(e, "Admin stream create rejected for client %s: %s", clientId, e.getMessage());
-            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new SsfErrorRepresentation("stream_error", e.getMessage()))
-                    .build());
+            return errorResponse(Response.Status.BAD_REQUEST, "stream_error", e.getMessage(), null);
         }
     }
 
@@ -597,9 +607,7 @@ public class SsfAdminResource {
             return Response.ok(toClientStreamRepresentation(updated, client)).build();
         } catch (SsfException e) {
             log.debugf(e, "Admin stream update rejected for client %s: %s", clientId, e.getMessage());
-            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new SsfErrorRepresentation("stream_error", e.getMessage()))
-                    .build());
+            return errorResponse(Response.Status.BAD_REQUEST, "stream_error", e.getMessage(), null);
         }
     }
 

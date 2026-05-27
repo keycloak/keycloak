@@ -36,6 +36,7 @@ import org.keycloak.ssf.transmitter.stream.StreamConfigUpdateRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
+import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
 import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
@@ -382,6 +383,41 @@ public class SsfTransmitterStreamManagementTests {
             Assertions.assertTrue(fetched.getEventsRequested().contains(CaepCredentialChange.TYPE),
                     "events_requested must remain unchanged when only events_delivered is narrowed");
             Assertions.assertTrue(fetched.getEventsRequested().contains(CaepSessionRevoked.TYPE));
+        }
+    }
+
+    @Test
+    public void testAdminCreateStreamValidationErrorReturnsReadable400() throws IOException {
+
+        // Regression: a validation failure on the admin create endpoint must
+        // surface as a readable 400 carrying an SsfErrorRepresentation, not an
+        // opaque 500. The thrown WebApplicationException response previously
+        // omitted the Content-Type, so DefaultSecurityHeadersProvider rejected
+        // it ("MediaType not set ...") and masked the 400 as a 500.
+        setClientAttribute(RECEIVER_RW, ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "");
+
+        String adminToken = adminClient.tokenManager().getAccessTokenString();
+        String adminStreamUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + RECEIVER_RW + "/stream";
+
+        // PUSH delivery with no ssf.validPushUrls declared is rejected by the
+        // SSRF gate (SsfException -> 400).
+        StreamConfigUpdateRepresentation body = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+
+        try (SimpleHttpResponse response = http.doPost(adminStreamUrl)
+                .json(body)
+                .auth(adminToken)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "admin create validation failure must be a clean 400, not a security-header-masked 500");
+            SsfErrorRepresentation error = response.asJson(SsfErrorRepresentation.class);
+            Assertions.assertEquals("stream_error", error.getError());
+            Assertions.assertTrue(
+                    error.getErrorDescription() != null
+                            && error.getErrorDescription().contains("validPushUrls"),
+                    "error body should carry the readable validation message, got: "
+                            + error.getErrorDescription());
         }
     }
 
