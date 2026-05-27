@@ -222,7 +222,8 @@ public final class Database {
                                 DatabaseOptions.DatabaseTlsMode.DISABLED.toCliValue())) == DatabaseTlsMode.DISABLED ? "@" : "@tcps:",
                         getProperty(DatabaseOptions.DB_URL_HOST, getter, "localhost"),
                         getProperty(DatabaseOptions.DB_URL_PORT, getter, "1521"),
-                        getProperty(DatabaseOptions.DB_URL_DATABASE, getter, "keycloak")),
+                        getProperty(DatabaseOptions.DB_URL_DATABASE, getter, "keycloak"),
+                        getProperty(DatabaseOptions.DB_URL_PROPERTIES, getter)),
                 "liquibase.database.core.OracleDatabase"
         );
 
