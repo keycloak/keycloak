@@ -87,6 +87,8 @@ export type ReceiverTabProps = {
   availableSupportedEvents: string[];
   nativelyEmittedEvents: string[];
   defaultUserSubjectFormat: string;
+  defaultPushConnectTimeoutMillis: number;
+  defaultPushSocketTimeoutMillis: number;
   save: (options?: SaveOptions) => void;
   reset: () => void;
 };
@@ -98,6 +100,8 @@ export const ReceiverTab = ({
   availableSupportedEvents,
   nativelyEmittedEvents,
   defaultUserSubjectFormat,
+  defaultPushConnectTimeoutMillis,
+  defaultPushSocketTimeoutMillis,
   save,
   reset,
 }: ReceiverTabProps) => {
@@ -674,6 +678,36 @@ export const ReceiverTab = ({
                           stringify
                         />
                       </FormGroup>
+                    )}
+                    {pushDeliveryAllowed && (
+                      <>
+                        <NumberControl
+                          name={convertAttributeNameToForm<FormFields>(
+                            "attributes.ssf.pushEndpointConnectTimeoutMillis",
+                          )}
+                          label={t("ssfPushEndpointConnectTimeout")}
+                          labelIcon={t("ssfPushEndpointConnectTimeoutHelp")}
+                          controller={{
+                            defaultValue: defaultPushConnectTimeoutMillis,
+                            rules: {
+                              min: 0,
+                            },
+                          }}
+                        />
+                        <NumberControl
+                          name={convertAttributeNameToForm<FormFields>(
+                            "attributes.ssf.pushEndpointSocketTimeoutMillis",
+                          )}
+                          label={t("ssfPushEndpointSocketTimeout")}
+                          labelIcon={t("ssfPushEndpointSocketTimeoutHelp")}
+                          controller={{
+                            defaultValue: defaultPushSocketTimeoutMillis,
+                            rules: {
+                              min: 0,
+                            },
+                          }}
+                        />
+                      </>
                     )}
                   </div>
                 ),

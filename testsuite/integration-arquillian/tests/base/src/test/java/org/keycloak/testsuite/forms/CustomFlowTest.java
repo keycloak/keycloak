@@ -45,6 +45,7 @@ import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
 import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
@@ -306,7 +307,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         AuthenticatorState state = new AuthenticatorState();
         state.setUsername("login-test");
         state.setClientId("test-app");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
 
         oauth.openLoginForm();
 
@@ -321,7 +322,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         AuthenticatorState state = new AuthenticatorState();
         state.setUsername("login-test");
         state.setClientId("test-app");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
 
         grantAccessToken("test-app", "login-test");
     }
@@ -331,15 +332,15 @@ public class CustomFlowTest extends AbstractFlowTest {
         AuthenticatorState state = new AuthenticatorState();
         state.setClientId("dummy-client");
         state.setUsername("login-test");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
         grantAccessToken("dummy-client", "login-test");
 
         state.setClientId("test-app");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
         grantAccessToken("test-app", "login-test");
 
         state.setClientId("unknown");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
 
         AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user", "password");
         assertEquals(401, response.getStatusCode());
@@ -356,7 +357,7 @@ public class CustomFlowTest extends AbstractFlowTest {
                 .error(Errors.CLIENT_NOT_FOUND);
 
         state.setClientId("test-app");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
 
         // Test throwing exception from the client authenticator. No error details should be displayed
         response = oauth.passwordGrantRequest("test-user", "password").param(PassThroughClientAuthenticator.TEST_ERROR_PARAM, "Some Random Error").send();
@@ -408,5 +409,15 @@ public class CustomFlowTest extends AbstractFlowTest {
                 .details(Details.CLIENT_AUTH_METHOD, PassThroughClientAuthenticator.PROVIDER_ID);
     }
 
+    public static RunOnServer updateAuthenticator(AuthenticatorState state) {
+        return  session -> {
+            if (state.getClientId() != null) {
+                PassThroughClientAuthenticator.clientId = state.getClientId();
+            }
+            if (state.getUsername() != null) {
+                PassThroughAuthenticator.username = state.getUsername();
+            }
+        };
+    }
 
 }

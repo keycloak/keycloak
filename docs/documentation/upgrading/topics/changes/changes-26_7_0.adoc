@@ -101,3 +101,13 @@ This change allows token audience changes and up/down scoping and is applicable 
 
 If you attempt to exchange a sender-constrained token using a different client, the request will be rejected with an `invalid_request` error.
 For more details, see the link:{securing_apps_token_exchange_link}[Token Exchange] guide.
+
+=== HAProxy certificate lookup provider
+The `HaProxySslClientCertificateLookup` implementation has deprecated support for configuring `--spi-x509cert-lookup--haproxy--ssl-cert-chain-prefix`
+as HAProxy does not provide a built-in mechanism to forward individual intermediate certificates as dedicated HTTP headers.
+Consequently, this solution does not work when more than one intermediate certificate is used. Existing deployments of
+`HaProxySslClientCertificateLookup` will continue to work with `ssl-cert-chain-prefix` as before, but a deprecation warning
+will now be logged.
+
+Users of `ssl-cert-chain-prefix` should instead make use of `--spi-x509cert-lookup--haproxy--ssl-cert-chain`.
+See the link:{client_certificate_lookup_link}[Reverse Proxy guide] for more details.

@@ -25,6 +25,7 @@ import org.keycloak.ssf.transmitter.stream.StreamService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.subject.SsfNotifyAttributes;
 import org.keycloak.ssf.transmitter.support.SsfUtil;
+import org.keycloak.storage.ReadOnlyException;
 
 import org.jboss.logging.Logger;
 
@@ -231,9 +232,23 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
         // org doesn't need a redundant per-user attribute.
         if (!isUserNotified(transmitter, user, client)
                 && !isAnyOrganizationNotified(transmitter, user, client)) {
-            markAsNotified(user, client);
-            log.debugf("SSF auto-notify on login: tagged user %s for receiver client %s",
-                    user.getId(), client.getClientId());
+            try {
+                markAsNotified(user, client);
+                log.debugf("SSF auto-notify on login: tagged user %s for receiver client %s",
+                        user.getId(), client.getClientId());
+            } catch (ReadOnlyException e) {
+                // Read-only user store (e.g. LDAP edit mode READ_ONLY, or
+                // import disabled): the ssf.notify.<clientId> attribute
+                // can't be persisted. Degrade quietly so login isn't
+                // disrupted and we don't surface a per-login ERROR via the
+                // event framework. Auto-notify-on-login requires writable
+                // user storage (e.g. LDAP edit mode UNSYNCED with import
+                // enabled). Alterantively users can use an LDAP attribute
+                // mapper that returns a proper ssf.notify.<client_id>=true attribute
+                log.warnf("SSF auto-notify on login: cannot tag read-only user %s for receiver client %s; "
+                        + "auto-notify-on-login requires writable user storage. Skipping.",
+                        user.getId(), client.getClientId());
+            }
         }
     }
 

@@ -18,11 +18,20 @@ package org.keycloak.testsuite.federation.ldap;
 
 import java.io.Serializable;
 
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.storage.CacheableStorageProviderModel;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.ldap.LDAPStorageProvider;
+import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.LDAPRule;
+import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -47,7 +56,7 @@ public class LDAPHardcodedGroupMapperTest extends AbstractLDAPTest implements Se
 
     @Override
     protected void afterImportTestRealm() {
-        testingClient.testing().ldap(TEST_REALM_NAME).prepareHardcodedGroupsLDAPTest();
+        runOnServer.run(prepareHardcodedGroupsLDAPTest());
     }
 
     /**
@@ -84,6 +93,39 @@ public class LDAPHardcodedGroupMapperTest extends AbstractLDAPTest implements Se
             // check role membership
             assertThat(john.hasRole(clientRoleGrantedViaHardcodedGroupMembership), is(true));
         });
+    }
+
+    /**
+     * Prepare hardcoded groups LDAP tests. Creates some LDAP mappers as well as some built-in Groups and users in LDAP
+     */
+    public static RunOnServer prepareHardcodedGroupsLDAPTest() {
+        return session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ComponentModel ldapCompModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapCompModel);
+            UserStorageProviderModel ldapModel = ldapFedProvider.getModel();
+            ldapModel.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
+            ldapModel.setImportEnabled(false);
+            ldapModel.getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.READ_ONLY.name());
+            realm.updateComponent(ldapModel);
+
+            // Add a hardcoded group hierarchy with role
+            RoleModel clientRole = realm.getClientByClientId("admin-cli").addRole("client_role");
+            GroupModel parentGroup = realm.createGroup("parent_group");
+            parentGroup.grantRole(clientRole);
+            GroupModel hardcodedGroup = realm.createGroup("hardcoded_group");
+            parentGroup.addChild(hardcodedGroup);
+
+            // Add group mapper
+            LDAPTestUtils.addOrUpdateHardcodedGroupMapper(realm, ldapModel);
+
+            // Remove all LDAP users
+            LDAPTestUtils.removeAllLDAPUsers(ldapFedProvider, realm);
+
+            // Add some LDAP users for testing
+            LDAPObject john = LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "johnkeycloak", "John", "Doe", "john@email.org", null, "1234");
+            LDAPTestUtils.updateLDAPPassword(ldapFedProvider, john, "Password1");
+        };
     }
 
 }
