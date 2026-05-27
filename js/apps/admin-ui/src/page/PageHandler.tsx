@@ -102,6 +102,7 @@ export const PageHandler = ({
           </Button>
           {providerType === PAGE_PROVIDER ? (
             <Button
+              data-testid="cancel"
               variant="link"
               component={(props) => (
                 <Link
@@ -113,7 +114,11 @@ export const PageHandler = ({
               {t("cancel")}
             </Button>
           ) : (
-            <Button variant="link" onClick={() => form.reset()}>
+            <Button
+              data-testid="cancel"
+              variant="link"
+              onClick={() => form.reset()}
+            >
               {t("revert")}
             </Button>
           )}
