@@ -1,0 +1,8 @@
+name: Wireit Cache
+description: Enables Wireit's GitHub Actions caching mode (caches build artifacts)
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Wireit GitHub Actions caching
+      uses: google/wireit@setup-github-actions-caching/v2

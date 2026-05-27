@@ -75,6 +75,8 @@ jobs:
 
       - uses: ./.github/actions/pnpm-setup
 
+      - uses: ./.github/actions/wireit-cache
+
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
         working-directory: js
 
@@ -293,9 +295,7 @@ jobs:
 
       - uses: ./.github/actions/pnpm-setup
 
-      - name: Generate bindings
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} generate:openapi
-        working-directory: js
+      - uses: ./.github/actions/wireit-cache
 
       - name: Run tests
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} run test
