@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.common.enums.SslRequired;
@@ -56,7 +57,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -66,7 +66,6 @@ import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
-import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -83,6 +82,7 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.common.TestRealmUserConfig;
 import org.keycloak.tests.utils.Assert;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AbstractHttpPostRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
@@ -151,8 +151,7 @@ public class RefreshTokenTest {
     @InjectUser(config = TestRealmUserConfig.class)
     protected ManagedUser user;
 
-    @InjectClient(attachTo = "test-app")
-    ManagedClient managedClient;
+    private ClientResource testAppClient;
 
     public static class RefreshTokenTestRealmConfig implements RealmConfig {
 
@@ -169,6 +168,7 @@ public class RefreshTokenTest {
 
     @BeforeEach
     public void before() {
+        testAppClient = AdminApiUtil.findClientByClientId(realm.admin(), "test-app");
         enableRefreshTokenEvents(realm);
         AccountHelper.logout(realm.admin(), user.getUsername());
     }
@@ -621,8 +621,8 @@ public class RefreshTokenTest {
         ClientScopeRepresentation phoneScope = findClientScopeByName("phone");
         ClientScopeRepresentation addressScope = findClientScopeByName("address");
 
-        managedClient.admin().addOptionalClientScope(phoneScope.getId());
-        managedClient.admin().addOptionalClientScope(addressScope.getId());
+        testAppClient.addOptionalClientScope(phoneScope.getId());
+        testAppClient.addOptionalClientScope(addressScope.getId());
 
         try {
             oauth.doLogin("test-user@localhost", "password");
@@ -648,8 +648,8 @@ public class RefreshTokenTest {
 
         } finally {
             oauth.scope(null);
-            managedClient.admin().removeOptionalClientScope(phoneScope.getId());
-            managedClient.admin().removeOptionalClientScope(addressScope.getId());
+            testAppClient.removeOptionalClientScope(phoneScope.getId());
+            testAppClient.removeOptionalClientScope(addressScope.getId());
         }
     }
 
@@ -688,8 +688,8 @@ public class RefreshTokenTest {
     public void refreshWithOptionalClientScopeWithIncludeInTokenScopeDisabled() {
         //set roles client scope as optional
         ClientScopeRepresentation rolesScope = findClientScopeByName(OIDCLoginProtocolFactory.ROLES_SCOPE);
-        managedClient.admin().removeDefaultClientScope(rolesScope.getId());
-        managedClient.admin().addOptionalClientScope(rolesScope.getId());
+        testAppClient.removeDefaultClientScope(rolesScope.getId());
+        testAppClient.addOptionalClientScope(rolesScope.getId());
 
         try {
             oauth.scope("roles");
@@ -721,8 +721,8 @@ public class RefreshTokenTest {
             Assert.assertNotNull(accessToken.getResourceAccess());
 
         } finally {
-            managedClient.admin().removeOptionalClientScope(rolesScope.getId());
-            managedClient.admin().addDefaultClientScope(rolesScope.getId());
+            testAppClient.removeOptionalClientScope(rolesScope.getId());
+            testAppClient.addDefaultClientScope(rolesScope.getId());
         }
     }
 
@@ -746,7 +746,7 @@ public class RefreshTokenTest {
         String refreshTokenString = response.getRefreshToken();
         events.clear();
 
-        managedClient.updateWithCleanup(c -> c.enabled(false));
+        realm.updateClientWithCleanup(testAppClient.toRepresentation().getClientId(), c -> c.enabled(false));
 
         response = oauth.doRefreshTokenRequest(refreshTokenString);
 
@@ -756,7 +756,6 @@ public class RefreshTokenTest {
         EventAssertion.assertError(events.poll())
                 .type(EventType.REFRESH_TOKEN_ERROR)
                 .error(Errors.CLIENT_DISABLED);
-        managedClient.updateWithCleanup(c -> c.enabled(true));
     }
 
     @Test
@@ -980,7 +979,7 @@ public class RefreshTokenTest {
 
     @Test
     public void refreshTokenRequestNoRefreshToken() {
-        ClientRepresentation client = managedClient.admin().toRepresentation();
+        ClientRepresentation client = testAppClient.toRepresentation();
         oauth.doLogin("test-user@localhost", "password");
 
         String code = oauth.parseLoginResponse().getCode();
@@ -990,7 +989,7 @@ public class RefreshTokenTest {
         String refreshTokenString = tokenResponse.getRefreshToken();
 
         client.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false");
-        managedClient.admin().update(client);
+        testAppClient.update(client);
 
         try {
 
@@ -1000,7 +999,7 @@ public class RefreshTokenTest {
             assertNull(response.getRefreshToken());
         } finally {
             client.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "true");
-            managedClient.admin().update(client);
+            testAppClient.update(client);
         }
     }
 
@@ -1071,14 +1070,14 @@ public class RefreshTokenTest {
 
         int currentTime = (int) (System.currentTimeMillis() / 1000);
 
-        ClientRepresentation clientRep = managedClient.admin().toRepresentation();
+        ClientRepresentation clientRep = testAppClient.toRepresentation();
         int originalClientNotBefore = clientRep.getNotBefore() != null ? clientRep.getNotBefore() : 0;
 
         try {
             //Test realm notBefore with client notBefore both set
             // Set client notBefore to past
             clientRep.setNotBefore(currentTime - 100);
-            managedClient.admin().update(clientRep);
+            testAppClient.update(clientRep);
 
             tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
             assertEquals(200, tokenResponse.getStatusCode());
@@ -1100,7 +1099,7 @@ public class RefreshTokenTest {
 
         } finally {
             clientRep.setNotBefore(originalClientNotBefore);
-            managedClient.admin().update(clientRep);
+            testAppClient.update(clientRep);
         }
     }
 
@@ -1124,10 +1123,10 @@ public class RefreshTokenTest {
     }
 
     private void changeClientAccessTokenSignatureProvider(String toSigAlgName) {
-        ClientRepresentation clientRep = managedClient.admin().toRepresentation();
+        ClientRepresentation clientRep = testAppClient.toRepresentation();
         log.tracef("change client %s access token signature algorithm from %s to %s", clientRep.getClientId(), clientRep.getAttributes().get(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG), toSigAlgName);
         clientRep.getAttributes().put(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG, toSigAlgName);
-        managedClient.admin().update(clientRep);
+        testAppClient.update(clientRep);
     }
 
     private void refreshToken(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {

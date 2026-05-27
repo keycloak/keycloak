@@ -67,7 +67,7 @@ public class PermissionRESTTest extends AbstractPermissionTest {
     @Test
     public void testPreventDeletingAdminPermissionsClient() {
         try {
-            client.admin().remove();
+            adminPermissionsClient.remove();
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
@@ -76,7 +76,7 @@ public class PermissionRESTTest extends AbstractPermissionTest {
 
     @Test
     public void testManageNotAllowedForAdminPermissionsClient() {
-        ClientRepresentation representation = client.admin().toRepresentation();
+        ClientRepresentation representation = adminPermissionsClient.toRepresentation();
         assertFalse(representation.getAccess().get("manage"));
         assertFalse(representation.getAccess().get("configure"));
     }
@@ -88,21 +88,21 @@ public class PermissionRESTTest extends AbstractPermissionTest {
         rep.setDecisionStrategy(DecisionStrategy.CONSENSUS);
 
         try {
-            client.admin().authorization().update(rep);
+            adminPermissionsClient.authorization().update(rep);
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
         }
 
         try {
-            client.admin().authorization().exportSettings();
+            adminPermissionsClient.authorization().exportSettings();
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
         }
 
         try {
-            client.admin().authorization().importSettings(rep);
+            adminPermissionsClient.authorization().importSettings(rep);
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
@@ -111,25 +111,25 @@ public class PermissionRESTTest extends AbstractPermissionTest {
 
     @Test
     public void scopesTest() {
-        ScopeRepresentation manage = client.admin().authorization().scopes().findByName("manage");
+        ScopeRepresentation manage = adminPermissionsClient.authorization().scopes().findByName("manage");
         assertThat(manage, notNullValue());
 
         ScopeRepresentation customScope = new ScopeRepresentation();
         customScope.setName("custom");
 
-        try (Response response = client.admin().authorization().scopes().create(customScope)) {
+        try (Response response = adminPermissionsClient.authorization().scopes().create(customScope)) {
             assertThat(response.getStatus(), equalTo(Response.Status.BAD_REQUEST.getStatusCode()));
         }
 
         try {
-            client.admin().authorization().scopes().scope(manage.getId()).update(manage);
+            adminPermissionsClient.authorization().scopes().scope(manage.getId()).update(manage);
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
         }
 
         try {
-            client.admin().authorization().scopes().scope(manage.getId()).remove();
+            adminPermissionsClient.authorization().scopes().scope(manage.getId()).remove();
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
@@ -141,16 +141,16 @@ public class PermissionRESTTest extends AbstractPermissionTest {
         ResourceRepresentation resourceRep = new ResourceRepresentation("resource-1", "manage");
         resourceRep.setType(AdminPermissionsSchema.USERS.getType());
         //it is not expected to create resources directly
-        try (Response response = client.admin().authorization().resources().create(resourceRep)) {
+        try (Response response = adminPermissionsClient.authorization().resources().create(resourceRep)) {
             assertThat(response.getStatus(), equalTo(Response.Status.BAD_REQUEST.getStatusCode()));
         }
         
-        ResourceRepresentation usersResource = client.admin().authorization().resources().searchByName(AdminPermissionsSchema.USERS.getType());
+        ResourceRepresentation usersResource = adminPermissionsClient.authorization().resources().searchByName(AdminPermissionsSchema.USERS.getType());
         assertThat(usersResource, notNullValue());
 
         // updates to 'all resource type' resources not expected
         try {
-            client.admin().authorization().resources().resource(usersResource.getId()).update(resourceRep);
+            adminPermissionsClient.authorization().resources().resource(usersResource.getId()).update(resourceRep);
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
@@ -158,27 +158,27 @@ public class PermissionRESTTest extends AbstractPermissionTest {
 
         // deletes to 'all resource type' resources not expected
         try {
-            client.admin().authorization().resources().resource(usersResource.getId()).remove();
+            adminPermissionsClient.authorization().resources().resource(usersResource.getId()).remove();
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
         }
 
         // this should create a resource for userAlice
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.USERS.getType())
                 .resources(Set.of(userAlice.getUsername()))
                 .scopes(AdminPermissionsSchema.USERS.getScopes())
                 .build());
 
         // resourceName should equal to userAlice.getId() by design
-        ResourceRepresentation userAliceResourceRep = client.admin().authorization().resources().searchByName(userAlice.getId());
+        ResourceRepresentation userAliceResourceRep = adminPermissionsClient.authorization().resources().searchByName(userAlice.getId());
         assertThat(userAliceResourceRep, notNullValue());
         String aliceResourceId = userAliceResourceRep.getId();
 
         // updates not expected 
         try {
-            client.admin().authorization().resources().resource(aliceResourceId).update(userAliceResourceRep);
+            adminPermissionsClient.authorization().resources().resource(aliceResourceId).update(userAliceResourceRep);
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
@@ -186,7 +186,7 @@ public class PermissionRESTTest extends AbstractPermissionTest {
 
         // delete not expected 
         try {
-            client.admin().authorization().resources().resource(aliceResourceId).remove();
+            adminPermissionsClient.authorization().resources().resource(aliceResourceId).remove();
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
@@ -196,65 +196,65 @@ public class PermissionRESTTest extends AbstractPermissionTest {
     @Test
     public void permissionsTest() {
         // no resourceType, valid scopes
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .scopes(AdminPermissionsSchema.USERS.getScopes())
                 .build(), Response.Status.BAD_REQUEST);
 
         // valid resourceType, no scopes
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.USERS.getType())
                 .build(), Response.Status.BAD_REQUEST);
 
         // valid resourceType, non-existent scopes
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.USERS.getType())
                 .scopes(Set.of("edit", "write", "token-exchange"))
                 .build(), Response.Status.BAD_REQUEST);
 
         // valid resourceType, valid scopes, non-existent resource ID
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.USERS.getType())
                 .resources(Set.of("non-existent-id"))
                 .scopes(AdminPermissionsSchema.USERS.getScopes())
                 .build(), Response.Status.BAD_REQUEST);
 
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.GROUPS.getType())
                 .resources(Set.of("non-existent-id"))
                 .scopes(AdminPermissionsSchema.GROUPS.getScopes())
                 .build(), Response.Status.BAD_REQUEST);
 
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.CLIENTS.getType())
                 .resources(Set.of("non-existent-id"))
                 .scopes(AdminPermissionsSchema.CLIENTS.getScopes())
                 .build(), Response.Status.BAD_REQUEST);
 
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.ROLES.getType())
                 .resources(Set.of("non-existent-id"))
                 .scopes(AdminPermissionsSchema.ROLES.getScopes())
                 .build(), Response.Status.BAD_REQUEST);
 
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.USERS.getType())
                 .resources(Set.of(AdminPermissionsSchema.USERS.getType()))
                 .scopes(AdminPermissionsSchema.USERS.getScopes())
                 .build());
 
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.GROUPS.getType())
                 .resources(Set.of(AdminPermissionsSchema.GROUPS.getType()))
                 .scopes(AdminPermissionsSchema.GROUPS.getScopes())
                 .build());
 
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.CLIENTS.getType())
                 .resources(Set.of(AdminPermissionsSchema.CLIENTS.getType()))
                 .scopes(AdminPermissionsSchema.CLIENTS.getScopes())
                 .build());
 
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.ROLES.getType())
                 .resources(Set.of(AdminPermissionsSchema.ROLES.getType()))
                 .scopes(AdminPermissionsSchema.ROLES.getScopes())
@@ -264,28 +264,28 @@ public class PermissionRESTTest extends AbstractPermissionTest {
     @Test
     public void testNonUnanimousDecisionStrategyRejected() {
         // AFFIRMATIVE should be rejected
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.USERS.getType())
                 .scopes(Set.of(AdminPermissionsSchema.VIEW))
                 .decisionStrategy(DecisionStrategy.AFFIRMATIVE)
                 .build(), Response.Status.BAD_REQUEST);
 
         // CONSENSUS should be rejected
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.GROUPS.getType())
                 .scopes(Set.of(AdminPermissionsSchema.MANAGE))
                 .decisionStrategy(DecisionStrategy.CONSENSUS)
                 .build(), Response.Status.BAD_REQUEST);
 
         // UNANIMOUS should be accepted (explicit)
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.USERS.getType())
                 .scopes(Set.of(AdminPermissionsSchema.VIEW))
                 .decisionStrategy(DecisionStrategy.UNANIMOUS)
                 .build());
 
         // default (null) should be accepted
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.USERS.getType())
                 .scopes(Set.of(AdminPermissionsSchema.MANAGE))
                 .build());
@@ -297,56 +297,56 @@ public class PermissionRESTTest extends AbstractPermissionTest {
                 .resourceType(AdminPermissionsSchema.USERS.getType())
                 .scopes(Set.of(AdminPermissionsSchema.VIEW))
                 .build();
-        createPermission(client, permission);
+        createPermission(adminPermissionsClient, permission);
 
         // attempt to update with AFFIRMATIVE should fail
         permission.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
         try {
-            client.admin().authorization().permissions().scope().findById(permission.getId()).update(permission);
+            adminPermissionsClient.authorization().permissions().scope().findById(permission.getId()).update(permission);
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(BadRequestException.class));
         }
 
         // verify permission is unchanged
-        ScopePermissionRepresentation fetched = client.admin().authorization().permissions().scope().findById(permission.getId()).toRepresentation();
+        ScopePermissionRepresentation fetched = adminPermissionsClient.authorization().permissions().scope().findById(permission.getId()).toRepresentation();
         assertThat(fetched.getDecisionStrategy(), equalTo(DecisionStrategy.UNANIMOUS));
     }
 
     @Test
     public void testResourceTypeMixingNotAllowed() {
         // Create a Users permission for alice — this creates an authz resource with alice's UUID as its name
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.USERS.getType())
                 .resources(Set.of(userAlice.getUsername()))
                 .scopes(AdminPermissionsSchema.USERS.getScopes())
                 .build());
 
-        ResourceRepresentation aliceResource = client.admin().authorization().resources().searchByName(userAlice.getId());
+        ResourceRepresentation aliceResource = adminPermissionsClient.authorization().resources().searchByName(userAlice.getId());
         assertThat(aliceResource, notNullValue());
         String aliceAuthzResourceId = aliceResource.getId();
 
         // Create a group and a Groups permission — this creates an authz resource with the group's UUID as its name
         GroupRepresentation group = createGroup("test-resource-type-group");
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.GROUPS.getType())
                 .resources(Set.of(group.getId()))
                 .scopes(AdminPermissionsSchema.GROUPS.getScopes())
                 .build());
 
-        ResourceRepresentation groupResource = client.admin().authorization().resources().searchByName(group.getId());
+        ResourceRepresentation groupResource = adminPermissionsClient.authorization().resources().searchByName(group.getId());
         assertThat(groupResource, notNullValue());
         String groupAuthzResourceId = groupResource.getId();
 
         // Attempting to create a Groups permission using the alice authz resource ID (a Users resource) must fail
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.GROUPS.getType())
                 .resources(Set.of(aliceAuthzResourceId))
                 .scopes(AdminPermissionsSchema.GROUPS.getScopes())
                 .build(), Response.Status.BAD_REQUEST);
 
         // Attempting to create a Users permission using the group authz resource ID (a Groups resource) must fail
-        createPermission(client, PermissionBuilder.create()
+        createPermission(adminPermissionsClient, PermissionBuilder.create()
                 .resourceType(AdminPermissionsSchema.USERS.getType())
                 .resources(Set.of(groupAuthzResourceId))
                 .scopes(AdminPermissionsSchema.USERS.getScopes())
@@ -397,7 +397,7 @@ public class PermissionRESTTest extends AbstractPermissionTest {
 
             try (Response response = clientManagerKeycloak.realm(realm.getName())
                     .clients()
-                    .get(client.getId())
+                    .get(adminPermissionsClient.toRepresentation().getId())
                     .authorization()
                     .permissions()
                     .scope()
@@ -427,7 +427,7 @@ public class PermissionRESTTest extends AbstractPermissionTest {
 
             try (Response response = realmAdminKeycloak.realm(realm.getName())
                     .clients()
-                    .get(client.getId())
+                    .get(adminPermissionsClient.toRepresentation().getId())
                     .authorization()
                     .permissions()
                     .scope()
