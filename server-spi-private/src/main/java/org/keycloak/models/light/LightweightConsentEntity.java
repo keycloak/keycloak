@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
@@ -145,7 +146,7 @@ class LightweightConsentEntity {
             grantedClientScopesIds = new HashSet<>();
         }
         grantedClientScopesIds.add(clientScopeId);
-        if (parameters != null && !parameters.isEmpty()) {
+        if (CollectionUtil.isNotEmpty(parameters)) {
             this.parameters.addAll(clientScopeId, parameters);
         }
         this.lastUpdatedDate = Time.currentTimeMillis();

@@ -335,8 +335,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                 ClientScopeModel grantedClientScopeModel = KeycloakModelUtils.findClientScopeById(realm, client, grantedClientScope.getScopeId());
                 if (grantedClientScopeModel != null) {
                     model.addGrantedClientScope(grantedClientScopeModel,
-                            ClientScopeModel.isDynamicScope(grantedClientScopeModel) && grantedClientScope.getParameter().isPresent()
-                                    ? grantedClientScope.getParameter().get()
+                            ClientScopeModel.isDynamicScope(grantedClientScopeModel)
+                                    ? grantedClientScope.getParameter().orElse(null)
                                     : null);
                 }
             }
