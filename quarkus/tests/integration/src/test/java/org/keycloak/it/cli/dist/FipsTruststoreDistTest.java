@@ -17,7 +17,6 @@
 
 package org.keycloak.it.cli.dist;
 
-import java.io.File;
 import java.nio.file.Path;
 
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -48,33 +47,28 @@ public class FipsTruststoreDistTest {
      * TruststoreBuilder.includeDefaultTruststore() attempts to load the truststore
      * as BCFKS. If configureTruststore runs before setCryptoProvider registers the
      * BCFIPS provider, KeyStore.getInstance("BCFKS") fails with "BCFKS not found".
+     *
+     * With the fix (configureTruststore @Consume CryptoProviderInitBuildItem),
+     * setCryptoProvider registers BCFIPS first, so BCFKS type is available and
+     * the server starts successfully.
      */
     @Test
-    void testFipsWithBcfksTruststoreTypeFailsWhenProviderNotRegistered(KeycloakRunner runner) {
+    void testFipsWithBcfksTruststoreType(KeycloakRunner runner) {
         RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
         installBcFips(rawDist);
 
-        rawDist.copyOrReplaceFileFromClasspath("/self-signed.pem", Path.of("conf", "self-signed.pem"));
+        rawDist.copyOrReplaceFileFromClasspath("/server.keystore.bcfks", Path.of("conf", "server.truststore.bcfks"));
 
-        Path truststorePath = rawDist.getDistPath().resolve("conf").resolve("self-signed.pem").toAbsolutePath();
+        Path bcfksTruststorePath = rawDist.getDistPath().resolve("conf").resolve("server.truststore.bcfks").toAbsolutePath();
 
-        String cacertsPath = System.getProperty("java.home") + File.separator + "lib"
-                + File.separator + "security" + File.separator + "cacerts";
-
-        // Simulates FIPS host where javax.net.ssl.trustStore points to a BCFKS
-        // truststore. On the real system the truststore IS BCFKS format, but the
-        // failure occurs because the BCFIPS provider hasn't been registered yet
-        // when configureTruststore runs — so KeyStore.getInstance("BCFKS") fails.
-        // Here we point to cacerts (not BCFKS) which triggers the same loadStore
-        // failure path.
         runner.setEnvVar("JAVA_OPTS_APPEND",
-                "-Djavax.net.ssl.trustStore=" + cacertsPath
-                + " -Djavax.net.ssl.trustStoreType=BCFKS");
+                "-Djavax.net.ssl.trustStore=" + bcfksTruststorePath
+                + " -Djavax.net.ssl.trustStoreType=BCFKS"
+                + " -Djavax.net.ssl.trustStorePassword=passwordpassword");
 
-        CLIResult cliResult = runner.run("--verbose", "start", "--features=fips",
-                "--truststore-paths=" + truststorePath);
-        cliResult.assertError("Failed to initialize truststore");
-        cliResult.assertError("cacerts");
+        CLIResult cliResult = runner.run("--verbose", "start", "--features=fips");
+        cliResult.assertStarted();
+        cliResult.assertMessage("FIPS1402Provider created");
     }
 
     /**

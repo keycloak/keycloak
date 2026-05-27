@@ -343,6 +343,7 @@ class KeycloakProcessor {
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     @Consume(ConfigBuildItem.class)
+    @Consume(CryptoProviderInitBuildItem.class)
     void configureTruststore(KeycloakRecorder recorder) {
         recorder.configureTruststore();
     }
