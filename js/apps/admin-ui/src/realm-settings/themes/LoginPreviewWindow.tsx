@@ -62,6 +62,9 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
         .login-preview .pf-v5-c-login__main {
           anchor-name: --logo;
         }
+        .login-preview .pf-v5-c-login__footer {
+          display: none;
+        }
       `}</style>
       <div className="login-preview login-pf">
         <div className="kc-logo-text">
