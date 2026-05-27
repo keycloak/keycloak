@@ -5,7 +5,6 @@ public class PageObjectRewrite extends TestRewrite {
     @Override
     public void rewrite() {
         int pageLine = findLine("import org\\.jboss\\.arquillian\\.graphene\\.page\\.Page;");
-        int secondBrowserLine = findLine("import org\\.keycloak\\.testsuite\\.util\\.SecondBrowser;");
 
         if (pageLine >= 0) {
             String current = content.get(pageLine);
@@ -33,7 +32,7 @@ public class PageObjectRewrite extends TestRewrite {
                 if (n.trim().contains("org.keycloak.testsuite.webauthn.pages")) {
                     content.remove(i);
                     content.add(i, n.replaceAll("testsuite\\.webauthn\\.pages", "tests.webauthn.page"));
-                    info(i, "Page imports rewritten to org.keycloak.testframework.ui.page");
+                    info(i, "WebAuthn Page imports rewritten to org.keycloak.tests.webauthn.page");
                 }
             }
         }
