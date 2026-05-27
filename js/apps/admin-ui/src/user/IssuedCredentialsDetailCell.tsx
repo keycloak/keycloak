@@ -4,11 +4,14 @@ import { ExclamationTriangleIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import useFormatDate from "../utils/useFormatDate";
+import { toClient } from "../clients/routes/Client";
+import { useRealm } from "../context/realm-context/RealmContext";
 
 type IssuedCredentialsDetailCellProps = {
   userId: string;
@@ -25,6 +28,7 @@ export const IssuedCredentialsDetailCell = ({
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const formatDate = useFormatDate();
+  const { realm } = useRealm();
 
   const [selectedCredential, setSelectedCredential] =
     useState<IssuedVerifiableCredentialRepresentation>();
@@ -36,7 +40,32 @@ export const IssuedCredentialsDetailCell = ({
     const allIssued = await adminClient.users.listIssuedVerifiableCredentials({
       id: userId,
     });
-    return allIssued.filter((ic) => ic.credentialType === credentialScopeName);
+    const filtered = allIssued.filter(
+      (ic) => ic.credentialType === credentialScopeName,
+    );
+
+    // Fetch client names
+    const uniqueClientUuids = [
+      ...new Set(filtered.map((ic) => ic.clientId).filter(Boolean)),
+    ] as string[];
+    const clientNamesMap = new Map<string, string>();
+
+    for (const uuid of uniqueClientUuids) {
+      try {
+        const client = await adminClient.clients.findOne({ id: uuid });
+        if (client?.clientId) {
+          clientNamesMap.set(uuid, client.clientId);
+        }
+      } catch {
+        // If client not found keep UUID
+      }
+    }
+
+    return filtered.map((ic) => ({
+      ...ic,
+      clientUuid: ic.clientId,
+      clientId: clientNamesMap.get(ic.clientId!) || ic.clientId,
+    }));
   };
 
   const [toggleRevokeDialog, RevokeConfirm] = useConfirmDialog({
@@ -92,8 +121,16 @@ export const IssuedCredentialsDetailCell = ({
           {
             name: "clientId",
             displayKey: "walletClient",
-            cellRenderer: ({ clientId }) => (
-              <code className="pf-v5-u-font-size-sm">{clientId}</code>
+            cellRenderer: (credential: any) => (
+              <Link
+                to={toClient({
+                  realm,
+                  clientId: credential.clientUuid!,
+                  tab: "settings",
+                })}
+              >
+                {credential.clientId}
+              </Link>
             ),
             transforms: [cellWidth(20)],
           },
