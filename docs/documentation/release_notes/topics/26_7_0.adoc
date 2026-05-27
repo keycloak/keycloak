@@ -27,6 +27,10 @@ When a user wants to authenticate with Passkeys, {project_name} shows the authen
 As part of this change, the passkey authentication page in the login theme and the signing-in page in the account console were updated.
 If you use a custom theme that overrides these pages, verify that your customizations work as expected with this release.
 
+== Unified button layout in login theme
+
+Action buttons across login theme pages now use a consistent horizontal layout. If you use a custom theme that overrides these pages, verify that your customizations work as expected with this release.
+
 == Realm search now matches by display name
 
 When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.
