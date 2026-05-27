@@ -390,6 +390,26 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
+    public void getClientsSortByMultipleFieldsDesc() {
+        createSortTestClient("sort-b", "B", "beta");
+        createSortTestClient("sort-a", "A", "alpha");
+        createSortTestClient("sort-c", "A", "gamma");
+
+        ListOptions listOptions = new ListOptions();
+        listOptions.setFields(Set.of("clientId", "displayName"));
+        listOptions.setSortBy("displayName,clientId");
+        listOptions.setSortOrder("desc");
+
+        try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
+            List<String> sortTestClientIds = clients
+                    .map(BaseClientRepresentation::getClientId)
+                    .filter(id -> id.startsWith("sort-"))
+                    .toList();
+            assertThat(sortTestClientIds, is(List.of("sort-b", "sort-c", "sort-a")));
+        }
+    }
+
+    @Test
     public void getClientsSortByInvalidField() {
         ListOptions listOptions = new ListOptions();
         listOptions.setFields(Set.of("clientId", "displayName"));
@@ -407,7 +427,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         try (var response = getClientsApi().createClient(rep)) {
             assertEquals(201, response.getStatus());
             BaseClientRepresentation created = response.readEntity(BaseClientRepresentation.class);
-            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
     }
 
