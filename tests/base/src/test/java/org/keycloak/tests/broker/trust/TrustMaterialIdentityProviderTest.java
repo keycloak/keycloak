@@ -65,7 +65,8 @@ public class TrustMaterialIdentityProviderTest {
 
     private static final String DEFAULT_INLINE_ALIAS = "trust-material-default-inline";
     private static final String DEFAULT_URL_ALIAS = "trust-material-default-url";
-    private static final String DEFAULT_PUBLIC_KEY_ALIAS = "trust-material-default-public-key";
+    private static final String DEFAULT_PUBLIC_KEY_WITHOUT_REQUEST_ALIAS = "trust-material-default-public-key-without-request";
+    private static final String DEFAULT_PUBLIC_KEY_WITH_REQUEST_ALIAS = "trust-material-default-public-key-with-request";
     private static final String DEFAULT_DISABLED_ALIAS = "trust-material-default-disabled";
     private static final String OIDC_ALIAS = "trust-material-oidc";
     private static final String KEY_ID = "trust-material-key";
@@ -159,13 +160,14 @@ public class TrustMaterialIdentityProviderTest {
         String publicKey = trustedPublicKey;
         runOnServer.run(session -> {
             RealmModel realm = session.getContext().getRealm();
-            configureTrustIdentityProvider(realm, DEFAULT_PUBLIC_KEY_ALIAS, DefaultTrustIdentityProviderFactory.PROVIDER_ID, true,
+            configureTrustIdentityProvider(realm, DEFAULT_PUBLIC_KEY_WITHOUT_REQUEST_ALIAS,
+                    DefaultTrustIdentityProviderFactory.PROVIDER_ID, true,
                     Map.of(
                             OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.FALSE.toString(),
                             DefaultTrustIdentityProviderConfig.TRUSTED_JWKS, publicKey,
                             DefaultTrustIdentityProviderConfig.TRUSTED_JWKS_KEY_ID, CONFIGURED_KEY_ID));
 
-            TrustMaterialIdentityProvider<?> provider = getTrustMaterialProvider(realm, session, DEFAULT_PUBLIC_KEY_ALIAS);
+            TrustMaterialIdentityProvider<?> provider = getTrustMaterialProvider(realm, session, DEFAULT_PUBLIC_KEY_WITHOUT_REQUEST_ALIAS);
             assertInstanceOf(DefaultTrustIdentityProvider.class, provider);
 
             JWK jwk = provider.resolveKeys(TrustMaterialRequest.builder()
@@ -182,13 +184,14 @@ public class TrustMaterialIdentityProviderTest {
         String publicKey = trustedPublicKey;
         runOnServer.run(session -> {
             RealmModel realm = session.getContext().getRealm();
-            configureTrustIdentityProvider(realm, DEFAULT_PUBLIC_KEY_ALIAS, DefaultTrustIdentityProviderFactory.PROVIDER_ID, true,
+            configureTrustIdentityProvider(realm, DEFAULT_PUBLIC_KEY_WITH_REQUEST_ALIAS,
+                    DefaultTrustIdentityProviderFactory.PROVIDER_ID, true,
                     Map.of(
                             OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.FALSE.toString(),
                             DefaultTrustIdentityProviderConfig.TRUSTED_JWKS, publicKey,
                             DefaultTrustIdentityProviderConfig.TRUSTED_JWKS_KEY_ID, CONFIGURED_KEY_ID));
 
-            TrustMaterialIdentityProvider<?> provider = getTrustMaterialProvider(realm, session, DEFAULT_PUBLIC_KEY_ALIAS);
+            TrustMaterialIdentityProvider<?> provider = getTrustMaterialProvider(realm, session, DEFAULT_PUBLIC_KEY_WITH_REQUEST_ALIAS);
             assertInstanceOf(DefaultTrustIdentityProvider.class, provider);
 
             JWK jwk = provider.resolveKeys(TrustMaterialRequest.builder()
