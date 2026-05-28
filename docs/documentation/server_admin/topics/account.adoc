@@ -125,6 +125,19 @@ The *Applications* menu item shows users which applications you can access. In t
 
 image:images/account-console-applications.png[Applications]
 
+==== Signing out from an application
+
+You can terminate your active sessions with a specific application directly from the *Applications* page. Applications that have an active session are marked as *In use* and display a *Sign out* button.
+
+.Procedure
+
+. Click *Applications* in the menu.
+. Find the application you want to sign out from.
+. Click *Sign out* next to the application.
+. Click *Confirm* in the confirmation dialog.
+
+After signing out, the application will no longer have an active session for your account. You will need to sign in again to use that application.
+
 === Viewing group memberships
 
 You can view the groups you are associated with by clicking the *Groups* menu.
