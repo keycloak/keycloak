@@ -87,10 +87,7 @@ export async function createJwtAuthorizationGrantProviderKey(
   await clickAddButton(page);
 }
 
-export async function createDefaultTrustProvider(
-  page: Page,
-  jwksUrl: string,
-) {
+export async function createDefaultTrustProvider(page: Page, jwksUrl: string) {
   await page.goto(
     `${SERVER_URL}/admin/master/console/#/master/identity-providers/default-trust/add`,
   );
