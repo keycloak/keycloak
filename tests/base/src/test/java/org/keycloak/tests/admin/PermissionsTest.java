@@ -327,6 +327,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.roles().get("sample-role").getRoleComposites(), Resource.REALM, false);
         invoke(realm -> realm.roles().get("sample-role").getRealmRoleComposites(), Resource.REALM, false);
         invoke(realm -> realm.roles().get("sample-role").getClientRoleComposites(KeycloakModelUtils.generateId()), Resource.REALM, false);
+        invoke(realm -> realm.roles().list(), clients.get(AdminRoles.MANAGE_IDENTITY_PROVIDERS), true);
     }
 
     @Test
