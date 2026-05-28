@@ -257,6 +257,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             }
 
             String subject = new MessageFormat(messages.getProperty(subjectKey, subjectKey), locale).format(subjectAttributes.toArray());
+            attributes.put("subject", subject);
             String textTemplate = String.format("text/%s", template);
             String textBody;
             try {
