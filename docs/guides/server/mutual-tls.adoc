@@ -41,7 +41,7 @@ Recognized file extensions for a truststore:
 * `.jks`, and `.truststore` for a jks file
 * `.ca`, `.crt`, and `.pem` for a pem file
 
-If your truststore does not have an extension matching its file type, you will also need to set the `https-key-store-type` option.
+If your truststore does not have an extension matching its file type, you will also need to set the `https-trust-store-type` option.
 
 == Additional resources
 
