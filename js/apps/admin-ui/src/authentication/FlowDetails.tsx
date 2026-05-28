@@ -13,6 +13,7 @@ import {
 } from "@dnd-kit/core";
 import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
+  Alert,
   AlertVariant,
   Button,
   ButtonVariant,
@@ -713,6 +714,11 @@ export default function FlowDetails() {
                 onDragMove={handleDragMove}
                 onDragEnd={handleDragEnd}
               >
+                <Alert
+                  isInline
+                  variant="info"
+                  title={t("executionDragInstructions")}
+                />
                 <Table aria-label={t("flows")} isTreeTable>
                   <FlowHeader />
                   <>
