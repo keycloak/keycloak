@@ -5,9 +5,13 @@ import { Controller, useFormContext } from "react-hook-form";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import IdentityProviderRepresentation from "libs/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 
+export const DEFAULT_KUBERNETES_ISSUER =
+  "https://kubernetes.default.svc.cluster.local";
+
 export const KubernetesSettings = () => {
   const { t } = useTranslation();
-  const { control } = useFormContext<IdentityProviderRepresentation>();
+  const { control, watch } = useFormContext<IdentityProviderRepresentation>();
+  const issuerUrl = watch("config.issuer");
   return (
     <>
       <TextControl
@@ -21,13 +25,17 @@ export const KubernetesSettings = () => {
 
       <TextControl
         name="config.issuer"
-        labelIcon={t("kubernetesIssuerUrlHelp")}
         label={t("kubernetesIssuerUrl")}
+        labelIcon={t("kubernetesIssuerUrlHelp")}
+        isHelpIconWarning={issuerUrl === DEFAULT_KUBERNETES_ISSUER}
+        rules={{
+          required: t("required"),
+        }}
       />
-      <FormGroupField label="fedClientAssertionMaxExp">
+      <FormGroupField label="kubernetesFedClientAssertionMaxExp">
         <Controller
           name="config.fedClientAssertionMaxExp"
-          defaultValue={""}
+          defaultValue="3600"
           control={control}
           render={({ field }) => (
             <TimeSelector

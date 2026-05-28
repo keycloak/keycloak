@@ -420,7 +420,7 @@ export const CapabilityConfig = ({
               <HelpItem
                 helpText={t("clientPkceRequiredHelp")}
                 fieldLabelId="pkceRequired"
-                isRecommendation={
+                isHelpIconWarning={
                   clientAuthentication && (!pkceEnabled || pkceEnabled === "")
                 }
               />

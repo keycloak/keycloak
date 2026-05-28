@@ -9,6 +9,7 @@ export type FieldProps<T extends FieldValues = FieldValues> = {
   label?: string;
   name: string;
   labelIcon?: string | ReactNode;
+  isHelpIconWarning?: boolean;
   error?: FieldError | Merge<FieldError, T>;
   isRequired: boolean;
 };
@@ -20,6 +21,7 @@ export const FormLabel = ({
   name,
   label,
   labelIcon,
+  isHelpIconWarning,
   error,
   children,
   ...rest
@@ -29,7 +31,11 @@ export const FormLabel = ({
     fieldId={id || name}
     labelIcon={
       labelIcon ? (
-        <HelpItem helpText={labelIcon} fieldLabelId={id || name} />
+        <HelpItem
+          helpText={labelIcon}
+          fieldLabelId={id || name}
+          isHelpIconWarning={isHelpIconWarning}
+        />
       ) : undefined
     }
     {...rest}

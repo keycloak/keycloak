@@ -15,7 +15,11 @@ import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import { toIdentityProviders } from "../routes/IdentityProviders";
-import { KubernetesSettings } from "./KubernetesSettings";
+import {
+  DEFAULT_KUBERNETES_ISSUER,
+  KubernetesSettings,
+} from "./KubernetesSettings";
+import "./identity-providers-settings.css";
 
 type DiscoveryIdentityProvider = IdentityProviderRepresentation & {
   discoveryEndpoint?: string;
@@ -29,7 +33,14 @@ export default function AddKubernetesConnect() {
   const id = "kubernetes";
 
   const form = useForm<DiscoveryIdentityProvider>({
-    defaultValues: { alias: id, config: { allowCreate: "true" } },
+    defaultValues: {
+      alias: id,
+      config: {
+        allowCreate: "true",
+        issuer: DEFAULT_KUBERNETES_ISSUER,
+        fedClientAssertionMaxExp: "3600",
+      },
+    },
     mode: "onChange",
   });
   const { handleSubmit } = form;
