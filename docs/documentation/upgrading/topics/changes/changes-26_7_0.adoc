@@ -79,6 +79,10 @@ A transaction is started automatically before the REST endpoint code is invoked,
 
 As before, transactions can be nested, which will pause the outer transaction once the nested transaction starts, and will resume the outer transaction once the nested transaction ends.
 
+=== Organization group representations now include role mappings
+
+Organization group representations returned by the Admin REST API now include `realmRoles` and `clientRoles` fields. Previously, these fields were `null` for organization groups. They are now empty lists/maps by default, and populated when roles are assigned to the group. If your code checks for `null` to detect organization groups or conditionally processes role mappings, update it to handle the new behavior.
+
 === Realm search now matches by display name
 
 When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.

@@ -60,6 +60,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.RoleMapperResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -103,6 +104,13 @@ public class OrganizationGroupResource {
         GroupRepresentation rep = ModelToRepresentation.toRepresentation(group, true);
         if (subGroupsCount) rep.setSubGroupCount(group.getSubGroupsCount());
         return rep;
+    }
+
+    @Path("role-mappings")
+    public RoleMapperResource getRoleMappings() {
+        AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.orgs().requireManage(organization);
+        AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.orgs().requireView(organization);
+        return new RoleMapperResource(session, auth, group, adminEvent, manageCheck, viewCheck);
     }
 
     @DELETE
