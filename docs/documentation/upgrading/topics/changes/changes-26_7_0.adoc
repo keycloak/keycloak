@@ -115,3 +115,15 @@ will now be logged.
 
 Users of `ssl-cert-chain-prefix` should instead make use of `--spi-x509cert-lookup--haproxy--ssl-cert-chain`.
 See the link:{client_certificate_lookup_link}[Reverse Proxy guide] for more details.
+
+// ------------------------ Removed features ------------------------ //
+== Removed features
+
+The following features have been removed from this release.
+
+=== Batching option for persistent user sessions removed
+
+The internal SPI options to enable writing updates to persistent sessions in batches have been removed.
+Batching has been disabled in previous releases by default, and its performance proved to be lower than with batching disabled, leading to its removal in this release.
+
+The options `spi-user-sessions--infinispan--use-batches` and `spi-user-sessions--infinispan--max-batch-size` have been removed without replacement.
