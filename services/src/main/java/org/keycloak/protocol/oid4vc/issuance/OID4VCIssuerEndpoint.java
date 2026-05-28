@@ -69,6 +69,7 @@ import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
@@ -180,7 +181,11 @@ public class OID4VCIssuerEndpoint {
     private AuthenticationManager.AuthResult cachedAuthResult;
 
     public static final String CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY = "credentialOfferLifespanS";
-    public static final int DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S = 30;
+
+    /**
+     * Default credential-offer lifespan is same as default "User-Initiated Action Lifespan" (5 minutes)
+     */
+    public static final int DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S = Constants.DEFAULT_ACCESS_CODE_LIFESPAN_USER_ACTION;
 
     public static final String DEFLATE_COMPRESSION = "DEF";
     public static final String NONCE_PATH = "nonce";
