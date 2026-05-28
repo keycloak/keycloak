@@ -339,67 +339,6 @@ importers:
         specifier: ^3.1.1
         version: 3.1.1
 
-  apps/onboarding-ui:
-    dependencies:
-      '@keycloak/keycloak-admin-client':
-        specifier: workspace:*
-        version: link:../../libs/keycloak-admin-client
-      '@keycloak/keycloak-admin-ui':
-        specifier: workspace:*
-        version: link:../admin-ui
-      '@keycloak/keycloak-ui-shared':
-        specifier: workspace:*
-        version: link:../../libs/ui-shared
-      '@patternfly/patternfly':
-        specifier: ^5.4.2
-        version: 5.4.2
-      '@patternfly/react-core':
-        specifier: ^5.4.14
-        version: 5.4.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@patternfly/react-icons':
-        specifier: ^5.4.2
-        version: 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      i18next:
-        specifier: ^25.7.3
-        version: 25.7.3(typescript@5.9.3)
-      keycloak-js:
-        specifier: ^26.2.2
-        version: 26.2.2
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-      react-hook-form:
-        specifier: ^7.70.0
-        version: 7.70.0(react@18.3.1)
-      react-i18next:
-        specifier: ^16.5.1
-        version: 16.5.1(i18next@25.7.3(typescript@5.9.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
-      react-router-dom:
-        specifier: ^6.30.3
-        version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-    devDependencies:
-      '@types/react':
-        specifier: ^18.3.18
-        version: 18.3.23
-      '@types/react-dom':
-        specifier: ^18.3.5
-        version: 18.3.7(@types/react@18.3.23)
-      '@vitejs/plugin-react-swc':
-        specifier: ^4.2.2
-        version: 4.2.2(vite@7.3.2(@types/node@25.0.8)(lightningcss@1.30.2)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.3))
-      lightningcss:
-        specifier: ^1.30.2
-        version: 1.30.2
-      vite:
-        specifier: ^7.3.2
-        version: 7.3.2(@types/node@25.0.8)(lightningcss@1.30.2)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.3)
-      vite-plugin-checker:
-        specifier: ^0.12.0
-        version: 0.12.0(eslint@9.39.2)(optionator@0.9.4)(typescript@5.9.3)(vite@7.3.2(@types/node@25.0.8)(lightningcss@1.30.2)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.3))
-
   libs/keycloak-admin-client:
     dependencies:
       '@microsoft/kiota-abstractions':
