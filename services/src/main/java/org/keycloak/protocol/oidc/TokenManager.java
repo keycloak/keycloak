@@ -768,11 +768,16 @@ public class TokenManager {
      * otherwise, the scope wasn't parsed correctly
      * <p>
      *
+     * @param session
      * @param scopes
      * @param authorizationRequestContext authorizationRequestContext. It is not null just if dynamic scopes feature is enabled
      * @param client
      * @return
      */
+    public static boolean isValidScope(KeycloakSession session, String scopes, AuthorizationRequestContext authorizationRequestContext, ClientModel client) {
+        return isValidScope(session, scopes, client, null);
+    }
+
     public static boolean isValidScope(KeycloakSession session, String scopes, AuthorizationRequestContext authorizationRequestContext, ClientModel client, UserModel user) {
         if (scopes == null) {
             return true;
@@ -850,6 +855,10 @@ public class TokenManager {
         }
 
         return true;
+    }
+
+    public static boolean isValidScope(KeycloakSession session, String scopes, ClientModel client) {
+        return isValidScope(session, scopes, client, null);
     }
 
     public static boolean isValidScope(KeycloakSession session, String scopes, ClientModel client, UserModel user) {

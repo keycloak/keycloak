@@ -248,7 +248,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
     protected String getRequestedScopes() {
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
-        if (!TokenManager.isValidScope(session, scope, client, null)) {
+        if (!TokenManager.isValidScope(session, scope, client)) {
             String errorMessage = "Invalid scopes: " + scope;
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);

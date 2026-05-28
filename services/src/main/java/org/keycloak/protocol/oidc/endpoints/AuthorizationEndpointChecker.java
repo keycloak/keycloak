@@ -286,7 +286,7 @@ public class AuthorizationEndpointChecker {
     }
 
     public void checkValidScope() throws AuthorizationCheckException {
-        if (!TokenManager.isValidScope(session, request.getScope(), request.getAuthorizationRequestContext(), client, null)) {
+        if (!TokenManager.isValidScope(session, request.getScope(), request.getAuthorizationRequestContext(), client)) {
             ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.SCOPE_PARAM);
             String errorMessage = "Invalid scopes: " + request.getScope();
             event.detail(Details.REASON, errorMessage);
