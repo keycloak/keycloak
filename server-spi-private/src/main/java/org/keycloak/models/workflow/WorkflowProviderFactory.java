@@ -25,6 +25,11 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 public interface WorkflowProviderFactory<P extends WorkflowProvider> extends ComponentFactory<P, WorkflowProvider>, EnvironmentDependentProviderFactory {
 
     @Override
+    default boolean isInternal() {
+        return true;
+    }
+
+    @Override
     default boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.WORKFLOWS);
     }
