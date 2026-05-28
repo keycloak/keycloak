@@ -132,7 +132,7 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
 
         // Testing only 1st certificate in the chain to match with configured subject
         X509Certificate certificate = certs[0];
-        boolean matchedCertificate = checkSubjectDN(certificate, subjectDNRegexp, clientCfg.getAllowRegexPatternComparison());
+        boolean matchedCertificate = checkSubjectDN(context, certificate, subjectDNRegexp, clientCfg.getAllowRegexPatternComparison());
 
         if (!matchedCertificate) {
             // We do quite expensive operation here, so better check the logging level beforehand.
@@ -151,7 +151,9 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
         // get the name of the CA to check
         String caSubjectDN = client.getAttribute(ATTR_CA_SUBJECT_DN);
         if (StringUtil.isBlank(caSubjectDN)) {
-            logger.warnf("[X509ClientCertificateAuthenticator:authenticate] %s is null or empty, please configure it for better security", ATTR_CA_SUBJECT_DN);
+            // TODO: enforce CA subject for keycloak 27.0
+            logger.warnf("[X509ClientCertificateAuthenticator:authenticate] option '%s' is null or empty, this configuration is deprecated, please configure it for better security for client '%s' in realm '%s'",
+                    ATTR_CA_SUBJECT_DN, client.getClientId(), context.getRealm().getName());
             // if the attribute is not present, return success for backwards compatibility
             context.success();
             return;
@@ -179,19 +181,21 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
         context.success();
     }
 
-    private boolean checkSubjectDN(X509Certificate certificate, String subjectDN, boolean isRegExp){
+    private boolean checkSubjectDN(ClientAuthenticationFlowContext context, X509Certificate certificate, String subjectDN, boolean isRegExp){
         if (isRegExp) {
-            return checkSubjectDNRegex(certificate, subjectDN);
+            return checkSubjectDNRegex(context, certificate, subjectDN);
         } else {
             return checkSubjectDNExact(certificate, subjectDN);
         }
     }
 
-    private boolean checkSubjectDNRegex(X509Certificate certificate, String subjectDN) {
+    private boolean checkSubjectDNRegex(ClientAuthenticationFlowContext context, X509Certificate certificate, String subjectDN) {
         Pattern subjectDNPattern = Pattern.compile(subjectDN);
 
         // getSubjectDN is deprecated and says should not be relied upon by portable code, we are deprecating regex comparison
-        logger.warn("Regex comparison is deprecated. Please configure the X.509 client authenticator to use exact Subject DN.");
+        // TODO: Remove this option in keycloak 27.0
+        logger.warnf("Regex comparison is deprecated. Please configure the X.509 client authenticator to use exact Subject DN for client '%s' in realm '%s'.",
+                context.getRealm().getName(), context.getClient().getClientId());
         String subjectdn = certificate.getSubjectDN().getName();
         return subjectDNPattern.matcher(subjectdn).matches();
     }

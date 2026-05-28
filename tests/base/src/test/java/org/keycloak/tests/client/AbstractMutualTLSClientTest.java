@@ -7,17 +7,11 @@ import java.util.List;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
 
-import jakarta.ws.rs.BadRequestException;
-
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
-import org.keycloak.events.Errors;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.https.ManagedCertificates;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -27,8 +21,6 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.utils.PasswordGenerateUtil;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -69,9 +61,6 @@ public abstract class AbstractMutualTLSClientTest {
 
     @InjectOAuthClient
     OAuthClient oauth;
-
-    @InjectRunOnServer
-    RunOnServerClient runOnServer;
 
     @AfterEach
     public void logout() {
@@ -172,30 +161,12 @@ public abstract class AbstractMutualTLSClientTest {
         ClientRepresentation clientRep = client.toRepresentation();
         String clientId = clientRep.getId();
 
-        // update without CA Subject DN is not allowed
+        // update without CA Subject DN is allowed at server side for the moment
         clientRep.getAttributes().put(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, "");
-        BadRequestException ex = Assertions.assertThrows(BadRequestException.class, () -> client.update(clientRep));
-        OAuth2ErrorRepresentation error = ex.getResponse().readEntity(OAuth2ErrorRepresentation.class);
-        Assertions.assertEquals(Errors.INVALID_INPUT, error.getError());
-        Assertions.assertEquals("Attribute 'x509.casubjectdn' is compulsory for X.509 authenticator.", error.getErrorDescription());
-
-        // update without certificate subject DN is not allowed
-        clientRep.getAttributes().put(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, CA_CERTIFICATE_SUBJECT_DN);
-        clientRep.getAttributes().put(X509ClientAuthenticator.ATTR_SUBJECT_DN, "");
-        ex = Assertions.assertThrows(BadRequestException.class, () -> client.update(clientRep));
-        error = ex.getResponse().readEntity(OAuth2ErrorRepresentation.class);
-        Assertions.assertEquals(Errors.INVALID_INPUT, error.getError());
-        Assertions.assertEquals("Attribute 'x509.subjectdn' is compulsory for X.509 authenticator.", error.getErrorDescription());
+        client.update(clientRep);
 
         clientRep.getAttributes().put(X509ClientAuthenticator.ATTR_SUBJECT_DN, DEFAULT_KEYSTORE_SUBJECT_DN);
         managedRealm.cleanup().add(r -> r.clients().get(clientId).update(clientRep));
-
-        // set previous configuration without CA Subject DN at server level and check authentication works
-        runOnServer.run(session -> {
-            RealmModel realmModel = session.getContext().getRealm();
-            ClientModel clientModel = realmModel.getClientById(clientId);
-            clientModel.removeAttribute(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN);
-        });
 
         //when
         AccessTokenResponse token = loginAndGetAccessTokenResponse(EXACT_SUBJECT_DN_CLIENT_ID, this::newCloseableHttpClient);

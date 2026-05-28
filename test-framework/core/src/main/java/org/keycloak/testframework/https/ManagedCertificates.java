@@ -50,7 +50,7 @@ public class ManagedCertificates {
     private final Path clientTruststorePath;
     private KeyStore clientTrustStore;
 
-    private SSLContext clientSslContext;
+    private final SSLContext clientSslContext;
 
     public ManagedCertificates(CertificatesConfigBuilder configBuilder) throws ManagedCertificatesException {
         if (!CryptoIntegration.isInitialised()) {
@@ -75,10 +75,10 @@ public class ManagedCertificates {
                 clientTrustStore = load(clientTruststorePath);
             }
         } else {
-            serverKeystorePath = configBuilder.getServerKeystore();
-            serverTruststorePath = configBuilder.getServerTruststore();
-            clientKeystorePath = configBuilder.getClientKeystore();
-            clientTruststorePath = configBuilder.getClientTruststore();
+            serverKeystorePath = checkPath(configBuilder.getServerKeystore());
+            serverTruststorePath = checkPath(configBuilder.getServerTruststore());
+            clientKeystorePath = checkPath(configBuilder.getClientKeystore());
+            clientTruststorePath = checkPath(configBuilder.getClientTruststore());
 
             clientKeyStore = load(clientKeystorePath);
             clientTrustStore = load(clientTruststorePath);

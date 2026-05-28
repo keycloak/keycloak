@@ -1,6 +1,5 @@
 package org.keycloak.testframework.https;
 
-import java.nio.file.Path;
 
 import org.keycloak.common.util.KeystoreUtil;
 
@@ -9,10 +8,10 @@ public class CertificatesConfigBuilder {
     private KeystoreUtil.KeystoreFormat keystoreFormat = KeystoreUtil.KeystoreFormat.JKS;
     private boolean tlsEnabled = false;
     private boolean mTlsEnabled = false;
-    private Path serverKeystore;
-    private Path serverTruststore;
-    private Path clientKeystore;
-    private Path clientTruststore;
+    private String serverKeystore;
+    private String serverTruststore;
+    private String clientKeystore;
+    private String clientTruststore;
 
     public CertificatesConfigBuilder() {
     }
@@ -62,19 +61,19 @@ public class CertificatesConfigBuilder {
         return mTlsEnabled;
     }
 
-    public Path getServerKeystore() {
+    public String getServerKeystore() {
         return serverKeystore;
     }
 
-    public Path getServerTruststore() {
+    public String getServerTruststore() {
         return serverTruststore;
     }
 
-    public Path getClientKeystore() {
+    public String getClientKeystore() {
         return clientKeystore;
     }
 
-    public Path getClientTruststore() {
+    public String getClientTruststore() {
         return clientTruststore;
     }
 
@@ -88,10 +87,10 @@ public class CertificatesConfigBuilder {
      * @return this
      */
     public CertificatesConfigBuilder stores(String serverKeystore, String serverTruststore, String clientKeystore, String clientTruststore) {
-        this.serverKeystore = ManagedCertificates.checkPath(serverKeystore);
-        this.serverTruststore = ManagedCertificates.checkPath(serverTruststore);
-        this.clientKeystore = ManagedCertificates.checkPath(clientKeystore);
-        this.clientTruststore = ManagedCertificates.checkPath(clientTruststore);
+        this.serverKeystore = serverKeystore;
+        this.serverTruststore = serverTruststore;
+        this.clientKeystore = clientKeystore;
+        this.clientTruststore = clientTruststore;
         return this;
     }
 }

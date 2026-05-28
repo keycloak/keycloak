@@ -42,7 +42,7 @@ The user profile metadata can still be retrieved when fetching a specific user b
 
 Since this release, the X509 client authentication, that allows a client authenticate presenting a certificate in the mutual TLS (mTLS) handshake, requires to configure a new option called **Certificate Authority subject DN** to identify the trusted anchor CA for the client certificate. As the {project_name}'s trust-store (or mTLS store) is shared for all the realms, the new option allows to identify the correct CA of the certificate and avoids interferences with other unrelated CAs.
 
-The new option is compulsory when configuring X509 credentials for the client. Previous configurations without this option still work, but they are invalid when they are updated or imported. Please, reconfigure your installation if you were using X509 to authenticate any of your clients.
+The new option is compulsory in the administration console when configuring X509 credentials for the client. For the moment, previous configurations without the CA subject DN still work to maintain backwards compatibility. In the next major version, the validation will be present at the server side, making any update, creation or import invalid if the new configuration option is not present. Please, if you use the X509 authenticator for clients ensure you add this new attribute to avoid issues in the future.
 
 Besides, the option **Allow regex pattern comparison** is deprecated. This option allows to configure a regexp instead of the exact DN of the client certificate. It is now deprecated and it will be removed in a future version. The certificate for the client should be unambiguously identified.
 
@@ -156,6 +156,14 @@ The `client_session_host` parameter is now validated against the client's regist
 This parameter is sent by clients during token refresh and is used when the `${application.session.host}` placeholder is present in a client's backchannel logout URL configuration.
 It was primarily used by legacy adapters that have been removed.
 This improves security by ensuring that only trusted, pre-registered hosts can be used in backchannel logout URLs.
+
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== Option Allow regex pattern comparison is deprecated for the X509 client authenticator
+
+The option **Allow regex pattern comparison** is deprecated for the X509 client authenticator. This option allows to configure a Java regular expression instead of the exact DN for the client certificate subject DN. As previously commented in the breaking changes section, this option is now deprecated and it will be removed in a future version. The certificate for the client should be unambiguously identified because of security reasons.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features
