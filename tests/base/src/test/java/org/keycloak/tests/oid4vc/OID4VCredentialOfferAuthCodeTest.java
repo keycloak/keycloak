@@ -178,6 +178,8 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
     @Test
     public void testAuthCodeOffer_Anonymous_expiredOffer() throws Exception {
+        // Bigger accessToken lifespan to avoid same timeout like credential-offer (to enforce that accessToken is still valid in the credential-request, when credential-offer would be invalid)
+        testRealm.updateWithCleanup(r -> r.accessTokenLifespan(600));
 
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
 

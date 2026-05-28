@@ -112,6 +112,9 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
                 .details(Details.VERIFIABLE_CREDENTIAL_TARGET_CLIENT_ID, client.getClientId())
                 .type(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER);
 
+        // Wait 2 minutes (just to test that credential-offer with default expiration (5 minutes) will not expire)
+        timeOffSet.set(120);
+
         // Refresh screen. Should be still same credential-offer as before and test that there are not new events
         driver.navigate().refresh();
         credentialOfferPage.assertCurrent();
