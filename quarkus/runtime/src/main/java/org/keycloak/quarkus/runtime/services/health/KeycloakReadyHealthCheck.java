@@ -27,8 +27,10 @@ import jakarta.inject.Inject;
 
 import io.quarkus.agroal.runtime.health.DataSourceHealthCheck;
 import io.quarkus.smallrye.health.runtime.QuarkusAsyncHealthCheckFactory;
+import io.smallrye.context.api.ManagedExecutorConfig;
 import io.smallrye.health.api.AsyncHealthCheck;
 import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Readiness;
@@ -59,23 +61,29 @@ public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
     @Inject
     DataSourceHealthCheck dataSourceHealthCheck;
 
+    @Inject
+    @ManagedExecutorConfig(maxAsync = 1, maxQueued = 20)
+    ManagedExecutor executor;
+
     private final AtomicReference<Instant> failingSince = new AtomicReference<>();
 
     @Override
     public Uni<HealthCheckResponse> call() {
+        Uni<HealthCheckResponse> uni = Uni.createFrom().item(this::syncCheck);
+        return uni.runSubscriptionOn(executor);
+    }
+
+    private HealthCheckResponse syncCheck() {
         HealthCheckResponseBuilder builder = HealthCheckResponse.named("Keycloak database connections async health check").up();
-        
-        return healthCheckFactory.callSync(() -> {
-            HealthCheckResponse activeCheckResult = dataSourceHealthCheck.call();
-            if (activeCheckResult.getStatus() == HealthCheckResponse.Status.DOWN) {
-                builder.down();
-                Instant failingTime = failingSince.updateAndGet(KeycloakReadyHealthCheck::createInstanceIfNeeded);
-                builder.withData(FAILING_SINCE, DATE_FORMATTER.format(failingTime));
-            } else {
-                failingSince.set(null);
-            }
-            return builder.build();
-        });
+        HealthCheckResponse activeCheckResult = dataSourceHealthCheck.call();
+        if (activeCheckResult.getStatus() == HealthCheckResponse.Status.DOWN) {
+            builder.down();
+            Instant failingTime = failingSince.updateAndGet(KeycloakReadyHealthCheck::createInstanceIfNeeded);
+            builder.withData(FAILING_SINCE, DATE_FORMATTER.format(failingTime));
+        } else {
+            failingSince.set(null);
+        }
+        return builder.build();
     }
 
     static Instant createInstanceIfNeeded(Instant instant) {
