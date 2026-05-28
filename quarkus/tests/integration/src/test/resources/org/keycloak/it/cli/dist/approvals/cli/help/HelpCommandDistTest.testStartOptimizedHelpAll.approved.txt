@@ -512,6 +512,22 @@ Management:
                        something is exposed on the management interface - see the guide for
                        details. Default: TLSv1.3,TLSv1.2. Available only when
                        http-management-scheme is inherited.
+--https-management-trust-store-file <file>
+                     The trust store which holds the certificate information of the certificates to
+                       trust for the management server. If not given, the value is inherited from
+                       HTTP options. Relevant only when something is exposed on the management
+                       interface - see the guide for details. Available only when
+                       http-management-scheme is inherited.
+--https-management-trust-store-password <password>
+                     The password of the trust store file for the management server. If not given,
+                       the value is inherited from HTTP options. Relevant only when something is
+                       exposed on the management interface - see the guide for details. Available
+                       only when http-management-scheme is inherited.
+--https-management-trust-store-type <type>
+                     The type of the trust store file for the management server. If not given, the
+                       value is inherited from HTTP options. Relevant only when something is
+                       exposed on the management interface - see the guide for details. Available
+                       only when http-management-scheme is inherited.
 
 Proxy:
 
