@@ -455,6 +455,48 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             return exchangeNotLinked(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
 
+        // Attempt to refresh the stored token if it is expired or about to expire
+        try {
+            if (model.getToken().startsWith("{")) {
+                OAuthResponse previousResponse = JsonSerialization.readValue(model.getToken(), OAuthResponse.class);
+                Long exp = previousResponse.getAccessTokenExpiration();
+                if (needsRefresh(exp)) {
+                    if (previousResponse.getRefreshToken() != null) {
+                        try {
+                            OAuthResponse newResponse = refreshToken(previousResponse, session);
+                            if (newResponse.getExpiresIn() != null && newResponse.getExpiresIn() > 0) {
+                                long accessTokenExpiration = Time.currentTime() + newResponse.getExpiresIn();
+                                newResponse.setAccessTokenExpiration(accessTokenExpiration);
+                            }
+                            model.setToken(JsonSerialization.writeValueAsString(newResponse));
+                            session.users().updateFederatedIdentity(realm, tokenSubject, model);
+                        } catch (WebApplicationException e) {
+                            // Refresh failed, treat as expired
+                            logger.debugf("Failed to refresh stored token for identity provider %s: %s", getConfig().getAlias(), e.getMessage());
+                            model.setToken(null);
+                            session.users().updateFederatedIdentity(realm, tokenSubject, model);
+                            if (event != null) {
+                                event.detail(Details.REASON, "requested_issuer token expired");
+                                event.error(Errors.INVALID_TOKEN);
+                            }
+                            return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
+                        }
+                    } else {
+                        // Token is expired and there is no refresh token available
+                        model.setToken(null);
+                        session.users().updateFederatedIdentity(realm, tokenSubject, model);
+                        if (event != null) {
+                            event.detail(Details.REASON, "requested_issuer token expired");
+                            event.error(Errors.INVALID_TOKEN);
+                        }
+                        return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to refresh token", e);
+        }
+
         String accessToken = extractTokenFromResponse(model.getToken(), getAccessTokenResponseParameter());
         if (accessToken == null) {
             model.setToken(null);
