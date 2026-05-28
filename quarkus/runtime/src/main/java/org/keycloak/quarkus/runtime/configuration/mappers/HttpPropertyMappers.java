@@ -248,7 +248,7 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                 .orElse(null);
     }
 
-    static String resolveKeyStoreType(String value,
+    private static String resolveKeyStoreType(String value,
             ConfigSourceInterceptorContext configSourceInterceptorContext) {
         if (FipsMode.STRICT.toString().equals(value)) {
             return "BCFKS";
