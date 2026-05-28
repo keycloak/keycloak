@@ -130,7 +130,9 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
 
             MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdleTimeMs, lifespanMs), SessionTimeouts.IMMORTAL_FLAG);
 
-            if (merged != null && merged.getOperation() != SessionUpdateTask.CacheOperation.ADD_IF_ABSENT && !lockDatabaseEntity(realm, entry.getKey(), entity.isOffline())) {
+            if (merged != null
+                    && merged.getOperation() != SessionUpdateTask.CacheOperation.ADD_IF_ABSENT // No need to lock a row that is about to be inserted
+                    && !lockDatabaseEntity(realm, entry.getKey(), entity.isOffline())) {
                 return false;
             }
         }
