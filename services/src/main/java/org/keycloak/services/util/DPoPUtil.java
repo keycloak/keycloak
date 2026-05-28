@@ -158,10 +158,17 @@ public class DPoPUtil {
         try {
             DPoP dPoP = new DPoPUtil.Validator(keycloakSession).request(request).uriInfo(keycloakSession.getContext().getUri()).validate();
             keycloakSession.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
-        } catch (VerificationException ex) {
-            event.detail(Details.REASON, ex.getMessage());
+        } catch (final Exception ex) {
+            Throwable exception = ex;
+
+            // JWKParser will wrap errors like InvalidKeySpecException into RuntimeException.
+            if(ex.getCause() != null) {
+                exception = ex.getCause();
+            }
+
+            event.detail(Details.REASON, exception.getMessage());
             event.error(Errors.INVALID_DPOP_PROOF);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, ex.getMessage(), Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, exception.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
