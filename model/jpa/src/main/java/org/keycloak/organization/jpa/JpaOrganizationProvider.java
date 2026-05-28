@@ -967,7 +967,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public boolean isAnyOrganizationExists() {
+    public boolean hasOrganizations() {
         TypedQuery<OrganizationEntity> query;
         query = em.createNamedQuery("getByRealm", OrganizationEntity.class);
         query.setParameter("realmId", getRealm().getId());

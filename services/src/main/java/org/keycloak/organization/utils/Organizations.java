@@ -157,7 +157,7 @@ public class Organizations {
     }
 
     public static boolean isEnabledAndOrganizationsPresent(OrganizationProvider orgProvider) {
-        return orgProvider != null && orgProvider.isEnabled() && orgProvider.isAnyOrganizationExists();
+        return orgProvider != null && orgProvider.isEnabled() && orgProvider.hasOrganizations();
     }
 
     public static boolean isEnabledAndOrganizationsPresent(KeycloakSession session) {
@@ -340,7 +340,7 @@ public class Organizations {
 
         OrganizationProvider provider = getProvider(session);
 
-        if (provider.isNoOrganizationExists()) {
+        if (!provider.hasOrganizations()) {
             return null;
         }
 
@@ -419,7 +419,7 @@ public class Organizations {
 
         var organizationProvider = getProvider(session);
 
-        if (organizationProvider.isNoOrganizationExists()) {
+        if (!organizationProvider.hasOrganizations()) {
             return false;
         }
 

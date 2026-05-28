@@ -525,9 +525,9 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public boolean isAnyOrganizationExists() {
+    public boolean hasOrganizations() {
         if (realmCache == null) {
-            return getDelegate().isAnyOrganizationExists();
+            return getDelegate().hasOrganizations();
         }
 
         String cacheKey = cacheKeyOrgCount(getRealm());
@@ -538,6 +538,6 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
             return cached.getCount() > 0;
         }
 
-        return getDelegate().isAnyOrganizationExists();
+        return getDelegate().hasOrganizations();
     }
 }

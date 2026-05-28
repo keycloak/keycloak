@@ -426,15 +426,7 @@ public interface OrganizationProvider extends Provider {
      *
      * @return true if any organization exists in the realm
      */
-    default boolean isAnyOrganizationExists() {
+    default boolean hasOrganizations() {
         return count() > 0;
-    }
-
-    /**
-     * Just an easy-to-read alias for the negated version of {@link #isAnyOrganizationExists()}
-     * @return true if no organization exists in the realm
-     */
-    default boolean isNoOrganizationExists() {
-        return !isAnyOrganizationExists();
     }
 }

@@ -1202,7 +1202,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
         OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
 
-        if (organizationProvider.isNoOrganizationExists()) {
+        if (!organizationProvider.hasOrganizations()) {
             return false;
         }
 
