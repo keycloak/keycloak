@@ -53,6 +53,7 @@ import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.Details;
@@ -1024,7 +1025,7 @@ public class OID4VCIssuerEndpoint {
                 .detail(Details.VERIFIABLE_CREDENTIAL_FORMAT, supportedCredential.getFormat())
                 .detail(Details.VERIFIABLE_CREDENTIALS_ISSUED, String.valueOf(responseVO.getCredentials().size()));
 
-        recordIssuedVerifiableCredentials(userModel, clientModel, supportedCredential.getScope(), responseVO.getCredentials().size());
+        recordIssuedVerifiableCredentials(userModel, clientModel, authorizedCredentialScope, responseVO.getCredentials().size());
 
         eventBuilder.success();
 
@@ -1038,15 +1039,21 @@ public class OID4VCIssuerEndpoint {
         return response;
     }
 
-    private void recordIssuedVerifiableCredentials(UserModel userModel, ClientModel clientModel, String credentialScope, int count) {
+    private void recordIssuedVerifiableCredentials(UserModel userModel, ClientModel clientModel, CredentialScopeModel credentialScope, int count) {
+        String credentialScopeName = credentialScope.getName();
         try {
             if (count > 0) {
-                IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(userModel.getId(), credentialScope, clientModel.getId());
+                IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(userModel.getId(), credentialScopeName, clientModel.getId());
+
+                long issuedAt = Time.currentTimeMillis();
+                model.setIssuedAt(issuedAt);
+                model.setExpiresAt(issuedAt + (credentialScope.getExpiryInSeconds() * 1000));
+
                 session.users().addIssuedVerifiableCredential(model);
-                LOGGER.debugf("Recorded VC issuance: user=%s, client=%s, type=%s, credentials=%d", userModel.getUsername(), clientModel.getClientId(), credentialScope, count);
+                LOGGER.debugf("Recorded VC issuance: user=%s, client=%s, type=%s, credentials=%d", userModel.getUsername(), clientModel.getClientId(), credentialScopeName, count);
             }
         } catch (Exception e) {
-            LOGGER.warnf(e, "Failed to record VC issuance for user=%s, client=%s, type=%s", userModel.getUsername(), clientModel.getClientId(), credentialScope);
+            LOGGER.warnf(e, "Failed to record VC issuance for user=%s, client=%s, type=%s", userModel.getUsername(), clientModel.getClientId(), credentialScopeName);
         }
     }
 

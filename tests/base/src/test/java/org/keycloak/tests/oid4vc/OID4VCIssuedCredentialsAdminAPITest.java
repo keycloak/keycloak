@@ -78,6 +78,7 @@ public class OID4VCIssuedCredentialsAdminAPITest extends OID4VCIssuerEndpointTes
                 () -> assertEquals(scopeName, issuedCred.getCredentialType(), "Credential type should match the scope name"),
                 () -> assertNotNull(issuedCred.getRevision(), "Revision should be set"),
                 () -> assertNotNull(issuedCred.getIssuedAt(), "IssuedAt timestamp should be set"),
+                () -> assertNotNull(issuedCred.getExpiresAt(), "expiresAt timestamp should be set"),
                 () -> assertNotNull(issuedCred.getClientId(), "ClientId should be set")
         );
 
@@ -101,5 +102,10 @@ public class OID4VCIssuedCredentialsAdminAPITest extends OID4VCIssuerEndpointTes
         // Verify sorting (newest first - DESC by issuedAt)
         assertTrue(multipleIssuedCreds.get(0).getIssuedAt() >= multipleIssuedCreds.get(1).getIssuedAt(),
                 "Issued credentials should be sorted by issuedAt DESC (newest first)");
+
+        // Verify expiration for both issued credentials
+        for (IssuedVerifiableCredentialRepresentation issuedCredential : multipleIssuedCreds) {
+            assertEquals(issuedCredential.getIssuedAt() + (CREDENTIALS_EXPIRATION_IN_SECONDS * 1000), issuedCredential.getExpiresAt());
+        }
     }
 }
