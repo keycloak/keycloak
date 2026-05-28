@@ -1,48 +1,32 @@
-/*
- * Copyright 2025 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package org.keycloak.testsuite.oid4vc.issuance.signing;
+package org.keycloak.tests.oid4vc.issuance.signing;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
-import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
+import org.keycloak.tests.oid4vc.OID4VCProofTestUtils;
+import org.keycloak.tests.oid4vc.issuance.OID4VCAuthorizationCodeFlowTestBase;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
 import org.keycloak.testsuite.util.oauth.ParResponse;
-import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 
 import org.apache.http.HttpStatus;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -50,63 +34,52 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test class for Authorization Code Flow with PAR (Pushed Authorization Request) containing authorization_details.
  * This test specifically verifies that when authorization_details is used in the PAR request,
  * it MUST be returned in the token response according to OID4VC specification.
- *
- * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
-public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpointTest {
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCAuthorizationCodeFlowTestBase {
 
-    /**
-     * Test context for OID4VC tests
-     */
-    protected static class Oid4vcTestContext {
-        public CredentialIssuer credentialIssuer;
-        public OIDCConfigurationRepresentation openidConfig;
+    @Override
+    protected String getCredentialFormat() {
+        return "jwt_vc";
     }
 
-    /**
-     * Get the credential client scope
-     */
-    protected ClientScopeRepresentation getCredentialClientScope() {
-        return jwtTypeCredentialClientScope;
+    @Override
+    protected CredentialScopeRepresentation getCredentialScope() {
+        return jwtTypeCredentialScope;
     }
 
-    /**
-     * Get the expected claim path for the credential format
-     */
+    @Override
     protected String getExpectedClaimPath() {
-        return "given_name";
+        return "family_name";
     }
 
-    /**
-     * Prepare OID4VC test context by fetching issuer metadata
-     */
-    protected Oid4vcTestContext prepareOid4vcTestContext() throws Exception {
-        Oid4vcTestContext ctx = new Oid4vcTestContext();
+    @Override
+    protected String getFirstNameProtocolMapperName() {
+        return "givenName";
+    }
 
-        // Get credential issuer metadata
-        CredentialIssuerMetadataResponse metadataResponse = oauth.oid4vc()
-                .issuerMetadataRequest()
-                .endpoint(getRealmMetadataPath(TEST_REALM_NAME))
-                .send();
-        assertEquals(HttpStatus.SC_OK, metadataResponse.getStatusCode());
-        ctx.credentialIssuer = metadataResponse.getMetadata();
+    @Override
+    protected void verifyCredentialStructure(Object credentialObj) {
+        assertNotNull(credentialObj, "JWT credential object should not be null");
+        assertInstanceOf(String.class, credentialObj, "JWT credential should be a string");
+        String jwtString = (String) credentialObj;
+        assertFalse(jwtString.isEmpty(), "JWT credential should not be empty");
+        assertTrue(jwtString.contains("."), "JWT credential should contain dots (header.payload.signature)");
+    }
 
-        // Get OpenID configuration
-        OpenIDProviderConfigurationResponse openIDProviderConfigurationResponse = oauth.wellknownRequest()
-                .url(ctx.credentialIssuer.getAuthorizationServers().get(0))
-                .send();
-        assertEquals(HttpStatus.SC_OK, openIDProviderConfigurationResponse.getStatusCode());
-        ctx.openidConfig = openIDProviderConfigurationResponse.getOidcConfiguration();
-
-        return ctx;
+    private Proofs newJwtProofs() {
+        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
+        String issuer = oauth.oid4vc().issuerMetadataRequest().send().getMetadata().getCredentialIssuer();
+        return OID4VCProofTestUtils.jwtProofs(issuer, cNonce);
     }
 
     @Test
     public void testAuthorizationCodeFlowWithPARAndAuthorizationDetails() throws Exception {
-        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
+        OIDCConfigurationRepresentation openidConfig = wallet.getAuthorizationServerMetadata(ctx);
 
         // Step 1: Create PAR request with authorization_details
-        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
+        String credentialConfigurationId = ctx.getCredentialConfigurationId();
 
         // Create authorization details with claims
         ClaimsDescription claim = new ClaimsDescription();
@@ -118,15 +91,15 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(credentialConfigurationId);
         authDetail.setClaims(List.of(claim));
-        authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
+        authDetail.setLocations(Collections.singletonList(issuer.getCredentialIssuer()));
 
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
 
         // Create PAR request
         ParResponse parResponse = oauth.pushedAuthorizationRequest()
-                .endpoint(ctx.openidConfig.getPushedAuthorizationRequestEndpoint())
-                .client(oauth.getClientId(), "password")
-                .scopeParam(getCredentialClientScope().getName())
+                .endpoint(openidConfig.getPushedAuthorizationRequestEndpoint())
+                .client(client.getClientId(), client.getSecret())
+                .scopeParam(ctx.getScope())
                 .authorizationDetails(authDetails)
                 .state("test-state")
                 .nonce("test-nonce")
@@ -136,9 +109,9 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         assertNotNull(requestUri, "Request URI should not be null");
 
         // Step 2: Perform authorization with PAR
-        oauth.client(clientId);
-        oauth.scope(getCredentialClientScope().getName());
-        oauth.loginForm().requestUri(requestUri).doLogin("john", "password");
+        oauth.client(client.getClientId(), client.getSecret());
+        oauth.scope(ctx.getScope());
+        oauth.loginForm().requestUri(requestUri).doLogin(TEST_USER, TEST_PASSWORD);
 
         String code = oauth.parseLoginResponse().getCode();
         assertNotNull(code, "Authorization code should not be null");
@@ -146,8 +119,8 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         // Step 3: Exchange authorization code for tokens (WITHOUT authorization_details in token request)
         // This tests that authorization_details from PAR request is processed and returned
         AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
-                .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(oauth.getClientId(), "password")
+                .endpoint(openidConfig.getTokenEndpoint())
+                .client(client.getClientId(), client.getSecret())
                 .send();
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
@@ -177,50 +150,34 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
 
         // Step 5: Request the actual credential using the identifier
         // When authorization_details are present in the token, credential_identifier must be used
-        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
-                .proofs(new Proofs().setJwt(List.of(generateJwtProof(ctx.credentialIssuer.getCredentialIssuer(), cNonce))))
+                .proofs(newJwtProofs())
                 .bearerToken(tokenResponse.getAccessToken())
                 .send();
 
-        assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusCode());
-
-        // Parse the credential response
-        CredentialResponse parsedResponse = credentialResponse.getCredentialResponse();
-        assertNotNull(parsedResponse, "Credential response should not be null");
-        assertNotNull(parsedResponse.getCredentials(), "Credentials should be present");
-        assertEquals(1, parsedResponse.getCredentials().size(), "Should have exactly one credential");
-
-        // Verify that the issued credential contains the requested claims
-        CredentialResponse.Credential credentialWrapper = parsedResponse.getCredentials().get(0);
-        assertNotNull(credentialWrapper, "Credential wrapper should not be null");
-
-        Object credentialObj = credentialWrapper.getCredential();
-        assertNotNull(credentialObj, "Credential object should not be null");
-
-        // Verify the credential structure
-        verifyCredentialStructure(credentialObj);
+        assertSuccessfulCredentialResponse(credentialResponse);
     }
 
     @Test
     public void testAuthorizationCodeFlowWithPARAndAuthorizationDetailsFailure() throws Exception {
-        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
+        OIDCConfigurationRepresentation openidConfig = wallet.getAuthorizationServerMetadata(ctx);
 
         // Step 1: Create PAR request with INVALID authorization_details
         // Create authorization details with INVALID credential configuration ID
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId("INVALID_CONFIG_ID"); // This should cause failure
-        authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
+        authDetail.setLocations(Collections.singletonList(issuer.getCredentialIssuer()));
 
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
 
         // Create PAR request
         ParResponse parResponse = oauth.pushedAuthorizationRequest()
-                .endpoint(ctx.openidConfig.getPushedAuthorizationRequestEndpoint())
-                .client(oauth.getClientId(), "password")
-                .scopeParam(getCredentialClientScope().getName())
+                .endpoint(openidConfig.getPushedAuthorizationRequestEndpoint())
+                .client(client.getClientId(), client.getSecret())
+                .scopeParam(ctx.getScope())
                 .authorizationDetails(authDetails)
                 .state("test-state")
                 .nonce("test-nonce")
@@ -230,8 +187,8 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         assertNotNull(requestUri, "Request URI should not be null");
 
         // Step 2: Perform authorization with PAR
-        oauth.client(clientId);
-        oauth.scope(getCredentialClientScope().getName());
+        oauth.client(client.getClientId(), client.getSecret());
+        oauth.scope(ctx.getScope());
         oauth.loginForm().requestUri(requestUri).open();
         AuthorizationEndpointResponse authResponse = oauth.parseLoginResponse();
 
@@ -242,13 +199,14 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
 
     @Test
     public void testAuthorizationCodeFlowWithPARButNoAuthorizationDetailsInTokenRequest() throws Exception {
-        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+        wallet.getIssuerMetadata(ctx);
+        OIDCConfigurationRepresentation openidConfig = wallet.getAuthorizationServerMetadata(ctx);
 
         // Step 1: Create PAR request WITHOUT authorization_details
         ParResponse parResponse = oauth.pushedAuthorizationRequest()
-                .endpoint(ctx.openidConfig.getPushedAuthorizationRequestEndpoint())
-                .client(oauth.getClientId(), "password")
-                .scopeParam(getCredentialClientScope().getName())
+                .endpoint(openidConfig.getPushedAuthorizationRequestEndpoint())
+                .client(client.getClientId(), client.getSecret())
+                .scopeParam(ctx.getScope())
                 .state("test-state")
                 .nonce("test-nonce")
                 .send();
@@ -257,15 +215,17 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         assertNotNull(requestUri, "Request URI should not be null");
 
         // Step 2: Perform authorization with PAR
-        oauth.scope(getCredentialClientScope().getName());
-        oauth.loginForm().requestUri(requestUri).doLogin("john", "password");
+        oauth.client(client.getClientId(), client.getSecret());
+        oauth.scope(ctx.getScope());
+        oauth.loginForm().requestUri(requestUri).doLogin(TEST_USER, TEST_PASSWORD);
 
         String code = oauth.parseLoginResponse().getCode();
         assertNotNull(code, "Authorization code should not be null");
 
         // Step 3: Exchange authorization code for tokens
         AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
-                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .endpoint(openidConfig.getTokenEndpoint())
+                .client(client.getClientId(), client.getSecret())
                 .send();
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
@@ -274,19 +234,10 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         assertNotNull(authDetailsResponse, "authorization_details should be present in the token response");
         assertFalse(authDetailsResponse.isEmpty(), "authorization_details should not be empty");
         OID4VCAuthorizationDetail firstAuthorizationDetail = authDetailsResponse.get(0);
-        assertEquals(getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID),
+        assertEquals(ctx.getCredentialConfigurationId(),
                 firstAuthorizationDetail.getCredentialConfigurationId(),
                 "credential_configuration_id should match requested scope");
         assertNotNull(firstAuthorizationDetail.getCredentialIdentifiers(), "credential_identifiers should be present");
         assertFalse(firstAuthorizationDetail.getCredentialIdentifiers().isEmpty(), "credential_identifiers should not be empty");
-    }
-
-    /**
-     * Verify the credential structure based on the format.
-     * Subclasses can override this to provide format-specific verification.
-     */
-    protected void verifyCredentialStructure(Object credentialObj) {
-        // Default implementation - subclasses should override
-        assertNotNull(credentialObj, "Credential object should not be null");
     }
 }
