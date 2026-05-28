@@ -165,6 +165,14 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     }
 
     @Override
+    public void sendVerifiableCredentialOffer(String link, long expirationInMinutes) throws EmailException {
+        Map<String, Object> attributes = new HashMap<>(this.attributes);
+        addLinkInfoIntoAttributes(link, expirationInMinutes, attributes);
+
+        send("verifiableCredentialOfferSubject", "verifiable-credential-offer.ftl", attributes);
+    }
+
+    @Override
     public void sendVerifyEmail(String link, long expirationInMinutes) throws EmailException {
         Map<String, Object> attributes = new HashMap<>(this.attributes);
         addLinkInfoIntoAttributes(link, expirationInMinutes, attributes);
@@ -249,6 +257,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             }
 
             String subject = new MessageFormat(messages.getProperty(subjectKey, subjectKey), locale).format(subjectAttributes.toArray());
+            attributes.put("subject", subject);
             String textTemplate = String.format("text/%s", template);
             String textBody;
             try {

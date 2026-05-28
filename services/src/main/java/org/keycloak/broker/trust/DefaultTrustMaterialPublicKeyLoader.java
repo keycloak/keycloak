@@ -39,12 +39,12 @@ public class DefaultTrustMaterialPublicKeyLoader implements PublicKeyLoader {
 
     @Override
     public PublicKeysWrapper loadKeys() throws Exception {
-        if (StringUtil.isNotBlank(config.getTrustedJwksUrl())) {
+        if (config.isUseJwksUrl() && StringUtil.isNotBlank(config.getTrustedJwksUrl())) {
             JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, config.getTrustedJwksUrl());
             return JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG, true);
         }
 
-        if (StringUtil.isNotBlank(config.getTrustedJwks())) {
+        if (!config.isUseJwksUrl() && StringUtil.isNotBlank(config.getTrustedJwks())) {
             JSONWebKeySet jwks = JsonSerialization.readValue(config.getTrustedJwks(), JSONWebKeySet.class);
             return JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG, true);
         }

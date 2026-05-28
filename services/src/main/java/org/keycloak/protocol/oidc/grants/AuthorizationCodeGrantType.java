@@ -18,8 +18,6 @@
 package org.keycloak.protocol.oidc.grants;
 
 import java.util.List;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
 
@@ -30,7 +28,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -205,8 +202,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
 
         // Compute client scopes again from scope parameter. Check if user still has them granted
         // (but in code-to-token request, it could just theoretically happen that they are not available)
-        Supplier<Stream<ClientScopeModel>> clientScopesSupplier = () -> TokenManager.getRequestedClientScopes(session, scopeParam, client, user);
-        if (!TokenManager.verifyConsentStillAvailable(session, user, client, clientScopesSupplier.get())) {
+        if (!TokenManager.verifyConsentStillAvailable(session, user, client, scopeParam)) {
             String errorMessage = "Client no longer has requested consent from user";
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);

@@ -848,7 +848,12 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         for (String clientScopeId : cachedConsent.getClientScopeIds()) {
             ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
             if (clientScope != null) {
-                consentModel.addGrantedClientScope(clientScope);
+                if (ClientScopeModel.isDynamicScope(clientScope)) {
+                    cachedConsent.getParameters(clientScopeId).stream()
+                            .forEach(p -> consentModel.addGrantedClientScope(clientScope, p));
+                } else {
+                    consentModel.addGrantedClientScope(clientScope);
+                }
             }
         }
 

@@ -334,7 +334,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
             for (UserConsentClientScopeEntity grantedClientScope : grantedClientScopeEntities) {
                 ClientScopeModel grantedClientScopeModel = KeycloakModelUtils.findClientScopeById(realm, client, grantedClientScope.getScopeId());
                 if (grantedClientScopeModel != null) {
-                    model.addGrantedClientScope(grantedClientScopeModel);
+                    model.addGrantedClientScope(grantedClientScopeModel,
+                            ClientScopeModel.isDynamicScope(grantedClientScopeModel)
+                                    ? grantedClientScope.getParameter().orElse(null)
+                                    : null);
                 }
             }
         }
@@ -348,17 +351,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         Collection<UserConsentClientScopeEntity> scopesToRemove = new HashSet<>(grantedClientScopeEntities);
 
         for (ClientScopeModel clientScope : consentModel.getGrantedClientScopes()) {
-            UserConsentClientScopeEntity grantedClientScopeEntity = new UserConsentClientScopeEntity();
-            grantedClientScopeEntity.setUserConsent(consentEntity);
-            grantedClientScopeEntity.setScopeId(clientScope.getId());
-
-            // Check if it's already there
-            if (!grantedClientScopeEntities.contains(grantedClientScopeEntity)) {
-                em.persist(grantedClientScopeEntity);
-                em.flush();
-                grantedClientScopeEntities.add(grantedClientScopeEntity);
+            if (ClientScopeModel.isDynamicScope(clientScope)) {
+                consentModel.getParameters(clientScope).forEach(p -> createUserConsentClientScopeEntity(
+                        consentEntity, clientScope, p, grantedClientScopeEntities, scopesToRemove));
             } else {
-                scopesToRemove.remove(grantedClientScopeEntity);
+                createUserConsentClientScopeEntity(consentEntity, clientScope, null, grantedClientScopeEntities, scopesToRemove);
             }
         }
         // Those client scopes were no longer on consentModel and will be removed
@@ -370,6 +367,25 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         consentEntity.setLastUpdatedDate(Time.currentTimeMillis());
 
         em.flush();
+    }
+
+    private void createUserConsentClientScopeEntity(
+            UserConsentEntity consentEntity, ClientScopeModel clientScope, String parameter,
+            Collection<UserConsentClientScopeEntity> grantedClientScopeEntities,
+            Collection<UserConsentClientScopeEntity> scopesToRemove) {
+        UserConsentClientScopeEntity grantedClientScopeEntity = new UserConsentClientScopeEntity();
+        grantedClientScopeEntity.setUserConsent(consentEntity);
+        grantedClientScopeEntity.setScopeId(clientScope.getId());
+        grantedClientScopeEntity.setParameter(parameter);
+
+        // Check if it's already there
+        if (!grantedClientScopeEntities.contains(grantedClientScopeEntity)) {
+            em.persist(grantedClientScopeEntity);
+            em.flush();
+            grantedClientScopeEntities.add(grantedClientScopeEntity);
+        } else {
+            scopesToRemove.remove(grantedClientScopeEntity);
+        }
     }
 
     @Override
@@ -420,6 +436,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         if (found == null) return false;
 
         em.remove(found);
+
+        em.createNamedQuery("deleteIssuedVcsByUserAndType")
+                .setParameter("userId", userId)
+                .setParameter("credentialType", credentialScopeName)
+                .executeUpdate();
+
         em.flush();
         return true;
     }
@@ -600,6 +622,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                     .setParameter("clientId", client.getId())
                     .executeUpdate();
             em.createNamedQuery("deleteUserConsentsByClient")
+                    .setParameter("clientId", client.getId())
+                    .executeUpdate();
+            em.createNamedQuery("deleteIssuedVcsByClient")
                     .setParameter("clientId", client.getId())
                     .executeUpdate();
         } else {

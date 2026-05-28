@@ -87,6 +87,15 @@ export async function createJwtAuthorizationGrantProviderKey(
   await clickAddButton(page);
 }
 
+export async function createDefaultTrustProvider(page: Page, jwksUrl: string) {
+  await page.goto(
+    `${SERVER_URL}/admin/master/console/#/master/identity-providers/default-trust/add`,
+  );
+  await expect(page.getByTestId("config.useJwksUrl")).toBeChecked();
+  await page.getByTestId("config.jwksUrl").fill(jwksUrl);
+  await clickAddButton(page);
+}
+
 export async function createKubernetesProvider(
   page: Page,
   providerName: string,

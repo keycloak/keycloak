@@ -32,17 +32,21 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  *
  * @author rmartinc
  */
+@DatabaseTest
 @KeycloakIntegrationTest(config = DynamicScopesOAuthGrantTest.DynamicScopesServerConfig.class)
 public class DynamicScopesOAuthGrantTest {
 
@@ -79,8 +83,8 @@ public class DynamicScopesOAuthGrantTest {
         thirdParty.admin().addOptionalClientScope(DYNAMIC_SCOPE_ID);
     }
 
-    @BeforeEach
-    public void beforeEach() {
+    @AfterEach
+    public void afterEach() {
         // logout user and revoke consents if present
         AccountHelper.logout(realm.admin(), DEFAULT_USERNAME);
         List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(realm.admin(), DEFAULT_USERNAME);
@@ -95,18 +99,19 @@ public class DynamicScopesOAuthGrantTest {
 
         // login using the dynamic scope
         oauth.client(THIRD_PARTY_APP, "password");
-        oauth.scope("foo-dynamic-scope:withparam");
+        oauth.scope("foo-dynamic-scope:param1");
         oauth.openLoginForm();
         oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
         grantPage.assertCurrent();
         List<String> grants = grantPage.getDisplayedGrants();
-        Assertions.assertTrue(grants.contains("foo-dynamic-scope: withparam"));
+        Assertions.assertTrue(grants.contains("foo-dynamic-scope: param1"));
         grantPage.accept();
 
         EventRepresentation loginEvent = events.poll();
         EventAssertion.assertSuccess(loginEvent).type(EventType.LOGIN)
                 .clientId(THIRD_PARTY_APP)
                 .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.USERNAME, DEFAULT_USERNAME)
                 .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
 
         String code = oauth.parseLoginResponse().getCode();
@@ -117,6 +122,12 @@ public class DynamicScopesOAuthGrantTest {
                 .sessionId(loginEvent.getSessionId())
                 .details(Details.CODE_ID, loginEvent.getDetails().get(Details.CODE_ID));
 
+        List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(realm.admin(), DEFAULT_USERNAME);
+        Assertions.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().anyMatch(p -> p.equals("foo-dynamic-scope:param1")));
+
+        res = oauth.doRefreshTokenRequest(res.getRefreshToken());
+        MatcherAssert.assertThat(List.of(res.getScope().split(" ")), Matchers.hasItems("foo-dynamic-scope:param1"));
+
         oauth.logoutForm().idTokenHint(res.getIdToken()).open();
 
         EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
@@ -124,20 +135,57 @@ public class DynamicScopesOAuthGrantTest {
                 .clientId(THIRD_PARTY_APP)
                 .withoutDetails(Details.REDIRECT_URI);
 
-        // login again to check whether the Dynamic scope and only the dynamic scope is requested again
-        oauth.scope("foo-dynamic-scope:withparam");
+        // login again with the same param and a new one, only param2 should be requested
+        oauth.scope("foo-dynamic-scope:param1 foo-dynamic-scope:param2");
         oauth.openLoginForm();
         oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
         grantPage.assertCurrent();
         grants = grantPage.getDisplayedGrants();
         Assertions.assertEquals(1, grants.size());
-        Assertions.assertTrue(grants.contains("foo-dynamic-scope: withparam"));
+        Assertions.assertTrue(grants.contains("foo-dynamic-scope: param2"));
         grantPage.accept();
+
+        loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent)
+                .clientId(THIRD_PARTY_APP)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
+
+        code = oauth.parseLoginResponse().getCode();
+        res = oauth.doAccessTokenRequest(code);
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN)
+                .clientId(THIRD_PARTY_APP)
+                .sessionId(loginEvent.getSessionId())
+                .details(Details.CODE_ID, loginEvent.getDetails().get(Details.CODE_ID));
+
+        userConsents = AccountHelper.getUserConsents(realm.admin(), DEFAULT_USERNAME);
+        Assertions.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().anyMatch(p -> p.equals("foo-dynamic-scope:param1")));
+        Assertions.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().anyMatch(p -> p.equals("foo-dynamic-scope:param2")));
+
+        res = oauth.doRefreshTokenRequest(res.getRefreshToken());
+        MatcherAssert.assertThat(List.of(res.getScope().split(" ")), Matchers.hasItems("foo-dynamic-scope:param1", "foo-dynamic-scope:param2"));
+
+        res = oauth.scope("foo-dynamic-scope:param2").doRefreshTokenRequest(res.getRefreshToken());
+        MatcherAssert.assertThat(List.of(res.getScope().split(" ")), Matchers.not(Matchers.hasItems("foo-dynamic-scope:param1")));
+        MatcherAssert.assertThat(List.of(res.getScope().split(" ")), Matchers.hasItems("foo-dynamic-scope:param2"));
+
+        oauth.logoutForm().idTokenHint(res.getIdToken()).open();
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(loginEvent.getSessionId())
+                .clientId(THIRD_PARTY_APP)
+                .withoutDetails(Details.REDIRECT_URI);
+
+        // login again with the same two params
+        oauth.scope("foo-dynamic-scope:param1 foo-dynamic-scope:param2");
+        oauth.openLoginForm();
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
 
         EventAssertion.expectLoginSuccess(events.poll())
                 .clientId(THIRD_PARTY_APP)
                 .details(Details.REDIRECT_URI, oauth.getRedirectUri())
-                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
+                .details(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT);
     }
 
     @Test

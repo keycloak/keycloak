@@ -2651,6 +2651,28 @@
     },
     "notBefore" : 0,
     "groups" : [ ]
+  }, {
+    "id" : "08420acf-d86f-4eba-8a69-73e7da43c668",
+    "username" : "consent-user",
+    "emailVerified" : false,
+    "createdTimestamp" : 1779110441255,
+    "enabled" : true,
+    "totp" : false,
+    "credentials" : [ ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "offline_access", "uma_authorization" ],
+    "clientRoles" : {
+      "account" : [ "manage-account", "view-profile" ]
+    },
+    "clientConsents" : [ {
+      "clientId" : "migration-consent-client",
+      "grantedClientScopes" : [ "roles", "email", "profile" ],
+      "createdDate" : 1779175201074,
+      "lastUpdatedDate" : 1779175201101
+    } ],
+    "notBefore" : 0,
+    "groups" : [ ]
   } ],
   "scopeMappings" : [ {
     "clientScope" : "offline_access",
@@ -2970,6 +2992,36 @@
       "saml.signing.certificate": "MIIDBjCCAe6gAwIBAgIJANPu/mvxOREdMA0GCSqGSIb3DQEBCwUAMDAxLjAsBgNVBAMTJWh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9zYWxlcy1wb3N0LWVuYy8wIBcNMjQwNjIxMTkzMTE3WhgPMjEyNDA1MjgxOTMxMTdaMDAxLjAsBgNVBAMTJWh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9zYWxlcy1wb3N0LWVuYy8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDE5iKDNNW5XxHAF0ITErZcHDYZI68z7u68n7o4dsiywkfOWf7jVnw7PJVnMeDEtLWtTO6f0tRTqJ4OV5HYdJ9+mhPJtn+2UuvrepyYa2IsC1eFPH98ZEtYapsE6ObvhKBQMcu5G/tQrxkCFY2ssDa99unwBH5STLyX78UvqKiYnkPCvIhkiPIHy8ab7DQowc+EE9XhlE3b63A65rp4G9R87rwgJX5VTM3h81WcDuWLPOg7YRYLZoorWz2p38/qL9gXY5NxIRK16EHGfw2W1dPrX3GyMOJbXVyrBNZ6m5IL9Wn7lBEJ/Dl7ZFMFB5W36QkJ+3aaNLT/Tu/Gz+7f24inAgMBAAGjITAfMB0GA1UdDgQWBBSk7RegFbEBruVbt/VFl2gZhZ2IpDANBgkqhkiG9w0BAQsFAAOCAQEAGyH1sXVU3HDMhCzP2k5fsJBGA+1iKLMsyyiGcaD/22anQ1uVU7iWPZH8mSJGWqkvo/4oFb7RjB2KzO/50wP0q/P/tymGsYoznt+MEJKKxYEqAYmIns7SKRIgv3xEfF8yQy2jOuULC9FTq/Pb3gd9Om40jmeJtYccDSICjEC+A2fcGe56ScuRRLt+3WFyIZUFH7Y9FYZQ3EYQ88UZg//5F1ddAzGtdMSeTanMxLKow7rUIm/+Sx6cd+Vkwo/SYdk4hsD8xZCYx8Ln4i3NKh+SzyvbYykyWVI2fwjplqvM5Md/M+SNvPtU9tkOCUxQqVfz/bwtTiqfjdSaUJlasgGByg==",
       "saml.encryption.certificate": "MIIDBjCCAe6gAwIBAgIJANPu/mvxOREdMA0GCSqGSIb3DQEBCwUAMDAxLjAsBgNVBAMTJWh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9zYWxlcy1wb3N0LWVuYy8wIBcNMjQwNjIxMTkzMTE3WhgPMjEyNDA1MjgxOTMxMTdaMDAxLjAsBgNVBAMTJWh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9zYWxlcy1wb3N0LWVuYy8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDE5iKDNNW5XxHAF0ITErZcHDYZI68z7u68n7o4dsiywkfOWf7jVnw7PJVnMeDEtLWtTO6f0tRTqJ4OV5HYdJ9+mhPJtn+2UuvrepyYa2IsC1eFPH98ZEtYapsE6ObvhKBQMcu5G/tQrxkCFY2ssDa99unwBH5STLyX78UvqKiYnkPCvIhkiPIHy8ab7DQowc+EE9XhlE3b63A65rp4G9R87rwgJX5VTM3h81WcDuWLPOg7YRYLZoorWz2p38/qL9gXY5NxIRK16EHGfw2W1dPrX3GyMOJbXVyrBNZ6m5IL9Wn7lBEJ/Dl7ZFMFB5W36QkJ+3aaNLT/Tu/Gz+7f24inAgMBAAGjITAfMB0GA1UdDgQWBBSk7RegFbEBruVbt/VFl2gZhZ2IpDANBgkqhkiG9w0BAQsFAAOCAQEAGyH1sXVU3HDMhCzP2k5fsJBGA+1iKLMsyyiGcaD/22anQ1uVU7iWPZH8mSJGWqkvo/4oFb7RjB2KzO/50wP0q/P/tymGsYoznt+MEJKKxYEqAYmIns7SKRIgv3xEfF8yQy2jOuULC9FTq/Pb3gd9Om40jmeJtYccDSICjEC+A2fcGe56ScuRRLt+3WFyIZUFH7Y9FYZQ3EYQ88UZg//5F1ddAzGtdMSeTanMxLKow7rUIm/+Sx6cd+Vkwo/SYdk4hsD8xZCYx8Ln4i3NKh+SzyvbYykyWVI2fwjplqvM5Md/M+SNvPtU9tkOCUxQqVfz/bwtTiqfjdSaUJlasgGByg=="
     }
+  },
+  {
+    "id" : "e908e55c-7cfe-46de-8c86-9ed6c65c11d9",
+    "clientId" : "migration-consent-client",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "alwaysDisplayInConsole" : false,
+    "clientAuthenticatorType" : "client-secret",
+    "redirectUris" : [ ],
+    "webOrigins" : [ ],
+    "notBefore" : 0,
+    "bearerOnly" : false,
+    "consentRequired" : true,
+    "standardFlowEnabled" : true,
+    "implicitFlowEnabled" : false,
+    "directAccessGrantsEnabled" : true,
+    "serviceAccountsEnabled" : false,
+    "publicClient" : true,
+    "frontchannelLogout" : false,
+    "protocol" : "openid-connect",
+    "attributes" : {
+      "post.logout.redirect.uris" : "+",
+      "backchannel.logout.session.required" : "true",
+      "backchannel.logout.revoke.offline.tokens" : "false"
+    },
+    "authenticationFlowBindingOverrides" : { },
+    "fullScopeAllowed" : true,
+    "nodeReRegistrationTimeout" : -1,
+    "defaultClientScopes" : [ "acr", "web-origins", "roles", "profile", "email" ],
+    "optionalClientScopes" : [ "address", "phone", "offline_access", "microprofile-jwt" ]
   } ],
   "clientScopes" : [ {
     "id" : "adef1610-70ec-4282-88ef-bcb26b1f5edf",

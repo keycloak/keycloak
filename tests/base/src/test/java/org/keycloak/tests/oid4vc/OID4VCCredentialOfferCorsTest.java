@@ -1,21 +1,4 @@
-/*
- * Copyright 2025 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package org.keycloak.testsuite.oid4vc.issuance.signing;
+package org.keycloak.tests.oid4vc;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -36,11 +19,9 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
@@ -51,9 +32,9 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -64,38 +45,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test class for CORS functionality on OID4VCI credential offer endpoints.
  * Tests both the authenticated create-credential-offer endpoint and the
  * session-based credential-offer/{nonce} endpoint.
- *
- * @author <a href="https://github.com/forkimenjeckayang">Forkim Akwichek</a>
  */
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
 public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
 
     private static final String VALID_CORS_URL = "http://localtest.me:8180";
     private static final String INVALID_CORS_URL = "http://invalid.localtest.me:8180";
     private static final String ANOTHER_VALID_CORS_URL = "http://another.localtest.me:8180";
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    private final String clientId = OID4VCI_CLIENT_ID;
 
-    @Rule
-    public TokenUtil tokenUtil = new TokenUtil();
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        super.configureTestRealm(testRealm);
-
-        // Find the existing client and add web origins for CORS testing
-        testRealm.getClients().stream()
-                .filter(client -> client.getClientId().equals(clientId))
-                .findFirst()
-                .ifPresent(client -> {
-                    client.setDirectAccessGrantsEnabled(true);
-                    client.setWebOrigins(Arrays.asList(VALID_CORS_URL, ANOTHER_VALID_CORS_URL));
-                });
+    @BeforeEach
+    public void setupCors() {
+        managedClient.updateWithCleanup(builder -> builder
+                .directAccessGrantsEnabled()
+                .webOrigins(VALID_CORS_URL, ANOTHER_VALID_CORS_URL));
+        client = managedClient.admin().toRepresentation();
     }
 
     @Test
     public void testCredentialOfferUriCorsValidOrigin() throws Exception {
-
         AccessTokenResponse tokenResponse = getAccessToken();
         // Clear events from token retrieval
         events.clear();
@@ -125,7 +94,6 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testCredentialOfferUriCorsInvalidOrigin() throws Exception {
-
         AccessTokenResponse tokenResponse = getAccessToken();
 
         // Test credential offer URI endpoint with invalid origin
@@ -231,7 +199,6 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testCredentialOfferUriQrCodeCorsValidOrigin() throws Exception {
-
         AccessTokenResponse tokenResponse = getAccessToken();
 
         // Test credential offer URI QR code endpoint with valid origin
@@ -316,9 +283,8 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         events.clear();
 
         // Create an expired credential offer using testing client
-        // Use AtomicReference to avoid serialization issues with lambda captures
-        String issuerPath = getRealmPath(TEST_REALM_NAME);
-        String nonce = testingClient.server(TEST_REALM_NAME).fetchString(session -> {
+        String issuerPath = getRealmPath(testRealm.getName());
+        String nonce = runOnServer.fetchString(session -> {
             CredentialsOffer credOffer = new CredentialsOffer()
                     .setCredentialIssuer(issuerPath)
                     .addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode("test-code"))
@@ -329,7 +295,6 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
             // This ensures it's still findable in storage but marked as expired
             CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, Time.currentTime() - 1, null);
             offerStorage.putOfferState(offerState);
-            session.getTransactionManager().commit();
             return offerState.getNonce();
         });
         assertNotNull(nonce, "CredentialOffer nonce not null");
@@ -353,22 +318,21 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
                 // Storage prunes expired single-use entries before lookup; lookup failure yields INVALID_REQUEST
                 // The error message indicates the offer was not found (pruned due to expiration) or already consumed
                 .error(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue()).getEvent();
-        Assertions.assertTrue(eventRep.getDetails().get(Details.REASON).contains("not found") || eventRep.getDetails().get(Details.REASON).contains("already consumed"));
+        assertTrue(eventRep.getDetails().get(Details.REASON).contains("not found") || eventRep.getDetails().get(Details.REASON).contains("already consumed"));
     }
 
     // Helper methods
 
     private AccessTokenResponse getAccessToken() throws Exception {
-        return oauth.doPasswordGrantRequest("john", "password");
+        return oauth.doPasswordGrantRequest("john", TEST_PASSWORD);
     }
 
     private String getCredentialOfferUriUrl() {
-        String configId = jwtTypeCredentialConfigurationIdName;
-        return getCredentialOfferUriUrl(configId, true, "john", null);
+        return getCredentialOfferUriUrl(jwtTypeCredentialConfigurationIdName, true, "john", null);
     }
 
     private String getCredentialOfferUriUrl(String configId, Boolean preAuthorized, String username, String clientId) {
-        String res = getBasePath("test") + "create-credential-offer?credential_configuration_id=" + configId;
+        String res = getBasePath(testRealm.getName()) + "create-credential-offer?credential_configuration_id=" + configId;
         if (preAuthorized != null)
             res += "&pre_authorized=" + preAuthorized;
         if (clientId != null)
@@ -379,7 +343,6 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
     }
 
     private CredentialOfferURI getCredentialOfferUri(String accessToken) throws Exception {
-
         CredentialOfferUriResponse response = oauth.oid4vc()
                 .credentialOfferUriRequest(jwtTypeCredentialConfigurationIdName)
                 .preAuthorized(true)
@@ -401,7 +364,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
             request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
         }
 
-        return httpClient.execute(request);
+        return getHttpClient().execute(request);
     }
 
     private CloseableHttpResponse makePreflightRequest(String url, String origin) throws IOException {
@@ -410,11 +373,11 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         request.setHeader("Access-Control-Request-Method", "GET");
         request.setHeader("Access-Control-Request-Headers", "Authorization, Accept");
 
-        return httpClient.execute(request);
+        return getHttpClient().execute(request);
     }
 
-    private String getResponseBody(CloseableHttpResponse response) throws IOException {
-        return new String(response.getEntity().getContent().readAllBytes());
+    private CloseableHttpClient getHttpClient() {
+        return oauth.httpClient().get();
     }
 
     private void assertCorsHeaders(AbstractHttpResponse response, String expectedOrigin) {

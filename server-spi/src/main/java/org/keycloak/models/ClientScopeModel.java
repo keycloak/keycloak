@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import java.util.Map;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.provider.ProviderEvent;
 
@@ -32,6 +33,16 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
      * The character separator used to specify values when the client scope is dynamic. For instance, {@code <scope>:<value>}.
      */
     String VALUE_SEPARATOR = ":";
+
+    /**
+     * Returns true when dynamic scopes are enabled and the scope is defined as dynamic.
+     *
+     * @param scope The scope to check
+     * @return true when the dynamic scopes feature is enabled and the scope is dynamic, false otherwise
+     */
+    static boolean isDynamicScope(ClientScopeModel scope) {
+        return Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) && scope.isDynamicScope();
+    }
 
     interface ClientScopeRemovedEvent extends ProviderEvent {
         ClientScopeModel getClientScope();
@@ -89,7 +100,7 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
         String consentScreenText = getAttribute(CONSENT_SCREEN_TEXT);
         if (ObjectUtil.isBlank(consentScreenText)) {
             consentScreenText = getName();
-            if (isDynamicScope()) {
+            if (isDynamicScope(this)) {
                 consentScreenText += ": {0}";
             }
         }

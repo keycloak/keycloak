@@ -212,8 +212,8 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         }
     }
 
-    protected void validateConsents(UserModel targetUser, ClientSessionContext clientSessionCtx) {
-        if (!TokenManager.verifyConsentStillAvailable(session, targetUser, client, clientSessionCtx.getClientScopesStream())) {
+    protected void validateConsents(UserModel targetUser, String scope) {
+        if (!TokenManager.verifyConsentStillAvailable(session, targetUser, client, scope)) {
             event.detail(Details.REASON, "Missing consents for Token Exchange in client " + client.getClientId());
             event.error(Errors.CONSENT_DENIED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE,
@@ -287,7 +287,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                 clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, targetAudienceClients.toArray(ClientModel[]::new));
             }
 
-            validateConsents(targetUser, clientSessionCtx);
+            validateConsents(targetUser, scope);
             clientSessionCtx.setAttribute(Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
 
             TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);

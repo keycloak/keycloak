@@ -167,6 +167,11 @@ public abstract class OID4VCIssuerTestBase {
             .truncatedTo(ChronoUnit.SECONDS);
     public static final Instant TEST_ISSUANCE_DATE = Instant.ofEpochSecond(1000);
 
+    /**
+     * Expiration of the VC as configured on the OID4VCI client scopes, which are created by the testsuite
+     */
+    public static final int CREDENTIALS_EXPIRATION_IN_SECONDS = 15;
+
     public static final String VCI_CLIENT_POLICY_HAIP = "oid4vc-haip-policy";
     public static final String VCI_CLIENT_POLICY_OFFER_REQUIRED = "oid4vci-offer-required";
 
@@ -577,7 +582,7 @@ public abstract class OID4VCIssuerTestBase {
                     List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH, OID4VCConstants.KeyAttestationResistanceLevels.MODERATE)
             );
             Map<String, String> sdJwtAttrs = Optional.ofNullable(sdJwtScope.getAttributes()).orElseGet(HashMap::new);
-            sdJwtAttrs.put(VC_BINDING_REQUIRED, "true");
+            sdJwtScope.setBindingRequired(true);
             sdJwtAttrs.put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
             sdJwtAttrs.put(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
             sdJwtScope.setAttributes(sdJwtAttrs);
@@ -803,7 +808,7 @@ public abstract class OID4VCIssuerTestBase {
 
             CredentialScopeRepresentation cs = new CredentialScopeRepresentation(scopeName)
                     .setIncludeInTokenScope(true)
-                    .setExpiryInSeconds(15)
+                    .setExpiryInSeconds(CREDENTIALS_EXPIRATION_IN_SECONDS)
                     .setIssuerDid(issuerDid)
                     .setCredentialConfigurationId(credentialConfigurationId)
                     .setCredentialIdentifier(credentialIdentifier)

@@ -17,7 +17,6 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
-import java.util.concurrent.ArrayBlockingQueue;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -38,10 +37,9 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
     private static final Logger LOG = Logger.getLogger(UserSessionPersistentChangelogBasedTransaction.class);
 
     public UserSessionPersistentChangelogBasedTransaction(KeycloakSession session,
-                                                          ArrayBlockingQueue<PersistentUpdate> batchingQueue,
                                                           CacheHolder<String, UserSessionEntity> cacheHolder,
                                                           CacheHolder<String, UserSessionEntity> offlineCacheHolder) {
-        super(session, USER_SESSION_CACHE_NAME, batchingQueue, cacheHolder, offlineCacheHolder);
+        super(session, USER_SESSION_CACHE_NAME, cacheHolder, offlineCacheHolder);
     }
 
     public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key, UserSessionModel userSession, boolean offline) {
