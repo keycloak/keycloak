@@ -2,6 +2,7 @@ package org.keycloak.services.error;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -40,6 +41,7 @@ import org.keycloak.utils.MediaTypeMatcher;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import org.jboss.logging.Logger;
 
 @Provider
@@ -84,7 +86,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             } if (throwable instanceof ModelDuplicateException) {
                 error.setErrorDescription(throwable.getMessage());
             } else if (throwable instanceof JsonProcessingException || throwable.getCause() instanceof JsonProcessingException) {
-                error.setErrorDescription("Cannot parse the JSON");
+                error.setErrorDescription(getJsonProcessingErrorDescription(throwable));
             } else if (isServerError) {
                 error.setErrorDescription("For more on this error consult the server log.");
             }
@@ -151,6 +153,65 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         }
 
         return "unknown_error";
+    }
+
+    private static String getJsonProcessingErrorDescription(Throwable throwable) {
+        Throwable cause = throwable instanceof JsonProcessingException ? throwable : throwable.getCause();
+        // An out-of-range numeric input (e.g. a session/token duration whose
+        // seconds value overflows the Integer field it maps to) fails to bind and
+        // surfaces here as a JsonMappingException pointing at the field. Name that
+        // field so the admin can tell which input was rejected, but never echo the
+        // submitted value back, and only surface a field name that resolves to a
+        // declared numeric property on the type being deserialized -- so the
+        // response can never reflect an arbitrary caller-supplied key, and
+        // non-numeric mismatches (invalid enum/boolean values) keep the generic
+        // message to preserve the existing error contract.
+        if (cause instanceof JsonMappingException mappingException) {
+            String field = numericFieldName(mappingException);
+            if (field != null) {
+                return String.format("Cannot parse value for field '%s'", field);
+            }
+        }
+        return "Cannot parse the JSON";
+    }
+
+    /**
+     * Returns the name of the offending field, but only when it maps to a numeric field declared on the type
+     * Jackson was deserializing into. Restricting to declared numeric fields keeps the response from echoing
+     * back an arbitrary key from the request body (the only value returned is a field name already known to
+     * the server) and preserves the generic message for non-numeric mismatches whose error contract callers
+     * already depend on.
+     */
+    private static String numericFieldName(JsonMappingException mappingException) {
+        List<JsonMappingException.Reference> path = mappingException.getPath();
+        if (path == null || path.isEmpty()) {
+            return null;
+        }
+        JsonMappingException.Reference last = path.get(path.size() - 1);
+        String fieldName = last.getFieldName();
+        if (fieldName == null) {
+            return null;
+        }
+        Object from = last.getFrom();
+        Class<?> target = from instanceof Class<?> clazz ? clazz : (from != null ? from.getClass() : null);
+        return isNumericType(declaredFieldType(target, fieldName)) ? fieldName : null;
+    }
+
+    private static Class<?> declaredFieldType(Class<?> type, String fieldName) {
+        for (Class<?> current = type; current != null && current != Object.class; current = current.getSuperclass()) {
+            try {
+                return current.getDeclaredField(fieldName).getType();
+            } catch (NoSuchFieldException e) {
+                // not declared at this level; keep walking up the hierarchy
+            }
+        }
+        return null;
+    }
+
+    private static boolean isNumericType(Class<?> type) {
+        return type != null && (Number.class.isAssignableFrom(type)
+                || type == int.class || type == long.class || type == short.class
+                || type == byte.class || type == double.class || type == float.class);
     }
 
     private static RealmModel resolveRealm(KeycloakSession session) {
