@@ -436,6 +436,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         if (found == null) return false;
 
         em.remove(found);
+
+        em.createNamedQuery("deleteIssuedVcsByUserAndType")
+                .setParameter("userId", userId)
+                .setParameter("credentialType", credentialScopeName)
+                .executeUpdate();
+
         em.flush();
         return true;
     }
@@ -616,6 +622,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                     .setParameter("clientId", client.getId())
                     .executeUpdate();
             em.createNamedQuery("deleteUserConsentsByClient")
+                    .setParameter("clientId", client.getId())
+                    .executeUpdate();
+            em.createNamedQuery("deleteIssuedVcsByClient")
                     .setParameter("clientId", client.getId())
                     .executeUpdate();
         } else {
