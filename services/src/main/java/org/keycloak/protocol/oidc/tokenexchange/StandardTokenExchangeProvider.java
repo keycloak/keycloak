@@ -224,7 +224,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
     protected String getRequestedScope(AccessToken token, List<ClientModel> targetAudienceClients) {
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
-        if (!TokenManager.isValidScope(session, scope, client, null)) {
+        if (!TokenManager.isValidScope(session, scope, client)) {
             String errorMessage = "Invalid scopes: " + scope;
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
