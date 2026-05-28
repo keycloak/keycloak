@@ -38,8 +38,8 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@KeycloakIntegrationTest(config = ExportImportTestFGAPV2.KeycloakAdminPermissionsV2ServerConfig.class)
-public class ExportImportTestFGAPV2 {
+@KeycloakIntegrationTest(config = ExportImportFGAPV2Test.KeycloakAdminPermissionsV2ServerConfig.class)
+public class ExportImportFGAPV2Test {
 
     @InjectAdminClient(mode = InjectAdminClient.Mode.BOOTSTRAP)
     Keycloak adminClient;
