@@ -78,9 +78,9 @@ public class DefaultTrustIdentityProvider implements TrustMaterialIdentityProvid
     private PublicKeyLoader getPublicKeyLoader(TrustMaterialRequest request) {
         if (!config.isUseJwksUrl() && StringUtil.isNotBlank(config.getTrustedJwks())
                 && !config.getTrustedJwks().trim().startsWith("{")) {
+            String kid = StringUtil.isNotBlank(request.getKid()) ? request.getKid() : config.getTrustedJwksKeyId();
             return new HardcodedPublicKeyLoader(
-                    StringUtil.isNotBlank(config.getTrustedJwksKeyId())
-                            ? config.getTrustedJwksKeyId().trim() : request.getKid(),
+                    StringUtil.isNotBlank(kid) ? kid.trim() : null,
                     config.getTrustedJwks(),
                     request.getAlgorithm());
         }
