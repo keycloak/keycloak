@@ -255,18 +255,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     @Override
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
         try {
-            if (identity.getToken().startsWith("{")) {
-                OAuthResponse previousResponse = JsonSerialization.readValue(identity.getToken(), OAuthResponse.class);
-                Long exp = previousResponse.getAccessTokenExpiration();
-                if (needsRefresh(exp) && previousResponse.getRefreshToken() != null) {
-                    OAuthResponse newResponse = refreshToken(previousResponse, session);
-                    if (newResponse.getExpiresIn() != null && newResponse.getExpiresIn() > 0) {
-                        long accessTokenExpiration = Time.currentTime() + newResponse.getExpiresIn();
-                        newResponse.setAccessTokenExpiration(accessTokenExpiration);
-                    }
-                    identity.setToken(JsonSerialization.writeValueAsString(newResponse));
-                }
-            }
+            refreshStoredTokenIfNeeded(session, identity);
         } catch (IOException e) {
             ErrorRepresentation error = new ErrorRepresentation();
             error.setErrorMessage("Unable to refresh token");
@@ -280,7 +269,34 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return exp != null && exp != 0 && exp < Time.currentTime() + getConfig().getMinValidityToken();
     }
 
-    private OAuthResponse refreshToken(OAuthResponse previousResponse, KeycloakSession session) throws IOException {
+    protected boolean refreshStoredTokenIfNeeded(KeycloakSession session, FederatedIdentityModel identity) throws IOException {
+        if (!identity.getToken().startsWith("{")) {
+            return false;
+        }
+
+        OAuthResponse previousResponse = JsonSerialization.readValue(identity.getToken(), OAuthResponse.class);
+        Long exp = previousResponse.getAccessTokenExpiration();
+        if (!needsRefresh(exp) || previousResponse.getRefreshToken() == null) {
+            return false;
+        }
+
+        OAuthResponse newResponse = refreshToken(previousResponse, session);
+        if (newResponse.getRefreshToken() == null && previousResponse.getRefreshToken() != null) {
+            newResponse.setRefreshToken(previousResponse.getRefreshToken());
+            newResponse.setRefreshExpiresIn(previousResponse.getRefreshExpiresIn());
+        }
+        if (newResponse.getIdToken() == null && previousResponse.getIdToken() != null) {
+            newResponse.setIdToken(previousResponse.getIdToken());
+        }
+        if (newResponse.getExpiresIn() != null && newResponse.getExpiresIn() > 0) {
+            long accessTokenExpiration = Time.currentTime() + newResponse.getExpiresIn();
+            newResponse.setAccessTokenExpiration(accessTokenExpiration);
+        }
+        identity.setToken(JsonSerialization.writeValueAsString(newResponse));
+        return true;
+    }
+
+    protected OAuthResponse refreshToken(OAuthResponse previousResponse, KeycloakSession session) throws IOException {
         try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
             SimpleHttpRequest refreshTokenRequest = getRefreshTokenRequest(session, previousResponse.getRefreshToken(), getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
             try (SimpleHttpResponse refreshTokenResponse = refreshTokenRequest.asResponse()) {
@@ -293,14 +309,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                             Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
                 }
                 OAuthResponse newResponse = JsonSerialization.readValue(response, OAuthResponse.class);
-
-                if (newResponse.getRefreshToken() == null && previousResponse.getRefreshToken() != null) {
-                    newResponse.setRefreshToken(previousResponse.getRefreshToken());
-                    newResponse.setRefreshExpiresIn(previousResponse.getRefreshExpiresIn());
-                }
-                if (newResponse.getIdToken() == null && previousResponse.getIdToken() != null) {
-                    newResponse.setIdToken(previousResponse.getIdToken());
-                }
                 return newResponse;
             }
         }
@@ -453,6 +461,14 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 event.error(Errors.INVALID_TOKEN);
             }
             return exchangeNotLinked(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
+        }
+
+        try {
+            if (refreshStoredTokenIfNeeded(session, model)) {
+                session.users().updateFederatedIdentity(realm, tokenSubject, model);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
         String accessToken = extractTokenFromResponse(model.getToken(), getAccessTokenResponseParameter());

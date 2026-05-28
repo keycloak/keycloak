@@ -24,7 +24,10 @@ import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.common.util.Time;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -187,6 +190,58 @@ public class AbstractOAuth2IdentityProviderTest {
 		Assert.assertNull(response.getRefreshExpiresIn()); // Should return null, not throw NPE
 	}
 
+	@Test
+	public void refreshStoredTokenIfNeeded_refreshesExpiredToken() throws IOException {
+		TestProvider tested = getTested();
+		AbstractOAuth2IdentityProvider.OAuthResponse storedResponse = new AbstractOAuth2IdentityProvider.OAuthResponse();
+		storedResponse.setToken("old-access-token");
+		storedResponse.setRefreshToken("old-refresh-token");
+		storedResponse.setAccessTokenExpiration((long) Time.currentTime() - 1);
+
+		AbstractOAuth2IdentityProvider.OAuthResponse refreshedResponse = new AbstractOAuth2IdentityProvider.OAuthResponse();
+		refreshedResponse.setToken("new-access-token");
+		refreshedResponse.setRefreshToken("new-refresh-token");
+		refreshedResponse.setExpiresIn(3600L);
+		tested.refreshedResponse = refreshedResponse;
+
+		FederatedIdentityModel identity = new FederatedIdentityModel("oauth2", "user", "username",
+				JsonSerialization.writeValueAsString(storedResponse));
+
+		Assert.assertTrue(tested.refreshStoredTokenForTest(identity));
+
+		AbstractOAuth2IdentityProvider.OAuthResponse updatedResponse =
+				JsonSerialization.readValue(identity.getToken(), AbstractOAuth2IdentityProvider.OAuthResponse.class);
+		Assert.assertEquals("new-access-token", updatedResponse.getToken());
+		Assert.assertEquals("new-refresh-token", updatedResponse.getRefreshToken());
+		Assert.assertTrue(updatedResponse.getAccessTokenExpiration() > Time.currentTime());
+	}
+
+	@Test
+	public void refreshStoredTokenIfNeeded_preservesRefreshTokenWhenProviderDoesNotRotate() throws IOException {
+		TestProvider tested = getTested();
+		AbstractOAuth2IdentityProvider.OAuthResponse storedResponse = new AbstractOAuth2IdentityProvider.OAuthResponse();
+		storedResponse.setToken("old-access-token");
+		storedResponse.setRefreshToken("old-refresh-token");
+		storedResponse.setRefreshExpiresIn(7200L);
+		storedResponse.setAccessTokenExpiration((long) Time.currentTime() - 1);
+
+		AbstractOAuth2IdentityProvider.OAuthResponse refreshedResponse = new AbstractOAuth2IdentityProvider.OAuthResponse();
+		refreshedResponse.setToken("new-access-token");
+		refreshedResponse.setExpiresIn(3600L);
+		tested.refreshedResponse = refreshedResponse;
+
+		FederatedIdentityModel identity = new FederatedIdentityModel("oauth2", "user", "username",
+				JsonSerialization.writeValueAsString(storedResponse));
+
+		Assert.assertTrue(tested.refreshStoredTokenForTest(identity));
+
+		AbstractOAuth2IdentityProvider.OAuthResponse updatedResponse =
+				JsonSerialization.readValue(identity.getToken(), AbstractOAuth2IdentityProvider.OAuthResponse.class);
+		Assert.assertEquals("new-access-token", updatedResponse.getToken());
+		Assert.assertEquals("old-refresh-token", updatedResponse.getRefreshToken());
+		Assert.assertEquals(Long.valueOf(7200), updatedResponse.getRefreshExpiresIn());
+	}
+
 	private OAuth2IdentityProviderConfig getConfig(final String autorizationUrl, final String defaultScope, final String clientId, final Boolean isLoginHint, final Boolean passMaxAge) {
 		IdentityProviderModel model = new IdentityProviderModel();
 		OAuth2IdentityProviderConfig config = new OAuth2IdentityProviderConfig(model);
@@ -199,6 +254,7 @@ public class AbstractOAuth2IdentityProviderTest {
 	}
 
 	private static class TestProvider extends AbstractOAuth2IdentityProvider<OAuth2IdentityProviderConfig> {
+		private OAuthResponse refreshedResponse;
 
 		public TestProvider(OAuth2IdentityProviderConfig config) {
 			super(null, config);
@@ -213,6 +269,15 @@ public class AbstractOAuth2IdentityProviderTest {
 		protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 			return new BrokeredIdentityContext(accessToken, getConfig());
 		};
+
+		boolean refreshStoredTokenForTest(FederatedIdentityModel identity) throws IOException {
+			return refreshStoredTokenIfNeeded(null, identity);
+		}
+
+		@Override
+		protected OAuthResponse refreshToken(OAuthResponse previousResponse, KeycloakSession session) {
+			return refreshedResponse;
+		}
 
 	};
 
