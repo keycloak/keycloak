@@ -185,4 +185,12 @@ public interface UserSessionPersisterProvider extends Provider {
      * @return A {@link Stream} for all the sessions matching the parameters.
      */
     Stream<UserSessionModel> readOnlyUserSessionStream(RealmModel realm, ClientModel client, boolean offline, int skip, int maxResults);
+
+    default boolean lockUserSession(RealmModel realm, String userSessionId, boolean offline) {
+        return false;
+    }
+
+    default boolean lockClientSession(RealmModel realm, String userSessionId, String clientId, boolean offline) {
+        return false;
+    }
 }

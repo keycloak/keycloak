@@ -77,6 +77,44 @@ public class DefaultInfinispanTransactionProvider extends AbstractKeycloakTransa
         CompletionStages.join(stage.freeze());
     }
 
+    /**
+     * During the prepare phase of the current transaction, try to move all database writes to the current JTA transaction.
+     * <p>
+     * If this is possible, this will prevent additional reads from the database and a separate transaction.
+     * Only if rows are modified concurrently, this might fail, which should be a rare exception.
+     */
+    public void prepareStep() {
+        List<NonBlockingTransaction> dbTransactions = new ArrayList<>(1);
+
+        for (NonBlockingTransaction t : transactionList) {
+            if (t.supportsLockingDatabaseEntities()) {
+                if (t.lockDatabaseEntities()) {
+                    dbTransactions.add(t);
+                } else {
+                    // All DB entities need to be successfully locked. If not, it is not safe to proceed.
+                    return;
+                }
+            }
+        }
+
+        if (dbTransactions.isEmpty()) {
+            return;
+        }
+
+        final AggregateCompletionStage<Void> stage = CompletionStages.aggregateCompletionStage();
+        final DatabaseWrites databaseWrites = new DatabaseWrites();
+
+        // sends all the cache requests and queues any pending database writes.
+        dbTransactions.forEach(transaction -> transaction.asyncCommit(stage, databaseWrites));
+        transactionList.removeAll(dbTransactions);
+
+        databaseWrites.run(session);
+
+        // finally, wait for the completion of the cache updates.
+        CompletionStages.join(stage.freeze());
+
+    }
+
     @Override
     protected void rollbackImpl() {
         final AggregateCompletionStage<Void> stage = CompletionStages.aggregateCompletionStage();

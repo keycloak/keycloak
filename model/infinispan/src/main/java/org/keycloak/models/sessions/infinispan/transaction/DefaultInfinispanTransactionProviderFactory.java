@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan.transaction;
 
 import org.keycloak.Config;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -28,6 +29,19 @@ public class DefaultInfinispanTransactionProviderFactory implements InfinispanTr
     @Override
     public InfinispanTransactionProvider create(KeycloakSession session) {
         var provider = new DefaultInfinispanTransactionProvider(session);
+
+        // In the prepare step, check if database entities can be locked. If this is true, no new transactions need to be started in the after-completion phase.
+        session.getTransactionManager().enlistPrepare(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                provider.prepareStep();
+            }
+
+            @Override
+            protected void rollbackImpl() {
+            }
+        });
+
         session.getTransactionManager().enlistAfterCompletion(provider);
         return provider;
     }

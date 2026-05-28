@@ -154,4 +154,9 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
                 .stream()
                 .anyMatch(task -> task.getOperation() == SessionUpdateTask.CacheOperation.REMOVE);
     }
+
+    @Override
+    protected boolean lockDatabaseEntity(RealmModel realm, String userSessionId, boolean offline) {
+        return kcSession.getProvider(UserSessionPersisterProvider.class).lockUserSession(realm, userSessionId, offline);
+    }
 }
