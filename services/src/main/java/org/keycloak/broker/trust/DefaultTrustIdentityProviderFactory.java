@@ -17,7 +17,6 @@
 
 package org.keycloak.broker.trust;
 
-import java.util.List;
 import java.util.Map;
 
 import org.keycloak.Config;
@@ -26,9 +25,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
-import org.keycloak.provider.ProviderConfigProperty;
-
-import static org.keycloak.broker.oidc.OIDCIdentityProviderConfig.USE_JWKS_URL;
 
 public class DefaultTrustIdentityProviderFactory extends AbstractIdentityProviderFactory<DefaultTrustIdentityProvider> implements EnvironmentDependentProviderFactory {
 
@@ -52,38 +48,6 @@ public class DefaultTrustIdentityProviderFactory extends AbstractIdentityProvide
     @Override
     public IdentityProviderModel createConfig() {
         return new DefaultTrustIdentityProviderConfig();
-    }
-
-    @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        ProviderConfigProperty useJwksUrl = new ProviderConfigProperty();
-        useJwksUrl.setName(USE_JWKS_URL);
-        useJwksUrl.setLabel("Use JWKS URL");
-        useJwksUrl.setHelpText("If enabled, trusted signing keys are downloaded from the JWKS URL. "
-                + "If disabled, the configured validating public key is used.");
-        useJwksUrl.setType(ProviderConfigProperty.BOOLEAN_TYPE);
-        useJwksUrl.setDefaultValue(Boolean.TRUE.toString());
-
-        ProviderConfigProperty trustedJwksUrl = new ProviderConfigProperty();
-        trustedJwksUrl.setName(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS_URL);
-        trustedJwksUrl.setLabel("JWKS URL");
-        trustedJwksUrl.setHelpText("External JWKS URL containing trusted signing keys.");
-        trustedJwksUrl.setType(ProviderConfigProperty.STRING_TYPE);
-
-        ProviderConfigProperty trustedJwks = new ProviderConfigProperty();
-        trustedJwks.setName(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS);
-        trustedJwks.setLabel("Validating public key");
-        trustedJwks.setHelpText("The public key in PEM or JWKS format that must be used to verify signatures. "
-                + "When JWKS is used, it can contain multiple public keys.");
-        trustedJwks.setType(ProviderConfigProperty.TEXT_TYPE);
-
-        ProviderConfigProperty trustedJwksKeyId = new ProviderConfigProperty();
-        trustedJwksKeyId.setName(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS_KEY_ID);
-        trustedJwksKeyId.setLabel("Validating public key id");
-        trustedJwksKeyId.setHelpText("Explicit ID of the validating public key.");
-        trustedJwksKeyId.setType(ProviderConfigProperty.STRING_TYPE);
-
-        return List.of(useJwksUrl, trustedJwksUrl, trustedJwks, trustedJwksKeyId);
     }
 
     @Override
