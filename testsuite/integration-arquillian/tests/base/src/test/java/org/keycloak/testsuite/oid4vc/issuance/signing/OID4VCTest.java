@@ -72,10 +72,12 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsParser;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.AttestationValidatorUtil;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtProofValidator;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
@@ -115,8 +117,6 @@ import org.junit.jupiter.api.Assertions;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest.TIME_PROVIDER;
-import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getCredentialIssuer;
-import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getJtiGeneratedIdMapper;
 
 /**
  * Super class for all OID4VC tests. Provides convenience methods to ease the testing.
@@ -811,5 +811,21 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	protected static String getCredentialIssuer(KeycloakSession session) {
+		return OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
+	}
+
+	public static ProtocolMapperRepresentation getJtiGeneratedIdMapper() {
+		ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
+		protocolMapperRepresentation.setName("generated-id-mapper");
+		protocolMapperRepresentation.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
+		protocolMapperRepresentation.setId(UUID.randomUUID().toString());
+		protocolMapperRepresentation.setProtocolMapper("oid4vc-generated-id-mapper");
+		protocolMapperRepresentation.setConfig(Map.of(
+				OID4VCGeneratedIdMapper.CLAIM_NAME, "jti"
+		));
+		return protocolMapperRepresentation;
 	}
 }
