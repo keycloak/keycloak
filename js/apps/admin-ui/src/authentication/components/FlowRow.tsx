@@ -34,7 +34,7 @@ type FlowRowProps = {
   onDelete: (execution: ExpandableExecution) => void;
 };
 
-export type FlowType = "flow" | "condition" | "execution" | "step";
+export type FlowType = "flow" | "condition" | "execution";
 
 const convertToType = (execution: ExpandableExecution): FlowType => {
   if (execution.authenticationFlow) {
@@ -43,10 +43,7 @@ const convertToType = (execution: ExpandableExecution): FlowType => {
   if (execution.displayName!.startsWith("Condition -")) {
     return "condition";
   }
-  if (execution.level === 0) {
-    return "execution";
-  }
-  return "step";
+  return "execution";
 };
 
 export const FlowRow = ({
