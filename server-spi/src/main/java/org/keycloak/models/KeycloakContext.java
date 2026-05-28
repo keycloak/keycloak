@@ -38,6 +38,13 @@ public interface KeycloakContext {
     URI getAuthServerUrl();
 
     String getContextPath();
+    
+     /**
+     * @deprecated Use {@link #getHttpRequest()} to obtain the request headers.
+     */
+    @Deprecated
+    HttpHeaders getRequestHeaders();
+    
 
     /**
      * Returns the URI assuming it is a frontend request. To resolve URI for a backend request use {@link #getUri(UrlType)}
@@ -55,8 +62,6 @@ public interface KeycloakContext {
      * @return
      */
     KeycloakUriInfo getUri(UrlType type);
-
-    HttpHeaders getRequestHeaders();
 
     /**
      * Will always return null. You should not need access to a general context object.
