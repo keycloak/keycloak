@@ -24,9 +24,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
@@ -42,9 +40,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = ExportImportTestFGAPV2.KeycloakAdminPermissionsV2ServerConfig.class)
 public class ExportImportTestFGAPV2 {
-
-    @InjectRealm
-    ManagedRealm managedRealm;
 
     @InjectAdminClient(mode = InjectAdminClient.Mode.BOOTSTRAP)
     Keycloak adminClient;

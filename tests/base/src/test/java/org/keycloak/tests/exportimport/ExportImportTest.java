@@ -58,16 +58,20 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServerWrapper;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.common.CustomProvidersServerConfig;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.JsonTestUtils;
 import org.keycloak.testsuite.util.runonserver.ExportImportHelper;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.util.JsonSerialization;
@@ -418,7 +422,7 @@ public class ExportImportTest {
         return adminClient.realms().findAll().stream().anyMatch(realm -> realmName.equals(realm.getRealm()));
     }
 
-    private void testFullExportImport() { //throws LifecycleException {
+    private void testFullExportImport() {
         runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_EXPORT));
         runOnServerMaster.run(ExportImportHelper.setRealmName(""));
 
@@ -434,13 +438,12 @@ public class ExportImportTest {
                     requiredActionsBeforeImport.put(action.getAlias(), action);
                 });
 
-        assertNotAuthenticated("test", "test-user@localhost", "password");
-        assertNotAuthenticated("test", "user1", "password");
-        assertNotAuthenticated("test", "user2", "password");
-        assertNotAuthenticated("test", "user3", "password");
-        assertNotAuthenticated("test", "user-requiredOTP", "password");
-        assertNotAuthenticated("test", "user-requiredWebAuthn", "password");
-
+        assertNotAuthenticated("test-user@localhost", "password");
+        assertNotAuthenticated("user1", "password");
+        assertNotAuthenticated("user2", "password");
+        assertNotAuthenticated("user3", "password");
+        assertNotAuthenticated("user-requiredOTP", "password");
+        assertNotAuthenticated("user-requiredWebAuthn", "password");
 
         // Configure import
         runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
@@ -450,12 +453,12 @@ public class ExportImportTest {
         // Ensure data are imported back
         assertRealmNames(adminClient.realms().findAll(), "master", "test", TEST_REALM);
 
-        assertAuthenticated("test", "test-user@localhost", "password");
-        assertAuthenticated("test", "user1", "password");
-        assertAuthenticated("test", "user2", "password");
-        assertAuthenticated("test", "user3", "password");
-        assertAuthenticated("test", "user-requiredOTP", "password");
-        assertAuthenticated("test", "user-requiredWebAuthn", "password");
+        assertAuthenticated("test-user@localhost", "password");
+        assertAuthenticated("user1", "password");
+        assertAuthenticated("user2", "password");
+        assertAuthenticated("user3", "password");
+        assertAuthenticated("user-requiredOTP", "password");
+        assertAuthenticated("user-requiredWebAuthn", "password");
 
         RealmResource testRealmRealm = adminClient.realm("test");
         assertTrue(testRealmRealm.users().search("user-requiredOTP").get(0)
@@ -500,14 +503,15 @@ public class ExportImportTest {
 
         // Delete some realm (and some data in admin realm)
         adminClient.realm("test").remove();
+
         assertRealmNames(adminClient.realms().findAll(), TEST_REALM, "master");
 
-        assertNotAuthenticated("test", "test-user@localhost", "password");
-        assertNotAuthenticated("test", "user1", "password");
-        assertNotAuthenticated("test", "user2", "password");
-        assertNotAuthenticated("test", "user3", "password");
-        assertNotAuthenticated("test", "user-requiredOTP", "password");
-        assertNotAuthenticated("test", "user-requiredWebAuthn", "password");
+        assertNotAuthenticated("test-user@localhost", "password");
+        assertNotAuthenticated("user1", "password");
+        assertNotAuthenticated("user2", "password");
+        assertNotAuthenticated("user3", "password");
+        assertNotAuthenticated("user-requiredOTP", "password");
+        assertNotAuthenticated("user-requiredWebAuthn", "password");
 
         // Configure import
         runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
@@ -515,14 +519,14 @@ public class ExportImportTest {
         runOnServerMaster.run(ExportImportHelper.runImport());
 
         // Ensure data are imported back, but just for "test" realm
-        assertRealmNames(adminClient.realms().findAll(), TEST_REALM, "master", "test");
+        assertRealmNames(adminClient.realms().findAll(), "master", "test", TEST_REALM);
 
-        assertAuthenticated("test", "test-user@localhost", "password");
-        assertAuthenticated("test", "user1", "password");
-        assertAuthenticated("test", "user2", "password");
-        assertAuthenticated("test", "user3", "password");
-        assertAuthenticated("test", "user-requiredOTP", "password");
-        assertAuthenticated("test", "user-requiredWebAuthn", "password");
+        assertAuthenticated("test-user@localhost", "password");
+        assertAuthenticated("user1", "password");
+        assertAuthenticated("user2", "password");
+        assertAuthenticated("user3", "password");
+        assertAuthenticated("user-requiredOTP", "password");
+        assertAuthenticated("user-requiredWebAuthn", "password");
 
         RealmResource testRealmRealm = adminClient.realm("test");
         assertTrue(testRealmRealm.users().search("user-requiredOTP").get(0)
@@ -555,25 +559,16 @@ public class ExportImportTest {
         checkEventsConfig(adminClient.realm("test").getRealmEventsConfig());
     }
 
-    private void assertAuthenticated(String realmName, String username, String password) {
-        assertAuth(true, realmName, username, password);
+    private void assertAuthenticated(String username, String password) {
+        assertAuth(true, username, password);
     }
 
-    private void assertNotAuthenticated(String realmName, String username, String password) {
-        assertAuth(false, realmName, username, password);
+    private void assertNotAuthenticated(String username, String password) {
+        assertAuth(false, username, password);
     }
 
-    private void assertAuth(boolean expectedResult, String realmName, String username, String password) {
-        //assertEquals(expectedResult, runOnServerTest.validCredentials(realmName, username, password));
-        assertEquals(expectedResult, runOnServerMaster.fetch(session -> {
-            RealmModel realm = session.realms().getRealmByName(realmName);
-            if (realm == null) return false;
-            UserProvider userProvider = session.getProvider(UserProvider.class);
-            UserModel user = userProvider.getUserByUsername(realm, username);
-            if (user == null) return false;
-            return user.credentialManager().isValid(UserCredentialModel.password(password));
-        }, Boolean.class));
-
+    private void assertAuth(boolean expectedResult, String username, String password) {
+        assertEquals(expectedResult, runOnServerMaster.fetch(validCredentials(username, password)));
     }
 
     private void assertComponents(List<ComponentRepresentation> expected, List<ComponentRepresentation> actual) {
@@ -601,7 +596,6 @@ public class ExportImportTest {
             }
         }
     }
-
 
     // Get IDs of some objects (top authentication flow, nested authentication flow, authentication config) to be able to test if IDs are same after re-import
     private String[] getSomeAuthenticationFlowsObjectIds() {
@@ -637,17 +631,6 @@ public class ExportImportTest {
         }
     }
 
-    private void importRealmFromFile(String path) {
-        runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileExportProviderFactory.PROVIDER_ID));
-        URL url = ExportImportTest.class.getResource(path);
-        String targetFilePath = new File(url.getFile()).getAbsolutePath();
-        runOnServerMaster.run(ExportImportHelper.setFile(targetFilePath));
-
-        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
-
-        runOnServerMaster.run(ExportImportHelper.runImport());
-    }
-
     protected void removeRealm(String realmName) {
         try {
             adminClient.realm(realmName).remove();
@@ -669,6 +652,40 @@ public class ExportImportTest {
                 .map(RealmRepresentation::getRealm)
                 .collect(Collectors.toSet());
         assertThat(actualNames, hasItems(expectedNames));
+    }
+
+    private void importRealmFromFile(String path) {
+        runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileExportProviderFactory.PROVIDER_ID));
+        URL url = ExportImportTest.class.getResource(path);
+        String targetFilePath = new File(url.getFile()).getAbsolutePath();
+        runOnServerMaster.run(ExportImportHelper.setFile(targetFilePath));
+
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
+
+        runOnServerMaster.run(ExportImportHelper.runImport());
+    }
+
+    private static FetchOnServerWrapper<Boolean> validCredentials(String userName, String password) {
+        return new FetchOnServerWrapper<>() {
+
+            @Override
+            public FetchOnServer getRunOnServer() {
+                return session -> {
+                    RealmModel realm = session.realms().getRealmByName("test");
+                    if (realm == null) {
+                        return false;
+                    }
+                    UserProvider userProvider = session.getProvider(UserProvider.class);
+                    UserModel user = userProvider.getUserByUsername(realm, userName);
+                    return user.credentialManager().isValid(UserCredentialModel.password(password));
+                };
+            }
+
+            @Override
+            public Class<Boolean> getResultClass() {
+                return Boolean.class;
+            }
+        };
     }
 
     public static class ExportImportRealmConfig implements RealmConfig {
