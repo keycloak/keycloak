@@ -94,19 +94,19 @@ public class Retry {
                 }
 
                 iteration++;
-                if (iteration < attemptsCount) {
-                    try {
-                        if (intervalBaseMillis > 0) {
-                            long delay = computeBackoffInterval(intervalBaseMillis, iteration);
-                            Thread.sleep(delay);
-                        }
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        ie.addSuppressed(e);
-                        throw new RuntimeException(ie);
-                    }
-                } else {
+                if (iteration >= attemptsCount) {
                     throw e;
+                }
+                if (intervalBaseMillis <= 0) {
+                    continue;
+                }
+                try {
+                    long delay = computeBackoffInterval(intervalBaseMillis, iteration);
+                    Thread.sleep(delay);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    ie.addSuppressed(e);
+                    throw new RuntimeException(ie);
                 }
             }
         }
@@ -132,19 +132,20 @@ public class Retry {
 
                 iteration++;
                 long remainingTime = maximumTime - Time.currentTimeMillis();
-                if (remainingTime > 0) {
-                    try {
-                        if (intervalBaseMillis > 0) {
-                            long delay = Math.min(remainingTime, computeBackoffInterval(intervalBaseMillis, iteration));
-                            Thread.sleep(delay);
-                        }
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        ie.addSuppressed(e);
-                        throw new RuntimeException(ie);
-                    }
-                } else {
+                if (remainingTime <= 0) {
                     throw e;
+                }
+
+                if (intervalBaseMillis <= 0) {
+                    continue;
+                }
+                try {
+                    long delay = Math.min(remainingTime, computeBackoffInterval(intervalBaseMillis, iteration));
+                    Thread.sleep(delay);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    ie.addSuppressed(e);
+                    throw new RuntimeException(ie);
                 }
             }
         }
