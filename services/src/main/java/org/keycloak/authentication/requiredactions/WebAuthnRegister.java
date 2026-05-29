@@ -23,6 +23,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -62,7 +63,11 @@ import org.keycloak.utils.StringUtil;
 
 import com.webauthn4j.converter.util.ObjectConverter;
 import com.webauthn4j.data.AttestationConveyancePreference;
+import com.webauthn4j.data.PublicKeyCredentialParameters;
+import com.webauthn4j.data.PublicKeyCredentialType;
+import com.webauthn4j.data.attestation.AttestationObject;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
+import com.webauthn4j.data.attestation.authenticator.AuthenticatorData;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
 import com.webauthn4j.data.attestation.statement.COSEAlgorithmIdentifier;
 import com.webauthn4j.data.attestation.statement.NoneAttestationStatement;
@@ -251,6 +256,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         boolean isUserVerificationRequired = policy.getUserVerificationRequirement().equals(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED);
 
         final String transportsParam = params.getFirst(WebAuthnConstants.TRANSPORTS);
+        final String authenticatorAttachment = params.getFirst(WebAuthnConstants.AUTHENTICATOR_ATTACHMENT);
 
         RegistrationRequest registrationRequest;
 
@@ -261,7 +267,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             registrationRequest = new RegistrationRequest(attestationObject, clientDataJSON);
         }
 
-        RegistrationParameters registrationParameters = new RegistrationParameters(serverProperty, isUserVerificationRequired);
+        RegistrationParameters registrationParameters = new RegistrationParameters(serverProperty, buildExpectedCredentialParameters(policy), isUserVerificationRequired);
 
         if ("on".equals(params.getFirst("logout-sessions"))) {
             AuthenticatorUtil.logoutOtherSessions(context);
@@ -276,11 +282,12 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
 
             showInfoAfterWebAuthnApiCreate(registrationData);
 
-            checkAcceptedAuthenticator(registrationData, policy);
+            // verify the registration response data against the WebAuthn policies
+            PolicyVerifier.verifyCompliance(registrationData, policy, authenticatorAttachment);
 
             WebAuthnCredentialModelInput credential = new WebAuthnCredentialModelInput(getCredentialType());
 
-            credential.setAttestedCredentialData(registrationData.getAttestationObject().getAuthenticatorData().getAttestedCredentialData());
+            credential.setAttestedCredentialData(getAttestedCredentialData(registrationData));
             credential.setCount(registrationData.getAttestationObject().getAuthenticatorData().getSignCount());
             credential.setAttestationStatementFormat(registrationData.getAttestationObject().getFormat());
             credential.setTransports(registrationData.getTransports());
@@ -354,8 +361,8 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
      *
      * Returns the list of converted algorithm identifiers.
     **/
-    private List<Long> convertSignatureAlgorithms(List<String> signatureAlgorithmsList) {
-        List<Long> algs = new ArrayList();
+    private static List<Long> convertSignatureAlgorithms(List<String> signatureAlgorithmsList) {
+        List<Long> algs = new ArrayList<>();
         if (signatureAlgorithmsList == null || signatureAlgorithmsList.isEmpty()) return algs;
 
         for (String s : signatureAlgorithmsList) {
@@ -392,8 +399,26 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         return algs;
     }
 
-    private void showInfoAfterWebAuthnApiCreate(RegistrationData response) {
-        AttestedCredentialData attestedCredentialData = response.getAttestationObject().getAuthenticatorData().getAttestedCredentialData();
+    private static List<PublicKeyCredentialParameters> buildExpectedCredentialParameters(WebAuthnPolicy policy) {
+        List<String> signatureAlgorithms = policy.getSignatureAlgorithm();
+        if (CollectionUtil.isEmpty(signatureAlgorithms)) {
+            signatureAlgorithms = List.of(Constants.DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS.split(","));
+        }
+        return convertSignatureAlgorithms(signatureAlgorithms)
+                .stream()
+                .map(alg -> new PublicKeyCredentialParameters(PublicKeyCredentialType.PUBLIC_KEY, COSEAlgorithmIdentifier.create(alg)))
+                .toList();
+    }
+
+    private static AttestedCredentialData getAttestedCredentialData(RegistrationData registrationData) {
+        return Optional.ofNullable(registrationData.getAttestationObject())
+                .map(AttestationObject::getAuthenticatorData)
+                .map(AuthenticatorData::getAttestedCredentialData)
+                .orElseThrow(() -> new WebAuthnException("Cannot obtain attested credential data from the response"));
+    }
+
+    private static void showInfoAfterWebAuthnApiCreate(RegistrationData response) {
+        AttestedCredentialData attestedCredentialData = getAttestedCredentialData(response);
         AttestationStatement attestationStatement = response.getAttestationObject().getAttestationStatement();
         Set<AuthenticatorTransport> transports = response.getTransports();
 
@@ -405,18 +430,6 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             logger.debugv("transports = [{0}]", transports.stream()
                     .map(AuthenticatorTransport::getValue)
                     .collect(Collectors.joining(",")));
-        }
-    }
-
-    private void checkAcceptedAuthenticator(RegistrationData response, WebAuthnPolicy policy) throws Exception {
-        String aaguid = response.getAttestationObject().getAuthenticatorData().getAttestedCredentialData().getAaguid().toString();
-        List<String> acceptableAaguids = policy.getAcceptableAaguids();
-        if (acceptableAaguids != null && !acceptableAaguids.isEmpty()) {
-            if (NoneAttestationStatement.FORMAT.equals(response.getAttestationObject().getFormat())) {
-                throw new WebAuthnException("Acceptable AAGUIDs require an attestation format other than 'none'.");
-            } else if (acceptableAaguids.stream().noneMatch(acceptableAaguid -> aaguid.equals(acceptableAaguid))) {
-                throw new WebAuthnException("not acceptable aaguid = " + aaguid);
-            }
         }
     }
 
@@ -471,4 +484,51 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         return mediaType != null && mediaType.isCompatible(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
     }
 
+    /**
+     * Policy compliance checks for WebAuthn registration.
+     * Signature algorithm, user verification, and user presence are validated by webauthn4j via {@link RegistrationParameters}.
+     * The checks below cover remaining policies.
+     */
+    static class PolicyVerifier {
+
+        static void verifyCompliance(RegistrationData registrationData, WebAuthnPolicy policy, String authenticatorAttachment) {
+            verifyAcceptableAaguids(registrationData, policy);
+            verifyAuthenticatorAttachment(authenticatorAttachment, policy);
+        }
+
+        private static void verifyAcceptableAaguids(RegistrationData registrationData, WebAuthnPolicy policy) {
+            String aaguid = getAttestedCredentialData(registrationData).getAaguid().toString();
+            List<String> acceptableAaguids = policy.getAcceptableAaguids();
+            if (CollectionUtil.isNotEmpty(acceptableAaguids)) {
+                // AAGUID comes from the authenticator data itself; only real attestation cryptographically proves the authenticator model
+                if (NoneAttestationStatement.FORMAT.equals(registrationData.getAttestationObject().getFormat())) {
+                    throw new WebAuthnException("Acceptable AAGUIDs require an attestation format other than 'none'.");
+                } else if (acceptableAaguids.stream().noneMatch(aaguid::equals)) {
+                    logger.debugf("Rejected authenticator with AAGUID '%s'. Acceptable AAGUIDs: %s", aaguid, acceptableAaguids);
+                    throw new WebAuthnException("Not acceptable authenticator model (based on the AAGUID).");
+                }
+            }
+        }
+
+        // Best-effort: authenticatorAttachment is client-reported (not in the attestation object), so not cryptographically verified
+        private static void verifyAuthenticatorAttachment(String authenticatorAttachment, WebAuthnPolicy policy) {
+            String requiredAttachment = policy.getAuthenticatorAttachment();
+            if (requiredAttachment == null || Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED.equals(requiredAttachment)) {
+                return;
+            }
+
+            // Browser may not provide authenticatorAttachment (not required by WebAuthn spec)
+            if (StringUtil.isBlank(authenticatorAttachment)) {
+                return;
+            }
+
+            if (!WebAuthnConstants.SUPPORTED_AUTHENTICATOR_ATTACHMENTS.contains(authenticatorAttachment)) {
+                throw new WebAuthnException("Unexpected authenticator attachment value. Possible values are: " + String.join(", ", WebAuthnConstants.SUPPORTED_AUTHENTICATOR_ATTACHMENTS));
+            }
+
+            if (!requiredAttachment.equals(authenticatorAttachment)) {
+                throw new WebAuthnException("Policy requires '" + requiredAttachment + "' authenticator attachment but got '" + authenticatorAttachment + "'");
+            }
+        }
+    }
 }
