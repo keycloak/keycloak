@@ -24,6 +24,7 @@ import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.OrganizationGroupResource;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -34,14 +35,13 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.admin.authz.fgap.PermissionTestUtils;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,11 +69,10 @@ public class OrganizationGroupRoleMappingFgapTest {
     @InjectRealm(config = OrganizationFgapConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;
 
-    @InjectClient(attachTo = Constants.ADMIN_PERMISSIONS_CLIENT_ID)
-    ManagedClient client;
-
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
     Keycloak realmAdminClient;
+    
+    private ClientResource clientResource;
 
     private String orgId;
     private String groupId;
@@ -81,6 +80,7 @@ public class OrganizationGroupRoleMappingFgapTest {
 
     @BeforeEach
     public void setup() {
+        clientResource = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
         // Create org using realm admin
         OrganizationRepresentation orgRep = new OrganizationRepresentation();
         orgRep.setName("testOrg");
@@ -122,7 +122,7 @@ public class OrganizationGroupRoleMappingFgapTest {
     @Test
     public void testViewOrgPermissionAllowsListingRoleMappings() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, orgId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        PermissionTestUtils.createPermission(clientResource, orgId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
 
         // Add role mapping using realm admin
         realm.admin().organizations().get(orgId).groups().group(groupId).roles().realmLevel().add(List.of(testRole));
@@ -136,7 +136,7 @@ public class OrganizationGroupRoleMappingFgapTest {
     @Test
     public void testViewOrgPermissionDeniesModifyingRoleMappings() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, orgId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        PermissionTestUtils.createPermission(clientResource, orgId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
 
         // myadmin with only VIEW cannot add role mappings
         try {
@@ -151,7 +151,7 @@ public class OrganizationGroupRoleMappingFgapTest {
     public void testManageOrgWithoutRoleMapPermissionDenied() {
         UserPolicyRepresentation policy = createAdminPolicy();
         // Grant MANAGE on the org — top-level check passes
-        PermissionTestUtils.createPermission(client, orgId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), policy);
+        PermissionTestUtils.createPermission(clientResource, orgId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), policy);
 
         // myadmin has MANAGE on org but does NOT have MANAGE_USERS or MAP_ROLE permission
         // The per-role check (auth.roles().requireMapRole) should deny the operation
@@ -167,9 +167,9 @@ public class OrganizationGroupRoleMappingFgapTest {
     public void testManageOrgWithRoleMapPermissionAllowed() {
         UserPolicyRepresentation policy = createAdminPolicy();
         // Grant MANAGE on the org
-        PermissionTestUtils.createPermission(client, orgId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), policy);
+        PermissionTestUtils.createPermission(clientResource, orgId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), policy);
         // Grant MAP_ROLE on the specific role
-        PermissionTestUtils.createPermission(client, testRole.getId(), ROLES_RESOURCE_TYPE, Set.of(MAP_ROLE), policy);
+        PermissionTestUtils.createPermission(clientResource, testRole.getId(), ROLES_RESOURCE_TYPE, Set.of(MAP_ROLE), policy);
 
         // Now both checks pass: org-level MANAGE + per-role MAP_ROLE
         getAdminOrgGroup().roles().realmLevel().add(List.of(testRole));
@@ -183,7 +183,7 @@ public class OrganizationGroupRoleMappingFgapTest {
     @Test
     public void testAvailableRolesFilteredByMapPermission() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, orgId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), policy);
+        PermissionTestUtils.createPermission(clientResource, orgId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), policy);
 
         // Create two roles, grant MAP_ROLE only on one
         RoleRepresentation allowedRole = new RoleRepresentation("allowed-role", "", false);
@@ -193,7 +193,7 @@ public class OrganizationGroupRoleMappingFgapTest {
         RoleRepresentation deniedRole = new RoleRepresentation("denied-role", "", false);
         realm.admin().roles().create(deniedRole);
 
-        PermissionTestUtils.createPermission(client, allowedRole.getId(), ROLES_RESOURCE_TYPE, Set.of(MAP_ROLE), policy);
+        PermissionTestUtils.createPermission(clientResource, allowedRole.getId(), ROLES_RESOURCE_TYPE, Set.of(MAP_ROLE), policy);
 
         // Available roles should include only the allowed role (among custom roles)
         List<RoleRepresentation> available = getAdminOrgGroup().roles().realmLevel().listAvailable();
@@ -207,8 +207,8 @@ public class OrganizationGroupRoleMappingFgapTest {
     @Test
     public void testRemoveRoleMappingRequiresManageAndMapRole() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, orgId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), policy);
-        PermissionTestUtils.createPermission(client, testRole.getId(), ROLES_RESOURCE_TYPE, Set.of(MAP_ROLE), policy);
+        PermissionTestUtils.createPermission(clientResource, orgId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), policy);
+        PermissionTestUtils.createPermission(clientResource, testRole.getId(), ROLES_RESOURCE_TYPE, Set.of(MAP_ROLE), policy);
 
         // Add role mapping
         getAdminOrgGroup().roles().realmLevel().add(List.of(testRole));
@@ -227,6 +227,6 @@ public class OrganizationGroupRoleMappingFgapTest {
 
     private UserPolicyRepresentation createAdminPolicy() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        return PermissionTestUtils.createUserPolicy(realm, client, "Allow My Admin " + KeycloakModelUtils.generateId(), myadmin.getId());
+        return PermissionTestUtils.createUserPolicy(realm, clientResource, "Allow My Admin " + KeycloakModelUtils.generateId(), myadmin.getId());
     }
 }
