@@ -483,7 +483,6 @@ public class LogoutTest extends AbstractKeycloakTest {
         rep.getAttributes().put(
                 OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL,
                 "https://${application.session.host}/testing/test-app/admin/backchannelLogout");
-               //oauth.APP_ROOT + "/admin/backchannelLogout");
         clientResource.update(rep);
 
         try {

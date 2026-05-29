@@ -23,7 +23,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.Optional;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -42,11 +42,11 @@ public class ClientHostUtils {
     private static final Logger logger = Logger.getLogger(ClientHostUtils.class);
 
     /**
-     * Validates that a hostname matches one of the client's registered URLs
-     * (redirect URIs, root URL, management URL, base URL).
-     * This validation prevents SSRF attacks by ensuring that only hosts that
-     * administrators have explicitly configured for the client can be used.
-     *
+     * Validates that a hostname matches one of the client's registered nodes
+     * or the  management URL/Admin URL.
+     * This validation prevents SSRF attacks by ensuring that
+     * [1] only hostnames within the Management/Admin URL can be used.
+     * [2] hostnames matching registered clustered nodes can be used.
      * @param hostname the hostname to validate
      * @param client the client model containing registered URLs
      * @param session the Keycloak session for URL resolution
@@ -64,16 +64,11 @@ public class ClientHostUtils {
         // Extract just the hostname (strip port if present)
         String bareHostname = extractHostname(hostname);
 
-        // Extract allowed hosts from client's configured URLs
-        List<String> allowedHosts = new ArrayList<>();
-        addHostFromUrl(client.getRootUrl(), client, session, allowedHosts);
-        addHostFromUrl(client.getManagementUrl(), client, session, allowedHosts);
-        addHostFromUrl(client.getBaseUrl(), client, session, allowedHosts);
+        // Extract hostname from the list of managed hosts (if any)
+        List<String> allowedHosts = extractHostsFromClientManagedHosts(client, hostname);
 
-        // Extract from redirect URIs - returns true if wildcard match found
-        if (extractHostsFromRedirectUris(client, session, hostname, allowedHosts)) {
-            return true;
-        }
+        // Extract allowed hosts from managed/admin URL
+        addHostFromUrl(client.getManagementUrl(), client, session, allowedHosts);
 
         // Check if the hostname matches any allowed host (case-insensitive)
         for (String allowedHost : allowedHosts) {
@@ -102,23 +97,6 @@ public class ClientHostUtils {
         }
     }
 
-    private static void addHostFromUri(String uri, List<String> hosts) {
-        if (uri == null || uri.isEmpty()) {
-            return;
-        }
-
-        try {
-            String host = new URI(uri).getHost();
-            if (host != null) {
-                if (!hosts.contains(host)) {
-                    hosts.add(host);
-                }
-            }
-        } catch (URISyntaxException e) {
-            logger.debugf("Could not extract host from URI: %s", uri);
-        }
-    }
-
     private static void addHostFromUrl(String url, ClientModel client, KeycloakSession session, List<String> hosts) {
         if (url == null || url.isEmpty()) {
             return;
@@ -137,26 +115,15 @@ public class ClientHostUtils {
         }
     }
 
-    private static boolean extractHostsFromRedirectUris(ClientModel client, KeycloakSession session,
-                                                        String hostname, List<String> allowedHosts) {
-        Set<String> redirectUris = client.getRedirectUris();
-        if (redirectUris == null || redirectUris.isEmpty()) {
-            return false;
+    private static List<String> extractHostsFromClientManagedHosts(ClientModel client, String hostname) {
+        List<String> allowedHosts = new ArrayList<>();
+        if (hostname == null || hostname.trim().isEmpty()) {
+            return allowedHosts;
         }
-
-        Set<String> resolvedRedirects = RedirectUtils.resolveValidRedirects(
-                session, client.getRootUrl(), redirectUris
-        );
-
-        for (String redirectUri : resolvedRedirects) {
-            if ("*".equals(redirectUri)) {
-                logger.debugf("Client '%s' has wildcard redirect URI - allowing host '%s'",
-                        client.getClientId(), hostname);
-                return true;
-            }
-            addHostFromUri(redirectUri, allowedHosts);
-        }
-        return false;
+        Optional.ofNullable(client.getRegisteredNodes())
+                .ifPresent(nodes -> nodes.forEach((host, timestamp) -> {
+                    allowedHosts.add(host);
+                }));
+        return allowedHosts;
     }
-
 }

@@ -1,6 +1,8 @@
 package org.keycloak.protocol.oidc.utils;
 
 import java.net.URI;
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test class for ClientHostUtils methods validating client_session_host against client URLs.
- *
+ * Note: when registering cluster nodes in admin client, some symbols '/', ':' etc. are not allowed.
  * @author Keycloak Security Team
  */
 public class ClientHostUtilsTest {
@@ -48,13 +50,10 @@ public class ClientHostUtilsTest {
     }
 
     @Test
-    public void testHostMatchesRedirectUri() {
+    public void testHostMatchesManagedNodesOnly() {
         TestClientModel client = new TestClientModel("test-client");
-        client.setRedirectUris(Stream.of(
-                "https://app.example.com/callback",
-                "https://app2.example.com/auth"
-        ).collect(Collectors.toSet()));
-
+        client.registerNode("app.example.com", (int) Instant.now().getEpochSecond());
+        client.registerNode("app2.example.com", (int) Instant.now().getEpochSecond());
         assertTrue(ClientHostUtils.isHostAllowedForClient("app.example.com", client, session));
         assertTrue(ClientHostUtils.isHostAllowedForClient("app2.example.com", client, session));
         assertFalse(ClientHostUtils.isHostAllowedForClient("evil.com", client, session));
@@ -62,73 +61,32 @@ public class ClientHostUtilsTest {
     }
 
     @Test
-    public void testHostMatchesRedirectUriWithPort() {
-        TestClientModel client = new TestClientModel("test-client");
-        client.setRedirectUris(Stream.of(
-                "https://app.example.com:8443/callback"
-        ).collect(Collectors.toSet()));
-
-        assertTrue(ClientHostUtils.isHostAllowedForClient("app.example.com", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("app.example.com:8443", client, session));
-    }
-
-    @Test
-    public void testHostMatchesRootUrl() {
-        TestClientModel client = new TestClientModel("test-client");
-        client.setRootUrl("https://root.example.com");
-
-        assertTrue(ClientHostUtils.isHostAllowedForClient("root.example.com", client, session));
-        assertFalse(ClientHostUtils.isHostAllowedForClient("other.example.com", client, session));
-    }
-
-    @Test
-    public void testHostMatchesManagementUrl() {
-        TestClientModel client = new TestClientModel("test-client");
-        client.setManagementUrl("https://admin.example.com/management");
-
-        assertTrue(ClientHostUtils.isHostAllowedForClient("admin.example.com", client, session));
-        assertFalse(ClientHostUtils.isHostAllowedForClient("evil.com", client, session));
-    }
-
-    @Test
-    public void testHostMatchesBaseUrl() {
-        TestClientModel client = new TestClientModel("test-client");
-        client.setBaseUrl("https://base.example.com");
-
-        assertTrue(ClientHostUtils.isHostAllowedForClient("base.example.com", client, session));
-        assertFalse(ClientHostUtils.isHostAllowedForClient("evil.com", client, session));
-    }
-
-    @Test
-    public void testHostMatchesAnyConfiguredUrl() {
+    public void testHostMatchesManagementUrlOnly() {
         TestClientModel client = new TestClientModel("test-client");
         client.setRedirectUris(Stream.of("https://app.example.com/callback").collect(Collectors.toSet()));
-        client.setRootUrl("https://root.example.com");
-        client.setManagementUrl("https://admin.example.com/mgmt");
-        client.setBaseUrl("https://base.example.com");
-
-        assertTrue(ClientHostUtils.isHostAllowedForClient("app.example.com", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("root.example.com", client, session));
+        client.setManagementUrl("https://admin.example.com/management");
         assertTrue(ClientHostUtils.isHostAllowedForClient("admin.example.com", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("base.example.com", client, session));
-        assertFalse(ClientHostUtils.isHostAllowedForClient("evil.com", client, session));
+        assertFalse(ClientHostUtils.isHostAllowedForClient("app.example.com", client, session));
     }
 
     @Test
-    public void testWildcardRedirectUri() {
+    public void testHostMatchesAnyManagedNodeOrManagementUrl() {
         TestClientModel client = new TestClientModel("test-client");
-        client.setRedirectUris(Stream.of("*").collect(Collectors.toSet()));
-
-        assertTrue(ClientHostUtils.isHostAllowedForClient("any.example.com", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("evil.com", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("localhost", client, session));
+        client.setRedirectUris(Stream.of("https://app3.example.com/callback").collect(Collectors.toSet()));
+        client.registerNode("app.example.com", (int) Instant.now().getEpochSecond());
+        client.registerNode("app2.example.com", (int) Instant.now().getEpochSecond());
+        client.setManagementUrl("https://admin.example.com/mgmt");
+        assertTrue(ClientHostUtils.isHostAllowedForClient("app.example.com", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("app2.example.com", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("admin.example.com", client, session));
+        assertFalse(ClientHostUtils.isHostAllowedForClient("app3.example.com", client, session));
+        assertFalse(ClientHostUtils.isHostAllowedForClient("evil.com", client, session));
     }
 
     @Test
     public void testNullAndEmptyHosts() {
         TestClientModel client = new TestClientModel("test-client");
         client.setRedirectUris(Stream.of("https://app.example.com/callback").collect(Collectors.toSet()));
-
         assertFalse(ClientHostUtils.isHostAllowedForClient(null, client, session));
         assertFalse(ClientHostUtils.isHostAllowedForClient("", client, session));
         assertFalse(ClientHostUtils.isHostAllowedForClient("   ", client, session));
@@ -140,64 +98,20 @@ public class ClientHostUtilsTest {
     }
 
     @Test
-    public void testNoUrlsConfigured() {
+    public void testLocalhostHostsInManagementUrl() {
         TestClientModel client = new TestClientModel("test-client");
-
-        assertFalse(ClientHostUtils.isHostAllowedForClient("app.example.com", client, session));
-        assertFalse(ClientHostUtils.isHostAllowedForClient("localhost", client, session));
-    }
-
-    @Test
-    public void testLocalhostHosts() {
-        TestClientModel client = new TestClientModel("test-client");
-        client.setRedirectUris(Stream.of(
-                "http://localhost:8080/callback",
-                "http://127.0.0.1:8080/callback"
-        ).collect(Collectors.toSet()));
-
+        client.registerNode("127.0.0.1", (int) Instant.now().getEpochSecond());
+        client.registerNode("app2.example.com", (int) Instant.now().getEpochSecond());
+        client.setManagementUrl("http://localhost:8080/mgmt");
         assertTrue(ClientHostUtils.isHostAllowedForClient("localhost", client, session));
         assertTrue(ClientHostUtils.isHostAllowedForClient("localhost:8080", client, session));
         assertTrue(ClientHostUtils.isHostAllowedForClient("127.0.0.1", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("127.0.0.1:8080", client, session));
-    }
-
-    @Test
-    public void testRelativeRedirectUris() {
-        TestClientModel client = new TestClientModel("test-client");
-        client.setRedirectUris(Stream.of("/callback").collect(Collectors.toSet()));
-        client.setRootUrl("https://root.example.com");
-
-        assertTrue(ClientHostUtils.isHostAllowedForClient("root.example.com", client, session));
-        assertFalse(ClientHostUtils.isHostAllowedForClient("evil.com", client, session));
-    }
-
-    @Test
-    public void testSubdomainsDontMatch() {
-        TestClientModel client = new TestClientModel("test-client");
-        client.setRedirectUris(Stream.of("https://app.example.com/callback").collect(Collectors.toSet()));
-
-        assertTrue(ClientHostUtils.isHostAllowedForClient("app.example.com", client, session));
-        assertFalse(ClientHostUtils.isHostAllowedForClient("example.com", client, session));
-        assertFalse(ClientHostUtils.isHostAllowedForClient("sub.app.example.com", client, session));
-    }
-
-    @Test
-    public void testHttpsAndHttpDifferentSchemes() {
-        TestClientModel client = new TestClientModel("test-client");
-        client.setRedirectUris(Stream.of(
-                "https://app.example.com/callback",
-                "http://dev.example.com/callback"
-        ).collect(Collectors.toSet()));
-
-        assertTrue(ClientHostUtils.isHostAllowedForClient("app.example.com", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("dev.example.com", client, session));
     }
 
     @Test
     public void testSSRFAttackPrevention() {
         TestClientModel client = new TestClientModel("test-client");
-        client.setRedirectUris(Stream.of("https://public.example.com/callback").collect(Collectors.toSet()));
-
+        client.setManagementUrl("https://public.example.com/callback");
         assertTrue(ClientHostUtils.isHostAllowedForClient("public.example.com", client, session));
         assertFalse(ClientHostUtils.isHostAllowedForClient("evil.com", client, session));
         assertFalse(ClientHostUtils.isHostAllowedForClient("internal.company.local", client, session));
@@ -208,26 +122,22 @@ public class ClientHostUtilsTest {
     @Test
     public void testIPv6WithBracketsAndPort() {
         TestClientModel client = new TestClientModel("test-client");
-        client.setRedirectUris(Stream.of(
-                "http://[::1]:8080/callback",
-                "http://[2001:db8::1]:8443/callback"
-        ).collect(Collectors.toSet()));
 
+        client.setManagementUrl( "http://[::1]:8080/callback");
         assertTrue(ClientHostUtils.isHostAllowedForClient("[::1]:8080", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("[2001:db8::1]:8443", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("[::1]:8080", client, session));
         assertTrue(ClientHostUtils.isHostAllowedForClient("[::1]", client, session));
+        client.setManagementUrl("http://[2001:db8::1]:8443/callback");
+        assertTrue(ClientHostUtils.isHostAllowedForClient("[2001:db8::1]:8443", client, session));
         assertTrue(ClientHostUtils.isHostAllowedForClient("[2001:db8::1]", client, session));
     }
 
     @Test
     public void testIPv6WithBracketsNoPort() {
         TestClientModel client = new TestClientModel("test-client");
-        client.setRedirectUris(Stream.of(
-                "http://[::1]/callback",
-                "http://[fe80::1]/auth"
-        ).collect(Collectors.toSet()));
-
+        client.setManagementUrl("http://[::1]/callback");
         assertTrue(ClientHostUtils.isHostAllowedForClient("[::1]", client, session));
+        client.setManagementUrl("http://[fe80::1]/auth");
         assertTrue(ClientHostUtils.isHostAllowedForClient("[fe80::1]", client, session));
         assertFalse(ClientHostUtils.isHostAllowedForClient("fe80::1", client, session));
     }
@@ -235,10 +145,7 @@ public class ClientHostUtilsTest {
     @Test
     public void testIPv6BareAddress() {
         TestClientModel client = new TestClientModel("test-client");
-        client.setRedirectUris(Stream.of(
-                "http://[2001:db8:85a3::8a2e:370:7334]/callback"
-        ).collect(Collectors.toSet()));
-
+        client.setManagementUrl("http://[2001:db8:85a3::8a2e:370:7334]/callback");
         assertTrue(ClientHostUtils.isHostAllowedForClient("[2001:db8:85a3::8a2e:370:7334]", client, session));
         assertFalse(ClientHostUtils.isHostAllowedForClient("2001:db8:85a3::8a2e:370:7334", client, session));
         assertTrue(ClientHostUtils.isHostAllowedForClient("[2001:db8:85a3::8a2e:370:7334]:443", client, session));
@@ -247,10 +154,7 @@ public class ClientHostUtilsTest {
     @Test
     public void testIPv6LinkLocal() {
         TestClientModel client = new TestClientModel("test-client");
-        client.setRedirectUris(Stream.of(
-                "http://[fe80::a00:27ff:fe4e:66a1]:3000/callback"
-        ).collect(Collectors.toSet()));
-
+        client.setManagementUrl("http://[fe80::a00:27ff:fe4e:66a1]:3000/callback");
         assertTrue(ClientHostUtils.isHostAllowedForClient("[fe80::a00:27ff:fe4e:66a1]:3000", client, session));
         assertTrue(ClientHostUtils.isHostAllowedForClient("[fe80::a00:27ff:fe4e:66a1]", client, session));
         assertFalse(ClientHostUtils.isHostAllowedForClient("fe80::a00:27ff:fe4e:66a1", client, session));
@@ -259,73 +163,137 @@ public class ClientHostUtilsTest {
     @Test
     public void testIPv6DoesNotMatchDifferentAddress() {
         TestClientModel client = new TestClientModel("test-client");
-        client.setRedirectUris(Stream.of(
-                "http://[::1]/callback"
-        ).collect(Collectors.toSet()));
-
+        client.setManagementUrl("http://[::1]/callback");
         assertFalse(ClientHostUtils.isHostAllowedForClient("::1", client, session)); // brackets required
         assertFalse(ClientHostUtils.isHostAllowedForClient("[2001:db8::1]", client, session));
         assertFalse(ClientHostUtils.isHostAllowedForClient("2001:db8::1", client, session));
     }
 
     @Test
-    public void testMixedIPv4AndIPv6() {
-        TestClientModel client = new TestClientModel("test-client");
-        client.setRedirectUris(Stream.of(
-                "http://127.0.0.1:8080/callback",
-                "http://[::1]:8080/callback",
-                "https://localhost:8443/auth"
-        ).collect(Collectors.toSet()));
-
-        assertTrue(ClientHostUtils.isHostAllowedForClient("127.0.0.1", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("127.0.0.1:8080", client, session));
-        assertFalse(ClientHostUtils.isHostAllowedForClient("::1", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("[::1]", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("[::1]:8080", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("localhost", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("localhost:443", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("localhost:8443", client, session));
-        assertFalse(ClientHostUtils.isHostAllowedForClient("192.168.1.1", client, session));
-        assertFalse(ClientHostUtils.isHostAllowedForClient("[fe80::1]", client, session));
-    }
-
-    @Test
-    public void testHostWithOnlyRootUrlNoRedirectUris() {
-        TestClientModel client = new TestClientModel("test-client");
-        client.setRootUrl("https://app.example.com");
-        // No redirect URIs set
-
-        assertTrue(ClientHostUtils.isHostAllowedForClient("app.example.com", client, session));
-        assertFalse(ClientHostUtils.isHostAllowedForClient("evil.com", client, session));
-    }
-
-    @Test
     public void testCaseInsensitiveMatching() {
         TestClientModel client = new TestClientModel("test-client");
-        client.setRedirectUris(Stream.of("https://App.Example.COM/callback").collect(Collectors.toSet()));
-
+        client.setManagementUrl("https://App.Example.COM/callback");
         assertTrue(ClientHostUtils.isHostAllowedForClient("app.example.com", client, session));
         assertTrue(ClientHostUtils.isHostAllowedForClient("APP.EXAMPLE.COM", client, session));
         assertTrue(ClientHostUtils.isHostAllowedForClient("App.Example.Com", client, session));
     }
 
     @Test
-    public void testIPv6InRootUrl() {
+    public void testMalformedURL() {
         TestClientModel client = new TestClientModel("test-client");
-        client.setRootUrl("http://[::1]:8080");
-
-        assertFalse(ClientHostUtils.isHostAllowedForClient("::1", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("[::1]", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("[::1]:8080", client, session));
+        client.setManagementUrl("https:///App.Example.COM/callback");
+        assertFalse(ClientHostUtils.isHostAllowedForClient("app.example.com", client, session));
     }
 
     @Test
-    public void testIPv6InManagementUrl() {
+    public void testDuplicatedManagedNodes() {
         TestClientModel client = new TestClientModel("test-client");
-        client.setManagementUrl("http://[2001:db8::1]:9990/management");
+        client.registerNode("Node1", (int) Instant.now().getEpochSecond());
+        client.registerNode("node1", (int) Instant.now().getEpochSecond());
+        client.registerNode("node2", (int) Instant.now().getEpochSecond());
+        client.setManagementUrl("https://app.example.com/callback");
+        assertTrue(ClientHostUtils.isHostAllowedForClient("node1", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("node2", client, session));
+    }
 
-        assertTrue(ClientHostUtils.isHostAllowedForClient("[2001:db8::1]", client, session));
-        assertTrue(ClientHostUtils.isHostAllowedForClient("[2001:db8::1]:9990", client, session));
+    @Test
+    public void testNoManagedNodesAndNoManagementURLSet() {
+        TestClientModel client = new TestClientModel("test-client");
+        client.setRedirectUris(Stream.of("https://app3.example.com/callback").collect(Collectors.toSet()));
+        assertFalse(ClientHostUtils.isHostAllowedForClient("app3", client, session));
+    }
+
+    @Test
+    public void testIPv4WithPort() {
+        TestClientModel client = new TestClientModel("test-client");
+        client.setManagementUrl("http://192.168.1.100:8080/callback");
+        assertTrue(ClientHostUtils.isHostAllowedForClient("192.168.1.100:8080", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("192.168.1.100", client, session));
+        client.setManagementUrl("https://10.0.0.5:443/mgmt");
+        assertTrue(ClientHostUtils.isHostAllowedForClient("10.0.0.5:443", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("10.0.0.5", client, session));
+    }
+
+    @Test
+    public void testIPv4WithoutPort() {
+        TestClientModel client = new TestClientModel("test-client");
+        client.setManagementUrl("http://192.168.1.100/callback");
+        assertTrue(ClientHostUtils.isHostAllowedForClient("192.168.1.100", client, session));
+        client.setManagementUrl("http://172.16.0.1/auth");
+        assertTrue(ClientHostUtils.isHostAllowedForClient("172.16.0.1", client, session));
+    }
+
+    @Test
+    public void testIPv4PrivateRanges() {
+        TestClientModel client = new TestClientModel("test-client");
+        client.setManagementUrl("http://10.0.0.1:8080/callback");
+        assertTrue(ClientHostUtils.isHostAllowedForClient("10.0.0.1", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("10.0.0.1:8080", client, session));
+        client.setManagementUrl("http://172.16.0.1/callback");
+        assertTrue(ClientHostUtils.isHostAllowedForClient("172.16.0.1", client, session));
+        client.setManagementUrl("http://192.168.1.1/callback");
+        assertTrue(ClientHostUtils.isHostAllowedForClient("192.168.1.1", client, session));
+    }
+
+    @Test
+    public void testIPv4PublicAddresses() {
+        TestClientModel client = new TestClientModel("test-client");
+        client.setManagementUrl("http://8.8.8.8:53/callback");
+        assertTrue(ClientHostUtils.isHostAllowedForClient("8.8.8.8", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("8.8.8.8:53", client, session));
+        client.setManagementUrl("https://1.1.1.1/auth");
+        assertTrue(ClientHostUtils.isHostAllowedForClient("1.1.1.1", client, session));
+    }
+
+    @Test
+    public void testIPv4DoesNotMatchDifferentAddress() {
+        TestClientModel client = new TestClientModel("test-client");
+        client.setManagementUrl("http://192.168.1.100/callback");
+        assertFalse(ClientHostUtils.isHostAllowedForClient("192.168.1.101", client, session));
+        assertFalse(ClientHostUtils.isHostAllowedForClient("192.168.2.100", client, session));
+        assertFalse(ClientHostUtils.isHostAllowedForClient("10.0.0.1", client, session));
+    }
+
+    @Test
+    public void testIPv4InManagedNodes() {
+        TestClientModel client = new TestClientModel("test-client");
+        client.registerNode("192.168.1.100", (int) Instant.now().getEpochSecond());
+        client.registerNode("10.0.0.5", (int) Instant.now().getEpochSecond());
+        assertTrue(ClientHostUtils.isHostAllowedForClient("192.168.1.100", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("10.0.0.5", client, session));
+        assertFalse(ClientHostUtils.isHostAllowedForClient("192.168.1.101", client, session));
+    }
+
+    @Test
+    public void testIPv4WithNonStandardPorts() {
+        TestClientModel client = new TestClientModel("test-client");
+        client.setManagementUrl("http://192.168.1.100:3000/callback");
+        assertTrue(ClientHostUtils.isHostAllowedForClient("192.168.1.100:3000", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("192.168.1.100", client, session));
+        client.setManagementUrl("http://10.0.0.1:9090/mgmt");
+        assertTrue(ClientHostUtils.isHostAllowedForClient("10.0.0.1:9090", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("10.0.0.1", client, session));
+    }
+
+    @Test
+    public void testIPv4LoopbackAddresses() {
+        TestClientModel client = new TestClientModel("test-client");
+        client.setManagementUrl("http://127.0.0.2:8080/callback");
+        assertTrue(ClientHostUtils.isHostAllowedForClient("127.0.0.2", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("127.0.0.2:8080", client, session));
+    }
+
+    @Test
+    public void testIPv4MixedWithHostnames() {
+        TestClientModel client = new TestClientModel("test-client");
+        client.registerNode("app.example.com", (int) Instant.now().getEpochSecond());
+        client.registerNode("192.168.1.100", (int) Instant.now().getEpochSecond());
+        client.setManagementUrl("http://10.0.0.5:8080/mgmt");
+        assertTrue(ClientHostUtils.isHostAllowedForClient("app.example.com", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("192.168.1.100", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("10.0.0.5", client, session));
+        assertFalse(ClientHostUtils.isHostAllowedForClient("evil.com", client, session));
+        assertFalse(ClientHostUtils.isHostAllowedForClient("192.168.1.101", client, session));
     }
 
     /**
@@ -338,7 +306,7 @@ public class ClientHostUtilsTest {
         private String rootUrl;
         private String managementUrl;
         private String baseUrl;
-
+        protected Map<String, Integer> managedNodes = new HashMap<String, Integer>();
         public TestClientModel(String clientId) {
             this.clientId = clientId;
         }
@@ -593,13 +561,19 @@ public class ClientHostUtilsTest {
         public void setNotBefore(int notBefore) { }
 
         @Override
-        public Map<String, Integer> getRegisteredNodes() { return null; }
+        public Map<String, Integer> getRegisteredNodes() {
+            return managedNodes;
+        }
 
         @Override
-        public void registerNode(String nodeHost, int registrationTime) { }
+        public void registerNode(String nodeHost, int registrationTime) {
+            managedNodes.put(nodeHost, registrationTime);
+        }
 
         @Override
-        public void unregisterNode(String nodeHost) { }
+        public void unregisterNode(String nodeHost) {
+            managedNodes.remove(nodeHost);
+        }
 
         @Override
         public Stream<ProtocolMapperModel> getProtocolMappersStream() {
