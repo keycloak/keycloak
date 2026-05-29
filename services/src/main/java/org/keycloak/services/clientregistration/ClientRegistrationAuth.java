@@ -23,6 +23,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.Config;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -84,12 +85,24 @@ public class ClientRegistrationAuth {
             return;
         }
 
-        String[] split = authorizationHeader.split(" ");
-        if (!split[0].equalsIgnoreCase("bearer")) {
+        int indexOfSpace = authorizationHeader.indexOf(' ');
+
+        if (indexOfSpace <= 0) {
             return;
         }
 
-        token = split[1];
+        String typeString = authorizationHeader.substring(0, indexOfSpace);
+        String tokenString = authorizationHeader.substring(indexOfSpace + 1);
+
+        if (!typeString.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_BEARER)) {
+            return;
+        }
+
+        if (ObjectUtil.isBlank(tokenString) || tokenString.contains(" ")) {
+            return;
+        }
+
+        token = tokenString;
 
         ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(session, realm, token);
         if (tokenVerification.getError() != null) {
