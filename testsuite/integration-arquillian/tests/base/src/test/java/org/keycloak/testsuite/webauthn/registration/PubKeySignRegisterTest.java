@@ -26,6 +26,7 @@ import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnDataWrapper;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
+import org.keycloak.utils.StringUtil;
 
 import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.attestation.statement.COSEAlgorithmIdentifier;
@@ -75,10 +76,16 @@ public class PubKeySignRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void publicKeySignaturesNonExisting() {
-        assertPublicKeyAlgorithms(true, COSEAlgorithmIdentifier.ES256, Collections.singletonList("RSSSS2048"));
+        assertPublicKeyAlgorithms(false, COSEAlgorithmIdentifier.ES256, Collections.singletonList("RSSSS2048"),
+                "alg not listed in options.pubKeyCredParams is used");
     }
 
     private void assertPublicKeyAlgorithms(boolean shouldSuccess, COSEAlgorithmIdentifier selectedAlgorithm, List<String> algorithms) {
+        assertPublicKeyAlgorithms(shouldSuccess, selectedAlgorithm, algorithms, null);
+    }
+
+    private void assertPublicKeyAlgorithms(boolean shouldSuccess, COSEAlgorithmIdentifier selectedAlgorithm, List<String> algorithms,
+                                           String expectedError) {
         assertThat(algorithms, notNullValue());
 
         try (Closeable u = getWebAuthnRealmUpdater()
@@ -94,9 +101,11 @@ public class PubKeySignRegisterTest extends AbstractWebAuthnVirtualTest {
 
             assertThat(webAuthnErrorPage.isCurrent(), is(!shouldSuccess));
             if (!shouldSuccess) {
-                final String expectedMessage = getExpectedMessageByDriver(
-                        "NotSupportedError: Operation is not supported",
-                        "The operation either timed out or was not allowed");
+                final String expectedMessage = StringUtil.isNotBlank(expectedError)
+                        ? expectedError
+                        : getExpectedMessageByDriver(
+                                "NotSupportedError: Operation is not supported",
+                                "The operation either timed out or was not allowed");
                 assertThat(webAuthnErrorPage.getError(), containsString(expectedMessage));
                 return;
             }
