@@ -68,8 +68,8 @@ public class DefaultInfinispanTransactionProviderFactory implements InfinispanTr
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        // Only in read-committed is enabled, it is safe to opportunistically upgrade a read lock to a write lock.
-        // Should work for PostgreSQL, Oracle and MSSQL
+        // Only when read-committed is enabled, it is safe to opportunistically upgrade a read lock to a write lock.
+        // Should work for PostgreSQL, Oracle and MSSQL that use read committed by default.
         // In all other isolation levels this can lead to a deadlock as seen for example with MariaDB (SnapshotIsolationException / "Record has changed since last read")
         prepareEnabled = KeycloakModelUtils.runJobInTransactionWithResult(factory, session -> {
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();

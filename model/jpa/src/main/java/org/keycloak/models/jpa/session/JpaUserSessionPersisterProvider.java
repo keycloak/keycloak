@@ -150,6 +150,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         em.createNamedQuery("findClientSessionsByUserSession", PersistentClientSessionEntity.class)
                 .setParameter("userSessionId", userSessionId)
                 .setParameter("offline", offlineStr)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                 .getResultStream().forEach(em::remove);
 
         removeUserSessionFromDatabase(userSessionId, offlineStr);
@@ -319,7 +320,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                 .setHint(LOCK_TIMEOUT, -2)
                 .setParameter("userSessionId", userSessionId)
                 .setParameter("offline", offlineStr)
-                .setMaxResults(1)
                 .getSingleResultOrNull();
 
         return currentVersion != null && knownVersion == currentVersion;
@@ -442,19 +442,12 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         }
         int knownVersion = entity.getVersion();
 
-        TypedQuery<Integer> query = em.createQuery("select version from PersistentClientSessionEntity where userSessionId = :userSessionId and offline = :offline and clientId = :clientId and externalClientId = :externalClientId and clientStorageProvider = :clientStorageProvider", Integer.class);
-        query.setParameter("userSessionId", key.userSessionId)
-                .setParameter("offline", key.offline);
-        if (key.getClientId() != null) {
-            query.setParameter("clientId", key.clientId)
-                    .setParameter("clientStorageProvider", PersistentClientSessionEntity.LOCAL)
-                    .setParameter("externalClientId", PersistentClientSessionEntity.LOCAL);
-
-        } else {
-            query.setParameter("clientId", PersistentClientSessionEntity.EXTERNAL)
-                    .setParameter("clientStorageProvider", key.clientStorageProvider)
-                    .setParameter("externalClientId", key.externalClientId);
-        }
+        TypedQuery<Integer> query = em.createQuery("select version from PersistentClientSessionEntity where userSessionId = :userSessionId and offline = :offline and clientId = :clientId and externalClientId = :externalClientId and clientStorageProvider = :clientStorageProvider", Integer.class)
+                .setParameter("userSessionId", key.userSessionId)
+                .setParameter("offline", key.offline)
+                .setParameter("clientId", key.clientId)
+                .setParameter("clientStorageProvider", key.getClientStorageProvider())
+                .setParameter("externalClientId", key.getExternalClientId());
 
         // Fetch the entry and lock the row but only if it is not locked already
         Integer currentVersion = query
@@ -462,7 +455,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                 .setHint(LOCK_TIMEOUT, -2)
                 .setParameter("userSessionId", key.userSessionId)
                 .setParameter("offline", key.offline)
-                .setMaxResults(1)
                 .getSingleResultOrNull();
 
         return currentVersion != null && knownVersion == currentVersion;

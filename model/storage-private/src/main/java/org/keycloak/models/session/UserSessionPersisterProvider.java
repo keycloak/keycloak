@@ -186,10 +186,20 @@ public interface UserSessionPersisterProvider extends Provider {
      */
     Stream<UserSessionModel> readOnlyUserSessionStream(RealmModel realm, ClientModel client, boolean offline, int skip, int maxResults);
 
+    /**
+     * Locking the entity that is about to be updated.
+     *
+     * @return When this returns true, there is either no entity to be locked, or all entities are now locked, and it is unlikely that the transaction will roll back.
+     */
     default boolean lockUserSession(RealmModel realm, String userSessionId, boolean offline) {
         return false;
     }
 
+    /**
+     * Locking the entity that is about to be updated.
+     *
+     * @return When this returns true, there is either no entity to be locked, or all entities are now locked, and it is unlikely that the transaction will roll back.
+     */
     default boolean lockClientSession(RealmModel realm, String userSessionId, String clientId, boolean offline) {
         return false;
     }
