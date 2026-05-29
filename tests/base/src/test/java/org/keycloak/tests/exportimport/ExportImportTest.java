@@ -409,9 +409,10 @@ public class ExportImportTest {
 
             runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
 
-            Assertions.assertThrows(RunOnServerException.class, () -> {
+            RunOnServerException e = Assertions.assertThrows(RunOnServerException.class, () -> {
                 runOnServerMaster.run(ExportImportHelper.runImport());
             });
+            assertThat(e.getMessage(), Matchers.containsString("File name / realm name mismatch."));
         } finally {
             DirExportProvider.recursiveDeleteDir(dest);
         }
