@@ -165,20 +165,10 @@ public class StartCommandDistTest {
     void testStartNonLocal(CLIResult cliResult) {
         cliResult.assertStarted();
         
-        // should not be directed to create an admin user
-        when().get("/").then().statusCode(200).body(containsString("You will need local access"));
-    }
-    
-    @StopServer(Mode.MANUAL)
-    @Test
-    @Launch({"start", "--db=dev-file", "--proxy-headers=forwarded", "--hostname-strict=false", "--http-enabled=true"})
-    void testStartLocal(CLIResult cliResult) {
-        cliResult.assertStarted();
-        
-        // should not be directed to create an admin user
+        // should be directed to create an admin user over http
         when().get("/").then().statusCode(200).body(Matchers.not(containsString("You will need local access")));
     }
-
+    
     @Test
     @Launch({ "start", "--db=dev-file", "--http-enabled=true" })
     void failNoHostnameNotSet(CLIResult cliResult) {

@@ -291,8 +291,9 @@ public class WelcomeResource {
         Scope rootConfig = Config.scope().root();
         if (rootConfig.get(ProxyOptions.PROXY_HEADERS.getKey()) == null
                 && !rootConfig.getBoolean(ProxyOptions.PROXY_PROTOCOL_ENABLED.getKey())
+                && "https".equals(session.getContext().getHttpRequest().getUri().getRequestUri().getScheme())
                 && !Environment.isDevMode()) {
-            logger.debugf("proxy-headers, nor proxy-protocol enabled, won't consider the access local for non-dev mode");
+            logger.debugf("proxy-headers, nor proxy-protocol enabled, won't consider the https access local for non-dev mode");
             return false;
         }
 
