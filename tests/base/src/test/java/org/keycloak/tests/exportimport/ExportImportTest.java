@@ -376,8 +376,6 @@ public class ExportImportTest {
         }
     }
 
-    // The test should verify that import works when filename doesn't match realm name
-    // Revisit when the server-side functionality is fixed
     @Test
     public void testImportNameMismatch() {
         runOnServerMaster.run(ExportImportHelper.setStrategy(Strategy.IGNORE_EXISTING));
