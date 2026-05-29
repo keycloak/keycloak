@@ -45,7 +45,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -182,7 +181,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
             registerDefaultUser();
 
             webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), allOf(containsString("not acceptable aaguid"), containsString(CHROME_AAGUID)));
+            assertThat(webAuthnErrorPage.getError(), containsString("Not acceptable authenticator model"));
         } finally {
             testingClient.testing().reenableTruststoreSpi();
         }
