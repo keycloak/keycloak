@@ -64,6 +64,7 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
 import org.keycloak.testframework.remote.providers.runonserver.FetchOnServerWrapper;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.common.CustomProvidersServerConfig;
@@ -375,11 +376,9 @@ public class ExportImportTest {
         }
     }
 
-    // TODO: This test is disabled because it causes uncaught server errors
-    // The test verifies that import works when filename doesn't match realm name
-    // See: @UncaughtServerErrorExpected in original Arquillian test
-    // Re-enable when the server-side bug is fixed or test framework supports expected errors
-    // @Test
+    // The test should verify that import works when filename doesn't match realm name
+    // Revisit when the server-side functionality is fixed
+    @Test
     public void testImportNameMismatch() {
         runOnServerMaster.run(ExportImportHelper.setStrategy(Strategy.IGNORE_EXISTING));
         runOnServerMaster.run(ExportImportHelper.setProvider(DirExportProviderFactory.PROVIDER_ID));
@@ -410,7 +409,9 @@ public class ExportImportTest {
 
             runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
 
-            runOnServerMaster.run(ExportImportHelper.runImport());
+            Assertions.assertThrows(RunOnServerException.class, () -> {
+                runOnServerMaster.run(ExportImportHelper.runImport());
+            });
         } finally {
             DirExportProvider.recursiveDeleteDir(dest);
         }
