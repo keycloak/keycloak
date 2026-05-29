@@ -380,6 +380,7 @@ public class ExportImportTest {
     public void testImportNameMismatch() {
         runOnServerMaster.run(ExportImportHelper.setStrategy(Strategy.IGNORE_EXISTING));
         runOnServerMaster.run(ExportImportHelper.setProvider(DirExportProviderFactory.PROVIDER_ID));
+        runOnServerMaster.run(ExportImportHelper.setRealmName(null));
 
         String targetDirPath = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","") + File.separator + "dirRealmExport";
         File dest = new File(targetDirPath);
