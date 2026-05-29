@@ -306,11 +306,14 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         return handleSingleQuery(entity, offlineStr);
     }
 
-    public boolean lockUserSession(RealmModel realm, String userSessionId, boolean offline) {
+    public boolean lockUserSession(RealmModel realm, String userSessionId, boolean offline, boolean isDelete) {
         String offlineStr = offlineToString(offline);
         PersistentUserSessionEntity entity = em.find(PersistentUserSessionEntity.class, new PersistentUserSessionEntity.Key(userSessionId, offlineStr));
         if (entity == null) {
-            return true; // this entity has already been deleted. No need to lock it, as this transaction will fail anyway if it is modified concurrently
+            // If the entity has already been deleted, there is no need to lock it, as this transaction will fail anyway if it is modified concurrently
+            // When caches are enabled, this might have been retrieved from the cache, and the entry doesn't exist in the database yet, and it can lead to conflicts if it is not locked.
+            logger.debugf("User session %s/%s not locked as it wasn't found (mode: %b)", userSessionId, offlineStr, isDelete);
+            return isDelete;
         }
         int knownVersion = entity.getVersion();
 
@@ -322,7 +325,9 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                 .setParameter("offline", offlineStr)
                 .getSingleResultOrNull();
 
-        return currentVersion != null && knownVersion == currentVersion;
+        boolean result = currentVersion != null && knownVersion == currentVersion;
+        logger.debugf("User session %s/%s lock status: %b", userSessionId, offlineStr, result);
+        return result;
     }
 
     @Override
@@ -433,31 +438,31 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     @Override
-    public boolean lockClientSession(RealmModel realm, String userSessionId, String clientId, boolean offline) {
+    public boolean lockClientSession(RealmModel realm, String userSessionId, String clientId, boolean offline, boolean isDelete) {
         PersistentClientSessionEntity.Key key = getClientSessionKey(clientId, userSessionId, offline);
 
         PersistentClientSessionEntity entity = em.find(PersistentClientSessionEntity.class, key);
         if (entity == null) {
-            return true; // this entity has already been deleted. No need to lock it, as this transaction will fail anyway if it is modified concurrently
+            // If the entity has already been deleted, there is no need to lock it, as this transaction will fail anyway if it is modified concurrently
+            // When caches are enabled, this might have been retrieved from the cache, and the entry doesn't exist in the database yet, and it can lead to conflicts if it is not locked.
+            logger.debugf("Client session %s/%s/%s not locked as it wasn't found (mode: %b)", userSessionId, clientId, offline, isDelete);
+            return isDelete;
         }
         int knownVersion = entity.getVersion();
 
-        TypedQuery<Integer> query = em.createQuery("select version from PersistentClientSessionEntity where userSessionId = :userSessionId and offline = :offline and clientId = :clientId and externalClientId = :externalClientId and clientStorageProvider = :clientStorageProvider", Integer.class)
+        Integer currentVersion = em.createQuery("select version from PersistentClientSessionEntity where userSessionId = :userSessionId and offline = :offline and clientId = :clientId and externalClientId = :externalClientId and clientStorageProvider = :clientStorageProvider", Integer.class)
                 .setParameter("userSessionId", key.userSessionId)
                 .setParameter("offline", key.offline)
                 .setParameter("clientId", key.clientId)
                 .setParameter("clientStorageProvider", key.getClientStorageProvider())
-                .setParameter("externalClientId", key.getExternalClientId());
-
-        // Fetch the entry and lock the row but only if it is not locked already
-        Integer currentVersion = query
+                .setParameter("externalClientId", key.getExternalClientId())
                 .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                 .setHint(LOCK_TIMEOUT, -2)
-                .setParameter("userSessionId", key.userSessionId)
-                .setParameter("offline", key.offline)
                 .getSingleResultOrNull();
 
-        return currentVersion != null && knownVersion == currentVersion;
+        boolean locked = currentVersion != null && knownVersion == currentVersion;
+        logger.debugf("User session %s/%s/%s lock status: %b"+ userSessionId, clientId, offline, locked);
+        return locked;
     }
 
     @Override

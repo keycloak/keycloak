@@ -191,7 +191,7 @@ public interface UserSessionPersisterProvider extends Provider {
      *
      * @return When this returns true, there is either no entity to be locked, or all entities are now locked, and it is unlikely that the transaction will roll back.
      */
-    default boolean lockUserSession(RealmModel realm, String userSessionId, boolean offline) {
+    default boolean lockUserSession(RealmModel realm, String userSessionId, boolean offline, boolean isRemove) {
         return false;
     }
 
@@ -200,7 +200,8 @@ public interface UserSessionPersisterProvider extends Provider {
      *
      * @return When this returns true, there is either no entity to be locked, or all entities are now locked, and it is unlikely that the transaction will roll back.
      */
-    default boolean lockClientSession(RealmModel realm, String userSessionId, String clientId, boolean offline) {
+    default boolean lockClientSession(RealmModel realm, String userSessionId, String clientId, boolean offline, boolean isRemove) {
         return false;
     }
+
 }

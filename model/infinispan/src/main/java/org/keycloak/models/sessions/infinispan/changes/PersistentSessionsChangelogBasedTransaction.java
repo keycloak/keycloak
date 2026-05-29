@@ -130,9 +130,11 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
 
             MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdleTimeMs, lifespanMs), SessionTimeouts.IMMORTAL_FLAG);
 
-            if (merged != null
-                    && merged.getOperation() != SessionUpdateTask.CacheOperation.ADD_IF_ABSENT // No need to lock a row that is about to be inserted
-                    && !lockDatabaseEntity(realm, entry.getKey(), entity.isOffline())) {
+            if (merged == null) {
+                continue;
+            }
+
+            if (!lockDatabaseEntity(realm, entry.getKey(), entity.isOffline(), merged.getOperation())) {
                 return false;
             }
         }
@@ -142,7 +144,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     /**
      * Lock the entity in the database.
      */
-    protected abstract boolean lockDatabaseEntity(RealmModel realm, K merged, boolean offline);
+    protected abstract boolean lockDatabaseEntity(RealmModel realm, K key, boolean offline, SessionUpdateTask.CacheOperation operation);
 
     @Override
     public void asyncCommit(AggregateCompletionStage<Void> stage, Consumer<DatabaseUpdate> databaseUpdates) {
