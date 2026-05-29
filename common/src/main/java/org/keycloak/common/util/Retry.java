@@ -105,8 +105,8 @@ public class Retry {
                     Thread.sleep(delay);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    ie.addSuppressed(e);
-                    throw new RuntimeException(ie);
+                    e.addSuppressed(ie);
+                    throw e;
                 }
             }
         }
@@ -144,8 +144,8 @@ public class Retry {
                     Thread.sleep(delay);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    ie.addSuppressed(e);
-                    throw new RuntimeException(ie);
+                    e.addSuppressed(ie);
+                    throw e;
                 }
             }
         }
