@@ -48,6 +48,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -56,7 +57,6 @@ import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.models.UserModel;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -1019,10 +1019,13 @@ public class GroupTest extends AbstractGroupTest {
             adminEvents.poll(); // consume GROUP_MEMBERSHIP event
 
             // Group members endpoint must respect user profile attribute permissions
-            List<UserRepresentation> members = group.members(null, null);
-            assertEquals(1, members.size());
-            assertNull(members.get(0).getEmail());
-            assertNull(members.get(0).getFirstName());
+            for (Boolean briefRep : List.of(Boolean.TRUE, Boolean.FALSE)) {
+                List<UserRepresentation> members = group.members(null, null, briefRep);
+                assertEquals(1, members.size());
+                assertNull(members.get(0).getEmail());
+                assertNull(members.get(0).getFirstName());
+                assertNull(members.get(0).getUserProfileMetadata());
+            }
 
             // User list endpoint must show the same filtering (parity check)
             List<UserRepresentation> userList = realm.users().search(userName, true);

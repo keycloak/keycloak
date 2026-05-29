@@ -57,9 +57,6 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
-import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.UserProfileContext;
-import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 
@@ -337,17 +334,10 @@ public class GroupResource {
 
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-        boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
+        boolean briefRep = Boolean.TRUE.equals(briefRepresentation);
 
-        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
         return session.users().getGroupMembersStream(realm, group, firstResult, maxResults)
-                .map(user -> {
-                    UserProfile profile = provider.create(UserProfileContext.USER_API, user);
-                    UserRepresentation rep = profile.toRepresentation(!briefRepresentationB);
-                    return briefRepresentationB
-                            ? ModelToRepresentation.toBriefRepresentation(user, rep, false)
-                            : ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
-                });
+                .map(user -> ModelToRepresentation.toRepresentation(session, user, briefRep));
     }
 
     /**
