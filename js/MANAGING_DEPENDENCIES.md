@@ -27,8 +27,6 @@ Follow [docs/bug-triage.md — CVE reports on third-party libraries](../docs/bug
 - **Affected** — the dependency is present but the vulnerable code is not used or not reachable (document and close with rationale).
 - **Not in lockfile / not in bundle** — may be a false positive for our UI surface; document findings on the issue.
 
-For UI CVEs, also run a bundle check (see [Production bundle checks](#production-bundle-checks)).
-
 ---
 
 ## Viewing vulnerabilities with `pnpm audit`
@@ -66,9 +64,47 @@ Audit reports what the **registry** knows about versions in your lockfile. It do
 
 ## Fixing vulnerabilities
 
-### Preferred: explicit overrides in `pnpm-workspace.yaml`
+### Step 1: Try automatic updates first
 
-For **transitive** fixes (most CVEs), add or update an entry under `overrides` in [`pnpm-workspace.yaml`](pnpm-workspace.yaml), then refresh the lockfile:
+**Always start here.** Let pnpm attempt to update dependencies within their existing version ranges:
+
+```bash
+cd js
+pnpm audit --fix update
+pnpm audit --prod    # check if vulnerabilities remain
+```
+
+This updates the lockfile to use the latest compatible versions without modifying `package.json`. It's the safest approach and often resolves many CVEs automatically.
+
+### Step 2: Identify if it's a direct or transitive dependency
+
+If vulnerabilities remain after Step 1, determine whether the vulnerable package is direct or transitive:
+
+```bash
+# Check where the vulnerable package comes from
+pnpm why <vulnerable-package-name>
+```
+
+**Direct dependency**: Listed in the `dependencies` or `devDependencies` of a workspace `package.json` (e.g., `js/apps/admin-ui/package.json`)
+
+**Transitive dependency**: Not directly listed; it's pulled in by another package. The `pnpm why` output will show the dependency chain (e.g., `package-a > package-b > vulnerable-pkg`).
+
+### Step 3a: Manual direct dependency bumps
+
+If the vulnerability is in a **direct** dependency, manually bump the version in the relevant `package.json`:
+
+```bash
+# Edit the relevant package.json to update the version range
+# Example: "vulnerable-pkg": "^1.0.0" → "^1.2.3"
+pnpm install
+pnpm audit --prod    # confirm the advisory is gone
+# Run relevant UI tests / build
+pnpm --filter @keycloak/keycloak-admin-ui build
+```
+
+### Step 3b: Explicit overrides (last resort for transitive dependencies)
+
+Only use overrides when automatic updates and direct bumps don't work—typically for **transitive** dependencies (nested packages you don't directly control). Add or update an entry under `overrides` in [`pnpm-workspace.yaml`](pnpm-workspace.yaml):
 
 ```bash
 cd js
@@ -78,18 +114,12 @@ pnpm install
 pnpm audit --prod    # confirm the advisory is gone
 ```
 
-This matches how the workspace already pins safe versions (e.g. `minimatch`, `serialize-javascript`). Overrides are reviewable, stable across machines, and work the same on every branch once merged.
+**Why overrides are last resort:**
+- They force specific versions across the entire workspace, potentially masking compatibility issues
+- They require manual maintenance and periodic review
+- They can become stale when upstream packages release proper fixes
 
-### Direct dependency bumps
-
-When the fix is a **direct** dependency in a workspace `package.json`, bump the version there, then:
-
-```bash
-pnpm install
-pnpm audit
-# Run relevant UI tests / build
-pnpm --filter @keycloak/keycloak-admin-ui build
-```
+**Reviewing existing overrides:** Periodically check if overrides are still needed by temporarily removing them, running `pnpm install && pnpm audit`, and testing. Document overrides with comments explaining why they're needed and when to revisit them.
 
 Dependabot may open these PRs automatically for patch/minor updates in `js/`.
 
