@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -381,18 +380,7 @@ public class JwtProofValidator extends AbstractProofValidator {
         Object factory = keycloakSession.getKeycloakSessionFactory()
                 .getProviderFactory(SignatureProvider.class, algorithm);
 
-        Set<String> privateClaimNames;
-        if (factory instanceof SignatureProviderFactory signatureProviderFactory) {
-            privateClaimNames = signatureProviderFactory.getJwkPrivateKeyClaims();
-        } else {
-            privateClaimNames = Collections.emptySet();
-        }
-
-        if (privateClaimNames.isEmpty()) {
-            // Fallback to the global set of claims if no provider is found, or it doesn't define any.
-            // This ensures we keep the same level of security for unknown or legacy providers.
-            privateClaimNames = SignatureProviderFactory.getDefaultJwkPrivateKeyClaims();
-        }
+        Set<String> privateClaimNames = getPrivateClaimNames(algorithm, factory);
 
         for (String privateClaim : privateClaimNames) {
             if (jwkMap.containsKey(privateClaim)) {
@@ -402,10 +390,25 @@ public class JwtProofValidator extends AbstractProofValidator {
         }
     }
 
+    private static Set<String> getPrivateClaimNames(String algorithm, Object factory) {
+        if (!(factory instanceof SignatureProviderFactory signatureProviderFactory)) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                    "No SignatureProviderFactory found for algorithm: " + algorithm);
+        }
+
+        Set<String> privateClaimNames = signatureProviderFactory.getJwkPrivateKeyClaims();
+
+        if (privateClaimNames.isEmpty()) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                    "SignatureProviderFactory for algorithm " + algorithm + " does not define private JWK claims");
+        }
+        return privateClaimNames;
+    }
+
     private void validateProofPayload(VCIssuanceContext vcIssuanceContext, AccessToken proofPayload)
             throws VCIssuerException, VerificationException {
         AuthenticationManager.AuthResult authResult = vcIssuanceContext.getAuthResult();
-        AccessToken requestToken = authResult != null ? authResult.getToken() : null;
+        AccessToken requestToken = authResult != null ? authResult.token() : null;
         String expectedClientId = requestToken != null ? requestToken.getIssuedFor() : null;
         String proofIssuer = proofPayload.getIssuer();
 

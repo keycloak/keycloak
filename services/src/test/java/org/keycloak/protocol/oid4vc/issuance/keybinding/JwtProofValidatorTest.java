@@ -58,8 +58,8 @@ public class JwtProofValidatorTest extends AbstractUtilSessionTest {
     }
 
     @Test
-    public void testValidateNoPrivateKeyInHeaderClaims_UnknownAlgorithm_FallbackBlocked() {
-        // FAKE256 should trigger the fallback which includes "d"
+    public void testValidateNoPrivateKeyInHeaderClaims_UnknownAlgorithm_Blocked() {
+        // FAKE256 has no registered provider, should throw
         assertBlocked("FAKE256", "RSA", "d", "secret");
     }
 
