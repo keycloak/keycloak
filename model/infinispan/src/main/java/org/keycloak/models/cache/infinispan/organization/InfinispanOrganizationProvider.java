@@ -32,6 +32,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.cache.infinispan.CachedCount;
+import org.keycloak.models.cache.infinispan.CachedExists;
 import org.keycloak.models.cache.infinispan.RealmCacheSession;
 import org.keycloak.models.cache.infinispan.UserCacheSession;
 import org.keycloak.organization.InvitationManager;
@@ -42,6 +43,7 @@ import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProvide
 public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     private static final String ORG_COUNT_KEY_SUFFIX = ".org.count";
+    private static final String ORG_EXISTS_KEY_SUFFIX = ".org.exists";
     private static final String ORG_MEMBERS_COUNT_KEY_SUFFIX = ".members.count";
 
     private final KeycloakSession session;
@@ -60,6 +62,10 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     private static String cacheKeyOrgCount(RealmModel realm) {
         return realm.getId() + ORG_COUNT_KEY_SUFFIX;
+    }
+
+    private static String cacheKeyOrgExists(RealmModel realm) {
+        return realm.getId() + ORG_EXISTS_KEY_SUFFIX;
     }
 
     public static String cacheKeyOrgMemberCount(RealmModel realm, OrganizationModel organization) {
@@ -462,6 +468,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     private void registerCountInvalidation() {
         if (realmCache != null) {
             realmCache.registerInvalidation(cacheKeyOrgCount(getRealm()));
+            realmCache.registerInvalidation(cacheKeyOrgExists(getRealm()));
         }
     }
 
@@ -524,20 +531,24 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         return userCache.isInvalid(cacheKey);
     }
 
-    @Override
+        @Override
     public boolean hasOrganizations() {
         if (realmCache == null) {
             return getDelegate().hasOrganizations();
         }
 
-        String cacheKey = cacheKeyOrgCount(getRealm());
-        CachedCount cached = realmCache.getCache().get(cacheKey, CachedCount.class);
+        String cacheKey = cacheKeyOrgExists(getRealm());
+        CachedExists cached = realmCache.getCache().get(cacheKey, CachedExists.class);
 
         // cached and not invalidated
         if (cached != null && !isRealmCacheKeyInvalid(cacheKey)) {
-            return cached.getCount() > 0;
+            return cached.isExists();
         }
 
-        return getDelegate().hasOrganizations();
+        Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
+        boolean hasOrganizations = getDelegate().hasOrganizations();
+        cached = new CachedExists(loaded, getRealm(), cacheKey, hasOrganizations);
+        realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
+        return hasOrganizations;
     }
 }
