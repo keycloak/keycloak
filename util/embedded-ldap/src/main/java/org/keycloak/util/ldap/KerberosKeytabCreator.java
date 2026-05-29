@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.util.ldap;
 
 import java.io.File;
@@ -47,7 +46,7 @@ public class KerberosKeytabCreator {
      * @throws java.io.IOException
      */
     public static void main(String[] args) throws IOException {
-        if (args == null || args.length != 3) {
+        if (args.length != 3) {
             System.out.println("Kerberos keytab generator");
             System.out.println("-------------------------");
             System.out.println("Arguments missing or invalid. Required arguments are: <principalName> <passPhrase> <outputKeytabFile>");
@@ -77,9 +76,8 @@ public class KerberosKeytabCreator {
             throws IOException {
         final KerberosTime timeStamp = new KerberosTime();
         final int principalType = 1; // KRB5_NT_PRINCIPAL
-
         final Keytab keytab = Keytab.getInstance();
-        final List<KeytabEntry> entries = new ArrayList<KeytabEntry>();
+        final List<KeytabEntry> entries = new ArrayList<>();
         for (Map.Entry<EncryptionType, EncryptionKey> keyEntry : KerberosKeyFactory.getKerberosKeys(principalName, passPhrase)
                 .entrySet()) {
             System.out.println("Adding keytab entry of type: " + keyEntry.getKey().getName());

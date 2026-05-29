@@ -29,7 +29,6 @@ import org.apache.directory.api.ldap.model.entry.Attribute;
 import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.entry.Value;
 import org.apache.directory.api.ldap.model.exception.LdapException;
-import org.apache.directory.api.ldap.model.schema.AttributeType;
 import org.apache.directory.api.ldap.model.schema.AttributeTypeOptions;
 import org.apache.directory.server.core.api.filtering.EntryFilter;
 import org.apache.directory.server.core.api.filtering.EntryFilteringCursor;
@@ -63,7 +62,6 @@ public class RangedAttributeInterceptor extends BaseInterceptor {
             this.name = name;
             this.min = min;
             this.max = max;
-            AttributeType type = new AttributeType(name);
         }
 
         private Entry prepareEntry(Entry e) {
