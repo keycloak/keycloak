@@ -41,16 +41,16 @@ import org.keycloak.services.managers.Auth;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
-public class AccountIssuedCredentialResource {
+public class AccountIssuedVerifiableCredentialResource {
 
-    private static final Logger logger = Logger.getLogger(AccountIssuedCredentialResource.class);
+    private static final Logger logger = Logger.getLogger(AccountIssuedVerifiableCredentialResource.class);
 
     private final KeycloakSession session;
     private final Auth auth;
     private final UserModel user;
     private final RealmModel realm;
 
-    public AccountIssuedCredentialResource(KeycloakSession session, Auth auth, UserModel user) {
+    public AccountIssuedVerifiableCredentialResource(KeycloakSession session, Auth auth, UserModel user) {
         this.session = session;
         this.auth = auth;
         this.user = user;

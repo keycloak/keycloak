@@ -21,6 +21,7 @@ import { UserVerifiableCredentialRepresentation } from "../api/representations";
 import { formatDate, FORMAT_DATE_ONLY } from "../utils/formatDate";
 import { useAccountAlerts } from "../utils/useAccountAlerts";
 import { UserAttributesDialog } from "./UserAttributesDialog";
+import { IssuedCredentialsModal } from "./IssuedCredentialsModal";
 
 type CredentialRowProps = {
   credential: UserVerifiableCredentialRepresentation;
@@ -32,6 +33,8 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
   const context = useEnvironment();
   const { addAlert, addError } = useAccountAlerts();
   const [showAttributesDialog, setShowAttributesDialog] = useState(false);
+  const [showIssuedCredentialsModal, setShowIssuedCredentialsModal] =
+    useState(false);
 
   const hasUserAttributes =
     credential.userAttributes != null &&
@@ -88,6 +91,12 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
           onClose={() => setShowAttributesDialog(false)}
         />
       )}
+      {showIssuedCredentialsModal && (
+        <IssuedCredentialsModal
+          credentialScopeName={credential.credentialScopeName!}
+          onClose={() => setShowIssuedCredentialsModal(false)}
+        />
+      )}
       <DataListItem
         id={`credential-${credential.credentialScopeName}`}
         key={credential.credentialScopeName}
@@ -130,6 +139,15 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
             id="credentialActions"
           >
             <Flex>
+              <FlexItem>
+                <Button
+                  id={`credential-${credential.credentialScopeName}-view-issued`}
+                  variant="link"
+                  onClick={() => setShowIssuedCredentialsModal(true)}
+                >
+                  {t("View Issued Credentials")}
+                </Button>
+              </FlexItem>
               <FlexItem>
                 <Button
                   id={`credential-${credential.credentialScopeName}-issue`}

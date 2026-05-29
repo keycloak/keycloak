@@ -253,10 +253,10 @@ public class AccountRestService {
         return new AccountVerifiableCredentialResource(session, auth, user);
     }
 
-    @Path("/issued-credentials")
-    public AccountIssuedCredentialResource issuedCredentials() {
+    @Path("/issued-verifiable-credentials")
+    public AccountIssuedVerifiableCredentialResource issuedVerifiableCredentials() {
         checkAccountApiEnabled();
-        return new AccountIssuedCredentialResource(session, auth, user);
+        return new AccountIssuedVerifiableCredentialResource(session, auth, user);
     }
 
     private ClientRepresentation modelToRepresentation(ClientModel model, List<String> inUseClients, List<String> offlineClients, Map<String, UserConsentModel> consents) {
