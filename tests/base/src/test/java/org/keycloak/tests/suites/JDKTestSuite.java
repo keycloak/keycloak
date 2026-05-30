@@ -1,5 +1,6 @@
 package org.keycloak.tests.suites;
 
+import org.keycloak.tests.account.AccountRestServiceTest;
 import org.keycloak.tests.admin.client.CredentialsTest;
 import org.keycloak.tests.forms.SSOTest;
 import org.keycloak.tests.keys.GeneratedRsaKeyProviderTest;
@@ -12,6 +13,7 @@ import org.junit.platform.suite.api.Suite;
 
 @Suite
 @SelectClasses({
+        AccountRestServiceTest.class,
         CredentialsTest.class,
         GeneratedRsaKeyProviderTest.class,
         JavaKeystoreKeyProviderTest.class,
