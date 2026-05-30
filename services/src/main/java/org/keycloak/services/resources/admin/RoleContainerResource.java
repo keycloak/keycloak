@@ -29,6 +29,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -332,6 +333,9 @@ public class RoleContainerResource extends RoleResource {
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role");
+        }
+        if (isProtectedAdminRoleRename(role, rep.getName()) && !auth.realm().canManageRealm()) {
+            throw new ForbiddenException("Cannot rename a protected admin role");
         }
         try {
             updateRole(rep, role, realm, session);

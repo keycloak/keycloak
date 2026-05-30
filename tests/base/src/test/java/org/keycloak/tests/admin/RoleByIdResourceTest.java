@@ -18,6 +18,7 @@
 package org.keycloak.tests.admin;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,13 +29,22 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.admin.AdminClientFactory;
+import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -77,6 +87,9 @@ public class RoleByIdResourceTest {
 
     @InjectAdminEvents
     AdminEvents adminEvents;
+
+    @InjectAdminClientFactory
+    AdminClientFactory adminClientFactory;
 
     private RoleByIdResource resource;
 
@@ -366,5 +379,184 @@ public class RoleByIdResourceTest {
 
     private void cacheMissingRoleName(String missingRoleName) {
         assertThrows(NotFoundException.class, () -> managedRealm.admin().roles().get(missingRoleName).toRepresentation());
+    }
+
+    /**
+     * see #49427
+     */
+    @Test
+    @DatabaseTest
+    public void testRenameProtectedRoleBlockedForDelegatedAdmin() {
+        createDelegatedAdminUser("delegated-admin", "password", AdminRoles.MANAGE_CLIENTS);
+
+        ClientRepresentation rmClient = managedRealm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation realmAdminRole = managedRealm.admin().clients()
+                .get(rmClient.getId()).roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+
+        try (Keycloak delegatedClient = adminClientFactory.create()
+                .realm(managedRealm.getName())
+                .username("delegated-admin")
+                .password("password")
+                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
+                .build()) {
+
+            RoleRepresentation renamed = new RoleRepresentation();
+            renamed.setId(realmAdminRole.getId());
+            renamed.setName("temp-role");
+
+            Assertions.assertThrows(ForbiddenException.class, () ->
+                    delegatedClient.realm(managedRealm.getName()).rolesById()
+                            .updateRole(realmAdminRole.getId(), renamed));
+        }
+    }
+
+    /**
+     * see #49427
+     */
+    @Test
+    @DatabaseTest
+    public void testRenamingToProtectedRoleNameBlockedForDelegatedAdmin() {
+        createDelegatedAdminUser("delegated-admin2", "password", AdminRoles.MANAGE_CLIENTS);
+
+        String attackerClientId = "attacker-client-" + new Random().nextInt(10000);
+        try (Keycloak delegatedClient = adminClientFactory.create()
+                .realm(managedRealm.getName())
+                .username("delegated-admin2")
+                .password("password")
+                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
+                .build()) {
+
+            // Create a client and a role the delegated admin owns
+            Response resp = delegatedClient.realm(managedRealm.getName()).clients()
+                    .create(clientRepresentation(attackerClientId));
+            String attackerClientUuid = resp.getLocation().getPath().replaceAll(".*/", "");
+            resp.close();
+
+            delegatedClient.realm(managedRealm.getName()).clients()
+                    .get(attackerClientUuid).roles().create(roleRepresentation("innocent-role"));
+
+            RoleRepresentation innocentRole = delegatedClient.realm(managedRealm.getName()).clients()
+                    .get(attackerClientUuid).roles().get("innocent-role").toRepresentation();
+
+            // Attempt to rename innocent-role → realm-admin
+            RoleRepresentation renamed = new RoleRepresentation();
+            renamed.setId(innocentRole.getId());
+            renamed.setName(AdminRoles.REALM_ADMIN);
+
+            Assertions.assertThrows(ForbiddenException.class, () ->
+                    delegatedClient.realm(managedRealm.getName()).rolesById()
+                            .updateRole(innocentRole.getId(), renamed));
+        }
+    }
+
+    /**
+     * see #49427 — named-role endpoint (PUT /roles/{role-name}) must also be guarded.
+     */
+    @Test
+    @DatabaseTest
+    public void testRenameProtectedRoleBlockedViaNamedRoleEndpoint() {
+        createDelegatedAdminUser("delegated-admin3", "password", AdminRoles.MANAGE_CLIENTS);
+
+        ClientRepresentation rmClient = managedRealm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+
+        try (Keycloak delegatedClient = adminClientFactory.create()
+                .realm(managedRealm.getName())
+                .username("delegated-admin3")
+                .password("password")
+                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
+                .build()) {
+
+            RoleRepresentation renamed = new RoleRepresentation();
+            renamed.setName("temp-role");
+
+            Assertions.assertThrows(ForbiddenException.class, () ->
+                    delegatedClient.realm(managedRealm.getName()).clients()
+                            .get(rmClient.getId()).roles().get(AdminRoles.REALM_ADMIN)
+                            .update(renamed));
+        }
+    }
+
+    /**
+     * see #49427
+    */
+    @Test
+    @DatabaseTest
+    public void testTOCTOURenameCompositeAttackPrevented() {
+        createDelegatedAdminUser("toctou-attacker", "password", AdminRoles.MANAGE_CLIENTS);
+
+        ClientRepresentation rmClient = managedRealm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation realmAdminRole = managedRealm.admin().clients()
+                .get(rmClient.getId()).roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+
+        try (Keycloak delegatedClient = adminClientFactory.create()
+                .realm(managedRealm.getName())
+                .username("toctou-attacker")
+                .password("password")
+                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
+                .build()) {
+
+            // Step 1: rename realm-admin → temp-role must be blocked
+            RoleRepresentation renamed = new RoleRepresentation();
+            renamed.setId(realmAdminRole.getId());
+            renamed.setName("temp-role");
+
+            Assertions.assertThrows(ForbiddenException.class, () ->
+                    delegatedClient.realm(managedRealm.getName()).rolesById()
+                            .updateRole(realmAdminRole.getId(), renamed));
+
+            // Confirm realm-admin name is unchanged
+            RoleRepresentation unchanged = managedRealm.admin().clients()
+                    .get(rmClient.getId()).roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+            assertEquals(AdminRoles.REALM_ADMIN, unchanged.getName());
+        }
+    }
+
+    private void createDelegatedAdminUser(String username, String password, String clientRoleName) {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername(username);
+        user.setEnabled(true);
+        user.setEmailVerified(true);
+        user.setFirstName("Delegated");
+        user.setLastName("Admin");
+        user.setEmail(username + "@test.local");
+
+        Response resp = managedRealm.admin().users().create(user);
+        String userId = resp.getLocation().getPath().replaceAll(".*/", "");
+        resp.close();
+
+        CredentialRepresentation cred = new CredentialRepresentation();
+        cred.setType(CredentialRepresentation.PASSWORD);
+        cred.setValue(password);
+        cred.setTemporary(false);
+        managedRealm.admin().users().get(userId).resetPassword(cred);
+
+        ClientRepresentation rmClient = managedRealm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation role = managedRealm.admin().clients()
+                .get(rmClient.getId()).roles().get(clientRoleName).toRepresentation();
+        managedRealm.admin().users().get(userId).roles()
+                .clientLevel(rmClient.getId()).add(Collections.singletonList(role));
+
+        // query-clients is required so the delegated admin can look up clients
+        RoleRepresentation queryClients = managedRealm.admin().clients()
+                .get(rmClient.getId()).roles().get(AdminRoles.QUERY_CLIENTS).toRepresentation();
+        managedRealm.admin().users().get(userId).roles()
+                .clientLevel(rmClient.getId()).add(Collections.singletonList(queryClients));
+    }
+
+    private ClientRepresentation clientRepresentation(String clientId) {
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId(clientId);
+        client.setEnabled(true);
+        return client;
+    }
+
+    private RoleRepresentation roleRepresentation(String name) {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(name);
+        return role;
     }
 }

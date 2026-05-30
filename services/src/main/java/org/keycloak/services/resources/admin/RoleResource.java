@@ -28,9 +28,12 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.UriInfo;
 
+import org.keycloak.Config;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -118,6 +121,38 @@ public abstract class RoleResource {
                 role.removeAttribute(attr);
             }
         }
+    }
+
+    /**
+     * Returns true when the rename involves a protected admin role name and requires
+     * full realm-management permission. Renaming TO a protected name is blocked for any
+     * container; renaming FROM one is only blocked for admin containers (realm or realm-management client).
+     */
+    protected boolean isProtectedAdminRoleRename(RoleModel role, String newName) {
+        boolean currentNameProtected = AdminRoles.ALL_ROLES.contains(role.getName());
+        boolean newNameProtected = newName != null && AdminRoles.ALL_ROLES.contains(newName);
+
+        if (!currentNameProtected && !newNameProtected) {
+            return false;
+        }
+
+        // Renaming TO a protected name is blocked for any container.
+        if (newNameProtected) {
+            return true;
+        }
+
+        // Renaming FROM a protected name: only guard admin containers.
+        if (role.getContainer() instanceof RealmModel) {
+            return true;
+        }
+        if (role.getContainer() instanceof ClientModel client) {
+            String adminClientId = realm.getName().equals(Config.getAdminRealm())
+                    ? Config.getAdminRealm() + "-realm"
+                    : Constants.REALM_MANAGEMENT_CLIENT_ID;
+            ClientModel adminClient = realm.getClientByClientId(adminClientId);
+            return adminClient != null && adminClient.equals(client);
+        }
+        return false;
     }
 
     protected void addComposites(AdminPermissionEvaluator auth, AdminEventBuilder adminEvent, UriInfo uriInfo, List<RoleRepresentation> roles, RoleModel role) {

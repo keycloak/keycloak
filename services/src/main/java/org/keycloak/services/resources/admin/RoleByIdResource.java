@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -170,6 +171,9 @@ public class RoleByIdResource extends RoleResource {
     public void updateRole(final @Parameter(description = "id of role") @PathParam("role-id") String id, final RoleRepresentation rep) {
         RoleModel role = getRoleModel(id);
         auth.roles().requireManage(role);
+        if (isProtectedAdminRoleRename(role, rep.getName()) && !auth.realm().canManageRealm()) {
+            throw new ForbiddenException("Cannot rename a protected admin role");
+        }
         updateRole(rep, role, realm, session);
 
         if (role.isClientRole()) {
