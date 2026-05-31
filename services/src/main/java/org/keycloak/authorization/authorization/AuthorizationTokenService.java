@@ -91,7 +91,6 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -344,16 +343,16 @@ public class AuthorizationTokenService {
         ClientSessionContext clientSessionCtx;
 
         if (clientSession == null) {
-            RootAuthenticationSessionModel rootAuthSession = keycloakSession.authenticationSessions().getRootAuthenticationSession(realm, userSessionModel.getId());
+            RootAuthenticationSessionModel rootAuthSession = keycloakSession.authenticationSessions().getOrCreateRootAuthenticationSession(realm, userSessionModel.getId());
 
-            if (rootAuthSession == null) {
-                if (userSessionModel.getUser().getServiceAccountClientLink() == null) {
-                    rootAuthSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(realm, userSessionModel.getId());
-                } else {
-                    // if the user session is associated with a service account
-                    rootAuthSession = new AuthenticationSessionManager(keycloakSession).createAuthenticationSession(realm, false);
-                }
-            }
+//            if (rootAuthSession == null) {
+//                if (userSessionModel.getUser().getServiceAccountClientLink() == null) {
+//                    rootAuthSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(realm, userSessionModel.getId());
+//                } else {
+//                    // if the user session is associated with a service account
+//                    rootAuthSession = new AuthenticationSessionManager(keycloakSession).createAuthenticationSession(realm, false);
+//                }
+//            }
 
             AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(targetClient);
 

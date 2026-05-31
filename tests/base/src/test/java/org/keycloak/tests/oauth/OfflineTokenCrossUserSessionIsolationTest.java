@@ -114,10 +114,7 @@ public class OfflineTokenCrossUserSessionIsolationTest {
         final String clientId = "offline-client";
         runOnServer.run(session -> {
             var testRealm = session.realms().getRealmByName(realmName);
-            var rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(testRealm, sessionId);
-            if (rootAuthSession == null) {
-                rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(testRealm, sessionId);
-            }
+            var rootAuthSession = session.authenticationSessions().getOrCreateRootAuthenticationSession(testRealm, sessionId);
             var client = testRealm.getClientByClientId(clientId);
             rootAuthSession.createAuthenticationSession(client);
         });

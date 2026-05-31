@@ -23,7 +23,6 @@ import java.util.Map;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -116,17 +115,6 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
                     .remove(itr.next().getKey());
         }
     }
-
-
-    @Override
-    public void onClientRemoved(RealmModel realm, ClientModel client) {
-        // No update anything on clientRemove for now. AuthenticationSessions of removed client will be handled at runtime if needed.
-
-//        clusterEventsSenderTx.addEvent(
-//                ClientRemovedSessionEvent.create(session, InfinispanAuthenticationSessionProviderFactory.CLIENT_REMOVED_AUTHSESSION_EVENT, realm.getId(), false, client.getId()),
-//                ClusterProvider.DCNotify.ALL_DCS);
-    }
-
 
     @Override
     public void updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId compoundId, Map<String, String> authNotesFragment) {

@@ -399,14 +399,12 @@ public class AuthenticationManager {
             browserCookiePresent = true;
         } else if (userSession != null) {
             authSessionId = userSession.getId();
-            rootLogoutSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
+            rootLogoutSession = session.authenticationSessions().getOrCreateRootAuthenticationSession(realm, authSessionId);
         } else {
-            authSessionId = KeycloakModelUtils.generateId();
+            rootLogoutSession = session.authenticationSessions().createRootAuthenticationSession(realm);
+            authSessionId = rootLogoutSession.getId();
         }
 
-        if (rootLogoutSession == null) {
-            rootLogoutSession = session.authenticationSessions().createRootAuthenticationSession(realm, authSessionId);
-        }
         if (browserCookie && !browserCookiePresent) {
             // Update cookie if needed
             asm.setAuthSessionCookie(authSessionId);

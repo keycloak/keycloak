@@ -67,6 +67,7 @@ import org.keycloak.models.jpa.session.JpaUserSessionPersisterProvider;
 import org.keycloak.models.jpa.session.JpaUserSessionPersisterProviderFactory;
 import org.keycloak.models.jpa.session.PersistentUserSessionEntity;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
@@ -436,7 +437,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             createClientSession(session, realm.getId(), realm.getClientByClientId(clientId), userSession, "http://redirect", "state");
         });
 
-        if (InfinispanUtils.isEmbeddedInfinispan()) {
+        if (InfinispanUtils.isEmbeddedInfinispan() && useCachesEnabled()) {
             // causes https://github.com/keycloak/keycloak/issues/42012
             inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealmByName(realmName);
@@ -773,7 +774,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             userSessionProvider.migrateNonPersistentSessionsToPersistentSessions();
 
             // verify that import was complete
-            Assert.assertEquals(sessions.length, countUserSessionsInRealm(session));
+            Assert.assertEquals(useCachesEnabled() ? sessions.length : 0, countUserSessionsInRealm(session));
         });
     }
 
@@ -1030,11 +1031,21 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         }
     }
 
+    private boolean useCachesEnabled() {
+        return inComittedTransaction(session -> {
+            var factory = (InfinispanUserSessionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserSessionProvider.class);
+            return factory.useCaches();
+        });
+    }
+
     private int getRemoteCachedUserSessionsCount() {
         return withRealm(realmId, (session, ignored) -> session.getProvider(InfinispanConnectionProvider.class).getRemoteCache(USER_SESSION_CACHE_NAME).size());
     }
 
     private int getEmbeddedCachedUserSessionsCount() {
+        if (!useCachesEnabled()) {
+            return -1;
+        }
         return withRealm(realmId, (session, ignored) -> session.getProvider(InfinispanConnectionProvider.class).getCache(USER_SESSION_CACHE_NAME).size());
     }
 
