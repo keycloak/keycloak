@@ -3,13 +3,13 @@ package org.keycloak.ssf.transmitter.emit;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.event.SsfEvent;
 import org.keycloak.ssf.event.SsfEventRegistry;
@@ -248,16 +248,13 @@ public class EventEmitterService {
     }
 
     protected OrganizationModel resolveOrganization(SubjectId tenantFacet) {
-        if (tenantFacet == null || !Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+        if (tenantFacet == null || !Organizations.isEnabled(session)) {
             return null;
         }
         if (!(tenantFacet instanceof OpaqueSubjectId opaque) || opaque.getId() == null) {
             return null;
         }
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-        if (orgProvider == null) {
-            return null;
-        }
         // Prefer alias (matches the admin shorthand 'org-alias' convention),
         // then fall back to UUID for emitters that prefer stable identifiers.
         OrganizationModel org = orgProvider.getByAlias(opaque.getId());
