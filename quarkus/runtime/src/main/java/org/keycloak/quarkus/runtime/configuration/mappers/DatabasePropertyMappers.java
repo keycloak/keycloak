@@ -105,7 +105,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .to(PG_TARGET_SERVER_TYPE)
                         .isEnabled(DatabasePropertyMappers::isPostgresqlTargetServerTypeEnabled)
                         .build(),
-                fromOption(DatabaseOptions.DB_POSTGRESQL_LOG_SERVER_ERROR_DETAIL).mapFrom(DB, (name, value, context) -> "false")
+                fromOption(DatabaseOptions.DB_POSTGRESQL_LOG_SERVER_ERROR_DETAIL)
                         .to(PG_LOG_SERVER_ERROR_DETAIL)
                         .isEnabled(DatabasePropertyMappers::isPostgresqlLogServerErrorDetailEnabled)
                         .build(),
