@@ -40,7 +40,7 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
 
             final BooleanSupplier isUnknownOption = () -> mapper == null || !(cmd.getCommand() instanceof AbstractCommand);
 
-            if (mapper == null && disabled.isPresent()) {
+            if (mapper == null && disabled.filter(m -> !m.getOption().isHidden()).isPresent()) {
                 var enabledWhen = disabled
                         .flatMap(PropertyMapper::getEnabledWhen)
                         .map(desc -> format(". %s", desc))

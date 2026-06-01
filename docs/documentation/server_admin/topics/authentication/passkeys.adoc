@@ -7,7 +7,9 @@
 Passkey registration and authentication are performed using the same features of xref:webauthn_{context}[WebAuthn]. More specifically *Passkeys* are related to xref:_webauthn_loginless[LoginLess WebAuthn] as they try to avoid any password during login.
 Therefore, users of {project_name} can do Passkey registration and authentication by existing xref:webauthn_{context}[WebAuthn registration and authentication], using the *passwordless* variants.
 
-The *Passkeys* feature has been integrated seamlessly in the default authentication forms in two different ways. When activated, both conditional UI and modal UI are available in the forms in which the username input is displayed (for example *Username Password Form*  or *Username Form*). Besides, the password forms, when the username was already selected, always show the modal UI button to login by passkey if the current user has passwordless WebAuthn credentials associated. This way modal and conditional UI can be used to perform a complete login from scratch that needs username and password, and only modal UI is presented when the username is already selected in the authentication process (because of re-authentication or because the user was selected before in the process not using a passkey).
+The *Passkeys* feature has been integrated seamlessly in the default authentication forms in two different ways. When activated, both conditional UI and modal UI are available in the forms in which the username input is displayed (for example *Username Password Form*  or *Username Form*).
+The exact behavior on page load — whether a passkey selection dialog appears automatically or credentials are offered only through browser autofill — is controlled by the *Passkey Mediation* setting in the *WebAuthn Passwordless Policy*.
+Besides, the password forms, when the username was already selected, always show the modal UI button to login by passkey if the current user has passwordless WebAuthn credentials associated. This way modal and conditional UI can be used to perform a complete login from scratch that needs username and password, and only modal UI is presented when the username is already selected in the authentication process (because of re-authentication or because the user was selected before in the process not using a passkey).
 
 *Passkeys* have been added to the following authenticator implementations:
 
@@ -51,6 +53,39 @@ The modal UI button is also presented in the password forms when the user is alr
 .Passkey Authentication with Modal UI using Chrome browser
 image:images/passkey-modal-ui.png[Passkey Authentication with Modal UI using Chrome browser]
 
+[[_passkeys-mediation]]
+==== Passkey Mediation
+
+The *Passkey Mediation* setting in the *WebAuthn Passwordless Policy* controls how the browser interacts with the user's passkeys when the login page loads. It maps directly to the https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/get#mediation[`mediation` parameter of the WebAuthn `navigator.credentials.get()` API].
+
+.Passkey Mediation options
+[cols="1,3",options="header"]
+|===
+|Value |Behavior
+
+|`conditional` (default)
+|No dialog is shown on page load. Passkeys are offered only through the browser's autofill dropdown when the user focuses the username input field. This is the least intrusive option and corresponds to the <<_passkeys-conditional-ui,Conditional UI>> behavior. If the browser does not support conditional mediation, the behaviour is the same as `none`.
+
+|`none`
+|No automatic passkey action is taken on page load. The user can still authenticate using a passkey by clicking the *Sign in with Passkey* button. Use this option when you want passkeys to be available but prefer not to display any prompt automatically.
+
+|`optional`
+|A passkey selection dialog is shown automatically on page load. The browser may skip the prompt if no credentials are found. Use this to invite the user to use a passkey without strictly enforcing it.
+
+|`required`
+|A passkey selection dialog is shown immediately on page load. The user is forced to authenticate or manually dismiss the prompt to proceed. Use this when passkey verification is a mandatory requirement for the current action.
+
+|`silent`
+|The browser attempts to authenticate without any user interaction or visible UI. Authentication fails silently if user interaction is required. This is intended for advanced scenarios and is unlikely to succeed for most passkey types.
+|===
+
+[NOTE]
+====
+The behavior of the `mediation` option, although defined in the specification, can vary between browsers and authenticators. {project_name} simply passes this option during the registration process. The actual final behavior is beyond its control. For example, the support for `required` and `silent` mediation are known to be different among browsers. Refer to your target browser's documentation before relying on these values in production.
+
+When the *Authenticator Attachment* in the policy is set to `platform` and the device does not have a user-verifying platform authenticator available, the automatic passkey flow on page load is skipped regardless of the mediation value. The user can still authenticate using the *Sign in with Passkey* button or fall back to password login.
+====
+
 ==== Setup
 
 Set up Passkey Authentication for the default forms as follows:
@@ -62,3 +97,5 @@ Set up Passkey Authentication for the default forms as follows:
 NOTE: Storage capacity is usually very limited on hardware passkeys meaning that you cannot store many discoverable credentials on your passkey. However, this limitation may be mitigated for instance if you use an Android phone backed by a Google account as a passkey device or an iPhone backed by Bitwarden.
 +
 . In the *WebAuthn Passwordless Policy* tab, activate the *Enable Passkeys* option at the bottom. This switch is the one that really enables passkeys in the realm.
+
+. Once *Enable Passkeys* is on, the *Passkey Mediation* select appears. Choose the value that best fits your use case. The default `conditional` value keeps behavior unobtrusive — passkeys are offered through autofill only. Switch to `optional` if you want the browser to automatically open a passkey selection dialog on page load while still allowing the user to dismiss it and fall back to autofill. See <<_passkeys-mediation,Passkey Mediation>> for a description of all available values.

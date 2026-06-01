@@ -39,6 +39,7 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -209,7 +210,7 @@ public class DPoPUtil {
 
         key.setAlgorithm(header.getAlgorithm().name());
 
-        SignatureVerifierContext signatureVerifier = session.getProvider(SignatureProvider.class, algorithm).verifier(key);
+        SignatureVerifierContext signatureVerifier = CryptoUtils.getSignatureProvider(session, algorithm).verifier(key);
         verifier.verifierContext(signatureVerifier);
         verifier.withChecks(
                 DPoPClaimsCheck.INSTANCE,
@@ -242,13 +243,13 @@ public class DPoPUtil {
                         boolean isSchemeDPoP = false;
                         if (StringUtil.isNotBlank(validator.authHeader)) {
                             String[] split = WHITESPACES.split(validator.authHeader);
-                            isSchemeDPoP = TokenUtil.TOKEN_TYPE_DPOP.equals(split[0]);
+                            isSchemeDPoP = TokenUtil.TOKEN_TYPE_DPOP.equalsIgnoreCase(split[0]);
                         }
 
-                        if (!isSchemeDPoP && DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
+                        if (!isSchemeDPoP && DPoPUtil.DPOP_TOKEN_TYPE.equalsIgnoreCase(token.getType())) {
                             throw new VerificationException("The access token type is DPoP but Authorization Header is not DPoP");
                         }
-                        if (isSchemeDPoP && !DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
+                        if (isSchemeDPoP && !DPoPUtil.DPOP_TOKEN_TYPE.equalsIgnoreCase(token.getType())) {
                             throw new VerificationException("The access token type is not DPoP but Authorization Header is DPoP");
                         }
                         ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());

@@ -713,7 +713,7 @@ public class LogoutEndpoint {
 
     private ClientModel authorizeClient() {
         ClientModel client = AuthorizeClientUtil.authorizeClient(session, event, cors).getClient();
-        cors.allowedOrigins(session, client);
+        cors.checkAllowedOrigins(session, client);
 
         if (client.isBearerOnly()) {
             throw new CorsErrorResponseException(cors, Errors.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);

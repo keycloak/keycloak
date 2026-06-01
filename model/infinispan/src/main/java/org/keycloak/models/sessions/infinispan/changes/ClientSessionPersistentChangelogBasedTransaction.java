@@ -19,7 +19,6 @@ package org.keycloak.models.sessions.infinispan.changes;
 
 import java.util.Collection;
 import java.util.Objects;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -44,11 +43,10 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
     private final UserSessionPersistentChangelogBasedTransaction userSessionTx;
 
     public ClientSessionPersistentChangelogBasedTransaction(KeycloakSession session,
-                                                            ArrayBlockingQueue<PersistentUpdate> batchingQueue,
                                                             CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> cacheHolder,
                                                             CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineCacheHolder,
                                                             UserSessionPersistentChangelogBasedTransaction userSessionTx) {
-        super(session, CLIENT_SESSION_CACHE_NAME, batchingQueue, cacheHolder, offlineCacheHolder);
+        super(session, CLIENT_SESSION_CACHE_NAME, cacheHolder, offlineCacheHolder);
         this.userSessionTx = userSessionTx;
     }
 
@@ -115,6 +113,19 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
             }
 
             return scheduledForRemove ? null : myUpdates.getEntityWrapper();
+        }
+    }
+
+    @Override
+    protected boolean lockDatabaseEntity(RealmModel realm, EmbeddedClientSessionKey clientSessionKey, boolean offline, SessionUpdateTask.CacheOperation operation) {
+        if (operation == SessionUpdateTask.CacheOperation.ADD_IF_ABSENT) {
+            // There might be concurrent inserts for the same key, which can lead to conflicts.
+            // In the future, we could lock the user session optimistically,
+            // but then the alternative path of a separate transaction would always need to lock that entity as well all the time (not only opportunistically).
+            // See UserSessionConcurrencyTest#testConcurrentNotesChange for a test.
+            return false;
+        } else {
+            return kcSession.getProvider(UserSessionPersisterProvider.class).lockClientSession(realm, clientSessionKey.userSessionId(), clientSessionKey.clientId(), offline, operation == SessionUpdateTask.CacheOperation.REMOVE);
         }
     }
 

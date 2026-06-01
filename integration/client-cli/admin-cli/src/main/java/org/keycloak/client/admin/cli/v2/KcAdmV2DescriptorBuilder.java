@@ -42,7 +42,7 @@ public class KcAdmV2DescriptorBuilder {
             PathItem.HttpMethod.POST, "create",
             PathItem.HttpMethod.PATCH, "patch",
             PathItem.HttpMethod.DELETE, "delete",
-            PathItem.HttpMethod.PUT, "update"
+            PathItem.HttpMethod.PUT, "apply"
     );
 
     public static KcAdmV2CommandDescriptor convert(OpenAPI openApi) {
@@ -168,7 +168,8 @@ public class KcAdmV2DescriptorBuilder {
     }
 
     private static void populateOptionsAndVariants(
-            KcAdmV2CommandDescriptor.CommandDescriptor cmd, Operation operation, OpenAPI openApi) {
+            KcAdmV2CommandDescriptor.CommandDescriptor cmd, Operation operation,
+            OpenAPI openApi) {
         Schema schema = extractRequestBodySchema(operation, openApi);
 
         if (schema == null && operation.getRequestBody() != null) {
@@ -225,6 +226,10 @@ public class KcAdmV2DescriptorBuilder {
             Schema propSchema = propEntry.getValue();
 
             Schema resolved = propSchema.getRef() != null ? resolveSchema(propSchema, openApi) : propSchema;
+
+            if (Boolean.TRUE.equals(resolved.getReadOnly())) {
+                continue;
+            }
 
             if (isObjectType(resolved)) {
                 flattenNestedObject(fieldName, resolved, openApi, options);

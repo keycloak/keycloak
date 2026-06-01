@@ -174,7 +174,7 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
   useFetch(
     () => adminClient.realms.getConfigEvents({ realm }),
     (events) => {
-      setAdminEventsEnabled(events?.adminEventsEnabled!);
+      setAdminEventsEnabled(events.adminEventsEnabled!);
     },
     [],
   );

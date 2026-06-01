@@ -20,11 +20,13 @@ import java.util.List;
 
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -37,6 +39,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.AccessTokenIntrospectionProviderFactory;
 import org.keycloak.protocol.oidc.TokenIntrospectionProvider;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenIntrospectContext;
@@ -136,9 +139,21 @@ public class TokenIntrospectionEndpoint {
 
         } catch (ErrorResponseException ere) {
             throw ere;
+        } catch (WebApplicationException wae) {
+            throw convertClientAuthenticationException(wae);
         } catch (Exception e) {
             throw throwErrorResponseException(Errors.INVALID_REQUEST, "Authentication failed.", Status.UNAUTHORIZED);
         }
+    }
+
+    private WebApplicationException convertClientAuthenticationException(WebApplicationException wae) {
+        Response response = wae.getResponse();
+        if (response != null && response.getStatus() == Status.UNAUTHORIZED.getStatusCode()
+                && response.getEntity() instanceof OAuth2ErrorRepresentation error
+                && OAuthErrorException.UNAUTHORIZED_CLIENT.equals(error.getError())) {
+            return throwErrorResponseException(OAuthErrorException.INVALID_CLIENT, "Client authentication failed.", Status.UNAUTHORIZED);
+        }
+        return wae;
     }
 
     private void checkSsl() {

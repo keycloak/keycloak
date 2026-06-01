@@ -41,7 +41,7 @@ import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -193,7 +193,7 @@ public class DeleteUserStepTest extends AbstractWorkflowTest {
             String componentId = addDummyFederationProvider();
             userId = addFederatedUser(componentId, USER_NAME, USER_PASSWORD);
         } else {
-            try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+            try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                     .username(USER_NAME).password(USER_PASSWORD).firstName("Federated").lastName("User").email(USER_NAME + "@example.com").build())) {
                 userId = ApiUtil.getCreatedId(response);
             }

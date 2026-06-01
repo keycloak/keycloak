@@ -1,6 +1,5 @@
 
 [[_vault-administration]]
-
 == Using a vault to obtain secrets
 
 {project_name} currently provides two out-of-the-box implementations of the Vault SPI: a plain-text file-based vault and Java KeyStore-based vault.

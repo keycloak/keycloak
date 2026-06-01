@@ -116,7 +116,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
     }
 
     private long getNumberOfSessionsThatNeedToBeLoggedOut(long count, long limit) {
-        return count - (limit - 1);
+        return Math.max(0, count - (limit - 1));
     }
 
     private int getIntConfigProperty(String key, Map<String, String> config) {
@@ -130,9 +130,9 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
     private List<UserSessionModel> getUserSessionsForClientIfEnabled(List<UserSessionModel> userSessionsForRealm, ClientModel currentClient, int userClientLimit) {
         // Only count this users sessions for this client only in case a limit is configured, otherwise skip this costly operation.
         if (userClientLimit <= 0) {
+            logger.debugf("total user sessions for this keycloak client will not be counted. Will be logged as 0 (zero)");
             return Collections.emptyList();
         }
-        logger.debugf("total user sessions for this keycloak client will not be counted. Will be logged as 0 (zero)");
         List<UserSessionModel> userSessionsForClient = userSessionsForRealm.stream().filter(session -> session.getAuthenticatedClientSessionByClient(currentClient.getId()) != null).collect(Collectors.toList());
         return userSessionsForClient;
     }
@@ -194,7 +194,11 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
      */
     private List<UserSessionModel> logoutOldestSessions(List<UserSessionModel> userSessions, long limit, EventBuilder eventBuilder) {
         long numberOfSessionsThatNeedToBeLoggedOut = getNumberOfSessionsThatNeedToBeLoggedOut(userSessions.size(), limit);
-        if (numberOfSessionsThatNeedToBeLoggedOut == 1) {
+
+        if (numberOfSessionsThatNeedToBeLoggedOut == 0) {
+            logger.debug("No additional sessions that need to be logged out");
+            return Collections.emptyList();
+        } else if (numberOfSessionsThatNeedToBeLoggedOut == 1) {
             logger.info("Logging out oldest session");
         } else {
             logger.infof("Logging out oldest %s sessions", numberOfSessionsThatNeedToBeLoggedOut);

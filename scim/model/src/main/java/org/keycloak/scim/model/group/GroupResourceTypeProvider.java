@@ -70,7 +70,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         List<Member> members = resource.getMembers();
 
         if (!Optional.ofNullable(members).orElse(List.of()).isEmpty()) {
-            throw new ModelValidationException("Managing members on updates are not supported");
+            throw new ModelValidationException("Managing members on updates is not supported");
         }
 
         return super.update(resource);

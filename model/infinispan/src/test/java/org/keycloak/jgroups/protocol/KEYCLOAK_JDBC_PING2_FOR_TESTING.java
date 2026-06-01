@@ -34,4 +34,13 @@ public class KEYCLOAK_JDBC_PING2_FOR_TESTING extends KEYCLOAK_JDBC_PING2 {
             throw new RuntimeException(e);
         }
     }
+
+    /**
+     * {@inheritDoc}
+     * Making public for testing.
+     */
+    @Override
+    public void writeAll() {
+        writeAll(null);
+    }
 }

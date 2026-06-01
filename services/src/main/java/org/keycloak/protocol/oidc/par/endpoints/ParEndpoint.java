@@ -133,7 +133,7 @@ public class ParEndpoint extends AbstractParEndpoint {
             if (ex.getError().equals(OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE)) {
                 throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Unsupported response type", Response.Status.BAD_REQUEST);
             } else {
-                ex.throwAsCorsErrorResponseException(cors);
+                checker.throwAsCorsErrorResponseException(cors, ex);
             }
         }
 
@@ -151,7 +151,7 @@ public class ParEndpoint extends AbstractParEndpoint {
             checker.checkPKCEParams();
             checker.checkParDPoPParams();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
-            ex.throwAsCorsErrorResponseException(cors);
+            checker.throwAsCorsErrorResponseException(cors, ex);
         }
 
         try {

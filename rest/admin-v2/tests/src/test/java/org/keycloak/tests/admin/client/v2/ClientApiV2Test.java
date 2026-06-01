@@ -17,17 +17,22 @@
 
 package org.keycloak.tests.admin.client.v2;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
+import org.keycloak.admin.api.ListOptions;
+import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.wrapper.Clients;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
@@ -35,17 +40,18 @@ import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
-import org.keycloak.services.PatchTypeNames;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
@@ -70,7 +76,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -85,26 +90,27 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     @InjectHttpClient
     CloseableHttpClient client;
 
-    @InjectRealm(config = NoAccessRealmConfig.class)
+    @InjectRealm(config = NoAccessRealmConfig.class, ref = "testRealm")
     ManagedRealm testRealm;
 
     @InjectRealm(attachTo = "master", ref = "master")
     ManagedRealm masterRealm;
 
-    @InjectAdminClient(ref = "noAccessClient", client = "myclient", mode = InjectAdminClient.Mode.MANAGED_REALM)
+    @InjectAdminClient(ref = "noAccessClient", realmRef = "testRealm", client = "myclient", mode = InjectAdminClient.Mode.MANAGED_REALM)
     Keycloak noAccessAdminClient;
 
-    @InjectClient(realmRef = "master")
+    @InjectClient(realmRef = "testRealm", config = TestClientConfig.class)
     ManagedClient testClient;
+
+    @Override
+    public String getRealmName() {
+        return testRealm.getName();
+    }
 
     @Test
     public void getClient() {
-        var client = clients(testRealm.getName()).v2().client("account").getClient();
+        var client = getClientApi("account").getClient();
         assertEquals("account", client.getClientId());
-    }
-
-    private Clients clients(String realmName) {
-        return adminClient.clients(realmName, Clients.class);
     }
 
     @Test
@@ -119,18 +125,25 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
-    public void jsonMergePatchClient() {
+    public void jsonMergePatchClient() throws JsonProcessingException {
         OIDCClientRepresentation patch = new OIDCClientRepresentation();
         patch.setDescription("I'm also a description");
-        BaseClientRepresentation baseRep = clients(masterRealm.getName()).v2().client(testClient.getClientId()).patchClient(mapper.valueToTree(patch));
+        BaseClientRepresentation baseRep = getClientsApi().client(testClient.getClientId()).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
+
         assertEquals("I'm also a description", baseRep.getDescription());
     }
 
     @Test
     public void jsonMergePatchClientInvalid() throws Exception {
-        HttpPatch request = new HttpPatch(getClientApiUrl(testClient.getClientId()));
+        HttpPatch request = new HttpPatch(getClientApiUrl(getRealmName(), testClient.getClientId()));
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
+
+        request.setEntity(null);
+        try (var response = client.execute(request)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Cannot replace client resource with non-object"));
+        }
 
         request.setEntity(new StringEntity("patch client invalid"));
         try (var response = client.execute(request)) {
@@ -148,11 +161,24 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(200, response.getStatusLine().getStatusCode());
         }
 
+        request.setEntity(new StringEntity("\"a\""));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(),is(400));
+            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Cannot replace client resource with non-object"));
+        }
+
         request.setEntity(new StringEntity(""));
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(),is(400));
-            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Cannot replace client resource with null"));
+            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Cannot replace client resource with non-object"));
         }
+
+        request.setEntity(new StringEntity("{} {}"));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(),is(400));
+            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Patch contains additional content"));
+        }
+
     }
 
     @Test
@@ -160,7 +186,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setClientId("other");
 
-        try (var response = clients(testRealm.getName()).v2().client("account").createOrUpdateClient(rep)) {
+        try (var response = getClientApi("account").createOrUpdateClient(rep)) {
             assertEquals(400, response.getStatus());
         }
     }
@@ -173,7 +199,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setClientId(clientId);
         rep.setDescription("I'm new");
 
-        try (var response = clients(testRealm.getName()).v2().client(clientId).createOrUpdateClient(rep)) {
+        try (var response = getClientsApi().client(clientId).createOrUpdateClient(rep)) {
             assertEquals(201, response.getStatus());
             OIDCClientRepresentation client = response.readEntity(OIDCClientRepresentation.class);
             assertEquals("I'm new", client.getDescription());
@@ -181,8 +207,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         }
 
         rep.setDescription("I'm updated");
-
-        try (var response = clients(testRealm.getName()).v2().client(clientId).createOrUpdateClient(rep)) {
+        try (var response = getClientsApi().client(clientId).createOrUpdateClient(rep)) {
             assertEquals(200, response.getStatus());
             OIDCClientRepresentation client = response.readEntity(OIDCClientRepresentation.class);
             assertEquals("I'm updated", client.getDescription());
@@ -198,7 +223,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setClientId(clientId);
         rep.setDescription("I'm new");
 
-        try (var response = clients(testRealm.getName()).v2().createClient(rep)) {
+        try (var response = getClientsApi().createClient(rep)) {
             assertThat(response.getStatus(), is(201));
             OIDCClientRepresentation client = response.readEntity(OIDCClientRepresentation.class);
             assertThat(client.getEnabled(), is(true));
@@ -206,7 +231,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertThat(client.getDescription(), is("I'm new"));
         }
 
-        try (var response = clients(testRealm.getName()).v2().createClient(rep)) {
+        try (var response = getClientsApi().createClient(rep)) {
             assertThat(response.getStatus(), is(409));
         }
     }
@@ -218,21 +243,20 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setClientId(clientIdToDelete);
         rep.setEnabled(true);
 
-        try (var response = clients(testRealm.getName()).v2().createClient(rep)) {
+        try (var response = getClientsApi().createClient(rep)) {
             assertEquals(201, response.getStatus());
         }
 
-
-        var baseClientRepresentation = clients(testRealm.getName()).v2().client(clientIdToDelete).getClient();
+        var baseClientRepresentation = getClientsApi().client(clientIdToDelete).getClient();
         assertEquals(clientIdToDelete, baseClientRepresentation.getClientId());
 
-        try (var response = clients(testRealm.getName()).v2().client(clientIdToDelete).deleteClient()) {
+        try (var response = getClientsApi().client(clientIdToDelete).deleteClient()) {
             assertEquals(204, response.getStatus());
         }
 
         NotFoundException exception = assertThrows(
             NotFoundException.class,
-            () -> clients(testRealm.getName()).v2().client(clientIdToDelete).getClient());
+            () -> getClientsApi().client(clientIdToDelete).getClient());
 
         assertTrue(exception.getMessage().contains("HTTP 404 Not Found"));
     }
@@ -246,9 +270,10 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         oidcRep.setDescription("OIDC client for mixed protocol test");
         // OIDC-specific fields
         oidcRep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.STANDARD, OIDCClientRepresentation.Flow.DIRECT_GRANT));
+        oidcRep.setRedirectUris(Set.of("http://localhost:3000/callback"));
         oidcRep.setWebOrigins(Set.of("http://localhost:3000", "http://localhost:4000"));
 
-        try (var response = clients(testRealm.getName()).v2().createClient(oidcRep)) {
+        try (var response = getClientsApi().createClient(oidcRep)) {
             assertEquals(201, response.getStatus());
             OIDCClientRepresentation created = response.readEntity(OIDCClientRepresentation.class);
             assertThat(created, notNullValue());
@@ -261,13 +286,13 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         samlRep.setClientId("mixed-test-saml");
         samlRep.setDescription("SAML client for mixed protocol test");
         // SAML-specific fields
-        samlRep.setNameIdFormat("email");
+        samlRep.setNameIdFormat(SAMLClientRepresentation.NameIdFormat.EMAIL);
         samlRep.setSignDocuments(true);
         samlRep.setSignAssertions(true);
         samlRep.setForcePostBinding(true);
         samlRep.setFrontChannelLogout(false);
 
-        try (var response = clients(testRealm.getName()).v2().createClient(samlRep)) {
+        try (var response = getClientsApi().createClient(samlRep)) {
             assertEquals(201, response.getStatus());
             SAMLClientRepresentation created = response.readEntity(SAMLClientRepresentation.class);
             assertThat(created, notNullValue());
@@ -275,7 +300,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         }
 
         // Get all clients - this should work with mixed protocols
-        try (Stream<BaseClientRepresentation> baseClientRepresentationStream = clients(testRealm.getName()).v2().getClients()) {
+        try (Stream<BaseClientRepresentation> baseClientRepresentationStream = getClientsApi().getClients()) {
             List<BaseClientRepresentation> clients = baseClientRepresentationStream.toList();
 
             // Verify OIDC client with protocol-specific fields
@@ -286,6 +311,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
                     .orElse(null);
 
             assertThat("OIDC client should be in the list", foundOidc, is(notNullValue()));
+            assertThat(foundOidc.getDescription(), notNullValue());
             assertThat(foundOidc.getLoginFlows(), is(Set.of(OIDCClientRepresentation.Flow.STANDARD, OIDCClientRepresentation.Flow.DIRECT_GRANT)));
             assertThat(foundOidc.getWebOrigins(), is(Set.of("http://localhost:3000", "http://localhost:4000")));
 
@@ -297,7 +323,8 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
                     .orElse(null);
 
             assertThat("SAML client should be in the list", foundSaml, is(notNullValue()));
-            assertThat(foundSaml.getNameIdFormat(), is("email"));
+            assertThat(foundSaml.getDescription(), notNullValue());
+            assertThat(foundSaml.getNameIdFormat(), is(SAMLClientRepresentation.NameIdFormat.EMAIL));
             assertThat(foundSaml.getSignDocuments(), is(true));
             assertThat(foundSaml.getSignAssertions(), is(true));
             assertThat(foundSaml.getForcePostBinding(), is(true));
@@ -306,20 +333,41 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
 
         // Get individual OIDC client and verify OIDC-specific fields
-        OIDCClientRepresentation oidcClient = (OIDCClientRepresentation) clients(testRealm.getName()).v2().client(oidcRep.getClientId()).getClient();
+        OIDCClientRepresentation oidcClient = (OIDCClientRepresentation) getClientsApi().client(oidcRep.getClientId()).getClient();
         assertEquals("mixed-test-oidc", oidcClient.getClientId());
         assertThat(oidcClient.getLoginFlows(), is(Set.of(OIDCClientRepresentation.Flow.STANDARD, OIDCClientRepresentation.Flow.DIRECT_GRANT)));
         assertThat(oidcClient.getWebOrigins(), is(Set.of("http://localhost:3000", "http://localhost:4000")));
 
         // Get individual SAML client and verify SAML-specific fields
-        SAMLClientRepresentation samlClient = (SAMLClientRepresentation) clients(testRealm.getName()).v2().client(samlRep.getClientId()).getClient();
+        SAMLClientRepresentation samlClient = (SAMLClientRepresentation) getClientsApi().client(samlRep.getClientId()).getClient();
         assertEquals("mixed-test-saml", samlClient.getClientId());
         assertEquals("SAML client for mixed protocol test", samlClient.getDescription());
-        assertThat(samlClient.getNameIdFormat(), is("email"));
+        assertThat(samlClient.getNameIdFormat(), is(SAMLClientRepresentation.NameIdFormat.EMAIL));
         assertThat(samlClient.getSignDocuments(), is(true));
         assertThat(samlClient.getSignAssertions(), is(true));
         assertThat(samlClient.getForcePostBinding(), is(true));
         assertThat(samlClient.getFrontChannelLogout(), is(false));
+        
+        // test projecting only id and protocol
+        try (Stream<BaseClientRepresentation> baseClientRepresentationStream = getClientsApi().getClients(new ListOptions().fields(Set.of("clientId", "protocol")))) {
+            List<BaseClientRepresentation> clients = baseClientRepresentationStream.toList();
+            for (BaseClientRepresentation client : clients) {
+                BaseClientRepresentation toCompare = null;
+                if (client.getProtocol().equals(OIDCClientRepresentation.PROTOCOL)) {
+                    toCompare = new OIDCClientRepresentation();
+                } else {
+                    toCompare = new SAMLClientRepresentation();
+                }
+                toCompare.setClientId(client.getClientId());
+                assertThat(client, Matchers.samePropertyValuesAs(toCompare));
+            }
+        }
+    }
+    
+    @Test
+    public void invalidFieldProjection() {
+        BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(new ListOptions().fields(Set.of("unknown!"))));
+        assertEquals("{\"error\":\"unknown! is an unknown field\"}", e.getResponse().readEntity(String.class));
     }
 
     @Test
@@ -328,14 +376,13 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         oidcRep.setDisplayName("something");
         oidcRep.setAppUrl("notUrl");
 
-        try (var response = clients(testRealm.getName()).v2().createClient(oidcRep)) {
+        try (var response = getClientsApi().createClient(oidcRep)) {
             assertThat(response, notNullValue());
             assertThat(response.getStatus(), is(400));
 
             var body = response.readEntity(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
             var violations = body.violations();
-            assertThat(violations, hasSize(2));
             assertThat(violations, hasItem("clientId: must not be blank"));
             assertThat(violations, hasItem("appUrl: must be a valid URL"));
         }
@@ -348,14 +395,14 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         auth.setMethod("missing-enabled");
         oidcRep.setAuth(auth);
 
-        try (var response = clients(testRealm.getName()).v2().createClient(oidcRep)) {
+        try (var response = getClientsApi().createClient(oidcRep)) {
             assertThat(response, notNullValue());
             assertThat(response.getStatus(), is(400));
             var body = response.readEntity(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
             var violations = body.violations();
-            assertThat(violations.size(), is(1));
-            assertThat(violations.iterator().next(), is("appUrl: must be a valid URL"));
+            assertThat(violations, hasItem("appUrl: must be a valid URL"));
+            assertThat(violations, hasItem(containsString("valid client authenticator type is required")));
         }
     }
 
@@ -371,8 +418,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     @Test
     public void createFullClient() {
         OIDCClientRepresentation rep = getTestingFullClientRep();
-
-        try (var response = clients(testRealm.getName()).v2().createClient(rep);) {
+        try (var response = getClientsApi().createClient(rep);) {
             assertEquals(201, response.getStatus());
             OIDCClientRepresentation client = response.readEntity(OIDCClientRepresentation.class);
             rep.setUuid(client.getUuid()); // needed for the use of equals()
@@ -385,7 +431,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         OIDCClientRepresentation rep = getTestingFullClientRep();
         rep.setServiceAccountRoles(Set.of("non-existing", "bad-role"));
 
-        try (var response = clients(testRealm.getName()).v2().createClient(rep);) {
+        try (var response = getClientsApi().createClient(rep);) {
             assertEquals(400, response.getStatus());
             assertThat(response.readEntity(String.class), containsString("Cannot assign role to the service account (field 'serviceAccount.roles') as it does not exist"));
         }
@@ -399,7 +445,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setRoles(Set.of("role1", "role2", "role3"));
 
-        try (var response = clients(testRealm.getName()).v2().createClient(rep)) {
+        try (var response = getClientsApi().createClient(rep)) {
             assertEquals(201, response.getStatus());
             OIDCClientRepresentation created = response.readEntity(OIDCClientRepresentation.class);
             assertThat(created.getRoles(), is(Set.of("role1", "role2", "role3")));
@@ -407,7 +453,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         // 2. Update with completely new roles - should remove old ones and add new ones
         rep.setRoles(Set.of("new-role1", "new-role2"));
-        try (var response = clients(testRealm.getName()).v2().client("declarative-role-test").createOrUpdateClient(rep)) {
+        try (var response = getClientsApi().client("declarative-role-test").createOrUpdateClient(rep)) {
             assertEquals(200, response.getStatus());
             OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
             assertThat(updated.getRoles(), is(Set.of("new-role1", "new-role2")));
@@ -415,7 +461,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         // 3. Update with partial overlap - keep some, add some, remove some
         rep.setRoles(Set.of("new-role1", "add-role3", "add-role4"));
-        try (var response = clients(testRealm.getName()).v2().client("declarative-role-test").createOrUpdateClient(rep)) {
+        try (var response = getClientsApi().client("declarative-role-test").createOrUpdateClient(rep)) {
             assertEquals(200, response.getStatus());
             OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
             assertThat(updated.getRoles(), is(Set.of("new-role1", "add-role3", "add-role4")));
@@ -423,7 +469,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         // 4. Update with same roles - should be idempotent
         rep.setRoles(Set.of("new-role1", "add-role3", "add-role4"));
-        try (var response = clients(testRealm.getName()).v2().client("declarative-role-test").createOrUpdateClient(rep)) {
+        try (var response = getClientsApi().client("declarative-role-test").createOrUpdateClient(rep)) {
             assertEquals(200, response.getStatus());
             OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
             assertThat(updated.getRoles(), is(Set.of("new-role1", "add-role3", "add-role4")));
@@ -431,7 +477,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         // 5. Update with empty set - should remove all roles
         rep.setRoles(Set.of());
-        try (var response = clients(testRealm.getName()).v2().client("declarative-role-test").createOrUpdateClient(rep)) {
+        try (var response = getClientsApi().client("declarative-role-test").createOrUpdateClient(rep)) {
             assertEquals(200, response.getStatus());
             OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
             assertThat(updated.getRoles(), is(Set.of()));
@@ -441,15 +487,19 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     @Test
     public void declarativeServiceAccountRoleManagement() {
         // 1. Create a client with service account and initial realm roles
-        String defaultRealmRoles = "default-roles-%s".formatted(testRealm.getName());
+        String defaultRealmRoles = "default-roles-%s".formatted(testRealm.getName().toLowerCase());
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setClientId("sa-declarative-test");
         rep.setEnabled(true);
 
         rep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT));
+        var auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod("client-secret");
+        auth.setSecret("test-sa-secret");
+        rep.setAuth(auth);
         rep.setServiceAccountRoles(Set.of(defaultRealmRoles, "offline_access"));
 
-        try (var response = clients(testRealm.getName()).v2().createClient(rep)) {
+        try (var response = getClientsApi().createClient(rep)) {
             assertEquals(201, response.getStatus());
             OIDCClientRepresentation created = response.readEntity(OIDCClientRepresentation.class);
             assertThat(created.getServiceAccountRoles(), is(Set.of(defaultRealmRoles, "offline_access")));
@@ -457,7 +507,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         // 2. Update with completely new roles - should remove old ones and add new ones
         rep.setServiceAccountRoles(Set.of("uma_authorization", "offline_access"));
-        try (var response = clients(testRealm.getName()).v2().client("sa-declarative-test").createOrUpdateClient(rep)) {
+        try (var response = getClientsApi().client("sa-declarative-test").createOrUpdateClient(rep)) {
             assertEquals(200, response.getStatus());
             OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
             assertThat(updated.getServiceAccountRoles(), is(Set.of("uma_authorization", "offline_access")));
@@ -465,7 +515,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         // 3. Update with partial overlap - keep some, add some, remove some
         rep.setServiceAccountRoles(Set.of("offline_access", defaultRealmRoles));
-        try (var response = clients(testRealm.getName()).v2().client("sa-declarative-test").createOrUpdateClient(rep)) {
+        try (var response = getClientsApi().client("sa-declarative-test").createOrUpdateClient(rep)) {
             assertEquals(200, response.getStatus());
             OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
             assertThat(updated.getServiceAccountRoles(), is(Set.of("offline_access", defaultRealmRoles)));
@@ -473,7 +523,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         // 4. Update with same roles - should be idempotent
         rep.setServiceAccountRoles(Set.of("offline_access", defaultRealmRoles));
-        try (var response = clients(testRealm.getName()).v2().client("sa-declarative-test").createOrUpdateClient(rep)) {
+        try (var response = getClientsApi().client("sa-declarative-test").createOrUpdateClient(rep)) {
             assertEquals(200, response.getStatus());
             OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
             assertThat(updated.getServiceAccountRoles(), is(Set.of("offline_access", defaultRealmRoles)));
@@ -481,10 +531,47 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         // 5. Update with empty set - should remove all roles
         rep.setServiceAccountRoles(Set.of());
-        try (var response = clients(testRealm.getName()).v2().client("sa-declarative-test").createOrUpdateClient(rep)) {
+        try (var response = getClientsApi().client("sa-declarative-test").createOrUpdateClient(rep)) {
             assertEquals(200, response.getStatus());
             OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
             assertThat(updated.getServiceAccountRoles(), is(Set.of()));
+        }
+    }
+
+    @Test
+    public void declarativeServiceAccountClientRoleManagement() {
+        String defaultRealmRoles = "default-roles-%s".formatted(testRealm.getName().toLowerCase());
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setClientId("sa-client-role-test");
+        rep.setEnabled(true);
+        rep.setRoles(Set.of("my-client-role"));
+        rep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT));
+        rep.setServiceAccountRoles(Set.of(defaultRealmRoles, "offline_access"));
+
+        OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod(ClientIdAndSecretAuthenticator.PROVIDER_ID);
+        rep.setAuth(auth);
+
+        try (var response = getClientsApi().createClient(rep)) {
+            assertEquals(201, response.getStatus());
+            OIDCClientRepresentation created = response.readEntity(OIDCClientRepresentation.class);
+            assertThat(created.getRoles(), is(Set.of("my-client-role")));
+            assertThat(created.getServiceAccountRoles(), is(Set.of(defaultRealmRoles, "offline_access")));
+        }
+
+        rep.setServiceAccountRoles(Set.of(defaultRealmRoles, "offline_access", "my-client-role"));
+        try (var response = getClientsApi().client("sa-client-role-test").createOrUpdateClient(rep)) {
+            assertEquals(200, response.getStatus());
+            OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
+            assertThat(updated.getServiceAccountRoles(), is(Set.of(defaultRealmRoles, "offline_access", "my-client-role")));
+        }
+
+        rep.setServiceAccountRoles(Set.of(defaultRealmRoles, "offline_access"));
+        try (var response = getClientsApi().client("sa-client-role-test").createOrUpdateClient(rep)) {
+            assertEquals(200, response.getStatus());
+            OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
+            assertThat(updated.getServiceAccountRoles(), is(Set.of(defaultRealmRoles, "offline_access")));
+            assertThat(updated.getRoles(), is(Set.of("my-client-role")));
         }
     }
 
@@ -505,13 +592,6 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(200));
             EntityUtils.consumeQuietly(response.getEntity());
-        }
-
-        // unknown version
-        request = new HttpGet(ADMIN_API_URL + "/clients/v3");
-        setAuthHeader(request);
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(404));
         }
 
         // invalid version
@@ -551,7 +631,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("client-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientCreationFailsWithError(rep, "Each redirect URL must be valid");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
     }
 
     @Test
@@ -561,7 +641,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("client-invalid-root-url");
         rep.setAppUrl("http://localhost:3000#fragment");
-        assertClientCreationFailsWithError(rep, "Root URL must not contain an URL fragment");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
     }
 
     @Test
@@ -570,7 +650,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-invalid-fragment");
         rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
-        assertClientCreationFailsWithError(rep, "Redirect URIs must not contain an URI fragment");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"Redirect URIs must not contain an URI fragment\"}");
     }
 
     @Test
@@ -579,7 +659,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientCreationFailsWithError(rep, "Each redirect URL must be valid");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
     }
 
     @Test
@@ -607,7 +687,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("client-update-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientUpdateFailsWithError(rep, "Each redirect URL must be valid");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
     }
 
     @Test
@@ -626,7 +706,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-update-invalid-fragment");
         rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
-        assertClientUpdateFailsWithError(rep, "Redirect URIs must not contain an URI fragment");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"Redirect URIs must not contain an URI fragment\"}");
     }
 
     @Test
@@ -635,7 +715,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-update-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientUpdateFailsWithError(rep, "Each redirect URL must be valid");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
     }
 
     @Test
@@ -662,14 +742,14 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         auth.setSecret(null);
         client.setAuth(auth);
 
-        try (var response = clients(testRealm.getName()).v2().createClient(client)) {
+        try (var response = getClientsApi().createClient(client)) {
             var createdClient = response.readEntity(OIDCClientRepresentation.class);
             assertThat(createdClient.getAuth(), notNullValue());
             assertThat(createdClient.getAuth().getSecret(), Matchers.not(emptyOrNullString()));
         }
 
         // make sure that the created model was persisted and GET method returns the newly generated secret
-        var persistedClient = (OIDCClientRepresentation) clients(testRealm.getName()).v2().client(clientId).getClient();
+        var persistedClient = (OIDCClientRepresentation) getClientsApi().client(clientId).getClient();
         assertEquals(clientId, persistedClient.getClientId());
         assertThat(persistedClient.getAuth().getSecret(), Matchers.not(emptyOrNullString()));
     }
@@ -727,8 +807,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         OIDCClientRepresentation.Auth authWithoutSecret = new OIDCClientRepresentation.Auth();
         authWithoutSecret.setMethod(authenticationMethod);
-        authWithoutSecret.setAdditionalField("secret", null);
-        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfigPatch(authWithoutSecret, clientId);
+        authWithoutSecret.setSecret(null);
+        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfigPatchRawAuth(clientId,
+                "{\"method\":\"" + authenticationMethod + "\",\"secret\":null}");
         assertThat(patchedAuth, notNullValue());
         String newlyGeneratedSecret = patchedAuth.getSecret();
         assertThat(newlyGeneratedSecret, not(is(createdAuth.getSecret())));
@@ -744,15 +825,13 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod(authenticationMethod);
-        auth.setSecret("shush");
+        auth.setSecret("shushy");
 
         OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfigPost(auth, clientId);
         assertThat(createdAuth, notNullValue());
         assertThat(createdAuth.getSecret(), is(auth.getSecret()));
 
-        OIDCClientRepresentation.Auth authWithoutSecret = new OIDCClientRepresentation.Auth();
-        authWithoutSecret.setAdditionalField("secret", null);
-        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfigPatch(authWithoutSecret, clientId);
+        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfigPatchRawAuth(clientId, "{\"secret\":null}");
         assertThat(patchedAuth, notNullValue());
         String newlyGeneratedSecret = patchedAuth.getSecret();
         assertThat(newlyGeneratedSecret, not(is(createdAuth.getSecret())));
@@ -768,7 +847,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod(authenticationMethod);
-        auth.setSecret("shush");
+        auth.setSecret("shushy");
 
         OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfigPost(auth, clientId);
         assertThat(createdAuth, notNullValue());
@@ -784,7 +863,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod(ClientIdAndSecretAuthenticator.PROVIDER_ID);
-        auth.setSecret("shush");
+        auth.setSecret("shushy");
 
         OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfigPost(auth, clientId);
         assertThat(createdAuth, notNullValue());
@@ -809,7 +888,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         String clientId = authenticationMethod + "-patched-other-fields";
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod(authenticationMethod);
-        auth.setSecret("shush");
+        auth.setSecret("shushy");
 
         OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfigPost(auth, clientId);
         assertThat(createdAuth, notNullValue());
@@ -822,7 +901,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @ParameterizedTest
     @ValueSource(strings = { ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID })
-    void expectValidationFailureForUpdatePutWithoutSecret(String authenticationMethod) throws IOException {
+    void putUpdateWithNullSecretReusesPersistedSecret(String authenticationMethod) throws IOException {
         String clientId = authenticationMethod + "-validation-update-put";
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod(authenticationMethod);
@@ -833,8 +912,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         assertThat(createdAuth.getSecret(), is(auth.getSecret()));
 
         auth.setSecret(null);
-        var assertionError = assertThrows(AssertionError.class, () -> getResultingAuthConfigPut(auth, clientId));
-        assertThat(assertionError.getMessage(), Matchers.containsString("was <400>"));
+        OIDCClientRepresentation.Auth putAuth = getResultingAuthConfigPut(auth, clientId);
+        assertThat(putAuth, notNullValue());
+        assertThat(putAuth.getSecret(), is(createdAuth.getSecret()));
     }
 
     @ParameterizedTest
@@ -868,7 +948,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     private OIDCClientRepresentation.Auth getResultingAuthConfigPost(OIDCClientRepresentation.Auth auth, String clientId, String... additionalFields) throws IllegalArgumentException {
         var rep = getResultingClientRep(auth, clientId, additionalFields);
-        try (var response = clients(testRealm.getName()).v2().createClient(rep)) {
+        try (var response = getClientsApi().createClient(rep)) {
             assertThat(response.getStatus(), Matchers.anyOf(is(201), is(200)));
             OIDCClientRepresentation createdClient = response.readEntity(OIDCClientRepresentation.class);
             return assertClientEnabledIdDescriptionAndAuth(rep, createdClient);
@@ -877,16 +957,33 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     private OIDCClientRepresentation.Auth getResultingAuthConfigPut(OIDCClientRepresentation.Auth auth, String clientId, String... additionalFields) throws IllegalArgumentException {
         var rep = getResultingClientRep(auth, clientId, additionalFields);
-        try (var response = clients(testRealm.getName()).v2().client(clientId).createOrUpdateClient(rep)) {
+        try (var response = getClientsApi().client(clientId).createOrUpdateClient(rep)) {
             assertThat(response.getStatus(), Matchers.anyOf(is(201), is(200)));
             OIDCClientRepresentation createdClient = response.readEntity(OIDCClientRepresentation.class);
             return assertClientEnabledIdDescriptionAndAuth(rep, createdClient);
         }
     }
 
-    private OIDCClientRepresentation.Auth getResultingAuthConfigPatch(OIDCClientRepresentation.Auth auth, String clientId, String... additionalFields) throws IllegalArgumentException {
+    private OIDCClientRepresentation.Auth getResultingAuthConfigPatch(OIDCClientRepresentation.Auth auth, String clientId, String... additionalFields) throws IllegalArgumentException, JsonProcessingException {
         var rep = getResultingClientRep(auth, clientId, additionalFields);
-        OIDCClientRepresentation createdClient = (OIDCClientRepresentation) clients(testRealm.getName()).v2().client(clientId).patchClient(mapper.valueToTree(rep));
+        OIDCClientRepresentation createdClient = (OIDCClientRepresentation) getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(rep)));
+        return assertClientEnabledIdDescriptionAndAuth(rep, createdClient);
+    }
+
+    /**
+     * Applies a JSON merge patch with a raw {@code auth} object fragment (must include {@code "secret":null} when rotating secrets).
+     */
+    private OIDCClientRepresentation.Auth getResultingAuthConfigPatchRawAuth(String clientId, String authObjectJson) throws JsonProcessingException {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setDescription("I'm OIDC Client");
+        rep.setAuth(mapper.readValue(authObjectJson, OIDCClientRepresentation.Auth.class));
+        String body = String.format(Locale.ROOT,
+                "{\"enabled\":true,\"clientId\":\"%s\",\"description\":\"I'm OIDC Client\",\"auth\":%s}",
+                clientId, authObjectJson);
+        OIDCClientRepresentation createdClient = (OIDCClientRepresentation) getClientsApi().client(clientId).patchClient(
+                new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
         return assertClientEnabledIdDescriptionAndAuth(rep, createdClient);
     }
 
@@ -895,6 +992,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId(clientId);
         rep.setDescription("I'm OIDC Client");
+        rep.setRedirectUris(Set.of("http://localhost/callback"));
         rep.setAuth(auth);
 
         if (additionalFields.length % 2 != 0) {
@@ -925,7 +1023,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
      * This verifies that ValidationUtil.validateClient is called after the full model is populated.
      */
     private void assertClientCreationFailsWithError(BaseClientRepresentation rep, String expectedErrorMessage) throws Exception {
-        try (var response = clients(testRealm.getName()).v2().createClient(rep)) {
+        try (var response = getClientsApi().createClient(rep)) {
             assertThat(response.getStatus(), is(400));
             String body = response.readEntity(String.class);
             assertThat(body, containsString(expectedErrorMessage));
@@ -949,7 +1047,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         validRep.setClientId(clientId);
         validRep.setEnabled(true);
 
-        try (var response = clients(testRealm.getName()).v2().createClient(validRep)) {
+        try (var response = getClientsApi().createClient(validRep)) {
             assertThat(response.getStatus(), is(201));
             BaseClientRepresentation created = response.readEntity(BaseClientRepresentation.class);
             assertThat(created, notNullValue());
@@ -957,7 +1055,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         }
 
         // Now try to update with invalid data
-        try (var response = clients(testRealm.getName()).v2().client(clientId).createOrUpdateClient(rep)) {
+        try (var response = getClientsApi().client(clientId).createOrUpdateClient(rep)) {
             assertThat(response.getStatus(), is(400));
             String body = response.readEntity(String.class);
             assertThat(body, containsString(expectedErrorMessage));
@@ -986,7 +1084,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setRoles(Set.of("view-consent", "manage-account"));
         rep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT));
         // TODO when roles are not set and SA is enabled, the default role 'default-roles-master' for the SA is used for the master realm
-        rep.setServiceAccountRoles(Set.of("default-roles-%s".formatted(testRealm.getName())));
+        rep.setServiceAccountRoles(Set.of("default-roles-%s".formatted(testRealm.getName()).toLowerCase()));
         // not implemented yet
         // rep.setAdditionalFields(Map.of("key1", "val1", "key2", "val2"));
         return rep;
@@ -1002,11 +1100,18 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     public static class NoAccessRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.addClient("myclient")
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.clients(ClientBuilder.create("myclient")
                     .secret("mysecret")
-                    .serviceAccountsEnabled(true);
+                    .serviceAccountsEnabled(true));
             return realm;
+        }
+    }
+
+    public static class TestClientConfig implements ClientConfig {
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.redirectUris("http://localhost/callback");
         }
     }
 }

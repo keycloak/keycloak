@@ -38,6 +38,7 @@ import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
@@ -45,6 +46,7 @@ import org.keycloak.userprofile.UserProfileContext;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.account.AccountRestServiceTest.assertUserProfileAttributeMetadata;
 import static org.keycloak.testsuite.account.AccountRestServiceTest.getUserProfileAttributeMetadata;
@@ -57,10 +59,10 @@ import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test account rest service with custom user profile configurations
@@ -167,9 +169,9 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
 
         } finally {
-            RealmRepresentation realmRep = testRealm().toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
         }
     }
 
@@ -224,9 +226,9 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
 
         } finally {
-            RealmRepresentation realmRep = testRealm().toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
         }
     }
 
@@ -249,9 +251,9 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertUserProfileAttributeMetadata(user, "attr_readonly", "attr_readonly", false, true);
             assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
         } finally {
-            RealmRepresentation realmRep = testRealm().toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
         }
     }
 
@@ -295,21 +297,21 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             
             assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
         } finally {
-            RealmRepresentation realmRep = testRealm().toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
             realmRep.setRegistrationEmailAsUsername(false);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
         }
     }
     
     protected void assertAnnotationValue(UserProfileAttributeMetadata uam, String key, Object value) {
-        assertNotNull("Missing annotations for attribute " + uam.getName(), uam.getAnnotations());
-        assertEquals("Unexpexted value of the "+key+" annotation for attribute " + uam.getName(), value, uam.getAnnotations().get(key));
+        assertNotNull(uam.getAnnotations(), "Missing annotations for attribute " + uam.getName());
+        assertEquals(value, uam.getAnnotations().get(key), "Unexpexted value of the "+key+" annotation for attribute " + uam.getName());
     }
 
     protected Map<String, Object> assertValidatorExists(UserProfileAttributeMetadata uam, String validatorId) {
-        assertNotNull("Missing validators for attribute " + uam.getName(), uam.getValidators());
-        assertTrue("Missing validtor "+validatorId+" for attribute " + uam.getName(), uam.getValidators().containsKey(validatorId));
+        assertNotNull(uam.getValidators(), "Missing validators for attribute " + uam.getName());
+        assertTrue(uam.getValidators().containsKey(validatorId), "Missing validtor "+validatorId+" for attribute " + uam.getName());
         return uam.getValidators().get(validatorId);
     }
     
@@ -347,17 +349,18 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             user = updateAndGet(user);
 
             //skip login to the REST API event
-            events.expectAccount(EventType.UPDATE_PROFILE).user(user.getId())
-                .detail(Details.CONTEXT, UserProfileContext.ACCOUNT.name())
-                .detail(Details.PREVIOUS_EMAIL, originalEmail)
-                .detail(Details.UPDATED_EMAIL, "bobby@localhost")
-                .detail(Details.PREVIOUS_FIRST_NAME, originalFirstName)
-                .detail(Details.PREVIOUS_LAST_NAME, originalLastName)
-                .detail(Details.UPDATED_FIRST_NAME, "Homer")
-                .detail(Details.UPDATED_LAST_NAME, "Simpsons")
-                .detail(Details.PREF_UPDATED+"attr2", "val22")
-                .assertEvent();
-            events.assertEmpty();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_PROFILE)
+                .userId(user.getId())
+                .clientId("account")
+                .details(Details.CONTEXT, UserProfileContext.ACCOUNT.name())
+                .details(Details.PREVIOUS_EMAIL, originalEmail)
+                .details(Details.UPDATED_EMAIL, "bobby@localhost")
+                .details(Details.PREVIOUS_FIRST_NAME, originalFirstName)
+                .details(Details.PREVIOUS_LAST_NAME, originalLastName)
+                .details(Details.UPDATED_FIRST_NAME, "Homer")
+                .details(Details.UPDATED_LAST_NAME, "Simpsons")
+                .details(Details.PREF_UPDATED+"attr2", "val22");
+            Assertions.assertNull(events.poll());
             
         } finally {
             RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
@@ -377,10 +380,10 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
 
     @Test
     public void testManageUserLocaleAttribute() throws IOException {
-        RealmRepresentation realmRep = testRealm().toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         Boolean internationalizationEnabled = realmRep.isInternationalizationEnabled();
         realmRep.setInternationalizationEnabled(false);
-        testRealm().update(realmRep);
+        managedRealm.admin().update(realmRep);
         UserRepresentation user = getUser();
         user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
 
@@ -390,7 +393,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertNull(user.getAttributes());
 
             realmRep.setInternationalizationEnabled(true);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             user.singleAttribute(UserModel.LOCALE, "pt_BR");
             user = updateAndGet(user);
@@ -409,13 +412,13 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             );
         } finally {
             realmRep.setInternationalizationEnabled(internationalizationEnabled);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
             updateAndGet(user);
         }
     }
 
     protected void setUserProfileConfiguration(String configuration) {
-        UserProfileUtil.setUserProfileConfiguration(testRealm(), configuration);
+        UserProfileUtil.setUserProfileConfiguration(managedRealm.admin(), configuration);
     }
 
     protected UserRepresentation getUser() throws IOException {

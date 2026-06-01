@@ -37,6 +37,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.CekManagementProvider;
 import org.keycloak.crypto.ContentEncryptionProvider;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
@@ -59,10 +60,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCProviderConfig;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.NotBeforeCheck;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -78,12 +83,15 @@ import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.OAuth2Error;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
 /**
  * @author pedroigor
  */
 public class UserInfoEndpoint {
+
+    private static final Logger logger = Logger.getLogger(UserInfoEndpoint.class);
 
     private final HttpRequest request;
 
@@ -150,7 +158,7 @@ public class UserInfoEndpoint {
                 MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
                 checkAccessTokenDuplicated(formParams);
                 String accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);
-                authHeader = accessToken == null ? null : new AppAuthManager.AuthHeader(AppAuthManager.BEARER, accessToken);
+                authHeader = accessToken == null ? null : new AppAuthManager.AuthHeader(TokenUtil.TOKEN_TYPE_BEARER, accessToken);
                 authorization(authHeader);
             }
         } catch (IllegalArgumentException e) {
@@ -191,7 +199,7 @@ public class UserInfoEndpoint {
 
             verifier = DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenForUserInfo.getToken()));
 
-            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+            SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);
 
             token = verifier.verify().getToken();
@@ -209,10 +217,10 @@ public class UserInfoEndpoint {
                 throw error.invalidToken("Client not found");
             }
 
-            cors.allowedOrigins(session, clientModel);
+            cors.checkAllowedOrigins(session, clientModel);
 
             TokenVerifier.createWithoutSignature(token)
-                    .withChecks(NotBeforeCheck.forModel(clientModel), new TokenManager.TokenRevocationCheck(session))
+                    .withChecks(NotBeforeCheck.forModel(realm), NotBeforeCheck.forModel(clientModel), new TokenManager.TokenRevocationCheck(session))
                     .verify();
         } catch (VerificationException e) {
             if (clientModel == null) {
@@ -262,6 +270,11 @@ public class UserInfoEndpoint {
             throw error.invalidToken("User disabled");
         }
 
+        if (!TokenManager.validateUserNotBefore(session, realm, token, userModel)) {
+            event.error(Errors.INVALID_USER);
+            throw error.invalidToken("User not valid");
+        }
+
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
         if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseMtlsHokToken()) {
@@ -270,6 +283,32 @@ public class UserInfoEndpoint {
                 event.detail(Details.REASON, errorMessage);
                 event.error(Errors.NOT_ALLOWED);
                 throw error.invalidToken(errorMessage);
+            }
+        }
+
+        // Check for lightweight access token
+        TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
+        AccessTokenContext tokenContext = encoder.getTokenContextFromTokenId(token.getId());
+        boolean isAccessTokenLightweight = AccessTokenContext.TokenType.LIGHTWEIGHT.equals(tokenContext.getTokenType());
+
+        if (isAccessTokenLightweight) {
+            OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+            OIDCProviderConfig config = loginProtocol.getConfig();
+
+            if (!config.isAllowUserinfoWithLightweightAccessToken()) {
+                OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(clientModel);
+                if (!clientConfig.isAllowUserinfoWithLightweightAccessToken()) {
+                    String errorMessage = "Lightweight access token not allowed for userinfo endpoint";
+                    event.detail(Details.REASON, errorMessage);
+                    event.error(Errors.INVALID_TOKEN);
+                    throw error.invalidToken(errorMessage);
+                } else {
+                    logger.warnf("Client '%s' using lightweight access token for userinfo (per-client setting on '%s')",
+                            clientModel.getClientId(), clientModel.getClientId());
+                }
+            } else {
+                logger.warnf("Client '%s' using lightweight access token for userinfo (server-wide setting)",
+                        clientModel.getClientId());
             }
         }
 

@@ -1,19 +1,24 @@
 package org.keycloak.scim.resource;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import org.keycloak.scim.resource.common.Meta;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import static org.keycloak.scim.resource.Scim.getCoreSchema;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(Include.NON_NULL)
 @JsonIgnoreProperties({"type"})
 public abstract class ResourceTypeRepresentation {
 
@@ -33,6 +38,8 @@ public abstract class ResourceTypeRepresentation {
 
     @JsonIgnore
     private Long lastModifiedTimestamp;
+
+    private Map<String, Object> extensions;
 
     public Set<String> getSchemas() {
         if (schemas == null) {
@@ -95,5 +102,22 @@ public abstract class ResourceTypeRepresentation {
             schemas = new HashSet<>();
         }
         schemas.add(schema);
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getExtensions() {
+        return extensions;
+    }
+
+    @JsonAnySetter
+    public void setExtensions(String name, Object value) {
+        if (extensions == null) {
+            extensions = new HashMap<>();
+        }
+        this.extensions.put(name, value);
+    }
+
+    public void setExtensions(Map<String, Object> extensions) {
+        this.extensions = extensions;
     }
 }

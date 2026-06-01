@@ -198,8 +198,8 @@ public class UserAdapter implements CachedUserModel {
             value = KeycloakModelUtils.toLowerCaseSafe(value);
         }
         if (updated == null) {
-            Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
-            Set<String> newEntries = value != null ? Set.of(value) : Collections.emptySet();
+            List<String> oldEntries = getAttributeStream(name).sorted().collect(Collectors.toList());
+            List<String> newEntries = value == null ? List.of() : List.of(value);
             if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
                 return;
             }
@@ -215,13 +215,8 @@ public class UserAdapter implements CachedUserModel {
             if (lowerCasedFirstValue != null) values = Collections.singletonList(lowerCasedFirstValue);
         }
         if (updated == null) {
-            Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
-            Set<String> newEntries;
-            if (values == null) {
-                newEntries = new HashSet<>();
-            } else {
-                newEntries = new HashSet<>(values);
-            }
+            List<String> oldEntries = getAttributeStream(name).sorted().collect(Collectors.toList());
+            List<String> newEntries = values == null ? List.of() : values.stream().sorted().toList();
             if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
                 return;
             }

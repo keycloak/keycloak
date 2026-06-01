@@ -16,12 +16,74 @@ concurrency:
 
 permissions:
   contents: read
-  
+
 jobs:
-  update-quarkus-next-branch:
-    name: Update quarkus-next branch
+  build-quarkus-snapshot:
+    name: Build Quarkus snapshot
     if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
+    outputs:
+      qosdk-version: ${{ steps.qosdk-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: quarkusio/quarkus
+          ref: main
+          path: quarkus
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: quarkiverse/quarkus-operator-sdk
+          ref: main
+          path: quarkus-operator-sdk
+
+      # JDK 17 to match how Quarkus and QOSDK build and publish their own snapshots
+      - name: Setup Java
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Key for daily rotation of cache
+        id: cache-key
+        run: echo "date=$(date -u +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
+      - name: Quarkus snapshot cache
+        id: quarkus-cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.m2/repository/io/quarkus
+            ~/.m2/repository/io/quarkiverse/operatorsdk
+          key: quarkus-snapshot-${{ steps.cache-key.outputs.date }}
+          enableCrossOsArchive: true
+
+      - name: Build Quarkus snapshot
+        if: steps.quarkus-cache.outputs.cache-hit != 'true'
+        run: |
+          cd quarkus
+          ./mvnw -B -e --no-transfer-progress \
+            -Dquickly -Dno-test-modules -Prelocations \
+            clean install
+
+      - name: Build Quarkus Operator SDK snapshot
+        if: steps.quarkus-cache.outputs.cache-hit != 'true'
+        run: |
+          cd quarkus-operator-sdk
+          ./mvnw -B -e --no-transfer-progress \
+            clean install -DskipTests -DskipITs -DskipDocs \
+            -Dquarkus.version=999-SNAPSHOT
+
+      - name: Extract QOSDK version
+        id: qosdk-version
+        run: |
+          version=$(ls ~/.m2/repository/io/quarkiverse/operatorsdk/quarkus-operator-sdk-bom/ | grep -E '.*-SNAPSHOT$' | head -1)
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+  update-quarkus-next-branch:
+    name: Update quarkus-next branch
+    runs-on: ubuntu-latest
+    needs: build-quarkus-snapshot
     permissions:
       contents: write # Required to push changes to the repository
     steps:
@@ -30,12 +92,20 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Setup Java
+        uses: ./.github/actions/java-setup
+
+      - name: Restore Quarkus snapshot cache
+        uses: ./.github/actions/quarkus-snapshot-cache
+
       - name: Configure Git
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
       - name: Cherry-pick additional commits in quarkus-next
+        env:
+          QOSDK_VERSION: ${{ needs.build-quarkus-snapshot.outputs.qosdk-version }}
         run: |
           ${GITHUB_WORKSPACE}/.github/scripts/prepare-quarkus-next.sh
 

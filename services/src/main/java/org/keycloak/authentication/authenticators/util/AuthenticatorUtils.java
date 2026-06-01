@@ -20,9 +20,12 @@ package org.keycloak.authentication.authenticators.util;
 import java.io.IOException;
 import java.util.Map;
 
+import jakarta.ws.rs.core.MultivaluedMap;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.hash.PasswordHashProvider;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.Constants;
@@ -138,4 +141,22 @@ public final class AuthenticatorUtils {
         }
     }
 
+    /**
+     * Process the <em>rememberMe</em> input for authentication. If the inputData contains
+     * the <em>rememberMe</em> attribute set to <em>on</em> and the realm is
+     * configured with the rememberMe option, the auth note is added to the
+     * authentication session; otherwise, the note is removed from the auth session.
+     * @param context The flow context
+     * @param inputData The form data
+     */
+    public static void processRememberMe(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
+        String rememberMe = inputData.getFirst("rememberMe");
+        boolean remember = context.getRealm().isRememberMe() && rememberMe != null && rememberMe.equalsIgnoreCase("on");
+        if (remember) {
+            context.getAuthenticationSession().setAuthNote(Details.REMEMBER_ME, "true");
+            context.getEvent().detail(Details.REMEMBER_ME, "true");
+        } else {
+            context.getAuthenticationSession().removeAuthNote(Details.REMEMBER_ME);
+        }
+    }
 }

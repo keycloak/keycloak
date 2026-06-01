@@ -31,7 +31,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.Profile;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -53,7 +52,6 @@ import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
 import org.keycloak.protocol.oidc.rar.InvalidAuthorizationDetailsException;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
-import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
@@ -62,7 +60,6 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
-import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
@@ -227,7 +224,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         String adapterSessionId = formParams.getFirst(AdapterConstants.CLIENT_SESSION_STATE);
         if (adapterSessionId != null) {
             String adapterSessionHost = formParams.getFirst(AdapterConstants.CLIENT_SESSION_HOST);
-            logger.debugf("Adapter Session '%s' saved in ClientSession for client '%s'. Host is '%s'", adapterSessionId, client.getClientId(), adapterSessionHost);
+            logger.debugf("Adapter Session '%s' saved in ClientSession '%s' for client '%s'. Host is '%s'",
+                    adapterSessionId, clientSession.getId(), client.getClientId(), adapterSessionHost);
 
             String oldClientSessionState = clientSession.getNote(AdapterConstants.CLIENT_SESSION_STATE);
             if (!adapterSessionId.equals(oldClientSessionState)) {
@@ -250,15 +248,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
     protected String getRequestedScopes() {
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
-        boolean validScopes;
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            AuthorizationRequestContext authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, scope);
-            validScopes = TokenManager.isValidScope(session, scope, authorizationRequestContext, client, null);
-        } else {
-            validScopes = TokenManager.isValidScope(session, scope, client, null);
-        }
-
-        if (!validScopes) {
+        if (!TokenManager.isValidScope(session, scope, client)) {
             String errorMessage = "Invalid scopes: " + scope;
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
@@ -274,7 +264,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         clientAuthAttributes = clientAuth.getClientAuthAttributes();
         clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
 
-        cors.allowedOrigins(session, client);
+        cors.checkAllowedOrigins(session, client);
 
         if (client.isBearerOnly()) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);

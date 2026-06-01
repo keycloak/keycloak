@@ -5,12 +5,13 @@ import java.util.Objects;
 import java.util.Set;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
-import org.keycloak.representations.admin.v2.validation.ClientUuidProvider;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.ProtocolUnmodified;
 import org.keycloak.representations.admin.v2.validation.PutClient;
 import org.keycloak.representations.admin.v2.validation.UuidUnmodified;
+import org.keycloak.representations.admin.v2.validation.ValidRedirectUris;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
@@ -29,8 +30,9 @@ import org.hibernate.validator.constraints.URL;
     @JsonSubTypes.Type(value = OIDCClientRepresentation.class, name = OIDCClientRepresentation.PROTOCOL),
     @JsonSubTypes.Type(value = SAMLClientRepresentation.class, name = SAMLClientRepresentation.PROTOCOL)
 })
-@UuidUnmodified(uuidProvider = ClientUuidProvider.class, groups = {PutClient.class, PatchClient.class})
+@UuidUnmodified(groups = {PutClient.class, PatchClient.class}, affectedFieldNames = {"uuid"})
 @ProtocolUnmodified(groups = {PutClient.class, PatchClient.class})
+@ValidRedirectUris
 public abstract class BaseClientRepresentation extends BaseRepresentation implements RepresentationWithUuid {
     public static final String DISCRIMINATOR_FIELD = "protocol";
 
@@ -39,12 +41,15 @@ public abstract class BaseClientRepresentation extends BaseRepresentation implem
     protected String uuid;
 
     @NotBlank
+    @Size(min = 1, max = 255)
     @JsonPropertyDescription("ID uniquely identifying this client")
     protected String clientId;
 
+    @Size(max = 255)
     @JsonPropertyDescription("Human readable name of the client")
     private String displayName;
 
+    @Size(max = 255)
     @JsonPropertyDescription("Human readable description of the client")
     private String description;
 
@@ -52,16 +57,19 @@ public abstract class BaseClientRepresentation extends BaseRepresentation implem
     private Boolean enabled;
 
     @URL
+    @Size(max = 255)
     @JsonPropertyDescription("URL to the application's homepage that is represented by this client")
     private String appUrl;
 
+    @Size(max = 100)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("URIs that the browser can redirect to after login")
-    private Set<@NotBlank @URL(message = "Each redirect URL must be valid") String> redirectUris = new LinkedHashSet<>();
+    private Set<@NotBlank @Size(max = 255) String> redirectUris = new LinkedHashSet<>();
 
+    @Size(max = 300)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("Roles associated with this client")
-    private Set<@NotBlank String> roles = new LinkedHashSet<>();
+    private Set<@NotBlank @Size(max = 255) String> roles = new LinkedHashSet<>();
 
     @Override
     public String getUuid() {
@@ -139,7 +147,10 @@ public abstract class BaseClientRepresentation extends BaseRepresentation implem
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof BaseClientRepresentation that)) return false;
+        if (!(o instanceof BaseClientRepresentation)) {
+            return false;
+        }
+        BaseClientRepresentation that = (BaseClientRepresentation)o;
         return Objects.equals(uuid, that.uuid) && Objects.equals(clientId, that.clientId) && Objects.equals(displayName, that.displayName) && Objects.equals(description, that.description) && Objects.equals(enabled, that.enabled) && Objects.equals(appUrl, that.appUrl) && Objects.equals(redirectUris, that.redirectUris) && Objects.equals(roles, that.roles);
     }
 

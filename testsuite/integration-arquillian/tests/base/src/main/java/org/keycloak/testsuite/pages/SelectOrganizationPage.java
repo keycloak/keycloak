@@ -21,7 +21,7 @@ import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -48,8 +48,8 @@ public class SelectOrganizationPage extends LanguageComboboxAwarePage {
 
     public void assertCurrent(String realm) {
         String name = getClass().getSimpleName();
-        Assert.assertTrue("Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")",
-                isCurrent(realm));
+        Assertions.assertTrue(isCurrent(realm),
+                "Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")");
     }
 
     public void selectOrganization(String alias) {

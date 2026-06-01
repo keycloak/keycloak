@@ -56,12 +56,14 @@ body:
         - organizations
         - saml
         - scim
+        - ssf
         - storage
         - testsuite
         - token-exchange
         - translations
         - user-profile
         - welcome/ui
+        - workflows
     validations:
       required: true
   - type: textarea

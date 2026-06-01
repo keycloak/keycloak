@@ -38,6 +38,9 @@ public class KeycloakBeanProducer implements TransactionalSessionHandler {
 
     @RequestScoped
     public KeycloakSession getKeycloakSession() {
+        // This is triggered lazily on the first method call on the session.
+        // Do not start the transaction here as it could still be inside the event loop when used with a (prematching) filter.
+        // JTA transactions must only be used in a blocking thread, so defer this until later.
         return factory.create();
     }
 

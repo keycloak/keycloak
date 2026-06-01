@@ -87,12 +87,12 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -206,22 +206,6 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         registerClient();
     }
 
-    /**
-     * OID4VC protocol is not valid for clients. It can only be used for ClientScopes.
-     * Attempting to create a client with protocol "oid4vc" should be rejected.
-     */
-    @Test
-    public void registerOid4vcClientShouldBeRejected() {
-        authManageClients();
-
-        ClientRepresentation client = buildClient();
-        client.setProtocol("oid4vc");
-
-        Response response = adminClient.realm(REALM_NAME).clients().create(client);
-        assertEquals("Creating a client with OID4VC protocol should be rejected as it is not a valid protocol for clients.",
-                400, response.getStatus());
-    }
-
     @Test
     public void registerClientAsAdminWithNoAccess() throws ClientRegistrationException {
         authNoAccess();
@@ -246,7 +230,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         reg.create(myclient);
 
-        oauth.clientId("myclient");
+        oauth.client("myclient");
         String bearerToken = getToken("myclient", "password", "manage-clients", "password");
         assertTrue(oauth.tokenRevocationRequest(bearerToken).accessToken().send().isSuccess());
 

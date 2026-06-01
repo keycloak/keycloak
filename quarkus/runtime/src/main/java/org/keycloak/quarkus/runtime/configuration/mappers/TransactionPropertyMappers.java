@@ -36,7 +36,7 @@ public class TransactionPropertyMappers implements PropertyMapperGrouping {
                         .validator(value -> validateDuration(TransactionOptions.TRANSACTION_SETUP_TIMEOUT, value))
                         .paramLabel("timeout")
                         .build(),
-                fromOption(TransactionOptions.DB_LOCK_TIMEOUT)
+                fromOption(TransactionOptions.TRANSACTION_SETUP_TIMEOUT)
                         .mapFrom(TransactionOptions.TRANSACTION_SETUP_TIMEOUT)
                         .to("kc.spi-dblock--jpa--lock-wait-timeout")
                         .paramLabel("timeout")

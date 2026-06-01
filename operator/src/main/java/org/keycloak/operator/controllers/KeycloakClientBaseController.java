@@ -98,7 +98,6 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         implements Reconciler<R>, Cleaner<R> {
 
     public static final String CLIENT_ADMIN_API_V2 = "client-admin-api:v2";
-    private static final String CLIENT_API_VERSION = "v2";
     private static final String HTTPS = "https";
 
     static class KeycloakClientStatusAggregator {
@@ -308,7 +307,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
             var target = getWebTarget(kcAdmin);
             AdminRootV2 root = org.keycloak.admin.client.Keycloak.getClientProvider().targetProxy(target,
                     AdminRootV2.class);
-            return action.apply(root.adminApi(resource.getSpec().getRealm()).clients(CLIENT_API_VERSION)
+            return action.apply(root.adminApi(resource.getSpec().getRealm()).clientsV2()
                     .client(resource.getMetadata().getName()));
         }
     }

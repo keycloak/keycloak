@@ -40,3 +40,5 @@ https://www.npmjs.com/package/*
 # Failing because of broken certificate, can likely be restored later.
 https://docs.kantarainitiative.org*
 https://saml.xml.org*
+# Blocks automated HTTP requests from CI runners (returns 403), but loads fine in a browser.
+https://www.oasis-open.org/standard/saml/

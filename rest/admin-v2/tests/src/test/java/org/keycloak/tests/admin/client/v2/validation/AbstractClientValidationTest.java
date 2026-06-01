@@ -17,6 +17,9 @@
 
 package org.keycloak.tests.admin.client.v2.validation;
 
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
@@ -27,8 +30,8 @@ import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -289,6 +292,7 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
         var request = getRequest(isOidc);
         setAuthHeader(request);
 
+        // Without appUrl set, relative paths like "not-a-url" are invalid
         request.setEntity(new StringEntity("""
                 {
                     "protocol": "%s",
@@ -303,9 +307,9 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
             var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
-            // Should have violations for the invalid URLs
+            // Should have violations for the invalid URLs (relative paths without root URL)
             assertThat(body.violations().size(), greaterThanOrEqualTo(1));
-            assertThat(body.violations(), hasItem("redirectUris[].<iterable element>: Each redirect URL must be valid"));
+            assertThat(body.violations(), hasItem(containsString("redirectUris")));
         }
     }
 
@@ -331,7 +335,8 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
             var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
             assertThat(body.violations().size(), greaterThanOrEqualTo(1));
-            assertThat(body.violations(), hasItem("redirectUris[].<iterable element>: Each redirect URL must be valid"));
+            // Blank strings are caught by @NotBlank on Set elements
+            assertThat(body.violations(), hasItem("redirectUris[].<iterable element>: must not be blank"));
         }
     }
 
@@ -455,12 +460,13 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
         var request = getRequest(isOidc);
         setAuthHeader(request);
 
+        // Use wildcard in middle of path which is always invalid, plus invalid appUrl
         request.setEntity(new StringEntity("""
                 {
                     "protocol": "%s",
                     "clientId": "%s",
                     "appUrl": "invalid-url",
-                    "redirectUris": ["also-invalid"]
+                    "redirectUris": ["https://example.com/*/invalid"]
                 }
                 """.formatted(protocol, getPayloadClientId(isOidc))));
 
@@ -471,7 +477,635 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
             assertThat(body.error(), is("Provided data is invalid"));
             // Should have violations for both appUrl and redirectUris
             assertThat(body.violations(), hasItem("appUrl: must be a valid URL"));
-            assertThat(body.violations(), hasItem(containsString("Each redirect URL must be valid")));
+            assertThat(body.violations(), hasItem(containsString("redirectUris")));
+        }
+    }
+
+    // ===========================================
+    // Size constraint tests (BaseClientRepresentation)
+    // ===========================================
+
+    @ParameterizedTest
+    @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
+    public void testDisplayNameMaxLength(String protocol) throws Exception {
+        boolean isOidc = protocol.equals(OIDCClientRepresentation.PROTOCOL);
+        var request = getRequest(isOidc);
+        setAuthHeader(request);
+
+        String longName = "n".repeat(256);
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "%s",
+                    "clientId": "%s",
+                    "displayName": "%s",
+                    "enabled": true
+                }
+                """.formatted(protocol, getPayloadClientId(isOidc), longName)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("displayName: size must be between 0 and 255"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
+    public void testDescriptionMaxLength(String protocol) throws Exception {
+        boolean isOidc = protocol.equals(OIDCClientRepresentation.PROTOCOL);
+        var request = getRequest(isOidc);
+        setAuthHeader(request);
+
+        String longDesc = "d".repeat(256);
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "%s",
+                    "clientId": "%s",
+                    "description": "%s",
+                    "enabled": true
+                }
+                """.formatted(protocol, getPayloadClientId(isOidc), longDesc)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("description: size must be between 0 and 255"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
+    public void testAppUrlMaxLength(String protocol) throws Exception {
+        boolean isOidc = protocol.equals(OIDCClientRepresentation.PROTOCOL);
+        var request = getRequest(isOidc);
+        setAuthHeader(request);
+
+        String longUrl = "http://example.com/" + "a".repeat(237);
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "%s",
+                    "clientId": "%s",
+                    "appUrl": "%s",
+                    "enabled": true
+                }
+                """.formatted(protocol, getPayloadClientId(isOidc), longUrl)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("appUrl: size must be between 0 and 255"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
+    public void testRedirectUriElementMaxLength(String protocol) throws Exception {
+        boolean isOidc = protocol.equals(OIDCClientRepresentation.PROTOCOL);
+        var request = getRequest(isOidc);
+        setAuthHeader(request);
+
+        String longUri = "http://example.com/" + "a".repeat(237);
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "%s",
+                    "clientId": "%s",
+                    "redirectUris": ["%s"],
+                    "enabled": true
+                }
+                """.formatted(protocol, getPayloadClientId(isOidc), longUri)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("redirectUris[].<iterable element>: size must be between 0 and 255"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
+    public void testRedirectUrisMaxSize(String protocol) throws Exception {
+        boolean isOidc = protocol.equals(OIDCClientRepresentation.PROTOCOL);
+        var request = getRequest(isOidc);
+        setAuthHeader(request);
+
+        String uris = IntStream.range(0, 101)
+                .mapToObj(i -> "\"http://example.com/redirect" + i + "\"")
+                .collect(Collectors.joining(", "));
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "%s",
+                    "clientId": "%s",
+                    "redirectUris": [%s],
+                    "enabled": true
+                }
+                """.formatted(protocol, getPayloadClientId(isOidc), uris)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("redirectUris: size must be between 0 and 100"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
+    public void testRolesElementMaxLength(String protocol) throws Exception {
+        boolean isOidc = protocol.equals(OIDCClientRepresentation.PROTOCOL);
+        var request = getRequest(isOidc);
+        setAuthHeader(request);
+
+        String longRole = "r".repeat(256);
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "%s",
+                    "clientId": "%s",
+                    "roles": ["%s"],
+                    "enabled": true
+                }
+                """.formatted(protocol, getPayloadClientId(isOidc), longRole)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("roles[].<iterable element>: size must be between 0 and 255"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
+    public void testRolesMaxSize(String protocol) throws Exception {
+        boolean isOidc = protocol.equals(OIDCClientRepresentation.PROTOCOL);
+        var request = getRequest(isOidc);
+        setAuthHeader(request);
+
+        String roles = IntStream.range(0, 301)
+                .mapToObj(i -> "\"role-" + i + "\"")
+                .collect(Collectors.joining(", "));
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "%s",
+                    "clientId": "%s",
+                    "roles": [%s],
+                    "enabled": true
+                }
+                """.formatted(protocol, getPayloadClientId(isOidc), roles)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("roles: size must be between 0 and 300"));
+        }
+    }
+
+    // ===========================================
+    // Size constraint tests (OIDCClientRepresentation)
+    // ===========================================
+
+    @Test
+    public void testWebOriginsElementMaxLength() throws Exception {
+        var request = getRequest();
+        setAuthHeader(request);
+
+        String longOrigin = "http://example.com:" + "1".repeat(247);
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "%s",
+                    "webOrigins": ["%s"],
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId(), longOrigin)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("webOrigins[].<iterable element>: size must be between 0 and 255"));
+        }
+    }
+
+    @Test
+    public void testWebOriginsMaxSize() throws Exception {
+        var request = getRequest();
+        setAuthHeader(request);
+
+        String origins = IntStream.range(0, 101)
+                .mapToObj(i -> "\"http://origin" + i + ".example.com\"")
+                .collect(Collectors.joining(", "));
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "%s",
+                    "webOrigins": [%s],
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId(), origins)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("webOrigins: size must be between 0 and 100"));
+        }
+    }
+
+    @Test
+    public void testWebOriginsInvalidFormat() throws Exception {
+        var request = getRequest();
+        setAuthHeader(request);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "%s",
+                    "webOrigins": ["not-an-origin"],
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId())));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem(containsString("webOrigins")));
+            assertThat(body.violations(), hasItem(containsString("must be a valid web origin")));
+        }
+    }
+
+    @Test
+    public void testServiceAccountRolesElementMaxLength() throws Exception {
+        var request = getRequest();
+        setAuthHeader(request);
+
+        String longRole = "r".repeat(256);
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "%s",
+                    "loginFlows": ["SERVICE_ACCOUNT"],
+                    "auth": {"method": "client-secret", "secret": "my-test-secret-value"},
+                    "serviceAccountRoles": ["%s"],
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId(), longRole)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("serviceAccountRoles[].<iterable element>: size must be between 0 and 255"));
+        }
+    }
+
+    @Test
+    public void testServiceAccountRolesMaxSize() throws Exception {
+        var request = getRequest();
+        setAuthHeader(request);
+
+        String roles = IntStream.range(0, 301)
+                .mapToObj(i -> "\"sa-role-" + i + "\"")
+                .collect(Collectors.joining(", "));
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "%s",
+                    "loginFlows": ["SERVICE_ACCOUNT"],
+                    "auth": {"method": "client-secret", "secret": "my-test-secret-value"},
+                    "serviceAccountRoles": [%s],
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId(), roles)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("serviceAccountRoles: size must be between 0 and 300"));
+        }
+    }
+
+    // ===========================================
+    // Auth field constraint tests (OIDC-only)
+    // ===========================================
+
+    @Test
+    public void testAuthMethodNotBlank() throws Exception {
+        var request = getRequest();
+        setAuthHeader(request);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "%s",
+                    "auth": {"method": "   ", "secret": "my-test-secret-value"},
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId())));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("auth.method: must not be blank"));
+        }
+    }
+
+    @Test
+    public void testAuthMethodInvalidProvider() throws Exception {
+        var request = getRequest();
+        setAuthHeader(request);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "%s",
+                    "auth": {"method": "nonexistent-provider", "secret": "my-test-secret-value"},
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId())));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem(containsString("auth.method")));
+            assertThat(body.violations(), hasItem(containsString("valid client authenticator type is required")));
+        }
+    }
+
+    @Test
+    public void testSecretMinLength() throws Exception {
+        var request = getRequest();
+        setAuthHeader(request);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "%s",
+                    "auth": {"method": "client-secret", "secret": "ab"},
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId())));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("auth.secret: size must be between 6 and 255"));
+        }
+    }
+
+    @Test
+    public void testCertificateMaxLength() throws Exception {
+        var request = getRequest();
+        setAuthHeader(request);
+
+        String longCert = "X".repeat(65537);
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "%s",
+                    "auth": {"method": "client-jwt", "certificate": "%s"},
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId(), longCert)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("auth.certificate: size must be between 0 and 65536"));
+        }
+    }
+
+    // ===========================================
+    // SAML field constraint tests (SAML-only)
+    // ===========================================
+
+    @Test
+    public void testNameIdFormatInvalidValue() throws Exception {
+        var request = getRequest(false);
+        setAuthHeader(request);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "saml",
+                    "clientId": "%s",
+                    "nameIdFormat": "foobar",
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId(false))));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            String responseBody = EntityUtils.toString(response.getEntity());
+            switch (getHttpMethod()) {
+                case HttpPatch.METHOD_NAME -> assertThat(responseBody, containsString("Invalid values for these fields: nameIdFormat"));
+                default -> assertThat(responseBody, containsString("Cannot parse the JSON"));
+            }
+        }
+    }
+
+    @Test
+    public void testSignatureAlgorithmInvalidValue() throws Exception {
+        var request = getRequest(false);
+        setAuthHeader(request);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "saml",
+                    "clientId": "%s",
+                    "signatureAlgorithm": "INVALID_ALGO",
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId(false))));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            String responseBody = EntityUtils.toString(response.getEntity());
+            if (getHttpMethod().equals(HttpPatch.METHOD_NAME)) {
+                assertThat(responseBody, containsString("Invalid values for these fields: signatureAlgorithm"));
+            } else {
+                assertThat(responseBody, containsString("Cannot parse the JSON"));
+            }
+        }
+    }
+
+    @Test
+    public void testCanonicalizationMethodInvalidValue() throws Exception {
+        var request = getRequest(false);
+        setAuthHeader(request);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "saml",
+                    "clientId": "%s",
+                    "signatureCanonicalizationMethod": "http://example.com/invalid",
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId(false))));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem(containsString("signatureCanonicalizationMethod")));
+            assertThat(body.violations(), hasItem(containsString("must be a valid XML canonicalization method URI")));
+        }
+    }
+
+    @Test
+    public void testSigningCertificateMaxLength() throws Exception {
+        var request = getRequest(false);
+        setAuthHeader(request);
+
+        String longCert = "X".repeat(65537);
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "saml",
+                    "clientId": "%s",
+                    "signingCertificate": "%s",
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId(false), longCert)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("signingCertificate: size must be between 0 and 65536"));
+        }
+    }
+
+    // ===========================================
+    // Cross-field constraint tests (OIDC-only)
+    // ===========================================
+
+    @Test
+    public void testServiceAccountRequiresConfidentialClient() throws Exception {
+        var request = getRequest();
+        setAuthHeader(request);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "%s",
+                    "loginFlows": ["SERVICE_ACCOUNT"],
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId())));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem(containsString("SERVICE_ACCOUNT")));
+            assertThat(body.violations(), hasItem(containsString("requires a confidential client")));
+        }
+    }
+
+    @Test
+    public void testTokenExchangeRequiresConfidentialClient() throws Exception {
+        var request = getRequest();
+        setAuthHeader(request);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "%s",
+                    "loginFlows": ["TOKEN_EXCHANGE"],
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId())));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem(containsString("TOKEN_EXCHANGE")));
+            assertThat(body.violations(), hasItem(containsString("requires a confidential client")));
+        }
+    }
+
+    @Test
+    public void testStandardFlowRequiresRedirectUris() throws Exception {
+        var request = getRequest();
+        setAuthHeader(request);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "%s",
+                    "loginFlows": ["STANDARD"],
+                    "redirectUris": [],
+                    "auth": {"method": "client-secret", "secret": "my-test-secret-value"},
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId())));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem(containsString("redirectUris")));
+            assertThat(body.violations(), hasItem(containsString("requires at least one redirect URI")));
+        }
+    }
+
+    @Test
+    public void testImplicitFlowRequiresRedirectUris() throws Exception {
+        var request = getRequest();
+        setAuthHeader(request);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "%s",
+                    "loginFlows": ["IMPLICIT"],
+                    "redirectUris": [],
+                    "auth": {"method": "client-secret", "secret": "my-test-secret-value"},
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId())));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem(containsString("redirectUris")));
+            assertThat(body.violations(), hasItem(containsString("requires at least one redirect URI")));
+        }
+    }
+
+    @Test
+    public void testServiceAccountRolesRequireServiceAccountFlow() throws Exception {
+        var request = getRequest();
+        setAuthHeader(request);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "%s",
+                    "loginFlows": ["STANDARD"],
+                    "auth": {"method": "client-secret", "secret": "my-test-secret-value"},
+                    "redirectUris": ["http://localhost/callback"],
+                    "serviceAccountRoles": ["some-role"],
+                    "enabled": true
+                }
+                """.formatted(getPayloadClientId())));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem(containsString("serviceAccountRoles can only be set when SERVICE_ACCOUNT flow is enabled")));
         }
     }
 
@@ -617,16 +1251,17 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
     public static class TestOidcClient implements ClientConfig {
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId("test-client-oidc")
                     .enabled(true)
+                    .redirectUris("http://localhost/callback")
                     .protocol("openid-connect");
         }
     }
 
     public static class TestSamlClient implements ClientConfig {
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId("test-client-saml")
                     .enabled(true)
                     .protocol("saml");

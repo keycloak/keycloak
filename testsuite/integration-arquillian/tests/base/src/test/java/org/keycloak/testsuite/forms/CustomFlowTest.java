@@ -29,6 +29,7 @@ import org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertifi
 import org.keycloak.authentication.authenticators.x509.ValidateX509CertificateUsernameFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -39,6 +40,12 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
+import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
@@ -50,23 +57,20 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.updaters.Creator;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.ExecutionBuilder;
-import org.keycloak.testsuite.util.FlowBuilder;
 import org.keycloak.testsuite.util.RealmRepUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.TokenUtil;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -88,7 +92,7 @@ public class CustomFlowTest extends AbstractFlowTest {
                                               .clientId("dummy-client")
                                               .name("dummy-client")
                                               .authenticatorType(PassThroughClientAuthenticator.PROVIDER_ID)
-                                              .directAccessGrants()
+                                              .directAccessGrantsEnabled()
                                               .build();
         testRealm.getClients().add(dummyClient);
 
@@ -106,79 +110,79 @@ public class CustomFlowTest extends AbstractFlowTest {
             return;
         }
 
-        AuthenticationFlowRepresentation flow = FlowBuilder.create()
+        AuthenticationFlowRepresentation flow = AuthenticationFlowBuilder.create()
                                                            .alias("dummy")
                                                            .description("dummy pass through flow")
                                                            .providerId("basic-flow")
                                                            .topLevel(true)
                                                            .builtIn(false)
                                                            .build();
-        testRealm().flows().createFlow(flow);
+        managedRealm.admin().flows().createFlow(flow);
 
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setBrowserFlow(flow.getAlias());
         realm.setDirectGrantFlow(flow.getAlias());
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
 
         // refresh flow to find its id
         flow = findFlowByAlias(flow.getAlias());
 
-        AuthenticationExecutionRepresentation execution = ExecutionBuilder.create()
+        AuthenticationExecutionRepresentation execution = AuthenticationExecutionBuilder.create()
                                                             .parentFlow(flow.getId())
                                                             .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString())
                                                             .authenticator(PassThroughAuthenticator.PROVIDER_ID)
                                                             .priority(10)
                                                             .authenticatorFlow(false)
                                                             .build();
-        testRealm().flows().addExecution(execution);
+        managedRealm.admin().flows().addExecution(execution);
 
-        flow = FlowBuilder.create()
+        flow = AuthenticationFlowBuilder.create()
                         .alias("dummy registration")
                         .description("dummy pass through registration")
                         .providerId("basic-flow")
                         .topLevel(true)
                         .builtIn(false)
                         .build();
-        testRealm().flows().createFlow(flow);
+        managedRealm.admin().flows().createFlow(flow);
 
         setRegistrationFlow(flow);
 
         // refresh flow to find its id
         flow = findFlowByAlias(flow.getAlias());
 
-        execution = ExecutionBuilder.create()
+        execution = AuthenticationExecutionBuilder.create()
                         .parentFlow(flow.getId())
                         .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString())
                         .authenticator(PassThroughRegistration.PROVIDER_ID)
                         .priority(10)
                         .authenticatorFlow(false)
                         .build();
-        testRealm().flows().addExecution(execution);
+        managedRealm.admin().flows().addExecution(execution);
 
-        AuthenticationFlowRepresentation clientFlow = FlowBuilder.create()
+        AuthenticationFlowRepresentation clientFlow = AuthenticationFlowBuilder.create()
                                                            .alias("client-dummy")
                                                            .description("dummy pass through flow")
                                                            .providerId(AuthenticationFlow.CLIENT_FLOW)
                                                            .topLevel(true)
                                                            .builtIn(false)
                                                            .build();
-        testRealm().flows().createFlow(clientFlow);
+        managedRealm.admin().flows().createFlow(clientFlow);
 
-        realm = testRealm().toRepresentation();
+        realm = managedRealm.admin().toRepresentation();
         realm.setClientAuthenticationFlow(clientFlow.getAlias());
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
 
         // refresh flow to find its id
         clientFlow = findFlowByAlias(clientFlow.getAlias());
 
-        execution = ExecutionBuilder.create()
+        execution = AuthenticationExecutionBuilder.create()
                         .parentFlow(clientFlow.getId())
                         .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString())
                         .authenticator(PassThroughClientAuthenticator.PROVIDER_ID)
                         .priority(10)
                         .authenticatorFlow(false)
                         .build();
-        testRealm().flows().addExecution(execution);
+        managedRealm.admin().flows().addExecution(execution);
 
         testContext.setInitialized(true);
     }
@@ -213,7 +217,7 @@ public class CustomFlowTest extends AbstractFlowTest {
      */
     @Test
     public void testRequiredAfterAlternative() {
-        AuthenticationManagementResource authMgmtResource = testRealm().flows();
+        AuthenticationManagementResource authMgmtResource = managedRealm.admin().flows();
         Map<String, Object> params = new HashMap<>();
         String flowAlias = "Browser Flow With Extra";
         params.put("newName", flowAlias);
@@ -227,7 +231,7 @@ public class CustomFlowTest extends AbstractFlowTest {
             response.close();
         }
 
-        AuthenticationExecutionRepresentation execution = ExecutionBuilder.create()
+        AuthenticationExecutionRepresentation execution = AuthenticationExecutionBuilder.create()
                 .parentFlow(flowId)
                 .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString())
                 .authenticator(ClickThroughAuthenticator.PROVIDER_ID)
@@ -235,12 +239,12 @@ public class CustomFlowTest extends AbstractFlowTest {
                 .authenticatorFlow(false)
                 .build();
 
-        RealmRepresentation rep = testRealm().toRepresentation();
-        try (Response r = testRealm().flows().addExecution(execution)) {
+        RealmRepresentation rep = managedRealm.admin().toRepresentation();
+        try (Response r = managedRealm.admin().flows().addExecution(execution)) {
             rep.setBrowserFlow(flowAlias);
-            testRealm().update(rep);
-            rep = testRealm().toRepresentation();
-            Assert.assertEquals(flowAlias, rep.getBrowserFlow());
+            managedRealm.admin().update(rep);
+            rep = managedRealm.admin().toRepresentation();
+            Assertions.assertEquals(flowAlias, rep.getBrowserFlow());
         }
 
 
@@ -250,11 +254,11 @@ public class CustomFlowTest extends AbstractFlowTest {
         loginPage.login("test-user@localhost", "bad-password");
         Assert.assertTrue(loginPage.isCurrent());
         loginPage.login("test-user@localhost", "password");*/
-        Assert.assertTrue(termsPage.isCurrent());
+        Assertions.assertTrue(termsPage.isCurrent());
 
         // Revert dummy flow
         rep.setBrowserFlow("dummy");
-        testRealm().update(rep);
+        managedRealm.admin().update(rep);
     }
 
     @Test
@@ -268,7 +272,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         flow.setTopLevel(true);
         flow.setBuiltIn(false);
 
-        try (Creator.Flow amr = Creator.create(testRealm(), flow)) {
+        try (Creator.Flow amr = Creator.create(managedRealm.admin(), flow)) {
             AuthenticationManagementResource authMgmtResource = amr.resource();
 
             //add execution - X509 username
@@ -303,14 +307,14 @@ public class CustomFlowTest extends AbstractFlowTest {
         AuthenticatorState state = new AuthenticatorState();
         state.setUsername("login-test");
         state.setClientId("test-app");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
 
         oauth.openLoginForm();
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
     }
 
     @Test
@@ -318,7 +322,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         AuthenticatorState state = new AuthenticatorState();
         state.setUsername("login-test");
         state.setClientId("test-app");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
 
         grantAccessToken("test-app", "login-test");
     }
@@ -328,32 +332,32 @@ public class CustomFlowTest extends AbstractFlowTest {
         AuthenticatorState state = new AuthenticatorState();
         state.setClientId("dummy-client");
         state.setUsername("login-test");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
         grantAccessToken("dummy-client", "login-test");
 
         state.setClientId("test-app");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
         grantAccessToken("test-app", "login-test");
 
         state.setClientId("unknown");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
 
         AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user", "password");
         assertEquals(401, response.getStatusCode());
         assertEquals("invalid_client", response.getError());
 
-        events.expectLogin()
-                .client((String) null)
-                .user((String) null)
-                .session((String) null)
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .error(Errors.CLIENT_NOT_FOUND)
-                .assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .clientId(null)
+                .userId(null)
+                .sessionId(null)
+                .withoutDetails(Details.CODE_ID)
+                .withoutDetails(Details.REDIRECT_URI)
+                .withoutDetails(Details.CONSENT)
+                .error(Errors.CLIENT_NOT_FOUND);
 
         state.setClientId("test-app");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
 
         // Test throwing exception from the client authenticator. No error details should be displayed
         response = oauth.passwordGrantRequest("test-user", "password").param(PassThroughClientAuthenticator.TEST_ERROR_PARAM, "Some Random Error").send();
@@ -372,19 +376,19 @@ public class CustomFlowTest extends AbstractFlowTest {
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
-        events.expectLogin()
-                .client(clientId)
-                .user(userId)
-                .session(accessToken.getSessionState())
-                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                .detail(Details.TOKEN_ID, accessToken.getId())
-                .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .detail(Details.USERNAME, login)
-                .detail(Details.CLIENT_AUTH_METHOD, PassThroughClientAuthenticator.PROVIDER_ID)
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGIN)
+                .clientId(clientId)
+                .userId(userId)
+                .sessionId(accessToken.getSessionState())
+                .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .details(Details.TOKEN_ID, accessToken.getId())
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .details(Details.USERNAME, login)
+                .details(Details.CLIENT_AUTH_METHOD, PassThroughClientAuthenticator.PROVIDER_ID)
+                .withoutDetails(Details.CODE_ID)
+                .withoutDetails(Details.REDIRECT_URI)
+                .withoutDetails(Details.CONSENT);
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
 
@@ -396,12 +400,24 @@ public class CustomFlowTest extends AbstractFlowTest {
         assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
         assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState())
-                .user(userId)
-                .client(clientId)
-                .detail(Details.CLIENT_AUTH_METHOD, PassThroughClientAuthenticator.PROVIDER_ID)
-                .assertEvent();
+        EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .sessionId(refreshToken.getSessionState())
+                .userId(userId)
+                .clientId(clientId)
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, PassThroughClientAuthenticator.PROVIDER_ID);
     }
 
+    public static RunOnServer updateAuthenticator(AuthenticatorState state) {
+        return  session -> {
+            if (state.getClientId() != null) {
+                PassThroughClientAuthenticator.clientId = state.getClientId();
+            }
+            if (state.getUsername() != null) {
+                PassThroughAuthenticator.username = state.getUsername();
+            }
+        };
+    }
 
 }

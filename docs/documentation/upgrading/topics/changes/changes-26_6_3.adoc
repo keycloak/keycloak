@@ -1,0 +1,40 @@
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Valid redirect URIs for clients do not accept wildcards for hostname anymore
+
+The wildcard comparison for valid redirect URIs does not affect the hostname anymore. Previously patterns like `$$https://example.com*$$` were accepted and lead to allow unintended domains like `$$https://example.com.other.domain.com$$`. Since this release, the hostname does not accept such type of wildcard and those patterns will be managed as if the wildcard is after the hostname `$$https://example.com/*$$`. The full wildcard for the hostname `$$https://*$$` is still accepted because its interpretation cannot be misunderstood.
+
+Note that OAuth 2.0 recommends exact string matching in the link:https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics#name-protecting-redirect-based-f[Security Best Current Practice] and draft for OAuth 2.1 enforces it. {project_name} recommends to not use any wildcard valid redirect URI for clients. See link:{adminguide_link}#unspecific-redirect-uris_server_administration_guide[Unspecific redirect URIs] in the {adminguide_name} for more information.
+
+=== Client scope evaluation now enforces access to the user when generating tokens
+
+In previous versions of {project_name}, client scope evaluation allow generating tokens without necessarily having
+the necessary admin roles or permissions to access the user.
+
+In this release, client scope evaluation now requires at the very least the `view-users` admin role granted to the
+realm administrator or any permission that grants the `view` scope on the user.
+
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== Maximum length of the token parameters in the OIDC token endpoint
+
+When the OIDC token endpoint request (or OAuth2 token endpoint request) is sent, a new limit exists for the maximum length of "token" OIDC/OAuth2 parameter. The maximum length of each "normal" parameter is still 4,000 characters as in previous version.
+However maximum length of the "token" parameter is increased to 20,000 characters. Also when limit for the "token" parameter is reached, the parameter will not be ignored, but request will fail.
+
+As "token" parameter is considered a parameter containing possibly long token (for example long JWT or SAML assertion) with unbounded data (For example possibly big amount of roles inside JWT).
+Applies for example for parameters like `subject_token` sent in case of the Token exchange grant.
+
+If you want to increase or lower those numbers, start the server with the option `req-token-params-default-max-size` for the default maximum length of the
+OIDC/OAuth2 token parameter or you can use something such as `req-params-max-size` for one specific parameter. For more details, see the `login-protocol` provider configuration in the link:{allproviderconfigguide_link}[{allproviderconfigguide_name}].
+
+=== CORS requests with an invalid Origin are now rejected before endpoint logic runs
+
+Cross-origin requests sent to OIDC endpoints (such as the token, userinfo, token revocation, logout, and PAR endpoints) are now validated against the client's configured Web Origins before the endpoint reaches its authentication and request-processing logic. Previously, requests carrying an `Origin` header that did not match any of the client's allowed Web Origins could be processed up to the point where the response was about to be returned, which could result in inconsistent error responses depending on how far the request progressed.
+
+After this change, such requests are rejected immediately with a CORS failure returning Forbidden (403) HTTP error status. There is no behavior change for same-origin requests (no `Origin` header) or for cross-origin requests whose `Origin` is already permitted by the client's Web Origins configuration.

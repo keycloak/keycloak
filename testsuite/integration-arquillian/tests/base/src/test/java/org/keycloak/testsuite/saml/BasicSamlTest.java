@@ -79,7 +79,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesRegex;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author mhajas
@@ -419,7 +419,7 @@ public class BasicSamlTest extends AbstractSamlTest {
 
             // check document is encrypted
             ResponseType responseType = (ResponseType) holder.getSamlObject();
-            assertTrue("Assertion is not encrypted", AssertionUtil.isAssertionEncrypted(responseType));
+            assertTrue(AssertionUtil.isAssertionEncrypted(responseType), "Assertion is not encrypted");
 
             SamlDeployment deployment = SamlUtils.getSamlDeploymentForClient("sales-post-enc");
             AssertionUtil.decryptAssertion(responseType, (EncryptedData encryptedData) -> Collections.singletonList(deployment.getDecryptionKey()));

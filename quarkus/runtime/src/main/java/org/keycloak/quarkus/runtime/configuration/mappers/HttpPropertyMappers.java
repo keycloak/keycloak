@@ -71,7 +71,7 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
             return value;
         }
         // account for modes that always need to be all interfaces
-        if (Boolean.parseBoolean(System.getenv("KC_RUN_IN_CONTAINER")) || LaunchMode.current().isRemoteDev()
+        if (Environment.isRunInContainer() || LaunchMode.current().isRemoteDev()
                 || isWSL()) {
             return "0.0.0.0";
         }
@@ -194,6 +194,12 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                 fromOption(HttpOptions.SHUTDOWN_DELAY)
                         .to("quarkus.shutdown.delay")
                         .paramLabel("delay")
+                        .validator(HttpPropertyMappers::validateShutdownDuration)
+                        .build(),
+                fromOption(HttpOptions.SHUTDOWN_TIMEOUT)
+                        .mapFrom(HttpOptions.SHUTDOWN_TIMEOUT)
+                        .to("kc.spi-connections-infinispan--default--shutdown-timeout")
+                        .paramLabel("timeout")
                         .validator(HttpPropertyMappers::validateShutdownDuration)
                         .build()
         );

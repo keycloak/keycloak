@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.keycloak.common.util.Time;
@@ -74,13 +75,11 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
             return;
         }
         
+        SingleUseObjectProvider singleUseObjects = session.singleUseObjects();
+        String offerId = entry.getCredentialsOfferId();
         String entryJson = JsonSerialization.valueAsString(entry);
 
-        // Store with key=offerId
-        session.singleUseObjects().put(entry.getCredentialsOfferId(), lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
-
-        // Store with key=nonce
-        session.singleUseObjects().put(entry.getNonce(), lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
+        singleUseObjects.put(offerId, lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
     }
 
     @Override
@@ -93,16 +92,19 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
 
     @Override
     public CredentialOfferState getOfferStateByNonce(String nonce) {
-        return Optional.ofNullable(session.singleUseObjects().get(nonce))
-                .map(o -> o.get(ENTRY_KEY))
-                .map(o -> JsonSerialization.valueFromString(o, CredentialOfferState.class))
-                .orElse(null);
+        String offerId = CredentialOfferLookupKey.extractOfferId(nonce);
+        if (offerId == null) {
+            return null;
+        }
+        CredentialOfferState offerState = getOfferStateById(offerId);
+        if (offerState == null || !Objects.equals(nonce, offerState.getNonce())) {
+            return null;
+        }
+        return offerState;
     }
 
     @Override
     public void removeOfferState(CredentialOfferState offerState) {
-        SingleUseObjectProvider singleUseObjects = session.singleUseObjects();
-        singleUseObjects.remove(offerState.getCredentialsOfferId());
-        singleUseObjects.remove(offerState.getNonce());
+        session.singleUseObjects().remove(offerState.getCredentialsOfferId());
     }
 }

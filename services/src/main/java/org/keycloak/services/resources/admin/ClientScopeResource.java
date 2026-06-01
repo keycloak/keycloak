@@ -208,27 +208,14 @@ public class ClientScopeResource {
         }
         boolean isDynamic = Boolean.parseBoolean(clientScope.getAttributes().get(ClientScopeModel.IS_DYNAMIC_SCOPE));
         String regexp = clientScope.getAttributes().get(ClientScopeModel.DYNAMIC_SCOPE_REGEXP);
+        // Always validate the dynamic scope regexp to avoid inserting a wrong value even when the feature is disabled
+        if (!StringUtil.isNullOrEmpty(regexp) && !dynamicScreenPattern.matcher(regexp).matches()) {
+            throw ErrorResponse.error(String.format("Invalid format for the Dynamic Scope regexp %1s", regexp), Response.Status.BAD_REQUEST);
+        }
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
             // if the scope is dynamic but the regexp is empty, it's not considered valid
             if (isDynamic && StringUtil.isNullOrEmpty(regexp)) {
                 throw ErrorResponse.error("Dynamic scope regexp must not be null or empty", Response.Status.BAD_REQUEST);
-            }
-            // Always validate the dynamic scope regexp to avoid inserting a wrong value even when the feature is disabled
-            if (!StringUtil.isNullOrEmpty(regexp) && !dynamicScreenPattern.matcher(regexp).matches()) {
-                throw ErrorResponse.error(String.format("Invalid format for the Dynamic Scope regexp %1s", regexp), Response.Status.BAD_REQUEST);
-            }
-        } else {
-            // if the value is not null or empty we won't accept the request as the feature is disabled
-            Optional.ofNullable(regexp).ifPresent(s -> {
-                if (!s.isEmpty()) {
-                    throw ErrorResponse.error(String.format("Unexpected value \"%1s\" for attribute %2s in ClientScope",
-                            regexp, ClientScopeModel.DYNAMIC_SCOPE_REGEXP), Response.Status.BAD_REQUEST);
-                }
-            });
-            // If isDynamic is true, we won't accept the request as the feature is disabled
-            if (isDynamic) {
-                throw ErrorResponse.error(String.format("Unexpected value \"%1s\" for attribute %2s in ClientScope",
-                        isDynamic, ClientScopeModel.IS_DYNAMIC_SCOPE), Response.Status.BAD_REQUEST);
             }
         }
     }
@@ -269,8 +256,8 @@ public class ClientScopeResource {
     }
 
     /**
-     * Makes sure that an update that makes a Client Scope Dynamic is rejected if the Client Scope is assigned to a client
-     * as a default scope.
+     * Makes sure that an update that makes a Client Scope Dynamic is rejected if the Client Scope is assigned
+     * as a default scope — either to a client or as a realm-level default.
      * @param rep the {@link ClientScopeRepresentation} with the changes from the frontend.
      */
     public void validateDynamicScopeUpdate(ClientScopeRepresentation rep) {
@@ -288,6 +275,16 @@ public class ClientScopeResource {
             // if it's present, it means that a client has this scope assigned as a default scope, so this scope can't be made dynamic
             if (scopeModelOpt.isPresent()) {
                 throw ErrorResponse.error("This Client Scope can't be made dynamic as it's assigned to a Client as a Default Scope",
+                        Response.Status.BAD_REQUEST);
+            }
+
+            // Also check realm-level default scopes — a scope that is a realm default would be automatically
+            // assigned to new clients as a default scope, which is incompatible with dynamic scopes.
+            boolean isRealmDefault = realm.getDefaultClientScopesStream(true)
+                    .map(ClientScopeModel::getId)
+                    .anyMatch(scopeId -> scopeId.equalsIgnoreCase(this.clientScope.getId()));
+            if (isRealmDefault) {
+                throw ErrorResponse.error("This Client Scope can't be made dynamic as it's assigned as a Realm Default Scope",
                         Response.Status.BAD_REQUEST);
             }
         }

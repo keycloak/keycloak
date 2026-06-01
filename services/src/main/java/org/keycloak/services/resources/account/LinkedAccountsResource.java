@@ -130,7 +130,7 @@ public class LinkedAccountsResource {
         // TODO: remove this statement once the console and the LinkedAccountsRestServiceTest are updated - this is only here for backwards compatibility
         if (linked == null) {
             List<LinkedAccountRepresentation> linkedAccounts = getLinkedAccounts(this.session, this.realm, this.user);
-            return Cors.builder().auth().allowedOrigins(auth.getToken()).add(Response.ok(linkedAccounts));
+            return Cors.builder().auth().checkAllowedOrigins(auth.getToken()).add(Response.ok(linkedAccounts));
         }
 
         List<LinkedAccountRepresentation> linkedAccounts;
@@ -158,7 +158,7 @@ public class LinkedAccountsResource {
                     .map(idp -> this.toLinkedAccount(idp, null, null))
                     .toList();
         }
-        return Cors.builder().auth().allowedOrigins(auth.getToken()).add(Response.ok(linkedAccounts));
+        return Cors.builder().auth().checkAllowedOrigins(auth.getToken()).add(Response.ok(linkedAccounts));
     }
 
     private LinkedAccountRepresentation toLinkedAccount(IdentityProviderModel provider, String fedIdentity, Set<IdentityProviderShowInAccountConsole> includedShowInAccountConsoleValues) {
@@ -274,7 +274,7 @@ public class LinkedAccountsResource {
         try {
             AccountLinkUriRepresentation rep = BrokerUtil.createClientInitiatedLinkURI(ACCOUNT_CONSOLE_CLIENT_ID, redirectUri, providerAlias, realm.getName(), auth.getSession().getId(), this.session.getContext().getUri().getBaseUri());
 
-            return Cors.builder().auth().allowedOrigins(auth.getToken()).add(Response.ok(rep));
+            return Cors.builder().auth().checkAllowedOrigins(auth.getToken()).add(Response.ok(rep));
         } catch (Exception spe) {
             spe.printStackTrace();
             throw ErrorResponse.error(Messages.FAILED_TO_PROCESS_RESPONSE, Response.Status.INTERNAL_SERVER_ERROR);
@@ -320,7 +320,7 @@ public class LinkedAccountsResource {
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, link.getUserName())
                 .success();
 
-        return Cors.builder().auth().allowedOrigins(auth.getToken()).add(Response.noContent());
+        return Cors.builder().auth().checkAllowedOrigins(auth.getToken()).add(Response.noContent());
     }
 
     private String checkCommonPreconditions(String providerAlias) {

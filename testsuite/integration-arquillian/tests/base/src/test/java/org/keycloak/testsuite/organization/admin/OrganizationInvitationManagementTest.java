@@ -29,9 +29,7 @@ import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.updaters.OrganizationAttributeUpdater;
-import org.keycloak.testsuite.util.MailServer;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -46,7 +44,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Integration tests for Organization Invitation Management functionality
@@ -59,15 +57,9 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
 
     @Before
     public void setUp() {
-        MailServer.start();
         OrganizationRepresentation orgRep = createOrganization("test-org", "test-org.com");
         organizationId = orgRep.getId();
-        organization = testRealm().organizations().get(organizationId);
-    }
-
-    @After
-    public void tearDown() {
-        MailServer.stop();
+        organization = managedRealm.admin().organizations().get(organizationId);
     }
 
     @Override
@@ -241,12 +233,12 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         assertThat(invitations, empty());
 
         try {
-            setTimeOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
+            timeOffSet.set(Math.toIntExact(Duration.ofDays(2).toSeconds()));
             invitations =
                     organization.invitations().list("EXPIRED", null, null, null);
             assertThat(invitations, hasSize(1));
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
         }
 
         invitations =
@@ -324,7 +316,7 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
     public void testCrossOrganizationInvitationAccess() {
         // Create second organization
         OrganizationRepresentation org2Rep = createOrganization("test-org-2", "test-org-2.com");
-        OrganizationResource organization2 = testRealm().organizations().get(org2Rep.getId());
+        OrganizationResource organization2 = managedRealm.admin().organizations().get(org2Rep.getId());
 
         // Create invitation in org1
         sendInvitation("user@test-org.com", "User", "One");
@@ -364,7 +356,7 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
     public void testMultipleOrganizationInvitationIsolation() {
         // Create second organization
         OrganizationRepresentation org2Rep = createOrganization("test-org-2", "test-org-2.com");
-        OrganizationResource organization2 = testRealm().organizations().get(org2Rep.getId());
+        OrganizationResource organization2 = managedRealm.admin().organizations().get(org2Rep.getId());
 
         // Create invitations in both organizations
         sendInvitation("user@test-org.com", "User", "One");

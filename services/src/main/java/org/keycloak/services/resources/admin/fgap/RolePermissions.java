@@ -182,6 +182,8 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
                     return true;
                 } else if (role.getName().equals(AdminRoles.QUERY_GROUPS)) {
                     return true;
+                } else if (role.getName().equals(AdminRoles.QUERY_ORGANIZATIONS)) {
+                    return true;
                 } else if (role.getName().equals(AdminRoles.MANAGE_AUTHORIZATION)) {
                     ResourceServer resourceServer = getResourceServer(role);
                     if (!root.realm().canManageAuthorization(resourceServer)) {
@@ -240,6 +242,18 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
                     }
                 } else if (role.getName().equals(AdminRoles.VIEW_REALM)) {
                     if (!root.realm().canViewRealm()) {
+                        return adminConflictMessage(role);
+                    } else {
+                        return true;
+                    }
+                } else if (role.getName().equals(AdminRoles.MANAGE_ORGANIZATIONS)) {
+                    if (!root.orgs().canManage()) {
+                        return adminConflictMessage(role);
+                    } else {
+                        return true;
+                    }
+                } else if (role.getName().equals(AdminRoles.VIEW_ORGANIZATIONS)) {
+                    if (!root.orgs().canView()) {
                         return adminConflictMessage(role);
                     } else {
                         return true;
@@ -347,7 +361,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         if (canView(container)) {
             return true;
         } else if (container instanceof RealmModel) {
-            return root.realm().canViewRealm();
+            return root.realm().canViewRealm() || root.hasOneAdminRole(AdminRoles.MANAGE_IDENTITY_PROVIDERS);
         } else {
             return root.clients().canView((ClientModel)container);
         }

@@ -22,8 +22,8 @@ import java.util.Set;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
@@ -38,46 +38,46 @@ public class UPConfigUtilsTest {
 
     @Test
     public void canBeAuthFlowContext() {
-        Assert.assertFalse(UserProfileContext.USER_API.canBeAuthFlowContext());
+        Assertions.assertFalse(UserProfileContext.USER_API.canBeAuthFlowContext());
 
-        Assert.assertTrue(UserProfileContext.ACCOUNT.canBeAuthFlowContext());
-        Assert.assertTrue(UserProfileContext.IDP_REVIEW.canBeAuthFlowContext());
-        Assert.assertTrue(UserProfileContext.REGISTRATION.canBeAuthFlowContext());
-        Assert.assertTrue(UserProfileContext.UPDATE_PROFILE.canBeAuthFlowContext());
+        Assertions.assertTrue(UserProfileContext.ACCOUNT.canBeAuthFlowContext());
+        Assertions.assertTrue(UserProfileContext.IDP_REVIEW.canBeAuthFlowContext());
+        Assertions.assertTrue(UserProfileContext.REGISTRATION.canBeAuthFlowContext());
+        Assertions.assertTrue(UserProfileContext.UPDATE_PROFILE.canBeAuthFlowContext());
     }
 
     @Test
     public void isRoleForContext() {
 
-        Assert.assertFalse(UserProfileContext.ACCOUNT.isRoleForContext( null));
+        Assertions.assertFalse(UserProfileContext.ACCOUNT.isRoleForContext( null));
 
         Set<String> roles = new HashSet<>();
         roles.add(ROLE_ADMIN);
-        Assert.assertTrue(UserProfileContext.USER_API.isRoleForContext(roles));
-        Assert.assertFalse(UserProfileContext.ACCOUNT.isRoleForContext(roles));
-        Assert.assertFalse(UserProfileContext.UPDATE_PROFILE.isRoleForContext(roles));
+        Assertions.assertTrue(UserProfileContext.USER_API.isRoleForContext(roles));
+        Assertions.assertFalse(UserProfileContext.ACCOUNT.isRoleForContext(roles));
+        Assertions.assertFalse(UserProfileContext.UPDATE_PROFILE.isRoleForContext(roles));
 
         roles = new HashSet<>();
         roles.add(ROLE_USER);
-        Assert.assertFalse(UserProfileContext.USER_API.isRoleForContext(roles));
-        Assert.assertTrue(UserProfileContext.ACCOUNT.isRoleForContext(roles));
-        Assert.assertTrue(UserProfileContext.IDP_REVIEW.isRoleForContext(roles));
-        Assert.assertTrue(UserProfileContext.REGISTRATION.isRoleForContext(roles));
+        Assertions.assertFalse(UserProfileContext.USER_API.isRoleForContext(roles));
+        Assertions.assertTrue(UserProfileContext.ACCOUNT.isRoleForContext(roles));
+        Assertions.assertTrue(UserProfileContext.IDP_REVIEW.isRoleForContext(roles));
+        Assertions.assertTrue(UserProfileContext.REGISTRATION.isRoleForContext(roles));
 
         // both in roles
         roles.add(ROLE_ADMIN);
-        Assert.assertTrue(UserProfileContext.USER_API.isRoleForContext(roles));
-        Assert.assertTrue(UserProfileContext.ACCOUNT.isRoleForContext(roles));
-        Assert.assertTrue(UserProfileContext.IDP_REVIEW.isRoleForContext(roles));
-        Assert.assertTrue(UserProfileContext.REGISTRATION.isRoleForContext(roles));
+        Assertions.assertTrue(UserProfileContext.USER_API.isRoleForContext(roles));
+        Assertions.assertTrue(UserProfileContext.ACCOUNT.isRoleForContext(roles));
+        Assertions.assertTrue(UserProfileContext.IDP_REVIEW.isRoleForContext(roles));
+        Assertions.assertTrue(UserProfileContext.REGISTRATION.isRoleForContext(roles));
     }
 
     @Test
     public void capitalizeFirstLetter() {
-        Assert.assertNull(UPConfigUtils.capitalizeFirstLetter(null));
-        Assert.assertEquals("",UPConfigUtils.capitalizeFirstLetter(""));
-        Assert.assertEquals("A",UPConfigUtils.capitalizeFirstLetter("a"));
-        Assert.assertEquals("AbcDefGh",UPConfigUtils.capitalizeFirstLetter("abcDefGh"));
+        Assertions.assertNull(UPConfigUtils.capitalizeFirstLetter(null));
+        Assertions.assertEquals("",UPConfigUtils.capitalizeFirstLetter(""));
+        Assertions.assertEquals("A",UPConfigUtils.capitalizeFirstLetter("a"));
+        Assertions.assertEquals("AbcDefGh",UPConfigUtils.capitalizeFirstLetter("abcDefGh"));
     }
 
 }

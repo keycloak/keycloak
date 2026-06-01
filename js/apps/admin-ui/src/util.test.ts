@@ -1,11 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   convertAttributeNameToForm,
   convertFormValuesToObject,
   convertToFormValues,
+  resolveDisplayName,
 } from "./util";
-
-vi.mock("react");
 
 const TOKEN = "🍺";
 
@@ -142,5 +141,37 @@ describe("Tests the form convert util functions", () => {
 
     //then
     expect(form).toEqual(`attributes.some${TOKEN}strange${TOKEN}attribute`);
+  });
+});
+
+const mockT = ((key: string) => {
+  const translations: Record<string, string> = {
+    custom: "Custom Attribute",
+    myRealmName: "My Translated Realm",
+  };
+  return translations[key] ?? key;
+}) as any;
+
+describe("resolveDisplayName", () => {
+  it("returns plain display name without translating", () => {
+    expect(resolveDisplayName(mockT, "My Realm", "fallback")).toBe("My Realm");
+  });
+
+  it("does not translate display name that matches a translation key", () => {
+    expect(resolveDisplayName(mockT, "custom", "fallback")).toBe("custom");
+  });
+
+  it("translates display name when it is a bundle key", () => {
+    expect(resolveDisplayName(mockT, "${myRealmName}", "fallback")).toBe(
+      "My Translated Realm",
+    );
+  });
+
+  it("returns fallback when display name is undefined", () => {
+    expect(resolveDisplayName(mockT, undefined, "my-realm")).toBe("my-realm");
+  });
+
+  it("returns fallback when display name is empty", () => {
+    expect(resolveDisplayName(mockT, "", "my-realm")).toBe("my-realm");
   });
 });

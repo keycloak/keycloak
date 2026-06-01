@@ -66,7 +66,7 @@ export default function DetailProvider() {
       const updatedComponent = {
         ...component,
         subType: subTab,
-        parentId: realmRepresentation?.id,
+        parentId: realmRepresentation.id,
         providerType:
           "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
         providerId,

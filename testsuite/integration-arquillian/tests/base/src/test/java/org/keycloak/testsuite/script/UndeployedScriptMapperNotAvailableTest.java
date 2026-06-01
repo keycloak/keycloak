@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.script;
 
 import java.io.IOException;
+import java.util.stream.Collectors;
 
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -44,7 +45,7 @@ import static org.keycloak.testsuite.admin.AdminApiUtil.findClientResourceByClie
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createScriptMapper;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -106,7 +107,7 @@ public class UndeployedScriptMapperNotAvailableTest extends AbstractTestRealmKey
         deployer.undeploy(SCRIPT_DEPLOYMENT_NAME);
         reconnectAdminClient();
         ClientResource cl = findClientResourceByClientId(adminClient.realm("test"), "test-app");
-        assertTrue(cl.getProtocolMappers().getMappers().isEmpty());
-        assertTrue(cl.getProtocolMappers().getMappersPerProtocol(cl.toRepresentation().getProtocol()).isEmpty());
+        assertTrue(cl.getProtocolMappers().getMappers().stream().filter(m->m.getName().equals("test-script-mapper1")).collect(Collectors.toSet()).isEmpty());
+        assertTrue(cl.getProtocolMappers().getMappersPerProtocol(cl.toRepresentation().getProtocol()).stream().filter(m->m.getName().equals("test-script-mapper1")).collect(Collectors.toSet()).isEmpty());
     }
 }

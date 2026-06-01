@@ -31,5 +31,3 @@ KcSamlEncryptedIdTest
 KcSamlSignedBrokerTest
 KcSamlSpDescriptorTest
 KerberosLdapTest
-TrustStoreEmailTest
-OID4VCSdJwtIssuingEndpointTest

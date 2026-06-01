@@ -25,8 +25,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
 
@@ -52,13 +50,13 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -72,20 +70,18 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.GroupBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
-import org.keycloak.testsuite.util.RolesBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -108,37 +104,24 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         groupProtocolMapper.setConfig(config);
 
         testRealms.add(RealmBuilder.create().name("authz-test")
-                .roles(RolesBuilder.create()
-                        .realmRole(RoleBuilder.create().name("uma_authorization").build())
-                        .realmRole(RoleBuilder.create().name("role-a").build())
-                        .realmRole(RoleBuilder.create().name("role-b").build())
-                )
-                .group(GroupBuilder.create().name("Group A")
-                        .subGroups(Arrays.asList("Group B", "Group D").stream().map(name -> {
-                            if ("Group B".equals(name)) {
-                                return GroupBuilder.create().name(name).subGroups(Arrays.asList("Group C", "Group E").stream().map(new Function<String, GroupRepresentation>() {
-                                    @Override
-                                    public GroupRepresentation apply(String name) {
-                                        return GroupBuilder.create().name(name).build();
-                                    }
-                                }).collect(Collectors.toList())).build();
-                            }
-                            return GroupBuilder.create().name(name).realmRoles(Arrays.asList("role-a")).build();
-                        }).collect(Collectors.toList())).build())
-                .group(GroupBuilder.create().name("Group E").build())
-                .user(UserBuilder.create().username("marta").password("password").addRoles("uma_authorization", "role-a").addGroups("Group A"))
-                .user(UserBuilder.create().username("alice").password("password").addRoles("uma_authorization").addGroups("/Group A/Group B/Group E"))
-                .user(UserBuilder.create().username("kolo").password("password").addRoles("uma_authorization").addGroups("/Group A/Group D"))
-                .user(UserBuilder.create().username("trinity").password("password").addRoles("uma_authorization").role("role-mapping-client", "client-role-a"))
-                .user(UserBuilder.create().username("jdoe").password("password").addGroups("/Group A/Group B", "/Group A/Group D"))
-                .client(ClientBuilder.create().clientId("resource-server-test")
+                .realmRoles("uma_authorization", "role-a", "role-b")
+                .groups(GroupBuilder.create().name("Group A")
+                        .subGroups(GroupBuilder.create("Group B").subGroups("Group C", "Group E"))
+                        .subGroups(GroupBuilder.create("Group D").realmRoles("role-a")))
+                .groups(GroupBuilder.create().name("Group E"))
+                .users(UserBuilder.create().username("marta").password("password").realmRoles("uma_authorization", "role-a").groups("Group A"))
+                .users(UserBuilder.create().username("alice").password("password").realmRoles("uma_authorization").groups("/Group A/Group B/Group E"))
+                .users(UserBuilder.create().username("kolo").password("password").realmRoles("uma_authorization").groups("/Group A/Group D"))
+                .users(UserBuilder.create().username("trinity").password("password").realmRoles("uma_authorization").clientRoles("role-mapping-client", "client-role-a"))
+                .users(UserBuilder.create().username("jdoe").password("password").groups("/Group A/Group B", "/Group A/Group D"))
+                .clients(ClientBuilder.create().clientId("resource-server-test")
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
-                        .directAccessGrants()
-                        .protocolMapper(groupProtocolMapper))
-                .client(ClientBuilder.create().clientId("role-mapping-client")
+                        .directAccessGrantsEnabled()
+                        .protocolMappers(groupProtocolMapper))
+                .clients(ClientBuilder.create().clientId("role-mapping-client")
                         .defaultRoles("client-role-a", "client-role-b"))
                 .build());
     }
@@ -199,7 +182,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setId(KeycloakModelUtils.generateId());
@@ -236,7 +219,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setName("allow-user-in-group-path-e-policy");
@@ -272,7 +255,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setName("allow-alice-in-group-path-e-policy.js");
@@ -284,7 +267,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setName("allow-alice-in-group-name-e-policy.js");
@@ -296,7 +279,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
     }
 
     @Test
@@ -335,7 +318,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
     }
 
     @Test
@@ -373,7 +356,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
     }
 
     @Test
@@ -412,7 +395,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
     }
 
     @Test
@@ -593,7 +576,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
             try {
                 evaluator.evaluate(resourceServer, null);
-                Assert.fail("Instances should be marked as read-only");
+                Assertions.fail("Instances should be marked as read-only");
             } catch (Exception ignore) {
             }
         } finally {
@@ -690,6 +673,47 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
                 return baseAttributes;
             }
         };
+    }
+
+    @Test
+    public void testResolveServiceAccountByClientId() {
+        testingClient.server().run(PolicyEvaluationTest::testResolveServiceAccountByClientId);
+    }
+
+    public static void testResolveServiceAccountByClientId(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("authz-test");
+        session.getContext().setRealm(realm);
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+        ClientModel clientModel = session.clients().getClientByClientId(realm, "resource-server-test");
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
+
+        // get the service account user and assign a realm role
+        UserModel serviceAccount = session.users().getServiceAccount(clientModel);
+        assertNotNull(serviceAccount);
+        RoleModel roleA = realm.getRole("role-a");
+        assertNotNull(roleA);
+        serviceAccount.grantRole(roleA);
+
+        // create a simple user policy (type doesn't matter, we test through the Realm interface)
+        UserPolicyRepresentation policyRepresentation = new UserPolicyRepresentation();
+        policyRepresentation.setName("testResolveServiceAccountByClientId");
+        policyRepresentation.addUser(serviceAccount.getId());
+        Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
+
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
+
+        // resolve service account using the client's internal ID (the fix scenario)
+        Assertions.assertTrue(evaluation.getRealm().isUserInRealmRole(clientModel.getId(), "role-a"),
+                "Service account should be resolved by client internal ID");
+
+        // resolve service account using the service account username (regression check)
+        Assertions.assertTrue(evaluation.getRealm().isUserInRealmRole(serviceAccount.getUsername(), "role-a"),
+                "Service account should still be resolved by username");
+
+        // non-existent ID should not cause errors (NPE check)
+        Assertions.assertFalse(evaluation.getRealm().isUserInRealmRole("non-existent-id", "role-a"),
+                "Non-existent ID should return false without errors");
     }
 
     @Test

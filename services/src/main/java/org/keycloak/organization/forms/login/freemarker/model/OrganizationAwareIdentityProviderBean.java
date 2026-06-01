@@ -17,14 +17,22 @@
 
 package org.keycloak.organization.forms.login.freemarker.model;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
+import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.util.Booleans;
 
@@ -51,6 +59,21 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
         this.organization = Organizations.resolveOrganization(super.session);
         this.onlyRealmBrokers = onlyRealmBrokers;
         this.onlyOrganizationBrokers = onlyOrganizationBrokers;
+    }
+
+    @Override
+    protected Set<String> getLinkedBrokerAliases(KeycloakSession session, RealmModel realm, AuthenticationFlowContext context) {
+        Set<String> linkedBrokerAliases = super.getLinkedBrokerAliases(session, realm, context);
+
+        if (linkedBrokerAliases == null || linkedBrokerAliases.isEmpty() || context == null || context.getUser() == null || onlyRealmBrokers) {
+            return linkedBrokerAliases;
+        }
+
+        Set<String> allBrokerAliases = new HashSet<>(linkedBrokerAliases);
+
+        allBrokerAliases.addAll(getOrgBrokersShownWhenLinkedElsewhere(context.getUser()));
+
+        return allBrokerAliases;
     }
 
     @Override
@@ -118,5 +141,40 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
             return false;
         }
         return Booleans.isFalse(idp.isHideOnLogin());
+    }
+
+    private Set<String> getOrgBrokersShownWhenLinkedElsewhere(UserModel user) {
+        OrganizationProvider provider = Organizations.getProvider(session);
+
+        if (!Organizations.isEnabledAndOrganizationsPresent(provider)) {
+            return Set.of();
+        }
+
+        return provider.getByMember(user)
+                .filter(OrganizationModel::isEnabled)
+                .flatMap(OrganizationModel::getIdentityProviders)
+                .filter(this::isShownWhenLinkedElsewhere)
+                .map(IdentityProviderModel::getAlias)
+                .collect(Collectors.toSet());
+    }
+
+    private boolean isShownWhenLinkedElsewhere(IdentityProviderModel idp) {
+        if (idp.getOrganizationId() == null) {
+            return false;
+        }
+
+        if (!Boolean.parseBoolean(idp.getConfig().get(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE))) {
+            return false;
+        }
+
+        if (organization != null && !Objects.equals(organization.getId(), idp.getOrganizationId())) {
+            return false;
+        }
+
+        if (organization == null && Boolean.parseBoolean(idp.getConfig().get(OrganizationModel.HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN))) {
+            return false;
+        }
+
+        return true;
     }
 }

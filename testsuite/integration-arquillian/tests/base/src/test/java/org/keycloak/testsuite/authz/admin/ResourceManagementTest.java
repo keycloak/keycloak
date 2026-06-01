@@ -39,12 +39,12 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *
@@ -175,7 +175,7 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         permission.addResource(r1.getName());
         permission.addScope("GET");
 
-        getClientResource().authorization().permissions().scope().create(permission);
+        getClientResource().authorization().permissions().scope().create(permission).close();
 
         ResourceRepresentation r2 = new ResourceRepresentation();
 
@@ -191,7 +191,7 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         permission.addResource(r2.getName());
         permission.addScope("GET");
 
-        getClientResource().authorization().permissions().scope().create(permission);
+        getClientResource().authorization().permissions().scope().create(permission).close();
 
         ResourceRepresentation rInstance = new ResourceRepresentation();
 
@@ -223,6 +223,8 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         ResourceRepresentation newResource = createResource();
 
         try {
+            newResource.setId(null);
+            newResource.setOwner((ResourceOwnerRepresentation) null);
             doCreateResource(newResource);
             fail("Can not create resources with the same name and owner");
         } catch (Exception e) {

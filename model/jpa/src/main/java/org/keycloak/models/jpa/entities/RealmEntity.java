@@ -42,6 +42,8 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
+import org.hibernate.annotations.Nationalized;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -50,7 +52,7 @@ import jakarta.persistence.Table;
 @Entity
 @NamedQueries({
         @NamedQuery(name="getAllRealmIds", query="select realm.id from RealmEntity realm"),
-        @NamedQuery(name="getRealmIdsWithNameContaining", query="select realm.id from RealmEntity realm where LOWER(realm.name) like CONCAT('%', LOWER(:search), '%')"),
+        @NamedQuery(name="getRealmIdsWithNameContaining", query="select realm.id from RealmEntity realm where LOWER(realm.name) like CONCAT('%', LOWER(:search), '%') or LOWER(realm.displayName) like CONCAT('%', LOWER(:search), '%')"),
         @NamedQuery(name="getRealmIdByName", query="select realm.id from RealmEntity realm where realm.name = :name"),
         @NamedQuery(name="getRealmIdsWithProviderType", query="select distinct c.realm.id from ComponentEntity c where c.providerType = :providerType"),
 })
@@ -137,6 +139,9 @@ public class RealmEntity {
     protected String adminTheme;
     @Column(name="EMAIL_THEME")
     protected String emailTheme;
+    @Nationalized
+    @Column(name="DISPLAY_NAME")
+    protected String displayName;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm", fetch = FetchType.EAGER)
     Collection<RealmAttributeEntity> attributes = new LinkedList<>();
@@ -498,6 +503,15 @@ public class RealmEntity {
 
     public void setEmailTheme(String emailTheme) {
         this.emailTheme = emailTheme;
+    }
+
+
+    public String getDisplayName() {
+        return this.displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public int getNotBefore() {

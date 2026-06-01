@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.xml.namespace.QName;
 
 import jakarta.ws.rs.Consumes;
@@ -76,7 +77,7 @@ import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH
  */
 public class TokenEndpoint {
 
-    private static final Logger logger = Logger.getLogger(TokenEndpoint.class);
+    private static final Logger LOGGER = Logger.getLogger(TokenEndpoint.class);
     private MultivaluedMap<String, String> formParams;
     private ClientModel client;
     private Map<String, String> clientAuthAttributes;
@@ -171,8 +172,8 @@ public class TokenEndpoint {
 
     @OPTIONS
     public Response preflight() {
-        if (logger.isDebugEnabled()) {
-            logger.debugv("CORS preflight from: {0}", headers.getRequestHeaders().getFirst("Origin"));
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debugv("CORS preflight from: {0}", headers.getRequestHeaders().getFirst("Origin"));
         }
         return Cors.builder().auth().preflight().allowedMethods("POST", "OPTIONS").add(Response.ok());
     }
@@ -195,7 +196,7 @@ public class TokenEndpoint {
         clientAuthAttributes = clientAuth.getClientAuthAttributes();
         clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
 
-        cors.allowedOrigins(session, client);
+        cors.checkAllowedOrigins(session, client);
 
         if (client.isBearerOnly()) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
@@ -235,6 +236,7 @@ public class TokenEndpoint {
     protected void checkParameters() {
         OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
         OIDCProviderConfig config = loginProtocol.getConfig();
+        Set<String> tokenParamNames = grant.getTokenParameterNames();
 
         Map<String, List<String>> paramsCopy = new HashMap<>(formParams);
         for (Map.Entry<String, List<String>> param : paramsCopy.entrySet()) {
@@ -242,10 +244,14 @@ public class TokenEndpoint {
             int totalLengthOfParamValues = param.getValue().stream()
                     .map(String::length)
                     .reduce(0, Integer::sum);
-            int maxLength = config.getMaxLengthForTheParameter(paramName);
+
+            // Does this parameter represent a token (typically JWT or SAML assertion)?
+            boolean isTokenParam = tokenParamNames.contains(paramName);
+
+            int maxLength = config.getMaxLengthForTheParameter(paramName, isTokenParam);
             if (totalLengthOfParamValues > maxLength) {
-                logger.warnf("The size of OIDC parameter '%s' is longer (%d) than allowed (%d). %s", paramName, totalLengthOfParamValues, maxLength, config.isAdditionalReqParamsFailFast() ? "Request not allowed." : "Ignoring the parameter.");
-                if (config.isAdditionalReqParamsFailFast()) {
+                LOGGER.warnf("The size of OIDC parameter '%s' is longer (%d) than allowed (%d). %s", paramName, totalLengthOfParamValues, maxLength, config.isAdditionalReqParamsFailFast(isTokenParam) ? "Request not allowed." : "Ignoring the parameter.");
+                if (config.isAdditionalReqParamsFailFast(isTokenParam)) {
                     throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "The size of OIDC parameter '" + paramName + "' is longer than allowed.",
                             Response.Status.BAD_REQUEST);
                 } else {

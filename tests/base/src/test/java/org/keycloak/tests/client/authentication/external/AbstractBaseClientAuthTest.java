@@ -1,6 +1,7 @@
 package org.keycloak.tests.client.authentication.external;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
@@ -9,6 +10,8 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public abstract class AbstractBaseClientAuthTest extends AbstractClientAuthTest {
 
@@ -146,6 +149,23 @@ public abstract class AbstractBaseClientAuthTest extends AbstractClientAuthTest 
         jwt.exp((long) (Time.currentTime() + 30));
         assertSuccess(internalClientId, doClientGrant(jwt));
         assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
+    }
+
+    @Test
+    public void testTokenWithNoneAlgorithm() throws Exception {
+        JsonWebToken token = createDefaultToken();
+
+        // Create token with "alg: none" header
+        String noneRequest = new JWSBuilder().jsonContent(token).none();
+        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest().clientJwt(noneRequest).send();
+        assertFalse(response.isSuccess());
+
+        // Create token with "alg: none" header, but with valid "kid" preserved in the JWS header
+        OAuthIdentityProvider.OAuthIdentityProviderKeys keys = getIdentityProvider().getKeys();
+        String noneRequestWithKid = new JWSBuilder().kid(keys.getKeyWrapper().getKid()).jsonContent(token).none();
+
+        response = oAuthClient.clientCredentialsGrantRequest().clientJwt(noneRequestWithKid).send();
+        assertFalse(response.isSuccess());
     }
 
 }

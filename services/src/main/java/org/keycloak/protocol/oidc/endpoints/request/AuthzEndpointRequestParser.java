@@ -110,7 +110,7 @@ public abstract class AuthzEndpointRequestParser {
         this.config = loginProtocol.getConfig();
         this.additionalReqParamsMaxNumber = config.getAdditionalReqParamsMaxNumber();
         this.additionalReqParamsMaxSize = config.getAdditionalReqParamsMaxSize();
-        this.additionalReqParamsFailFast = config.isAdditionalReqParamsFailFast();
+        this.additionalReqParamsFailFast = config.isAdditionalReqParamsFailFast(false);
         this.additionalReqParamsMaxOverallSize = config.getAdditionalReqParamsMaxOverallSize();
     }
 
@@ -130,7 +130,7 @@ public abstract class AuthzEndpointRequestParser {
         }
 
         request.responseMode = replaceIfNotNull(request.responseMode, getAndValidateParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM));
-        request.redirectUriParam = replaceIfNotNull(request.redirectUriParam, getAndValidateParameter(OIDCLoginProtocol.REDIRECT_URI_PARAM));
+        request.redirectUri = replaceIfNotNull(request.redirectUri, getAndValidateParameter(OIDCLoginProtocol.REDIRECT_URI_PARAM));
         request.state = replaceIfNotNull(request.state, getAndValidateParameter(OIDCLoginProtocol.STATE_PARAM));
         request.scope = replaceIfNotNull(request.scope, getAndValidateParameter(OIDCLoginProtocol.SCOPE_PARAM));
         request.resource = replaceIfNotNull(request.resource, getAndValidateParameter(OIDCLoginProtocol.RESOURCE_PARAM));
@@ -228,7 +228,7 @@ public abstract class AuthzEndpointRequestParser {
         String paramValue = getParameter(paramName);
 
         if (paramValue != null) {
-            int maxLength = config.getMaxLengthForTheParameter(paramName);
+            int maxLength = config.getMaxLengthForTheParameter(paramName, false);
             if (paramValue.length() > maxLength) {
                 logger.warnf("The size of OIDC parameter '%s' size is longer (%d) than allowed (%d). %s", paramName, paramValue.length(), maxLength, additionalReqParamsFailFast ? "Request not allowed." : "Ignoring the parameter.");
                 if (additionalReqParamsFailFast) {

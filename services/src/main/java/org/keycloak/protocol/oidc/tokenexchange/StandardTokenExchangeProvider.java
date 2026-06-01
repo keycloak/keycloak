@@ -30,6 +30,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.common.Profile;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -44,13 +45,14 @@ import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
-import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.services.util.AuthorizationContextUtil;
+import org.keycloak.services.util.DPoPUtil;
+import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -135,13 +137,41 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         UserSessionModel tokenSession = authResult.session();
         AccessToken token = authResult.token();
 
-        // Reject sender-constrained tokens (RFC 7800) as subject_token
         if (isSenderConstrainedToken(token)) {
-            event.detail(Details.REASON, "Sender-constrained tokens (RFC 7800) cannot be used as subject_token in Token Exchange");
-            event.error(Errors.INVALID_REQUEST);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                    "Sender-constrained tokens are not supported as subject_token. Use a Bearer token instead.",
-                    Response.Status.BAD_REQUEST);
+            // Reject sender-constrained tokens (RFC 7800) as subject_token if client does not match the authorized parties claim
+            if (!token.getIssuedFor().equals(client.getClientId())) {
+                event.detail(Details.REASON, "Sender-constrained token exchange rejected as the token was not issued for the requesting client");
+                event.error(Errors.INVALID_REQUEST);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                      "Sender-constrained token exchange rejected as the token was not issued for the requesting client",
+                      Response.Status.BAD_REQUEST);
+            }
+
+            AccessToken.Confirmation cnf = token.getConfirmation();
+            // Validate mTLS
+            if (cnf.getCertThumbprint() != null) {
+                if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(token, session.getContext().getHttpRequest(), session)) {
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC, Response.Status.BAD_REQUEST);
+                }
+            }
+            // Validate DPoP
+            if (Profile.isFeatureEnabled(Profile.Feature.DPOP) && cnf.getKeyThumbprint() != null) {
+                DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
+                if (dPoP == null) {
+                    event.detail(Details.REASON, "DPoP proof is missing");
+                    event.error(Errors.INVALID_DPOP_PROOF);
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                          "DPoP proof is missing", Response.Status.BAD_REQUEST);
+                }
+                try {
+                    DPoPUtil.validateBinding(token, dPoP);
+                } catch (VerificationException ex) {
+                    event.detail(Details.REASON, ex.getMessage());
+                    event.error(Errors.INVALID_DPOP_PROOF);
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                          ex.getMessage(), Response.Status.BAD_REQUEST);
+                }
+            }
         }
 
         event.user(tokenUser);
@@ -180,8 +210,8 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         }
     }
 
-    protected void validateConsents(UserModel targetUser, ClientSessionContext clientSessionCtx) {
-        if (!TokenManager.verifyConsentStillAvailable(session, targetUser, client, clientSessionCtx.getClientScopesStream())) {
+    protected void validateConsents(UserModel targetUser, String scope) {
+        if (!TokenManager.verifyConsentStillAvailable(session, targetUser, client, scope)) {
             event.detail(Details.REASON, "Missing consents for Token Exchange in client " + client.getClientId());
             event.error(Errors.CONSENT_DENIED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE,
@@ -194,15 +224,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
     protected String getRequestedScope(AccessToken token, List<ClientModel> targetAudienceClients) {
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
-        boolean validScopes;
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            AuthorizationRequestContext authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, scope);
-            validScopes = TokenManager.isValidScope(session, scope, authorizationRequestContext, client, null);
-        } else {
-            validScopes = TokenManager.isValidScope(session, scope, client, null);
-        }
-
-        if (!validScopes) {
+        if (!TokenManager.isValidScope(session, scope, client)) {
             String errorMessage = "Invalid scopes: " + scope;
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
@@ -255,7 +277,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                 clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, targetAudienceClients.toArray(ClientModel[]::new));
             }
 
-            validateConsents(targetUser, clientSessionCtx);
+            validateConsents(targetUser, scope);
             clientSessionCtx.setAttribute(Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
 
             TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);

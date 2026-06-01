@@ -18,6 +18,9 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,13 +29,20 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.clientpolicy.PredicateCredentialClientPolicy;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
+import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
+import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.IssuerState;
+import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -60,6 +70,8 @@ import org.keycloak.utils.StringUtil;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
+import static org.keycloak.OAuth2Constants.ISSUER_STATE;
+import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
 
 /**
  * Implements some checks typical for OIDC Authorization Endpoint. Useful to consolidate various checks on single place to avoid duplicated
@@ -115,6 +127,26 @@ public class AuthorizationEndpointChecker {
         return this;
     }
 
+    public AuthorizationEndpointRequest getAuthorizationEndpointRequest() {
+        return request;
+    }
+
+    public ClientModel getClient() {
+        return client;
+    }
+
+    public EventBuilder getEventBuilder() {
+        return event;
+    }
+
+    public RealmModel getRealm() {
+        return realm;
+    }
+
+    public MultivaluedMap<String, String> getQueryParams() {
+        return params;
+    }
+
     public String getRedirectUri() {
         return redirectUri;
     }
@@ -128,7 +160,7 @@ public class AuthorizationEndpointChecker {
     }
 
     public void checkRedirectUri() throws AuthorizationCheckException {
-        String redirectUriParam = request.getRedirectUriParam();
+        String redirectUriParam = request.getRedirectUri();
         boolean isOIDCRequest = TokenUtil.isOIDCRequest(request.getScope());
 
         event.detail(Details.REDIRECT_URI, redirectUriParam);
@@ -212,6 +244,16 @@ public class AuthorizationEndpointChecker {
             event.error(Errors.NOT_ALLOWED);
             throw new AuthorizationCheckException(Response.Status.UNAUTHORIZED, OAuthErrorException.UNAUTHORIZED_CLIENT, errorMessage);
         }
+
+        // DPoP is not supported for implicit and hybrid flows
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        if (clientConfig.isUseDPoP() && parsedResponseType.isImplicitOrHybridFlow()) {
+            ServicesLogger.LOGGER.flowNotAllowed("Implicit/Hybrid with DPoP");
+            String errorMessage = "DPoP is not supported for implicit and hybrid flows. Client requires DPoP bound access tokens.";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.NOT_ALLOWED);
+            throw new AuthorizationCheckException(Response.Status.UNAUTHORIZED, OAuthErrorException.UNAUTHORIZED_CLIENT, errorMessage);
+        }
     }
 
     public boolean isInvalidResponseType(AuthorizationEndpointChecker.AuthorizationCheckException ex) {
@@ -244,13 +286,7 @@ public class AuthorizationEndpointChecker {
     }
 
     public void checkValidScope() throws AuthorizationCheckException {
-        boolean validScopes;
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            validScopes = TokenManager.isValidScope(session, request.getScope(), request.getAuthorizationRequestContext(), client, null);
-        } else {
-            validScopes = TokenManager.isValidScope(session, request.getScope(), client, null);
-        }
-        if (!validScopes) {
+        if (!TokenManager.isValidScope(session, request.getScope(), request.getAuthorizationRequestContext(), client)) {
             ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.SCOPE_PARAM);
             String errorMessage = "Invalid scopes: " + request.getScope();
             event.detail(Details.REASON, errorMessage);
@@ -334,6 +370,54 @@ public class AuthorizationEndpointChecker {
                 event.detail(Details.REASON, errorMessage);
                 event.error(Errors.INVALID_REQUEST);
                 throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
+            }
+        }
+    }
+
+    public void checkProviderAddOns() throws AuthorizationCheckException {
+        Set<AuthorizationEndpointCheckProvider> additionalChecks = session.getAllProviders(AuthorizationEndpointCheckProvider.class);
+        for (AuthorizationEndpointCheckProvider check : additionalChecks) {
+            check.check(this);
+        }
+    }
+
+    public void checkCredentialScope() throws AuthorizationCheckException {
+
+        // Get the list of requested credential scopes that are associated with this client
+        //
+        List<CredentialScopeModel> credScopes = CredentialScopeUtils.getCredentialScopesForAuthorization(client, request);
+
+        // Proceed when there are requested credential scopes
+        //
+        if (!credScopes.isEmpty()) {
+
+            PredicateCredentialClientPolicy offerRequiredPolicy = VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
+
+            // Get the potential offer state derived from issuer_state
+            //
+            String issuerStateParam = request.getAdditionalReqParams().get(ISSUER_STATE);
+            CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+            CredentialOfferState offerState = Optional.ofNullable(issuerStateParam)
+                    .map(IssuerState::fromEncodedString)
+                    .map(IssuerState::getCredentialsOfferId)
+                    .map(offerStorage::getOfferStateById)
+                    .orElse(null);
+
+            List<String> offeredConfigurationIds = Optional.ofNullable(offerState)
+                    .map(CredentialOfferState::getCredentialsOffer)
+                    .map(CredentialsOffer::getCredentialConfigurationIds)
+                    .orElse(List.of());
+
+            // Check whether each requested credential_configuration_id has actually been offered
+            //
+            for (CredentialScopeModel credScope : credScopes) {
+                String credConfigId = credScope.getCredentialConfigurationId();
+
+                boolean requiredByScope = offerRequiredPolicy.validate(new CredentialScopeRepresentation(credScope));
+                if (requiredByScope && !offeredConfigurationIds.contains(credConfigId)) {
+                    String errorDetail = "Authorization request rejected by policy " + offerRequiredPolicy.getName() + " for scope: " + credScope.getName();
+                    throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorDetail);
+                }
             }
         }
     }
@@ -427,9 +511,18 @@ public class AuthorizationEndpointChecker {
         }
     }
 
+    public void throwAsErrorPageException(AuthenticationSessionModel authenticationSession, AuthorizationCheckException ex) {
+        throw new ErrorPageException(session, authenticationSession, ex.status, ex.error, ex.errorDescription);
+    }
+
+    public void throwAsCorsErrorResponseException(Cors cors, AuthorizationCheckException ex) {
+        event.detail("detail", ex.errorDescription).error(ex.error);
+        throw new CorsErrorResponseException(cors, ex.error, ex.errorDescription, ex.status);
+    }
+
 
     // Exception propagated to the caller, which will allow caller to send proper error response based on the context (Browser OIDC Authorization Endpoint, PAR etc)
-    public class AuthorizationCheckException extends Exception {
+    public static class AuthorizationCheckException extends Exception {
 
         private final Response.Status status;
         private final String error;
@@ -439,15 +532,6 @@ public class AuthorizationEndpointChecker {
             this.status = status;
             this.error = error;
             this.errorDescription = errorDescription;
-        }
-
-        public void throwAsErrorPageException(AuthenticationSessionModel authenticationSession) {
-            throw new ErrorPageException(session, authenticationSession, status, error, errorDescription);
-        }
-
-        public void throwAsCorsErrorResponseException(Cors cors) {
-            AuthorizationEndpointChecker.this.event.detail("detail", errorDescription).error(error);
-            throw new CorsErrorResponseException(cors, error, errorDescription, status);
         }
 
         public String getError() {

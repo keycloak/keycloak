@@ -232,10 +232,9 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
             config.setAuthorizationDetailsTypesSupported(authorizationDetailsTypesSupported);
         }
 
+        // HAIP-1.0 does not want to see this property (don't set to false)
         if (Profile.isFeatureEnabled(Profile.Feature.CIMD)) {
             config.setClientIdMetadataDocumentSupported(true);
-        } else {
-            config.setClientIdMetadataDocumentSupported(false);
         }
 
         config = checkConfigOverride(config);

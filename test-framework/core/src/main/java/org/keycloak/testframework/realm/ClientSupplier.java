@@ -28,33 +28,18 @@ public class ClientSupplier implements Supplier<ManagedClient, InjectClient> {
     public ManagedClient getValue(InstanceContext<ManagedClient, InjectClient> instanceContext) {
         ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class, instanceContext.getAnnotation().realmRef());
 
-        String attachTo = instanceContext.getAnnotation().attachTo();
-        boolean managed = attachTo.isEmpty();
+        ClientConfig config = SupplierHelpers.getInstanceWithInjectedFields(instanceContext.getAnnotation().config(), instanceContext);
+        ClientRepresentation clientRepresentation = config.configure(ClientBuilder.create()).build();
 
-        ClientRepresentation clientRepresentation;
-
-        if (managed) {
-            ClientConfig config = SupplierHelpers.getInstanceWithInjectedFields(instanceContext.getAnnotation().config(), instanceContext);
-            clientRepresentation = config.configure(ClientConfigBuilder.create()).build();
-
-            if (clientRepresentation.getClientId() == null) {
-                clientRepresentation.setClientId(SupplierHelpers.createName(instanceContext));
-            }
-
-            Response response = realm.admin().clients().create(clientRepresentation);
-            if (Status.CONFLICT.equals(Status.fromStatusCode(response.getStatus()))) {
-                throw new IllegalStateException("Client already exist with client id: " + clientRepresentation.getClientId());
-            }
-            clientRepresentation.setId(ApiUtil.getCreatedId(response));
-        } else {
-            List<ClientRepresentation> clients = realm.admin().clients().findByClientId(attachTo);
-            if (clients.isEmpty()) {
-                throw new IllegalStateException("No client found with client id: " + attachTo);
-            }
-            clientRepresentation = clients.get(0);
+        if (clientRepresentation.getClientId() == null) {
+            clientRepresentation.setClientId(SupplierHelpers.createName(instanceContext));
         }
 
-        instanceContext.addNote("managed", managed);
+        Response response = realm.admin().clients().create(clientRepresentation);
+        if (Status.CONFLICT.equals(Status.fromStatusCode(response.getStatus()))) {
+            throw new IllegalStateException("Client already exist with client id: " + clientRepresentation.getClientId());
+        }
+        clientRepresentation.setId(ApiUtil.getCreatedId(response));
 
         ClientResource clientResource = realm.admin().clients().get(clientRepresentation.getId());
         return new ManagedClient(clientRepresentation, clientResource);
@@ -67,11 +52,9 @@ public class ClientSupplier implements Supplier<ManagedClient, InjectClient> {
 
     @Override
     public void close(InstanceContext<ManagedClient, InjectClient> instanceContext) {
-        if (instanceContext.getNote("managed", Boolean.class)) {
-            try {
-                instanceContext.getValue().admin().remove();
-            } catch (NotFoundException ex) {}
-        }
+        try {
+            instanceContext.getValue().admin().remove();
+        } catch (NotFoundException ex) {}
     }
 
 }

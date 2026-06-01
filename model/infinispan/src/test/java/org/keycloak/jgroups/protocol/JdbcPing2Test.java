@@ -1,27 +1,40 @@
 package org.keycloak.jgroups.protocol;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.infinispan.health.impl.JdbcPingClusterHealthImpl;
 
+import org.hamcrest.CoreMatchers;
 import org.infinispan.util.concurrent.WithinThreadExecutor;
 import org.jboss.logging.Logger;
 import org.jgroups.Address;
 import org.jgroups.JChannel;
+import org.jgroups.PhysicalAddress;
 import org.jgroups.conf.ClassConfigurator;
+import org.jgroups.protocols.PingData;
+import org.jgroups.protocols.relay.SiteUUID;
+import org.jgroups.stack.IpAddress;
+import org.jgroups.util.NameCache;
+import org.jgroups.util.Responses;
 import org.jgroups.util.ThreadFactory;
 import org.jgroups.util.UUID;
 import org.jgroups.util.Util;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -111,6 +124,13 @@ public class JdbcPing2Test {
         assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.UNHEALTHY, ping.healthStatus());
         clusterHealth.triggerClusterHealthCheck();
         assertFalse(clusterHealth.isHealthy());
+
+        // test more members in a partition win
+        // coordinator a[0] and a[1] in the table, and we belong to view with the coordinator a[1]
+        ping.setPingData(List.of(addresses[1], addresses[0]), Map.of(addresses[0], 1, addresses[1], 2));
+        assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, ping.healthStatus());
+        clusterHealth.triggerClusterHealthCheck();
+        assertTrue(clusterHealth.isHealthy());
     }
 
     @SuppressWarnings("resource")
@@ -145,6 +165,66 @@ public class JdbcPing2Test {
             Arrays.stream(channels).filter(ch -> ch.view().getCoord() != ch.getAddress()).forEach(JChannel::close);
             Arrays.stream(channels).filter(ch -> !ch.isClosed()).forEach(JChannel::close);
             log.infof("Closed");
+        }
+    }
+
+    @Test
+    public void testClearing() throws Exception {
+        JChannel channel = createChannel("0");
+        try (channel) {
+            channel.connect("ISPN");
+            KEYCLOAK_JDBC_PING2_FOR_TESTING jdbcPing = (KEYCLOAK_JDBC_PING2_FOR_TESTING) channel.getProtocolStack().getProtocols().stream().filter(protocol -> protocol instanceof KEYCLOAK_JDBC_PING2).findFirst().orElseThrow(() -> new RuntimeException("Didn't find JDBC_PING"));
+            try (Connection con = jdbcPing.getConnection()) {
+                // Insert an entry of a second coordinator
+                PingData data = new PingData(new UUID(), false, "old", new IpAddress("127.0.0.1:9999")).coord(true);
+                try (PreparedStatement ps = con.prepareStatement(jdbcPing.getInsertSingleSql())) {
+                    Address address = data.getAddress();
+                    String addr = Util.addressToString(address);
+                    String name = address instanceof SiteUUID ? ((SiteUUID) address).getName() : NameCache.get(address);
+                    PhysicalAddress ip_addr = data.getPhysicalAddr();
+                    String ip = ip_addr.toString();
+                    ps.setString(1, addr);
+                    ps.setString(2, name);
+                    ps.setString(3, jdbcPing.getClusterName());
+                    ps.setString(4, ip);
+                    ps.setBoolean(5, data.isCoord());
+                    ps.setLong(6, Time.currentTime());
+                    ps.setString(7, Util.addressToString(data.getAddress()));
+                    ps.executeUpdate();
+                }
+
+                // See that the second coordinator is still there
+                Responses responses = new Responses(false);
+                jdbcPing.findMembers(null, false, responses);
+                assertThat(responses.size(), CoreMatchers.equalTo(2));
+
+                // Advance the time beyond the timeout. See the entry is not returned.
+                Time.setOffset(120);
+                responses.clear();
+                jdbcPing.writeAll();
+                jdbcPing.findMembers(null, false, responses);
+                assertThat(responses.size(), CoreMatchers.equalTo(1));
+                // The entry is still in the database though as it will only be cleared on view change
+                try (PreparedStatement ps= con.prepareStatement(jdbcPing.getSelectAllPingdataSql())) {
+                    ps.setString(1, jdbcPing.getClusterName());
+                    try (ResultSet resultSet = ps.executeQuery()) {
+                        resultSet.last();
+                        assertThat(resultSet.getRow(), CoreMatchers.equalTo(2));
+                    }
+                }
+
+                // Simulate a row change to trigger a cleanup of the table.
+                jdbcPing.handleView(jdbcPing.getTransport().view(), jdbcPing.getTransport().view(), true);
+                try (PreparedStatement ps= con.prepareStatement(jdbcPing.getSelectAllPingdataSql())) {
+                    ps.setString(1, jdbcPing.getClusterName());
+                    try (ResultSet resultSet = ps.executeQuery()) {
+                        resultSet.last();
+                        assertThat(resultSet.getRow(), CoreMatchers.equalTo(1));
+                    }
+                }
+            }
+        } finally {
+            Time.setOffset(0);
         }
     }
 

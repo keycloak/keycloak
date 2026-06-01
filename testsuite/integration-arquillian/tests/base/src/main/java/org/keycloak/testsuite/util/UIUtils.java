@@ -8,7 +8,7 @@ import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.keycloak.testsuite.pages.AbstractPage;
 
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
@@ -143,7 +143,7 @@ public final class UIUtils {
         boolean current = checkbox.isSelected();
         if (current != enable) {
             clickElement(checkbox, Keys.SPACE);
-            Assert.assertNotEquals("Checkbox " + checkbox + " is still in the state " + current + " after click.", current, checkbox.isSelected());
+            Assertions.assertNotEquals(current, checkbox.isSelected(), "Checkbox " + checkbox + " is still in the state " + current + " after click.");
         }
     }
 

@@ -160,6 +160,7 @@
           "deleteAccountAllowed": ${deleteAccountAllowed?c},
           "updateEmailFeatureEnabled": ${updateEmailFeatureEnabled?c},
           "updateEmailActionEnabled": ${updateEmailActionEnabled?c},
+          "isViewApplicationsEnabled": ${isViewApplicationsEnabled?c},
           "isViewGroupsEnabled": ${isViewGroupsEnabled?c},
           "isOid4VciEnabled": ${isOid4VciEnabled?c}
         },

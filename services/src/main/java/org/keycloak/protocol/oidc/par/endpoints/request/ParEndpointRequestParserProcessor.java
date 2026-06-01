@@ -24,6 +24,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
 import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -92,13 +93,14 @@ public class ParEndpointRequestParserProcessor {
             }
 
             if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-                request.setAuthorizationRequestContext(AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, request.getScope()));
+                request.setAuthorizationRequestContext(AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, request.getScope()));
             }
 
             return request;
 
         } catch (Exception e) {
             ServicesLogger.LOGGER.invalidRequest(e);
+            event.detail(Details.REASON, e.getMessage());
             event.error(Errors.INVALID_REQUEST);
             throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
         }

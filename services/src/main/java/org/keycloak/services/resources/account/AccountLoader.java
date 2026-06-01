@@ -115,6 +115,8 @@ public class AccountLoader {
     }
 
     private AccountRestService getAccountRestService(ClientModel client, String versionStr) {
+        AccountRestService.checkAccountApiEnabled();
+
         AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
                 .authenticate();
         if (authResult == null) {
@@ -136,7 +138,7 @@ public class AccountLoader {
 
         Auth auth = new Auth(session.getContext().getRealm(), accessToken, authResult.user(), client, authResult.session(), false);
 
-        Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
+        Cors.builder().checkAllowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
 
         if (authResult.user().getServiceAccountClientLink() != null) {
             throw new NotAuthorizedException("Service accounts are not allowed to access this service");
@@ -166,11 +168,12 @@ public class AccountLoader {
     }
 
     private AccountResourceProvider getAccountResourceProvider(Theme theme) {
-      try {
-        if (theme.getProperties().containsKey(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY)) {
-          return session.getProvider(AccountResourceProvider.class, theme.getProperties().getProperty(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY));
+        try {
+            if (theme != null && theme.getProperties().containsKey(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY)) {
+                return session.getProvider(AccountResourceProvider.class, theme.getProperties().getProperty(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY));
+            }
+        } catch (IOException ignore) {
         }
-      } catch (IOException ignore) {}
-      return session.getProvider(AccountResourceProvider.class);
+        return session.getProvider(AccountResourceProvider.class);
     }
 }

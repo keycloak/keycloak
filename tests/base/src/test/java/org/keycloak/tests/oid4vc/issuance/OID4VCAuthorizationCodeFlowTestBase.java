@@ -24,7 +24,9 @@ import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.tests.oid4vc.OID4VCBasicWallet;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCProofTestUtils;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
@@ -34,11 +36,9 @@ import org.keycloak.testsuite.util.oauth.InvalidTokenRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.InvalidCredentialRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 
-import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.NoSuchElementException;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
@@ -46,7 +46,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -60,8 +59,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * extend this class and implement the abstract methods to define format-specific expectations.
  */
 public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTestBase {
-
-    private static final Logger logger = Logger.getLogger(OID4VCAuthorizationCodeFlowTestBase.class);
 
     protected OID4VCTestContext ctx;
 
@@ -97,28 +94,28 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         try {
             wallet.logout(TEST_USER);
         } catch (Exception e) {
-            logger.warn("Failed to logout user during cleanup", e);
+            log.warn("Failed to logout user during cleanup", e);
         }
 
         // 2. User profile restoration
         try {
             resetTestUser();
         } catch (Exception e) {
-            logger.warn("Failed to reset test user", e);
+            log.warn("Failed to reset test user", e);
         }
 
         // 3. Consent cleanup
         try {
             clearUserConsents();
         } catch (Exception e) {
-            logger.warn("Failed to clear user consents", e);
+            log.warn("Failed to clear user consents", e);
         }
 
         // 4. Event cleanup
         try {
             events.clear();
         } catch (Exception e) {
-            logger.warn("Failed to clear events", e);
+            log.warn("Failed to clear events", e);
         }
 
         // 5. Browser-side cookie cleanup (VERY IMPORTANT to prevent NoSuchElementException: username)
@@ -128,7 +125,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
                 driver.driver().navigate().to("about:blank");
             }
         } catch (Exception e) {
-            logger.warn("Failed to cleanup browser state", e);
+            log.warn("Failed to cleanup browser state", e);
         }
     }
 
@@ -473,6 +470,56 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         }
     }
 
+    /**
+     * Requesting verifiable-credential, which user does not have should fail
+     */
+    @Test
+    public void testRequestingVerifiableCredentialMissingForUser()
+            throws Exception {
+
+        // User still has credential. Token request should be successful
+        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
+        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+        String credentialIdentifier = assertTokenResponse(tokenResponse);
+        events.clear();
+
+        // Revoke verifiable credential from user
+        String userId = testRealm.admin().users().search(TEST_USER).get(0).getId();
+        try {
+            testRealm.admin().users().get(userId).verifiableCredentials().revokeCredential(ctx.getScope());
+
+            Oid4vcCredentialResponse credResponse = oauth.oid4vc().credentialRequest()
+                    .credentialIdentifier(credentialIdentifier)
+                    .proofs(newJwtProofs())
+                    .bearerToken(tokenResponse.getAccessToken())
+                    .send();
+
+            assertEquals(400, credResponse.getStatusCode());
+            assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), credResponse.getError());
+
+            events.poll();
+            EventAssertion.assertError(events.poll())
+                    .type(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                    .error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue())
+                    .details(Details.REASON, "User 'john' does not have requested verifiable credential '" + ctx.getCredentialConfigurationId() + "'");
+
+            // Test new token-endpoint request fails as user does not have credential
+            OID4VCBasicWallet.AuthorizationEndpointRequest authRequest = wallet.authorizationRequest()
+                    .scope(ctx.getScope());
+            authRequest.openLoginForm();
+            AuthorizationEndpointResponse authResponse = authRequest.parseLoginResponse();
+            String code = authResponse.getCode();
+            AccessTokenResponse errorResponse = oauth.accessTokenRequest(code).send();
+            assertEquals(400, errorResponse.getStatusCode());
+            assertTrue(errorResponse.getErrorDescription().contains("User 'john' does not have verifiable credential '" + ctx.getCredentialConfigurationId() + "'."));
+        } finally {
+            // Add back verifiable credential to the user
+            UserVerifiableCredentialRepresentation credRep = new UserVerifiableCredentialRepresentation();
+            credRep.setCredentialScopeName(ctx.getScope());
+            testRealm.admin().users().get(userId).verifiableCredentials().createCredential(credRep);
+        }
+    }
+
     /** Reusing an authorization code must fail with an {@code invalid_grant} error. */
     @Test
     public void testAuthorizationCodeReuse() throws Exception {
@@ -565,11 +612,16 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
 
         OID4VCAuthorizationDetail authDetail = createAuthorizationDetail(issuer, "unknown-credential-config-id");
-        NoSuchElementException ex = assertThrows(NoSuchElementException.class, () -> performAuthorizationCodeLoginWithAuthorizationDetails(authDetail));
+        wallet.authorizationRequest()
+                .scope(ctx.getScope())
+                .authorizationDetails(authDetail)
+                .openLoginForm();
+        AuthorizationEndpointResponse authResponse = oauth.parseLoginResponse();
+        assertEquals("invalid_request", authResponse.getError());
 
-        // [TODO #47649] OAuthClient cannot handle invalid authorization requests
-        assertNotNull(ex.getMessage(), "No error message");
-        assertTrue(ex.getMessage().contains("Unable to locate element with ID: 'username'"), ex.getMessage());
+        String errorDescription = authResponse.getErrorDescription();
+        assertNotNull(errorDescription, "No error message");
+        assertTrue(errorDescription.contains("Invalid authorization_details: Invalid credential configuration"), errorDescription);
     }
 
     /** Token exchange without redirect_uri must fail. */
@@ -689,14 +741,16 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
     @Test
     public void testTokenExchangeWithMalformedAuthorizationDetails() {
 
-        NoSuchElementException ex = assertThrows(NoSuchElementException.class, () -> oauth.loginForm()
+        oauth.loginForm()
                 .scope(ctx.getScope())
                 .param(OAuth2Constants.AUTHORIZATION_DETAILS, "invalid-json")
-                .doLogin(TEST_USER, TEST_PASSWORD));
+                .open();
+        AuthorizationEndpointResponse authResponse = oauth.parseLoginResponse();
+        assertEquals("invalid_request", authResponse.getError());
 
-        // [TODO #47649] OAuthClient cannot handle invalid authorization requests
-        assertNotNull(ex.getMessage(), "No error message");
-        assertTrue(ex.getMessage().contains("Unable to locate element with ID: 'username'"), ex.getMessage());
+        String errorDescription = authResponse.getErrorDescription();
+        assertNotNull(errorDescription, "No error description");
+        assertTrue(errorDescription.contains("Invalid authorization_details: invalid-json"), errorDescription);
     }
 
     /**

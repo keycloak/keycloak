@@ -16,15 +16,15 @@ import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -273,20 +273,20 @@ public class AdminConsoleWhoAmILocaleTest {
     private static class LocaleOffRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.internationalizationEnabled(false);
-            realm.addUser(USER_WITHOUT_LOCALE).password(PASSWORD)
+            realm.users(UserBuilder.create(USER_WITHOUT_LOCALE).password(PASSWORD)
                     .name("My", "Locale Off")
                     .email("locale-off@email.org").emailVerified(true)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-            realm.addUser(USER_WITH_LOCALE).password(PASSWORD)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
+            realm.users(UserBuilder.create(USER_WITH_LOCALE).password(PASSWORD)
                     .name("My", "Locale On")
                     .email("locale-on@email.org").emailVerified(true)
                     .attribute("locale", USER_LOCALE)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-            realm.addClient(ADMIN_CLI_CLIENT_ID).name(ADMIN_CLI_CLIENT_ID).secret(SECRET)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
+            realm.clients(ClientBuilder.create(ADMIN_CLI_CLIENT_ID).name(ADMIN_CLI_CLIENT_ID).secret(SECRET)
                     .attribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR, "true")
-                    .directAccessGrantsEnabled(true);
+                    .directAccessGrantsEnabled(true));
 
             return realm;
         }
@@ -295,29 +295,29 @@ public class AdminConsoleWhoAmILocaleTest {
     private static class LocaleOnRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.internationalizationEnabled(true);
             realm.supportedLocales(REALM_LOCALE, USER_LOCALE, EXTRA_LOCALE);
             realm.defaultLocale(REALM_LOCALE);
 
-            realm.addUser(USER_WITHOUT_LOCALE).password(PASSWORD)
+            realm.users(UserBuilder.create(USER_WITHOUT_LOCALE).password(PASSWORD)
                     .name("My", "Locale Off")
                     .email("locale-off@email.org").emailVerified(true)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-            realm.addUser(USER_WITH_LOCALE).password(PASSWORD)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
+            realm.users(UserBuilder.create(USER_WITH_LOCALE).password(PASSWORD)
                     .email("locale-on@email.org").emailVerified(true).name("My", "Locale On")
                     .attribute("locale", USER_LOCALE)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-            realm.addUser(USER_NO_ACCESS).password(PASSWORD)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
+            realm.users(UserBuilder.create(USER_NO_ACCESS).password(PASSWORD)
                     .name("No", "Access")
                     .email("no-access@email.org").emailVerified(true)
-                    .attribute("locale", USER_LOCALE);
-            realm.addClient(ADMIN_CLI_CLIENT_ID).name(ADMIN_CLI_CLIENT_ID).secret(SECRET)
+                    .attribute("locale", USER_LOCALE));
+            realm.clients(ClientBuilder.create(ADMIN_CLI_CLIENT_ID).name(ADMIN_CLI_CLIENT_ID).secret(SECRET)
                     .attribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR, "true")
-                    .directAccessGrantsEnabled(true);
-            realm.addClient(ADMIN_CLI_NOT_ALLOWED).name(ADMIN_CLI_NOT_ALLOWED).secret(SECRET)
+                    .directAccessGrantsEnabled(true));
+            realm.clients(ClientBuilder.create(ADMIN_CLI_NOT_ALLOWED).name(ADMIN_CLI_NOT_ALLOWED).secret(SECRET)
                     .attribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR, null)
-                    .directAccessGrantsEnabled(true);
+                    .directAccessGrantsEnabled(true));
 
             return realm;
         }
@@ -326,7 +326,7 @@ public class AdminConsoleWhoAmILocaleTest {
     private static class MasterAdminUserConfig implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder user) {
+        public UserBuilder configure(UserBuilder user) {
             user.username("master-admin");
             user.password(PASSWORD);
             user.name("My", "Admin");
@@ -342,7 +342,7 @@ public class AdminConsoleWhoAmILocaleTest {
     private static class MasterAdminClientConfig implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             client.clientId("master-admin-cli");
             client.name("master-admin-cli");
             client.secret(SECRET);

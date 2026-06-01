@@ -21,10 +21,11 @@ import java.nio.file.Paths;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.WithEnvVars;
-import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.MethodOrderer;
@@ -38,7 +39,7 @@ import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAM
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class OptionsDistTest {
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Order(1)
     @Launch({"build", "--db=invalid"})
@@ -46,7 +47,7 @@ public class OptionsDistTest {
         result.assertError("Invalid value for option '--db': invalid. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Order(2)
     @Launch({"start", "--db=dev-file", "--test=invalid"})
@@ -54,16 +55,16 @@ public class OptionsDistTest {
         result.assertError("Unknown option: '--test'");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Order(3)
     @Launch({"start", "--db=dev-file", "--log=console", "--log-file-output=json", "--http-enabled=true", "--hostname-strict=false"})
     public void testServerDoesNotStartIfDisabledFileLogOption(CLIResult result) {
         result.assertError("Disabled option: '--log-file-output'. Available only when File log handler is activated");
-        result.assertError("--log, --log-async, --log-service-name, --log-service-environment, --log-console-output, --log-console-level, --log-console-format, --log-console-color, --log-console-async, --log-level, --log-level-<category>");
+        result.assertError("Possible solutions: --log-console-output, --log-level, --log, --log-console-level, --log-console-format, --log-console-async, --log-async");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Order(4)
     @Launch({"start", "--db=dev-file", "--log=file", "--log-file-output=json", "--http-enabled=true", "--hostname-strict=false"})
@@ -82,13 +83,13 @@ public class OptionsDistTest {
         cliResult.assertStarted();
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Order(6)
     @RawDistOnly(reason = "Raw is enough and we avoid issues with including custom conf file in the container")
-    public void testExpressionsInConfigFile(KeycloakDistribution distribution) {
-        distribution.setEnvVar("MY_LOG_LEVEL", "warn");
-        CLIResult result = distribution.run(CONFIG_FILE_LONG_NAME + "=" + Paths.get("src/test/resources/OptionsDistTest/keycloak.conf").toAbsolutePath().normalize(), "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false");
+    public void testExpressionsInConfigFile(KeycloakRunner runner) {
+        runner.setEnvVar("MY_LOG_LEVEL", "warn");
+        CLIResult result = runner.run(CONFIG_FILE_LONG_NAME + "=" + Paths.get("src/test/resources/OptionsDistTest/keycloak.conf").toAbsolutePath().normalize(), "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false");
         result.assertNoMessage("INFO [io.quarkus]");
         result.assertNoMessage("Listening on:");
 
@@ -100,7 +101,7 @@ public class OptionsDistTest {
 
     // Start-dev should be executed as last tests - build is done for development mode
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Order(7)
     @Launch({"start-dev", "--test=invalid"})
@@ -108,26 +109,26 @@ public class OptionsDistTest {
         result.assertError("Unknown option: '--test'");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Order(8)
     @Launch({"start-dev", "--log=console", "--log-file-output=json"})
     public void testServerDoesNotStartDevIfDisabledFileLogOption(CLIResult result) {
         result.assertError("Disabled option: '--log-file-output'. Available only when File log handler is activated");
-        result.assertError("Possible solutions: --log, --log-async, --log-service-name, --log-service-environment, --log-console-output, --log-console-level, --log-console-format, --log-console-color, --log-console-async, --log-level, --log-level-<category>");
+        result.assertError("Possible solutions: --log-console-output, --log-level, --log, --log-console-level, --log-console-format, --log-console-async, --log-async");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Order(9)
     @Launch({"start-dev", "--log=file", "--log-file-output=json", "--log-console-color=true"})
     public void testServerStartDevIfEnabledFileLogOption(CLIResult result) {
         result.assertNoError("Disabled option: '--log-file-output'. Available only when File log handler is activated");
         result.assertError("Disabled option: '--log-console-color'. Available only when Console log handler is activated");
-        result.assertError("Possible solutions: --log, --log-async, --log-service-name, --log-service-environment, --log-file, --log-file-level, --log-file-format, --log-file-json-format, --log-file-output, --log-file-async, --log-file-rotation-enabled, --log-file-rotation-max-file-size, --log-file-rotation-max-backup-index, --log-file-rotation-file-suffix, --log-file-rotation-rotate-on-boot, --log-level, --log-level-<category>, --log-mdc-enabled");
+        result.assertError("Possible solutions: --log, --log-file, --log-level, --log-file-level, --log-file-json-format, --log-file-format, --log-file-async");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Order(10)
     @Launch({"start-dev", "--cache-remote-host=localhost"})
@@ -135,7 +136,7 @@ public class OptionsDistTest {
         result.assertError( "cache-remote-host available only when feature 'multi-site' or 'clusterless' is set");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Order(11)
     @Launch({"start-dev", "--cache-remote-port=11222"})
@@ -143,7 +144,7 @@ public class OptionsDistTest {
         assertDisabledDueToMissingRemoteHost(result, "--cache-remote-port");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Order(12)
     @Launch({"start-dev", "--cache-remote-username=user"})
@@ -151,7 +152,7 @@ public class OptionsDistTest {
         assertDisabledDueToMissingRemoteHost(result, "--cache-remote-username");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Order(13)
     @Launch({"start-dev", "--cache-remote-password=pass"})
@@ -159,7 +160,7 @@ public class OptionsDistTest {
         assertDisabledDueToMissingRemoteHost(result, "--cache-remote-password");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Order(14)
     @Launch({"start-dev", "--cache-remote-tls-enabled=false"})
@@ -167,7 +168,7 @@ public class OptionsDistTest {
         assertDisabledDueToMissingRemoteHost(result, "--cache-remote-tls-enabled");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Order(15)
     @Launch({"start-dev", "--features=multi-site"})
@@ -175,7 +176,7 @@ public class OptionsDistTest {
         result.assertError("- cache-remote-host: Required when feature 'multi-site' or 'clusterless' is set.");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Order(16)
     @Launch({"start-dev", "--features=multi-site", "--cache-remote-host=localhost", "--cache-remote-username=user"})
@@ -183,7 +184,7 @@ public class OptionsDistTest {
         result.assertError("The option 'cache-remote-password' is required when 'cache-remote-username' is set.");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Order(17)
     @Launch({"start-dev", "--features=multi-site", "--cache-remote-host=localhost", "--cache-remote-password=secret"})

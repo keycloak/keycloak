@@ -23,7 +23,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.common.Profile;
@@ -284,11 +283,13 @@ public class LightweightUserAdapter extends AbstractInMemoryUserAdapter {
           : consent.getClient().getId();
         LightweightConsentEntity userConsentEntity = getConsentEntityByClient(clientId);
 
-        userConsentEntity.setGrantedClientScopesIds(
-                consent.getGrantedClientScopes().stream()
-                        .map(ClientScopeModel::getId)
-                        .collect(Collectors.toSet())
-        );
+        for (ClientScopeModel clientScope : consent.getGrantedClientScopes()) {
+            if (ClientScopeModel.isDynamicScope(clientScope)) {
+                userConsentEntity.addGrantedClientScopesId(clientScope.getId(), consent.getParameters(clientScope));
+            } else {
+                userConsentEntity.addGrantedClientScopesId(clientScope.getId());
+            }
+        }
         update();
     }
 

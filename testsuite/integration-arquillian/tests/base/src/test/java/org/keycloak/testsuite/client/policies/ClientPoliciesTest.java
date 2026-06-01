@@ -55,7 +55,9 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.ClaimsParameterWithValueIdTokenMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -87,25 +89,27 @@ import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExec
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SuppressRefreshTokenRotationExecutorFactory;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExceptionConditionFactory;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.MutualTLSUtils;
-import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
@@ -113,9 +117,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.TextNode;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.logging.Logger;
-import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.OAuth2Constants.SCOPE_PHONE;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
@@ -138,17 +142,16 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExep
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -265,8 +268,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         });
         OIDCClientRepresentation clientRep = getClientDynamically(clientId);
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, clientRep.getTokenEndpointAuthMethod());
-        events.expect(EventType.CLIENT_REGISTER).client(clientId).user(is(emptyOrNullString())).assertEvent();
-        events.expect(EventType.CLIENT_INFO).client(clientId).user(is(emptyOrNullString())).assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_REGISTER).clientId(clientId).userId(null);
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_INFO).clientId(clientId).userId(null);
         adminClient.realm(REALM_NAME).clients().get(clientId).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
 
         successfulLoginAndLogout(clientId, clientRep.getClientSecret());
@@ -396,14 +399,27 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         String clientName = generateSuffixedName(CLIENT_NAME);
         String clientId = createClientDynamically(clientName, (OIDCClientRepresentation clientRep) -> {
         });
-        events.expect(EventType.CLIENT_REGISTER).client(clientId).user(is(emptyOrNullString())).assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_REGISTER).clientId(clientId).userId(null);
         OIDCClientRepresentation response = getClientDynamically(clientId);
         String clientSecret = response.getClientSecret();
         assertEquals(clientName, response.getClientName());
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, response.getTokenEndpointAuthMethod());
-        events.expect(EventType.CLIENT_INFO).client(clientId).user(is(emptyOrNullString())).assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_INFO).clientId(clientId).userId(null);
 
         adminClient.realm(REALM_NAME).clients().get(clientId).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        // Add audience mapper so the client can introspect its own tokens
+        org.keycloak.representations.idm.ProtocolMapperRepresentation audienceMapper = new org.keycloak.representations.idm.ProtocolMapperRepresentation();
+        audienceMapper.setName("audience-mapper");
+        audienceMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        audienceMapper.setProtocolMapper(AudienceProtocolMapper.PROVIDER_ID);
+
+        Map<String, String> audienceConfig = new HashMap<>();
+        audienceConfig.put(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE, response.getClientId());
+        audienceConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        audienceMapper.setConfig(audienceConfig);
+
+        adminClient.realm(REALM_NAME).clients().get(clientId).getProtocolMappers().createMapper(audienceMapper);
 
         successfulLoginAndLogoutWithPKCE(response.getClientId(), clientSecret, TEST_USER_NAME, TEST_USER_PASSWORD);
     }
@@ -612,7 +628,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             cau.update();
             // Check login.
             AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-            Assert.assertNull(loginResponse.getError());
+            Assertions.assertNull(loginResponse.getError());
 
             String code = oauth.parseLoginResponse().getCode();
 
@@ -752,7 +768,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         oauth.client(clientPublicId);
         oauth.openLoginForm();
         assertEquals(OAuthErrorException.INVALID_CLIENT, oauth.parseLoginResponse().getError());
-        assertEquals("invalid client access type", oauth.parseLoginResponse().getErrorDescription());
+        assertEquals("invalid client access type: public", oauth.parseLoginResponse().getErrorDescription());
     }
 
     @Test
@@ -847,14 +863,14 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             clientRep.setImplicitFlowEnabled(Boolean.FALSE);
             clientRep.setConsentRequired(Boolean.FALSE);
         });
-        Assert.assertFalse(getClientByAdmin(cid).isConsentRequired());
+        Assertions.assertFalse(getClientByAdmin(cid).isConsentRequired());
 
         // add the role to the client to execute condition
         adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
 
         // update with consent to false should be updated to true by autoconfigure
         updateClientByAdmin(cid, (ClientRepresentation cRep) -> cRep.setConsentRequired(Boolean.FALSE));
-        Assert.assertTrue(getClientByAdmin(cid).isConsentRequired());
+        Assertions.assertTrue(getClientByAdmin(cid).isConsentRequired());
     }
 
     @Test
@@ -1047,9 +1063,12 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             oauth.openLoginForm();
             assertTrue(errorPage.isCurrent());
             assertEquals(ERR_MSG_REQ_NOT_ALLOWED, errorPage.getError());
-            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                            Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                            ERR_MSG_REQ_NOT_ALLOWED).client((String) null).user((String) null).assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                    .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.CLIENT_POLICY_ERROR_DETAIL, ERR_MSG_REQ_NOT_ALLOWED)
+                    .clientId(null)
+                    .userId(null);
 
             revertToBuiltinProfiles();
             successfulLoginAndLogout(clientBetaId, "secretBeta");
@@ -1104,7 +1123,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertThat(updated.getClientSecretExpiresAt(), equalTo(firstSecretExpiration));
 
         //force secret expiration
-        setTimeOffset(61);
+        timeOffSet.set(61);
 
         updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> clientRep.setClientName(generateSuffixedName(CLIENT_NAME)));
 
@@ -1122,7 +1141,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertLoginAndLogoutStatus(clientId, firstSecret, Response.Status.OK);
 
         //force rotated secret expiration
-        setTimeOffset(100);
+        timeOffSet.set(100);
 
         //login with updated secret (remains valid)
         assertLoginAndLogoutStatus(clientId, updatedSecret, Response.Status.OK);
@@ -1155,7 +1174,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertThat(firstSecretExpiration, is(greaterThan(Time.currentTime())));
 
         //Enter in Remaining expiration window
-        setTimeOffset(41);
+        timeOffSet.set(41);
 
         //update client to force rotation (due to remaining expiration)
         updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> clientRep.setContacts(Collections.singletonList("keycloak@keycloak.org")));
@@ -1236,10 +1255,12 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("The intent is not bound with the client", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                "The intent is not bound with the client").client(clientId).user((String) null)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "The intent is not bound with the client")
+                .clientId(clientId)
+                .userId(null);
 
         // register a binding of an intent with a valid client
         r = testingClient.testApp().oidcClientEndpoints().bindIntentWithClient(intentId, clientId);
@@ -1249,7 +1270,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         oauth.loginForm().request(request).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         // check an authorization response
-        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId).getEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String code = oauth.parseLoginResponse().getCode();
@@ -1266,7 +1287,12 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         // check a token response
         assertEquals(200, response.getStatusCode());
-        events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(clientId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
         idToken = new JWSInput(response.getIdToken());
         parser = mapper.getFactory().createParser(idToken.readContentAsString());
         treeNode = mapper.readTree(parser);
@@ -1275,7 +1301,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         // logout
         oauth.doLogout(response.getRefreshToken());
-        events.expectLogout(response.getSessionState()).client(clientId).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(response.getSessionState()).clientId(clientId).withoutDetails(Details.REDIRECT_URI);
 
         // create a request object with invalid claims
         claimsRep = new ClaimsRepresentation();
@@ -1291,10 +1318,12 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("no claim for an intent value for ID token" , authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        "no claim for an intent value for ID token").client(clientId)
-                .user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "no claim for an intent value for ID token")
+                .clientId(clientId)
+                .userId(null);
     }
 
     @Test

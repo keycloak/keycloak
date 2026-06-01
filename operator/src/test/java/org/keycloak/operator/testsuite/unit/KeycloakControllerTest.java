@@ -19,7 +19,10 @@ package org.keycloak.operator.testsuite.unit;
 
 import org.keycloak.operator.controllers.KeycloakController;
 import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.IngressSpecBuilder;
+import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -66,6 +69,26 @@ class KeycloakControllerTest {
         assertTrue(update.isPatchResource());
         assertEquals(1, update.getResource().orElseThrow().getSpec().getInstances());
         assertNull(update.getResource().orElseThrow().getSpec().getHostnameSpec().getHostname());
+    }
+    
+    @Test
+    void testUpdateStatus() {
+        KeycloakController controller = new KeycloakController();
+        Keycloak kc = K8sUtils.getDefaultKeycloakDeployment();
+        kc = new KeycloakBuilder(kc).editSpec().withNewUnsupported().withNewPodTemplate().withNewSpec()
+                .withServiceAccountName("foo").endSpec().endPodTemplate().endUnsupported().endSpec().build();
+
+        Context<Keycloak> mockContext = Mockito.mock(Context.class, Mockito.RETURNS_DEEP_STUBS);
+
+        KeycloakStatusAggregator agg = new KeycloakStatusAggregator(null, 1L);
+        controller.updateStatus(kc, null, agg, mockContext);
+        CRAssert.assertKeycloakStatusCondition(agg.build(), "HasErrors", false, null, 1L).extracting("message").isEqualTo("");
+        
+        Mockito.when(mockContext.getControllerConfiguration().getInformerConfig().watchAllNamespaces()).thenReturn(true);
+
+        agg = new KeycloakStatusAggregator(null, 1L);
+        controller.updateStatus(kc, null, agg, mockContext);
+        CRAssert.assertKeycloakStatusCondition(agg.build(), "HasErrors", false, "The serviceAccountName cannot be set in a multi-namespace install mode");
     }
 
 }

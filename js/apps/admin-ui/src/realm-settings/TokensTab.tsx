@@ -96,10 +96,12 @@ export const RealmSettingsTokensTab = ({
     defaultValue: false,
   });
 
-  const encryptionRequired = useWatch({
+  const requestEncryptionRequired = useWatch({
     control,
-    name: convertAttributeNameToForm("attributes.oid4vci.encryption.required"),
-    defaultValue: realm.attributes?.["oid4vci.encryption.required"],
+    name: convertAttributeNameToForm(
+      "attributes.oid4vci.request.encryption.required",
+    ),
+    defaultValue: realm.attributes?.["oid4vci.request.encryption.required"],
   });
 
   const strategy = useWatch({
@@ -207,12 +209,10 @@ export const RealmSettingsTokensTab = ({
                       id="oAuthDevicePollingInterval"
                       value={field.value}
                       min={0}
-                      onPlus={() => field.onChange(Number(field?.value) + 1)}
+                      onPlus={() => field.onChange(Number(field.value) + 1)}
                       onMinus={() =>
                         field.onChange(
-                          Number(field?.value) > 0
-                            ? Number(field?.value) - 1
-                            : 0,
+                          Number(field.value) > 0 ? Number(field.value) - 1 : 0,
                         )
                       }
                       onChange={(event) => {
@@ -726,14 +726,23 @@ export const RealmSettingsTokensTab = ({
           />
           <DefaultSwitchControl
             name={convertAttributeNameToForm(
-              "attributes.oid4vci.encryption.required",
+              "attributes.oid4vci.request.encryption.required",
             )}
-            label={t("requireEncryption")}
-            labelIcon={t("requireEncryptionHelp")}
+            label={t("requireRequestEncryption")}
+            labelIcon={t("requireRequestEncryptionHelp")}
             stringify
-            data-testid="require-encryption-switch"
+            data-testid="require-request-encryption-switch"
           />
-          {encryptionRequired === "true" && (
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm(
+              "attributes.oid4vci.response.encryption.required",
+            )}
+            label={t("requireResponseEncryption")}
+            labelIcon={t("requireResponseEncryptionHelp")}
+            stringify
+            data-testid="require-response-encryption-switch"
+          />
+          {requestEncryptionRequired === "true" && (
             <DefaultSwitchControl
               name={convertAttributeNameToForm(
                 "attributes.oid4vci.request.zip.algorithms",

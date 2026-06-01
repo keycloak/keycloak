@@ -27,7 +27,7 @@ import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.UIUtils;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -85,6 +85,11 @@ public class RegisterPage extends LanguageComboboxAwarePage
         register(firstName, lastName, email, username, password, password, null, null, null);
     }
 
+    // Register user with the registration-page expected to NOT have "password" and "password-confirmation" fields
+    public void registerWithoutPassword(String firstName, String lastName, String email, String username) {
+        register(firstName, lastName, email, username, null, null, null, null, null);
+    }
+
     public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm) {
         register(firstName, lastName, email, username, password, passwordConfirm, null, null, null);
     }
@@ -120,14 +125,20 @@ public class RegisterPage extends LanguageComboboxAwarePage
             usernameInput.sendKeys(username);
         }
 
-        passwordInput.clear();
-        if (password != null) {
-            passwordInput.sendKeys(password);
+        if (!isPasswordPresent() && password != null) {
+            Assertions.fail("Password expected to be filled, but password field not present on the registration page");
         }
 
-        passwordConfirmInput.clear();
-        if (passwordConfirm != null) {
-            passwordConfirmInput.sendKeys(passwordConfirm);
+        if (isPasswordPresent()) {
+            passwordInput.clear();
+            if (password != null) {
+                passwordInput.sendKeys(password);
+            }
+
+            passwordConfirmInput.clear();
+            if (passwordConfirm != null) {
+                passwordConfirmInput.sendKeys(passwordConfirm);
+            }
         }
 
         if(isDepartmentPresent()) {
@@ -172,7 +183,7 @@ public class RegisterPage extends LanguageComboboxAwarePage
 
         try {
             usernameInput.clear();
-            Assert.fail("Form must be without username field");
+            Assertions.fail("Form must be without username field");
         } catch (NoSuchElementException e) {
             // OK
         }
@@ -271,6 +282,14 @@ public class RegisterPage extends LanguageComboboxAwarePage
         }
     }
 
+    public boolean isPasswordPresent() {
+        try {
+            return driver.findElement(By.name("password")).isDisplayed();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
+    }
+
 
     public boolean isCurrent() {
         return isCurrent("Register");
@@ -291,7 +310,7 @@ public class RegisterPage extends LanguageComboboxAwarePage
 
     public void assertCurrent(String orgName) {
         String name = getClass().getSimpleName();
-        Assert.assertTrue("Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")",
-                isCurrent("Create an account to join the " + orgName + " organization"));
+        Assertions.assertTrue(isCurrent("Create an account to join the " + orgName + " organization"),
+                "Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")");
     }
 }

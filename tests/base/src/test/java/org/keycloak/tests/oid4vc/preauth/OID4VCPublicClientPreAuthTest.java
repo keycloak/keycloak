@@ -59,7 +59,10 @@ public class OID4VCPublicClientPreAuthTest extends OID4VCIssuerTestBase {
 
         // Create Pre-Authorized CredentialOffer
         //
-        CredentialsOffer credOffer = wallet.createCredentialOfferPreAuth(ctx, ctx.getHolder());
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
         String preAuthCode = credOffer.getPreAuthorizedCode();
 
         // Redeem Pre-Authorized Code for AccessToken
@@ -77,7 +80,7 @@ public class OID4VCPublicClientPreAuthTest extends OID4VCIssuerTestBase {
         //
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
                 .credentialIdentifier(authorizedIdentifier)
-                .proofs(wallet.generateJwtProof(ctx, ctx.getHolder()))
+                .proofs(wallet.generateJwtProof(ctx))
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);

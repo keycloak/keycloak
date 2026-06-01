@@ -37,6 +37,7 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
@@ -54,10 +55,13 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.UseLightweightAccessTokenExecutorFactory;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
@@ -70,6 +74,8 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -80,9 +86,9 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.logging.Logger;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.protocol.ProtocolMapperUtils.USER_SESSION_NOTE;
 import static org.keycloak.protocol.oidc.OIDCLoginProtocolFactory.ACR;
@@ -113,8 +119,13 @@ import static org.keycloak.protocol.oidc.mappers.RoleNameMapper.ROLE_CONFIG;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 
+import static org.junit.Assert.assertEquals;
+
 public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     private static final Logger logger = Logger.getLogger(LightWeightAccessTokenTest.class);
+
+    protected ManagedRealm managedRealm = new ManagedRealm(this, REALM_NAME);
+
     private static String RESOURCE_SERVER_CLIENT_ID = "resource-server";
     private static String RESOURCE_SERVER_CLIENT_PASSWORD = "password";
     @Before
@@ -122,6 +133,31 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(TEST_CLIENT).directAccessGrant(true).setServiceAccountsEnabled(true);
         ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(RESOURCE_SERVER_CLIENT_ID).directAccessGrant(true);
         ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(RESOURCE_SERVER_CLIENT_ID).updateAttribute(Constants.SUPPORT_JWT_CLAIM_IN_INTROSPECTION_RESPONSE_ENABLED, "true");
+
+        // Assign resource-server role to both users and service account
+        // This allows the audience-resolve mapper to add resource-server to the audience
+        RealmResource realm = adminClient.realm(REALM_NAME);
+        String resourceServerId = realm.clients().findByClientId(RESOURCE_SERVER_CLIENT_ID).get(0).getId();
+
+        // Create rs-role on resource-server if it doesn't exist
+        try {
+            realm.clients().get(resourceServerId).roles().get("rs-role").toRepresentation();
+        } catch (NotFoundException e) {
+            RoleRepresentation newRole = new RoleRepresentation();
+            newRole.setName("rs-role");
+            realm.clients().get(resourceServerId).roles().create(newRole);
+        }
+
+        RoleRepresentation role = realm.clients().get(resourceServerId).roles().get("rs-role").toRepresentation();
+
+        // Assign the role to TEST_CLIENT service account
+        String testClientId = realm.clients().findByClientId(TEST_CLIENT).get(0).getId();
+        UserRepresentation serviceAccount = realm.clients().get(testClientId).getServiceAccountUser();
+        realm.users().get(serviceAccount.getId()).roles().clientLevel(resourceServerId).add(Collections.singletonList(role));
+
+        // Assign the role to test-user@localhost for user flows
+        UserRepresentation testUser = realm.users().search("test-user@localhost").get(0);
+        realm.users().get(testUser.getId()).roles().clientLevel(resourceServerId).add(Collections.singletonList(role));
     }
 
     @Override
@@ -228,7 +264,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             AccessToken introspectionResult = JsonSerialization.readValue(tokenResponse, AccessToken.class);
             assertTokenIntrospectionResponse(introspectionResult, true, true, false);
 
-            Assert.assertNotNull(introspectionResult.getOtherClaims().get("jwt"));
+            Assertions.assertNotNull(introspectionResult.getOtherClaims().get("jwt"));
         } finally {
             deleteProtocolMappers(protocolMappers);
         }
@@ -354,10 +390,10 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             AccessToken token = oauth.verifyToken(accessToken);
             assertAccessToken(token, true, true, true);
 
-            AccessTokenContext ctx = testingClient.testing("test").getTokenContext(token.getId());
-            Assert.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.ONLINE);
-            Assert.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.LIGHTWEIGHT);
-            Assert.assertEquals(ctx.getGrantType(), OAuth2Constants.AUTHORIZATION_CODE);
+            AccessTokenContext ctx = runOnServer.fetch(RunHelpers.getTokenContext(token.getId()));
+            Assertions.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.ONLINE);
+            Assertions.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.LIGHTWEIGHT);
+            Assertions.assertEquals(ctx.getGrantType(), OAuth2Constants.AUTHORIZATION_CODE);
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
             String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
@@ -511,12 +547,12 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             HttpGet get = new HttpGet(OAuthClient.SERVER_ROOT + "/auth/admin/realms/master");
             get.setHeader("Authorization", "Bearer " + accessToken);
             try (CloseableHttpResponse response = client.execute(get)) {
-                Assert.assertEquals(200, response.getStatusLine().getStatusCode());
+                Assertions.assertEquals(200, response.getStatusLine().getStatusCode());
                 RealmRepresentation realmRepresentation = JsonSerialization.readValue(response.getEntity().getContent(), RealmRepresentation.class);
-                Assert.assertEquals("master", realmRepresentation.getRealm());
+                Assertions.assertEquals("master", realmRepresentation.getRealm());
             }
         } catch (Exception e) {
-            Assert.fail(e.getMessage());
+            Assertions.fail(e.getMessage());
         }
     }
 
@@ -537,7 +573,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
                 post.setHeader("Authorization", "Bearer " + accessToken);
                 post.setEntity(new StringEntity("{\"realm\":\"invalid\",\"enabled\":true}", ContentType.APPLICATION_JSON));
                 try (CloseableHttpResponse resp = client.execute(post)) {
-                    Assert.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), resp.getStatusLine().getStatusCode());
+                    Assertions.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), resp.getStatusLine().getStatusCode());
                 }
             }
         }
@@ -560,21 +596,21 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             oauth.client(transientClient.getClientId(), transientClient.getSecret());
             AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest();
             String accessTokenString = tokenResponse.getAccessToken();
-            Assert.assertNull(tokenResponse.getRefreshToken());
+            Assertions.assertNull(tokenResponse.getRefreshToken());
             AccessToken accessToken = oauth.verifyToken(accessTokenString);
-            Assert.assertNotNull(accessToken.getSubject());
-            Assert.assertNull(accessToken.getSessionId());
+            Assertions.assertNotNull(accessToken.getSubject());
+            Assertions.assertNull(accessToken.getSessionId());
 
             CloseableHttpClient client = HttpClientBuilder.create().build();
             HttpGet get = new HttpGet(OAuthClient.SERVER_ROOT + "/auth/admin/realms/master");
             get.setHeader("Authorization", "Bearer " + accessTokenString);
             CloseableHttpResponse response = client.execute(get);
-            Assert.assertEquals(200, response.getStatusLine().getStatusCode());
+            Assertions.assertEquals(200, response.getStatusLine().getStatusCode());
             RealmRepresentation realmRepresentation = JsonSerialization.readValue(response.getEntity().getContent(), RealmRepresentation.class);
-            Assert.assertEquals("master", realmRepresentation.getRealm());
+            Assertions.assertEquals("master", realmRepresentation.getRealm());
 
         } catch (Exception e) {
-            Assert.fail(e.getMessage());
+            Assertions.fail(e.getMessage());
         }
     }
 
@@ -598,12 +634,12 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             HttpGet get = new HttpGet(OAuthClient.SERVER_ROOT + "/auth/admin/realms/master");
             get.setHeader("Authorization", "Bearer " + accessToken);
             try (CloseableHttpResponse response = client.execute(get)) {
-                Assert.assertEquals(200, response.getStatusLine().getStatusCode());
+                Assertions.assertEquals(200, response.getStatusLine().getStatusCode());
                 RealmRepresentation realmRepresentation = JsonSerialization.readValue(response.getEntity().getContent(), RealmRepresentation.class);
-                Assert.assertEquals("master", realmRepresentation.getRealm());
+                Assertions.assertEquals("master", realmRepresentation.getRealm());
             }
         } catch (Exception e) {
-            Assert.fail(e.getMessage());
+            Assertions.fail(e.getMessage());
         }
 
         setScopeProtocolMapper("master", OIDCLoginProtocolFactory.BASIC_SCOPE, "sub", true, false, false);
@@ -641,16 +677,19 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
         // Verify lightweight token
         AccessToken token = oauth.verifyToken(response.getAccessToken());
-        AccessTokenContext ctx = testingClient.testing(REALM_NAME).getTokenContext(token.getId());
-        Assert.assertEquals(AccessTokenContext.TokenType.LIGHTWEIGHT, ctx.getTokenType());
-        Assert.assertEquals(TEST_USER_PASSWORD, ctx.getGrantType());
+        AccessTokenContext ctx = runOnServer.fetch(RunHelpers.getTokenContext(token.getId()));
+        Assertions.assertEquals(AccessTokenContext.TokenType.LIGHTWEIGHT, ctx.getTokenType());
+        Assertions.assertEquals(TEST_USER_PASSWORD, ctx.getGrantType());
     }
 
     private void removeSession(final String sessionId) {
-        testingClient.testing().removeExpired(REALM_NAME);
+        runOnServer.run(RunHelpers.removeExpired());
         try {
-            testingClient.testing().removeUserSession(REALM_NAME, sessionId);
-        } catch (NotFoundException nfe) {
+            runOnServer.run(RunHelpers.removeUserSession(sessionId));
+        } catch (RunOnServerException nfe) {
+            if (!(nfe.getCause() instanceof NotFoundException)) {
+                throw nfe;
+            }
             // Ignore
         }
     }
@@ -658,100 +697,96 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     private void assertMapperClaims(AccessToken token, boolean isAddMapperResponseFlag, boolean isAuthCodeFlow) {
         if (isAddMapperResponseFlag) {
             if (isAuthCodeFlow) {
-                Assert.assertNotNull(token.getName());
-                Assert.assertNotNull(token.getGivenName());
-                Assert.assertNotNull(token.getFamilyName());
-                Assert.assertNotNull(token.getAddress());
-                Assert.assertNotNull(token.getEmail());
-                Assert.assertNotNull(token.getOtherClaims().get("user-session-note"));
-                Assert.assertNotNull(token.getOtherClaims().get("test-claim"));
-                Assert.assertNotNull(token.getOtherClaims().get("group-name"));
-                Assert.assertNotNull(token.getOtherClaims().get(IDToken.SESSION_STATE));
+                Assertions.assertNotNull(token.getName());
+                Assertions.assertNotNull(token.getGivenName());
+                Assertions.assertNotNull(token.getFamilyName());
+                Assertions.assertNotNull(token.getAddress());
+                Assertions.assertNotNull(token.getEmail());
+                Assertions.assertNotNull(token.getOtherClaims().get("user-session-note"));
+                Assertions.assertNotNull(token.getOtherClaims().get("test-claim"));
+                Assertions.assertNotNull(token.getOtherClaims().get("group-name"));
+                Assertions.assertNotNull(token.getOtherClaims().get(IDToken.SESSION_STATE));
             }
-            Assert.assertNotNull(token.getAudience());
-            Assert.assertNotNull(token.getAcr());
-            Assert.assertNotNull(token.getAllowedOrigins());
-            Assert.assertNotNull(token.getRealmAccess());
-            Assert.assertNotNull(token.getResourceAccess());
-            Assert.assertNotNull(token.getEmailVerified());
-            Assert.assertNotNull(token.getPreferredUsername());
+            Assertions.assertNotNull(token.getAudience());
+            Assertions.assertNotNull(token.getAcr());
+            Assertions.assertNotNull(token.getAllowedOrigins());
+            Assertions.assertNotNull(token.getRealmAccess());
+            Assertions.assertNotNull(token.getResourceAccess());
+            Assertions.assertNotNull(token.getEmailVerified());
+            Assertions.assertNotNull(token.getPreferredUsername());
         } else {
             if (isAuthCodeFlow) {
-                Assert.assertNull(token.getName());
-                Assert.assertNull(token.getGivenName());
-                Assert.assertNull(token.getFamilyName());
-                Assert.assertNull(token.getAddress());
-                Assert.assertNull(token.getEmail());
-                Assert.assertNull(token.getOtherClaims().get("user-session-note"));
-                Assert.assertNull(token.getOtherClaims().get("test-claim"));
-                Assert.assertNull(token.getOtherClaims().get("group-name"));
-                Assert.assertNull(token.getOtherClaims().get(IDToken.SESSION_STATE));
+                Assertions.assertNull(token.getName());
+                Assertions.assertNull(token.getGivenName());
+                Assertions.assertNull(token.getFamilyName());
+                Assertions.assertNull(token.getAddress());
+                Assertions.assertNull(token.getEmail());
+                Assertions.assertNull(token.getOtherClaims().get("user-session-note"));
+                Assertions.assertNull(token.getOtherClaims().get("test-claim"));
+                Assertions.assertNull(token.getOtherClaims().get("group-name"));
+                Assertions.assertNull(token.getOtherClaims().get(IDToken.SESSION_STATE));
             }
-            Assert.assertNull(token.getAcr());
-            Assert.assertNull(token.getAllowedOrigins());
-            Assert.assertNull(token.getRealmAccess());
-            Assert.assertTrue(token.getResourceAccess().isEmpty());
-            Assert.assertNull(token.getEmailVerified());
-            Assert.assertNull(token.getPreferredUsername());
+            Assertions.assertNull(token.getAcr());
+            Assertions.assertNull(token.getAllowedOrigins());
+            Assertions.assertNull(token.getRealmAccess());
+            Assertions.assertTrue(token.getResourceAccess().isEmpty());
+            Assertions.assertNull(token.getEmailVerified());
+            Assertions.assertNull(token.getPreferredUsername());
         }
     }
 
     private void assertInitClaims(AccessToken token, boolean isAuthCodeFlow) {
-        Assert.assertNotNull(token.getExp());
-        Assert.assertNotNull(token.getIat());
-        Assert.assertNotNull(token.getId());
-        Assert.assertNotNull(token.getType());
-        Assert.assertNotNull(token.getIssuedFor());
-        Assert.assertNotNull(token.getScope());
-        Assert.assertNotNull(token.getIssuer());
+        Assertions.assertNotNull(token.getExp());
+        Assertions.assertNotNull(token.getIat());
+        Assertions.assertNotNull(token.getId());
+        Assertions.assertNotNull(token.getType());
+        Assertions.assertNotNull(token.getIssuedFor());
+        Assertions.assertNotNull(token.getScope());
+        Assertions.assertNotNull(token.getIssuer());
         if (isAuthCodeFlow) {
-            Assert.assertNotNull(token.getSessionId());
+            Assertions.assertNotNull(token.getSessionId());
         } else {
-            Assert.assertNull(token.getSessionId());
+            Assertions.assertNull(token.getSessionId());
         }
     }
 
     private void assertBasicClaims(AccessToken token, boolean isAuthCodeFlow, boolean missing) {
         if (missing) {
-            Assert.assertNull(token.getAuth_time());
-            Assert.assertNull(token.getSubject());
+            Assertions.assertNull(token.getAuth_time());
+            Assertions.assertNull(token.getSubject());
         } else {
-            Assert.assertNotNull(token.getSubject());
+            Assertions.assertNotNull(token.getSubject());
             if (isAuthCodeFlow) {
-                Assert.assertNotNull(token.getAuth_time());
+                Assertions.assertNotNull(token.getAuth_time());
             } else {
-                Assert.assertNull(token.getAuth_time());
+                Assertions.assertNull(token.getAuth_time());
             }
         }
     }
 
     private void assertIntrospectClaims(AccessToken token) {
-        Assert.assertNotNull(token.getOtherClaims().get("client_id"));
-        Assert.assertNotNull(token.getOtherClaims().get("active"));
-        Assert.assertNotNull(token.getOtherClaims().get("token_type"));
+        Assertions.assertNotNull(token.getOtherClaims().get("client_id"));
+        Assertions.assertNotNull(token.getOtherClaims().get("active"));
+        Assertions.assertNotNull(token.getOtherClaims().get("token_type"));
     }
 
     private void assertAccessToken(AccessToken token, boolean isAuthCodeFlow, boolean isAddToAccessToken, boolean missingBasicClaims) {
-        Assert.assertNull(token.getNonce());
+        Assertions.assertNull(token.getNonce());
         assertMapperClaims(token, isAddToAccessToken, isAuthCodeFlow);
         assertInitClaims(token, isAuthCodeFlow);
         assertBasicClaims(token, isAuthCodeFlow, missingBasicClaims);
     }
 
     private void assertTokenIntrospectionResponse(AccessToken token, boolean isAuthCodeFlow, boolean isAddToIntrospect, boolean missingBasicClaims) {
-        Assert.assertNull(token.getNonce());
+        Assertions.assertNull(token.getNonce());
         assertMapperClaims(token, isAddToIntrospect, isAuthCodeFlow);
         assertInitClaims(token, isAuthCodeFlow);
         assertIntrospectClaims(token);
         assertBasicClaims(token, isAuthCodeFlow, missingBasicClaims);
     }
 
-    protected RealmResource testRealm() {
-        return adminClient.realm(REALM_NAME);
-    }
-
     public void addDefaultBasicClientScope() {
-        testRealm().getDefaultDefaultClientScopes()
+        managedRealm.admin().getDefaultDefaultClientScopes()
                 .stream()
                 .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
                 .findFirst()
@@ -761,7 +796,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     public void removeDefaultBasicClientScope() {
-        testRealm().getDefaultDefaultClientScopes()
+        managedRealm.admin().getDefaultDefaultClientScopes()
                 .stream()
                 .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
                 .findFirst()
@@ -808,7 +843,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     private void setScopeProtocolMapper(String scopeName, String mapperName, boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean isIncludeLightweightAccessToken) {
-        setScopeProtocolMapper(testRealm().toRepresentation().getRealm(), scopeName, mapperName, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
+        setScopeProtocolMapper(managedRealm.admin().toRepresentation().getRealm(), scopeName, mapperName, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
     }
 
     private ProtocolMappersResource setProtocolMappers(boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean setPairWise) {
@@ -851,6 +886,14 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             put(INCLUDED_CLIENT_AUDIENCE, "account-console");
         }});
         protocolMapperList.add(audienceProtocolMapper);
+        // Always include resource-server in audience for introspection validation
+        ProtocolMapperRepresentation resourceServerAudienceMapper = createClaimMapper("audience-resource-server", AudienceProtocolMapper.PROVIDER_ID, new HashMap<>() {{
+            put(INCLUDE_IN_ACCESS_TOKEN, "true");
+            put(INCLUDE_IN_INTROSPECTION, "true");
+            put(INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN, String.valueOf(isIncludeLightweightAccessToken));
+            put(INCLUDED_CLIENT_AUDIENCE, RESOURCE_SERVER_CLIENT_ID);
+        }});
+        protocolMapperList.add(resourceServerAudienceMapper);
         ProtocolMapperRepresentation roleNameMapper = createClaimMapper("role-name", RoleNameMapper.PROVIDER_ID, new HashMap<>(config) {{
             put(ROLE_CONFIG, "user");
             put(NEW_ROLE_NAME, "new-role");
@@ -894,7 +937,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     private void deleteProtocolMappers(ProtocolMappersResource protocolMappers) {
-        List<String> mapperNames = new ArrayList<>(Arrays.asList("reference", "audience", "role-name", "group-member", "hardcoded-claim", "hardcoded-role", "user-session-note", "pairwise-sub-mapper", "session-state-mapper"));
+        List<String> mapperNames = new ArrayList<>(Arrays.asList("reference", "audience", "audience-resource-server", "role-name", "group-member", "hardcoded-claim", "hardcoded-role", "user-session-note", "pairwise-sub-mapper", "session-state-mapper"));
         List<ProtocolMapperRepresentation> mappers = new ArrayList<>();
         for (String mapperName : mapperNames) {
             mappers.add(ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, mapperName));
@@ -947,5 +990,131 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
     private void alwaysUseLightWeightAccessToken(boolean enable){
         ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(TEST_CLIENT).alwaysUseLightweightAccessToken(enable);
+    }
+
+    private void allowUserinfoWithLightweightAccessToken(boolean allow) {
+        runOnServerMaster.run(RunHelpers.setSystemPropertyOnServer("oidc.allow-userinfo-with-lightweight-access-token", String.valueOf(allow)));
+        runOnServerMaster.run(RunHelpers.reinitializeProviderFactoryWithSystemPropertiesScope(org.keycloak.protocol.LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc."));
+    }
+
+    @Test
+    public void testUserInfoWithLightweightTokenRejected() {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
+        try {
+            oauth.scope("openid address");
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+
+            UserInfoResponse userInfoResponse = oauth.userInfoRequest(accessToken).send();
+            assertEquals(401, userInfoResponse.getStatusCode());
+        } finally {
+            deleteProtocolMappers(protocolMappers);
+            alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
+    @Test
+    public void testUserInfoWithLightweightTokenAllowedPerClient() {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
+        try {
+            // Enable per-client option
+            ClientManager.realm(adminClient.realm(REALM_NAME))
+                    .clientId(TEST_CLIENT)
+                    .updateAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, "true");
+
+            oauth.scope("openid address");
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+
+            // UserInfo request should succeed with per-client option enabled
+            UserInfoResponse userInfoResponse = oauth.userInfoRequest(accessToken).send();
+            assertEquals(200, userInfoResponse.getStatusCode());
+            assertEquals("test-user@localhost", userInfoResponse.getUserInfo().getPreferredUsername());
+
+        } finally {
+            // Disable per-client option
+            ClientManager.realm(adminClient.realm(REALM_NAME))
+                    .clientId(TEST_CLIENT)
+                    .updateAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, "false");
+            deleteProtocolMappers(protocolMappers);
+            alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
+    @Test
+    public void testUserInfoWithLightweightTokenAllowedServerWide() throws Exception {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
+        try {
+            // Enable server-wide option
+            allowUserinfoWithLightweightAccessToken(true);
+
+            oauth.scope("openid address");
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+
+            // UserInfo request should succeed with server-wide option enabled
+            UserInfoResponse userInfoResponse = oauth.userInfoRequest(accessToken).send();
+            assertEquals(200, userInfoResponse.getStatusCode());
+            assertEquals("test-user@localhost", userInfoResponse.getUserInfo().getPreferredUsername());
+
+        } finally {
+            // Disable server-wide option
+            allowUserinfoWithLightweightAccessToken(false);
+            deleteProtocolMappers(protocolMappers);
+            alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
+    @Test
+    public void testUserInfoWithLightweightTokenServerWideOverridesClient() throws Exception {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
+        try {
+            // Enable server-wide option
+            allowUserinfoWithLightweightAccessToken(true);
+
+            // Explicitly disable per-client option
+            ClientManager.realm(adminClient.realm(REALM_NAME))
+                    .clientId(TEST_CLIENT)
+                    .updateAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, "false");
+
+            oauth.scope("openid address");
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+
+            // Should succeed - server-wide overrides per-client false
+            UserInfoResponse userInfoResponse = oauth.userInfoRequest(accessToken).send();
+            assertEquals(200, userInfoResponse.getStatusCode());
+            assertEquals("test-user@localhost", userInfoResponse.getUserInfo().getPreferredUsername());
+
+            // Remove per-client option (not set)
+            ClientManager.realm(adminClient.realm(REALM_NAME))
+                    .clientId(TEST_CLIENT)
+                    .updateAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, null);
+
+            // Reuse same token - server-wide should still allow
+            userInfoResponse = oauth.userInfoRequest(accessToken).send();
+            assertEquals(200, userInfoResponse.getStatusCode());
+            assertEquals("test-user@localhost", userInfoResponse.getUserInfo().getPreferredUsername());
+
+        } finally {
+            allowUserinfoWithLightweightAccessToken(false);
+            ClientManager.realm(adminClient.realm(REALM_NAME))
+                    .clientId(TEST_CLIENT)
+                    .updateAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, "false");
+            deleteProtocolMappers(protocolMappers);
+            alwaysUseLightWeightAccessToken(false);
+        }
     }
 }

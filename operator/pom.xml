@@ -123,10 +123,6 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-v2-api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-v2-rest</artifactId>
-        </dependency>
 
         <!-- Test -->
         <dependency>

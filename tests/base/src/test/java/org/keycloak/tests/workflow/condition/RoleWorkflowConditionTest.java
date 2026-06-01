@@ -28,8 +28,8 @@ import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowScheduleRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
@@ -80,7 +80,7 @@ public class RoleWorkflowConditionTest extends AbstractWorkflowTest {
 
         // create some users associated with the role
         for (int i = 0; i < 10; i++) {
-            try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create().username("user-with-role-" + i).build())) {
+            try (Response response = managedRealm.admin().users().create(UserBuilder.create().username("user-with-role-" + i).build())) {
                 assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
                 managedRealm.admin().users().get(ApiUtil.getCreatedId(response)).roles().realmLevel().add(List.of(role));
             }
@@ -125,7 +125,7 @@ public class RoleWorkflowConditionTest extends AbstractWorkflowTest {
     }
 
     private void assertUserRoles(String username, boolean shouldExist, List<String> roles) {
-        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                 .username(username)
                 .email(username + "@example.com")
                 .build())) {
@@ -213,7 +213,7 @@ public class RoleWorkflowConditionTest extends AbstractWorkflowTest {
             RolesResource roles = managedRealm.admin().clients().get(clients.get(0).getId()).roles();
 
             if (roles.list(clientRoleName, -1, -1).isEmpty()) {
-                roles.create(RoleConfigBuilder.create()
+                roles.create(RoleBuilder.create()
                         .name(clientRoleName)
                         .build());
             }
@@ -223,7 +223,7 @@ public class RoleWorkflowConditionTest extends AbstractWorkflowTest {
             RolesResource roles = managedRealm.admin().roles();
 
             if (roles.list(roleName, -1, -1).isEmpty()) {
-                roles.create(RoleConfigBuilder.create()
+                roles.create(RoleBuilder.create()
                         .name(roleName)
                         .build());
             }

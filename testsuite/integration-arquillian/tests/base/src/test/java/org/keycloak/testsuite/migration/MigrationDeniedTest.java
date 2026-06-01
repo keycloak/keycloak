@@ -33,8 +33,8 @@ import org.keycloak.storage.datastore.DefaultMigrationManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -55,7 +55,7 @@ public class MigrationDeniedTest extends AbstractKeycloakTest {
         KeycloakModelUtils.runJobInTransaction(s.getKeycloakSessionFactory(), (session) -> {
             MigrationModel model = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
             String databaseVersion = model.getStoredVersion();
-            Assert.assertNotNull("Stored DB version was null", model.getStoredVersion());
+            Assertions.assertNotNull(model.getStoredVersion(), "Stored DB version was null");
 
             String currentVersion = Version.VERSION;
             try {
@@ -64,9 +64,9 @@ public class MigrationDeniedTest extends AbstractKeycloakTest {
                 model.setStoredVersion(Constants.SNAPSHOT_VERSION);
 
                 new DefaultMigrationManager(session, false).migrate();
-                Assert.fail("Not expected to successfully run migration. DB version was " + databaseVersion + ". Keycloak version was " + currentVersion);
+                Assertions.fail("Not expected to successfully run migration. DB version was " + databaseVersion + ". Keycloak version was " + currentVersion);
             } catch (ModelException expected) {
-                Assert.assertTrue(expected.getMessage().startsWith("Incorrect state of migration. You are trying to run server version"));
+                Assertions.assertTrue(expected.getMessage().startsWith("Incorrect state of migration. You are trying to run server version"));
             } finally {
                 // Revert version to the state before the test
                 Version.VERSION = currentVersion;
@@ -84,7 +84,7 @@ public class MigrationDeniedTest extends AbstractKeycloakTest {
         KeycloakModelUtils.runJobInTransaction(s.getKeycloakSessionFactory(), (session) -> {
             MigrationModel model = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
             String databaseVersion = model.getStoredVersion();
-            Assert.assertNotNull("Stored DB version was null", model.getStoredVersion());
+            Assertions.assertNotNull(model.getStoredVersion(), "Stored DB version was null");
 
             String currentVersion = Version.VERSION;
             try {
@@ -93,9 +93,9 @@ public class MigrationDeniedTest extends AbstractKeycloakTest {
                 model.setStoredVersion("23.0.0");
 
                 new DefaultMigrationManager(session, false).migrate();
-                Assert.fail("Not expected to successfully run migration. DB version was " + databaseVersion + ". Keycloak version was " + currentVersion);
+                Assertions.fail("Not expected to successfully run migration. DB version was " + databaseVersion + ". Keycloak version was " + currentVersion);
             } catch (ModelException expected) {
-                Assert.assertTrue(expected.getMessage().startsWith("Incorrect state of migration. You are trying to run nightly server version"));
+                Assertions.assertTrue(expected.getMessage().startsWith("Incorrect state of migration. You are trying to run nightly server version"));
             } finally {
                 // Revert version to the state before the test
                 Version.VERSION = currentVersion;

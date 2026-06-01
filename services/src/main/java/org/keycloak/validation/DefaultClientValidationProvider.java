@@ -31,6 +31,8 @@ import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -192,6 +194,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
     @Override
     public ValidationResult validate(ValidationContext<ClientModel> context) {
         validateClientId(context);
+        validateProtocol(context);
         validateUrls(context);
         validatePairwiseInClientModel(context);
         new CibaClientValidation(context).validate();
@@ -207,6 +210,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
     @Override
     public ValidationResult validate(ClientValidationContext.OIDCContext context) {
         validateClientId(context);
+        validateProtocol(context);
         validateUrls(context);
         validatePairwiseInOIDCClient(context);
         new CibaClientValidation(context).validate();
@@ -221,6 +225,27 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         ClientModel client = context.getObjectToValidate();
         if (StringUtil.isBlank(client.getClientId())) {
             context.addError("Client ID cannot be blank");
+        }
+    }
+
+    private void validateProtocol(ValidationContext<ClientModel> context) {
+        ClientModel client = context.getObjectToValidate();
+        String protocol = client.getProtocol();
+
+        // null protocol is allowed
+        if (protocol == null) {
+            return;
+        }
+
+        LoginProtocolFactory factory = (LoginProtocolFactory) context.getSession().getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, protocol);
+
+        if (factory == null) {
+            context.addError("protocol", "Invalid protocol: " + protocol);
+            return;
+        }
+
+        if (!factory.allowAsClientProtocol()) {
+            context.addError("protocol", "Protocol '" + protocol + "' cannot be used as a client protocol");
         }
     }
 

@@ -36,6 +36,7 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 
 public class WebAuthnErrorTest extends AbstractWebAuthnAccountTest {
 
@@ -84,6 +85,8 @@ public class WebAuthnErrorTest extends AbstractWebAuthnAccountTest {
 
             webAuthnErrorPage.assertCurrent();
             assertThat(webAuthnErrorPage.getError(), is("Failed to authenticate by the Passkey."));
+            assertThat("execution value should be a double-quoted JS string via ?c",
+                    driver.getPageSource(), containsString("getElementById('executionValue').value = \""));
         }
     }
 }

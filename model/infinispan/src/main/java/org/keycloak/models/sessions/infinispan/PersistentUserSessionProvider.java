@@ -923,8 +923,8 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     public void migrateNonPersistentSessionsToPersistentSessions() {
         var sessionCache = sessionTx.getCache(false);
         var clientSessionCache = clientSessionTx.getCache(false);
-        JpaChangesPerformer<String, UserSessionEntity> userSessionPerformer = new JpaChangesPerformer<>(sessionCache.getName(), null);
-        JpaChangesPerformer<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionPerformer = new JpaChangesPerformer<>(clientSessionCache.getName(), null);
+        JpaChangesPerformer<String, UserSessionEntity> userSessionPerformer = new JpaChangesPerformer<>(sessionCache.getName());
+        JpaChangesPerformer<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionPerformer = new JpaChangesPerformer<>(clientSessionCache.getName());
         AtomicInteger currentBatch = new AtomicInteger(0);
         var persistence = ComponentRegistry.componentOf(sessionCache, PersistenceManager.class);
         if (persistence != null && !persistence.getStoresAsString().isEmpty()) {
