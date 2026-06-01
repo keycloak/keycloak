@@ -786,7 +786,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                 assertEquals("uid", component.getConfig().getFirst(LDAPConstants.RDN_LDAP_ATTRIBUTE));
                 assertEquals("nsuniqueid", component.getConfig().getFirst(LDAPConstants.UUID_LDAP_ATTRIBUTE));
                 assertEquals("inetOrgPerson, organizationalPerson", component.getConfig().getFirst(LDAPConstants.USER_OBJECT_CLASSES));
-                assertEquals("http://localhost", component.getConfig().getFirst(LDAPConstants.CONNECTION_URL));
+                assertEquals("ldap://localhost", component.getConfig().getFirst(LDAPConstants.CONNECTION_URL));
                 assertEquals("dn", component.getConfig().getFirst(LDAPConstants.USERS_DN));
                 assertEquals(LDAPConstants.AUTH_TYPE_NONE, component.getConfig().getFirst(LDAPConstants.AUTH_TYPE));
                 assertEquals("true", component.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION));
