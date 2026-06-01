@@ -33,7 +33,8 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 public class ManagementPropertyMappers implements PropertyMapperGrouping {
 
     private static final String HTTP_MANAGEMENT_SCHEME_IS_INHERITED = "http-management-scheme is inherited";
-    private static final String QUARKUS_MANAGEMENT_HTTPS_TRUST_STORE_FILE = "quarkus.management.ssl.certificate.trust-store-file";
+    static final String QUARKUS_MANAGEMENT_HTTPS_KEY_STORE_FILE = "quarkus.management.ssl.certificate.key-store-file";
+    static final String QUARKUS_MANAGEMENT_HTTPS_TRUST_STORE_FILE = "quarkus.management.ssl.certificate.trust-store-file";
     static final String QUARKUS_MANAGEMENT_HTTPS_TRUST_STORE_FILE_TYPE = "quarkus.management.ssl.certificate.trust-store-file-type";
 
     @Override
