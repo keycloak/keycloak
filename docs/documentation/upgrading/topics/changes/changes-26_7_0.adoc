@@ -116,6 +116,10 @@ will now be logged.
 Users of `ssl-cert-chain-prefix` should instead make use of `--spi-x509cert-lookup--haproxy--ssl-cert-chain`.
 See the link:{client_certificate_lookup_link}[Reverse Proxy guide] for more details.
 
+=== Async Custom REST Endpoints should not be used
+
+Async custom REST endpoints using `AsyncResponse` or returning an async type such as `CompletableFuture` or `CompletionState` should not be used. If you are using them, be aware that the `KeycloakSession` used to initial the request will be immediately closed - it will not remain open for the entire lifespan of the request - and that you are fully responsible for transaction management in the async work.
+
 // ------------------------ Removed features ------------------------ //
 == Removed features
 

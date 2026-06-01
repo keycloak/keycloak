@@ -48,7 +48,7 @@ public class KeycloakBeanProducer implements TransactionalSessionHandler {
 
     void dispose(@Disposes KeycloakSession session) {
         if (!session.isClosed()) {
-            logger.debug("Proactive closing of the session was missed - refinements are needed to TransactionSessionHandler related logic");
+            logger.warn("Proactive closing of the session was missed - refinements are needed to TransactionSessionHandler related logic");
         }
         close(session);
     }

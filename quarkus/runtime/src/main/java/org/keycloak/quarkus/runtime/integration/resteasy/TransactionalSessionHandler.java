@@ -17,10 +17,10 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow.Publisher;
-import java.util.stream.Stream;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransactionManager;
@@ -39,7 +39,16 @@ import org.jboss.resteasy.reactive.server.spi.EndpointInvoker;
 
 public final class TransactionalSessionHandler extends InvocationHandler implements org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler {
     
-    public static final Class<?>[] ASYNC_TYPES = new Class<?>[] {
+    /*
+     * see AsyncReturnTypeScanner - there doesn't seem to be a simpler way to get
+     * ahead of the respective handlers, so we'll capture the relevant types here.
+     * 
+     * If something is missed, we should be alerted by the log in KeycloakBeanProducer.dispose
+     * 
+     * Resteasy reactive specific types are added for completeness - we don't expect their usage
+     * in internal nor custom logic just yet
+     */
+    public static final Set<Class<?>> ASYNC_TYPES = Set.of(
         CompletionStage.class,
         CompletableFuture.class,
         Uni.class,
@@ -48,7 +57,7 @@ public final class TransactionalSessionHandler extends InvocationHandler impleme
         Publisher.class,
         org.reactivestreams.Publisher.class,
         RestResponse.class
-    }; 
+    ); 
     
     public TransactionalSessionHandler(EndpointInvoker invoker) {
         super(invoker);
@@ -60,25 +69,26 @@ public final class TransactionalSessionHandler extends InvocationHandler impleme
 
         requestContext.requireCDIRequestScope();
 
+        KeycloakSession currentSession = ClientProxy.unwrap(Arc.container().instance(KeycloakSession.class).get());
+
+        // before we call the underlying invoke, ensure the thread bound resources are set
+        KeycloakSessionUtil.setKeycloakSession(currentSession);
         if (BlockingOperationSupport.isBlockingAllowed()) {
             // ClientProxy.unwrap() resolves a proxy that is lazily initialized on the first method call or on unwrap.
-            KeycloakSession currentSession = ClientProxy.unwrap(Arc.container().instance(KeycloakSession.class).get());
             KeycloakTransactionManager transactionManager = currentSession.getTransactionManager();
             if (!transactionManager.isActive()) {
                 // This handler is always running in a blocking thread.
                 beginTransaction(currentSession);
             }
-            KeycloakSessionUtil.setKeycloakSession(currentSession);
         }
 
         super.handle(requestContext);
         
         // check for async cases where we are now done with the initiating thread
         // and must clean up anything that is thread bound
-        if ((requestContext.getAsyncResponse() != null || Stream.of(ASYNC_TYPES)
-                .anyMatch(requestContext.getResteasyReactiveResourceInfo().getMethod().getReturnType()::equals))) {
-            KeycloakSession currentSession = ClientProxy.unwrap(Arc.container().instance(KeycloakSession.class).get());
-            close(currentSession);
+        if ((requestContext.getAsyncResponse() != null || ASYNC_TYPES
+                .contains(requestContext.getResteasyReactiveResourceInfo().getMethod().getReturnType()))) {
+            close(currentSession);    
         }
     }
 }
