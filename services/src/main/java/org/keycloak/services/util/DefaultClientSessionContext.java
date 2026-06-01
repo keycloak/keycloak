@@ -97,7 +97,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     public static DefaultClientSessionContext fromClientSessionAndScopeParameter(AuthenticatedClientSessionModel clientSession, String scopeParam, KeycloakSession session) {
         Stream<ClientScopeModel> requestedScopes;
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
             requestedScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, clientSession.getClient(), scopeParam);
         } else {
             requestedScopes = TokenManager.getRequestedClientScopes(session, scopeParam, clientSession.getClient(), clientSession.getUserSession().getUser());
@@ -187,9 +187,9 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     @Override
     public String getScopeString(boolean ignoreIncludeInTokenScope) {
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
             String scopeParam = buildScopesStringFromAuthorizationRequest(ignoreIncludeInTokenScope);
-            logger.tracef("Generated scope param with Dynamic Scopes enabled: %1s", scopeParam);
+            logger.tracef("Generated scope param with Parameterized Scopes enabled: %1s", scopeParam);
             String scopeSent = requestedScopeString;
             if (TokenUtil.isOIDCRequest(scopeSent)) {
                 scopeParam = TokenUtil.attachOIDCScope(scopeParam);

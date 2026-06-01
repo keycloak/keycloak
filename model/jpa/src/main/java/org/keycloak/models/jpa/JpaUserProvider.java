@@ -335,7 +335,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                 ClientScopeModel grantedClientScopeModel = KeycloakModelUtils.findClientScopeById(realm, client, grantedClientScope.getScopeId());
                 if (grantedClientScopeModel != null) {
                     model.addGrantedClientScope(grantedClientScopeModel,
-                            ClientScopeModel.isDynamicScope(grantedClientScopeModel)
+                            ClientScopeModel.isParameterizedScope(grantedClientScopeModel)
                                     ? grantedClientScope.getParameter().orElse(null)
                                     : null);
                 }
@@ -351,7 +351,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         Collection<UserConsentClientScopeEntity> scopesToRemove = new HashSet<>(grantedClientScopeEntities);
 
         for (ClientScopeModel clientScope : consentModel.getGrantedClientScopes()) {
-            if (ClientScopeModel.isDynamicScope(clientScope)) {
+            if (ClientScopeModel.isParameterizedScope(clientScope)) {
                 consentModel.getParameters(clientScope).forEach(p -> createUserConsentClientScopeEntity(
                         consentEntity, clientScope, p, grantedClientScopeEntities, scopesToRemove));
             } else {

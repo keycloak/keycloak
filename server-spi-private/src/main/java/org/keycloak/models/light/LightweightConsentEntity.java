@@ -54,7 +54,7 @@ class LightweightConsentEntity {
         model.getGrantedClientScopes()
           .stream()
           .forEach(m -> consentEntity.addGrantedClientScopesId(m.getId(),
-                ClientScopeModel.isDynamicScope(m) ? model.getParameters(m) : null));
+                ClientScopeModel.isParameterizedScope(m) ? model.getParameters(m) : null));
 
         return consentEntity;
     }

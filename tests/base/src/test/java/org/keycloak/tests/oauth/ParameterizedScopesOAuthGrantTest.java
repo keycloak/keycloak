@@ -56,16 +56,16 @@ import org.junit.jupiter.api.Test;
  * @author rmartinc
  */
 @DatabaseTest
-@KeycloakIntegrationTest(config = DynamicScopesOAuthGrantTest.DynamicScopesServerConfig.class)
-public class DynamicScopesOAuthGrantTest {
+@KeycloakIntegrationTest(config = ParameterizedScopesOAuthGrantTest.ParameterizedScopesServerConfig.class)
+public class ParameterizedScopesOAuthGrantTest {
 
     private static final String THIRD_PARTY_APP = "third-party";
     private static final String DEFAULT_USERNAME = "test-user@localhost";
     private static final String DEFAULT_PASSWORD = "password";
 
-    private static String DYNAMIC_SCOPE_ID;
+    private static String PARAMETERIZED_SCOPE_ID;
 
-    @InjectRealm(config = DynamicScopesRealmConfig.class)
+    @InjectRealm(config = ParameterizedScopesRealmConfig.class)
     ManagedRealm realm;
 
     @InjectClient(config = ThirdPartyClient.class)
@@ -85,14 +85,14 @@ public class DynamicScopesOAuthGrantTest {
 
     @TestSetup
     public void configureTestRealm() {
-        ClientScopeRepresentation dynamicScope = ClientScopeBuilder.create()
+        ClientScopeRepresentation parameterizedScope = ClientScopeBuilder.create()
                 .name("foo-dynamic-scope")
                 .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                .attribute(ClientScopeModel.IS_DYNAMIC_SCOPE, Boolean.TRUE.toString())
-                .attribute(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "foo-dynamic-scope:*")
+                .attribute(ClientScopeModel.IS_PARAMETERIZED_SCOPE, Boolean.TRUE.toString())
+                .attribute(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "foo-dynamic-scope:*")
                 .build();
-        DYNAMIC_SCOPE_ID = ApiUtil.getCreatedId(realm.admin().clientScopes().create(dynamicScope));
-        thirdParty.admin().addOptionalClientScope(DYNAMIC_SCOPE_ID);
+        PARAMETERIZED_SCOPE_ID = ApiUtil.getCreatedId(realm.admin().clientScopes().create(parameterizedScope));
+        thirdParty.admin().addOptionalClientScope(PARAMETERIZED_SCOPE_ID);
     }
 
     @AfterEach
@@ -106,10 +106,10 @@ public class DynamicScopesOAuthGrantTest {
     }
 
     @Test
-    public void oauthGrantDynamicScopeParamRequired() {
-        realm.updateClientScope(DYNAMIC_SCOPE_ID, s -> s.attribute(ClientScopeModel.CONSENT_SCREEN_TEXT, ""));
+    public void oauthGrantParameterizedScopeParamRequired() {
+        realm.updateClientScope(PARAMETERIZED_SCOPE_ID, s -> s.attribute(ClientScopeModel.CONSENT_SCREEN_TEXT, ""));
 
-        // login using the dynamic scope
+        // login using the parameterized scope
         oauth.client(THIRD_PARTY_APP, "password");
         oauth.scope("foo-dynamic-scope:param1");
         oauth.openLoginForm();
@@ -201,8 +201,8 @@ public class DynamicScopesOAuthGrantTest {
     }
 
     @Test
-    public void oauthGrantDynamicScopeParamRequiredWithConsentText() {
-        realm.updateClientScope(DYNAMIC_SCOPE_ID, s -> s.attribute(
+    public void oauthGrantParameterizedScopeParamRequiredWithConsentText() {
+        realm.updateClientScope(PARAMETERIZED_SCOPE_ID, s -> s.attribute(
                 ClientScopeModel.CONSENT_SCREEN_TEXT, "Dynamic scope with parameter {0}"));
 
         oauth.client(THIRD_PARTY_APP, "password");
@@ -222,9 +222,9 @@ public class DynamicScopesOAuthGrantTest {
     }
 
     @Test
-    public void oauthGrantDynamicScopeParamRequiredWithConsentTextKey() {
+    public void oauthGrantParameterizedScopeParamRequiredWithConsentTextKey() {
         realm.admin().localization().saveRealmLocalizationText("en", "dynamicConsentText", "Dynamic scope with parameter {0}");
-        realm.updateClientScope(DYNAMIC_SCOPE_ID, s -> s.attribute(
+        realm.updateClientScope(PARAMETERIZED_SCOPE_ID, s -> s.attribute(
                 ClientScopeModel.CONSENT_SCREEN_TEXT, "${dynamicConsentText}"));
 
         oauth.client(THIRD_PARTY_APP, "password");
@@ -300,17 +300,17 @@ public class DynamicScopesOAuthGrantTest {
         MatcherAssert.assertThat(List.of(tokenRes.getScope().split(" ")), Matchers.hasItems("foo-dynamic-scope:param1"));
     }
 
-    public static class DynamicScopesServerConfig implements KeycloakServerConfig {
+    public static class ParameterizedScopesServerConfig implements KeycloakServerConfig {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.DYNAMIC_SCOPES)
+            return config.features(Profile.Feature.PARAMETERIZED_SCOPES)
                     .option("spi-ciba-auth-channel-ciba-http-auth-channel-http-authentication-channel-uri",
                             "http://localhost:8500/ciba/request-authentication-channel");
         }
     }
 
-    public static class DynamicScopesRealmConfig implements RealmConfig {
+    public static class ParameterizedScopesRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             realm.users(UserBuilder.create(DEFAULT_USERNAME)

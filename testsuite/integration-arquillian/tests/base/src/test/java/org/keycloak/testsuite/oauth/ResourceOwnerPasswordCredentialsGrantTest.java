@@ -195,13 +195,13 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
-    public void grantAccessTokenWithDynamicScope() throws Exception {
+    @EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
+    public void grantAccessTokenWithParameterizedScope() throws Exception {
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("dynamic-scope");
         clientScope.setAttributes(new HashMap<String, String>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic-scope:*");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope:*");
         }});
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         RealmResource realmResource = adminClient.realm("test");
@@ -244,8 +244,8 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
-    public void grantAccessTokenWithUnassignedDynamicScope() throws Exception {
+    @EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
+    public void grantAccessTokenWithUnassignedParameterizedScope() throws Exception {
         oauth.scope("unknown-scope:123");
         oauth.client("resource-owner-public");
         AccessTokenResponse response = oauth.doPasswordGrantRequest("direct-login", "password");

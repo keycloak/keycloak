@@ -511,18 +511,18 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
-    public boolean isDynamicScope() {
-        return getDelegate().isDynamicScope();
+    public boolean isParameterizedScope() {
+        return getDelegate().isParameterizedScope();
     }
 
     @Override
-    public void setIsDynamicScope(boolean isDynamicScope) {
-        getDelegate().setIsDynamicScope(isDynamicScope);
+    public void setIsParameterizedScope(boolean isParameterizedScope) {
+        getDelegate().setIsParameterizedScope(isParameterizedScope);
     }
 
     @Override
-    public String getDynamicScopeRegexp() {
-        return getDelegate().getDynamicScopeRegexp();
+    public String getParameterizedScopeRegexp() {
+        return getDelegate().getParameterizedScopeRegexp();
     }
 
     @Override

@@ -45,8 +45,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
  */
-@EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
-public class DynamicScopesRARParseTest extends AbstractRARParserTest {
+@EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
+public class ParameterizedScopesRARParseTest extends AbstractRARParserTest {
 
     @Test
     public void generatedAuthorizationRequestsShouldMatchDefaultScopes() {
@@ -141,7 +141,7 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
                 .allMatch(rep -> rep.getType().equalsIgnoreCase(AuthorizationDetailsJSONRepresentation.STATIC_SCOPE_RAR_TYPE)));
 
         Optional<AuthorizationRequestContextHolder.AuthorizationRequestHolder> authorizationRequestContextHolderOpt = authorizationRequestHolders.stream()
-                .filter(authorizationRequestHolder -> authorizationRequestHolder.getAuthorizationDetails().getType().equalsIgnoreCase(AuthorizationDetailsJSONRepresentation.DYNAMIC_SCOPE_RAR_TYPE))
+                .filter(authorizationRequestHolder -> authorizationRequestHolder.getAuthorizationDetails().getType().equalsIgnoreCase(AuthorizationDetailsJSONRepresentation.PARAMETERIZED_SCOPE_RAR_TYPE))
                 .findAny();
 
         Assertions.assertTrue(authorizationRequestContextHolderOpt.isPresent());
@@ -157,8 +157,8 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
         clientScope.setName(scopeName);
         if (dynamic) {
             clientScope.setAttributes(new HashMap<String, String>() {{
-                put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-                put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, String.format("%1s:*", scopeName));
+                put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+                put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, String.format("%1s:*", scopeName));
             }});
         }
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);

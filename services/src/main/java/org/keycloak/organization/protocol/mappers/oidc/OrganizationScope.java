@@ -52,7 +52,7 @@ import static org.keycloak.utils.StringUtil.isBlank;
 /**
  * <p>An enum with utility methods to process the {@link OIDCLoginProtocolFactory#ORGANIZATION} scope.
  *
- * <p>The {@link OrganizationScope} behaves like a dynamic scopes so that access to organizations is granted depending
+ * <p>The {@link OrganizationScope} behaves like a parameterized scope so that access to organizations is granted depending
  * on how the client requests the {@link OIDCLoginProtocolFactory#ORGANIZATION} scope.
  */
 public enum OrganizationScope {

@@ -26,14 +26,14 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
-@KeycloakIntegrationTest(config = StandardBaseTokenExchangeWithDynamicScopesTest.ServerConfig.class)
-public class StandardBaseTokenExchangeWithDynamicScopesTest extends StandardBaseTokenExchangeV2Test {
+@KeycloakIntegrationTest(config = StandardBaseTokenExchangeWithParameterizedScopesTest.ServerConfig.class)
+public class StandardBaseTokenExchangeWithParameterizedScopesTest extends StandardBaseTokenExchangeV2Test {
 
     public static class ServerConfig implements KeycloakServerConfig {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.DYNAMIC_SCOPES);
+            return config.features(Profile.Feature.PARAMETERIZED_SCOPES);
         }
     }
 }

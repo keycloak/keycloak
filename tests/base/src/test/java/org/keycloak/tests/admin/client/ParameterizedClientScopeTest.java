@@ -23,59 +23,59 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@KeycloakIntegrationTest(config = DynamicClientScopeTest.DynamicClientScopeServerConfig.class)
-public class DynamicClientScopeTest extends AbstractClientScopeTest {
+@KeycloakIntegrationTest(config = ParameterizedClientScopeTest.ParameterizedClientScopeServerConfig.class)
+public class ParameterizedClientScopeTest extends AbstractClientScopeTest {
 
     @Test
-    public void testCreateValidDynamicScope() {
+    public void testCreateValidParameterizedScope() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("dynamic-scope-def");
         scopeRep.setProtocol("openid-connect");
         scopeRep.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic-scope-def:*");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope-def:*");
         }});
         String scopeDefId = createClientScopeWithCleanup(scopeRep);
 
         // Assert updated attributes
         scopeRep = clientScopes().get(scopeDefId).toRepresentation();
         Assertions.assertEquals("dynamic-scope-def", scopeRep.getName());
-        Assertions.assertEquals("true", scopeRep.getAttributes().get(ClientScopeModel.IS_DYNAMIC_SCOPE));
-        Assertions.assertEquals("dynamic-scope-def:*", scopeRep.getAttributes().get(ClientScopeModel.DYNAMIC_SCOPE_REGEXP));
+        Assertions.assertEquals("true", scopeRep.getAttributes().get(ClientScopeModel.IS_PARAMETERIZED_SCOPE));
+        Assertions.assertEquals("dynamic-scope-def:*", scopeRep.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP));
     }
 
     @Test
-    public void testCreateNonDynamicScopeWithFeatureEnabled() {
+    public void testCreateNonParameterizedScopeWithFeatureEnabled() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("non-dynamic-scope-def");
         scopeRep.setProtocol("openid-connect");
         scopeRep.setAttributes(new HashMap<String, String>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "false");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "false");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "");
         }});
         String scopeDefId = createClientScopeWithCleanup(scopeRep);
 
         // Assert updated attributes
         scopeRep = clientScopes().get(scopeDefId).toRepresentation();
         Assertions.assertEquals("non-dynamic-scope-def", scopeRep.getName());
-        Assertions.assertEquals("false", scopeRep.getAttributes().get(ClientScopeModel.IS_DYNAMIC_SCOPE));
-        assertThat(scopeRep.getAttributes().get(ClientScopeModel.DYNAMIC_SCOPE_REGEXP), anyOf(nullValue(), equalTo("")));
+        Assertions.assertEquals("false", scopeRep.getAttributes().get(ClientScopeModel.IS_PARAMETERIZED_SCOPE));
+        assertThat(scopeRep.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP), anyOf(nullValue(), equalTo("")));
     }
 
     @Test
-    public void testCreateInvalidRegexpDynamicScope() {
+    public void testCreateInvalidRegexpParameterizedScope() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("dynamic-scope-def4");
         scopeRep.setProtocol("openid-connect");
         scopeRep.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic-scope-def:*:*");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope-def:*:*");
         }});
-        handleExpectedCreateFailure(scopeRep, 400, "Invalid format for the Dynamic Scope regexp dynamic-scope-def:*:*");
+        handleExpectedCreateFailure(scopeRep, 400, "Invalid format for the Parameterized Scope regexp dynamic-scope-def:*:*");
     }
 
     @Test
-    public void updateAssignedDefaultClientScopeToDynamicScope() {
+    public void updateAssignedDefaultClientScopeToParameterizedScope() {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId("dyn-scope-client-update");
         clientRep.setProtocol("openid-connect");
@@ -89,8 +89,8 @@ public class DynamicClientScopeTest extends AbstractClientScopeTest {
         managedRealm.admin().clients().get(clientUuid).addDefaultClientScope(scopeDefId);
 
         scopeRep.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic-scope-def:*:*");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope-def:*:*");
         }});
 
         try {
@@ -102,7 +102,7 @@ public class DynamicClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
-    public void dynamicClientScopeCannotBeAssignedAsDefaultClientScope() {
+    public void parameterizedClientScopeCannotBeAssignedAsDefaultClientScope() {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId("dyn-scope-client-default");
         clientRep.setProtocol("openid-connect");
@@ -112,15 +112,15 @@ public class DynamicClientScopeTest extends AbstractClientScopeTest {
         optionalClientScope.setName("optional-dynamic-client-scope");
         optionalClientScope.setProtocol("openid-connect");
         optionalClientScope.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic-scope-def:*");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope-def:*");
         }});
         String optionalClientScopeId = createClientScopeWithCleanup(optionalClientScope);
 
         try {
             ClientResource clientResource = managedRealm.admin().clients().get(clientUuid);
             clientResource.addDefaultClientScope(optionalClientScopeId);
-            Assertions.fail("A Dynamic Scope shouldn't not be assigned as a default scope to a client");
+            Assertions.fail("A Parameterized Scope shouldn't be assigned as a default scope to a client");
         } catch (ClientErrorException ex) {
             assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
         }
@@ -128,42 +128,42 @@ public class DynamicClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
-    public void dynamicClientScopeCannotBeAssignedAsRealmDefaultClientScope() {
-        ClientScopeRepresentation dynamicScope = new ClientScopeRepresentation();
-        dynamicScope.setName("dynamic-scope-for-realm-default");
-        dynamicScope.setProtocol("openid-connect");
-        dynamicScope.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic-scope-for-realm-default:*");
+    public void parameterizedClientScopeCannotBeAssignedAsRealmDefaultClientScope() {
+        ClientScopeRepresentation parameterizedScope = new ClientScopeRepresentation();
+        parameterizedScope.setName("dynamic-scope-for-realm-default");
+        parameterizedScope.setProtocol("openid-connect");
+        parameterizedScope.setAttributes(new HashMap<>() {{
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope-for-realm-default:*");
         }});
-        String dynamicScopeId = createClientScopeWithCleanup(dynamicScope);
+        String parameterizedScopeId = createClientScopeWithCleanup(parameterizedScope);
 
         try {
-            managedRealm.admin().addDefaultDefaultClientScope(dynamicScopeId);
-            Assertions.fail("A Dynamic Scope should not be assigned as a realm default scope");
+            managedRealm.admin().addDefaultDefaultClientScope(parameterizedScopeId);
+            Assertions.fail("A Parameterized Scope should not be assigned as a realm default scope");
         } catch (ClientErrorException ex) {
             assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
         }
     }
 
     @Test
-    public void dynamicClientScopeCanBeAssignedAsRealmOptionalClientScope() {
-        ClientScopeRepresentation dynamicScope = new ClientScopeRepresentation();
-        dynamicScope.setName("dynamic-scope-for-realm-optional");
-        dynamicScope.setProtocol("openid-connect");
-        dynamicScope.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic-scope-for-realm-optional:*");
+    public void parameterizedClientScopeCanBeAssignedAsRealmOptionalClientScope() {
+        ClientScopeRepresentation parameterizedScope = new ClientScopeRepresentation();
+        parameterizedScope.setName("dynamic-scope-for-realm-optional");
+        parameterizedScope.setProtocol("openid-connect");
+        parameterizedScope.setAttributes(new HashMap<>() {{
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope-for-realm-optional:*");
         }});
-        String dynamicScopeId = createClientScope(dynamicScope);
+        String parameterizedScopeId = createClientScope(parameterizedScope);
 
-        managedRealm.admin().addDefaultOptionalClientScope(dynamicScopeId);
-        managedRealm.cleanup().add(r -> r.removeDefaultOptionalClientScope(dynamicScopeId));
-        managedRealm.cleanup().add(r -> r.clientScopes().get(dynamicScopeId).remove());
+        managedRealm.admin().addDefaultOptionalClientScope(parameterizedScopeId);
+        managedRealm.cleanup().add(r -> r.removeDefaultOptionalClientScope(parameterizedScopeId));
+        managedRealm.cleanup().add(r -> r.clientScopes().get(parameterizedScopeId).remove());
     }
 
     @Test
-    public void realmDefaultClientScopeCannotBeMadeDynamic() {
+    public void realmDefaultClientScopeCannotBeMadeParameterized() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("scope-for-realm-default-update");
         scopeRep.setProtocol("openid-connect");
@@ -174,23 +174,23 @@ public class DynamicClientScopeTest extends AbstractClientScopeTest {
         managedRealm.cleanup().add(r -> r.clientScopes().get(scopeId).remove());
 
         scopeRep.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "scope-for-realm-default-update:*");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "scope-for-realm-default-update:*");
         }});
 
         try {
             clientScopes().get(scopeId).update(scopeRep);
-            Assertions.fail("A Realm Default Scope should not be made dynamic");
+            Assertions.fail("A Realm Default Scope should not be made parameterized");
         } catch (ClientErrorException ex) {
             assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
         }
     }
 
-    public static class DynamicClientScopeServerConfig implements KeycloakServerConfig {
+    public static class ParameterizedClientScopeServerConfig implements KeycloakServerConfig {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.DYNAMIC_SCOPES);
+            return config.features(Profile.Feature.PARAMETERIZED_SCOPES);
         }
     }
 }

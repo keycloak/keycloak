@@ -10,6 +10,7 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -48,6 +49,7 @@ public class MigrateTo26_7_0 extends RealmMigration {
     public void migrateRealm(KeycloakSession session, RealmModel realm) {
         updatePasswordAfterEmailVerificationDuringRegistrationOfUsers(realm);
         updateAdminPermissionsSchema(session, realm);
+        renameDynamicScopeAttributes(realm);
     }
 
     private void updatePasswordAfterEmailVerificationDuringRegistrationOfUsers(RealmModel realm) {
@@ -122,6 +124,21 @@ public class MigrateTo26_7_0 extends RealmMigration {
     private void updateAdminPermissionsSchema(KeycloakSession session, RealmModel realm) {
         if (realm.getAdminPermissionsClient() != null) {
             AdminPermissionsSchema.SCHEMA.init(session, realm);
+        }
+    }
+
+    private void renameDynamicScopeAttributes(RealmModel realm) {
+        realm.getClientScopesStream().forEach(clientScope -> {
+            renameAttribute(clientScope, "is.dynamic.scope", ClientScopeModel.IS_PARAMETERIZED_SCOPE);
+            renameAttribute(clientScope, "dynamic.scope.regexp", ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP);
+        });
+    }
+
+    private void renameAttribute(ClientScopeModel clientScope, String oldName, String newName) {
+        String value = clientScope.getAttribute(oldName);
+        if (value != null) {
+            clientScope.setAttribute(newName, value);
+            clientScope.removeAttribute(oldName);
         }
     }
 }

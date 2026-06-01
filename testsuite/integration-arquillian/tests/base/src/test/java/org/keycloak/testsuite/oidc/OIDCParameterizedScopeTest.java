@@ -47,17 +47,17 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.keycloak.common.Profile.Feature.DYNAMIC_SCOPES;
+import static org.keycloak.common.Profile.Feature.PARAMETERIZED_SCOPES;
 
 
 /**
- * Extend another tests class {@link OIDCScopeTest} in order to repeat all the tests but with DYNAMIC_SCOPES enabled
+ * Extend another tests class {@link OIDCScopeTest} in order to repeat all the tests but with PARAMETERIZED_SCOPES enabled
  * to make sure that retro compatibility is maintained when the feature is enabled.
  *
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
  */
-@EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
-public class OIDCDynamicScopeTest extends OIDCScopeTest {
+@EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
+public class OIDCParameterizedScopeTest extends OIDCScopeTest {
 
     private static String userId;
 
@@ -85,9 +85,9 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
         testRealm.getUsers().add(user);
 
         // Add sample realm roles
-        RoleRepresentation dynamicScopeRole = new RoleRepresentation();
-        dynamicScopeRole.setName("dynamic-scope-role");
-        testRealm.getRoles().getRealm().add(dynamicScopeRole);
+        RoleRepresentation parameterizedScopeRole = new RoleRepresentation();
+        parameterizedScopeRole.setName("dynamic-scope-role");
+        testRealm.getRoles().getRealm().add(parameterizedScopeRole);
     }
 
     @Override
@@ -97,8 +97,8 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
     }
 
     @Before
-    public void assertDynamicScopesFeatureEnabled() {
-        ProfileAssume.assumeFeatureEnabled(DYNAMIC_SCOPES);
+    public void assertParameterizedScopesFeatureEnabled() {
+        ProfileAssume.assumeFeatureEnabled(PARAMETERIZED_SCOPES);
     }
 
     @Override
@@ -142,8 +142,8 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
     }
 
     @Test
-    public void testGetAccessTokenWithDynamicScope() {
-        Response response = createDynamicScope("dynamic");
+    public void testGetAccessTokenWithParameterizedScope() {
+        Response response = createParameterizedScope("dynamic");
         String scopeId = ApiUtil.getCreatedId(response);
         getCleanup().addClientScopeId(scopeId);
         response.close();
@@ -161,17 +161,17 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
     }
 
     @Test
-    public void testGetAccessTokenWithDynamicScopeWithPermittedRoleScope() {
-        Response response = createDynamicScope("dynamic");
+    public void testGetAccessTokenWithParameterizedScopeWithPermittedRoleScope() {
+        Response response = createParameterizedScope("dynamic");
         String scopeId = ApiUtil.getCreatedId(response);
         getCleanup().addClientScopeId(scopeId);
         response.close();
 
-        List<RoleRepresentation> dynamicScopeRoleList = managedRealm.admin().roles().list().stream()
+        List<RoleRepresentation> parameterizedScopeRoleList = managedRealm.admin().roles().list().stream()
                 .filter(roleRepresentation -> "dynamic-scope-role".equalsIgnoreCase(roleRepresentation.getName()))
                 .collect(Collectors.toList());
 
-        managedRealm.admin().clientScopes().get(scopeId).getScopeMappings().realmLevel().add(dynamicScopeRoleList);
+        managedRealm.admin().clientScopes().get(scopeId).getScopeMappings().realmLevel().add(parameterizedScopeRoleList);
 
         ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
@@ -186,17 +186,17 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
     }
 
     @Test
-    public void testGetAccessTokenMissingRoleScopedDynamicScope() {
-        Response response = createDynamicScope("dynamic");
+    public void testGetAccessTokenMissingRoleScopedParameterizedScope() {
+        Response response = createParameterizedScope("dynamic");
         String scopeId = ApiUtil.getCreatedId(response);
         getCleanup().addClientScopeId(scopeId);
         response.close();
 
-        List<RoleRepresentation> dynamicScopeRoleList = managedRealm.admin().roles().list().stream()
+        List<RoleRepresentation> parameterizedScopeRoleList = managedRealm.admin().roles().list().stream()
                 .filter(roleRepresentation -> "dynamic-scope-role".equalsIgnoreCase(roleRepresentation.getName()))
                 .collect(Collectors.toList());
 
-        managedRealm.admin().clientScopes().get(scopeId).getScopeMappings().realmLevel().add(dynamicScopeRoleList);
+        managedRealm.admin().clientScopes().get(scopeId).getScopeMappings().realmLevel().add(parameterizedScopeRoleList);
 
         ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
@@ -204,7 +204,7 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
         testApp.addOptionalClientScope(scopeId);
 
         oauth.scope("dynamic:scope");
-        // almost the same test as before, but now with a user that doesn't have the Role scoped dynamic scope attached
+        // almost the same test as before, but now with a user that doesn't have the Role scoped parameterized scope attached
         testLoginAndClientScopesPermissions("johnNormal", "", "role-1");
 
         //cleanup
@@ -212,12 +212,12 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
     }
 
 
-    private Response createDynamicScope(String scopeName) {
+    private Response createParameterizedScope(String scopeName) {
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName(scopeName);
         clientScope.setAttributes(new HashMap<String, String>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, String.format("%1s:*", scopeName));
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, String.format("%1s:*", scopeName));
         }});
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         return managedRealm.admin().clientScopes().create(clientScope);
