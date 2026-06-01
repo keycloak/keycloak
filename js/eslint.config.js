@@ -30,7 +30,7 @@ export default tseslint.config(
   reactRecommended,
   reactJsxRuntime,
   prettierRecommended,
-  ...compat.plugins("lodash"),
+  ...compat.plugins("lodash-es"),
   {
     plugins: {
       "react-hooks": fixupPluginRules(reactHooks),
@@ -133,7 +133,7 @@ export default tseslint.config(
       "react/no-unstable-nested-components": ["error", { allowAsProps: true }],
       // Prefer a specific import scope (e.g. `lodash/map` vs `lodash`).
       // Allows for more efficient tree-shaking and better code splitting.
-      "lodash/import-scope": ["error", "member"],
+      //"lodash-es/import-scope": ["error", "member"],
     },
   },
   {
