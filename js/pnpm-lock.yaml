@@ -280,8 +280,8 @@ importers:
         specifier: ^10.9.2
         version: 10.9.2(@swc/core@1.15.8)(@types/node@25.0.8)(typescript@5.9.3)
       uuid:
-        specifier: ^13.0.0
-        version: 13.0.0
+        specifier: ^13.0.2
+        version: 13.0.2
       vite:
         specifier: ^7.3.0
         version: 7.3.0(@types/node@25.0.8)(lightningcss@1.30.2)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.3)
@@ -483,8 +483,8 @@ importers:
         specifier: ^1.5.4
         version: 1.5.4
       uuid:
-        specifier: ^13.0.0
-        version: 13.0.0
+        specifier: ^13.0.2
+        version: 13.0.2
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: ^29.0.0
@@ -4612,8 +4612,8 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  uuid@13.0.0:
-    resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
+  uuid@13.0.2:
+    resolution: {integrity: sha512-vzi9uRZ926x4XV73S/4qQaTwPXM2JBj6/6lI/byHH1jOpCzb0zDbfytgA9LcN/hzb2l7WQSQnxITOVx5un/wGw==}
     hasBin: true
 
   v8-compile-cache-lib@3.0.1:
@@ -9424,7 +9424,7 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  uuid@13.0.0: {}
+  uuid@13.0.2: {}
 
   v8-compile-cache-lib@3.0.1: {}
 
