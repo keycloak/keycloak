@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.xml.namespace.QName;
 
 import jakarta.ws.rs.Consumes;
@@ -235,6 +236,7 @@ public class TokenEndpoint {
     protected void checkParameters() {
         OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
         OIDCProviderConfig config = loginProtocol.getConfig();
+        Set<String> tokenParamNames = grant.getTokenParameterNames();
 
         Map<String, List<String>> paramsCopy = new HashMap<>(formParams);
         for (Map.Entry<String, List<String>> param : paramsCopy.entrySet()) {
@@ -242,10 +244,14 @@ public class TokenEndpoint {
             int totalLengthOfParamValues = param.getValue().stream()
                     .map(String::length)
                     .reduce(0, Integer::sum);
-            int maxLength = config.getMaxLengthForTheParameter(paramName);
+
+            // Does this parameter represent a token (typically JWT or SAML assertion)?
+            boolean isTokenParam = tokenParamNames.contains(paramName);
+
+            int maxLength = config.getMaxLengthForTheParameter(paramName, isTokenParam);
             if (totalLengthOfParamValues > maxLength) {
-                logger.warnf("The size of OIDC parameter '%s' is longer (%d) than allowed (%d). %s", paramName, totalLengthOfParamValues, maxLength, config.isAdditionalReqParamsFailFast() ? "Request not allowed." : "Ignoring the parameter.");
-                if (config.isAdditionalReqParamsFailFast()) {
+                logger.warnf("The size of OIDC parameter '%s' is longer (%d) than allowed (%d). %s", paramName, totalLengthOfParamValues, maxLength, config.isAdditionalReqParamsFailFast(isTokenParam) ? "Request not allowed." : "Ignoring the parameter.");
+                if (config.isAdditionalReqParamsFailFast(isTokenParam)) {
                     throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "The size of OIDC parameter '" + paramName + "' is longer than allowed.",
                             Response.Status.BAD_REQUEST);
                 } else {

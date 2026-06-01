@@ -18,7 +18,9 @@
 package org.keycloak.protocol.oidc.grants.device;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
@@ -365,6 +367,11 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
     @Override
     public EventType getEventType() {
         return EventType.OAUTH2_DEVICE_CODE_TO_TOKEN;
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Collections.emptySet();
     }
 
 }

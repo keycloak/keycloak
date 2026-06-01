@@ -110,7 +110,7 @@ public abstract class AuthzEndpointRequestParser {
         this.config = loginProtocol.getConfig();
         this.additionalReqParamsMaxNumber = config.getAdditionalReqParamsMaxNumber();
         this.additionalReqParamsMaxSize = config.getAdditionalReqParamsMaxSize();
-        this.additionalReqParamsFailFast = config.isAdditionalReqParamsFailFast();
+        this.additionalReqParamsFailFast = config.isAdditionalReqParamsFailFast(false);
         this.additionalReqParamsMaxOverallSize = config.getAdditionalReqParamsMaxOverallSize();
     }
 
@@ -228,7 +228,7 @@ public abstract class AuthzEndpointRequestParser {
         String paramValue = getParameter(paramName);
 
         if (paramValue != null) {
-            int maxLength = config.getMaxLengthForTheParameter(paramName);
+            int maxLength = config.getMaxLengthForTheParameter(paramName, false);
             if (paramValue.length() > maxLength) {
                 logger.warnf("The size of OIDC parameter '%s' size is longer (%d) than allowed (%d). %s", paramName, paramValue.length(), maxLength, additionalReqParamsFailFast ? "Request not allowed." : "Ignoring the parameter.");
                 if (additionalReqParamsFailFast) {
