@@ -216,7 +216,7 @@ public final class Database {
                 "oracle.jdbc.xa.client.OracleXADataSource",
                 "oracle.jdbc.driver.OracleDriver",
                 "org.hibernate.dialect.OracleDialect",
-                // default URL looks like this: "jdbc:oracle:thin:@//${kc.db-url-host:localhost}:${kc.db-url-port:1521}/${kc.db-url-database:keycloak}"
+                // default URL looks like this: "jdbc:oracle:thin:@//${kc.db-url-host:localhost}:${kc.db-url-port:1521}/${kc.db-url-database:keycloak}${kc.db-url-properties:}"
                 (getter, namedProperty, alias) -> "jdbc:oracle:thin:%s//%s:%s/%s%s".formatted(
                         DatabaseOptions.DatabaseTlsMode.fromCliValue(getProperty(DatabaseOptions.DB_TLS_MODE, getter,
                                 DatabaseOptions.DatabaseTlsMode.DISABLED.toCliValue())) == DatabaseTlsMode.DISABLED ? "@" : "@tcps:",
