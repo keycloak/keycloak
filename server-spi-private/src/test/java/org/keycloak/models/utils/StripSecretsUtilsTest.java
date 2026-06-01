@@ -18,18 +18,24 @@
 package org.keycloak.models.utils;
 
 import java.io.IOException;
+import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.events.hooks.EventHookTargetProvider;
+import org.keycloak.events.hooks.EventHookTargetProviderFactory;
 import org.keycloak.models.ClientSecretConstants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.EventHookTargetRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -203,6 +209,13 @@ public class StripSecretsUtilsTest {
         idp.getConfig().put("clientSecret", "ipdClientSecret");
         rep.setIdentityProviders(Arrays.asList(idp));
 
+        EventHookTargetRepresentation target = new EventHookTargetRepresentation();
+        target.setType(TestEventHookTargetProviderFactory.ID);
+        target.setSettings(new HashMap<>());
+        target.getSettings().put("url", "https://example.org/hooks");
+        target.getSettings().put("hmacSecret", "eventHookSecret");
+        rep.setEventHookTargets(Arrays.asList(target));
+
         UserRepresentation user = new UserRepresentation();
         user.setId("userId");
         user.setEnabled(true);
@@ -238,7 +251,7 @@ public class StripSecretsUtilsTest {
         componentConfigProperties.put("nonSecret", new ProviderConfigProperty("nonSecret", "nonSecretLabel", "nonSecretHelpText", "secretType", "defaultValue", false));
         StripSecretsUtils.GetComponentPropertiesFn fnGetComponentConfigProperties = (session, providerType, providerId) -> componentConfigProperties;
 
-        StripSecretsUtils.stripRealm(null, rep, fnGetComponentConfigProperties);
+        StripSecretsUtils.stripRealm(eventHookSession(new TestEventHookTargetProviderFactory()), rep, fnGetComponentConfigProperties);
 
         assertEquals("Master", rep.getRealm());
         assertEquals("realmId", rep.getId());
@@ -257,6 +270,10 @@ public class StripSecretsUtilsTest {
         assertEquals(2, rep.getIdentityProviders().get(0).getConfig().size());
         assertEquals("idpConfig1Value", rep.getIdentityProviders().get(0).getConfig().get("idpConfig1"));
         assertEquals("**********", rep.getIdentityProviders().get(0).getConfig().get("clientSecret"));
+
+        assertEquals(1, rep.getEventHookTargets().size());
+        assertEquals("https://example.org/hooks", rep.getEventHookTargets().get(0).getSettings().get("url"));
+        assertEquals("********", rep.getEventHookTargets().get(0).getSettings().get("hmacSecret"));
 
 
         assertEquals(1, rep.getUsers().size());
@@ -279,6 +296,69 @@ public class StripSecretsUtilsTest {
         assertEquals(2, componentExportConfig.get("nonSecret").size());
         assertEquals("nonSecret1", componentExportConfig.get("nonSecret").get(0));
         assertEquals("nonSecret2", componentExportConfig.get("nonSecret").get(1));
+    }
+
+    private KeycloakSession eventHookSession(EventHookTargetProviderFactory factory) {
+        KeycloakSessionFactory sessionFactory = (KeycloakSessionFactory) Proxy.newProxyInstance(
+                KeycloakSessionFactory.class.getClassLoader(),
+                new Class<?>[] { KeycloakSessionFactory.class },
+                (proxy, method, args) -> {
+                    if ("getProviderFactory".equals(method.getName())
+                            && args.length == 2
+                            && args[0] == EventHookTargetProvider.class
+                            && factory.getId().equals(args[1])) {
+                        return factory;
+                    }
+                    return null;
+                });
+
+        return (KeycloakSession) Proxy.newProxyInstance(
+                KeycloakSession.class.getClassLoader(),
+                new Class<?>[] { KeycloakSession.class },
+                (proxy, method, args) -> {
+                    if ("getKeycloakSessionFactory".equals(method.getName())) {
+                        return sessionFactory;
+                    }
+                    return null;
+                });
+    }
+
+    private static final class TestEventHookTargetProviderFactory implements EventHookTargetProviderFactory {
+
+        private static final String ID = "http";
+
+        @Override
+        public EventHookTargetProvider create(KeycloakSession session) {
+            return null;
+        }
+
+        @Override
+        public void init(org.keycloak.Config.Scope config) {
+        }
+
+        @Override
+        public void postInit(KeycloakSessionFactory factory) {
+        }
+
+        @Override
+        public void close() {
+        }
+
+        @Override
+        public String getId() {
+            return ID;
+        }
+
+        @Override
+        public java.util.List<ProviderConfigProperty> getConfigMetadata() {
+            return java.util.List.of(
+                    new ProviderConfigProperty("url", "URL", "", ProviderConfigProperty.STRING_TYPE, null, false),
+                    new ProviderConfigProperty("hmacSecret", "HMAC secret", "", ProviderConfigProperty.PASSWORD, null, true));
+        }
+
+        @Override
+        public void validateConfig(KeycloakSession session, Map<String, Object> settings) {
+        }
     }
 
 }

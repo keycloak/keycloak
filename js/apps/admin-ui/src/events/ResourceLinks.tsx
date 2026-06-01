@@ -11,6 +11,7 @@ import { toUser } from "../user/routes/User";
 import { toRealmRole } from "../realm-roles/routes/RealmRole";
 import { toFlow } from "../authentication/routes/Flow";
 import { toEditOrganization } from "../organizations/routes/EditOrganization";
+import { toEventHookTargets } from "./hooks/routes";
 
 type ResourceLinkProps = {
   event: AdminEventRepresentation;
@@ -48,7 +49,8 @@ const isLinkable = (event: AdminEventRepresentation) => {
     event.resourceType?.startsWith("AUTHORIZATION_RESOURCE") ||
     event.resourceType === "CLIENT_SCOPE" ||
     event.resourceType === "AUTH_FLOW" ||
-    event.resourcePath?.startsWith("roles-by-id")
+    event.resourcePath?.startsWith("roles-by-id") ||
+    event.resourceType === "EVENT_HOOK_TARGET"
   );
 };
 
@@ -104,6 +106,10 @@ const createLink = (realm: string, event: AdminEventRepresentation) => {
 
   if (event.resourceType === "ORGANIZATION_MEMBERSHIP") {
     return toEditOrganization({ realm, id, tab: "members" });
+  }
+
+  if (event.resourceType === "EVENT_HOOK_TARGET") {
+    return toEventHookTargets({ realm });
   }
 
   return "";

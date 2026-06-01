@@ -4,6 +4,8 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+This release does not include breaking changes related to Event Hooks.
+
 === Test Framework representation builders
 
 The test framework provides a number of builders to simplify creating representations. These can be used on their own,
@@ -43,6 +45,26 @@ The user profile metadata can still be retrieved when fetching a specific user b
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
+
+=== New preview event-hooks
+
+The delivery model is at-least-once rather than exactly-once.
+Receivers must therefore be prepared to handle duplicate deliveries.
+
+For HTTP targets, {project_name} retries failed deliveries with exponential backoff.
+If the receiving service returns a `Retry-After` response header, {project_name} honors that delay when it is longer than the computed retry delay.
+
+The Admin Console and Admin REST API also expose delivery logs, queued message inspection, and manual retry for failed, exhausted, or dead deliveries.
+
+If you use the JPA-based storage, the migration adds the tables `EVENT_HOOK_TARGET`, `EVENT_HOOK_MESSAGE`, and `EVENT_HOOK_LOG`.
+Realm export and partial export/import now also support event hook target definitions.
+
+There are no migration steps for existing realms unless you want to enable the new feature.
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+This release does not deprecate Event Hooks or related APIs.
 
 === Verify email required before credentials setup during user self-registration
 
@@ -125,6 +147,8 @@ See the link:{client_certificate_lookup_link}[Reverse Proxy guide] for more deta
 
 // ------------------------ Removed features ------------------------ //
 == Removed features
+
+This release does not remove Event Hooks or related APIs.
 
 The following features have been removed from this release.
 

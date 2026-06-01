@@ -40,11 +40,13 @@ import { pickBy } from "lodash-es";
 import { PropsWithChildren, useMemo, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { EventsBanners } from "../Banners";
 import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import CodeEditor from "../components/form/CodeEditor";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { toEventHookLogs } from "./hooks/routes";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../util";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
@@ -111,6 +113,7 @@ type AdminEventsProps = {
 
 export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
   const { adminClient } = useAdminClient();
+  const navigate = useNavigate();
 
   const { t } = useTranslation();
   const { realm } = useRealm();
@@ -259,7 +262,7 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
             <Tbody>
               <Tr>
                 <Td>{t("realm")}</Td>
-                <Td>{authEvent.authDetails?.realmId}</Td>
+                <Td>{realm}</Td>
               </Tr>
               <Tr>
                 <Td>{t("client")}</Td>
@@ -562,12 +565,30 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
         actions={
           [
             {
+              title: t("eventHookOpenLogsAction"),
+              onRowClick: (event: AdminEventRepresentation) => {
+                if (!event.id) {
+                  return;
+                }
+
+                navigate(
+                  toEventHookLogs({
+                    realm,
+                    sourceType: "ADMIN",
+                    search: event.id,
+                  }),
+                );
+              },
+            },
+            {
               title: t("auth"),
-              onRowClick: (event) => setAuthEvent(event),
+              onRowClick: (event: AdminEventRepresentation) =>
+                setAuthEvent(event),
             },
             {
               title: t("representation"),
-              onRowClick: (event) => setRepresentationEvent(event),
+              onRowClick: (event: AdminEventRepresentation) =>
+                setRepresentationEvent(event),
             },
           ] as Action<AdminEventRepresentation>[]
         }
