@@ -57,7 +57,6 @@ import static org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectP
 import static org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectProviderFactory.LOADED;
 import static org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanSingleUseObjectProvider.REVOKED_TOKEN_VALUE;
 import static org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanSingleUseObjectProvider.RevokeTokenConsumer;
-import static org.keycloak.storage.datastore.DefaultDatastoreProviderFactory.setupClearExpiredRevokedTokensScheduledTask;
 
 public class RemoteInfinispanSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory<RemoteInfinispanSingleUseObjectProvider>, EnvironmentDependentProviderFactory, ProviderEventListener, ServerInfoAwareProviderFactory {
 
@@ -140,7 +139,6 @@ public class RemoteInfinispanSingleUseObjectProviderFactory implements SingleUse
 
         // preload revoked tokens from the database and register cleanup expired tokens task
         KeycloakSessionFactory sessionFactory = pme.getFactory();
-        setupClearExpiredRevokedTokensScheduledTask(sessionFactory);
         try (var session = sessionFactory.create()) {
             preloadRevokedTokens(session);
         }

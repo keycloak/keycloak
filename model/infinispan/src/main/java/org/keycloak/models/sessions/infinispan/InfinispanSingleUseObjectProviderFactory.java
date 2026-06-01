@@ -46,7 +46,6 @@ import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.infinispan.commons.api.BasicCache;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
-import static org.keycloak.storage.datastore.DefaultDatastoreProviderFactory.setupClearExpiredRevokedTokensScheduledTask;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -115,7 +114,6 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
             factory.register(event -> {
                 if (event instanceof PostMigrationEvent pme) {
                     KeycloakSessionFactory sessionFactory = pme.getFactory();
-                    setupClearExpiredRevokedTokensScheduledTask(sessionFactory);
                     try (KeycloakSession session = sessionFactory.create()) {
                         // load sessions during startup, not on first request to avoid congestion
                         initialize(session);

@@ -83,7 +83,6 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -1617,8 +1616,7 @@ public class TokenManager {
 
         @Override
         public boolean test(JsonWebToken token) {
-            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-            return !singleUseStore.contains(token.getId() + SingleUseObjectProvider.REVOKED_KEY);
+            return !session.revokedTokens().contains(token.getId());
         }
     }
 

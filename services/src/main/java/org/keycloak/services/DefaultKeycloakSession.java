@@ -47,6 +47,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RevokedTokenProvider;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.ThemeManager;
@@ -295,6 +296,11 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public SingleUseObjectProvider singleUseObjects() {
         return getDatastoreProvider().singleUseObjects();
+    }
+
+    @Override
+    public RevokedTokenProvider revokedTokens() {
+        return getDatastoreProvider().revokedTokens();
     }
 
     @Override

@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.model.singleUseObject;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -36,7 +35,7 @@ import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
-import org.keycloak.services.scheduled.ClearExpiredRevokedTokens;
+import org.keycloak.revoketokens.jpa.RevokedTokenExpirationAction;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
@@ -176,17 +175,15 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
 
     @Test
     public void testRevokedTokenIsPresentAfterRestartAndEventuallyExpires() {
-        String revokedKey = UUID.randomUUID() + SingleUseObjectProvider.REVOKED_KEY;
+        String revokedKey = UUID.randomUUID().toString();
 
         inComittedTransaction(session -> {
-            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-            singleUseStore.put(revokedKey,  60, Collections.emptyMap());
+            session.revokedTokens().put(revokedKey,  60);
         });
 
         // Run again to ensure revocation can happen multiple times
         inComittedTransaction(session -> {
-            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-            singleUseStore.put(revokedKey,  60, Collections.emptyMap());
+            session.revokedTokens().put(revokedKey,  60);
         });
 
         // simulate restart
@@ -194,8 +191,7 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
         reinitializeKeycloakSessionFactory();
 
         inComittedTransaction(session -> {
-            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-            assertThat(singleUseStore.contains(revokedKey), Matchers.is(true));
+            assertThat(session.revokedTokens().contains(revokedKey), Matchers.is(true));
         });
 
         setTimeOffset(120);
@@ -205,20 +201,18 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
         reinitializeKeycloakSessionFactory();
 
         inComittedTransaction(session -> {
-            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
             // not loaded as it is too old
-            assertThat(singleUseStore.contains(revokedKey), Matchers.is(false));
+            assertThat(session.revokedTokens().contains(revokedKey), Matchers.is(false));
 
             // remove it from the database
-            new ClearExpiredRevokedTokens().run(session);
+            RevokedTokenExpirationAction.INSTANCE.removeExpired(session, null, Time.currentTime(), value -> {});
         });
 
         setTimeOffset(0);
 
         inComittedTransaction(session -> {
-            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
             // not loaded as it has been removed from the database
-            assertThat(singleUseStore.contains(revokedKey), Matchers.is(false));
+            assertThat(session.revokedTokens().contains(revokedKey), Matchers.is(false));
         });
 
     }
