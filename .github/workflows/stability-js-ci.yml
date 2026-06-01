@@ -12,6 +12,7 @@ defaults:
 
 permissions:
   contents: read
+  actions: write
 
 jobs:
   build-keycloak:

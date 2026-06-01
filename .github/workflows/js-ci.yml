@@ -24,6 +24,7 @@ defaults:
 
 permissions:
   contents: read
+  actions: write
 
 jobs:
   conditional:
@@ -74,8 +75,6 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - uses: ./.github/actions/pnpm-setup
-
-      - uses: ./.github/actions/wireit-cache
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
         working-directory: js
@@ -294,8 +293,6 @@ jobs:
           KC_BOOTSTRAP_ADMIN_PASSWORD: admin
 
       - uses: ./.github/actions/pnpm-setup
-
-      - uses: ./.github/actions/wireit-cache
 
       - name: Run tests
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} run test
