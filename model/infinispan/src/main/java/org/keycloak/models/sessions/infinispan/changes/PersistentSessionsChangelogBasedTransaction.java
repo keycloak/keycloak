@@ -105,6 +105,48 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     }
 
     @Override
+    public boolean supportsLockingDatabaseEntities() {
+        return true;
+    }
+
+    @Override
+    public boolean lockDatabaseEntities() {
+        for (Map.Entry<K, SessionUpdatesList<V>> entry : Stream.concat(updates.entrySet().stream(), offlineUpdates.entrySet().stream()).toList()) {
+            SessionUpdatesList<V> sessionUpdates = entry.getValue();
+            if (sessionUpdates.getUpdateTasks().isEmpty()) {
+                continue;
+            }
+            SessionEntityWrapper<V> sessionWrapper = sessionUpdates.getEntityWrapper();
+            V entity = sessionWrapper.getEntity();
+            boolean isOffline = entity.isOffline();
+
+            // Don't save transient entities to infinispan. They are valid just for current transaction
+            if (sessionUpdates.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) continue;
+
+            RealmModel realm = sessionUpdates.getRealm();
+
+            long lifespanMs = getLifespanMsLoader(isOffline).apply(realm, sessionUpdates.getClient(), entity);
+            long maxIdleTimeMs = getMaxIdleMsLoader(isOffline).apply(realm, sessionUpdates.getClient(), entity);
+
+            MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdleTimeMs, lifespanMs), SessionTimeouts.IMMORTAL_FLAG);
+
+            if (merged == null) {
+                continue;
+            }
+
+            if (!lockDatabaseEntity(realm, entry.getKey(), entity.isOffline(), merged.getOperation())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Lock the entity in the database.
+     */
+    protected abstract boolean lockDatabaseEntity(RealmModel realm, K key, boolean offline, SessionUpdateTask.CacheOperation operation);
+
+    @Override
     public void asyncCommit(AggregateCompletionStage<Void> stage, Consumer<DatabaseUpdate> databaseUpdates) {
         JpaChangesPerformer<K, V> persister = null;
         for (Map.Entry<K, SessionUpdatesList<V>> entry : Stream.concat(updates.entrySet().stream(), offlineUpdates.entrySet().stream()).toList()) {
