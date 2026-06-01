@@ -59,21 +59,12 @@ public class JpaAuthenticationSessionProvider implements AuthenticationSessionPr
         if (id == null) {
             return createRootAuthenticationSession(realm);
         }
-        return getOrCreateRootAuthenticationSession(realm, id);
-    }
-
-    @Override
-    public RootAuthenticationSessionModel getOrCreateRootAuthenticationSession(RealmModel realm, String id) {
-        if (id == null) {
-            return createRootAuthenticationSession(realm);
-        }
         var em = getEntityManager();
         em.createNamedQuery("insertRootAuthSessionIfAbsent")
                 .setParameter("id", id)
                 .setParameter("realmId", realm.getId())
                 .setParameter("timestamp", Time.currentTime())
                 .executeUpdate();
-
         var entity = em.find(RootAuthenticationSessionEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (entity == null) {
             throw new ModelException("Unable to create or find root authentication session with id '" + id + "'");

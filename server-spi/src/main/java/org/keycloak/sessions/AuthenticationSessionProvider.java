@@ -38,54 +38,17 @@ public interface AuthenticationSessionProvider extends Provider {
 
     /**
      * Creates a new root authentication session specified by the provided realm and id.
-     *
      * @param realm {@code RealmModel} Can't be {@code null}.
-     * @param id    {@code String} Id of newly created root authentication session. If {@code null} a random id will be
-     *              generated.
+     * @param id {@code String} Id of newly created root authentication session. If {@code null} a random id will be generated.
      * @return Returns created {@code RootAuthenticationSessionModel}. Never returns {@code null}.
-     * @implNote The JPA implementation will fail if {@link #getRootAuthenticationSession(RealmModel, String)} was
-     * invoked previously in the same transaction for the same non-existent id, as the prior call may have acquired a
-     * gap lock that blocks the insert.
-     * @deprecated Use {@link #getOrCreateRootAuthenticationSession(RealmModel, String)} instead to avoid deadlocks in
-     * the database.
      */
-    @Deprecated(since = "26.7", forRemoval = true)
     RootAuthenticationSessionModel createRootAuthenticationSession(RealmModel realm, String id);
 
     /**
-     * Atomically returns an existing root authentication session or creates a new one. This is the preferred method
-     * when the caller has an id from an external source (e.g. a cookie) that may already exist in the store.
-     *
-     * @param realm {@code RealmModel} Can't be {@code null}.
-     * @param id    {@code String} Id of the root authentication session. If {@code null} a new session with a random id
-     *              is created.
-     * @return Returns the existing or newly created {@code RootAuthenticationSessionModel}. Never returns {@code null}.
-     * @implNote The JPA implementation should use a database-level upsert or a separate transaction for the insert to
-     * avoid gap lock deadlocks on InnoDB (MySQL/MariaDB) and key-range lock conflicts on MSSQL.
-     */
-    default RootAuthenticationSessionModel getOrCreateRootAuthenticationSession(RealmModel realm, String id) {
-        if (id == null) {
-            return createRootAuthenticationSession(realm);
-        }
-        var existing = getRootAuthenticationSession(realm, id);
-        if (existing != null) {
-            return existing;
-        }
-        return createRootAuthenticationSession(realm, id);
-    }
-
-    /**
      * Returns the root authentication session specified by the provided realm and id.
-     *
-     * @param realm                   {@code RealmModel} Can't be {@code null}.
-     * @param authenticationSessionId {@code RootAuthenticationSessionModel} If {@code null} then {@code null} will be
-     *                                returned.
-     * @return Returns found {@code RootAuthenticationSessionModel} or {@code null} if no root authentication session is
-     * found.
-     * @implNote The JPA implementation acquires a pessimistic write lock on the returned entity. On databases with gap
-     * locking (InnoDB, MSSQL), this can acquire a gap lock if the row does not exist, which may lead to deadlocks if a
-     * subsequent insert is attempted in the same transaction. Prefer
-     * {@link #getOrCreateRootAuthenticationSession(RealmModel, String)} when the intent is to find or create.
+     * @param realm {@code RealmModel} Can't be {@code null}.
+     * @param authenticationSessionId {@code RootAuthenticationSessionModel} If {@code null} then {@code null} will be returned.
+     * @return Returns found {@code RootAuthenticationSessionModel} or {@code null} if no root authentication session is found.
      */
     RootAuthenticationSessionModel getRootAuthenticationSession(RealmModel realm, String authenticationSessionId);
 
@@ -129,7 +92,7 @@ public interface AuthenticationSessionProvider extends Provider {
      * @deprecated to remove, all implementations are empty.
      */
     @Deprecated(since = "26.5", forRemoval = true)
-    default void onClientRemoved(RealmModel realm, ClientModel client) {};
+    default void onClientRemoved(RealmModel realm, ClientModel client) {}
 
     /**
      * Requests update of authNotes of a root authentication session that is not owned

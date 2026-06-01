@@ -322,7 +322,10 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         UserSessionModel userSession = cookieResult.session();
 
         // Auth session with ID corresponding to our userSession may already exists in some rare cases (EG. if some client tried to login in another browser tab with "prompt=login")
-        RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getOrCreateRootAuthenticationSession(realmModel, userSession.getId());
+        RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realmModel, userSession.getId());
+        if (rootAuthSession == null) {
+            rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realmModel, userSession.getId());
+        }
 
         AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
         authSession.setAuthenticatedUser(userSession.getUser());

@@ -193,7 +193,11 @@ public abstract class AuthorizationEndpointBase {
                     AuthenticationManager.backchannelLogout(session, userSession, true);
                 } else {
                     String userSessionId = userSession.getId();
-                    rootAuthSession = session.authenticationSessions().getOrCreateRootAuthenticationSession(realm, userSessionId);
+                    rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, userSessionId);
+                    if (rootAuthSession == null) {
+                        // depending on the storage layer we don't want to re-create the root authentication session
+                        rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm, userSessionId);
+                    }
                     authSession = rootAuthSession.createAuthenticationSession(client);
                     // set auth session cookies because they can be missing if recovered from identity cookie
                     manager.setAuthSessionCookie(rootAuthSession.getId());
