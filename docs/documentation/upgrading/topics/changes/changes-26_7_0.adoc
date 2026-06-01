@@ -31,6 +31,13 @@ Additionally, some methods where updated for consistency across the builders:
 The alias of an Identity Provider can no longer be changed after creation via the Admin REST API. Attempts to update the alias will result in a `400 Bad Request` error.
 Previously, although the admin console UI already treated the alias as read-only, the REST API still allowed alias changes.
 
+=== User profile metadata no longer returned on user search
+
+When searching for users using the Admin REST API, the user profile metadata is no longer included for each user in the search results.
+
+This change was made to improve performance of user search operations, as fetching user profile metadata for each user can be resource-intensive.
+The user profile metadata can still be retrieved when fetching a specific user by their identifier.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
