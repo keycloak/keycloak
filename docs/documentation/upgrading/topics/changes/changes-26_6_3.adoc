@@ -9,6 +9,13 @@ The wildcard comparison for valid redirect URIs does not affect the hostname any
 
 Note that OAuth 2.0 recommends exact string matching in the link:https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics#name-protecting-redirect-based-f[Security Best Current Practice] and draft for OAuth 2.1 enforces it. {project_name} recommends to not use any wildcard valid redirect URI for clients. See link:{adminguide_link}#unspecific-redirect-uris_server_administration_guide[Unspecific redirect URIs] in the {adminguide_name} for more information.
 
+=== User profile metadata no longer returned on user search
+
+When searching for users using the Admin REST API, the user profile metadata is no longer included for each user in the search results.
+
+This change was made to improve performance of user search operations, as fetching user profile metadata for each user can be resource-intensive.
+The user profile metadata can still be retrieved when fetching a specific user by their identifier.
+
 == Notable changes
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.

@@ -334,12 +334,10 @@ public class GroupResource {
 
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-        boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
+        boolean briefRep = Boolean.TRUE.equals(briefRepresentation);
 
         return session.users().getGroupMembersStream(realm, group, firstResult, maxResults)
-                .map(user -> briefRepresentationB
-                        ? ModelToRepresentation.toBriefRepresentation(user)
-                        : ModelToRepresentation.toRepresentation(session, realm, user));
+                .map(user -> ModelToRepresentation.toRepresentation(session, user, briefRep));
     }
 
     /**

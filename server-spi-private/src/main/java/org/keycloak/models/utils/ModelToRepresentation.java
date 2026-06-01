@@ -127,6 +127,9 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.storage.StorageId;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
@@ -340,6 +343,21 @@ public class ModelToRepresentation {
                 rep.setAttributes(attrs);
             }
         }
+
+        return rep;
+    }
+
+    public static UserRepresentation toRepresentation(KeycloakSession session, UserModel user, boolean brief) {
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = provider.create(UserProfileContext.USER_API, user);
+        UserRepresentation rep = profile.toRepresentation(!brief);
+        RealmModel realm = session.getContext().getRealm();
+
+        rep = brief ?
+                ModelToRepresentation.toBriefRepresentation(user, rep, false) :
+                ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
+
+        rep.setUserProfileMetadata(null);
 
         return rep;
     }
