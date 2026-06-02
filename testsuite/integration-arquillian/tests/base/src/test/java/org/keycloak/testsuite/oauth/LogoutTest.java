@@ -477,15 +477,10 @@ public class LogoutTest extends AbstractKeycloakTest {
      */
     @Test
     public void adminLogoutDoesNotUseMaliciousClientSessionHost() throws Exception {
-        ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
-        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
-        ClientResource clientResource = clients.get(rep.getId());
-        rep.getAttributes().put(
-                OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL,
-                "https://${application.session.host}/testing/test-app/admin/backchannelLogout");
-        clientResource.update(rep);
+        try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, oauth.getRealm(), oauth.getClientId())
+                .setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "https://${application.session.host}/testing/test-app/admin/backchannelLogout")
+                .update()) {
 
-        try {
             oauth.doLogin("test-user@localhost", "password");
             String code = oauth.parseLoginResponse().getCode();
 
@@ -501,9 +496,6 @@ public class LogoutTest extends AbstractKeycloakTest {
 
             assertNull(testingClient.testApp().getBackChannelRawLogoutToken(),
                     "There should be no Backchannel logout token for an untrusted client session host");
-        } finally {
-            rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
-            clientResource.update(rep);
         }
     }
 
