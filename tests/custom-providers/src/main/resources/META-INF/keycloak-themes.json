@@ -1,0 +1,10 @@
+{
+  "themes": [
+    {
+      "name": "custom-account-provider",
+      "types": [
+        "account"
+      ]
+    }
+  ]
+}
