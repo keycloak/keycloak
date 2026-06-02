@@ -41,6 +41,8 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.RolesService;
 import org.keycloak.services.ServiceException;
+import org.keycloak.services.client.query.ClientQueryEvaluator;
+import org.keycloak.services.client.query.QueryParseUtils;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisteredContext;
@@ -118,12 +120,12 @@ public class DefaultClientService implements ClientService {
                                                        ClientSearchOptions searchOptions,
                                                        ClientSortAndSliceOptions sortAndSliceOptions) {
         permissions.clients().requireList();
-        
+
         // TODO: this check is weak
         //  a stronger check is whether the remaining fields have repSetters
         //  however this highlights an issue we may hit with polymorphism a field may
         //  be projectable in one subtype, but fixed in another
-        
+
         projectionOptions.getFields().forEach(s -> {
             if (!MAPPERS.isKnownField(s)) {
                 throw new ServiceException("%s is an unknown field".formatted(s), Response.Status.BAD_REQUEST);
@@ -134,14 +136,34 @@ public class DefaultClientService implements ClientService {
         // When disabled, we fall back to in-memory filtering by VIEW_CLIENTS role.
         boolean canView = AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || permissions.clients().canView();
         try {
-            return realm.getClientsStream()
+            Stream<BaseClientRepresentation> stream = realm.getClientsStream()
                     .filter(client -> canView || permissions.clients().canView(client))
                     .filter(client -> client.getProtocol() != null)
-                    .map(client -> getMapper(client.getProtocol()).fromModel(client, projectionOptions.getFields()))
+                    .map(client -> getMapper(client.getProtocol()).fromModel(client))
                     .filter(java.util.Objects::nonNull);
+
+            stream = applySearchFilter(stream, searchOptions);
+            return applyProjection(stream, projectionOptions);
         } catch (ModelException e) {
             throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
         }
+    }
+
+    protected Stream<BaseClientRepresentation> applySearchFilter(Stream<BaseClientRepresentation> stream, ClientSearchOptions searchOptions) {
+        if (searchOptions != null && searchOptions.query() != null && !searchOptions.query().isBlank()) {
+            var queryCtx = QueryParseUtils.parse(searchOptions.query());
+            QueryParseUtils.validate(queryCtx);
+            return stream.filter(client -> ClientQueryEvaluator.matches(queryCtx, client));
+        }
+        return stream;
+    }
+
+    protected Stream<BaseClientRepresentation> applyProjection(Stream<BaseClientRepresentation> stream, ClientProjectionOptions projectionOptions) {
+        if (projectionOptions.getFields().isEmpty()) return stream;
+        return stream.map(rep -> {
+            MAPPERS.applyProjection(rep, projectionOptions.getFields());
+            return rep;
+        });
     }
 
     @Override

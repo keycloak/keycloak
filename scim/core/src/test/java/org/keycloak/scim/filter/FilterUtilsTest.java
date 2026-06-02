@@ -1,6 +1,8 @@
 package org.keycloak.scim.filter;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -95,6 +97,15 @@ public class FilterUtilsTest {
     public void testNullLiteral() {
         assertDoesNotThrow(() -> FilterUtils.parseFilter("middleName eq null"));
         assertDoesNotThrow(() -> FilterUtils.parseFilter("middleName eq NULL"));
+        assertDoesNotThrow(() -> FilterUtils.parseFilter("middleName ne null"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"co", "sw", "ew", "gt", "ge", "lt", "le"})
+    public void testNullWithNonEqualityOperatorThrows(String op) {
+        ScimFilterException e = assertThrows(ScimFilterException.class,
+                () -> FilterUtils.parseFilter("userName %s null".formatted(op)));
+        assertTrue(e.getMessage().contains(op));
     }
 
     @Test
