@@ -27,12 +27,16 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
 
+import org.jboss.logging.Logger;
+
 /**
  * <p>Utility class for working with LDAP.</p>
  *
  * @author Pedro Igor
  */
 public class LDAPUtil {
+
+    private static final Logger logger = Logger.getLogger(LDAPUtil.class);
 
     /**
      * <p>Formats the given date.</p>
@@ -257,6 +261,10 @@ public class LDAPUtil {
     public static String decodeBase64ToUuid(String base64Value, LDAPConfig config) {
         if (base64Value == null) return null;
         byte[] bytes = Base64.getDecoder().decode(base64Value);
+        if (bytes.length != 16) {
+            logger.warnf("Binary attribute value is %d bytes but a UUID requires exactly 16 bytes. Returning base64-encoded value.", bytes.length);
+            return base64Value;
+        }
         if (config.isObjectGUID()) {
             return decodeObjectGUID(bytes);
         }

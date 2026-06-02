@@ -135,7 +135,7 @@ The User Attribute LDAP mapper now includes a *Decode Binary Attribute As* confi
 
 * *auto* (default for new mappers) — decodes as UUID when the LDAP attribute matches the configured UUID LDAP attribute (e.g. `objectGUID` in Active Directory), base64 otherwise.
 * *base64* — always returns a base64-encoded string.
-* *uuid* — always decodes the value as a UUID/GUID string.
+* *uuid* — always decodes the value as a UUID/GUID string. If the binary value is not exactly 16 bytes (the size of a UUID), the decoder falls back to base64 encoding.
 
 This change reverts a regression introduced in 26.6.1 where the `objectGUID` binary attribute format was silently changed from base64 to UUID string for user attribute mappers. Existing binary attribute mappers are automatically migrated to use *base64* decoding to preserve their current behavior. If you were relying on the UUID string format introduced in 26.6.x, explicitly set the decoder to *uuid* after upgrading.
 
