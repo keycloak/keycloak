@@ -41,12 +41,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Reproducer for https://github.com/keycloak/keycloak/issues/12223
  *
- * Verifies that sequential authorization code requests with different dynamic
+ * Verifies that sequential authorization code requests with different parameterized
  * scope parameters produce tokens with the correct, non-mixed scopes — both
  * at code exchange and after refresh.
  */
-@KeycloakIntegrationTest(config = DynamicScopesIsolationTest.DynamicScopesServerConfig.class)
-public class DynamicScopesIsolationTest {
+@KeycloakIntegrationTest(config = ParameterizedScopesIsolationTest.ParameterizedScopesServerConfig.class)
+public class ParameterizedScopesIsolationTest {
 
     private static final String SCOPE_NAME = "dynamic";
     private static final String VALUE_A = "valueA";
@@ -63,21 +63,21 @@ public class DynamicScopesIsolationTest {
     @InjectOAuthClient(config = TestOAuthClientConfig.class)
     OAuthClient oauth;
 
-    private String dynamicScopeId;
+    private String parameterizedScopeId;
 
     @AfterEach
     public void cleanup() {
-        if (dynamicScopeId != null) {
+        if (parameterizedScopeId != null) {
             ClientRepresentation client = realm.admin().clients().findByClientId(oauth.getClientId()).get(0);
-            realm.admin().clients().get(client.getId()).removeOptionalClientScope(dynamicScopeId);
-            realm.admin().clientScopes().get(dynamicScopeId).remove();
-            dynamicScopeId = null;
+            realm.admin().clients().get(client.getId()).removeOptionalClientScope(parameterizedScopeId);
+            realm.admin().clientScopes().get(parameterizedScopeId).remove();
+            parameterizedScopeId = null;
         }
     }
 
     @Test
-    public void testDynamicScopeIsolationAcrossCodeExchangeAndRefresh() {
-        createAndAssignDynamicScope();
+    public void testParameterizedScopeIsolationAcrossCodeExchangeAndRefresh() {
+        createAndAssignParameterizedScope();
 
         String scopeA = SCOPE_NAME + ":" + VALUE_A;
         String scopeB = SCOPE_NAME + ":" + VALUE_B;
@@ -131,22 +131,22 @@ public class DynamicScopesIsolationTest {
         assertScopeNotContains(token.getScope(), notExpectedScope);
     }
 
-    private void createAndAssignDynamicScope() {
+    private void createAndAssignParameterizedScope() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName(SCOPE_NAME);
         scopeRep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         scopeRep.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, SCOPE_NAME + ":*");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, SCOPE_NAME + ":*");
         }});
 
         try (Response response = realm.admin().clientScopes().create(scopeRep)) {
-            assertEquals(201, response.getStatus(), "Dynamic scope creation should succeed");
-            dynamicScopeId = ApiUtil.getCreatedId(response);
+            assertEquals(201, response.getStatus(), "Parameterized scope creation should succeed");
+            parameterizedScopeId = ApiUtil.getCreatedId(response);
         }
 
         ClientRepresentation client = realm.admin().clients().findByClientId(oauth.getClientId()).get(0);
-        realm.admin().clients().get(client.getId()).addOptionalClientScope(dynamicScopeId);
+        realm.admin().clients().get(client.getId()).addOptionalClientScope(parameterizedScopeId);
     }
 
     private static void assertScopeContains(String scopeString, String expectedScope) {
@@ -176,10 +176,10 @@ public class DynamicScopesIsolationTest {
         }
     }
 
-    public static class DynamicScopesServerConfig implements KeycloakServerConfig {
+    public static class ParameterizedScopesServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.DYNAMIC_SCOPES);
+            return config.features(Profile.Feature.PARAMETERIZED_SCOPES);
         }
     }
 }

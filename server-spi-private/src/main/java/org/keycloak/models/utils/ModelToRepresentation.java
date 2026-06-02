@@ -1041,9 +1041,9 @@ public class ModelToRepresentation {
         for (ClientScopeModel clientScope : model.getGrantedClientScopes()) {
             if (clientScope instanceof ClientModel) {
                 grantedClientScopes.add(((ClientModel) clientScope).getClientId());
-            } else if (ClientScopeModel.isDynamicScope(clientScope)) {
+            } else if (ClientScopeModel.isParameterizedScope(clientScope)) {
                 model.getParameters(clientScope).stream().forEach(p ->
-                        grantedClientScopes.add(clientScope.getDynamicScopeRegexp().replace("*", p)));
+                        grantedClientScopes.add(clientScope.getParameterizedScopeRegexp().replace("*", p)));
             } else {
                 grantedClientScopes.add(clientScope.getName());
             }

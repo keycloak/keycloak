@@ -1020,7 +1020,7 @@ public class LoginActionsService {
 
     private boolean checkGranted(AuthorizationDetails details, UserConsentModel grantedConsent) {
         ClientScopeModel clientScope = details.getClientScope();
-        String parameter = details.getDynamicScopeParam();
+        String parameter = details.getParameterizedScopeParam();
         if (!grantedConsent.isClientScopeGranted(clientScope, parameter) && clientScope.isDisplayOnConsentScreen()) {
             grantedConsent.addGrantedClientScope(clientScope, parameter);
             return true;

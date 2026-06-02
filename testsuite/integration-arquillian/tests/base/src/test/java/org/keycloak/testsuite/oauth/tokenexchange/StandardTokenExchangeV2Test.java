@@ -819,10 +819,10 @@ public abstract class StandardTokenExchangeV2Test extends AbstractClientPolicies
 
     @Test
     @UncaughtServerErrorExpected
-    public void testExchangeWithDynamicScopesEnabled() throws Exception {
-        testingClient.enableFeature(Profile.Feature.DYNAMIC_SCOPES);
+    public void testExchangeWithParameterizedScopesEnabled() throws Exception {
+        testingClient.enableFeature(Profile.Feature.PARAMETERIZED_SCOPES);
         testExchange();
-        testingClient.disableFeature(Profile.Feature.DYNAMIC_SCOPES);
+        testingClient.disableFeature(Profile.Feature.PARAMETERIZED_SCOPES);
     }
 
     @Test

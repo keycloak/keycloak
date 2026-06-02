@@ -7,7 +7,7 @@ export enum Feature {
   AdminFineGrainedAuthzV2 = "ADMIN_FINE_GRAINED_AUTHZ_V2",
   ClientPolicies = "CLIENT_POLICIES",
   Kerberos = "KERBEROS",
-  DynamicScopes = "DYNAMIC_SCOPES",
+  ParameterizedScopes = "PARAMETERIZED_SCOPES",
   DPoP = "DPOP",
   DeviceFlow = "DEVICE_FLOW",
   TransientUsers = "TRANSIENT_USERS",

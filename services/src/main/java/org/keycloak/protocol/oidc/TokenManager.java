@@ -624,7 +624,7 @@ public class TokenManager {
         String scopeParam = authSession.getClientNote(OAuth2Constants.SCOPE);
         Set<ClientScopeModel> clientScopes;
 
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
             clientScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, client, scopeParam)
                     .collect(Collectors.toSet());
         } else {
@@ -713,8 +713,8 @@ public class TokenManager {
             return clientScopes;
         }
 
-        // skip organization-related scopes that were explicitly requested using the dynamic scope format
-        // we don't want dynamic and default client scopes duplicated
+        // skip organization-related scopes that were explicitly requested using the parameterized scope format
+        // we don't want parameterized and default client scopes duplicated
         clientScopes = clientScopes.filter(scope -> {
             return scope.equals(client)
                     || !scopeParam.contains(scope.getName() + ClientScopeModel.VALUE_SEPARATOR)
@@ -768,7 +768,7 @@ public class TokenManager {
      *
      * @param session
      * @param scopes
-     * @param authorizationRequestContext authorizationRequestContext. It is not null just if dynamic scopes feature is enabled
+     * @param authorizationRequestContext authorizationRequestContext. It is not null just if parameterized scopes feature is enabled
      * @param client
      * @return
      */
@@ -846,7 +846,7 @@ public class TokenManager {
         }
 
         for (String requestedScope : rawScopes) {
-            // we also check dynamic scopes in case the client is from a provider that dynamically provides scopes to their clients
+            // we also check parameterized scopes in case the client is from a provider that dynamically provides scopes to their clients
             if (!clientScopes.contains(requestedScope) && client.getDynamicClientScope(requestedScope) == null) {
                 return false;
             }
@@ -860,7 +860,7 @@ public class TokenManager {
     }
 
     public static boolean isValidScope(KeycloakSession session, String scopes, ClientModel client, UserModel user) {
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
             AuthorizationRequestContext authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, scopes);
             return isValidScope(session, scopes, authorizationRequestContext, client, user);
         } else {
@@ -880,12 +880,12 @@ public class TokenManager {
 
         UserConsentModel grantedConsent = UserConsentManager.getConsentByClient(session, client.getRealm(), user, client.getId());
 
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
             AuthorizationRequestContext ctx = AuthorizationContextUtil.getAuthorizationRequestContextFromScopesWithClient(
                     session, client, scopeParam);
             for (AuthorizationDetails authDetails : ctx.getAuthorizationDetailEntries()) {
                 ClientScopeModel requestedScope = authDetails.getClientScope();
-                String parameter = authDetails.getDynamicScopeParam();
+                String parameter = authDetails.getParameterizedScopeParam();
                 if (requestedScope.isDisplayOnConsentScreen() && (grantedConsent == null || !grantedConsent.isClientScopeGranted(requestedScope, parameter))) {
                     return false;
                 }
