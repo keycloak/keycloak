@@ -39,7 +39,7 @@ overrides:
   diff@^7: ^8.0.3
   '@microsoft/api-extractor': ^7.58.7
   jquery@^3: ^3.7.1
-  lodash: ^4.17.23
+  lodash: ^4.17.24
   mdast-util-to-hast: ^13.2.1
 allowBuilds:
   '@swc/core': true
