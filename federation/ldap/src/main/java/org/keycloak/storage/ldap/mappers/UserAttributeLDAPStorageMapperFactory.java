@@ -82,7 +82,9 @@ public class UserAttributeLDAPStorageMapperFactory extends AbstractLDAPStorageMa
                 .helpText("Controls how binary attribute values are decoded. "
                         + "'auto' decodes as UUID when the LDAP attribute matches the UUID LDAP attribute (e.g. objectGUID), base64 otherwise. "
                         + "'base64' always returns a base64-encoded string. "
-                        + "'uuid' always decodes the value as a UUID/GUID.")
+                        + "'uuid' always decodes the value as a UUID/GUID. "
+                        + "If 'uuid' or 'auto' is selected but the binary value is not 16 bytes (the size of a UUID), "
+                        + "it falls back to base64 encoding.")
                 .type(ProviderConfigProperty.LIST_TYPE)
                 .options(Arrays.asList(UserAttributeLDAPStorageMapper.BINARY_DECODER_AUTO, UserAttributeLDAPStorageMapper.BINARY_DECODER_BASE64, UserAttributeLDAPStorageMapper.BINARY_DECODER_UUID))
                 .add()
