@@ -48,7 +48,10 @@
       "command": "eslint ."
     },
     "test": {
-      "command": "TS_NODE_PROJECT=tsconfig.test.json mocha --recursive \"test/**/*.spec.ts\" --timeout 10000"
+      "command": "TS_NODE_PROJECT=tsconfig.test.json mocha --recursive \"test/**/*.spec.ts\" --timeout 10000",
+      "dependencies": [
+        "build"
+      ]
     }
   },
   "dependencies": {
