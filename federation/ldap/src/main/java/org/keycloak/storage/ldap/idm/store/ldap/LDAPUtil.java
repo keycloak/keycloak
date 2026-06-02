@@ -19,6 +19,7 @@ package org.keycloak.storage.ldap.idm.store.ldap;
 
 import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -241,6 +242,28 @@ public class LDAPUtil {
             guid[8], guid[9], guid[10], guid[11], guid[12], guid[13], guid[14], guid[15]
         };
         return convertToDashedString(withBigEndian);
+    }
+
+    /**
+     * Decodes a base64-encoded binary UUID attribute value into a GUID string representation.
+     * Uses {@link #decodeObjectGUID(byte[])} for Active Directory or {@link #decodeGuid(byte[])} for eDirectory,
+     * based on the provided LDAP configuration. Returns the original base64 value if the configuration doesn't
+     * match a known UUID format.
+     *
+     * @param base64Value the base64-encoded binary value of the UUID attribute.
+     * @param config the LDAP configuration used to determine the UUID decoding strategy.
+     * @return the decoded UUID string, or the original base64 value if no matching decoder is found.
+     */
+    public static String decodeBase64ToUuid(String base64Value, LDAPConfig config) {
+        if (base64Value == null) return null;
+        byte[] bytes = Base64.getDecoder().decode(base64Value);
+        if (config.isObjectGUID()) {
+            return decodeObjectGUID(bytes);
+        }
+        if (config.isEdirectory() && config.isEdirectoryGUID()) {
+            return decodeGuid(bytes);
+        }
+        return base64Value;
     }
 
     private static String convertToDashedString(byte[] objectGUID) {

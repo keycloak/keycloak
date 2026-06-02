@@ -468,8 +468,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testSamlEncryptionAttributes(migrationRealm);
     }
 
-    protected void testMigrationTo26_7_0() {
+    protected void testMigrationTo26_7_0(boolean testLdapBinaryAttributeDecoderMigration) {
         testParameterizedScopeTypesMigration(migrationRealm);
+        if (testLdapBinaryAttributeDecoderMigration) {
+            testLdapBinaryAttributeDecoderMigration(migrationRealm2);
+        }
     }
 
     private void testParameterizedScopeTypesMigration(RealmResource realm) {
@@ -1357,6 +1360,23 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         MultivaluedHashMap<String, String> config = componentsRep.get(0).getConfig();
         assertNotNull(config);
         assertThat(config.getFirst(LDAPConstants.USE_TRUSTSTORE_SPI), equalTo(LDAPConstants.USE_TRUSTSTORE_ALWAYS));
+    }
+
+    private void testLdapBinaryAttributeDecoderMigration(final RealmResource realm) {
+        RealmRepresentation rep = realm.toRepresentation();
+        List<ComponentRepresentation> ldapProviders = realm.components().query(rep.getId(), UserStorageProvider.class.getName());
+        assertThat(ldapProviders.size(), equalTo(1));
+        String ldapProviderId = ldapProviders.get(0).getId();
+
+        List<ComponentRepresentation> mappers = realm.components().query(ldapProviderId,
+                "org.keycloak.storage.ldap.mappers.LDAPStorageMapper");
+        ComponentRepresentation binaryMapper = mappers.stream()
+                .filter(c -> "user-attribute-ldap-mapper".equals(c.getProviderId()))
+                .filter(c -> "true".equals(c.getConfig().getFirst("is.binary.attribute")))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(binaryMapper, "Binary attribute mapper not found");
+        assertThat(binaryMapper.getConfig().getFirst("binary.attribute.decoder"), equalTo("base64"));
     }
 
     private void testHS512KeyCreated(RealmResource realm) {
