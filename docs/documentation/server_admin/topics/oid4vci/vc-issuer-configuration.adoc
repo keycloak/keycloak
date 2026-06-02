@@ -525,7 +525,7 @@ curl -k -X POST "https://localhost:8443/admin/realms/oid4vc-vci/clients" \
   -d @oid4vc-rest-api-client.json
 ----
 
-=== Verify the Configuration
+=== Verifying the Configuration
 
 Validate the setup by accessing the **issuer metadata endpoint**:
 
@@ -535,11 +535,17 @@ Validate the setup by accessing the **issuer metadata endpoint**:
 ----
 https://localhost:8443/.well-known/openid-credential-issuer/realms/oid4vc-vci
 ----
-
++
 A successful response returns a JSON object containing details such as:
 - **Supported claims**
 - **Credential formats**
 - **Issuer metadata**
+
+=== Next Steps
+
+This guide covered the basic configuration. For more advanced topics, see:
+
+- <<_oid4vci_proofs, Proof Types and Key Binding>> - Detailed documentation on proof types, creating JWT proofs, configuring trusted attestation keys, and how key binding appears in credentials.
 
 === Conclusion
 
