@@ -123,6 +123,12 @@ public class DatabaseOptions {
             .hidden()
             .build();
 
+    public static final Option<String> DB_POSTGRESQL_LOG_SERVER_ERROR_DETAIL = new OptionBuilder<>("db-postgres-log-error-detail", String.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue("false") // cause the propertymapping logic to always advertise this property
+            .hidden()
+            .build();
+
     public static final Option<String> DB_CONNECT_TIMEOUT = new OptionBuilder<>("db-connect-timeout", String.class)
             .category(OptionCategory.DATABASE)
             .description("Sets the JDBC driver connection timeout and login timeout. " + DURATION_DESCRIPTION)
