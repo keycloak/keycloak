@@ -4,6 +4,8 @@ public class OAuthIdentityProviderConfigBuilder {
 
     private Mode mode = Mode.DEFAULT;
     private boolean jwkUse = true;
+    private String issuer;
+    private String discoveryPath = "/idp";
 
     public OAuthIdentityProviderConfigBuilder spiffe() {
         mode = Mode.SPIFFE;
@@ -20,11 +22,21 @@ public class OAuthIdentityProviderConfigBuilder {
         return this;
     }
 
-    public OAuthIdentityProviderConfiguration build() {
-        return new OAuthIdentityProviderConfiguration(mode, jwkUse);
+    public OAuthIdentityProviderConfigBuilder issuer(String issuer) {
+        this.issuer = issuer;
+        return this;
     }
 
-    public record OAuthIdentityProviderConfiguration(Mode mode, boolean jwkUse) {
+    public OAuthIdentityProviderConfigBuilder discoveryPath(String discoveryPath) {
+        this.discoveryPath = discoveryPath;
+        return this;
+    }
+
+    public OAuthIdentityProviderConfiguration build() {
+        return new OAuthIdentityProviderConfiguration(mode, jwkUse, issuer, discoveryPath);
+    }
+
+    public record OAuthIdentityProviderConfiguration(Mode mode, boolean jwkUse, String issuer, String discoveryPath) {
     }
 
     public enum Mode {

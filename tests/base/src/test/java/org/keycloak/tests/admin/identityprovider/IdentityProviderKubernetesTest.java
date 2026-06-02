@@ -17,6 +17,8 @@
 
 package org.keycloak.tests.admin.identityprovider;
 
+import java.util.Map;
+
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
@@ -35,6 +37,66 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @KeycloakIntegrationTest(config = IdentityProviderKubernetesTest.TestServerConfig.class)
 public class IdentityProviderKubernetesTest extends AbstractIdentityProviderTest {
+
+    private static final String DISCOVERY_ISSUER = "http://127.0.0.1:8500/idp";
+    private static final String AUTOMATIC_ISSUER_DISCOVERY = "automaticIssuerDiscovery";
+    private static final String ISSUER_DISCOVERY_URL = "issuerDiscoveryUrl";
+
+    @Test
+    public void testCreateIdentityProviderRejectsNonKubernetesIssuerDiscoveryUrl() {
+        IdentityProviderRepresentation identityProvider = createRep("kubernetes", "kubernetes");
+        enableAutomaticIssuerDiscovery(identityProvider);
+
+        try (Response response = managedRealm.admin().identityProviders().create(identityProvider)) {
+            assertEquals(400, response.getStatus(), () -> response.readEntity(String.class));
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertEquals("Automatic issuer discovery URL must be an HTTPS Kubernetes API service URL", error.getErrorMessage());
+        }
+    }
+
+    @Test
+    public void testUpdateIdentityProviderRejectsNonKubernetesIssuerDiscoveryUrl() {
+        IdentityProviderRepresentation identityProvider = createRep("kubernetes", "kubernetes");
+        identityProvider.getConfig().put("issuer", "https://localhost");
+
+        try (Response response = managedRealm.admin().identityProviders().create(identityProvider)) {
+            assertEquals(201, response.getStatus(), () -> response.readEntity(String.class));
+        }
+        managedRealm.cleanup().add(r -> r.identityProviders().get("kubernetes").remove());
+
+        IdentityProviderResource idpResource = managedRealm.admin().identityProviders().get("kubernetes");
+        identityProvider = idpResource.toRepresentation();
+        enableAutomaticIssuerDiscovery(identityProvider);
+        try {
+            idpResource.update(identityProvider);
+            Assertions.fail("Non-Kubernetes issuer discovery URL not detected");
+        } catch (WebApplicationException ex) {
+            assertEquals(400, ex.getResponse().getStatus());
+            ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Automatic issuer discovery URL must be an HTTPS Kubernetes API service URL", error.getErrorMessage());
+        }
+
+        IdentityProviderRepresentation updated = idpResource.toRepresentation();
+        assertEquals("https://localhost", updated.getConfig().get("issuer"));
+    }
+
+    @Test
+    public void testIssuerDiscoveryUrlWithoutAutomaticDiscoveryDoesNotResolveIssuer() {
+        IdentityProviderRepresentation identityProvider = createRep("kubernetes", "kubernetes");
+        identityProvider.setConfig(Map.of(
+                AUTOMATIC_ISSUER_DISCOVERY, "false",
+                "issuer", "https://localhost",
+                ISSUER_DISCOVERY_URL, DISCOVERY_ISSUER
+        ));
+
+        try (Response response = managedRealm.admin().identityProviders().create(identityProvider)) {
+            assertEquals(201, response.getStatus(), () -> response.readEntity(String.class));
+        }
+        managedRealm.cleanup().add(r -> r.identityProviders().get("kubernetes").remove());
+
+        IdentityProviderRepresentation created = managedRealm.admin().identityProviders().get("kubernetes").toRepresentation();
+        assertEquals("https://localhost", created.getConfig().get("issuer"));
+    }
 
     @Test
     public void testCreateIdentityProviderWithDuplicateIssuer() {
@@ -94,5 +156,13 @@ public class IdentityProviderKubernetesTest extends AbstractIdentityProviderTest
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.KUBERNETES_SERVICE_ACCOUNTS);
         }
+    }
+
+    private static void enableAutomaticIssuerDiscovery(IdentityProviderRepresentation identityProvider) {
+        identityProvider.setConfig(Map.of(
+                AUTOMATIC_ISSUER_DISCOVERY, "true",
+                "issuer", DISCOVERY_ISSUER,
+                ISSUER_DISCOVERY_URL, DISCOVERY_ISSUER
+        ));
     }
 }

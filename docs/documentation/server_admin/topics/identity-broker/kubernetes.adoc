@@ -7,7 +7,10 @@ A Kubernetes identity provider supports authenticating clients with Kubernetes s
 This feature can be enabled and disabled with the feature `kubernetes-service-accounts` which is enabled by default. It depends on the feature `client-auth-federated` which is enabled by default as well.
 
 The default issuer URL for a Kubernetes cluster is `\https://kubernetes.default.svc.cluster.local`. You can discover
-this value by decoding a service account token to retrieve the value of the `iss` claim.
+this value by decoding a service account token to retrieve the value of the `iss` claim. Managed Kubernetes clusters
+can expose the discovery endpoint through the in-cluster Kubernetes API while issuing service account tokens with a
+different issuer URL. In this case, enable automatic issuer discovery. {project_name} resolves the issuer from the
+in-cluster discovery endpoint and stores the discovered issuer for client assertion validation.
 
 Keycloak must be able to invoke the endpoint `<ISSUER>/.well-known/openid-configuration` and additionally the
 JWKS endpoint returned in the well-known configuration. By default, these endpoints require authentication with a
@@ -39,7 +42,10 @@ and make sure tokens can not be intercepted in communication between the client 
 |The alias for the identity provider is used to link a client to the provider
 
 |Kubernetes Issuer URL
-|The issuer URL of service account tokens. The URL `<ISSUER>.well-known/openid-configuration` must be available to {project_name})
+|The issuer URL of service account tokens. The URL `<ISSUER>/.well-known/openid-configuration` must be available to {project_name} when automatic issuer discovery is disabled
+
+|Automatic issuer discovery
+|Resolve the service account token issuer from the in-cluster Kubernetes discovery endpoint. Use this option when a managed cluster exposes discovery through the Kubernetes API but uses a different issuer in service account tokens
 
 |===
 +

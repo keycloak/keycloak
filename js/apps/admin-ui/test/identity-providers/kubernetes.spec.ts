@@ -29,6 +29,21 @@ test.describe.serial("Kubernetes identity provider test", () => {
     await goToIdentityProviders(page);
     await clickTableRowItem(page, "kubernetes");
 
+    await expect(
+      page.getByTestId("config.automaticIssuerDiscovery"),
+    ).not.toBeChecked();
+    await expect(page.getByTestId("config.issuer")).toBeEnabled();
+
+    await page
+      .getByTestId("config.automaticIssuerDiscovery")
+      .click({ force: true });
+    await expect(page.getByTestId("config.issuer")).toBeDisabled();
+
+    await page
+      .getByTestId("config.automaticIssuerDiscovery")
+      .click({ force: true });
+    await expect(page.getByTestId("config.issuer")).toBeEnabled();
+
     await page
       .getByTestId("config.issuer")
       .fill("https://kubernetes2.myorg.com");

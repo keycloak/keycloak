@@ -29,7 +29,10 @@ export default function AddKubernetesConnect() {
   const id = "kubernetes";
 
   const form = useForm<DiscoveryIdentityProvider>({
-    defaultValues: { alias: id, config: { allowCreate: "true" } },
+    defaultValues: {
+      alias: id,
+      config: { allowCreate: "true", automaticIssuerDiscovery: "false" },
+    },
     mode: "onChange",
   });
   const { handleSubmit } = form;

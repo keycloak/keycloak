@@ -21,6 +21,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.Strings;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -33,22 +34,29 @@ import static org.keycloak.common.crypto.CryptoConstants.EC_KEY_SECP256R1;
  */
 public class OAuthIdentityProvider {
 
+    private static final String IDP_PATH = "/idp";
+
     private final HttpServer httpServer;
 
     private final OAuthIdentityProviderKeys keys;
     private final OAuthIdentityProviderConfigBuilder.OAuthIdentityProviderConfiguration config;
+    private final String issuer;
 
     private int keysRequestCount = 0;
 
     public OAuthIdentityProvider(HttpServer httpServer, OAuthIdentityProviderConfigBuilder.OAuthIdentityProviderConfiguration config) {
         this.config = config;
+        this.issuer = config.issuer();
         if (!CryptoIntegration.isInitialised()) {
             CryptoIntegration.setProvider(new DefaultCryptoProvider());
         }
 
         this.httpServer = httpServer;
-        httpServer.createContext("/idp/.well-known/openid-configuration", new WellKnownHandler());
-        httpServer.createContext("/idp/jwks", new JwksHttpHandler());
+        httpServer.createContext(IDP_PATH + "/.well-known/openid-configuration", new WellKnownHandler());
+        if (!IDP_PATH.equals(config.discoveryPath())) {
+            httpServer.createContext(config.discoveryPath() + "/.well-known/openid-configuration", new WellKnownHandler());
+        }
+        httpServer.createContext(IDP_PATH + "/jwks", new JwksHttpHandler());
 
         keys = new OAuthIdentityProviderKeys(config);
     }
@@ -78,8 +86,11 @@ public class OAuthIdentityProvider {
     }
 
     public void close() {
-        httpServer.removeContext("/idp/.well-known/openid-configuration");
-        httpServer.removeContext("/idp/jwks");
+        httpServer.removeContext(IDP_PATH + "/.well-known/openid-configuration");
+        if (!IDP_PATH.equals(config.discoveryPath())) {
+            httpServer.removeContext(config.discoveryPath() + "/.well-known/openid-configuration");
+        }
+        httpServer.removeContext(IDP_PATH + "/jwks");
     }
 
     public class WellKnownHandler implements HttpHandler {
@@ -87,6 +98,9 @@ public class OAuthIdentityProvider {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             OIDCConfigurationRepresentation oidcConfig = new OIDCConfigurationRepresentation();
+            if (!Strings.isEmpty(issuer)) {
+                oidcConfig.setIssuer(issuer);
+            }
             oidcConfig.setJwksUri("http://127.0.0.1:8500/idp/jwks");
             String oidcConfigString = JsonSerialization.writeValueAsString(oidcConfig);
 

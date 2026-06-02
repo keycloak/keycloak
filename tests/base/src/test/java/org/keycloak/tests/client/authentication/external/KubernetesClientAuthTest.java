@@ -149,7 +149,7 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
 
         @Override
         public OAuthIdentityProviderConfigBuilder configure(OAuthIdentityProviderConfigBuilder config) {
-            return config.kubernetes();
+            return config.kubernetes().issuer(ISSUER);
         }
     }
 
