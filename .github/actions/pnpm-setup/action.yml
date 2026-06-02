@@ -1,5 +1,5 @@
 name: Setup PNPM
-description: Sets up Node.js and runs PNPM so dependencies are installed.
+description: Sets up Node.js, enables Wireit and PNPM caching, and installs dependencies.
 
 inputs:
   node-version:
