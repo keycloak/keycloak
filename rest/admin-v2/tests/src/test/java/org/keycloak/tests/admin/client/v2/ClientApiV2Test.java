@@ -32,6 +32,7 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.PatchTypeNames;
+import org.keycloak.admin.api.SortOrder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
@@ -398,7 +399,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         ListOptions listOptions = new ListOptions();
         listOptions.setFields(Set.of("clientId", "displayName"));
         listOptions.setSortBy("displayName,clientId");
-        listOptions.setSortOrder("desc");
+        listOptions.setSortOrder(SortOrder.DESC);
 
         try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
             List<String> sortTestClientIds = clients
@@ -416,6 +417,14 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         listOptions.setSortBy("displayName,unknown");
         BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(listOptions));
         assertThat(e.getResponse().readEntity(String.class), containsString("unknown is not a sortable field"));
+    }
+
+    @Test
+    public void getClientsInvalidSortOrderReturns400() {
+        ListOptions listOptions = new ListOptions();
+        listOptions.setSortOrder("what");
+        BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(listOptions));
+        assertThat(e.getResponse().readEntity(String.class), containsString("sortOrder must be asc or desc"));
     }
 
     private void createSortTestClient(String clientId, String displayName, String description) {

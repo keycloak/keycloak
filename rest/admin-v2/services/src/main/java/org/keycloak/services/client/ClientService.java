@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.api.ListOptions;
+import org.keycloak.admin.api.SortOrder;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.PatchType;
@@ -75,13 +76,9 @@ public interface ClientService extends Service {
         }
 
         private static boolean parseSortOrder(String sortOrder) {
-            if (isBlank(sortOrder) || "asc".equalsIgnoreCase(sortOrder)) {
-                return true;
-            }
-            if ("desc".equalsIgnoreCase(sortOrder)) {
-                return false;
-            }
-            throw new ServiceException("sortOrder must be asc or desc", Response.Status.BAD_REQUEST);
+            return SortOrder.fromQueryValue(sortOrder)
+                    .orElseThrow(() -> new ServiceException("sortOrder must be asc or desc", Response.Status.BAD_REQUEST))
+                    .isAscending();
         }
 
         public Comparator<BaseClientRepresentation> getSortComparator() {

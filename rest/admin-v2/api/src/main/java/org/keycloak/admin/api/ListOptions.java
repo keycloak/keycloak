@@ -4,6 +4,7 @@ import java.util.Set;
 
 import jakarta.ws.rs.QueryParam;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
 public class ListOptions {
@@ -12,7 +13,7 @@ public class ListOptions {
     @QueryParam("sortBy")
     protected String sortBy;
     
-    @Parameter(description = "Sort direction. Allowed values: asc (default), desc.")
+    @Parameter(description = "Sort direction. Allowed values: asc (default), desc.", schema = @Schema(implementation = SortOrder.class))
     @QueryParam("sortOrder")
     protected String sortOrder;
 
@@ -64,5 +65,9 @@ public class ListOptions {
 
     public void setSortOrder(String sortOrder) {
         this.sortOrder = sortOrder;
+    }
+
+    public void setSortOrder(SortOrder sortOrder) {
+        this.sortOrder = sortOrder == null ? null : sortOrder.toQueryValue();
     }
 }
