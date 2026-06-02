@@ -1,8 +1,6 @@
 AccountRestServiceTest
 AuthorizationCodeTest
 AuthorizationTest
-ClientRegistrationTest
-ExportImportTest
 KcOidcBrokerTest
 LDAPUserLoginTest
 LoginTest

@@ -14,7 +14,7 @@ import { useAdminClient } from "../admin-client";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useParams } from "../utils/useParams";
-import { type PAGE_PROVIDER, TAB_PROVIDER } from "./constants";
+import { PAGE_PROVIDER, TAB_PROVIDER } from "./constants";
 import { toPage } from "./routes";
 
 type PageHandlerProps = {
@@ -100,17 +100,28 @@ export const PageHandler = ({
           <Button data-testid="save" type="submit">
             {t("save")}
           </Button>
-          <Button
-            variant="link"
-            component={(props) => (
-              <Link
-                {...props}
-                to={toPage({ realm: realmName, providerId: providerId! })}
-              />
-            )}
-          >
-            {t("cancel")}
-          </Button>
+          {providerType === PAGE_PROVIDER ? (
+            <Button
+              data-testid="cancel"
+              variant="link"
+              component={(props) => (
+                <Link
+                  {...props}
+                  to={toPage({ realm: realmName, providerId: providerId! })}
+                />
+              )}
+            >
+              {t("cancel")}
+            </Button>
+          ) : (
+            <Button
+              data-testid="cancel"
+              variant="link"
+              onClick={() => form.reset()}
+            >
+              {t("revert")}
+            </Button>
+          )}
         </ActionGroup>
       </Form>
     </PageSection>

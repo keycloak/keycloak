@@ -62,9 +62,9 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
     @Test
     public void testMapRoleClientScopeAllRoles() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
         // we need to be able to list client scopes
-        createAllPermission(client, AdminPermissionsSchema.CLIENTS.getType(), onlyMyAdminUserPolicy, Set.of(VIEW));
+        createAllPermission(adminPermissionsClient, AdminPermissionsSchema.CLIENTS.getType(), onlyMyAdminUserPolicy, Set.of(VIEW));
 
         // create a client-scope
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
@@ -82,7 +82,7 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
         assertThat(availableRoles, empty());
 
         // grant the permission to map all roles to client scopes
-        createAllPermission(client, rolesType, onlyMyAdminUserPolicy, Set.of(MAP_ROLE_CLIENT_SCOPE));
+        createAllPermission(adminPermissionsClient, rolesType, onlyMyAdminUserPolicy, Set.of(MAP_ROLE_CLIENT_SCOPE));
 
         availableRoles = clientScopeResource.getScopeMappings().realmLevel().listAvailable();
         assertThat(availableRoles, not(empty()));
@@ -117,8 +117,8 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
         realm.admin().users().get(myadmin.getId()).roles().clientLevel(clientId).add(List.of(manageRealmRole));
         realmAdminClient.tokenManager().grantToken();
 
-        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
-        createAllPermission(client, rolesType, onlyMyAdminUserPolicy, Set.of(MAP_ROLE_COMPOSITE));
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, rolesType, onlyMyAdminUserPolicy, Set.of(MAP_ROLE_COMPOSITE));
 
         realmAdminClient.realm(realm.getName()).roles().get("myRole").addComposites(List.of(subRole));
     }
@@ -149,9 +149,9 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         // create required permissions
-        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
-        createPermission(client, role.getId(), rolesType, Set.of(MAP_ROLE), onlyMyAdminUserPolicy);
-        createPermission(client, myadmin.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(MAP_ROLES), onlyMyAdminUserPolicy);
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, role.getId(), rolesType, Set.of(MAP_ROLE), onlyMyAdminUserPolicy);
+        createPermission(adminPermissionsClient, myadmin.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(MAP_ROLES), onlyMyAdminUserPolicy);
 
         // should pass
         realmAdminClient.realm(realm.getName()).users().get(myadmin.getId()).roles().realmLevel().add(List.of(role));
@@ -172,9 +172,9 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
         RoleRepresentation createClientRole = realm.admin().clients().get(realmManagement.getId()).roles().get(AdminRoles.CREATE_CLIENT).toRepresentation();
 
         // create permission to map roles from all clients and to all users
-        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
-        createAllPermission(client, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, onlyMyAdminUserPolicy, Set.of(MAP_ROLES));
-        createAllPermission(client, AdminPermissionsSchema.USERS_RESOURCE_TYPE, onlyMyAdminUserPolicy, Set.of(MAP_ROLES));
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, onlyMyAdminUserPolicy, Set.of(MAP_ROLES));
+        createAllPermission(adminPermissionsClient, AdminPermissionsSchema.USERS_RESOURCE_TYPE, onlyMyAdminUserPolicy, Set.of(MAP_ROLES));
 
         // create a role
         RoleRepresentation role = new RoleRepresentation();

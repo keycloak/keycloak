@@ -102,8 +102,8 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
 
     @Test
     public void testViewAllUsersUsingUserPolicy() {
-        UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createAllPermission(client, usersType, policy, Set.of(VIEW));
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createAllPermission(adminPermissionsClient, usersType, policy, Set.of(VIEW));
 
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 50);
         assertFalse(search.isEmpty());
@@ -112,16 +112,16 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
 
     @Test
     public void testDeniedResourcesPrecedenceOverGrantedResources() {
-        UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createAllPermission(client, usersType, policy, Set.of(VIEW));
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createAllPermission(adminPermissionsClient, usersType, policy, Set.of(VIEW));
 
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 50);
         assertFalse(search.isEmpty());
         assertEquals(50, search.size());
 
-        UserPolicyRepresentation notMyAdminPolicy = createUserPolicy(Logic.NEGATIVE, realm, client,"Not My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        UserPolicyRepresentation notMyAdminPolicy = createUserPolicy(Logic.NEGATIVE, realm, adminPermissionsClient,"Not My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
         Set<String> notAllowedUsers = Set.of("user-0", "user-15", "user-30", "user-45");
-        createPermission(client, notAllowedUsers, usersType, Set.of(VIEW), notMyAdminPolicy);
+        createPermission(adminPermissionsClient, notAllowedUsers, usersType, Set.of(VIEW), notMyAdminPolicy);
         search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
         assertFalse(search.isEmpty());
         assertTrue(search.stream().map(UserRepresentation::getUsername).noneMatch(notAllowedUsers::contains));
@@ -132,9 +132,9 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         assertThat(realmAdminClient.realm(realm.getName()).users().count("user-"), is(0));
         assertThat(realmAdminClient.realm(realm.getName()).users().count(null, null, null, "user-15"), is(0));
 
-        UserPolicyRepresentation allowPolicy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        UserPolicyRepresentation allowPolicy = createUserPolicy(realm, adminPermissionsClient,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
         Set<String> allowedUsers = Set.of("user-0", "user-15", "user-30");
-        createPermission(client, allowedUsers, usersType, Set.of(VIEW), allowPolicy);
+        createPermission(adminPermissionsClient, allowedUsers, usersType, Set.of(VIEW), allowPolicy);
 
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
         assertEquals(allowedUsers.size(), search.size());
@@ -149,8 +149,8 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertTrue(search.isEmpty());
 
-        UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createPermission(client, "user-9", usersType, Set.of(VIEW), policy);
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createPermission(adminPermissionsClient, "user-9", usersType, Set.of(VIEW), policy);
 
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertFalse(search.isEmpty());
@@ -169,8 +169,8 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
             String adminUserId = realm.admin().users().search("myadmin").get(0).getId();
             String groupId = ApiUtil.getCreatedId(response);
             realm.admin().users().get(adminUserId).joinGroup(groupId);
-            GroupPolicyRepresentation policy = createGroupPolicy(realm, client, "Admin Group Policy", Logic.POSITIVE, groupId);
-            createPermission(client, "user-9", usersType, Set.of(VIEW), policy);
+            GroupPolicyRepresentation policy = createGroupPolicy(realm, adminPermissionsClient, "Admin Group Policy", Logic.POSITIVE, groupId);
+            createPermission(adminPermissionsClient, "user-9", usersType, Set.of(VIEW), policy);
 
         }
 
@@ -191,8 +191,8 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         String adminUserId = realm.admin().users().search("myadmin").get(0).getId();
         role = realm.admin().roles().get(role.getName()).toRepresentation();
         realm.admin().users().get(adminUserId).roles().realmLevel().add(List.of(role));
-        RolePolicyRepresentation policy = createRolePolicy(realm, client, "Admin Role Policy", role.getId(), Logic.POSITIVE);
-        createPermission(client, "user-9", usersType, Set.of(VIEW), policy);
+        RolePolicyRepresentation policy = createRolePolicy(realm, adminPermissionsClient, "Admin Role Policy", role.getId(), Logic.POSITIVE);
+        createPermission(adminPermissionsClient, "user-9", usersType, Set.of(VIEW), policy);
 
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertFalse(search.isEmpty());
@@ -211,7 +211,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         String adminUserId = realm.admin().users().search("myadmin").get(0).getId();
         role = realm.admin().roles().get(role.getName()).toRepresentation();
         realm.admin().users().get(adminUserId).roles().realmLevel().add(List.of(role));
-        RolePolicyRepresentation rolePolicy = createRolePolicy(realm, client, "Admin Role Policy", role.getId(), Logic.POSITIVE);
+        RolePolicyRepresentation rolePolicy = createRolePolicy(realm, adminPermissionsClient, "Admin Role Policy", role.getId(), Logic.POSITIVE);
 
         GroupRepresentation rep = new GroupRepresentation();
         rep.setName(KeycloakModelUtils.generateId());
@@ -220,16 +220,16 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         try (Response response = realm.admin().groups().add(rep)) {
             String groupId = ApiUtil.getCreatedId(response);
             realm.admin().users().get(adminUserId).joinGroup(groupId);
-            groupPolicy = createGroupPolicy(realm, client, "Admin Group Policy", Logic.POSITIVE, groupId);
+            groupPolicy = createGroupPolicy(realm, adminPermissionsClient, "Admin Group Policy", Logic.POSITIVE, groupId);
         }
 
-        createPermission(client, "user-9", usersType, Set.of(VIEW), rolePolicy, groupPolicy);
+        createPermission(adminPermissionsClient, "user-9", usersType, Set.of(VIEW), rolePolicy, groupPolicy);
 
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertFalse(search.isEmpty());
         assertEquals(1, search.size());
 
-        RolePoliciesResource rolePolicyResource = client.admin().authorization().policies().role();
+        RolePoliciesResource rolePolicyResource = adminPermissionsClient.authorization().policies().role();
         rolePolicy = rolePolicyResource.findByName(rolePolicy.getName());
         rolePolicy.setLogic(Logic.NEGATIVE);
         rolePolicyResource.findById(rolePolicy.getId()).update(rolePolicy);
@@ -256,15 +256,15 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
             }
         }
 
-        UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createPermission(client, group.getId(), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), policy);
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createPermission(adminPermissionsClient, group.getId(), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), policy);
 
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertEquals(memberUsernames.size(), search.size());
         assertTrue(search.stream().map(UserRepresentation::getUsername).allMatch(memberUsernames::contains));
 
-        UserPolicyRepresentation negativePolicy = createUserPolicy(Logic.NEGATIVE, realm, client,"Not My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createPermission(client, realm.admin().users().search("user-0").get(0).getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), negativePolicy);
+        UserPolicyRepresentation negativePolicy = createUserPolicy(Logic.NEGATIVE, realm, adminPermissionsClient,"Not My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createPermission(adminPermissionsClient, realm.admin().users().search("user-0").get(0).getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), negativePolicy);
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertFalse(search.isEmpty());
         assertTrue(search.stream().map(UserRepresentation::getUsername).noneMatch("user-0"::equals));
@@ -298,16 +298,16 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         }
 
         // grant access to se members of a group
-        UserPolicyRepresentation permitPolicy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createPermission(client, allowedMembers.getId(), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), permitPolicy);
+        UserPolicyRepresentation permitPolicy = createUserPolicy(realm, adminPermissionsClient,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createPermission(adminPermissionsClient, allowedMembers.getId(), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), permitPolicy);
 
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertEquals(memberUsernames.size(), search.size());
         assertTrue(search.stream().map(UserRepresentation::getUsername).allMatch(memberUsernames::contains));
 
         // deny access to the members of another group where access to some users in this group were previously granted
-        UserPolicyRepresentation denyPolicy = createUserPolicy(Logic.NEGATIVE, realm, client,"Not My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createPermission(client, deniedMembers.getId(), GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), denyPolicy);
+        UserPolicyRepresentation denyPolicy = createUserPolicy(Logic.NEGATIVE, realm, adminPermissionsClient,"Not My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createPermission(adminPermissionsClient, deniedMembers.getId(), GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), denyPolicy);
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertFalse(search.isEmpty());
         assertEquals(memberUsernames.size() - deniedMemberUsernames.size(), search.size());
@@ -315,7 +315,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
 
         // grant access to a specific user that is protected, the permission will have no effect because the user cannot be accessed due to the group permission
         String userId = realm.admin().users().search("user-0").get(0).getId();
-        createPermission(client, userId, USERS_RESOURCE_TYPE, Set.of(VIEW), permitPolicy);
+        createPermission(adminPermissionsClient, userId, USERS_RESOURCE_TYPE, Set.of(VIEW), permitPolicy);
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         Set<String> expected = new HashSet<>(memberUsernames);
         expected.removeAll(deniedMemberUsernames);
@@ -359,8 +359,8 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     public void testSearchById() {
         UserRepresentation expected = realm.admin().users().search("user-0").get(0);
         assertThat(realmAdminClient.realm(realm.getName()).users().search("id:" + expected.getId(), -1, -1), hasSize(0));
-        UserPolicyRepresentation negativePolicy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createPermission(client, expected.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), negativePolicy);
+        UserPolicyRepresentation negativePolicy = createUserPolicy(realm, adminPermissionsClient,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createPermission(adminPermissionsClient, expected.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), negativePolicy);
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertFalse(search.isEmpty());
         assertThat(search, Matchers.hasSize(1));
@@ -386,8 +386,8 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
             String groupId = ApiUtil.getCreatedId(response);
             realm.admin().users().get(adminUserId).joinGroup(groupId);
             realm.admin().groups().group(groupId).roles().realmLevel().add(List.of(role));
-            RolePolicyRepresentation policy = createRolePolicy(realm, client, "My Role Policy", role.getId(), Logic.POSITIVE);
-            createPermission(client, "user-9", usersType, Set.of(VIEW), policy);
+            RolePolicyRepresentation policy = createRolePolicy(realm, adminPermissionsClient, "My Role Policy", role.getId(), Logic.POSITIVE);
+            createPermission(adminPermissionsClient, "user-9", usersType, Set.of(VIEW), policy);
         }
 
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
@@ -421,8 +421,8 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
             String groupId = ApiUtil.getCreatedId(response);
             realm.admin().users().get(adminUserId).joinGroup(groupId);
             realm.admin().groups().group(groupId).roles().realmLevel().add(List.of(compositeRole));
-            RolePolicyRepresentation policy = createRolePolicy(realm, client, "My Role Policy", role.getId(), Logic.POSITIVE);
-            createPermission(client, "user-9", usersType, Set.of(VIEW), policy);
+            RolePolicyRepresentation policy = createRolePolicy(realm, adminPermissionsClient, "My Role Policy", role.getId(), Logic.POSITIVE);
+            createPermission(adminPermissionsClient, "user-9", usersType, Set.of(VIEW), policy);
         }
 
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
@@ -450,9 +450,9 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         }
 
         // grant permission to view user1 and user2 to myadmin
-        UserPolicyRepresentation policy = createUserPolicy(realm, client, "Myadmin user policy", myadmin.getId());
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Myadmin user policy", myadmin.getId());
         Set<String> allowedUsers = Set.of("user1", "user2");
-        createPermission(client, allowedUsers, usersType, Set.of(VIEW), policy);
+        createPermission(adminPermissionsClient, allowedUsers, usersType, Set.of(VIEW), policy);
 
         // assign view-realm role to myadmin so that the user can access the sessions endpoint
         realm.admin().users().get(myadmin.getId()).roles().clientLevel(clientUuid).add(List.of(viewRealmRole));
@@ -519,10 +519,10 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         }
 
         // Grant myadmin permission to view user_x and user_y, and to view the test client
-        UserPolicyRepresentation policy = createUserPolicy(realm, client, "Myadmin user policy", realm.admin().users().search("myadmin").get(0).getId());
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Myadmin user policy", realm.admin().users().search("myadmin").get(0).getId());
         Set<String> allowedUsers = Set.of("user_x", "user_y");
-        createPermission(client, allowedUsers, AdminPermissionsSchema.USERS.getType(), Set.of(AdminPermissionsSchema.VIEW), policy);
-        createPermission(client, Set.of(testClient.getId()), AdminPermissionsSchema.CLIENTS.getType(), Set.of(AdminPermissionsSchema.VIEW), policy);
+        createPermission(adminPermissionsClient, allowedUsers, AdminPermissionsSchema.USERS.getType(), Set.of(AdminPermissionsSchema.VIEW), policy);
+        createPermission(adminPermissionsClient, Set.of(testClient.getId()), AdminPermissionsSchema.CLIENTS.getType(), Set.of(AdminPermissionsSchema.VIEW), policy);
 
         // Query role members as myadmin
         List<String> roleMembers = realmAdminClient.realm(realm.getName()).clients().get(testClient.getId()).roles().get(role.getName()).getUserMembers().stream().map(UserRepresentation::getUsername).toList();
@@ -547,15 +547,15 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         realm.admin().users().get(barUser.getId()).joinGroup(barGroup.getId());
         GroupRepresentation barGroupManager = createGroup(KeycloakModelUtils.generateId());
 
-        GroupPolicyRepresentation fooGroupManagerPolicy = createGroupPolicy(realm, client, "Foo Group Policy", Logic.POSITIVE, fooGroupManager.getId());
-        GroupPolicyRepresentation barGroupManagerPolicy = createGroupPolicy(realm, client, "Bar Group Policy", Logic.POSITIVE, barGroupManager.getId());
-        AggregatePolicyRepresentation aggregatedPolicy = createAggregatedPolicy(client, "Foo and Bar Group Policy", Logic.POSITIVE, DecisionStrategy.AFFIRMATIVE, fooGroupManagerPolicy.getName(), barGroupManagerPolicy.getName());
+        GroupPolicyRepresentation fooGroupManagerPolicy = createGroupPolicy(realm, adminPermissionsClient, "Foo Group Policy", Logic.POSITIVE, fooGroupManager.getId());
+        GroupPolicyRepresentation barGroupManagerPolicy = createGroupPolicy(realm, adminPermissionsClient, "Bar Group Policy", Logic.POSITIVE, barGroupManager.getId());
+        AggregatePolicyRepresentation aggregatedPolicy = createAggregatedPolicy(adminPermissionsClient, "Foo and Bar Group Policy", Logic.POSITIVE, DecisionStrategy.AFFIRMATIVE, fooGroupManagerPolicy.getName(), barGroupManagerPolicy.getName());
 
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertTrue(search.isEmpty());
 
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        createAllPermission(client, GROUPS_RESOURCE_TYPE, aggregatedPolicy, Set.of(VIEW_MEMBERS, MANAGE_MEMBERSHIP, MANAGE_MEMBERS));
+        createAllPermission(adminPermissionsClient, GROUPS_RESOURCE_TYPE, aggregatedPolicy, Set.of(VIEW_MEMBERS, MANAGE_MEMBERSHIP, MANAGE_MEMBERS));
 
         realm.admin().users().get(myadmin.getId()).joinGroup(fooGroupManager.getId());
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
@@ -564,7 +564,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         assertTrue(search.stream().map(UserRepresentation::getUsername).anyMatch(barUser.getUsername()::equals));
 
         aggregatedPolicy.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
-        client.admin().authorization().policies().aggregate().findById(aggregatedPolicy.getId()).update(aggregatedPolicy);
+        adminPermissionsClient.authorization().policies().aggregate().findById(aggregatedPolicy.getId()).update(aggregatedPolicy);
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertTrue(search.isEmpty());
 

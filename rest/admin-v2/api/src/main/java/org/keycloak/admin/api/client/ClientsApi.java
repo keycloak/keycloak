@@ -33,12 +33,12 @@ public interface ClientsApi {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Get all clients", description = "Returns a list of all clients in the realm")
+    @Operation(summary = "Get all clients", description = "Returns a list of clients in the realm, optionally filtered by a query expression")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = BaseClientRepresentation.class)))
     })
     Stream<BaseClientRepresentation> getClients(@BeanParam ListOptions params);
-    
+
     default Stream<BaseClientRepresentation> getClients() {
         return getClients(new ListOptions());
     }

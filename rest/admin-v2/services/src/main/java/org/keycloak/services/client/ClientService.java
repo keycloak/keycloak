@@ -15,9 +15,7 @@ import org.keycloak.services.ServiceException;
 
 public interface ClientService extends Service {
 
-    class ClientSearchOptions {
-        // TODO
-    }
+    record ClientSearchOptions(String query) {}
 
     class ClientProjectionOptions {
         private final LinkedHashSet<String> fields = new LinkedHashSet<>();

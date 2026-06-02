@@ -54,4 +54,22 @@ public interface NonBlockingTransaction {
      * @param stage The {@link AggregateCompletionStage} to collect the {@link CompletionStage}.
      */
     void asyncRollback(AggregateCompletionStage<Void> stage);
+
+    /**
+     * This transaction connects to entities in the database.
+     *
+     * @return When this returns true, this has entities in the database
+     */
+    default boolean supportsLockingDatabaseEntities() {
+        return false;
+    }
+
+    /**
+     * Locking any entities that are about to be updated.
+     *
+     * @return When this returns true, there is either no entity to be locked, or all entities are now locked and it is unlikely that the transaction will roll back.
+     */
+    default boolean lockDatabaseEntities() {
+        return false;
+    }
 }

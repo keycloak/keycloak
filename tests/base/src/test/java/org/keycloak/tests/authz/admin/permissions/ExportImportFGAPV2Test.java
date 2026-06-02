@@ -14,17 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.authz.admin.permissions;
+package org.keycloak.tests.authz.admin.permissions;
 
 import java.util.List;
 
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-import org.keycloak.testsuite.exportimport.ExportImportTest;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -33,14 +38,18 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ExportImportTestFGAPV2 extends ExportImportTest {
+@KeycloakIntegrationTest(config = ExportImportFGAPV2Test.KeycloakAdminPermissionsV2ServerConfig.class)
+public class ExportImportFGAPV2Test {
+
+    @InjectAdminClient(mode = InjectAdminClient.Mode.BOOTSTRAP)
+    Keycloak adminClient;
 
     private final String REALM_NAME = "fgap";
     private final String CUSTOM_CLIENT_ID = "imported-permission-client";
 
-    @After
+    @AfterEach
     public void cleanup() {
-        removeRealm(REALM_NAME);
+        adminClient.realm(REALM_NAME).remove();
     }
 
     @Test
@@ -120,4 +129,10 @@ public class ExportImportTestFGAPV2 extends ExportImportTest {
         assertThat(authorizationSettings.getAuthorizationSchema(), nullValue());
     }
 
+    public static class KeycloakAdminPermissionsV2ServerConfig implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2);
+        }
+    }
 }
