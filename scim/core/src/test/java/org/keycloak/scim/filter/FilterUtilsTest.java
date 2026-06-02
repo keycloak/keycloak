@@ -5,6 +5,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -151,9 +152,19 @@ public class FilterUtilsTest {
 
     @Test
     public void testEscapedStrings() {
-        // JSON string escaping
         assertDoesNotThrow(() -> FilterUtils.parseFilter("userName eq \"john\\\"doe\""));
         assertDoesNotThrow(() -> FilterUtils.parseFilter("path eq \"c:\\\\users\\\\john\""));
+
+        assertEquals("quote\"here", FilterUtils.unescapeJsonString("quote\\\"here"));
+        assertEquals("back\\slash", FilterUtils.unescapeJsonString("back\\\\slash"));
+        assertEquals("no escapes", FilterUtils.unescapeJsonString("no escapes"));
+    }
+
+    @Test
+    public void testUnescapeJsonStringDoesNotDoubleDecode() {
+        assertEquals("\\n", FilterUtils.unescapeJsonString("\\\\n"));
+        assertEquals("\\t", FilterUtils.unescapeJsonString("\\\\t"));
+        assertEquals("\\r", FilterUtils.unescapeJsonString("\\\\r"));
     }
 
     @Test
