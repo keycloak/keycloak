@@ -20,6 +20,7 @@ package org.keycloak.protocol.saml.profile.ecp;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
+import java.util.concurrent.CompletionStage;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.xml.soap.SOAPException;
@@ -69,7 +70,7 @@ public class SamlEcpProfileService extends SamlService {
 
     public Response authenticate(Document soapMessage) {
         try {
-            return new PostBindingProtocol() {
+            CompletionStage<Response> responseStage = new PostBindingProtocol() {
 
                 @Override
                 protected Response error(KeycloakSession session, AuthenticationSessionModel authenticationSession, Response.Status status, String message, Object... parameters) {
@@ -105,6 +106,9 @@ public class SamlEcpProfileService extends SamlService {
                     return super.loginRequest(relayState, requestAbstractType, client);
                 }
             }.execute(Soap.toSamlHttpPostMessage(soapMessage), null, null, null);
+
+            // For non-artifact cases, the response is already completed synchronously
+            return responseStage.toCompletableFuture().join();
         } catch (Exception e) {
             String reason = "Some error occurred while processing the AuthnRequest.";
             String detail = e.getMessage();

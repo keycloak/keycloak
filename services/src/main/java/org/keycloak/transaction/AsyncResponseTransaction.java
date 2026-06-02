@@ -14,7 +14,12 @@ import org.keycloak.services.messages.Messages;
  * done withing this execution are committed. Therefore we need some mechanism that resumes the AsyncResponse after all
  * changes are successfully committed. This can be achieved by enlisting an instance of AsyncResponseTransaction into
  * the main transaction using {@link org.keycloak.models.KeycloakTransactionManager#enlistAfterCompletion(KeycloakTransaction)}.
+ *
+ * @deprecated This class is deprecated and should not be used. Use {@link jakarta.ws.rs.container.AsyncResponse}
+ * with proper exception handling, or prefer returning {@link java.util.concurrent.CompletionStage} from JAX-RS endpoints
+ * which provides better exception handling and transaction management.
  */
+@Deprecated
 public class AsyncResponseTransaction implements KeycloakTransaction {
 
     private final KeycloakSession session;
@@ -29,7 +34,10 @@ public class AsyncResponseTransaction implements KeycloakTransaction {
      * @param session Current KeycloakSession
      * @param responseToFinishInTransaction AsyncResponse to be resumed on {@link KeycloakTransactionManager} commit/rollback.
      * @param responseToSend Response to be sent
+     * @deprecated Use {@link java.util.concurrent.CompletionStage} return types from JAX-RS endpoints instead.
+     *             This method does not properly handle exceptions thrown from async tasks.
      */
+    @Deprecated
     public static void finishAsyncResponseInTransaction(KeycloakSession session, AsyncResponse responseToFinishInTransaction, Response responseToSend) {
         session.getTransactionManager().enlistAfterCompletion(new AsyncResponseTransaction(session, responseToFinishInTransaction, responseToSend));
     }

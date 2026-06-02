@@ -28,6 +28,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.xml.crypto.dsig.XMLSignature;
@@ -43,8 +45,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.container.AsyncResponse;
-import jakarta.ws.rs.container.Suspended;
+
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
@@ -135,8 +136,7 @@ import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.timer.ScheduledTask;
-import org.keycloak.transaction.AsyncResponseTransaction;
-import org.keycloak.utils.KeycloakSessionUtil;
+
 import org.keycloak.utils.MediaType;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -373,9 +373,9 @@ public class SamlService extends AuthorizationEndpointBase {
          *
          * @param artifact the received artifact
          * @param relayState the current relay state
-         * @return a Response based on the content of the ArtifactResponse's content
+         * @return a CompletionStage of Response based on the content of the ArtifactResponse's content
          */
-        protected void handleArtifact(AsyncResponse asyncResponse, String artifact, String relayState) {
+        protected CompletionStage<Response> handleArtifact(String artifact, String relayState) {
             logger.tracef("Keycloak obtained artifact %s. %s", artifact, getShortStackTrace());
             //Find client
             ClientModel client;
@@ -384,16 +384,15 @@ public class SamlService extends AuthorizationEndpointBase {
 
                 Response error = checkClientValidity(client);
                 if (error != null) {
-                    asyncResponse.resume(error);
-                    return;
+                    return CompletableFuture.completedFuture(error);
                 }
 
             } catch (ArtifactResolverProcessingException | IllegalArgumentException e) {
                 event.event(EventType.LOGIN);
                 event.detail(Details.REASON, e.getMessage());
                 event.error(Errors.INVALID_SAML_ARTIFACT);
-                asyncResponse.resume(error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST));
-                return;
+                return CompletableFuture.completedFuture(
+                        error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST));
             }
 
             try {
@@ -419,23 +418,29 @@ public class SamlService extends AuthorizationEndpointBase {
 
                 URI clientArtifactBindingURI = new URI(clientArtifactBindingURL);
 
-                ExecutorService executor = session.getProvider(ExecutorsProvider.class).getExecutor("saml-artifact-pool");
+                // Create the artifact resolution runnable
+                ArtifactResolutionRunnable runnable = new ArtifactResolutionRunnable(
+                        getBindingType(), doc, clientArtifactBindingURI, relayState);
 
-                ArtifactResolutionRunnable artifactResolutionRunnable = new ArtifactResolutionRunnable(getBindingType(), asyncResponse, doc, clientArtifactBindingURI, relayState);
-                ScheduledTaskRunner task = new ScheduledTaskRunner(session.getKeycloakSessionFactory(), artifactResolutionRunnable);
-                executor.execute(task);
-
-                logger.tracef("ArtifactResolutionRunnable scheduled, current transaction will be rolled back");
-                // Current transaction must be ignored due to asyncResponse.
+                // Rollback current transaction as we're now running asynchronously
                 session.getTransactionManager().rollback();
-                // Remove the thread local - this thread will be returned, but KeycloakBeanProducer will only fire after the response is resumed.
-                KeycloakSessionUtil.setKeycloakSession(null);
+
+                // Execute asynchronously using the executor pool
+                ExecutorService executor = session.getProvider(ExecutorsProvider.class).getExecutor("saml-artifact-pool");
+                executor.execute(() -> {
+                    ScheduledTaskRunner task = new ScheduledTaskRunner(session.getKeycloakSessionFactory(), runnable);
+                    task.run();
+                });
+
+                // Return the future that will be completed when the async task finishes
+                return runnable.getResponseFuture().toCompletableFuture();
+
             } catch (URISyntaxException | ProcessingException | ParsingException | ConfigurationException e) {
                 event.event(EventType.LOGIN);
                 event.detail(Details.REASON, e.getMessage());
                 event.error(Errors.IDENTITY_PROVIDER_ERROR);
-                asyncResponse.resume(error(session, null, Response.Status.INTERNAL_SERVER_ERROR, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST));
-                return;
+                return CompletableFuture.completedFuture(
+                        error(session, null, Response.Status.INTERNAL_SERVER_ERROR, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST));
             }
         }
 
@@ -743,34 +748,18 @@ public class SamlService extends AuthorizationEndpointBase {
             }
         }
 
-        public Response execute(String samlRequest, String samlResponse, String relayState, String artifact) {
+        public CompletionStage<Response> execute(String samlRequest, String samlResponse, String relayState, String artifact) {
             Response response = basicChecks(samlRequest, samlResponse, artifact);
             if (response != null)
-                return response;
-
-            if (samlRequest != null)
-                return handleSamlRequest(samlRequest, relayState);
-            else
-                return handleSamlResponse(samlResponse, relayState);
-        }
-
-        public void execute(AsyncResponse asyncReponse, String samlRequest, String samlResponse, String relayState, String artifact) {
-            Response response = basicChecks(samlRequest, samlResponse, artifact);
-
-            if (response != null){
-                asyncReponse.resume(response);
-                return;
-            }
+                return CompletableFuture.completedFuture(response);
 
             if (artifact != null) {
-                handleArtifact(asyncReponse, artifact, relayState);
-                return;
+                return handleArtifact(artifact, relayState);
             }
             if (samlRequest != null) {
-                asyncReponse.resume(handleSamlRequest(samlRequest, relayState));
-                return;
+                return CompletableFuture.completedFuture(handleSamlRequest(samlRequest, relayState));
             } else {
-                asyncReponse.resume(handleSamlResponse(samlResponse, relayState));
+                return CompletableFuture.completedFuture(handleSamlResponse(samlResponse, relayState));
             }
         }
 
@@ -930,11 +919,11 @@ public class SamlService extends AuthorizationEndpointBase {
     /**
      */
     @GET
-    public void redirectBinding(@Suspended AsyncResponse asyncResponse, @QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest, @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse, @QueryParam(GeneralConstants.RELAY_STATE) String relayState, @QueryParam(GeneralConstants.SAML_ARTIFACT_KEY) String artifact) {
+    public CompletionStage<Response> redirectBinding(@QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest, @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse, @QueryParam(GeneralConstants.RELAY_STATE) String relayState, @QueryParam(GeneralConstants.SAML_ARTIFACT_KEY) String artifact) {
         logger.debug("SAML GET");
         CacheControlUtil.noBackButtonCacheControlHeader(session);
 
-        new RedirectBindingProtocol().execute(asyncResponse, samlRequest, samlResponse, relayState, artifact);
+        return new RedirectBindingProtocol().execute(samlRequest, samlResponse, relayState, artifact);
     }
 
     /**
@@ -942,14 +931,14 @@ public class SamlService extends AuthorizationEndpointBase {
     @POST
     @NoCache
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public void postBinding(@Suspended AsyncResponse asyncResponse, @FormParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest, @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse, @FormParam(GeneralConstants.RELAY_STATE) String relayState, @FormParam(GeneralConstants.SAML_ARTIFACT_KEY) String artifact) {
+    public CompletionStage<Response> postBinding(@FormParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest, @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse, @FormParam(GeneralConstants.RELAY_STATE) String relayState, @FormParam(GeneralConstants.SAML_ARTIFACT_KEY) String artifact) {
         logger.debug("SAML POST");
         PostBindingProtocol postBindingProtocol = new PostBindingProtocol();
         // this is to support back button on browser
         // if true, we redirect to authenticate URL otherwise back button behavior has bad side effects
         // and we want to turn it off.
         postBindingProtocol.redirectToAuthentication = true;
-        postBindingProtocol.execute(asyncResponse, samlRequest, samlResponse, relayState, artifact);
+        return postBindingProtocol.execute(samlRequest, samlResponse, relayState, artifact);
     }
 
     @GET
@@ -1408,20 +1397,19 @@ public class SamlService extends AuthorizationEndpointBase {
         return artifactResolver != null ? artifactResolver : session.getProvider(ArtifactResolver.class);
     }
 
-    private class ArtifactResolutionRunnable implements ScheduledTask{
+private class ArtifactResolutionRunnable implements ScheduledTask {
 
         private final HttpRequest request;
         private final HttpResponse response;
-        private AsyncResponse asyncResponse;
-        private URI clientArtifactBindingURI;
-        private String relayState;
-        private Document doc;
-        private String realmId;
-        private ClientConnection connection;
-        private String bindingType;
+        private final URI clientArtifactBindingURI;
+        private final String relayState;
+        private final Document doc;
+        private final String realmId;
+        private final ClientConnection connection;
+        private final String bindingType;
+        private final CompletableFuture<Response> responseFuture;
 
-        public ArtifactResolutionRunnable(String bindingType, AsyncResponse asyncResponse, Document doc, URI clientArtifactBindingURI, String relayState){
-            this.asyncResponse = asyncResponse;
+        public ArtifactResolutionRunnable(String bindingType, Document doc, URI clientArtifactBindingURI, String relayState) {
             this.doc = doc;
             this.clientArtifactBindingURI = clientArtifactBindingURI;
             this.relayState = relayState;
@@ -1430,10 +1418,15 @@ public class SamlService extends AuthorizationEndpointBase {
             this.bindingType = bindingType;
             this.request = session.getContext().getHttpRequest();
             this.response = session.getContext().getHttpResponse();
+            this.responseFuture = new CompletableFuture<>();
+        }
+
+        public CompletableFuture<Response> getResponseFuture() {
+            return responseFuture;
         }
 
         @Override
-        public void run(KeycloakSession session){
+        public void run(KeycloakSession session) {
             // Initialize context
             session.getContext().setHttpRequest(request);
             session.getContext().setHttpResponse(response);
@@ -1442,7 +1435,8 @@ public class SamlService extends AuthorizationEndpointBase {
             RealmManager realmManager = new RealmManager(session);
             RealmModel realm = realmManager.getRealm(realmId);
             if (realm == null) {
-                throw new NotFoundException("Realm does not exist");
+                responseFuture.completeExceptionally(new NotFoundException("Realm does not exist"));
+                return;
             }
             session.getContext().setRealm(realm);
 
@@ -1476,7 +1470,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     ArtifactResponseType art = (ArtifactResponseType) samlDoc.getSamlObject();
 
                     if (art.getAny() == null) {
-                        AsyncResponseTransaction.finishAsyncResponseInTransaction(session, asyncResponse,
+                        responseFuture.complete(
                                 ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.ARTIFACT_RESOLUTION_SERVICE_INVALID_RESPONSE));
                         return;
                     }
@@ -1484,7 +1478,8 @@ public class SamlService extends AuthorizationEndpointBase {
                     LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, "saml");
                     if (factory == null) {
                         logger.debugf("protocol %s not found", "saml");
-                        throw new NotFoundException("Protocol not found");
+                        responseFuture.completeExceptionally(new NotFoundException("Protocol not found"));
+                        return;
                     }
 
                     SamlService endpoint = (SamlService) factory.createProtocolEndpoint(session, event);
@@ -1494,22 +1489,20 @@ public class SamlService extends AuthorizationEndpointBase {
                     } else if (SamlProtocol.SAML_REDIRECT_BINDING.equals(bindingType)) {
                         protocol = endpoint.newRedirectBindingProtocol();
                     } else {
-                        throw new ConfigurationException("Invalid binding protocol: " + bindingType);
+                        responseFuture.completeExceptionally(new ConfigurationException("Invalid binding protocol: " + bindingType));
+                        return;
                     }
 
                     if (art.getAny() instanceof ResponseType) {
                         Document clientMessage = SAML2Request.convert((ResponseType) art.getAny());
                         String response = protocol.encodeSamlDocument(clientMessage);
-
-                        AsyncResponseTransaction.finishAsyncResponseInTransaction(session, asyncResponse,
-                                protocol.handleSamlResponse(response, relayState));
+                        responseFuture.complete(protocol.handleSamlResponse(response, relayState));
                     } else if (art.getAny() instanceof RequestAbstractType) {
                         Document clientMessage = SAML2Request.convert((RequestAbstractType) art.getAny());
                         String request = protocol.encodeSamlDocument(clientMessage);
-                        AsyncResponseTransaction.finishAsyncResponseInTransaction(session, asyncResponse,
-                                protocol.handleSamlRequest(request, relayState));
+                        responseFuture.complete(protocol.handleSamlRequest(request, relayState));
                     } else {
-                        throw new ProcessingException("Cannot recognise message contained in ArtifactResponse");
+                        responseFuture.completeExceptionally(new ProcessingException("Cannot recognise message contained in ArtifactResponse"));
                     }
 
                 } finally {
@@ -1520,17 +1513,20 @@ public class SamlService extends AuthorizationEndpointBase {
                 event.event(EventType.LOGIN);
                 event.detail(Details.REASON, e.getMessage());
                 event.error(Errors.IDENTITY_PROVIDER_ERROR);
-
-                AsyncResponseTransaction.finishAsyncResponseInTransaction(session, asyncResponse,
+                responseFuture.complete(
                         ErrorPage.error(session, null, Response.Status.INTERNAL_SERVER_ERROR, Messages.ARTIFACT_RESOLUTION_SERVICE_INVALID_RESPONSE));
-            } catch(ConfigurationException e) {
+            } catch (ConfigurationException e) {
                 event.event(EventType.LOGIN);
                 event.detail(Details.REASON, e.getMessage());
                 event.error(Errors.IDENTITY_PROVIDER_ERROR);
-                AsyncResponseTransaction.finishAsyncResponseInTransaction(session, asyncResponse,
+                responseFuture.complete(
                         ErrorPage.error(session, null, Response.Status.INTERNAL_SERVER_ERROR, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST));
+            } catch (Exception e) {
+                event.event(EventType.LOGIN);
+                event.detail(Details.REASON, e.getMessage());
+                event.error(Errors.IDENTITY_PROVIDER_ERROR);
+                responseFuture.completeExceptionally(e);
             }
         }
     }
-
 }
