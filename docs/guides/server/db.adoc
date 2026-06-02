@@ -398,7 +398,12 @@ However, on MS SQL Server, the database isolation level needs to be modified by 
 ALTER DATABASE <your-database-name> SET READ_COMMITTED_SNAPSHOT ON;
 ----
 
-NOTE: The `ALTER DATABASE` command requires exclusive access to the database. Ensure no other user connections are active, or the command will block until all other connections are closed.
+[NOTE]
+====
+* The `ALTER DATABASE` command requires exclusive access to the database.
+Ensure no other database connections are active, or the command will block until all other connections are closed.
+* For that, shutdown all instances of {project_name} first, and start them again once the change is complete.
+====
 
 To verify the current isolation level, connect to the database and execute:
 

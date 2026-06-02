@@ -52,7 +52,6 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
@@ -595,11 +594,10 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find role");
         }
 
-        final Function<UserModel, UserRepresentation> toRepresentation = briefRepresentation != null && briefRepresentation
-                ? ModelToRepresentation::toBriefRepresentation
-                : user -> ModelToRepresentation.toRepresentation(session, realm, user);
+        boolean briefRep = Boolean.TRUE.equals(briefRepresentation);
+
         return session.users().getRoleMembersStream(realm, role, firstResult, maxResults)
-                .map(toRepresentation);
+                .map((u) -> ModelToRepresentation.toRepresentation(session, u, briefRep));
     }
 
     /**

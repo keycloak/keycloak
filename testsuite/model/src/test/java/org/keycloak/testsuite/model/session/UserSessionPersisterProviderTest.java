@@ -67,6 +67,7 @@ import org.keycloak.models.jpa.session.JpaUserSessionPersisterProvider;
 import org.keycloak.models.jpa.session.JpaUserSessionPersisterProviderFactory;
 import org.keycloak.models.jpa.session.PersistentUserSessionEntity;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
@@ -436,7 +437,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             createClientSession(session, realm.getId(), realm.getClientByClientId(clientId), userSession, "http://redirect", "state");
         });
 
-        if (InfinispanUtils.isEmbeddedInfinispan()) {
+        if (InfinispanUtils.isEmbeddedInfinispan() && useCachesEnabled()) {
             // causes https://github.com/keycloak/keycloak/issues/42012
             inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealmByName(realmName);
@@ -553,6 +554,215 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             UserSessionModel userSession = loadedSessions.get(0);
             session.sessions().removeUserSession(realm, userSession);
             persister.removeUserSession(userSession.getId(), userSession.isOffline());
+        });
+    }
+
+    @Test
+    public void testFindUserSessionsByUserId() {
+        // Verifies that findUserSessionsByUserId returns sessions for cache cleanup even when their
+        // lastSessionRefresh would exclude them from loadUserSessionsStream (which filters by idle timeout).
+        // Without this guarantee, a user delete could leave orphaned cache entries for a user whose
+        // sessions have been idle longer than the offline-session idle timeout.
+        AtomicReference<UserSessionModel[]> origSessionsAt = new AtomicReference<>();
+
+        inComittedTransaction(session -> {
+            origSessionsAt.set(createSessions(session, realmId));
+        });
+
+        withRealmConsumer(realmId, (session, realm) -> {
+            UserSessionModel us1 = session.sessions().getUserSession(realm, origSessionsAt.get()[1].getId());
+            persistUserSession(session, us1, true);
+        });
+
+        withRealmConsumer(realmId, (session, realm) -> {
+            // Advance clock past the offline session idle timeout. The persisted session's lastSessionRefresh
+            // is now older than the idle threshold, so loadUserSessionsStream filters it out.
+            setTimeOffset(realm.getOfflineSessionIdleTimeout() + 86400);
+            try {
+                UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+                UserModel user1 = session.users().getUserByUsername(realm, "user1");
+
+                long activeStreamCount = persister.loadUserSessionsStream(realm, user1, true, null, null).count();
+                Assert.assertEquals("loadUserSessionsStream is expected to filter out idle-expired sessions",
+                        0L, activeStreamCount);
+
+                Map<String, Set<String>> forRemoval = persister.findUserSessionsByUserId(realm, user1, true);
+                Assert.assertEquals("findUserSessionsByUserId must return idle-expired sessions for cache cleanup",
+                        1, forRemoval.size());
+                Assert.assertTrue("returned map must include the persisted user session id",
+                        forRemoval.containsKey(origSessionsAt.get()[1].getId()));
+            } finally {
+                setTimeOffset(0);
+                session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
+            }
+        });
+    }
+
+    @Test
+    public void testFindUserSessionsByUserIdWithoutClientSessions() {
+        // Regression guard for the LEFT JOIN in findUserSessionsByUserId: a user session can exist in the
+        // persister without any associated client session (e.g. when the last client session was removed,
+        // or during the brief race window between createUserSession and createClientSession). The query
+        // must still return the user-session id so cache eviction can clear orphaned user-session entries.
+        AtomicReference<UserSessionModel[]> origSessionsAt = new AtomicReference<>();
+
+        inComittedTransaction(session -> {
+            origSessionsAt.set(createSessions(session, realmId));
+        });
+
+        withRealmConsumer(realmId, (session, realm) -> {
+            // Persist only the user session row, NOT its client sessions — this is what the LEFT JOIN
+            // in findUserSessionsByUserId must cope with.
+            UserSessionModel us = session.sessions().getUserSession(realm, origSessionsAt.get()[2].getId());
+            session.getProvider(UserSessionPersisterProvider.class).createUserSession(us, true);
+        });
+
+        withRealmConsumer(realmId, (session, realm) -> {
+            UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+            UserModel user2 = session.users().getUserByUsername(realm, "user2");
+
+            Map<String, Set<String>> result = persister.findUserSessionsByUserId(realm, user2, true);
+            Assert.assertEquals("user session without client sessions must still appear in result",
+                    1, result.size());
+            String userSessionId = origSessionsAt.get()[2].getId();
+            Assert.assertTrue("returned map must contain the persisted user-session id",
+                    result.containsKey(userSessionId));
+            Assert.assertEquals("client-id set must be empty when no client session exists",
+                    Collections.emptySet(), result.get(userSessionId));
+        });
+    }
+
+    @Test
+    @RequireProvider(ClientStorageProvider.class)
+    public void testFindUserSessionsByUserIdWithExternalClient() {
+        // Test that external clients (stored via clientStorageProvider/externalClientId)
+        // are correctly returned and mapped to their client UUID
+        AtomicReference<UserSessionModel> userSessionAt = new AtomicReference<>();
+        AtomicReference<String> externalClientIdAt = new AtomicReference<>();
+
+        withRealmConsumer(realmId, this::setupClientStorageComponents);
+        try {
+
+            withRealmConsumer(realmId, (session, realm) -> {
+                UserModel user1 = session.users().getUserByUsername(realm, "user1");
+                UserSessionModel userSession = session.sessions().createUserSession(null, realm, user1, "user1",
+                        "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+                userSessionAt.set(userSession);
+
+                // Create session with external client
+                ClientModel externalClient = realm.getClientByClientId("external-storage-client");
+                externalClientIdAt.set(externalClient.getId());
+                createClientSession(session, realmId, externalClient, userSession, "http://redirect", "state");
+
+                persistUserSession(session, userSession, true);
+            });
+
+            withRealmConsumer(realmId, (session, realm) -> {
+                UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+                UserModel user1 = session.users().getUserByUsername(realm, "user1");
+
+                Map<String, Set<String>> result = persister.findUserSessionsByUserId(realm, user1, true);
+
+                Assert.assertEquals("should return one user session", 1, result.size());
+                String userSessionId = userSessionAt.get().getId();
+                Assert.assertTrue("returned map must contain the persisted user-session id",
+                        result.containsKey(userSessionId));
+
+                Set<String> clientIds = result.get(userSessionId);
+                Assert.assertEquals("should have one client session", 1, clientIds.size());
+                Assert.assertTrue("client ID set must contain the external client UUID",
+                        clientIds.contains(externalClientIdAt.get()));
+            });
+        } finally {
+            withRealmConsumer(realmId, this::cleanClientStorageComponents);
+        }
+    }
+
+    @Test
+    public void testFindUserSessionsByUserIdMixedOnlineOffline() {
+        // Verify that online and offline flags are properly separated
+        // and don't interfere with each other
+        AtomicReference<UserSessionModel[]> origSessionsAt = new AtomicReference<>();
+
+        inComittedTransaction(session -> {
+            origSessionsAt.set(createSessions(session, realmId));
+        });
+
+        withRealmConsumer(realmId, (session, realm) -> {
+            // Persist session 0 as offline only
+            UserSessionModel offlineSession = session.sessions().getUserSession(realm, origSessionsAt.get()[0].getId());
+            session.getProvider(UserSessionPersisterProvider.class).createUserSession(offlineSession, true);
+            session.getProvider(UserSessionPersisterProvider.class).removeUserSession(origSessionsAt.get()[0].getId(), false);
+            UserSessionModel onlineSession = session.sessions().getUserSession(realm, origSessionsAt.get()[1].getId());
+            if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
+                persistUserSession(session, onlineSession, false);
+            }
+        });
+
+        withRealmConsumer(realmId, (session, realm) -> {
+            UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+            UserModel user1 = session.users().getUserByUsername(realm, "user1");
+            
+            // Query offline sessions - should only return session 0
+            Map<String, Set<String>> offlineResult = persister.findUserSessionsByUserId(realm, user1, true);
+            Assert.assertEquals("should return one offline session", 1, offlineResult.size());
+            Assert.assertTrue("offline result must contain session 0",
+                    offlineResult.containsKey(origSessionsAt.get()[0].getId()));
+            Assert.assertFalse("offline result must not contain session 1",
+                    offlineResult.containsKey(origSessionsAt.get()[1].getId()));
+            
+            // Query online sessions - should only return session 1
+            Map<String, Set<String>> onlineResult = persister.findUserSessionsByUserId(realm, user1, false);
+            Assert.assertEquals("should return one online session", 1, onlineResult.size());
+            Assert.assertTrue("online result must contain session 1",
+                    onlineResult.containsKey(origSessionsAt.get()[1].getId()));
+            Assert.assertFalse("online result must not contain session 0",
+                    onlineResult.containsKey(origSessionsAt.get()[0].getId()));
+        });
+    }
+
+    @Test
+    public void testFindUserSessionsByUserIdMultipleClients() {
+        // Test a user session with multiple client sessions
+        // Verify all client IDs are returned in the Set
+        AtomicReference<UserSessionModel> userSessionAt = new AtomicReference<>();
+
+        withRealmConsumer(realmId, (session, realm) -> {
+            UserModel user1 = session.users().getUserByUsername(realm, "user1");
+            UserSessionModel userSession = session.sessions().createUserSession(null, realm, user1, "user1",
+                    "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+            userSessionAt.set(userSession);
+            
+            // Create multiple client sessions for the same user session
+            ClientModel testApp = realm.getClientByClientId("test-app");
+            ClientModel thirdParty = realm.getClientByClientId("third-party");
+            
+            createClientSession(session, realmId, testApp, userSession, "http://redirect", "state");
+            createClientSession(session, realmId, thirdParty, userSession, "http://redirect", "state");
+            
+            persistUserSession(session, userSession, true);
+        });
+
+        withRealmConsumer(realmId, (session, realm) -> {
+            UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+            UserModel user1 = session.users().getUserByUsername(realm, "user1");
+            
+            Map<String, Set<String>> result = persister.findUserSessionsByUserId(realm, user1, true);
+            
+            Assert.assertEquals("should return one user session", 1, result.size());
+            String userSessionId = userSessionAt.get().getId();
+            Assert.assertTrue("returned map must contain the persisted user-session id",
+                    result.containsKey(userSessionId));
+            
+            Set<String> clientIds = result.get(userSessionId);
+            Assert.assertEquals("should have two client sessions", 2, clientIds.size());
+            
+            ClientModel testApp = realm.getClientByClientId("test-app");
+            ClientModel thirdParty = realm.getClientByClientId("third-party");
+            Assert.assertTrue("client ID set must contain test-app",
+                    clientIds.contains(testApp.getId()));
+            Assert.assertTrue("client ID set must contain third-party",
+                    clientIds.contains(thirdParty.getId()));
         });
     }
 
@@ -773,7 +983,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             userSessionProvider.migrateNonPersistentSessionsToPersistentSessions();
 
             // verify that import was complete
-            Assert.assertEquals(sessions.length, countUserSessionsInRealm(session));
+            Assert.assertEquals(useCachesEnabled() ? sessions.length : 0, countUserSessionsInRealm(session));
         });
     }
 
@@ -1030,11 +1240,21 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         }
     }
 
+    private boolean useCachesEnabled() {
+        return inComittedTransaction(session -> {
+            var factory = (InfinispanUserSessionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserSessionProvider.class);
+            return factory.useCaches();
+        });
+    }
+
     private int getRemoteCachedUserSessionsCount() {
         return withRealm(realmId, (session, ignored) -> session.getProvider(InfinispanConnectionProvider.class).getRemoteCache(USER_SESSION_CACHE_NAME).size());
     }
 
     private int getEmbeddedCachedUserSessionsCount() {
+        if (!useCachesEnabled()) {
+            return -1;
+        }
         return withRealm(realmId, (session, ignored) -> session.getProvider(InfinispanConnectionProvider.class).getCache(USER_SESSION_CACHE_NAME).size());
     }
 

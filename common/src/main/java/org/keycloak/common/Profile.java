@@ -123,6 +123,8 @@ public class Profile {
 
         MULTI_SITE("Multi-site support", Type.DISABLED_BY_DEFAULT, FeatureUpdatePolicy.SHUTDOWN),
 
+        CACHELESS("Store authentication sessions, action tokens and login failure data in the database, removing the need for Infinispan caches.", Type.EXPERIMENTAL, FeatureUpdatePolicy.SHUTDOWN),
+
         CLUSTERLESS("Store all session data, work cache and login failure data in an external Infinispan cluster.", Type.EXPERIMENTAL, FeatureUpdatePolicy.SHUTDOWN),
 
         CLIENT_TYPES("Client Types", Type.EXPERIMENTAL),

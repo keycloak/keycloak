@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -137,7 +138,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             log.warn("The option spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override is deprecated and will be removed in a future release");
         }
         // Do not use caches for sessions if explicitly disabled or if embedded caches are not used
-        useCaches = config.getBoolean(CONFIG_USE_CACHES, DEFAULT_USE_CACHES) && InfinispanUtils.isEmbeddedInfinispan();
+        useCaches = config.getBoolean(CONFIG_USE_CACHES, !Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) && InfinispanUtils.isEmbeddedInfinispan();
         expirationPeriodSeconds = getExpirationPeriodSeconds(config);
     }
 
@@ -342,7 +343,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         builder.property()
                 .name(CONFIG_USE_CACHES)
                 .type("boolean")
-                .helpText("Enable or disable caches. Enabled by default unless the external feature to use only external remote caches is used")
+                .helpText("Enable or disable caches. Enabled by default unless the external feature to use only external remote caches is used or " + Profile.Feature.CACHELESS.getUnversionedKey() + " is enabled")
                 .add();
 
         builder.property()
@@ -357,6 +358,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
         return Set.of(InfinispanConnectionProvider.class, InfinispanTransactionProvider.class);
+    }
+
+    public boolean useCaches() {
+        return useCaches;
     }
 
     public ExpirationTask getExpirationTask() {

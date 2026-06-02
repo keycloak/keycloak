@@ -304,19 +304,18 @@ public class OrganizationGroupResource {
                                                    @QueryParam("briefRepresentation") Boolean briefRepresentation) {
         RealmModel realm = session.getContext().getRealm();
         return session.users().getGroupMembersStream(realm, group, firstResult, maxResults)
-                .map(user -> toMemberRepresentation(realm, user, briefRepresentation));
+                .map(user -> toMemberRepresentation(user, briefRepresentation));
     }
 
-    private MemberRepresentation toMemberRepresentation(RealmModel realm, UserModel user, Boolean briefRepresentation) {
-        UserRepresentation userRep = Boolean.TRUE.equals(briefRepresentation)
-                ? ModelToRepresentation.toBriefRepresentation(user)
-                : ModelToRepresentation.toRepresentation(session, realm, user);
-
+    private MemberRepresentation toMemberRepresentation(UserModel user, Boolean briefRepresentation) {
+        boolean briefRep = Boolean.TRUE.equals(briefRepresentation);
+        UserRepresentation userRep = ModelToRepresentation.toRepresentation(session, user, briefRep);
         MemberRepresentation memberRep = new MemberRepresentation(userRep);
+
         memberRep.setMembershipType(
-            organizationProvider.isManagedMember(organization, user)
-                ? MembershipType.MANAGED
-                : MembershipType.UNMANAGED
+                organizationProvider.isManagedMember(organization, user)
+                        ? MembershipType.MANAGED
+                        : MembershipType.UNMANAGED
         );
 
         return memberRep;
