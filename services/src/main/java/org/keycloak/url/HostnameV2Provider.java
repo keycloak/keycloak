@@ -18,8 +18,10 @@
 package org.keycloak.url;
 
 import java.net.URI;
+import java.util.Objects;
 import java.util.Optional;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
@@ -44,6 +46,7 @@ public class HostnameV2Provider implements HostnameProvider {
     private final URI adminUrl;
     private final Boolean backchannelDynamic;
     private static final UrlType defaultUrlType = FRONTEND;
+    private static final String INVALID_REQUEST_SCHEME = "Invalid request scheme";
 
     private final Logger logger = Logger.getLogger(HostnameV2Provider.class);
 
@@ -80,6 +83,7 @@ public class HostnameV2Provider implements HostnameProvider {
         }
 
         URI uri = builder.build();
+        validateRequestScheme(uri);
         // sanitize ports
         int normalizedPort = normalizedPort(uri);
         if (normalizedPort != uri.getPort()) {
@@ -91,16 +95,30 @@ public class HostnameV2Provider implements HostnameProvider {
     }
 
     private int normalizedPort(URI uri) {
-        if ((uri.getScheme().equals("http") && uri.getPort() == 80) || (uri.getScheme().equals("https") && uri.getPort() == 443)) {
+        if ((isHttpScheme(uri.getScheme()) && uri.getPort() == 80) || (isHttpsScheme(uri.getScheme()) && uri.getPort() == 443)) {
             return -1;
         }
         return uri.getPort();
     }
 
+    private void validateRequestScheme(URI uri) {
+        if (!isHttpScheme(uri.getScheme()) && !isHttpsScheme(uri.getScheme())) {
+            throw new BadRequestException(INVALID_REQUEST_SCHEME);
+        }
+    }
+
+    private boolean isHttpScheme(String scheme) {
+        return "http".equalsIgnoreCase(scheme);
+    }
+
+    private boolean isHttpsScheme(String scheme) {
+        return "https".equalsIgnoreCase(scheme);
+    }
+
     private boolean isFrontendRequest(UriInfo originalUriInfo) {
         URI frontend = getFrontUriBuilder(originalUriInfo).build();
-        return frontend.getScheme().equals(originalUriInfo.getBaseUri().getScheme()) &&
-                frontend.getHost().equals(originalUriInfo.getBaseUri().getHost()) &&
+        return Objects.equals(frontend.getScheme(), originalUriInfo.getBaseUri().getScheme()) &&
+                Objects.equals(frontend.getHost(), originalUriInfo.getBaseUri().getHost()) &&
                 frontend.getPort() == normalizedPort(originalUriInfo.getBaseUri());
     }
 

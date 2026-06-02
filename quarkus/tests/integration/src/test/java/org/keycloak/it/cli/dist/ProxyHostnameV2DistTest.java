@@ -123,6 +123,14 @@ public class ProxyHostnameV2DistTest {
     }
 
     @Test
+    @Launch({ "start-dev", "--hostname-strict=false", "--proxy-headers=xforwarded" })
+    public void testMalformedXForwardedProtoReturnsBadRequest() {
+        assertMalformedXForwardedProto("/");
+        assertMalformedXForwardedProto("/just/a/path");
+        assertMalformedXForwardedProto("://");
+    }
+
+    @Test
     @Launch({ "start-dev", "--hostname=fixed", "--proxy-headers=xforwarded" })
     public void testXForwardedProxyHeadersWithHostname() {
         given().header("X-Forwarded-Prefix", "/prefix").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://fixed:8080/prefix/admin"));
@@ -162,6 +170,14 @@ public class ProxyHostnameV2DistTest {
         given().header("X-Forwarded-Host", "test").when().get("https://localhost:8443").then().header(HttpHeaders.LOCATION, containsString("https://localhost:8443/admin"));
         given().header("X-Forwarded-Proto", "https").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://localhost:8080/admin"));
         given().header("X-Forwarded-Proto", "https").header("X-Forwarded-Port", "8443").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://localhost:8080/admin"));
+    }
+
+    private void assertMalformedXForwardedProto(String proto) {
+        given()
+                .header("X-Forwarded-Proto", proto)
+                .accept("text/html")
+                .when().get("http://localhost:8080/realms/master/protocol/openid-connect/login-status-iframe.html")
+                .then().statusCode(400);
     }
 
     private OIDCConfigurationRepresentation getServerMetadata(String baseUrl) {

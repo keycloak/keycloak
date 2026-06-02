@@ -2,6 +2,7 @@ package org.keycloak.utils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import org.keycloak.representations.account.DeviceRepresentation;
@@ -92,6 +93,18 @@ public class SecureContextResolverTest {
     @Test
     public void testNoDeviceRepresentation() {
         assertSecureContext("http://localhost", null, true);
+    }
+
+    @Test
+    public void testNoSchemeUriIsNotSecureContext() {
+        AtomicBoolean supplierCalled = new AtomicBoolean(false);
+        Supplier<DeviceRepresentation> deviceRepresentationSupplier = () -> {
+            supplierCalled.set(true);
+            return DEVICE_UNKOWN;
+        };
+
+        Assert.assertFalse(SecureContextResolver.isSecureContext(URI.create("/just/a/path"), deviceRepresentationSupplier));
+        Assert.assertTrue(supplierCalled.get());
     }
 
     @Test

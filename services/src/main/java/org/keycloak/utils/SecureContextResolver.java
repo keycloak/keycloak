@@ -47,7 +47,7 @@ public class SecureContextResolver {
     }
 
     static boolean isSecureContext(URI uri, Supplier<DeviceRepresentation> deviceRepresentationSupplier, String referer, String secFetchDest) {
-        if (uri.getScheme().equals("https")) {
+        if ("https".equalsIgnoreCase(uri.getScheme())) {
             // Per the W3C Secure Contexts spec, a page is only contextually secure if all its
             // ancestor contexts are also secure. An HTTPS iframe embedded in an HTTP parent page
             // is therefore not a secure context. Detect this using browser-sent fetch metadata.
