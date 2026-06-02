@@ -114,7 +114,7 @@ For more details on the Operator configuration, see the https://www.keycloak.org
 
 {project_name} now uses Infinispan 16.0 for embedded distributed caching. This upgrade brings improved performance, enhanced security, and better support for zero-downtime upgrades in patch releases.
 
-If you are using an external {jdgserver_name} server, for example in a multi-cluster setup, you should upgrade to version 16.0 as this is the version {project_name} was tested with.
+If you are using an external {jdgserver_name} server, for example in a multi-cluster setup, you should upgrade to version 16.0.13 as this is the version {project_name} was tested with.
 
 When upgrading the external {jdgserver_name}, the following changes are necessary:
 

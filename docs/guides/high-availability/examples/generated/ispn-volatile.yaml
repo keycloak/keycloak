@@ -521,7 +521,7 @@ spec:
     type: Route
   configMapName: "cluster-config"
   image: 
-  version: 16.0.8
+  version: 16.0.13
   configListener:
     enabled: false
   container:
