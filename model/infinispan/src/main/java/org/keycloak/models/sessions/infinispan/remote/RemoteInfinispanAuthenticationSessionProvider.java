@@ -23,7 +23,6 @@ import java.util.Objects;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
@@ -83,11 +82,6 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
     @Override
     public void onRealmRemoved(RealmModel realm) {
         transaction.removeByRealmId(realm.getId());
-    }
-
-    @Override
-    public void onClientRemoved(RealmModel realm, ClientModel client) {
-        // No update anything on clientRemove for now. AuthenticationSessions of removed client will be handled at runtime if needed.
     }
 
     @Override

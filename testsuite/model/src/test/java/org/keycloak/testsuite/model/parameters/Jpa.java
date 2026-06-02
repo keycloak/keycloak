@@ -18,6 +18,7 @@ package org.keycloak.testsuite.model.parameters;
 
 import java.util.Set;
 
+import org.keycloak.authentication.jpa.JpaAuthenticationSessionProviderFactory;
 import org.keycloak.authorization.jpa.store.JPAAuthorizationStoreFactory;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderSpi;
@@ -50,6 +51,7 @@ import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocolSpi;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
+import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.storage.DatastoreSpi;
 import org.keycloak.storage.datastore.DefaultDatastoreProviderFactory;
 import org.keycloak.testsuite.model.Config;
@@ -70,6 +72,7 @@ public class Jpa extends KeycloakModelParameters {
       .add(LiquibaseConnectionSpi.class)
       .add(UserSessionPersisterSpi.class)
       .add(RevokedTokenPersisterSpi.class)
+      .add(AuthenticationSessionSpi.class)
 
       .add(DatastoreSpi.class)
 
@@ -106,6 +109,7 @@ public class Jpa extends KeycloakModelParameters {
       .add(LiquibaseDBLockProviderFactory.class)
       .add(JpaUserSessionPersisterProviderFactory.class)
       .add(JpaRevokedTokensPersisterProviderFactory.class)
+      .add(JpaAuthenticationSessionProviderFactory.class)
 
       //required for migrateModel
       .add(MigrationProviderFactory.class)

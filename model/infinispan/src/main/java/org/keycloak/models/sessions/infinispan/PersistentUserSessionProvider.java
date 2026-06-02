@@ -453,6 +453,9 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
     // public for usage in the testsuite
     public void removeLocalUserSessions(String realmId, boolean offline) {
+        if (getCache(offline) == null) {
+            return; // use-caches is disabled
+        }
         Cache<String, SessionEntityWrapper<UserSessionEntity>> localCache = CacheDecorators.localCache(getCache(offline));
         var localClientSessionCache = CacheDecorators.localCache(getClientSessionCache(offline));
         final AtomicInteger userSessionsSize = new AtomicInteger();
@@ -928,6 +931,9 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     @Deprecated(since = "26.4", forRemoval = true)
     public void migrateNonPersistentSessionsToPersistentSessions() {
         var sessionCache = sessionTx.getCache(false);
+        if (sessionCache == null) {
+            return; // use-caches is disabled
+        }
         var clientSessionCache = clientSessionTx.getCache(false);
         JpaChangesPerformer<String, UserSessionEntity> userSessionPerformer = new JpaChangesPerformer<>(sessionCache.getName());
         JpaChangesPerformer<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionPerformer = new JpaChangesPerformer<>(clientSessionCache.getName());
