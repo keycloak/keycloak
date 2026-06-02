@@ -124,7 +124,7 @@ public class ExportImportUtil {
         Assertions.assertEquals(0, userRsc.getFederatedIdentity().size());
 
         List<ClientRepresentation> resources = realmRsc.clients().findAll();
-        Assertions.assertEquals(10, resources.size());
+        Assertions.assertEquals(13, resources.size());
 
         // Test applications imported
         ClientRepresentation application = AdminApiUtil.findClientByClientId(realmRsc, "Application").toRepresentation();
@@ -136,7 +136,7 @@ public class ExportImportUtil {
         Assertions.assertNotNull(otherApp);
         Assertions.assertNull(nonExisting);
         List<ClientRepresentation> clients = realmRsc.clients().findAll();
-        Assertions.assertEquals(10, clients.size());
+        Assertions.assertEquals(13, clients.size());
         Assertions.assertTrue(hasClient(clients, application));
         Assertions.assertTrue(hasClient(clients, otherApp));
         Assertions.assertTrue(hasClient(clients, accountApp));
@@ -292,10 +292,11 @@ public class ExportImportUtil {
 
         // Test smtp config
         Map<String, String> smtpConfig = realm.getSmtpServer();
-        Assertions.assertTrue(smtpConfig.size() == 3);
+        Assertions.assertTrue(smtpConfig.size() == 4);
         Assertions.assertEquals("auto@keycloak.org", smtpConfig.get("from"));
         Assertions.assertEquals("localhost", smtpConfig.get("host"));
         Assertions.assertEquals("3025", smtpConfig.get("port"));
+        Assertions.assertNotNull(smtpConfig.get("password"));
 
         // Test identity providers
         List<IdentityProviderRepresentation> identityProviders = realmRsc.identityProviders().findAll();
