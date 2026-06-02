@@ -82,7 +82,7 @@ curl -X PUT "https://localhost:8443/admin/realms/{realm}" \
   -H "Content-Type: application/json" \
   -d '{
         "attributes": {
-          "oid4vc.attestation.trusted_keys": "[{\"kid\":\"custom-key-1\",\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"...\",\"y\":\"...\"},{\"kid\":\"custom-key-2\",\"kty\":\"RSA\",\"n\":\"...\",\"e\":\"...\"}]"
+          "oid4vc.attestation.trusted_keys": "[{ \"kid\":\"custom-key-1\", \"kty\":\"EC\", \"crv\":\"P-256\", \"x\":\"...\", \"y\":\"...\" }, { \"kid\":\"custom-key-2\", \"kty\":\"RSA\", \"n\":\"...\", \"e\":\"...\" }]"
         }
       }'
 ----
@@ -126,7 +126,7 @@ The JWT proof must contain the following claims:
 
 | `aud`
 | Yes
-| Must be the Credential Issuer Identifier (e.g., `https://localhost:8443/realms/{realm}`)
+| Must be the Credential Issuer Identifier of the issuing realm
 
 | `nonce`
 | Yes
@@ -357,8 +357,8 @@ NONCE_RESPONSE=$(curl -X POST "https://localhost:8443/realms/myrealm/protocol/oi
 C_NONCE=$(echo $NONCE_RESPONSE | jq -r '.c_nonce')
 
 # 3. Create JWT proof (pseudocode - use your JWT library)
-PROOF_HEADER='{"typ":"openid4vci-proof+jwt","alg":"ES256","jwk":{"kty":"EC","crv":"P-256","x":"...","y":"..."}}'
-PROOF_PAYLOAD="{\"iss\":\"your-client-id\",\"aud\":\"https://localhost:8443/realms/myrealm\",\"nonce\":\"$C_NONCE\",\"iat\":$(date +%s)}"
+PROOF_HEADER='{ "typ":"openid4vci-proof+jwt", "alg":"ES256", "jwk":{ "kty":"EC", "crv":"P-256", "x":"...", "y":"..." } }'
+PROOF_PAYLOAD="{ \"iss\":\"your-client-id\", \"aud\":\"https://localhost:8443/realms/myrealm\", \"nonce\":\"$C_NONCE\", \"iat\":$(date +%s) }"
 JWT_PROOF=$(create_jwt "$PROOF_HEADER" "$PROOF_PAYLOAD" "$YOUR_PRIVATE_KEY")
 
 # 4. Send credential request
