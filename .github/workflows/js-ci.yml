@@ -24,7 +24,6 @@ defaults:
 
 permissions:
   contents: read
-  actions: write
 
 jobs:
   conditional:
