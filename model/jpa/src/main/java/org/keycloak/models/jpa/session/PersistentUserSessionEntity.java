@@ -111,7 +111,9 @@ import org.hibernate.annotations.DynamicUpdate;
                         " FROM PersistentUserSessionEntity sess INNER JOIN PersistentClientSessionEntity clientSess " +
                         " ON sess.userSessionId = clientSess.userSessionId AND clientSess.clientStorageProvider = :clientStorageProvider AND sess.offline = clientSess.offline AND clientSess.externalClientId = :externalClientId WHERE sess.offline = :offline " +
                         " AND sess.realmId = :realmId AND sess.lastSessionRefresh >= :lastSessionRefresh ORDER BY sess.userSessionId"),
-
+        @NamedQuery(name="findUserAndClientSessionsByUserId", query="SELECT sess.userSessionId, cs.clientId, cs.clientStorageProvider, cs.externalClientId FROM PersistentUserSessionEntity sess" +
+                " LEFT JOIN PersistentClientSessionEntity cs ON cs.userSessionId = sess.userSessionId AND cs.offline = sess.offline" +
+                " WHERE sess.offline = :offline AND sess.realmId = :realmId AND sess.userId = :userId"),
 })
 @Table(name="OFFLINE_USER_SESSION")
 @Entity
