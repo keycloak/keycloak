@@ -1060,7 +1060,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         clientScope.setName("dynamic");
         clientScope.setAttributes(new HashMap<String, String>() {{
             put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic:*");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         Response response = managedRealm.admin().clientScopes().create(clientScope);

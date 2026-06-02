@@ -50,6 +50,33 @@ public class MigrateTo26_7_0 extends RealmMigration {
         updatePasswordAfterEmailVerificationDuringRegistrationOfUsers(realm);
         updateAdminPermissionsSchema(session, realm);
         renameDynamicScopeAttributes(realm);
+        migrateParameterizedScopeTypes(realm);
+    }
+
+    private void migrateParameterizedScopeTypes(RealmModel realm) {
+        realm.getClientScopesStream()
+                .filter(scope -> scope.isParameterizedScope())
+                .filter(scope -> scope.getAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE) == null)
+                .forEach(scope -> {
+                    String regexp = scope.getParameterizedScopeRegexp();
+                    if (regexp == null) {
+                        LOG.warnf("Parameterized client scope '%s' has no regexp. Defaulting to 'string' type.", scope.getName());
+                        scope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
+                        return;
+                    }
+
+                    String prefix = scope.getName() + ":";
+                    String defaultRegexp = prefix + "*";
+                    if (defaultRegexp.equals(regexp)) {
+                        scope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
+                        scope.removeAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP);
+                    } else if (regexp.startsWith(prefix)) {
+                        scope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "custom");
+                        scope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, regexp.substring(prefix.length()));
+                    } else {
+                        LOG.warnf("Parameterized client scope '%s' has a regexp '%s' that does not start with the expected prefix '%s'. Please migrate this scope manually.", scope.getName(), regexp, prefix);
+                    }
+                });
     }
 
     private void updatePasswordAfterEmailVerificationDuringRegistrationOfUsers(RealmModel realm) {

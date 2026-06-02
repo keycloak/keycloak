@@ -202,7 +202,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         clientScope.setName("dynamic-scope");
         clientScope.setAttributes(new HashMap<String, String>() {{
             put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope:*");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         RealmResource realmResource = adminClient.realm("test");

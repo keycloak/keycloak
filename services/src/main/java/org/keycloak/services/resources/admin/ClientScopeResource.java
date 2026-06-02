@@ -31,7 +31,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientScopeModel;
@@ -45,12 +44,15 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.oidc.scope.CustomRegexScopeType;
+import org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeProvider;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.utils.RegexUtils;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -78,7 +80,6 @@ public class ClientScopeResource {
     private AdminEventBuilder adminEvent;
     protected ClientScopeModel clientScope;
     protected KeycloakSession session;
-    protected static Pattern parameterizedScreenPattern = Pattern.compile("[^\\s\\*]*\\*{1}[^\\s\\*]*");
     protected final static Pattern scopeNamePattern = Pattern.compile("[\\x21\\x23-\\x5B\\x5D-\\x7E]+");
 
     public ClientScopeResource(RealmModel realm, AdminPermissionEvaluator auth, ClientScopeModel clientScope, KeycloakSession session, AdminEventBuilder adminEvent) {
@@ -202,20 +203,29 @@ public class ClientScopeResource {
      * @param clientScope
      * @throws ErrorResponseException
      */
-    public static void validateParameterizedClientScope(ClientScopeRepresentation clientScope) throws ErrorResponseException {
+    public static void validateParameterizedClientScope(KeycloakSession session, ClientScopeRepresentation clientScope) throws ErrorResponseException {
         if (clientScope.getAttributes() == null) {
             return;
         }
         boolean isParameterized = Boolean.parseBoolean(clientScope.getAttributes().get(ClientScopeModel.IS_PARAMETERIZED_SCOPE));
         String regexp = clientScope.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP);
-        // Always validate the parameterized scope regexp to avoid inserting a wrong value even when the feature is disabled
-        if (!StringUtil.isNullOrEmpty(regexp) && !parameterizedScreenPattern.matcher(regexp).matches()) {
-            throw ErrorResponse.error(String.format("Invalid format for the Parameterized Scope regexp %1s", regexp), Response.Status.BAD_REQUEST);
-        }
-        if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
-            // if the scope is parameterized but the regexp is empty, it's not considered valid
-            if (isParameterized && StringUtil.isNullOrEmpty(regexp)) {
-                throw ErrorResponse.error("Parameterized scope regexp must not be null or empty", Response.Status.BAD_REQUEST);
+        String parameterType = clientScope.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE);
+
+        if (isParameterized) {
+            if (StringUtil.isNullOrEmpty(parameterType)) {
+                throw ErrorResponse.error("Parameterized scope must have a parameter type", Response.Status.BAD_REQUEST);
+            }
+
+            if (session.getProvider(ParameterizedScopeTypeProvider.class, parameterType) == null) {
+                throw ErrorResponse.error(String.format("Invalid parameter type '%s'", parameterType), Response.Status.BAD_REQUEST);
+            }
+
+            if (CustomRegexScopeType.TYPE.equals(parameterType) && StringUtil.isNullOrEmpty(regexp)) {
+                throw ErrorResponse.error("Custom parameterized scope type requires a regex pattern", Response.Status.BAD_REQUEST);
+            }
+
+            if (!StringUtil.isNullOrEmpty(regexp) && !RegexUtils.isValidRegex(regexp, RegexUtils.DEFAULT_MAX_LENGTH, false)) {
+                throw ErrorResponse.error(String.format("Invalid regex for the Parameterized Scope regexp %1s", regexp), Response.Status.BAD_REQUEST);
             }
         }
     }
@@ -289,6 +299,6 @@ public class ClientScopeResource {
             }
         }
         // after the previous validation, run the usual Parameterized Scope validations.
-        validateParameterizedClientScope(rep);
+        validateParameterizedClientScope(session, rep);
     }
 }

@@ -28,20 +28,13 @@ public class ParameterizedClientScopeTest extends AbstractClientScopeTest {
 
     @Test
     public void testCreateValidParameterizedScope() {
-        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
-        scopeRep.setName("dynamic-scope-def");
-        scopeRep.setProtocol("openid-connect");
-        scopeRep.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope-def:*");
-        }});
-        String scopeDefId = createClientScopeWithCleanup(scopeRep);
+        String scopeDefId = createClientScopeWithCleanup(parameterizedScopeRep("dynamic-scope-def", "string"));
 
         // Assert updated attributes
-        scopeRep = clientScopes().get(scopeDefId).toRepresentation();
+        ClientScopeRepresentation scopeRep = clientScopes().get(scopeDefId).toRepresentation();
         Assertions.assertEquals("dynamic-scope-def", scopeRep.getName());
         Assertions.assertEquals("true", scopeRep.getAttributes().get(ClientScopeModel.IS_PARAMETERIZED_SCOPE));
-        Assertions.assertEquals("dynamic-scope-def:*", scopeRep.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP));
+        Assertions.assertEquals("string", scopeRep.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE));
     }
 
     @Test
@@ -63,15 +56,9 @@ public class ParameterizedClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
-    public void testCreateInvalidRegexpParameterizedScope() {
-        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
-        scopeRep.setName("dynamic-scope-def4");
-        scopeRep.setProtocol("openid-connect");
-        scopeRep.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope-def:*:*");
-        }});
-        handleExpectedCreateFailure(scopeRep, 400, "Invalid format for the Parameterized Scope regexp dynamic-scope-def:*:*");
+    public void testCreateParameterizedScopeWithoutTypeIsRejected() {
+        handleExpectedCreateFailure(parameterizedScopeRep("dynamic-scope-def4", null, "dynamic-scope-def:*"),
+                400, "Parameterized scope must have a parameter type");
     }
 
     @Test
@@ -90,7 +77,7 @@ public class ParameterizedClientScopeTest extends AbstractClientScopeTest {
 
         scopeRep.setAttributes(new HashMap<>() {{
             put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope-def:*:*");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
 
         try {
@@ -108,14 +95,7 @@ public class ParameterizedClientScopeTest extends AbstractClientScopeTest {
         clientRep.setProtocol("openid-connect");
         final String clientUuid = createClientWithCleanup(clientRep);
 
-        ClientScopeRepresentation optionalClientScope = new ClientScopeRepresentation();
-        optionalClientScope.setName("optional-dynamic-client-scope");
-        optionalClientScope.setProtocol("openid-connect");
-        optionalClientScope.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope-def:*");
-        }});
-        String optionalClientScopeId = createClientScopeWithCleanup(optionalClientScope);
+        String optionalClientScopeId = createClientScopeWithCleanup(parameterizedScopeRep("optional-dynamic-client-scope", "string"));
 
         try {
             ClientResource clientResource = managedRealm.admin().clients().get(clientUuid);
@@ -129,14 +109,7 @@ public class ParameterizedClientScopeTest extends AbstractClientScopeTest {
 
     @Test
     public void parameterizedClientScopeCannotBeAssignedAsRealmDefaultClientScope() {
-        ClientScopeRepresentation parameterizedScope = new ClientScopeRepresentation();
-        parameterizedScope.setName("dynamic-scope-for-realm-default");
-        parameterizedScope.setProtocol("openid-connect");
-        parameterizedScope.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope-for-realm-default:*");
-        }});
-        String parameterizedScopeId = createClientScopeWithCleanup(parameterizedScope);
+        String parameterizedScopeId = createClientScopeWithCleanup(parameterizedScopeRep("dynamic-scope-for-realm-default", "string"));
 
         try {
             managedRealm.admin().addDefaultDefaultClientScope(parameterizedScopeId);
@@ -148,14 +121,7 @@ public class ParameterizedClientScopeTest extends AbstractClientScopeTest {
 
     @Test
     public void parameterizedClientScopeCanBeAssignedAsRealmOptionalClientScope() {
-        ClientScopeRepresentation parameterizedScope = new ClientScopeRepresentation();
-        parameterizedScope.setName("dynamic-scope-for-realm-optional");
-        parameterizedScope.setProtocol("openid-connect");
-        parameterizedScope.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope-for-realm-optional:*");
-        }});
-        String parameterizedScopeId = createClientScope(parameterizedScope);
+        String parameterizedScopeId = createClientScope(parameterizedScopeRep("dynamic-scope-for-realm-optional", "string"));
 
         managedRealm.admin().addDefaultOptionalClientScope(parameterizedScopeId);
         managedRealm.cleanup().add(r -> r.removeDefaultOptionalClientScope(parameterizedScopeId));
@@ -175,7 +141,7 @@ public class ParameterizedClientScopeTest extends AbstractClientScopeTest {
 
         scopeRep.setAttributes(new HashMap<>() {{
             put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "scope-for-realm-default-update:*");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
 
         try {
@@ -184,6 +150,75 @@ public class ParameterizedClientScopeTest extends AbstractClientScopeTest {
         } catch (ClientErrorException ex) {
             assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
         }
+    }
+
+    @Test
+    public void testCreateParameterizedScopeWithBuiltInParameterizedType() {
+        String scopeId = createClientScopeWithCleanup(parameterizedScopeRep("parameterized-scope-integer", "integer"));
+
+        ClientScopeRepresentation scopeRep = clientScopes().get(scopeId).toRepresentation();
+        Assertions.assertEquals("integer", scopeRep.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE));
+    }
+
+    @Test
+    public void testCreateParameterizedScopeWithCustomTypeAndValidRegex() {
+        String scopeId = createClientScopeWithCleanup(parameterizedScopeRep("parameterized-scope-custom", "custom", "[a-z]+"));
+
+        ClientScopeRepresentation scopeRep = clientScopes().get(scopeId).toRepresentation();
+        Assertions.assertEquals("custom", scopeRep.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE));
+        Assertions.assertEquals("[a-z]+", scopeRep.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP));
+    }
+
+    @Test
+    public void testCreateParameterizedScopeWithCustomTypeAndInvalidRegex() {
+        handleExpectedCreateFailure(parameterizedScopeRep("parameterized-scope-custom-invalid", "custom", "([invalid"),
+                400, "Invalid regex for the Parameterized Scope regexp ([invalid");
+    }
+
+    @Test
+    public void testCreateParameterizedScopeWithCustomTypeAndMissingRegex() {
+        handleExpectedCreateFailure(parameterizedScopeRep("parameterized-scope-custom-no-regex", "custom"),
+                400, "Custom parameterized scope type requires a regex pattern");
+    }
+
+    @Test
+    public void testCreateParameterizedScopeWithInvalidRegex() {
+        handleExpectedCreateFailure(parameterizedScopeRep("parameterized-scope-invalid-regex", "string", "([invalid"),
+                400, "Invalid regex for the Parameterized Scope regexp ([invalid");
+    }
+
+    @Test
+    public void testCreateParameterizedScopeWithInvalidParameterType() {
+        handleExpectedCreateFailure(parameterizedScopeRep("parameterized-scope-bad-type", "nonexistent"),
+                400, "Invalid parameter type 'nonexistent'");
+    }
+
+    @Test
+    public void testCreateParameterizedScopeWithBuiltInTypeNoRegexpRequired() {
+        String scopeId = createClientScopeWithCleanup(parameterizedScopeRep("parameterized-scope-boolean", "boolean"));
+
+        ClientScopeRepresentation scopeRep = clientScopes().get(scopeId).toRepresentation();
+        Assertions.assertEquals("boolean", scopeRep.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE));
+    }
+
+    private ClientScopeRepresentation parameterizedScopeRep(String name, String type) {
+        return parameterizedScopeRep(name, type, null);
+    }
+
+    private ClientScopeRepresentation parameterizedScopeRep(String name, String type, String regexp) {
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName(name);
+        scopeRep.setProtocol("openid-connect");
+        HashMap<String, String> attrs = new HashMap<>();
+        attrs.put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+        if (type != null) {
+            attrs.put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, type);
+        }
+        if (regexp != null) {
+            attrs.put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, regexp);
+        }
+        scopeRep.setAttributes(attrs);
+        return scopeRep;
     }
 
     public static class ParameterizedClientScopeServerConfig implements KeycloakServerConfig {

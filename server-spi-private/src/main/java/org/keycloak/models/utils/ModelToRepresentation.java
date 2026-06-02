@@ -1043,7 +1043,7 @@ public class ModelToRepresentation {
                 grantedClientScopes.add(((ClientModel) clientScope).getClientId());
             } else if (ClientScopeModel.isParameterizedScope(clientScope)) {
                 model.getParameters(clientScope).stream().forEach(p ->
-                        grantedClientScopes.add(clientScope.getParameterizedScopeRegexp().replace("*", p)));
+                        grantedClientScopes.add(clientScope.getName() + ClientScopeModel.VALUE_SEPARATOR + p));
             } else {
                 grantedClientScopes.add(clientScope.getName());
             }

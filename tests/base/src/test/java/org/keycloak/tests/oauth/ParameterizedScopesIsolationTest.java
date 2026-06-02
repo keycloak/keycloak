@@ -9,7 +9,6 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -30,7 +29,6 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -62,18 +60,6 @@ public class ParameterizedScopesIsolationTest {
 
     @InjectOAuthClient(config = TestOAuthClientConfig.class)
     OAuthClient oauth;
-
-    private String parameterizedScopeId;
-
-    @AfterEach
-    public void cleanup() {
-        if (parameterizedScopeId != null) {
-            ClientRepresentation client = realm.admin().clients().findByClientId(oauth.getClientId()).get(0);
-            realm.admin().clients().get(client.getId()).removeOptionalClientScope(parameterizedScopeId);
-            realm.admin().clientScopes().get(parameterizedScopeId).remove();
-            parameterizedScopeId = null;
-        }
-    }
 
     @Test
     public void testParameterizedScopeIsolationAcrossCodeExchangeAndRefresh() {
@@ -137,16 +123,18 @@ public class ParameterizedScopesIsolationTest {
         scopeRep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         scopeRep.setAttributes(new HashMap<>() {{
             put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, SCOPE_NAME + ":*");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
 
+        String scopeId;
         try (Response response = realm.admin().clientScopes().create(scopeRep)) {
             assertEquals(201, response.getStatus(), "Parameterized scope creation should succeed");
-            parameterizedScopeId = ApiUtil.getCreatedId(response);
+            scopeId = ApiUtil.getCreatedId(response);
         }
 
-        ClientRepresentation client = realm.admin().clients().findByClientId(oauth.getClientId()).get(0);
-        realm.admin().clients().get(client.getId()).addOptionalClientScope(parameterizedScopeId);
+        String clientId = realm.admin().clients().findByClientId(oauth.getClientId()).get(0).getId();
+        realm.cleanup().add(r -> r.clientScopes().get(scopeId).remove());
+        realm.admin().clients().get(clientId).addOptionalClientScope(scopeId);
     }
 
     private static void assertScopeContains(String scopeString, String expectedScope) {

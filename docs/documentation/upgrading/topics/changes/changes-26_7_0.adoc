@@ -50,6 +50,18 @@ The experimental feature `dynamic-scopes` has been renamed to `parameterized-sco
 
 The corresponding Java model methods in `ClientScopeModel` (`isDynamicScope()`, `setIsDynamicScope()`, `getDynamicScopeRegexp()`) and constants (`IS_DYNAMIC_SCOPE`, `DYNAMIC_SCOPE_REGEXP`) have been deprecated in favor of their `parameterized` counterparts. The deprecated methods and constants will be removed in a future major release. The underlying database attribute names (`is.dynamic.scope`, `dynamic.scope.regexp`) are automatically migrated to `is.parameterized.scope` and `parameterized.scope.regexp` during upgrade.
 
+=== Parameterized scopes now require a parameter type
+
+When the `parameterized-scopes` feature is enabled, creating or updating a parameterized scope via the Admin REST API now requires a `parameterized.scope.type` attribute. Available types are `string`, `integer`, `boolean`, `username`, and `custom`. The `custom` type additionally requires a `parameterized.scope.regexp` attribute with a valid regular expression. Requests using the old regexp-only format (without a type) are rejected.
+
+During upgrade, existing parameterized scopes are automatically migrated to preserve their current behavior:
+
+* Scopes with the default `<scope-name>:*` regexp are set to the `string` type and the regexp is removed.
+* Scopes with a custom regexp are set to the `custom` type and the scope name prefix is stripped from the regexp.
+* Scopes with no regexp are set to the `string` type.
+
+No manual action is required — the migration ensures existing scopes continue to work as before.
+
 === Verify email required before credentials setup during user self-registration
 
 When user self-registration is enabled for the realm together with *Verify Email*, then users will not see password by default

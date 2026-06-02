@@ -89,7 +89,7 @@ public class ParameterizedScopesOAuthGrantTest {
                 .name("foo-dynamic-scope")
                 .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
                 .attribute(ClientScopeModel.IS_PARAMETERIZED_SCOPE, Boolean.TRUE.toString())
-                .attribute(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "foo-dynamic-scope:*")
+                .attribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string")
                 .build();
         PARAMETERIZED_SCOPE_ID = ApiUtil.getCreatedId(realm.admin().clientScopes().create(parameterizedScope));
         thirdParty.admin().addOptionalClientScope(PARAMETERIZED_SCOPE_ID);
@@ -298,6 +298,41 @@ public class ParameterizedScopesOAuthGrantTest {
         // do a refresh
         tokenRes = oauth.doRefreshTokenRequest(tokenRes.getRefreshToken());
         MatcherAssert.assertThat(List.of(tokenRes.getScope().split(" ")), Matchers.hasItems("foo-dynamic-scope:param1"));
+    }
+
+    @Test
+    public void oauthGrantCustomRegexScopeValidation() {
+        ClientScopeRepresentation customScope = ClientScopeBuilder.create()
+                .name("custom-regex-scope")
+                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                .attribute(ClientScopeModel.IS_PARAMETERIZED_SCOPE, Boolean.TRUE.toString())
+                .attribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "custom")
+                .attribute(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "[a-z]+")
+                .build();
+        String customScopeId = ApiUtil.getCreatedId(realm.admin().clientScopes().create(customScope));
+        realm.cleanup().add(r -> {
+            r.clients().get(thirdParty.getId()).removeOptionalClientScope(customScopeId);
+            r.clientScopes().get(customScopeId).remove();
+        });
+        thirdParty.admin().addOptionalClientScope(customScopeId);
+
+        oauth.client(THIRD_PARTY_APP, "password");
+
+        // non-matching parameter should be rejected
+        oauth.scope("custom-regex-scope:123");
+        oauth.openLoginForm();
+        Assertions.assertEquals("invalid_scope", oauth.parseLoginResponse().getError());
+
+        // matching parameter should be accepted
+        oauth.scope("custom-regex-scope:abc");
+        oauth.openLoginForm();
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        MatcherAssert.assertThat(List.of(res.getScope().split(" ")), Matchers.hasItems("custom-regex-scope:abc"));
     }
 
     public static class ParameterizedScopesServerConfig implements KeycloakServerConfig {
