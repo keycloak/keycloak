@@ -541,12 +541,6 @@ A successful response returns a JSON object containing details such as:
 - **Credential formats**
 - **Issuer metadata**
 
-=== Next Steps
-
-This guide covered the basic configuration. For more advanced topics, see:
-
-- <<_oid4vci_proofs, Proof Types and Key Binding>> - Detailed documentation on proof types, creating JWT proofs, configuring trusted attestation keys, and how key binding appears in credentials.
-
 === Conclusion
 
 You have successfully configured **{project_name} as a Verifiable Credential Issuer** using the **OID4VCI protocol**.
@@ -554,3 +548,5 @@ This setup leverages {project_name}'s robust **identity management capabilities*
 
 For a **complete reference implementation**, see the sample project:
 https://github.com/adorsys/{project_name}-ssi-deployment/tree/main[{project_name} SSI Deployment^].
+
+include::proofs.adoc[]

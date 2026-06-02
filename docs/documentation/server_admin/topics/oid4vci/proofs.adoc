@@ -1,14 +1,9 @@
 [[_oid4vci_proofs]]
-== Proof Types and Key Binding in OID4VCI
+=== Proof Types and Key Binding in OID4VCI
 
-[IMPORTANT]
-====
-This is an experimental feature and should not be used in production. Backward compatibility is not guaranteed, and future updates may introduce breaking changes.
-====
+This section documents the proof types supported by OpenID for Verifiable Credential Issuance (OID4VCI), how to configure trusted attestation keys, and how key binding works in the resulting credentials.
 
-This chapter documents the proof types supported by OpenID for Verifiable Credential Issuance (OID4VCI), how to configure trusted attestation keys, and how key binding works in the resulting credentials.
-
-=== Proof Types Overview
+==== Proof Types Overview
 
 OID4VCI supports different proof types for holder binding:
 
@@ -33,11 +28,11 @@ OID4VCI supports different proof types for holder binding:
 
 When a credential requires cryptographic holder binding, the client must provide a proof of an appropriate type. The issuer validates the proof and extracts the binding key, which is then included in the issued credential.
 
-=== Configuring Trusted Attestation Keys
+==== Configuring Trusted Attestation Keys
 
 Keycloak supports JWT proofs that can optionally include key attestations. To validate attested keys, configure trusted keys at the realm level.
 
-==== Realm Attributes for Trusted Keys
+===== Realm Attributes for Trusted Keys
 
 [cols="1,1,2", options="header"]
 |===
@@ -59,7 +54,7 @@ Keycloak supports JWT proofs that can optionally include key attestations. To va
 The `oid4vc.attestation.trusted_key_ids` attribute takes precedence over `oid4vc.attestation.trusted_keys` when both are set. Keys are merged with `trusted_key_ids` taking highest priority.
 ====
 
-==== Configuring Trusted Keys via Admin REST API
+===== Configuring Trusted Keys via Admin REST API
 
 [source,bash]
 ----
@@ -87,11 +82,11 @@ curl -X PUT "https://localhost:8443/admin/realms/{realm}" \
       }'
 ----
 
-=== Creating and Sending JWT Proofs
+==== Creating and Sending JWT Proofs
 
 JWT proofs are the most common proof type. To create a JWT proof:
 
-==== 1. Obtain a Nonce
+===== 1. Obtain a Nonce
 
 First, call the nonce endpoint to obtain a fresh nonce:
 
@@ -110,7 +105,7 @@ Response:
 }
 ----
 
-==== 2. Create the JWT Proof
+===== 2. Create the JWT Proof
 
 The JWT proof must contain the following claims:
 
@@ -161,7 +156,7 @@ The JWT proof must contain the following claims:
 | The binding key. Only one of these should be present.
 |===
 
-===== Example: JWT Proof with JWK in Header
+====== Example: JWT Proof with JWK in Header
 
 [source,javascript]
 ----
@@ -186,7 +181,7 @@ The JWT proof must contain the following claims:
 }
 ----
 
-===== Example: JWT Proof with kid Header
+====== Example: JWT Proof with kid Header
 
 [source,javascript]
 ----
@@ -206,7 +201,7 @@ The JWT proof must contain the following claims:
 }
 ----
 
-==== 3. Send the Credential Request
+===== 3. Send the Credential Request
 
 Include the JWT proof in the credential request:
 
@@ -221,11 +216,11 @@ Include the JWT proof in the credential request:
 }
 ----
 
-=== Using Attestation Proofs
+==== Using Attestation Proofs
 
 Attestation proofs allow the holder to prove key ownership through an attestation authority. This is useful for hardware-backed keys or keys managed by secure enclaves.
 
-==== Structure of an Attestation Proof
+===== Structure of an Attestation Proof
 
 An attestation proof is a JWT containing:
 
@@ -281,7 +276,7 @@ An attestation proof is a JWT containing:
 | Object with `status` claim (e.g., `{"status": "valid"}`)
 |===
 
-==== Credential Request with Attestation Proof
+===== Credential Request with Attestation Proof
 
 [source,json]
 ----
@@ -294,11 +289,11 @@ An attestation proof is a JWT containing:
 }
 ----
 
-=== Key Binding in Credentials
+==== Key Binding in Credentials
 
 The binding key from the proof is included in the issued credential to ensure the holder possesses the corresponding private key.
 
-==== JWT VC JSON Format
+===== JWT VC JSON Format
 
 For `jwt_vc_json` format credentials, the binding key is included in the `cnf` (confirmation) claim:
 
@@ -325,7 +320,7 @@ For `jwt_vc_json` format credentials, the binding key is included in the `cnf` (
 }
 ----
 
-==== SD-JWT Format
+===== SD-JWT Format
 
 For `dc+sd-jwt` format credentials, the binding key is included as a disclosure in the SD-JWT:
 
@@ -336,7 +331,7 @@ eyJhbGciOiJFUzI1NiJ9.eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW5
 
 The holder binding key appears in the `_sd_hash` of the SD-JWT, allowing verifiers to confirm the holder possesses the corresponding private key.
 
-==== Verifying Key Binding
+===== Verifying Key Binding
 
 When presenting a credential, the verifier should:
 
@@ -344,7 +339,7 @@ When presenting a credential, the verifier should:
 2. Challenge the holder to sign a challenge with the corresponding private key
 3. Verify the signature matches the bound key
 
-=== Complete Example: Credential Request with JWT Proof
+==== Complete Example: Credential Request with JWT Proof
 
 [source,bash]
 ----
@@ -374,7 +369,7 @@ curl -X POST "https://localhost:8443/realms/myrealm/protocol/oid4vc/credential" 
   }'
 ----
 
-=== Client Scope Configuration for Proof Types
+==== Client Scope Configuration for Proof Types
 
 To enable proof types for a credential, configure the client scope with the appropriate attributes:
 
@@ -406,7 +401,7 @@ To enable proof types for a credential, configure the client scope with the appr
 
 The `proof_signing_alg_values_supported` is automatically included in the issuer metadata based on the realm's supported algorithms and the `vc.credential_signing_alg` attribute.
 
-=== Related Configuration
+==== Related Configuration
 
 - <<_oid4vci, OID4VCI Configuration>> - General OID4VCI setup
 - <<proc-creating-a-realm_{context}, Creating a Realm>> - Realm creation
