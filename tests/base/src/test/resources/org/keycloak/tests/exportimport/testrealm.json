@@ -22,7 +22,8 @@
     "smtpServer": {
         "from": "auto@keycloak.org",
         "host": "localhost",
-        "port":"3025"
+        "port": "3025",
+        "password": "secret"
     },
     "identityProviders" : [
         {
@@ -374,6 +375,74 @@
             }
         },
         {
+          "clientId": "test-app",
+          "enabled": true,
+          "baseUrl": "http://localhost:8180/auth/realms/master/app/auth",
+          "redirectUris": [
+            "http://localhost:8180/auth/realms/master/app/auth/*",
+            "https://localhost:8543/auth/realms/master/app/auth/*",
+            "http://localhost:8180/auth/realms/test/app/auth/*",
+            "https://localhost:8543/auth/realms/test/app/auth/*"
+          ],
+          "adminUrl": "http://localhost:8180/auth/realms/master/app/admin",
+          "secret": "password",
+          "protocolMappers": [
+            {
+              "name": "audience-confidential-cli",
+              "protocol": "openid-connect",
+              "protocolMapper": "oidc-audience-mapper",
+              "config": {
+                "included.client.audience": "confidential-cli",
+                "access.token.claim": "true"
+              }
+            },
+            {
+              "name": "audience-test-app",
+              "protocol": "openid-connect",
+              "protocolMapper": "oidc-audience-mapper",
+              "config": {
+                "included.client.audience": "test-app",
+                "access.token.claim": "true"
+              }
+            }
+          ]
+        },
+        {
+          "clientId": "root-url-client",
+          "enabled": true,
+          "rootUrl": "http://localhost:8180/foo/bar",
+          "adminUrl": "http://localhost:8180/foo/bar",
+          "baseUrl": "/baz",
+          "redirectUris": [
+            "http://localhost:8180/foo/bar/*",
+            "https://localhost:8543/foo/bar/*"
+          ],
+          "directAccessGrantsEnabled": true,
+          "secret": "password"
+        },
+        {
+          "clientId" : "test-app-scope",
+          "enabled": true,
+
+          "redirectUris": [
+            "http://localhost:8180/auth/realms/master/app/*",
+            "https://localhost:8543/auth/realms/master/app/*"
+          ],
+          "secret": "password",
+          "fullScopeAllowed": "false",
+          "protocolMappers": [
+            {
+              "name": "audience-test-app-scope",
+              "protocol": "openid-connect",
+              "protocolMapper": "oidc-audience-mapper",
+              "config": {
+                "included.client.audience": "test-app-scope",
+                "access.token.claim": "true"
+              }
+            }
+          ]
+        },
+        {
             "clientId": "test-app-authz",
             "enabled": true,
             "baseUrl": "/test-app-authz",
@@ -609,8 +678,58 @@
             {
                 "name": "customer-user-premium",
                 "description": "Have User Premium privileges"
+            },
+            {
+              "name": "sample-realm-role",
+              "description": "Sample realm role"
+            },
+            {
+              "name": "attribute-role",
+              "description": "has attributes assigned",
+              "attributes": {
+                "hello": [
+                  "world",
+                  "keycloak"
+                ]
+              }
             }
         ],
+        "client" : {
+          "test-app" : [
+            {
+              "name": "manage-account",
+              "description": "Allows application-initiated actions."
+            },
+            {
+              "name": "customer-user",
+              "description": "Have Customer User privileges"
+            },
+            {
+              "name": "customer-admin",
+              "description": "Have Customer Admin privileges"
+            },
+            {
+              "name": "sample-client-role",
+              "description": "Sample client role",
+              "attributes": {
+                "sample-client-role-attribute": [
+                  "sample-client-role-attribute-value"
+                ]
+              }
+            },
+            {
+              "name": "customer-admin-composite-role",
+              "description": "Have Customer Admin privileges via composite role",
+              "composite" : true,
+              "composites" : {
+                "realm" : [ "customer-user-premium" ],
+                "client" : {
+                  "test-app" : [ "customer-admin" ]
+                }
+              }
+            }
+          ]
+        },
         "application" : {
             "Application" : [
                 {
@@ -843,6 +962,14 @@
                     "autheticatorFlow": false
                 },
                 {
+                  "authenticatorFlow": true,
+                  "requirement": "REQUIRED",
+                  "priority": 20,
+                  "autheticatorFlow": true,
+                  "flowAlias": "User creation or linking",
+                  "userSetupAllowed": false
+                },
+                {
                     "authenticatorConfig": "create unique user config",
                     "authenticator": "idp-create-user-if-unique",
                     "requirement": "ALTERNATIVE",
@@ -858,6 +985,30 @@
                     "autheticatorFlow": true
                 }
             ]
+        },
+        {
+          "id" : "4c749ecd-1045-4a59-b326-85d4942d1ad1",
+          "alias" : "User creation or linking",
+          "description" : "Flow for the existing/non-existing user alternatives",
+          "providerId" : "basic-flow",
+          "topLevel" : false,
+          "builtIn" : true,
+          "authenticationExecutions" : [ {
+            "authenticatorConfig" : "create unique user config",
+            "authenticator" : "idp-create-user-if-unique",
+            "authenticatorFlow" : false,
+            "requirement" : "ALTERNATIVE",
+            "priority" : 10,
+            "autheticatorFlow" : false,
+            "userSetupAllowed" : false
+          }, {
+            "authenticatorFlow" : true,
+            "requirement" : "ALTERNATIVE",
+            "priority" : 20,
+            "autheticatorFlow" : true,
+            "flowAlias" : "Handle Existing Account",
+            "userSetupAllowed" : false
+          } ]
         },
         {
             "id": "1a84808d-e0c7-4759-aee8-cf9229542429",
