@@ -96,6 +96,9 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
      */
     public static final String OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS = "attester_trust_idps";
 
+    /** The token confirmation type */
+    public static final String ABCA_CNF_TYPE = "Client-Attestation";
+
     @Override
     public String getId() {
         return PROVIDER_ID;
