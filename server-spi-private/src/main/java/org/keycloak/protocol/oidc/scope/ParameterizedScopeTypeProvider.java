@@ -1,5 +1,7 @@
 package org.keycloak.protocol.oidc.scope;
 
+import jakarta.annotation.Nonnull;
+
 import org.keycloak.Config;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
@@ -26,17 +28,22 @@ public interface ParameterizedScopeTypeProvider extends Provider, ProviderFactor
      * Implementations should normalize the parameter before validation (e.g. lowercase usernames,
      * strip leading zeros from numbers).
      *
+     * @param scope the client scope model, never {@code null}
+     * @param parameter the captured parameter value, never {@code null} or empty
      * @throws InvalidScopeParameterException if the parameter is invalid
      */
-    void validateParameter(ClientScopeModel scope, String parameter) throws InvalidScopeParameterException;
+    void validateParameter(@Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException;
 
     /**
      * Validates the parameter when the authenticated user is known (code-to-token, refresh, token exchange).
      * Use for authorization checks such as whether the user can act on the given parameter value.
      *
+     * @param currentUser the authenticated user, never {@code null}
+     * @param scope the client scope model, never {@code null}
+     * @param parameter the captured parameter value, never {@code null} or empty
      * @throws InvalidScopeParameterException if the parameter is invalid for the given user
      */
-    default void validateParameterWithUser(UserModel currentUser, ClientScopeModel scope, String parameter) throws InvalidScopeParameterException {
+    default void validateParameterWithUser(@Nonnull UserModel currentUser, @Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException {
     }
 
     @Override

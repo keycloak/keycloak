@@ -1,5 +1,7 @@
 package org.keycloak.protocol.oidc.scope;
 
+import jakarta.annotation.Nonnull;
+
 import org.keycloak.models.ClientScopeModel;
 
 public class StringScopeType implements ParameterizedScopeTypeProvider {
@@ -12,6 +14,6 @@ public class StringScopeType implements ParameterizedScopeTypeProvider {
     }
 
     @Override
-    public void validateParameter(ClientScopeModel scope, String parameter) throws InvalidScopeParameterException {
+    public void validateParameter(@Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException {
     }
 }

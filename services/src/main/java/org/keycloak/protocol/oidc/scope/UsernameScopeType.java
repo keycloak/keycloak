@@ -1,5 +1,7 @@
 package org.keycloak.protocol.oidc.scope;
 
+import jakarta.annotation.Nonnull;
+
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
@@ -33,7 +35,7 @@ public class UsernameScopeType implements ParameterizedScopeTypeProvider {
     }
 
     @Override
-    public void validateParameter(ClientScopeModel scope, String parameter) throws InvalidScopeParameterException {
+    public void validateParameter(@Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException {
         if (StringUtil.isBlank(parameter)) {
             throw new InvalidScopeParameterException("Username parameter must not be blank");
         }
@@ -41,7 +43,7 @@ public class UsernameScopeType implements ParameterizedScopeTypeProvider {
     }
 
     @Override
-    public void validateParameterWithUser(UserModel currentUser, ClientScopeModel scope, String parameter) throws InvalidScopeParameterException {
+    public void validateParameterWithUser(@Nonnull UserModel currentUser, @Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException {
         UserModel targetUser = resolveUser(scope, parameter);
         if (targetUser.getId().equals(currentUser.getId())) {
             throw new InvalidScopeParameterException("User cannot target themselves");

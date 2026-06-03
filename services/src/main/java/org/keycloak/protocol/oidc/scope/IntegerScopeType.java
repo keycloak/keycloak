@@ -1,5 +1,7 @@
 package org.keycloak.protocol.oidc.scope;
 
+import jakarta.annotation.Nonnull;
+
 import org.keycloak.models.ClientScopeModel;
 
 public class IntegerScopeType implements ParameterizedScopeTypeProvider {
@@ -12,7 +14,7 @@ public class IntegerScopeType implements ParameterizedScopeTypeProvider {
     }
 
     @Override
-    public void validateParameter(ClientScopeModel scope, String parameter) throws InvalidScopeParameterException {
+    public void validateParameter(@Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException {
         try {
             // Long to accept any whole number (no fractional part), not just int-range values
             Long.parseLong(parameter);
