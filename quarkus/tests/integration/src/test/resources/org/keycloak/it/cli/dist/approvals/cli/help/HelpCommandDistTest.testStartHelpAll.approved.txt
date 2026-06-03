@@ -157,6 +157,9 @@ Database:
                        generation. Default: false.
 --db-driver <driver> The fully qualified class name of the JDBC driver. If not set, a default
                        driver is set accordingly to the chosen database.
+--db-health-exclude-<datasource> <exclude>
+                     If you have enabled heatlth endpoints, but want the given datasource excluded
+                       from the health check. Default: false.
 --db-log-slow-queries-threshold <milliseconds>
                      Log SQL statements slower than the configured threshold with logger org.
                        hibernate.SQL_SLOW and log-level info. Default: 10000.

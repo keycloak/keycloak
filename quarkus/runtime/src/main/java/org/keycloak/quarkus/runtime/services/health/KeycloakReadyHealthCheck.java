@@ -38,7 +38,8 @@ import org.eclipse.microprofile.health.Readiness;
 /**
  * Keycloak Healthcheck Readiness Probe.
  * <p>
- * Converts the standard <code>DataSourceHealthCheck</code> that waits for a connection to be returned to the pool and checks if it's valid, to an async check.
+ * Converts the standard <code>DataSourceHealthCheck</code> that waits for a connection and checks if it's valid, to an async check with a
+ * dedicated pool to control load shedding.
  * <p>
  *
  * @see <a href="https://github.com/keycloak/keycloak-community/pull/55">Healthcheck API Design</a>
