@@ -160,6 +160,13 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                     errorMessage, Response.Status.BAD_REQUEST);
         }
 
+        if (!clientModel.isEnabled()) {
+            var errorMessage = "Client '" + clientModel.getClientId() + "' disabled";
+            event.detail(REASON, errorMessage).error(Errors.CLIENT_DISABLED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+
         UserSessionModel userSession = session.sessions().createUserSession(null, realm, targetUserModel, targetUserModel.getUsername(),
                 null, "pre-authorized-code", false, null,
                 null, UserSessionModel.SessionPersistenceState.TRANSIENT);
