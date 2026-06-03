@@ -31,12 +31,7 @@ public interface ClientService extends Service {
         }
     }
 
-    class ClientSortAndSliceOptions {
-        // order by
-        // offset
-        // limit
-        // NOTE: this is not always the most desirable way to do pagination
-    }
+    record ClientSortAndSliceOptions(int offset, int limit) {}
 
     record CreateOrUpdateResult(BaseClientRepresentation representation, boolean created) {}
 

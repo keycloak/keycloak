@@ -33,7 +33,8 @@ public interface ClientsApi {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Get all clients", description = "Returns a list of clients in the realm, optionally filtered by a query expression")
+    @Operation(summary = "Get all clients", description = "Returns a list of clients in the realm, optionally filtered by a query expression. "
+            + "Results are paginated using offset (0-based, default 0) and limit (default 100, maximum 100).")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = BaseClientRepresentation.class)))
     })
