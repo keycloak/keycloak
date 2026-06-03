@@ -16,56 +16,44 @@
  */
 package org.keycloak.tests.forms;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.cookie.CookieType;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel.RequiredAction;
-import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
-import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
-import org.keycloak.testframework.https.InjectCertificates;
-import org.keycloak.testframework.https.ManagedCertificates;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -80,23 +68,33 @@ import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
+import org.keycloak.testframework.ui.page.LoginConfigTotpPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.tests.forms.page.LoginConfigTotpPage;
 import org.keycloak.tests.suites.DatabaseTest;
-import org.keycloak.tests.utils.matchers.Matchers;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.jupiter.api.Assumptions;
+import org.apache.http.Header;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
+
+import static org.keycloak.models.utils.SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -130,9 +128,6 @@ public class LoginTest {
     @InjectKeycloakUrls
     KeycloakUrls keycloakUrls;
 
-    @InjectAdminClient
-    Keycloak adminClient;
-
     @InjectEvents
     Events events;
 
@@ -151,8 +146,8 @@ public class LoginTest {
     @InjectTimeOffSet(enableForCaches = true)
     TimeOffSet timeOffSet;
 
-    @InjectCertificates
-    ManagedCertificates managedCertificates;
+    @InjectHttpClient
+    CloseableHttpClient client;
 
     private static String userId;
 
@@ -160,17 +155,13 @@ public class LoginTest {
 
     private static final Map<String, String> userPasswords = new HashMap<>();
 
-    static final String REALM_NAME = "test";
-
-    static final boolean AUTH_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required", "true"));
-
     @BeforeEach
     public void setupTest() {
-        userId = adminClient.realm(managedRealm.getName()).users().search("login-test", true).get(0).getId();
-        user2Id = adminClient.realm(managedRealm.getName()).users().search("test-2-login", true).get(0).getId();
+        userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), "login-test").getId();
+        user2Id = AdminApiUtil.findUserByUsername(managedRealm.admin(), "test-2-login").getId();
 
         // Configure test-app client to accept redirect URIs with query parameters (for loginWithLongRedirectUri test)
-        ClientResource testAppClient = findClientByClientId("test-app");
+        ClientResource testAppClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         if (testAppClient != null) {
             ClientRepresentation testAppRep = testAppClient.toRepresentation();
             testAppRep.setRedirectUris(List.of("*"));
@@ -179,29 +170,26 @@ public class LoginTest {
     }
 
     @Test
-    public void testBrowserSecurityHeaders() {
-        Client client = managedCertificates.isTlsEnabled()
-            ? ClientBuilder.newBuilder().sslContext(managedCertificates.getClientSSLContext()).build()
-            : ClientBuilder.newClient();
-        Response response = client.target(oauth.loginForm().build()).request().get();
-        assertThat(response.getStatus(), is(equalTo(200)));
+    public void testBrowserSecurityHeaders() throws IOException {
+        HttpGet request = new HttpGet(oauth.loginForm().build());
+        CloseableHttpResponse response = client.execute(request);
+
+        assertThat(response.getStatusLine().getStatusCode(), is(equalTo(200)));
         for (BrowserSecurityHeaders header : BrowserSecurityHeaders.values()) {
-            String headerValue = response.getHeaderString(header.getHeaderName());
+            Header headerValue = response.getFirstHeader(header.getHeaderName());
             String expectedValue = header.getDefaultValue();
             if (expectedValue.isEmpty()) {
                 assertNull(headerValue);
             } else {
                 assertNotNull(headerValue);
-                assertThat(headerValue, is(equalTo(expectedValue)));
+                assertThat(headerValue.getValue(), is(equalTo(expectedValue)));
             }
         }
-        response.close();
-        client.close();
     }
 
     @Test
     @DatabaseTest
-    public void testContentSecurityPolicyReportOnlyBrowserSecurityHeader() {
+    public void testContentSecurityPolicyReportOnlyBrowserSecurityHeader() throws IOException {
         final String expectedCspReportOnlyValue = "default-src 'none'";
         final String cspReportOnlyAttr = "contentSecurityPolicyReportOnly";
         final String cspReportOnlyHeader = "Content-Security-Policy-Report-Only";
@@ -212,39 +200,33 @@ public class LoginTest {
                 )
         );
 
-        Client client = managedCertificates.isTlsEnabled()
-            ? ClientBuilder.newBuilder().sslContext(managedCertificates.getClientSSLContext()).build()
-            : ClientBuilder.newClient();
-        Response response = client.target(oauth.loginForm().build()).request().get();
-        String headerValue = response.getHeaderString(cspReportOnlyHeader);
-        assertThat(headerValue, is(equalTo(expectedCspReportOnlyValue)));
-        response.close();
-        client.close();
-
+        HttpGet request = new HttpGet(oauth.loginForm().build());
+        try(CloseableHttpResponse response = client.execute(request)){
+            Header headerValue = response.getFirstHeader(cspReportOnlyHeader);
+            assertThat(headerValue.getValue(), is(equalTo(expectedCspReportOnlyValue)));
+        }
     }
 
     //KEYCLOAK-5556
     @Test
-    public void testPOSTAuthenticationRequest() {
-        Client client = managedCertificates.isTlsEnabled()
-            ? ClientBuilder.newBuilder().sslContext(managedCertificates.getClientSSLContext()).build()
-            : ClientBuilder.newClient();
+    public void testPOSTAuthenticationRequest() throws IOException {
+        HttpPost post = new HttpPost(oauth.getEndpoints().getAuthorization());
 
-        Form form = new Form()
-                .param(OAuth2Constants.SCOPE, "openid")
-                .param(OAuth2Constants.CLIENT_ID, oauth.getClientId())
-                .param(OAuth2Constants.RESPONSE_TYPE, "code")
-                .param(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri())
-                .param(OAuth2Constants.STATE, "123456");
+        List<NameValuePair> params = new ArrayList<>();
+        params.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
+        params.add(new BasicNameValuePair(OAuth2Constants.RESPONSE_TYPE, "code"));
+        params.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
+        params.add(new BasicNameValuePair(OAuth2Constants.STATE, "123456"));
+        post.setEntity(new UrlEncodedFormEntity(params));
 
         //POST request to http://localhost:8180/auth/realms/test/protocol/openid-connect/auth;
-        Response response = client.target(oauth.getEndpoints().getAuthorization()).request().post(Entity.form(form));
+        try(CloseableHttpResponse response = client.execute(post)){
+            assertThat(response.getStatusLine().getStatusCode(), is(equalTo(200)));
+            String body = EntityUtils.toString(response.getEntity());
+            assertThat(body, containsString("Sign in"));
 
-        assertThat(response.getStatus(), is(equalTo(200)));
-        assertThat(response, Matchers.body(containsString("Sign in")));
-
-        response.close();
-        client.close();
+            EntityUtils.consume(response.getEntity());
+        }
     }
 
     @Test
@@ -255,7 +237,7 @@ public class LoginTest {
                         rep.setEventsEnabled(true)
         ));
 
-        String randomLongString = RandomStringUtils.random(2500, true, true);
+        String randomLongString = RandomStringUtils.secure().next(2500, true, true);
         String longRedirectUri = oauth.getRedirectUri() + "?longQueryParameterValue=" + randomLongString;
         oauth.loginForm().param(OAuth2Constants.REDIRECT_URI, longRedirectUri).open();
 
@@ -508,46 +490,6 @@ public class LoginTest {
     }
 
     @Test
-    @DatabaseTest
-    public void loginSuccessRealmSigningAlgorithms() throws JWSInputException {
-        // Skip test if not SSL
-        Assumptions.assumeTrue(AUTH_SERVER_SSL_REQUIRED, "Test Skipped - Only works with the SSL configured");
-
-        oauth.openLoginForm();
-        loginPage.fillLogin("login-test", getPassword("login-test"));
-        loginPage.submit();
-
-        assertNotNull(oauth.parseLoginResponse().getCode());
-
-        EventAssertion.assertSuccess(events.poll())
-                .type(EventType.LOGIN)
-                .userId(userId)
-                .details(Details.USERNAME, "login-test");
-
-        driver.driver().navigate().to(keycloakUrls.getBase() + "/realms/" + REALM_NAME + "/");
-        String keycloakIdentity = Objects.requireNonNull(driver.driver().manage().getCookieNamed("KEYCLOAK_IDENTITY")).getValue();
-
-        // Check identity cookie is signed with HS256
-        String algorithm = new JWSInput(keycloakIdentity).getHeader().getAlgorithm().name();
-        assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, algorithm);
-
-        managedRealm.updateWithCleanup(realm -> realm.defaultSignatureAlgorithm(Algorithm.ES256));
-
-        oauth.openLoginForm();
-
-        driver.driver().navigate().to(keycloakUrls.getBase() + "/realms/" + REALM_NAME + "/");
-        keycloakIdentity = Objects.requireNonNull(driver.driver().manage().getCookieNamed("KEYCLOAK_IDENTITY")).getValue();
-
-        // Check identity cookie is still signed with HS256
-        algorithm = new JWSInput(keycloakIdentity).getHeader().getAlgorithm().name();
-        assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, algorithm);
-
-        // Check identity cookie still works
-        oauth.openLoginForm();
-        assertNotNull(oauth.parseLoginResponse().getCode());
-    }
-
-    @Test
     public void loginWithWhitespaceSuccess() {
         oauth.openLoginForm();
         loginPage.fillLogin(" login-test \t ", getPassword("login-test"));
@@ -595,7 +537,6 @@ public class LoginTest {
 
         timeOffSet.set(0);
 
-        events.poll(); // UPDATE_PASSWORD
         events.poll(); // UPDATE_CREDENTIAL (or might be null)
 
         assertNotNull(oauth.parseLoginResponse().getCode());
@@ -699,7 +640,7 @@ public class LoginTest {
                 .getSessionId();
 
         // Expire session
-        removeUserSession(sessionId);
+        managedRealm.admin().deleteSession(sessionId, false);
 
         // Assert rememberMe checked and username/email prefilled
         oauth.openLoginForm();
@@ -712,7 +653,7 @@ public class LoginTest {
     @Test
     public void loginWithRememberMeNotSet() {
         oauth.openLoginForm();
-        assertFalse(isRememberMeCheckboxPresent());
+        assertFalse(loginPage.isRememberMeCheckboxPresent());
         // fake create the rememberme checkbox
         ((JavascriptExecutor) driver.driver()).executeScript(
                 "var checkbox = document.createElement('input');" +
@@ -721,7 +662,7 @@ public class LoginTest {
                         "checkbox.name = 'rememberMe';" +
                         "document.getElementsByTagName('form')[0].appendChild(checkbox);");
 
-        assertTrue(isRememberMeCheckboxPresent());
+        assertTrue(loginPage.isRememberMeCheckboxPresent());
         loginPage.rememberMe(true);
         loginPage.fillLogin("login-test", getPassword("login-test"));
         loginPage.submit();
@@ -759,7 +700,7 @@ public class LoginTest {
                 .getSessionId();
 
         // Expire session
-        removeUserSession(sessionId);
+        managedRealm.admin().deleteSession(sessionId, false);
 
         // Assert rememberMe checked and username/email prefilled
         oauth.openLoginForm();
@@ -778,7 +719,7 @@ public class LoginTest {
                 .details(Details.USERNAME, "login-test")
                 .getEvent()
                 .getSessionId();
-        removeUserSession(sessionId);
+        managedRealm.admin().deleteSession(sessionId, false);
 
         // Assert rememberMe not checked nor username/email prefilled
         oauth.openLoginForm();
@@ -807,7 +748,7 @@ public class LoginTest {
                 .getSessionId();
 
         // Expire session
-        removeUserSession(sessionId);
+        managedRealm.admin().deleteSession(sessionId, false);
 
         // Assert rememberMe checked and username/email prefilled
         oauth.openLoginForm();
@@ -849,7 +790,7 @@ public class LoginTest {
 
         // Assert session removed
         oauth.openLoginForm();
-        assertFalse(isRememberMeCheckboxPresent());
+        assertFalse(loginPage.isRememberMeCheckboxPresent());
         assertNotEquals("login-test", loginPage.getUsername());
     }
 
@@ -935,7 +876,7 @@ public class LoginTest {
         errorPage.assertCurrent();
         String link = errorPage.getBackToApplicationLink();
 
-        ClientResource thirdParty = findClientByClientId("third-party");
+        ClientResource thirdParty = AdminApiUtil.findClientByClientId(managedRealm.admin(), "third-party");
         assert thirdParty != null;
         ClientRepresentation thirdPartyRep = thirdParty.toRepresentation();
         assertEquals(thirdPartyRep.getBaseUrl(), link);
@@ -1048,7 +989,6 @@ public class LoginTest {
     }
 
     @Test
-    @DatabaseTest
     public void loginRememberMeExpiredIdle() {
         managedRealm.updateWithCleanup(realm -> {
             realm.setRememberMe(true);
@@ -1075,8 +1015,7 @@ public class LoginTest {
         assertNotNull(oauth.parseLoginResponse().getCode());
 
         // expire idle timeout using the timeout window.
-        int idleTimeoutWindow = isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) ? 0 : SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
-        timeOffSet.set(2 + idleTimeoutWindow);
+        timeOffSet.set(2 + IDLE_TIMEOUT_WINDOW_SECONDS);
 
         // trying to open the account page with an expired idle timeout should redirect back to the login page.
         oauth.openLoginForm();
@@ -1119,35 +1058,29 @@ public class LoginTest {
     @Test
     @DatabaseTest
     public void loginSuccessfulWithDynamicScope() {
-        // Skip if DYNAMIC_SCOPES feature is not enabled
-        Assumptions.assumeTrue(isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES), "DYNAMIC_SCOPES feature must be enabled");
-
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("dynamic");
         clientScope.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic:*");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic:*");
         }});
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         Response response = managedRealm.admin().clientScopes().create(clientScope);
         String scopeId = ApiUtil.getCreatedId(response);
         response.close();
 
-        ClientResource testApp = findClientByClientId("test-app");
+        managedRealm.cleanup().add(realm -> realm.clientScopes().get(scopeId).remove());
+
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testApp.update(testAppRep);
         testApp.addOptionalClientScope(scopeId);
 
-        try {
-            oauth.scope("dynamic:scope");
-            oauth.doLogin("login@test.com", getPassword("login-test"));
-            EventAssertion.assertSuccess(events.poll())
-                    .type(EventType.LOGIN)
-                    .userId(userId);
-        } finally {
-            // Cleanup
-            managedRealm.admin().clientScopes().get(scopeId).remove();
-        }
+        oauth.scope("dynamic:scope");
+        oauth.doLogin("login@test.com", getPassword("login-test"));
+         EventAssertion.assertSuccess(events.poll())
+                       .type(EventType.LOGIN)
+                       .userId(userId);
     }
 
     @Test
@@ -1170,29 +1103,18 @@ public class LoginTest {
         assertNotNull(oauth.parseLoginResponse().getCode());
         EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN);
 
-        UsersResource users = adminClient.realm(REALM_NAME).users();
-        UserRepresentation user = users.search("test-user@localhost", true).get(0);
+        managedRealm.updateUserWithCleanup("test-user@localhost", user1 -> user1.requiredActions(RequiredAction.CONFIGURE_TOTP.name()));
+        oauth.openLoginForm();
 
-        user.setRequiredActions(List.of(RequiredAction.CONFIGURE_TOTP.name()));
-
-        try {
-            users.get(user.getId()).update(user);
-
-            oauth.openLoginForm();
-
-            // make sure the authentication session is no longer available
-            for (Cookie cookie : driver.driver().manage().getCookies()) {
-                if (cookie.getName().startsWith(CookieType.AUTH_SESSION_ID.getName())) {
-                    driver.driver().manage().deleteCookie(cookie);
-                }
+        // make sure the authentication session is no longer available
+        for (Cookie cookie : driver.driver().manage().getCookies()) {
+            if (cookie.getName().startsWith(CookieType.AUTH_SESSION_ID.getName())) {
+                driver.driver().manage().deleteCookie(cookie);
             }
-
-            oauth.openLoginForm();
-            configTotpPage.assertCurrent();
-        } finally {
-            user.setRequiredActions(List.of());
-            users.get(user.getId()).update(user);
         }
+
+        oauth.openLoginForm();
+        configTotpPage.assertCurrent();
     }
 
     @Test
@@ -1222,26 +1144,25 @@ public class LoginTest {
         static int PASSWORD_LENGTH = 64;
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.name(REALM_NAME)
+            realm.name("test")
                     .eventsEnabled(true);
 
 
             // Add third-party client for loginExpiredCodeAndExpiredCookies test
-
             realm.clients(
-                    org.keycloak.testframework.realm.ClientBuilder.create("third-party")
-                                                                  .enabled(true)
-                                                                  .secret("password")
-                                                                  .baseUrl("http://localhost:8180/app")
-                                                                  .redirectUris("http://localhost:8180/app/*")
-                                                                  .directAccessGrantsEnabled(true),
+                    ClientBuilder.create("third-party")
+                                            .enabled(true)
+                                            .secret("password")
+                                            .baseUrl("http://localhost:8180/app")
+                                            .redirectUris("http://localhost:8180/app/*")
+                                            .directAccessGrantsEnabled(true),
 
                     // Add root-url-client for openLoginFormWithDifferentApplication test
-                    org.keycloak.testframework.realm.ClientBuilder.create("root-url-client")
-                                                                  .enabled(true)
-                                                                  .secret("password")
-                                                                  .redirectUris("http://localhost:8080/foo/bar/*", "https://localhost:8443/foo/bar/*", "https://localhost:8543/foo/bar/*")
-                                                                  .directAccessGrantsEnabled(true)
+                    ClientBuilder.create("root-url-client")
+                                             .enabled(true)
+                                             .secret("password")
+                                             .redirectUris("http://localhost:8080/foo/bar/*", "https://localhost:8443/foo/bar/*", "https://localhost:8543/foo/bar/*")
+                                             .directAccessGrantsEnabled(true)
             );
 
             realm.users(
@@ -1301,18 +1222,9 @@ public class LoginTest {
         throw new IllegalStateException("Password not found for user: " + username);
     }
 
-    private ClientResource findClientByClientId(String clientId) {
-        for (ClientRepresentation c : adminClient.realm(REALM_NAME).clients().findAll()) {
-            if (clientId.equals(c.getClientId())) {
-                return adminClient.realm(REALM_NAME).clients().get(c.getId());
-            }
-        }
-        return null;
-    }
-
     private int getAuthenticationSessionTabsCount(String authSessionId) {
         return Integer.parseInt(runOnServer.fetchString(session -> {
-            RealmModel realmModel = session.realms().getRealm(REALM_NAME);
+            RealmModel realmModel = session.realms().getRealm("test");
             session.getContext().setRealm(realmModel);
 
             AuthenticationSessionManager authenticationSessionManager = new AuthenticationSessionManager(session);
@@ -1324,21 +1236,4 @@ public class LoginTest {
             return rootAuthSession.getAuthenticationSessions().size();
         }));
     }
-
-    private boolean isRememberMeCheckboxPresent() {
-        try {
-            return driver.driver().findElement(org.openqa.selenium.By.id("rememberMe")) != null;
-        } catch (org.openqa.selenium.NoSuchElementException e) {
-            return false;
-        }
-    }
-
-    private boolean isFeatureEnabled(Profile.Feature feature) {
-        return runOnServer.fetch(session -> Profile.isFeatureEnabled(feature), Boolean.class);
-    }
-
-    private void removeUserSession(String sessionId) {
-        adminClient.realm(REALM_NAME).deleteSession(sessionId, false);
-    }
-
 }

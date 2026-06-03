@@ -14,9 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.tests.forms.page;
+package org.keycloak.testframework.ui.page;
 
-import org.keycloak.testframework.ui.page.AbstractPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.openqa.selenium.By;

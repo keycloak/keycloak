@@ -2,9 +2,6 @@ AuthorizationCodeTest
 AuthorizationTest
 KcOidcBrokerTest
 LDAPUserLoginTest
-PasswordPolicyTest
-RequiredActionUpdateProfileTest
-SSOTest
 SamlClientTest
 UserProfileTest
 OidcAdvancedClaimToGroupMapperTest

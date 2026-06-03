@@ -18,7 +18,6 @@ import org.keycloak.testframework.https.CertificatesConfig;
 import org.keycloak.testframework.https.CertificatesConfigBuilder;
 import org.keycloak.testframework.https.InjectCertificates;
 import org.keycloak.testframework.https.ManagedCertificates;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -39,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class LoginSSLTest {
 
     // Use separate realm instance to avoid conflicts with LoginTest
-    @InjectRealm(ref = "login-ssl-test", config = LoginTest.LoginRealmConfig.class, lifecycle = LifeCycle.CLASS)
+    @InjectRealm(ref = "login-ssl-test", config = LoginTest.LoginRealmConfig.class)
     ManagedRealm managedRealm;
 
     @InjectWebDriver
