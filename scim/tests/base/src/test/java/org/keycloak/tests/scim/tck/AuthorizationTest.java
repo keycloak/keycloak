@@ -10,6 +10,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -22,6 +23,7 @@ import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.group.Group;
+import org.keycloak.scim.resource.user.GroupMembership;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -38,6 +40,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -197,6 +200,41 @@ public class AuthorizationTest extends AbstractScimTest {
     }
 
     @Test
+    public void testUsersCanQueryIfFGAPViewScopeGranted() {
+        realm.updateWithCleanup(realm -> realm.adminPermissionsEnabled(true));
+
+        assertAccessDenied(() -> noAccessClient.users().getAll());
+
+        UserPolicyRepresentation policy = createUserPolicy(getServiceAccount().getId());
+        createPermission(AdminPermissionsSchema.USERS_RESOURCE_TYPE,
+                null,
+                Set.of(AdminPermissionsSchema.VIEW),
+                policy.getName());
+
+        ListResponse<User> users = noAccessClient.users().getAll();
+        assertNotNull(users);
+        assertEquals(1, users.getTotalResults());
+    }
+
+    @Test
+    public void testGroupsCanQueryIfFGAPViewScopeGranted() {
+        realm.updateWithCleanup(realm -> realm.adminPermissionsEnabled(true));
+
+        createGroup();
+        assertAccessDenied(() -> noAccessClient.groups().getAll(""));
+
+        UserPolicyRepresentation policy = createUserPolicy(getServiceAccount().getId());
+        createPermission(AdminPermissionsSchema.GROUPS_RESOURCE_TYPE,
+                null,
+                Set.of(AdminPermissionsSchema.VIEW),
+                policy.getName());
+
+        ListResponse<Group> groups = noAccessClient.groups().getAll("");
+        assertNotNull(groups);
+        assertEquals(1, groups.getTotalResults());
+    }
+
+    @Test
     public void testAllowUsersFromGroupFGAP() {
         RealmRepresentation realmRep = this.realm.admin().toRepresentation();
         realmRep.setAdminPermissionsEnabled(true);
@@ -253,6 +291,160 @@ public class AuthorizationTest extends AbstractScimTest {
         permissionClient.authorization().permissions().scope().create(permission).close();
         groups = noAccessClient.groups().getAll("");
         assertEquals(1, groups.getTotalResults());
+    }
+
+    @Test
+    public void testGroupMembersReadRequiresViewMembersFGAP() {
+        realm.updateWithCleanup(realm -> realm.adminPermissionsEnabled(true));
+
+        GroupRepresentation group = createGroup();
+        managedUser.admin().joinGroup(group.getId());
+
+        ClientResource permissionClient = getAdminPermissionsClient();
+        UserPolicyRepresentation policy = createUserPolicy(getServiceAccount().getId());
+        ScopePermissionRepresentation permission = createPermission(AdminPermissionsSchema.GROUPS_RESOURCE_TYPE,
+                Set.of(group.getId()),
+                Set.of(AdminPermissionsSchema.VIEW),
+                policy.getName());
+
+        Group fetched = noAccessClient.groups().get(group.getId(), List.of("members"));
+        assertNull(fetched.getMembers());
+
+        grantAdminRole(AdminRoles.VIEW_USERS);
+        fetched = noAccessClient.groups().get(group.getId(), List.of("members"));
+        assertNotNull(fetched.getMembers());
+        assertEquals(1, fetched.getMembers().size());
+        assertEquals(managedUser.getId(), fetched.getMembers().get(0).getValue());
+
+        revokeAdminRole(AdminRoles.VIEW_USERS);
+        permission = permissionClient.authorization().permissions().scope().findByName(permission.getName());
+        permission.addScope(AdminPermissionsSchema.VIEW);
+        permission.addScope(AdminPermissionsSchema.VIEW_MEMBERS);
+        permissionClient.authorization().permissions().scope().findById(permission.getId()).update(permission);
+        fetched = noAccessClient.groups().get(group.getId(), List.of("members"));
+        assertNotNull(fetched.getMembers());
+        assertEquals(1, fetched.getMembers().size());
+        assertEquals(managedUser.getId(), fetched.getMembers().get(0).getValue());
+    }
+
+    @Test
+    public void testUserGroupMembershipReadFiltersByPerGroupViewFGAP() {
+        realm.updateWithCleanup(realm -> realm.adminPermissionsEnabled(true));
+
+        // Create two groups and add managedUser to both
+        GroupRepresentation groupA = new GroupRepresentation();
+        groupA.setName("group-a");
+        try (Response response = realm.admin().groups().add(groupA)) {
+            groupA.setId(ApiUtil.getCreatedId(response));
+        }
+
+        GroupRepresentation groupB = new GroupRepresentation();
+        groupB.setName("group-b");
+        try (Response response = realm.admin().groups().add(groupB)) {
+            groupB.setId(ApiUtil.getCreatedId(response));
+        }
+
+        managedUser.admin().joinGroup(groupA.getId());
+        managedUser.admin().joinGroup(groupB.getId());
+
+        // Set up a user policy referencing the restricted SCIM client's service account
+        UserPolicyRepresentation policy = createUserPolicy(getServiceAccount().getId());
+
+        // Grant users:view on the managed user so the SCIM client can fetch it
+        createPermission(AdminPermissionsSchema.USERS_RESOURCE_TYPE,
+                Set.of(managedUser.getId()),
+                Set.of(AdminPermissionsSchema.VIEW),
+                policy.getName());
+
+        // Grant groups:view on groupA ONLY — groupB is intentionally not accessible
+        createPermission(AdminPermissionsSchema.GROUPS_RESOURCE_TYPE,
+                Set.of(groupA.getId()),
+                Set.of(AdminPermissionsSchema.VIEW),
+                policy.getName());
+
+        User fetched = noAccessClient.users().get(managedUser.getId(), List.of("groups"));
+        assertNotNull(fetched.getGroups());
+        List<String> returnedGroupIds = fetched.getGroups().stream()
+                .map(GroupMembership::getValue)
+                .toList();
+        assertEquals(1, returnedGroupIds.size());
+        assertTrue(returnedGroupIds.contains(groupA.getId()));
+
+        grantAdminRole(AdminRoles.VIEW_USERS);
+        fetched = noAccessClient.users().get(managedUser.getId(), List.of("groups"));
+        assertNotNull(fetched.getGroups());
+        returnedGroupIds = fetched.getGroups().stream()
+                .map(GroupMembership::getValue)
+                .toList();
+        assertEquals(2, returnedGroupIds.size());
+        assertTrue(returnedGroupIds.contains(groupA.getId()));
+        assertTrue(returnedGroupIds.contains(groupB.getId()));
+
+    }
+
+    @Test
+    public void testUserGroupMembershipAddDeniedWithoutGroupViewFGAP() {
+        RealmRepresentation realmRep = this.realm.admin().toRepresentation();
+        realmRep.setAdminPermissionsEnabled(true);
+        realm.admin().update(realmRep);
+
+        GroupRepresentation group = createGroup();
+        UserPolicyRepresentation policy = createUserPolicy(getServiceAccount().getId());
+
+        createPermission(AdminPermissionsSchema.USERS_RESOURCE_TYPE,
+                Set.of(managedUser.getId()),
+                Set.of(AdminPermissionsSchema.MANAGE, AdminPermissionsSchema.VIEW, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP),
+                policy.getName());
+
+        createPermission(AdminPermissionsSchema.GROUPS_RESOURCE_TYPE,
+                Set.of(group.getId()),
+                Set.of(AdminPermissionsSchema.MANAGE_MEMBERSHIP),
+                policy.getName());
+
+        ScimClientException exception = null;
+        try {
+            noAccessClient.users().patch(managedUser.getId(), PatchRequest.create()
+                    .add("groups", group.getId())
+                    .build());
+        } catch (ScimClientException sce) {
+            exception = sce;
+        }
+
+        assertNotNull(exception);
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), exception.getError().getStatusInt());
+    }
+
+    @Test
+    public void testGroupMembersAddDeniedWithoutUserViewFGAP() {
+        RealmRepresentation realmRep = this.realm.admin().toRepresentation();
+        realmRep.setAdminPermissionsEnabled(true);
+        realm.admin().update(realmRep);
+
+        GroupRepresentation group = createGroup();
+        ClientResource permissionClient = getAdminPermissionsClient();
+        UserPolicyRepresentation policy = createUserPolicy(getServiceAccount().getId());
+
+        createPermission(AdminPermissionsSchema.GROUPS_RESOURCE_TYPE,
+                Set.of(group.getId()),
+                Set.of(AdminPermissionsSchema.MANAGE, AdminPermissionsSchema.VIEW, AdminPermissionsSchema.MANAGE_MEMBERSHIP),
+                policy.getName());
+
+        createPermission(AdminPermissionsSchema.USERS_RESOURCE_TYPE,
+                Set.of(managedUser.getId()),
+                Set.of(AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP),
+                policy.getName());
+
+        ScimClientException exception = null;
+        try {
+            noAccessClient.groups().patch(group.getId(), PatchRequest.create()
+                    .add("members", managedUser.getId())
+                    .build());
+        } catch (ScimClientException sce) {
+            exception = sce;
+        }
+
+        assertNotNull(exception);
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), exception.getError().getStatusInt());
     }
 
     @Test
@@ -576,6 +768,51 @@ public class AuthorizationTest extends AbstractScimTest {
                 .build()));
     }
 
+    @Test
+    public void testFGAPPerUserViewAllowsGetByIdButNotList() {
+        realm.updateWithCleanup(realm -> realm.adminPermissionsEnabled(true));
+
+        UserPolicyRepresentation policy = createUserPolicy(getServiceAccount().getId());
+        createPermission(AdminPermissionsSchema.USERS_RESOURCE_TYPE,
+                Set.of(managedUser.getId()),
+                Set.of(AdminPermissionsSchema.VIEW),
+                policy.getName());
+
+        User fetched = noAccessClient.users().get(managedUser.getId());
+        assertNotNull(fetched);
+        assertEquals(managedUser.getId(), fetched.getId());
+
+        assertAccessDenied(() -> noAccessClient.users().getAll());
+
+        grantAdminRole(AdminRoles.QUERY_USERS);
+        ListResponse<User> users = noAccessClient.users().getAll();
+        assertNotNull(users);
+        assertEquals(1, users.getTotalResults());
+    }
+
+    @Test
+    public void testFGAPPerGroupViewAllowsGetByIdButNotList() {
+        realm.updateWithCleanup(realm -> realm.adminPermissionsEnabled(true));
+
+        GroupRepresentation group = createGroup();
+        UserPolicyRepresentation policy = createUserPolicy(getServiceAccount().getId());
+        createPermission(AdminPermissionsSchema.GROUPS_RESOURCE_TYPE,
+                Set.of(group.getId()),
+                Set.of(AdminPermissionsSchema.VIEW),
+                policy.getName());
+
+        Group fetched = noAccessClient.groups().get(group.getId());
+        assertNotNull(fetched);
+        assertEquals(group.getId(), fetched.getId());
+
+        assertAccessDenied(() -> noAccessClient.groups().getAll(""));
+
+        grantAdminRole(AdminRoles.QUERY_GROUPS);
+        ListResponse<Group> groups = noAccessClient.groups().getAll("");
+        assertNotNull(groups);
+        assertEquals(1, groups.getTotalResults());
+    }
+
     private ClientRepresentation getScimClient() {
         return realm.admin().clients().findByClientId("scim-client-restricted").get(0);
     }
@@ -590,6 +827,37 @@ public class AuthorizationTest extends AbstractScimTest {
         return group;
     }
 
+    private ClientResource getAdminPermissionsClient() {
+        String permissionsClientId = realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId();
+        return realm.admin().clients().get(permissionsClientId);
+    }
+
+    private UserPolicyRepresentation createUserPolicy(String userId) {
+        UserPolicyRepresentation policy = new UserPolicyRepresentation();
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.addUser(userId);
+        getAdminPermissionsClient().authorization().policies().user().create(policy).close();
+
+        return policy;
+    }
+
+    private UserRepresentation getServiceAccount() {
+        return realm.admin().clients().get(getScimClient().getId()).getServiceAccountUser();
+    }
+
+    private ScopePermissionRepresentation createPermission(String resourceType, Set<String> resources, Set<String> scopes, String policyName) {
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.setResourceType(resourceType);
+        if (resources != null && !resources.isEmpty()) {
+            permission.setResources(resources);
+        }
+        permission.setScopes(scopes);
+        permission.addPolicy(policyName);
+        getAdminPermissionsClient().authorization().permissions().scope().create(permission).close();
+        return permission;
+    }
+
     private void assertAccessDenied(Runnable action) {
         try {
             action.run();
@@ -599,11 +867,19 @@ public class AuthorizationTest extends AbstractScimTest {
         }
     }
 
-    private void grantAdminRole(String viewUsers) {
+    private void grantAdminRole(String role) {
         ClientRepresentation realmMgmt = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
-        RoleRepresentation viewUserRole = realm.admin().clients().get(realmMgmt.getId()).roles().get(viewUsers).toRepresentation();
+        RoleRepresentation viewUserRole = realm.admin().clients().get(realmMgmt.getId()).roles().get(role).toRepresentation();
         ClientRepresentation clientRep = getScimClient();
         UserRepresentation serviceAccountUser = realm.admin().clients().get(clientRep.getId()).getServiceAccountUser();
         realm.admin().users().get(serviceAccountUser.getId()).roles().clientLevel(realmMgmt.getId()).add(List.of(viewUserRole));
+    }
+
+    private void revokeAdminRole(String name) {
+        ClientRepresentation realmMgmt = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation role = realm.admin().clients().get(realmMgmt.getId()).roles().get(name).toRepresentation();
+        ClientRepresentation clientRep = getScimClient();
+        UserRepresentation serviceAccountUser = realm.admin().clients().get(clientRep.getId()).getServiceAccountUser();
+        realm.admin().users().get(serviceAccountUser.getId()).roles().clientLevel(realmMgmt.getId()).remove(List.of(role));
     }
 }

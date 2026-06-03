@@ -276,7 +276,6 @@ public final class PartialEvaluator {
     }
 
     private boolean hasAnyQueryAdminRole(ClientModel client, UserModel user) {
-        boolean result = false;
         for (String adminRole : List.of(AdminRoles.QUERY_CLIENTS, AdminRoles.QUERY_GROUPS, AdminRoles.QUERY_USERS, AdminRoles.QUERY_ORGANIZATIONS)) {
             RoleModel role = client.getRole(adminRole);
 
@@ -285,11 +284,10 @@ public final class PartialEvaluator {
             }
 
             if (user.hasRole(role)) {
-                result = true;
-                break;
+                return true;
             }
         }
 
-        return result;
+        return false;
     }
 }
