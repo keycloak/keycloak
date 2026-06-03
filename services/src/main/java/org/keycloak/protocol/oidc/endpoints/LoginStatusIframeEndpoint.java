@@ -31,6 +31,7 @@ import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.services.Urls;
 import org.keycloak.urls.UrlType;
@@ -83,7 +84,7 @@ public class LoginStatusIframeEndpoint {
                 Set<String> validWebOrigins = WebOriginsUtils.resolveValidWebOrigins(session, client);
                 String requestOrigin = UriUtils.getOrigin(uriInfo.getRequestUri());
                 validWebOrigins.add(requestOrigin);
-                if (validWebOrigins.contains("*") || validWebOrigins.contains(origin)) {
+                if (RedirectUtils.matchesOrigin(validWebOrigins, origin)) {
                     return Response.noContent().build();
                 }
                 logger.debugf("client %s does not allow origin=%s for requestOrigin=%s (as determined by the proxy-header setting), init will return a 403", clientId, origin, requestOrigin);
