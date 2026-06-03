@@ -11,6 +11,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.DefaultOAuthClientConfiguration;
@@ -18,9 +19,11 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
@@ -58,12 +61,15 @@ public class ParameterizedScopesIsolationTest {
     @InjectWebDriver(lifecycle = LifeCycle.METHOD)
     ManagedWebDriver driver;
 
+    @InjectUser(config = TargetUserConfig.class)
+    ManagedUser targetUser;
+
     @InjectOAuthClient(config = TestOAuthClientConfig.class)
     OAuthClient oauth;
 
     @Test
     public void testParameterizedScopeIsolationAcrossCodeExchangeAndRefresh() {
-        createAndAssignParameterizedScope();
+        createAndAssignParameterizedScope(SCOPE_NAME, "string");
 
         String scopeA = SCOPE_NAME + ":" + VALUE_A;
         String scopeB = SCOPE_NAME + ":" + VALUE_B;
@@ -117,13 +123,13 @@ public class ParameterizedScopesIsolationTest {
         assertScopeNotContains(token.getScope(), notExpectedScope);
     }
 
-    private void createAndAssignParameterizedScope() {
+    private void createAndAssignParameterizedScope(String name, String type) {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
-        scopeRep.setName(SCOPE_NAME);
+        scopeRep.setName(name);
         scopeRep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         scopeRep.setAttributes(new HashMap<>() {{
             put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, type);
         }});
 
         String scopeId;
@@ -135,6 +141,40 @@ public class ParameterizedScopesIsolationTest {
         String clientId = realm.admin().clients().findByClientId(oauth.getClientId()).get(0).getId();
         realm.cleanup().add(r -> r.clientScopes().get(scopeId).remove());
         realm.admin().clients().get(clientId).addOptionalClientScope(scopeId);
+    }
+
+    @Test
+    public void testUsernameScopeTypeDropsScopeWhenTargetUserDisabled() {
+        String scopeName = "user-scope";
+        String requestedScope = scopeName + ":" + targetUser.getUsername();
+
+        createAndAssignParameterizedScope(scopeName, "username");
+
+        // 1. Auth request — user authenticates, scope is granted
+        AuthorizationEndpointResponse authResponse = oauth.loginForm()
+                .scope(requestedScope)
+                .doLogin(USERNAME, PASSWORD);
+        assertTrue(authResponse.isRedirected());
+        String code = authResponse.getCode();
+        assertNotNull(code);
+
+        // 2. Code to token — scope should be present
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        assertTrue(tokenResponse.isSuccess());
+        assertScopeContains(tokenResponse.getScope(), requestedScope);
+
+        // 3. Refresh with no scopes (uses initial scopes) — scope should still be present
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+        assertTrue(refreshResponse.isSuccess());
+        assertScopeContains(refreshResponse.getScope(), requestedScope);
+
+        // 4. Disable the target user
+        targetUser.updateWithCleanup(u -> u.enabled(false));
+
+        // 5. Refresh with no scopes — succeeds but scope is no longer assigned
+        AccessTokenResponse refreshResponse2 = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken());
+        assertTrue(refreshResponse2.isSuccess());
+        assertScopeNotContains(refreshResponse2.getScope(), requestedScope);
     }
 
     private static void assertScopeContains(String scopeString, String expectedScope) {
@@ -154,6 +194,17 @@ public class ParameterizedScopesIsolationTest {
         public RealmBuilder configure(RealmBuilder realm) {
             return realm.users(UserBuilder.create(USERNAME).password(PASSWORD)
                     .email("test@localhost").firstName("Test").lastName("User"));
+        }
+    }
+
+    static class TargetUserConfig implements UserConfig {
+        @Override
+        public UserBuilder configure(UserBuilder user) {
+            return user.username("target-user")
+                    .password(PASSWORD)
+                    .email("target@localhost")
+                    .firstName("Target")
+                    .lastName("User");
         }
     }
 
