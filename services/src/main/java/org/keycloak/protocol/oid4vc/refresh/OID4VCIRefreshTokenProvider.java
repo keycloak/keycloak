@@ -87,6 +87,10 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
 
         RefreshToken refreshToken = createRefreshToken(accessToken, initialRefreshTokenCtx.confirmation(), OID4VCIRefreshTokenProviderFactory.PROVIDER_ID);
 
+        if (refreshToken.getSubject() == null) {
+            refreshToken.subject(user.getId());
+        }
+
         if (initialRefreshTokenCtx.offlineTokenRequested()) {
             throw new RefreshTokenException(INVALID_REQUEST, "Unsupported to request offline access together with oid4vci credential");
         } else {
@@ -163,9 +167,10 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
     }
 
 
-    // Might be eventually overriden for the scenarios where user not available in Keycloak DB
+    // Might eventually be overridden for scenarios where a user is not available in the Keycloak DB
     protected UserModel getUser(RealmModel realm, RefreshToken oldToken) {
-        return session.users().getUserById(realm, oldToken.getSubject());
+        String userId = oldToken.getSubject();
+        return session.users().getUserById(realm, userId);
     }
 
     protected IssuedVerifiableCredentialModel checkIssuedVerifiableCredential(KeycloakSession session, UserModel user, String issuedCredentialId, CredentialScopeModel expectedCredentialScope, ClientModel expectedClient) {
