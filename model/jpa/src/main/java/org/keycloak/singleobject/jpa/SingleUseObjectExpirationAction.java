@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.revoketokens.jpa;
+package org.keycloak.singleobject.jpa;
 
 import java.util.function.IntConsumer;
 
@@ -23,20 +23,23 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.expiration.jpa.ExpirationAction;
 import org.keycloak.models.KeycloakSession;
 
-public enum RevokedTokenExpirationAction implements ExpirationAction {
+/**
+ * {@link ExpirationAction} that deletes expired rows from the {@code SINGLE_USE_OBJECT} table.
+ */
+public enum SingleUseObjectExpirationAction implements ExpirationAction {
     INSTANCE;
 
     @Override
     public boolean removeExpired(KeycloakSession session, String realmId, int currentTime, int maxRemoval, IntConsumer removeCount) {
         var em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        var ids = em.createNamedQuery("findExpiredRevokedTokenIds", String.class)
+        var ids = em.createNamedQuery("findExpiredSingleUseObjectIds", String.class)
                 .setParameter("currentTime", currentTime)
                 .setMaxResults(maxRemoval)
                 .getResultList();
         if (ids.isEmpty()) {
             return false;
         }
-        var removed = em.createNamedQuery("deleteExpiredRevokedTokenByIds")
+        var removed = em.createNamedQuery("deleteExpiredSingleUseObjectByIds")
                 .setParameter("ids", ids)
                 .setParameter("currentTime", currentTime)
                 .executeUpdate();

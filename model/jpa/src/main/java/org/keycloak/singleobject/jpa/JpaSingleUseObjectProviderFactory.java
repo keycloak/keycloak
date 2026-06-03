@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.authentication.jpa;
+package org.keycloak.singleobject.jpa;
 
 import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
@@ -33,40 +33,43 @@ import org.keycloak.expiration.jpa.ExpirationHelper;
 import org.keycloak.expiration.jpa.ExpirationTask;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.SingleUseObjectProviderFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
-import org.keycloak.sessions.AuthenticationSessionProviderFactory;
+import org.keycloak.storage.configuration.ServerConfigStorageProvider;
 import org.keycloak.timer.TimerProvider;
 
 import org.jboss.logging.Logger;
 
-public class JpaAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory<JpaAuthenticationSessionProvider>, EnvironmentDependentProviderFactory, ServerInfoAwareProviderFactory {
+/**
+ * Factory for {@link JpaSingleUseObjectProvider}.
+ * <p>
+ * Enabled only when the {@link Profile.Feature#CACHELESS} feature is active. Registers a periodic
+ * {@link ExpirationTask} to clean up expired single-use objects from the database.
+ */
+public class JpaSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory<JpaSingleUseObjectProvider>, EnvironmentDependentProviderFactory, ServerInfoAwareProviderFactory {
 
     private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
-    public static final String PROVIDER_ID = "jpa";
+    private static final String PROVIDER_ID = "jpa";
 
-    private int authSessionsLimit;
+    // Config
+    private static final String METRICS_KEY = "metricsEnabled";
+
     private int expirationTaskIntervalSeconds;
     private int expirationTaskTimeoutSeconds;
     private int expirationTaskMaxRemoval;
     private boolean metricsEnabled;
 
-    // Config
-    private static final String AUTH_SESSION_LIMIT_KEY = "authSessionsLimit";
-    private static final int DEFAULT_AUTH_SESSION_LIMIT = 300;
-    private static final String METRICS_KEY = "metricsEnabled";
-
     @Override
-    public JpaAuthenticationSessionProvider create(KeycloakSession session) {
-        return new JpaAuthenticationSessionProvider(session, authSessionsLimit);
+    public JpaSingleUseObjectProvider create(KeycloakSession session) {
+        return new JpaSingleUseObjectProvider(session);
     }
 
     @Override
     public void init(Config.Scope config) {
-        authSessionsLimit = config.getInt(AUTH_SESSION_LIMIT_KEY, DEFAULT_AUTH_SESSION_LIMIT);
         metricsEnabled = config.getBoolean(METRICS_KEY, config.root().getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), Boolean.FALSE));
         expirationTaskIntervalSeconds = ExpirationHelper.getExpirationTaskInterval(config, logger);
         expirationTaskTimeoutSeconds = ExpirationHelper.getExpirationTaskTimeout(config, logger);
@@ -76,15 +79,15 @@ public class JpaAuthenticationSessionProviderFactory implements AuthenticationSe
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         ExpirationTask.builder()
+                .withEntityId("single-use-obj")
+                .withAction(SingleUseObjectExpirationAction.INSTANCE)
                 .withFactory(factory)
-                .withEntityId("authentication-sessions")
-                .withInterval(expirationTaskIntervalSeconds, TimeUnit.SECONDS)
-                .withTimeout(expirationTaskTimeoutSeconds, TimeUnit.SECONDS)
-                .withAction(AuthenticationSessionExpirationAction.INSTANCE)
                 .withExecutor(ExpirationHelper.expirationExecutor(factory))
                 .withMaxRemoval(expirationTaskMaxRemoval)
                 .withMetrics(metricsEnabled)
-                .withRealmExpiration(true)
+                .withRealmExpiration(false)
+                .withTimeout(expirationTaskTimeoutSeconds, TimeUnit.SECONDS)
+                .withInterval(expirationTaskIntervalSeconds, TimeUnit.SECONDS)
                 .build()
                 .schedule();
     }
@@ -100,8 +103,20 @@ public class JpaAuthenticationSessionProviderFactory implements AuthenticationSe
     }
 
     @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        var builder = ProviderConfigurationBuilder.create();
+        ExpirationHelper.addConfiguration(builder, "single use object");
+        builder.property()
+                .name(METRICS_KEY)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .helpText("Whether metrics are enabled for this provider (expiration metrics). If not set, uses '" + MetricsOptions.METRICS_ENABLED.getKey() + "' option value.")
+                .add();
+        return builder.build();
+    }
+
+    @Override
     public Set<Class<? extends Provider>> dependsOn() {
-        return Set.of(JpaConnectionProvider.class, ExecutorsProvider.class, TimerProvider.class);
+        return Set.of(JpaConnectionProvider.class, ExecutorsProvider.class, ServerConfigStorageProvider.class, TimerProvider.class);
     }
 
     @Override
@@ -110,28 +125,9 @@ public class JpaAuthenticationSessionProviderFactory implements AuthenticationSe
     }
 
     @Override
-    public List<ProviderConfigProperty> getConfigMetadata() {
-        var builder = ProviderConfigurationBuilder.create();
-        builder.property()
-                .name(AUTH_SESSION_LIMIT_KEY)
-                .type(ProviderConfigProperty.INTEGER_TYPE)
-                .helpText("The maximum number of concurrent authentication sessions per RootAuthenticationSession.")
-                .defaultValue(DEFAULT_AUTH_SESSION_LIMIT)
-                .add();
-        builder.property()
-                .name(METRICS_KEY)
-                .type(ProviderConfigProperty.BOOLEAN_TYPE)
-                .helpText("Whether metrics are enabled for this provider (expiration metrics). If not set, uses '" + MetricsOptions.METRICS_ENABLED.getKey() + "' option value.")
-                .add();
-        ExpirationHelper.addConfiguration(builder, "authentication sessions");
-        return builder.build();
-    }
-
-    @Override
     public Map<String, String> getOperationalInfo() {
         var map = new HashMap<String, String>();
         ExpirationHelper.addToOperationalInfo(expirationTaskIntervalSeconds, expirationTaskTimeoutSeconds, expirationTaskMaxRemoval, map);
-        map.put(AUTH_SESSION_LIMIT_KEY, Integer.toString(authSessionsLimit));
         map.put(METRICS_KEY, Boolean.toString(metricsEnabled));
         return Map.copyOf(map);
     }

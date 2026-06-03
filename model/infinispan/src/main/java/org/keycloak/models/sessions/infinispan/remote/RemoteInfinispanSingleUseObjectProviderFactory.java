@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
@@ -104,7 +105,7 @@ public class RemoteInfinispanSingleUseObjectProviderFactory implements SingleUse
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return InfinispanUtils.isRemoteInfinispan();
+        return !Profile.isFeatureEnabled(Profile.Feature.CACHELESS) && InfinispanUtils.isRemoteInfinispan();
     }
 
     @Override

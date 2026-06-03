@@ -332,4 +332,24 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.7.0-single-use-object-table">
+        <createTable tableName="SINGLE_USE_OBJECT">
+            <!-- cannot use varchar larger than 255, see org.keycloak.connections.jpa.updater.liquibase.MySQL8VarcharType -->
+            <!-- MySQL/MariaDB don't like it and fails with: BLOB/TEXT column 'ID' used in key specification without a key length -->
+            <column name="ID" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SINGLE_USE_OBJECT"/>
+            </column>
+            <column name="NOTES" type="TEXT"/>
+            <column name="EXPIRE" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-single-use-object-index">
+        <createIndex tableName="SINGLE_USE_OBJECT" indexName="IDX_SINGLE_USE_OBJ_EXPIRE">
+            <column name="EXPIRE"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

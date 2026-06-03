@@ -53,10 +53,11 @@ abstract class BaseExpirationTask implements ExpirationTask {
     protected final KeycloakSessionFactory factory;
     protected final String entityId;
     protected final int intervalSeconds;
+    protected final int maxRemoval;
     protected final ExpirationAction action;
     protected final ExpirationListener listener;
 
-    BaseExpirationTask(KeycloakSessionFactory factory, Executor executor, ExpirationAction action, ExpirationListener listener, String entityId, int transactionTimeoutSeconds, int intervalSeconds) {
+    BaseExpirationTask(KeycloakSessionFactory factory, Executor executor, ExpirationAction action, ExpirationListener listener, String entityId, int transactionTimeoutSeconds, int intervalSeconds, int maxRemoval) {
         this.factory = Objects.requireNonNull(factory);
         this.executor = Objects.requireNonNull(executor);
         this.action = Objects.requireNonNull(action);
@@ -64,6 +65,7 @@ abstract class BaseExpirationTask implements ExpirationTask {
         this.entityId = Objects.requireNonNull(entityId);
         this.transactionTimeoutSeconds = transactionTimeoutSeconds;
         this.intervalSeconds = intervalSeconds;
+        this.maxRemoval = maxRemoval;
         this.inProgress = new AtomicBoolean();
     }
 

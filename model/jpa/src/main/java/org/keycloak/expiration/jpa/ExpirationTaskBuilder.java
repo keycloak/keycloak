@@ -41,7 +41,8 @@ import io.micrometer.core.instrument.Timer;
  * {@link #withEntityId(String)}, {@link #withExecutor(Executor)}, and {@link #withInterval(int, TimeUnit)}.
  * <p>
  * Optional properties: {@link #withListener(ExpirationListener)}, {@link #withMetrics(boolean)},
- * {@link #withRealmExpiration(boolean)}, and {@link #withTimeout(int, TimeUnit)} (defaults to the interval).
+ * {@link #withRealmExpiration(boolean)}, {@link #withMaxRemoval(int)} (defaults to 128),
+ * and {@link #withTimeout(int, TimeUnit)} (defaults to the interval).
  * <p>
  * Example usage:
  * <pre>{@code
@@ -54,6 +55,7 @@ import io.micrometer.core.instrument.Timer;
  *     .withExecutor(executor)
  *     .withMetrics(true)
  *     .withRealmExpiration(true)
+ *     .withMaxRemoval(128)
  *     .build()
  *     .schedule();
  * }</pre>
@@ -71,12 +73,15 @@ public final class ExpirationTaskBuilder {
     private static final String TYPE_TAG = "type";
     private static final String OUTCOME_TAG = "outcome";
 
+    static final int DEFAULT_MAX_REMOVAL = 128;
+
     private ExpirationAction action;
     private ExpirationListener listener;
     private Executor executor;
     private String entityId;
     private int interval;
     private int timeout;
+    private int maxRemoval = DEFAULT_MAX_REMOVAL;
     private boolean metrics;
     private boolean realmExpiration;
     private KeycloakSessionFactory factory;
@@ -144,6 +149,19 @@ public final class ExpirationTaskBuilder {
     }
 
     /**
+     * Sets the maximum number of entries to remove per batch. Defaults to {@value #DEFAULT_MAX_REMOVAL}.
+     *
+     * @throws ModelException if the value is not positive.
+     */
+    public ExpirationTaskBuilder withMaxRemoval(int maxRemoval) {
+        if (maxRemoval <= 0) {
+            throw new ModelException("Max removal must be greater than 0");
+        }
+        this.maxRemoval = maxRemoval;
+        return this;
+    }
+
+    /**
      * Sets the interval between expiration task runs.
      *
      * @throws ArithmeticException if the converted value overflows an {@code int}.
@@ -194,8 +212,8 @@ public final class ExpirationTaskBuilder {
             timeout = interval;
         }
         return realmExpiration ?
-                new RealmAwareExpirationTask(factory, executor, action, getListener(), entityId, timeout, interval) :
-                new DefaultExpirationTask(factory, executor, action, getListener(), entityId, timeout, interval);
+                new RealmAwareExpirationTask(factory, executor, action, getListener(), entityId, timeout, interval, maxRemoval) :
+                new DefaultExpirationTask(factory, executor, action, getListener(), entityId, timeout, interval, maxRemoval);
     }
 
     private ExpirationListener getListener() {

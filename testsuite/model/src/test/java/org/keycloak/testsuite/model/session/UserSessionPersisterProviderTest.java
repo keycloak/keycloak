@@ -1057,7 +1057,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             loadUserSessionDirectlyDatabase(session, userSessionIds.get(0)).setRememberMe(false);
 
             //no cache with remote infinispan, but we have to clear the embedded cache.
-            if (InfinispanUtils.isEmbeddedInfinispan()) {
+            if (!Profile.isFeatureEnabled(Profile.Feature.CACHELESS) && InfinispanUtils.isEmbeddedInfinispan()) {
                 session.getProvider(InfinispanConnectionProvider.class).getCache(USER_SESSION_CACHE_NAME).clear();
             }
         });

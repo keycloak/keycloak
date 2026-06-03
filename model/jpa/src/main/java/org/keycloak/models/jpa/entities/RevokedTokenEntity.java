@@ -31,8 +31,12 @@ import jakarta.persistence.Table;
  */
 @NamedQueries({
         @NamedQuery(
-                name = "deleteExpiredRevokedToken",
-                query = "delete from RevokedTokenEntity token where token.expire <= :currentTime"
+                name = "findExpiredRevokedTokenIds",
+                query = "select t.id from RevokedTokenEntity t where t.expire <= :currentTime"
+        ),
+        @NamedQuery(
+                name = "deleteExpiredRevokedTokenByIds",
+                query = "delete from RevokedTokenEntity where id in :ids and expire <= :currentTime"
         ),
         @NamedQuery(
                 name = "findRevokeTokenExpireTime",
