@@ -160,6 +160,11 @@ public class OrganizationMemberResource {
         return new OrganizationInvitationResource(session, organization, adminEvent, auth).inviteExistingUser(id);
     }
 
+    /**
+     * Precondition: caller must have passed through {@link OrganizationsResource#get(String)}
+     * which enforces {@code auth.orgs().requireView(organization)}. This method additionally
+     * requires {@code auth.users().requireQuery()}.
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
@@ -196,6 +201,11 @@ public class OrganizationMemberResource {
         return provider.getMembersStream(organization, filters, exact, first, max).map(this::toRepresentation);
     }
 
+    /**
+     * Precondition: caller must have passed through {@link OrganizationsResource#get(String)}
+     * which enforces {@code auth.orgs().requireView(organization)}. This method additionally
+     * requires {@code auth.users().requireView(member)}.
+     */
     @Path("{member-id}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -252,6 +262,15 @@ public class OrganizationMemberResource {
         throw ErrorResponse.error("Not a member of the organization", Status.BAD_REQUEST);
     }
 
+    /**
+     * Precondition: when reached via the per-org path, the caller must have passed through
+     * {@link OrganizationsResource#get(String)} which enforces {@code auth.orgs().requireView(organization)}.
+     * When reached via the collection-level path ({@code /organizations/members/{id}/organizations}),
+     * the caller passes through {@link OrganizationsResource#getOrganizations(String)} which enforces
+     * {@code auth.orgs().requireQuery()}. This method additionally requires
+     * {@code auth.users().requireView(member)} and filters returned organizations by
+     * {@code auth.orgs().canView(org)}.
+     */
     @Path("{member-id}/organizations")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -284,6 +303,11 @@ public class OrganizationMemberResource {
                 .map(model -> ModelToRepresentation.toRepresentation(model, briefRepresentation));
     }
 
+    /**
+     * Precondition: caller must have passed through {@link OrganizationsResource#get(String)}
+     * which enforces {@code auth.orgs().requireView(organization)}. This method additionally
+     * requires {@code auth.users().requireView(member)}.
+     */
     @Path("{member-id}/groups")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -313,6 +337,11 @@ public class OrganizationMemberResource {
                 .map(group -> ModelToRepresentation.toRepresentation(group, !briefRepresentation));
     }
 
+    /**
+     * Precondition: caller must have passed through {@link OrganizationsResource#get(String)}
+     * which enforces {@code auth.orgs().requireView(organization)}. This method additionally
+     * requires {@code auth.users().requireQuery()}.
+     */
     @Path("count")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
