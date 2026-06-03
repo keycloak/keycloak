@@ -26,6 +26,7 @@ import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientPoliciesPoliciesResource;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -125,6 +126,7 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS;
+import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_DEFAULT_TRUST_IDP_ALIAS;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.models.Constants.CREATE_DEFAULT_CLIENT_SCOPES;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
@@ -185,10 +187,10 @@ public abstract class OID4VCIssuerTestBase {
     protected ManagedClient managedClient;
 
     @InjectClient(ref = OID4VCI_ABCA_CLIENT_ID, config = OID4VCAttestationBasedClient.class)
-    ManagedClient managedAttestationBasedClient;
+    protected ManagedClient managedAttestationBasedClient;
 
     @InjectClient(ref = OID4VCI_PUBLIC_CLIENT_ID, config = OID4VCPublicClient.class)
-    ManagedClient managedPublicClient;
+    protected ManagedClient managedPublicClient;
 
     @InjectOAuthClient
     protected OAuthClient oauth;
@@ -240,7 +242,6 @@ public abstract class OID4VCIssuerTestBase {
             testUser.setRealmRoles(List.of(CREDENTIAL_OFFER_CREATE.getName()));
             realmResource.users().get(testUser.getId()).roles().realmLevel().add(List.of(credentialOfferRole));
         }
-
     }
 
     @BeforeEach
@@ -284,14 +285,6 @@ public abstract class OID4VCIssuerTestBase {
             trustIdp.setConfig(config);
             realm.updateIdentityProvider(trustIdp);
         }
-    }
-
-    protected void setClientTrustSource(String alias) {
-        Map<String, String> attributes = new HashMap<>(Optional.ofNullable(abcaClient.getAttributes()).orElse(Map.of()));
-        attributes.put(OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS, alias);
-        abcaClient.setAttributes(attributes);
-        testRealm.admin().clients().get(abcaClient.getId()).update(abcaClient);
-        abcaClient = testRealm.admin().clients().get(abcaClient.getId()).toRepresentation();
     }
 
     protected static KeyWrapper getKeyFromSession(KeycloakSession keycloakSession) {
@@ -477,11 +470,30 @@ public abstract class OID4VCIssuerTestBase {
         realmResource.update(realm);
     }
 
-    protected void setVerifiableCredentialsEnabled(boolean enabled) {
+    protected void setRealmVerifiableCredentialsEnabled(boolean enabled) {
         RealmResource realmResource = testRealm.admin();
         RealmRepresentation realm = realmResource.toRepresentation();
         realm.setVerifiableCredentialsEnabled(enabled);
         realmResource.update(realm);
+    }
+
+    protected void setClientAttribute(ClientRepresentation client, String attrKey, String attrValue) {
+        setClientAttributes(client, Map.of(attrKey, attrValue));
+    }
+
+    protected void setClientAttributes(ClientRepresentation client, Map<String, String> attrUpdate) {
+        Map<String, String> attrs = client.getAttributes();
+        boolean updateNeeded = attrUpdate.entrySet().stream()
+                .anyMatch(e -> !e.getValue().equals(attrs.get(e.getKey())));
+        if (updateNeeded) {
+            ClientResource clientResource = testRealm.admin().clients().get(client.getId());
+            client.getAttributes().putAll(attrUpdate);
+            clientResource.update(client);
+        }
+    }
+
+    protected void setCredentialScopeAttribute(ClientScopeRepresentation credScope, String attrKey, String attrValue) {
+        setCredentialScopeAttributes(credScope, Map.of(attrKey, attrValue));
     }
 
     protected void setCredentialScopeAttributes(ClientScopeRepresentation credScope, Map<String, String> attrUpdate) {
@@ -941,6 +953,7 @@ public abstract class OID4VCIssuerTestBase {
                     .defaultClientScopes("basic", "profile", "roles")
                     .optionalClientScopes(optionalClientScopes)
                     .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
+                    .attribute(OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS, OAUTH_CLIENT_ATTESTATION_DEFAULT_TRUST_IDP_ALIAS)
                     .redirectUris("*");
             return client;
         }
