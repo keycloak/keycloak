@@ -18,6 +18,7 @@
 package org.keycloak.expiration.jpa;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 import org.keycloak.Config;
@@ -25,8 +26,11 @@ import org.keycloak.common.util.DurationConverter;
 import org.keycloak.config.OptionsUtil;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.storage.configuration.ServerConfigStorageProvider;
+import org.keycloak.timer.TimerProvider;
 
 import org.jboss.logging.Logger;
 
@@ -68,6 +72,10 @@ public final class ExpirationHelper {
             return ExpirationTaskBuilder.DEFAULT_MAX_REMOVAL;
         }
         return value;
+    }
+
+    public static Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(ExecutorsProvider.class, TimerProvider.class, ServerConfigStorageProvider.class);
     }
 
     public static Executor expirationExecutor(KeycloakSessionFactory factory) {

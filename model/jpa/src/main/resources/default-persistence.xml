@@ -68,6 +68,7 @@
         <class>org.keycloak.authentication.jpa.AuthenticationSessionEntity</class>
         <class>org.keycloak.authentication.jpa.RootAuthenticationSessionEntity</class>
         <class>org.keycloak.singleobject.jpa.SingleUseObjectEntity</class>
+        <class>org.keycloak.loginfailures.jpa.LoginFailureEntity</class>
 
         <!-- JpaAuditProviders -->
         <class>org.keycloak.events.jpa.EventEntity</class>

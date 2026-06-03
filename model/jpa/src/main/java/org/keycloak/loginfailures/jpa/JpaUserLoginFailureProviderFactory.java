@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.revoketokens.jpa;
+package org.keycloak.loginfailures.jpa;
 
 import java.lang.invoke.MethodHandles;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,9 +26,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
-import org.keycloak.cache.LocalCache;
-import org.keycloak.cache.LocalCacheConfiguration;
-import org.keycloak.cache.LocalCacheProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -37,7 +33,7 @@ import org.keycloak.expiration.jpa.ExpirationHelper;
 import org.keycloak.expiration.jpa.ExpirationTask;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RevokedTokenProviderFactory;
+import org.keycloak.models.UserLoginFailureProviderFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -46,26 +42,20 @@ import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
 import org.jboss.logging.Logger;
 
-public class JpaRevokedTokenProviderFactory implements RevokedTokenProviderFactory<JpaRevokedTokenProvider>, EnvironmentDependentProviderFactory, ServerInfoAwareProviderFactory {
+public class JpaUserLoginFailureProviderFactory implements UserLoginFailureProviderFactory<JpaUserLoginFailureProvider>, EnvironmentDependentProviderFactory, ServerInfoAwareProviderFactory {
 
-    private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
+    private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
     private static final String PROVIDER_ID = "jpa";
-
-    // Config
-    private static final String CACHE_MAX_SIZE_KEY = "cacheMaxSize";
-    private static final int DEFAULT_CACHE_MAX_SIZE = 1000;
     private static final String METRICS_KEY = "metricsEnabled";
 
     private int expirationTaskIntervalSeconds;
     private int expirationTaskTimeoutSeconds;
     private int expirationTaskMaxRemoval;
-    private int cacheMaxSize;
     private boolean metricsEnabled;
-    private LocalCache<String, Long> loadingCache;
 
     @Override
-    public JpaRevokedTokenProvider create(KeycloakSession session) {
-        return new JpaRevokedTokenProvider(session, loadingCache);
+    public JpaUserLoginFailureProvider create(KeycloakSession session) {
+        return new JpaUserLoginFailureProvider(session, expirationTaskMaxRemoval);
     }
 
     @Override
@@ -74,27 +64,18 @@ public class JpaRevokedTokenProviderFactory implements RevokedTokenProviderFacto
         expirationTaskIntervalSeconds = ExpirationHelper.getExpirationTaskInterval(config, logger);
         expirationTaskTimeoutSeconds = ExpirationHelper.getExpirationTaskTimeout(config, logger);
         expirationTaskMaxRemoval = ExpirationHelper.getExpirationTaskMaxRemoval(config, logger);
-        cacheMaxSize = config.getInt(CACHE_MAX_SIZE_KEY, DEFAULT_CACHE_MAX_SIZE);
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        var cacheConfig = LocalCacheConfiguration.<String, Long>builder();
-        cacheConfig.name("revokedToken")
-                .maxSize(cacheMaxSize)
-                .expirationAfterCreate((id, lifespan) -> Duration.ofSeconds(lifespan));
-        try (var session = factory.create()) {
-            loadingCache = session.getProvider(LocalCacheProvider.class)
-                    .create(cacheConfig.build());
-        }
         ExpirationTask.builder()
-                .withEntityId("revoked-token")
-                .withAction(RevokedTokenExpirationAction.INSTANCE)
+                .withEntityId("login-failure")
+                .withAction(LoginFailureExpirationAction.INSTANCE)
                 .withFactory(factory)
                 .withExecutor(ExpirationHelper.expirationExecutor(factory))
                 .withMaxRemoval(expirationTaskMaxRemoval)
                 .withMetrics(metricsEnabled)
-                .withRealmExpiration(false)
+                .withRealmExpiration(true)
                 .withTimeout(expirationTaskTimeoutSeconds, TimeUnit.SECONDS)
                 .withInterval(expirationTaskIntervalSeconds, TimeUnit.SECONDS)
                 .build()
@@ -104,17 +85,11 @@ public class JpaRevokedTokenProviderFactory implements RevokedTokenProviderFacto
     @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
         var builder = ProviderConfigurationBuilder.create();
-        ExpirationHelper.addConfiguration(builder, "revoked token");
-        builder.property()
-                .name(CACHE_MAX_SIZE_KEY)
-                .type(ProviderConfigProperty.INTEGER_TYPE)
-                .helpText("Maximum number of revoked token IDs to keep in the local cache. The cache avoids repeated database lookups for frequently checked tokens.")
-                .defaultValue(DEFAULT_CACHE_MAX_SIZE)
-                .add();
+        ExpirationHelper.addConfiguration(builder, "login failure");
         builder.property()
                 .name(METRICS_KEY)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
-                .helpText("Whether metrics are enabled for this provider (expiration metrics). If not set, uses '" + MetricsOptions.METRICS_ENABLED.getKey() + "' option value.")
+                .helpText("If metrics is enabled for this provider (expiration metrics). If not set, uses '" + MetricsOptions.METRICS_ENABLED.getKey() + "' option value.")
                 .add();
         return builder.build();
     }
@@ -141,7 +116,6 @@ public class JpaRevokedTokenProviderFactory implements RevokedTokenProviderFacto
     public Set<Class<? extends Provider>> dependsOn() {
         var deps = new HashSet<>(ExpirationHelper.dependsOn());
         deps.add(JpaConnectionProvider.class);
-        deps.add(LocalCacheProvider.class);
         return Set.copyOf(deps);
     }
 
@@ -149,5 +123,4 @@ public class JpaRevokedTokenProviderFactory implements RevokedTokenProviderFacto
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.CACHELESS);
     }
-
 }
