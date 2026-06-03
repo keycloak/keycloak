@@ -37,6 +37,9 @@
     },
     "generate:openapi": {
       "command": "kiota generate -l typescript -d openapi.yaml -c AdminClient -n ApiSdk -o ./src/generated --clean-output",
+      "env": {
+        "KIOTA_VERSION": "v1.31.1"
+      },
       "files": [
         "openapi.yaml"
       ],
