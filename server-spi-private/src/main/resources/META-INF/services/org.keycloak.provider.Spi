@@ -114,3 +114,4 @@ org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorSpi
 org.keycloak.protocol.oidc.rar.AuthorizationRequestParserSpi
 org.keycloak.cache.AlternativeLookupSPI
 org.keycloak.cache.LocalCacheSPI
+org.keycloak.models.RevokedTokenSpi

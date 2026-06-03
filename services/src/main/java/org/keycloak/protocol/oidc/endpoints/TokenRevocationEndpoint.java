@@ -18,7 +18,6 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -44,7 +43,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -270,10 +268,9 @@ public class TokenRevocationEndpoint {
     }
 
     private void revokeAccessToken() {
-        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         int currentTime = Time.currentTime();
         long lifespanInSecs = Math.max(token.getExp() - currentTime + 1, 10);
-        singleUseStore.put(token.getId() + SingleUseObjectProvider.REVOKED_KEY, lifespanInSecs, Collections.emptyMap());
+        session.revokedTokens().put(token.getId(), lifespanInSecs);
         revokeTokenExchangeSession();
     }
 

@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
-package org.keycloak.authentication.jpa;
+package org.keycloak.revoketokens.jpa;
 
 import java.lang.invoke.MethodHandles;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
+import org.keycloak.cache.LocalCache;
+import org.keycloak.cache.LocalCacheConfiguration;
+import org.keycloak.cache.LocalCacheProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -33,57 +37,92 @@ import org.keycloak.expiration.jpa.ExpirationHelper;
 import org.keycloak.expiration.jpa.ExpirationTask;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RevokedTokenProviderFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
-import org.keycloak.sessions.AuthenticationSessionProviderFactory;
 import org.keycloak.timer.TimerProvider;
 
 import org.jboss.logging.Logger;
 
-public class JpaAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory<JpaAuthenticationSessionProvider>, EnvironmentDependentProviderFactory, ServerInfoAwareProviderFactory {
+public class JpaRevokedTokenProviderFactory implements RevokedTokenProviderFactory<JpaRevokedTokenProvider>, EnvironmentDependentProviderFactory, ServerInfoAwareProviderFactory {
 
     private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
-    public static final String PROVIDER_ID = "jpa";
-
-    private int authSessionsLimit;
-    private int expirationTaskIntervalSeconds;
-    private int expirationTaskTimeoutSeconds;
-    private boolean metricsEnabled;
+    private static final String PROVIDER_ID = "jpa";
 
     // Config
-    private static final String AUTH_SESSION_LIMIT_KEY = "authSessionsLimit";
-    private static final int DEFAULT_AUTH_SESSION_LIMIT = 300;
+    private static final String CACHE_MAX_SIZE_KEY = "cacheMaxSize";
+    private static final int DEFAULT_CACHE_MAX_SIZE = 1000;
     private static final String METRICS_KEY = "metricsEnabled";
 
+    private int expirationTaskIntervalSeconds;
+    private int expirationTaskTimeoutSeconds;
+    private int cacheMaxSize;
+    private boolean metricsEnabled;
+    private LocalCache<String, Long> loadingCache;
+
     @Override
-    public JpaAuthenticationSessionProvider create(KeycloakSession session) {
-        return new JpaAuthenticationSessionProvider(session, authSessionsLimit);
+    public JpaRevokedTokenProvider create(KeycloakSession session) {
+        return new JpaRevokedTokenProvider(session, loadingCache);
     }
 
     @Override
     public void init(Config.Scope config) {
-        authSessionsLimit = config.getInt(AUTH_SESSION_LIMIT_KEY, DEFAULT_AUTH_SESSION_LIMIT);
         metricsEnabled = config.getBoolean(METRICS_KEY, config.root().getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), Boolean.FALSE));
         expirationTaskIntervalSeconds = ExpirationHelper.getExpirationTaskInterval(config, logger);
         expirationTaskTimeoutSeconds = ExpirationHelper.getExpirationTaskTimeout(config, logger);
+        cacheMaxSize = config.getInt(CACHE_MAX_SIZE_KEY, DEFAULT_CACHE_MAX_SIZE);
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        var cacheConfig = LocalCacheConfiguration.<String, Long>builder();
+        cacheConfig.name("revokedToken")
+                .maxSize(cacheMaxSize)
+                .expirationAfterCreate((id, lifespan) -> Duration.ofSeconds(lifespan));
+        try (var session = factory.create()) {
+            loadingCache = session.getProvider(LocalCacheProvider.class)
+                    .create(cacheConfig.build());
+        }
         ExpirationTask.builder()
+                .withEntityId("revoked-token")
+                .withAction(RevokedTokenExpirationAction.INSTANCE)
                 .withFactory(factory)
-                .withEntityId("authentication-sessions")
-                .withInterval(expirationTaskIntervalSeconds, TimeUnit.SECONDS)
-                .withTimeout(expirationTaskTimeoutSeconds, TimeUnit.SECONDS)
-                .withAction(AuthenticationSessionExpirationAction.INSTANCE)
                 .withExecutor(ExpirationHelper.expirationExecutor(factory))
                 .withMetrics(metricsEnabled)
-                .withRealmExpiration(true)
+                .withRealmExpiration(false)
+                .withTimeout(expirationTaskTimeoutSeconds, TimeUnit.SECONDS)
+                .withInterval(expirationTaskIntervalSeconds, TimeUnit.SECONDS)
                 .build()
                 .schedule();
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        var builder = ProviderConfigurationBuilder.create();
+        ExpirationHelper.addConfiguration(builder, "revoked token");
+        builder.property()
+                .name(CACHE_MAX_SIZE_KEY)
+                .type(ProviderConfigProperty.INTEGER_TYPE)
+                .helpText("Maximum number of revoked token IDs to keep in the local cache. The cache avoids repeated database lookups for frequently checked tokens.")
+                .defaultValue(DEFAULT_CACHE_MAX_SIZE)
+                .add();
+        builder.property()
+                .name(METRICS_KEY)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .helpText("If metrics is enabled for this provider (expiration metrics). If not set, uses '" + MetricsOptions.METRICS_ENABLED.getKey() + "' option value.")
+                .add();
+        return builder.build();
+    }
+
+    @Override
+    public Map<String, String> getOperationalInfo() {
+        var map = new HashMap<String, String>();
+        ExpirationHelper.addToOperationalInfo(expirationTaskIntervalSeconds, expirationTaskTimeoutSeconds, map);
+        map.put(METRICS_KEY, Boolean.toString(metricsEnabled));
+        return Map.copyOf(map);
     }
 
     @Override
@@ -98,7 +137,7 @@ public class JpaAuthenticationSessionProviderFactory implements AuthenticationSe
 
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
-        return Set.of(JpaConnectionProvider.class, ExecutorsProvider.class, TimerProvider.class);
+        return Set.of(LocalCacheProvider.class, JpaConnectionProvider.class, ExecutorsProvider.class, TimerProvider.class);
     }
 
     @Override
@@ -106,30 +145,4 @@ public class JpaAuthenticationSessionProviderFactory implements AuthenticationSe
         return Profile.isFeatureEnabled(Profile.Feature.CACHELESS);
     }
 
-    @Override
-    public List<ProviderConfigProperty> getConfigMetadata() {
-        var builder = ProviderConfigurationBuilder.create();
-        builder.property()
-                .name(AUTH_SESSION_LIMIT_KEY)
-                .type(ProviderConfigProperty.INTEGER_TYPE)
-                .helpText("The maximum number of concurrent authentication sessions per RootAuthenticationSession.")
-                .defaultValue(DEFAULT_AUTH_SESSION_LIMIT)
-                .add();
-        builder.property()
-                .name(METRICS_KEY)
-                .type(ProviderConfigProperty.BOOLEAN_TYPE)
-                .helpText("If metrics is enabled for this provider (expiration metrics). If not set, uses '" + MetricsOptions.METRICS_ENABLED.getKey() + "' option value.")
-                .add();
-        ExpirationHelper.addConfiguration(builder, "authentication sessions");
-        return builder.build();
-    }
-
-    @Override
-    public Map<String, String> getOperationalInfo() {
-        var map = new HashMap<String, String>();
-        ExpirationHelper.addToOperationalInfo(expirationTaskIntervalSeconds, expirationTaskTimeoutSeconds, map);
-        map.put(AUTH_SESSION_LIMIT_KEY, Integer.toString(authSessionsLimit));
-        map.put(METRICS_KEY, Boolean.toString(metricsEnabled));
-        return Map.copyOf(map);
-    }
 }
