@@ -305,7 +305,7 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN, tls_client_auth_subject_dn);
     }
 
-    public String getTlsClientCAAuthSubjectDn() {
+    public String getTlsClientAuthCASubjectDn() {
         return getAttribute(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN);
      }
 

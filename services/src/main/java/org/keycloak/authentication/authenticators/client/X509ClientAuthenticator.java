@@ -57,6 +57,10 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
         CUSTOM_OIDS_REVERSED.put("E", "1.2.840.113549.1.9.1"); // Another synonym for "EMAILADDRESS"
     }
 
+    public static X500Principal constructX500Principal(String subjectDN) {
+        return new X500Principal(subjectDN, CUSTOM_OIDS_REVERSED);
+    }
+
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
 
@@ -203,7 +207,7 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
     private boolean checkSubjectDNExact(X509Certificate certificate, String subjectDN) {
         // OIDC/OAuth2 does not use regex comparison as it expects exact DN given in the format according to RFC4514. See RFC8705 for the details.
         // We allow custom OIDs attributes to be "expanded" or not expanded in the given Subject DN
-        X500Principal expectedDNPrincipal = new X500Principal(subjectDN, CUSTOM_OIDS_REVERSED);
+        X500Principal expectedDNPrincipal = constructX500Principal(subjectDN);
 
         return (expectedDNPrincipal.getName(X500Principal.RFC2253, CUSTOM_OIDS).equals(certificate.getSubjectX500Principal().getName(X500Principal.RFC2253, CUSTOM_OIDS)));
     }
