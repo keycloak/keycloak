@@ -205,7 +205,7 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
             assertThat(session.revokedTokens().contains(revokedKey), Matchers.is(false));
 
             // remove it from the database
-            RevokedTokenExpirationAction.INSTANCE.removeExpired(session, null, Time.currentTime(), value -> {});
+            RevokedTokenExpirationAction.INSTANCE.removeExpired(session, null, Time.currentTime(), 128, value -> {});
         });
 
         setTimeOffset(0);

@@ -43,10 +43,11 @@ public interface ExpirationAction {
      * @param realmId     the realm to clean up, or {@code null} for non-realm-aware expiration tasks.
      * @param currentTime the current time in seconds since epoch, used as the expiration threshold. This value is
      *                    constant across all batches within a single task run.
+     * @param maxRemoval  the maximum number of entries to remove in this batch.
      * @param removeCount a consumer to report the number of entries removed in this batch.
      * @return {@code true} if there are more expired entries to remove (the framework will call this method again in a
      * new transaction); {@code false} if all expired entries have been removed.
      */
-    boolean removeExpired(KeycloakSession session, String realmId, int currentTime, IntConsumer removeCount);
+    boolean removeExpired(KeycloakSession session, String realmId, int currentTime, int maxRemoval, IntConsumer removeCount);
 
 }

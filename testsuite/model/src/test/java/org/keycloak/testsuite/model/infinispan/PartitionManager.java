@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+import org.keycloak.common.Profile;
+
 import org.infinispan.configuration.global.TransportConfiguration;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.test.TestingUtil;
@@ -89,7 +91,10 @@ public class PartitionManager {
     }
 
     private static void waitForNoRebalanceInClusteredCaches(List<EmbeddedCacheManager> cacheManagers) {
-        for (var cacheName : List.of(WORK_CACHE_NAME, AUTHENTICATION_SESSIONS_CACHE_NAME, ACTION_TOKEN_CACHE, LOGIN_FAILURE_CACHE_NAME)) {
+        var cacheNameList = Profile.isFeatureEnabled(Profile.Feature.CACHELESS) ?
+                List.of(WORK_CACHE_NAME, LOGIN_FAILURE_CACHE_NAME) :
+                List.of(WORK_CACHE_NAME, AUTHENTICATION_SESSIONS_CACHE_NAME, ACTION_TOKEN_CACHE, LOGIN_FAILURE_CACHE_NAME);
+        for (var cacheName : cacheNameList) {
             var caches = cacheManagers.stream()
                     .map(cm -> cm.getCache(cacheName))
                     .toList();

@@ -59,6 +59,7 @@ public class JpaRevokedTokenProviderFactory implements RevokedTokenProviderFacto
 
     private int expirationTaskIntervalSeconds;
     private int expirationTaskTimeoutSeconds;
+    private int expirationTaskMaxRemoval;
     private int cacheMaxSize;
     private boolean metricsEnabled;
     private LocalCache<String, Long> loadingCache;
@@ -73,6 +74,7 @@ public class JpaRevokedTokenProviderFactory implements RevokedTokenProviderFacto
         metricsEnabled = config.getBoolean(METRICS_KEY, config.root().getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), Boolean.FALSE));
         expirationTaskIntervalSeconds = ExpirationHelper.getExpirationTaskInterval(config, logger);
         expirationTaskTimeoutSeconds = ExpirationHelper.getExpirationTaskTimeout(config, logger);
+        expirationTaskMaxRemoval = ExpirationHelper.getExpirationTaskMaxRemoval(config, logger);
         cacheMaxSize = config.getInt(CACHE_MAX_SIZE_KEY, DEFAULT_CACHE_MAX_SIZE);
     }
 
@@ -91,6 +93,7 @@ public class JpaRevokedTokenProviderFactory implements RevokedTokenProviderFacto
                 .withAction(RevokedTokenExpirationAction.INSTANCE)
                 .withFactory(factory)
                 .withExecutor(ExpirationHelper.expirationExecutor(factory))
+                .withMaxRemoval(expirationTaskMaxRemoval)
                 .withMetrics(metricsEnabled)
                 .withRealmExpiration(false)
                 .withTimeout(expirationTaskTimeoutSeconds, TimeUnit.SECONDS)
@@ -112,7 +115,7 @@ public class JpaRevokedTokenProviderFactory implements RevokedTokenProviderFacto
         builder.property()
                 .name(METRICS_KEY)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
-                .helpText("If metrics is enabled for this provider (expiration metrics). If not set, uses '" + MetricsOptions.METRICS_ENABLED.getKey() + "' option value.")
+                .helpText("Whether metrics are enabled for this provider (expiration metrics). If not set, uses '" + MetricsOptions.METRICS_ENABLED.getKey() + "' option value.")
                 .add();
         return builder.build();
     }
@@ -120,7 +123,7 @@ public class JpaRevokedTokenProviderFactory implements RevokedTokenProviderFacto
     @Override
     public Map<String, String> getOperationalInfo() {
         var map = new HashMap<String, String>();
-        ExpirationHelper.addToOperationalInfo(expirationTaskIntervalSeconds, expirationTaskTimeoutSeconds, map);
+        ExpirationHelper.addToOperationalInfo(expirationTaskIntervalSeconds, expirationTaskTimeoutSeconds, expirationTaskMaxRemoval, map);
         map.put(METRICS_KEY, Boolean.toString(metricsEnabled));
         return Map.copyOf(map);
     }

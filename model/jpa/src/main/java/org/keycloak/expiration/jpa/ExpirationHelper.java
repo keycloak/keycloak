@@ -44,6 +44,7 @@ public final class ExpirationHelper {
     private static final int DEFAULT_EXPIRATION_TASK_INTERVAL = 600;
     private static final String EXPIRATION_TASK_TIMEOUT_KEY = "expirationTaskTimeoutSeconds";
     private static final int DEFAULT_EXPIRATION_TASK_TIMEOUT = 300;
+    private static final String EXPIRATION_TASK_MAX_REMOVAL_KEY = "expirationTaskMaxRemoval";
 
     private ExpirationHelper() {
     }
@@ -54,6 +55,19 @@ public final class ExpirationHelper {
 
     public static int getExpirationTaskTimeout(Config.Scope config, Logger logger) {
         return parseDuration(config, logger, EXPIRATION_TASK_TIMEOUT_KEY, DEFAULT_EXPIRATION_TASK_TIMEOUT, "expiration task timeout");
+    }
+
+    /**
+     * Reads and validates the maximum number of entries to remove per expiration batch from the provider configuration.
+     * Falls back to {@link ExpirationTaskBuilder#DEFAULT_MAX_REMOVAL} if not set or invalid.
+     */
+    public static int getExpirationTaskMaxRemoval(Config.Scope config, Logger logger) {
+        var value = config.getInt(EXPIRATION_TASK_MAX_REMOVAL_KEY, ExpirationTaskBuilder.DEFAULT_MAX_REMOVAL);
+        if (value <= 0) {
+            logger.warnf("Invalid expiration task max removal specified: %d. Using default value of %d.", value, ExpirationTaskBuilder.DEFAULT_MAX_REMOVAL);
+            return ExpirationTaskBuilder.DEFAULT_MAX_REMOVAL;
+        }
+        return value;
     }
 
     public static Executor expirationExecutor(KeycloakSessionFactory factory) {
@@ -75,11 +89,18 @@ public final class ExpirationHelper {
                 .helpText("The transaction timeout in seconds for each expired " + what + " cleanup run. " + OptionsUtil.DURATION_DESCRIPTION)
                 .defaultValue(DEFAULT_EXPIRATION_TASK_TIMEOUT)
                 .add();
+        builder.property()
+                .name(EXPIRATION_TASK_MAX_REMOVAL_KEY)
+                .type(ProviderConfigProperty.INTEGER_TYPE)
+                .helpText("The maximum number of expired " + what + " entries to remove per batch.")
+                .defaultValue(ExpirationTaskBuilder.DEFAULT_MAX_REMOVAL)
+                .add();
     }
 
-    public static void addToOperationalInfo(int interval, int timeout, Map<String, String> info) {
+    public static void addToOperationalInfo(int interval, int timeout, int maxRemoval, Map<String, String> info) {
         info.put(EXPIRATION_TASK_INTERVAL_KEY, interval + " seconds");
         info.put(EXPIRATION_TASK_TIMEOUT_KEY, timeout + " seconds");
+        info.put(EXPIRATION_TASK_MAX_REMOVAL_KEY, Integer.toString(maxRemoval));
     }
 
     private static int parseDuration(Config.Scope config, Logger logger, String key, int defaultValueSeconds, String what) {

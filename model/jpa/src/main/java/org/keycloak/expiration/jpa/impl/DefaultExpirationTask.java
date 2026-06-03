@@ -38,8 +38,8 @@ public class DefaultExpirationTask extends BaseExpirationTask {
 
     private static final String ROW_ID_PREFIX = "exp-";
 
-    public DefaultExpirationTask(KeycloakSessionFactory factory, Executor executor, ExpirationAction action, ExpirationListener listener, String entityId, int transactionTimeoutSeconds, int intervalSeconds) {
-        super(factory, executor, action, listener, entityId, transactionTimeoutSeconds, intervalSeconds);
+    public DefaultExpirationTask(KeycloakSessionFactory factory, Executor executor, ExpirationAction action, ExpirationListener listener, String entityId, int transactionTimeoutSeconds, int intervalSeconds, int maxRemoval) {
+        super(factory, executor, action, listener, entityId, transactionTimeoutSeconds, intervalSeconds, maxRemoval);
     }
 
     @Override
@@ -56,7 +56,7 @@ public class DefaultExpirationTask extends BaseExpirationTask {
         var currentTime = Time.currentTime();
         try {
             do {
-                hasMore = KeycloakModelUtils.runJobInTransactionWithResult(factory, session -> action.removeExpired(session, null, currentTime, removed::addAndGet));
+                hasMore = KeycloakModelUtils.runJobInTransactionWithResult(factory, session -> action.removeExpired(session, null, currentTime, maxRemoval, removed::addAndGet));
                 success = true;
             } while (hasMore);
         } catch (RuntimeException e) {

@@ -131,6 +131,18 @@ public class ExpirationTaskTest {
     }
 
     @TestOnServer
+    public void testBuilderRejectsZeroMaxRemoval(KeycloakSession session) {
+        assertThrows(ModelException.class, () -> ExpirationTask.builder()
+                .withFactory(session.getKeycloakSessionFactory())
+                .withAction(noopAction())
+                .withEntityId("test")
+                .withExecutor(SYNCHRONOUS)
+                .withInterval(1, TimeUnit.SECONDS)
+                .withMaxRemoval(0)
+                .build());
+    }
+
+    @TestOnServer
     public void testBuilderCreatesDefaultTask(KeycloakSession session) {
         var task = buildTask("builder-default", noopAction(), new RecordingListener(), false, session.getKeycloakSessionFactory());
         assertThat(task, instanceOf(DefaultExpirationTask.class));
@@ -148,7 +160,7 @@ public class ExpirationTaskTest {
     public void testDefaultTaskSingleBatch(KeycloakSession session) {
         var listener = new RecordingListener();
         var callCount = new AtomicInteger();
-        ExpirationAction action = (s, realmId, currentTime, removeCount) -> {
+        ExpirationAction action = (s, realmId, currentTime, maxRemoval, removeCount) -> {
             callCount.incrementAndGet();
             removeCount.accept(REMOVALS_PER_BATCH);
             return false;
@@ -167,10 +179,47 @@ public class ExpirationTaskTest {
     }
 
     @TestOnServer
+    public void testDefaultTaskReceivesMaxRemoval(KeycloakSession session) {
+        var receivedMaxRemoval = new AtomicInteger();
+        ExpirationAction action = (s, realmId, currentTime, maxRemoval, removeCount) -> {
+            receivedMaxRemoval.set(maxRemoval);
+            return false;
+        };
+
+        var customMaxRemoval = 42;
+        var task = ExpirationTask.builder()
+                .withFactory(session.getKeycloakSessionFactory())
+                .withAction(action)
+                .withEntityId("max-removal-test")
+                .withExecutor(SYNCHRONOUS)
+                .withInterval(INTERVAL_SECONDS, TimeUnit.SECONDS)
+                .withTimeout(INTERVAL_SECONDS, TimeUnit.SECONDS)
+                .withMaxRemoval(customMaxRemoval)
+                .build();
+        task.run();
+
+        assertThat(receivedMaxRemoval.get(), is(customMaxRemoval));
+    }
+
+    @TestOnServer
+    public void testDefaultTaskUsesDefaultMaxRemoval(KeycloakSession session) {
+        var receivedMaxRemoval = new AtomicInteger();
+        ExpirationAction action = (s, realmId, currentTime, maxRemoval, removeCount) -> {
+            receivedMaxRemoval.set(maxRemoval);
+            return false;
+        };
+
+        var task = buildTask("max-removal-default", action, new RecordingListener(), false, session.getKeycloakSessionFactory());
+        task.run();
+
+        assertThat(receivedMaxRemoval.get(), is(128));
+    }
+
+    @TestOnServer
     public void testDefaultTaskMultiBatch(KeycloakSession session) {
         var listener = new RecordingListener();
         var callCount = new AtomicInteger();
-        ExpirationAction action = (s, realmId, currentTime, removeCount) -> {
+        ExpirationAction action = (s, realmId, currentTime, maxRemoval, removeCount) -> {
             removeCount.accept(REMOVALS_PER_BATCH);
             return callCount.incrementAndGet() < 3;
         };
@@ -188,7 +237,7 @@ public class ExpirationTaskTest {
     public void testDefaultTaskCoordinationSkipsDuplicateRuns(KeycloakSession session) {
         var listener = new RecordingListener();
         var callCount = new AtomicInteger();
-        ExpirationAction action = (s, realmId, currentTime, removeCount) -> {
+        ExpirationAction action = (s, realmId, currentTime, maxRemoval, removeCount) -> {
             callCount.incrementAndGet();
             return false;
         };
@@ -219,7 +268,7 @@ public class ExpirationTaskTest {
     @TestOnServer
     public void testDefaultTaskFailedOutcome(KeycloakSession session) {
         var listener = new RecordingListener();
-        ExpirationAction action = (s, realmId, currentTime, removeCount) -> {
+        ExpirationAction action = (s, realmId, currentTime, maxRemoval, removeCount) -> {
             throw new RuntimeException("test failure");
         };
 
@@ -235,7 +284,7 @@ public class ExpirationTaskTest {
     public void testDefaultTaskPartialOutcome(KeycloakSession session) {
         var listener = new RecordingListener();
         var callCount = new AtomicInteger();
-        ExpirationAction action = (s, realmId, currentTime, removeCount) -> {
+        ExpirationAction action = (s, realmId, currentTime, maxRemoval, removeCount) -> {
             if (callCount.incrementAndGet() == 2) {
                 throw new RuntimeException("second batch fails");
             }
@@ -260,7 +309,7 @@ public class ExpirationTaskTest {
 
         var listener = new RecordingListener();
         var cleanedRealms = ConcurrentHashMap.<String>newKeySet();
-        ExpirationAction action = (s, realmId, currentTime, removeCount) -> {
+        ExpirationAction action = (s, realmId, currentTime, maxRemoval, removeCount) -> {
             cleanedRealms.add(realmId);
             removeCount.accept(REMOVALS_PER_BATCH);
             return false;
@@ -286,7 +335,7 @@ public class ExpirationTaskTest {
 
         var listener = new RecordingListener();
         var callCount = new AtomicInteger();
-        ExpirationAction action = (s, realmId, currentTime, removeCount) -> {
+        ExpirationAction action = (s, realmId, currentTime, maxRemoval, removeCount) -> {
             if (realmId.equals(realmId1) || realmId.equals(realmId2)) {
                 callCount.incrementAndGet();
             }
@@ -321,7 +370,7 @@ public class ExpirationTaskTest {
         String realmId2 = session.realms().getRealmByName(REALM_NAME_2).getId();
 
         var listener = new RecordingListener();
-        ExpirationAction action = (s, realmId, currentTime, removeCount) -> {
+        ExpirationAction action = (s, realmId, currentTime, maxRemoval, removeCount) -> {
             if (realmId.equals(realmId1)) {
                 throw new RuntimeException("realm 1 fails");
             }
@@ -352,7 +401,7 @@ public class ExpirationTaskTest {
         var actionCanProceed = new CountDownLatch(1);
         var callCount = new AtomicInteger();
 
-        ExpirationAction action = (s, realmId, currentTime, removeCount) -> {
+        ExpirationAction action = (s, realmId, currentTime, maxRemoval, removeCount) -> {
             callCount.incrementAndGet();
             actionStarted.countDown();
             try {
@@ -403,7 +452,7 @@ public class ExpirationTaskTest {
     }
 
     private static ExpirationAction noopAction() {
-        return (session, realmId, currentTime, removeCount) -> false;
+        return (session, realmId, currentTime, maxRemoval, removeCount) -> false;
     }
 
     private static final class RecordingListener implements ExpirationListener {
