@@ -1,48 +1,92 @@
 import {
-  ContinueCancelModal,
   useEnvironment,
+  KeycloakDataTable,
+  ErrorBoundaryProvider,
 } from "@keycloak/keycloak-ui-shared";
-import {
-  Button,
-  DataList,
-  DataListAction,
-  DataListCell,
-  DataListItem,
-  DataListItemCells,
-  DataListItemRow,
-  Label,
-  Modal,
-  ModalVariant,
-} from "@patternfly/react-core";
-import { useEffect, useState } from "react";
+import type { Action } from "@keycloak/keycloak-ui-shared";
+import { Button, Label, Modal, ModalVariant } from "@patternfly/react-core";
+import { ExclamationTriangleIcon } from "@patternfly/react-icons";
+import { cellWidth } from "@patternfly/react-table";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   getIssuedVerifiableCredentials,
   revokeIssuedVerifiableCredential,
 } from "../api/methods";
 import { IssuedUserVerifiableCredentialRepresentation } from "../api/representations";
-import { EmptyRow } from "../components/datalist/EmptyRow";
-import { formatDate, FORMAT_DATE_AND_TIME } from "../utils/formatDate";
 import { useAccountAlerts } from "../utils/useAccountAlerts";
 
 type IssuedCredentialsModalProps = {
   credentialScopeName: string;
+  parentRevision?: string;
   onClose: () => void;
+};
+
+type IssuedCredentialWithClientName =
+  IssuedUserVerifiableCredentialRepresentation & {
+    clientName?: string;
+  };
+
+type RevokeDialogProps = {
+  isOpen: boolean;
+  credential: IssuedCredentialWithClientName | undefined;
+  onClose: () => void;
+  onConfirm: (credentialId: string) => Promise<void>;
+  t: (key: string) => string;
+};
+
+const RevokeDialog = ({
+  isOpen,
+  credential,
+  onClose,
+  onConfirm,
+  t,
+}: RevokeDialogProps) => {
+  if (!isOpen || !credential) return null;
+
+  return (
+    <Modal
+      variant={ModalVariant.small}
+      title={t("Revoke Issued Credential")}
+      isOpen={true}
+      onClose={onClose}
+      actions={[
+        <Button
+          key="confirm"
+          variant="danger"
+          onClick={async () => {
+            await onConfirm(credential.id!);
+            onClose();
+          }}
+        >
+          {t("revoke")}
+        </Button>,
+        <Button key="cancel" variant="link" onClick={onClose}>
+          {t("cancel")}
+        </Button>,
+      ]}
+    >
+      {t("Confirm Revoke Issued Credential")}
+    </Modal>
+  );
 };
 
 export const IssuedCredentialsModal = ({
   credentialScopeName,
+  parentRevision,
   onClose,
 }: IssuedCredentialsModalProps) => {
   const { t } = useTranslation();
   const context = useEnvironment();
   const { addAlert, addError } = useAccountAlerts();
-  const [issuedCredentials, setIssuedCredentials] = useState<
-    IssuedUserVerifiableCredentialRepresentation[]
-  >([]);
-  const [key, setKey] = useState(1);
+  const [selectedCredential, setSelectedCredential] =
+    useState<IssuedCredentialWithClientName>();
+  const [key, setKey] = useState(0);
+  const [showRevokeDialog, setShowRevokeDialog] = useState(false);
 
-  const refresh = () => setKey(key + 1);
+  const refresh = () => setKey((prev) => prev + 1);
+
+  const toggleRevokeDialog = () => setShowRevokeDialog(!showRevokeDialog);
 
   const hasManageRole = () => {
     const token = context.keycloak.tokenParsed;
@@ -53,153 +97,170 @@ export const IssuedCredentialsModal = ({
     );
   };
 
-  useEffect(() => {
-    const controller = new AbortController();
+  const loader = async (first?: number, max?: number, search?: string) => {
+    const data = await getIssuedVerifiableCredentials({
+      signal: new AbortController().signal,
+      context,
+    });
 
-    async function fetchIssuedCredentials() {
-      try {
-        const data = await getIssuedVerifiableCredentials({
-          signal: controller.signal,
-          context,
-        });
-        // Filter by credential type
-        const filtered = data.filter(
-          (ic) => ic.credentialType === credentialScopeName,
-        );
-        setIssuedCredentials(filtered);
-      } catch (error) {
-        console.error("Error fetching issued verifiable credentials:", error);
-        setIssuedCredentials([]);
-      }
+    // Filter by credential type
+    let filtered = data.filter(
+      (ic) => ic.credentialType === credentialScopeName,
+    );
+
+    // Apply search filter if provided
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filtered = filtered.filter(
+        (ic) =>
+          ic.id?.toLowerCase().includes(searchLower) ||
+          ic.clientId?.toLowerCase().includes(searchLower) ||
+          ic.revision?.toLowerCase().includes(searchLower),
+      );
     }
 
-    void fetchIssuedCredentials();
-    return () => controller.abort();
-  }, [key, context, credentialScopeName]);
+    const credentialsWithClientNames: IssuedCredentialWithClientName[] =
+      filtered.map((ic) => ({
+        ...ic,
+        clientName: ic.clientId,
+      }));
+
+    // Apply pagination if provided
+    if (first !== undefined && max !== undefined) {
+      return credentialsWithClientNames.slice(first, first + max);
+    }
+
+    return credentialsWithClientNames;
+  };
 
   const handleRevoke = async (credentialId: string) => {
     try {
       await revokeIssuedVerifiableCredential(context, credentialId);
-      addAlert(t("revokeIssuedCredentialSuccess"));
+      addAlert(t("Revoke Issued Credential Success"));
       refresh();
     } catch (error) {
-      addError("revokeIssuedCredentialError", error);
+      addError("Revoke Issued Credential Error", error);
     }
   };
 
-  const isExpired = (expiresAt?: number) => {
-    if (!expiresAt) return false;
-    return expiresAt < Date.now();
-  };
-
   return (
-    <Modal
-      variant={ModalVariant.large}
-      title={t("Issued Credentials")}
-      isOpen={true}
-      onClose={onClose}
-      width="90%"
-    >
-      <DataList
-        id="issued-credentials-modal-list"
-        aria-label={t("issuedCredentials")}
-        isCompact
+    <>
+      <RevokeDialog
+        isOpen={showRevokeDialog}
+        credential={selectedCredential}
+        onClose={toggleRevokeDialog}
+        onConfirm={handleRevoke}
+        t={t}
+      />
+      <Modal
+        variant={ModalVariant.large}
+        title={t("Issued Credentials")}
+        isOpen={true}
+        onClose={onClose}
+        width="90%"
       >
-        <DataListItem
-          id="issued-credentials-modal-header"
-          aria-labelledby="Column headers"
-        >
-          <DataListItemRow>
-            <DataListItemCells
-              dataListCells={[
-                <DataListCell key="credential-id-header" width={3}>
-                  <strong>{t("Credential ID")}</strong>
-                </DataListCell>,
-                <DataListCell key="issued-date-header" width={2}>
-                  <strong>{t("Issued Date")}</strong>
-                </DataListCell>,
-                <DataListCell key="expires-date-header" width={2}>
-                  <strong>{t("Expires")}</strong>
-                </DataListCell>,
-                <DataListCell key="status-header" width={1}>
-                  <strong>{t("Status")}</strong>
-                </DataListCell>,
-              ]}
-            />
-          </DataListItemRow>
-        </DataListItem>
-        {issuedCredentials.length > 0 ? (
-          issuedCredentials.map((credential) => (
-            <DataListItem
-              key={credential.id}
-              id={`issued-credential-${credential.id}`}
-              aria-label={credential.id}
-            >
-              <DataListItemRow>
-                <DataListItemCells
-                  dataListCells={[
-                    <DataListCell key="id" width={3}>
-                      <code className="pf-v5-u-font-size-sm">
-                        {credential.id}
-                      </code>
-                    </DataListCell>,
-                    <DataListCell key="issued" width={2}>
-                      {credential.issuedAt
-                        ? formatDate(
-                            new Date(credential.issuedAt),
-                            undefined,
-                            FORMAT_DATE_AND_TIME,
-                          )
-                        : "—"}
-                    </DataListCell>,
-                    <DataListCell key="expires" width={2}>
-                      {credential.expiresAt
-                        ? formatDate(
-                            new Date(credential.expiresAt),
-                            undefined,
-                            FORMAT_DATE_AND_TIME,
-                          )
-                        : "—"}
-                    </DataListCell>,
-                    <DataListCell key="status" width={1}>
-                      {isExpired(credential.expiresAt) ? (
-                        <Label color="red">{t("Expired")}</Label>
-                      ) : (
-                        <Label color="green">{t("Active")}</Label>
-                      )}
-                    </DataListCell>,
-                  ]}
-                />
-                {hasManageRole() && (
-                  <DataListAction
-                    aria-labelledby={t("actions")}
-                    aria-label={t("credentialActions")}
-                    id={`issued-credential-${credential.id}-actions`}
-                  >
-                    <ContinueCancelModal
-                      buttonTitle={t("revoke")}
-                      modalTitle={t("Revoke Issued Credential")}
-                      continueLabel={t("revoke")}
-                      cancelLabel={t("cancel")}
-                      buttonVariant="link"
-                      onContinue={() => handleRevoke(credential.id!)}
+        <ErrorBoundaryProvider>
+          <KeycloakDataTable
+            loader={loader}
+            key={key}
+            ariaLabelKey="issuedCredentials"
+            searchPlaceholderKey=" "
+            columns={[
+              {
+                name: "id",
+                displayKey: "ID",
+                cellRenderer: ({ id }) => (
+                  <code className="pf-v5-u-font-size-sm">{id}</code>
+                ),
+                transforms: [cellWidth(25)],
+              },
+              {
+                name: "issuedAt",
+                displayKey: "Issued At",
+                cellRenderer: ({ issuedAt }) =>
+                  issuedAt ? new Date(issuedAt).toLocaleString("en-US") : "—",
+                transforms: [cellWidth(15)],
+              },
+              {
+                name: "expiresAt",
+                displayKey: "Expires At",
+                cellRenderer: ({ expiresAt }) => {
+                  if (!expiresAt) return "—";
+                  const expirationDate = new Date(expiresAt);
+                  const isExpired = expirationDate < new Date();
+                  return (
+                    <span
+                      style={{
+                        color: isExpired
+                          ? "var(--pf-v5-global--danger-color--100)"
+                          : "inherit",
+                      }}
                     >
-                      {t("Revoke Issued Credential Confirm")}
-                    </ContinueCancelModal>
-                  </DataListAction>
-                )}
-              </DataListItemRow>
-            </DataListItem>
-          ))
-        ) : (
-          <EmptyRow message={t("No Issued Credentials")} />
-        )}
-      </DataList>
-      <div className="pf-v5-u-mt-md pf-v5-u-text-align-right">
-        <Button variant="primary" onClick={onClose}>
-          {t("close")}
-        </Button>
-      </div>
-    </Modal>
+                      {isExpired && (
+                        <ExclamationTriangleIcon
+                          style={{ marginRight: "0.25rem" }}
+                        />
+                      )}
+                      {expirationDate.toLocaleString("en-US")}
+                    </span>
+                  );
+                },
+                transforms: [cellWidth(15)],
+              },
+              {
+                name: "clientId",
+                displayKey: "Wallet Client",
+                cellRenderer: (credential: IssuedCredentialWithClientName) =>
+                  credential.clientName || credential.clientId || "—",
+                transforms: [cellWidth(20)],
+              },
+              {
+                name: "revision",
+                displayKey: "Revision",
+                cellRenderer: ({ revision }) => (
+                  <>
+                    {revision || "—"}
+                    {parentRevision &&
+                      revision &&
+                      revision !== parentRevision && (
+                        <>
+                          {" "}
+                          <Label
+                            color="orange"
+                            icon={<ExclamationTriangleIcon />}
+                          >
+                            {t("outdated")}
+                          </Label>
+                        </>
+                      )}
+                  </>
+                ),
+                transforms: [cellWidth(20)],
+              },
+            ]}
+            actions={
+              hasManageRole()
+                ? [
+                    {
+                      title: t("revoke"),
+                      onRowClick: (credential) => {
+                        setSelectedCredential(credential);
+                        toggleRevokeDialog();
+                      },
+                    } as Action<IssuedCredentialWithClientName>,
+                  ]
+                : []
+            }
+            emptyState={
+              <div className="pf-v5-u-text-align-center pf-v5-u-py-md">
+                <span className="pf-v5-u-color-200">
+                  {t("No Issued Credentials")}
+                </span>
+              </div>
+            }
+          />
+        </ErrorBoundaryProvider>
+      </Modal>
+    </>
   );
 };
