@@ -25,4 +25,9 @@ Applies for example for parameters like `subject_token` sent in case of the Toke
 If you want to increase or lower those numbers, start the server with the option `req-token-params-default-max-size` for the default maximum length of the
 OIDC/OAuth2 token parameter or you can use something such as `req-params-max-size` for one specific parameter. For more details, see the `login-protocol` provider configuration in the link:{allproviderconfigguide_link}[{allproviderconfigguide_name}].
 
+=== Validation of client_session_host parameter
+The `client_session_host` parameter is now validated against the client's registered nodes and management URL.
+This parameter is sent by clients during token refresh and is used when the `${application.session.host}` placeholder is present in a client's backchannel logout URL configuration.
 
+It was primarily used by legacy adapters that have been removed.
+This improves security by ensuring that only trusted, pre-registered hosts can be used in backchannel logout URLs.
