@@ -111,6 +111,9 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             return Response.status(responseStatus).type(MediaType.TEXT_HTML_UTF_8_TYPE).entity(content).build();
         } catch (Throwable t) {
             logger.error("Failed to create error page", t);
+            if (Response.Status.BAD_REQUEST.equals(responseStatus)) {
+                return Response.status(responseStatus).build();
+            }
             return Response.serverError().build();
         }
     }

@@ -131,6 +131,14 @@ public class ProxyHostnameV2DistTest {
     }
 
     @Test
+    @Launch({ "start-dev", "--hostname-strict=false", "--proxy-headers=forwarded" })
+    public void testMalformedForwardedProtoReturnsBadRequest() {
+        assertMalformedForwardedProto("/");
+        assertMalformedForwardedProto("/just/a/path");
+        assertMalformedForwardedProto("://");
+    }
+
+    @Test
     @Launch({ "start-dev", "--hostname=fixed", "--proxy-headers=xforwarded" })
     public void testXForwardedProxyHeadersWithHostname() {
         given().header("X-Forwarded-Prefix", "/prefix").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://fixed:8080/prefix/admin"));
@@ -175,6 +183,14 @@ public class ProxyHostnameV2DistTest {
     private void assertMalformedXForwardedProto(String proto) {
         given()
                 .header("X-Forwarded-Proto", proto)
+                .accept("text/html")
+                .when().get("http://localhost:8080/realms/master/protocol/openid-connect/login-status-iframe.html")
+                .then().statusCode(400);
+    }
+
+    private void assertMalformedForwardedProto(String proto) {
+        given()
+                .header("Forwarded", "for=12.34.56.78;host=test:1234;proto=" + proto)
                 .accept("text/html")
                 .when().get("http://localhost:8080/realms/master/protocol/openid-connect/login-status-iframe.html")
                 .then().statusCode(400);

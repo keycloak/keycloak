@@ -18,6 +18,7 @@
 package org.keycloak.url;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -67,13 +68,13 @@ public class HostnameV2Provider implements HostnameProvider {
                 builder = getAdminUriBuilder(originalUriInfo);
                 break;
             case LOCAL_ADMIN:
-                builder = originalUriInfo.getBaseUriBuilder();
+                builder = getBaseUriBuilder(originalUriInfo);
                 // This might not be enough if a reverse proxy is used. In that case we might e.g. have wrong local ports in originalUriInfo.
                 // However, that would be transparent to us (we don't know the actual server ports in this context AFAIK).
                 builder.host("localhost");
                 break;
             case BACKEND:
-                builder = backchannelDynamic && !isFrontendRequest(originalUriInfo) ? originalUriInfo.getBaseUriBuilder() : getFrontUriBuilder(originalUriInfo);
+                builder = backchannelDynamic && !isFrontendRequest(originalUriInfo) ? getBaseUriBuilder(originalUriInfo) : getFrontUriBuilder(originalUriInfo);
                 break;
             case FRONTEND:
                 builder = getFrontUriBuilder(originalUriInfo);
@@ -82,16 +83,25 @@ public class HostnameV2Provider implements HostnameProvider {
                 throw new IllegalArgumentException("Unknown URL type");
         }
 
-        URI uri = builder.build();
+        URI uri = buildUri(builder);
         validateRequestScheme(uri);
         // sanitize ports
         int normalizedPort = normalizedPort(uri);
         if (normalizedPort != uri.getPort()) {
             builder.port(normalizedPort);
-            uri = builder.build();
+            uri = buildUri(builder);
         }
 
         return uri;
+    }
+
+    private URI buildUri(UriBuilder builder) {
+        try {
+            return builder.build();
+        } catch (RuntimeException e) {
+            throwBadRequestIfUriSyntaxException(e);
+            throw e;
+        }
     }
 
     private int normalizedPort(URI uri) {
@@ -116,10 +126,11 @@ public class HostnameV2Provider implements HostnameProvider {
     }
 
     private boolean isFrontendRequest(UriInfo originalUriInfo) {
-        URI frontend = getFrontUriBuilder(originalUriInfo).build();
-        return Objects.equals(frontend.getScheme(), originalUriInfo.getBaseUri().getScheme()) &&
-                Objects.equals(frontend.getHost(), originalUriInfo.getBaseUri().getHost()) &&
-                frontend.getPort() == normalizedPort(originalUriInfo.getBaseUri());
+        URI frontend = buildUri(getFrontUriBuilder(originalUriInfo));
+        URI originalBaseUri = getBaseUri(originalUriInfo);
+        return Objects.equals(frontend.getScheme(), originalBaseUri.getScheme()) &&
+                Objects.equals(frontend.getHost(), originalBaseUri.getHost()) &&
+                frontend.getPort() == normalizedPort(originalBaseUri);
     }
 
     private UriBuilder getFrontUriBuilder(UriInfo originalUriInfo) {
@@ -133,12 +144,38 @@ public class HostnameV2Provider implements HostnameProvider {
             builder = UriBuilder.fromUri(hostnameUrl);
         }
         else {
-            builder = originalUriInfo.getBaseUriBuilder();
+            builder = getBaseUriBuilder(originalUriInfo);
             if (hostname != null) {
                 builder.host(hostname);
             }
         }
         return builder;
+    }
+
+    private URI getBaseUri(UriInfo originalUriInfo) {
+        try {
+            return originalUriInfo.getBaseUri();
+        } catch (RuntimeException e) {
+            throwBadRequestIfUriSyntaxException(e);
+            throw e;
+        }
+    }
+
+    private UriBuilder getBaseUriBuilder(UriInfo originalUriInfo) {
+        try {
+            return originalUriInfo.getBaseUriBuilder();
+        } catch (RuntimeException e) {
+            throwBadRequestIfUriSyntaxException(e);
+            throw e;
+        }
+    }
+
+    private void throwBadRequestIfUriSyntaxException(RuntimeException e) {
+        for (Throwable cause = e; cause != null; cause = cause.getCause()) {
+            if (cause instanceof URISyntaxException) {
+                throw new BadRequestException(INVALID_REQUEST_SCHEME, e);
+            }
+        }
     }
 
     private UriBuilder getRealmFrontUriBuilder() {
