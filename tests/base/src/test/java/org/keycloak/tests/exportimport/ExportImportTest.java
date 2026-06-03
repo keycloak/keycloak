@@ -68,7 +68,6 @@ import org.keycloak.testframework.remote.providers.runonserver.FetchOnServerWrap
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.tests.common.CustomProvidersServerConfig;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.JsonTestUtils;
 import org.keycloak.testsuite.util.runonserver.ExportImportHelper;
@@ -97,7 +96,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-@KeycloakIntegrationTest(config = CustomProvidersServerConfig.class)
+@KeycloakIntegrationTest
 public class ExportImportTest {
 
     @InjectRealm(ref = "test-realm", fromJson = "testrealm.json", config = ExportImportRealmConfig.class, lifecycle = LifeCycle.METHOD)
@@ -112,7 +111,7 @@ public class ExportImportTest {
     @InjectAdminClient(mode = InjectAdminClient.Mode.BOOTSTRAP)
     Keycloak adminClient;
 
-    private static String REALM_NAME = "test-realm";
+    private static final String REALM_NAME = "test-realm";
 
     private static void setEventsConfig(RealmRepresentation realm) {
         realm.setEventsEnabled(true);
