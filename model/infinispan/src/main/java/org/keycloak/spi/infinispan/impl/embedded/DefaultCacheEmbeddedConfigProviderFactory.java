@@ -57,6 +57,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.C
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_MAX_COUNT_CACHES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_MAX_COUNT_CACHES;
+import static org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator.addExpirationConfiguration;
 import static org.keycloak.spi.infinispan.impl.embedded.JGroupsConfigurator.createJGroupsProperties;
 
 /**
@@ -133,6 +134,7 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
                         .add());
         createTopologyProperties(builder);
         createJGroupsProperties(builder);
+        addExpirationConfiguration(builder);
         return builder.build();
     }
 
@@ -211,6 +213,7 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
         if (JGroupsConfigurator.isClustered(holder)) {
             KeycloakModelUtils.runJobInTransaction(factory, session -> JGroupsConfigurator.configureJGroups(config, holder, session));
         }
+        CacheConfigurator.configureLocalCachesExpiration(holder, config);
         configureMetrics(config, holder);
     }
 
