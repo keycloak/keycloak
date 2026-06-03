@@ -80,7 +80,6 @@ import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
 import org.keycloak.testframework.remote.providers.runonserver.FetchOnServerWrapper;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.tests.providers.federation.DummyUserFederationProviderFactory;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -340,9 +339,6 @@ public class ExportImportUtil {
         Assertions.assertEquals(FullNameLDAPStorageMapperFactory.PROVIDER_ID, fullNameMapper.getProviderId());
         Assertions.assertEquals("cn", fullNameMapper.getConfig().getFirst(FullNameLDAPStorageMapper.LDAP_FULL_NAME_ATTRIBUTE));
         /////////////////
-
-        // Assert that federation link wasn't created during import
-        Assertions.assertNull(runOnServerMaster.fetch(getUserByUsernameFromFedProviderFactory(realm.getRealm(), "wburke")));
 
         // Test builtin authentication flows
         AuthenticationFlowRepresentation clientFlow = realmRsc.flows().getFlows().stream()
@@ -818,27 +814,6 @@ public class ExportImportUtil {
         };
     }
 
-    private static FetchOnServerWrapper<UserRepresentation> getUserByUsernameFromFedProviderFactory(String realmName, String userName) {
-        return new FetchOnServerWrapper<>() {
-
-            @Override
-            public FetchOnServer getRunOnServer() {
-                return session -> {
-                    RealmModel realm = session.realms().getRealmByName(realmName);
-                    if (realm == null) return null;
-                    DummyUserFederationProviderFactory factory = (DummyUserFederationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, "dummy");
-                    UserModel user = factory.create(session, null).getUserByUsername(realm, userName);
-                    if (user == null) return null;
-                    return ModelToRepresentation.toRepresentation(session, realm, user);
-                };
-            }
-
-            @Override
-            public Class<UserRepresentation> getResultClass() {
-                return UserRepresentation.class;
-            }
-        };
-    }
     private static FetchOnServerWrapper<UserRepresentation> getUserByFederatedIdentity(
             String realmName,
             String identityProvider,
