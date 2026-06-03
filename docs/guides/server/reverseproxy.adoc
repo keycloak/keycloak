@@ -90,6 +90,19 @@ Mitigate this risk, for example, by restricting network access.
 
 * Allow a longer `--shutdown-delay` (for example, 10–30 seconds) to give keepalive connections time to drain during shutdown, since the proxy cannot signal a connection close at the HTTP connection level.
 
+==== Backchannel access considerations
+
+If private backchannel access is required it is recommended to deploy an internal proxy in addition to the external proxy. In this case there are additional considerations:
+
+* Restrict network access so that {project_name} accepts connections only from the two proxies.
+
+* Both proxies need to use the same mode. Either both need to use TLS passthrough, or both need to use TLS re-encrypt.
+
+* If using TLS passthrough mode both proxies can forward requests using the PROXY protocol.
+
+* If using TLS re-encrypt mode both proxies would filter incoming HTTP headers, and add trusted HTTP headers.
+
+
 == Port to be proxied
 
 {project_name} runs on the following ports by default:
