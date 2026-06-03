@@ -46,6 +46,8 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientA
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientAttributesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientProtocolConditionConfig;
 
 import java.io.IOException;
 import java.net.URL;
@@ -105,6 +107,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientAttributesConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientProtocolConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
@@ -150,9 +154,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import static org.keycloak.OAuth2Constants.SCOPE_PHONE;
-
-
-import static org.junit.Assert.assertNotNull;
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_REFRESH_TOKEN;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -591,7 +593,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, TEST_CLIENT)) {
             ClientRepresentation clientRep = cau.getResource().toRepresentation();
-            assertNotNull(clientRep);
+            Assert.assertNotNull(clientRep);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
             cau.update();
             checkMtlsFlow();
@@ -624,7 +626,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, TEST_CLIENT)) {
             ClientRepresentation clientRep = cau.getResource().toRepresentation();
-            assertNotNull(clientRep);
+            Assert.assertNotNull(clientRep);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
             cau.update();
             // Check login.
@@ -945,29 +947,17 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
     }
 
     @Test
-    public void testRejectResourceOwnerCredentialsGrantExecutor() throws Exception {
-
+    public void testRejectResourceOwnerCredentialsGrantExecutorWithAnyClientCondition() throws Exception {
         String clientId = generateSuffixedName(CLIENT_NAME);
         String clientSecret = "secret";
 
-        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-            clientRep.setSecret(clientSecret);
-            clientRep.setStandardFlowEnabled(Boolean.TRUE);
-            clientRep.setDirectAccessGrantsEnabled(Boolean.TRUE);
-            clientRep.setPublicClient(Boolean.FALSE);
-        });
-
-        // register profiles
-        String json = (new ClientProfilesBuilder()).addProfile(
-                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Purofairu desu")
-                        .addExecutor(RejectResourceOwnerPasswordCredentialsGrantExecutorFactory.PROVIDER_ID,
-                                createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig(Boolean.TRUE))
-                        .toRepresentation()
-        ).toString();
-        updateProfiles(json);
+        // Create client
+        createClientForResourceOwnerPasswordCredential(clientId, clientSecret);
+        // Register profile
+        registerClientProfileWithResourceOwnerRejectExecutor();
 
         // register policies
-        json = (new ClientPoliciesBuilder()).addPolicy(
+        String json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Porisii desu", Boolean.TRUE)
                         .addCondition(AnyClientConditionFactory.PROVIDER_ID,
                                 createAnyClientConditionConfig())
@@ -990,24 +980,13 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         String clientId = generateSuffixedName(CLIENT_NAME);
         String clientSecret = "secret";
 
-        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-            clientRep.setSecret(clientSecret);
-            clientRep.setStandardFlowEnabled(Boolean.TRUE);
-            clientRep.setDirectAccessGrantsEnabled(Boolean.TRUE);
-            clientRep.setPublicClient(Boolean.FALSE);
-        });
+        // Create client
+        createClientForResourceOwnerPasswordCredential(clientId, clientSecret);
+        // Register profile
+        registerClientProfileWithResourceOwnerRejectExecutor();
 
-        // register profiles
-        String json = (new ClientProfilesBuilder()).addProfile(
-                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Purofairu desu")
-                        .addExecutor(RejectResourceOwnerPasswordCredentialsGrantExecutorFactory.PROVIDER_ID,
-                                createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig(Boolean.TRUE))
-                        .toRepresentation()
-        ).toString();
-        updateProfiles(json);
-
-        // register policies
-        json = (new ClientPoliciesBuilder()).addPolicy(
+        // register policies - client scopes condition
+        String json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
                         .addCondition(ClientScopesConditionFactory.PROVIDER_ID,
                                 createClientScopesConditionConfig(ClientScopesConditionFactory.ANY, Arrays.asList(SCOPE_PHONE)))
@@ -1019,7 +998,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         oauth.client(clientId, clientSecret);
         AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
         assertEquals(200, response.getStatusCode());
-        assertNotNull(response.getAccessToken());
+        Assert.assertNotNull(response.getAccessToken());
         assertNull(response.getError());
 
         // Request with "scope=phone" should not be permitted
@@ -1034,6 +1013,120 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         } finally {
             oauth.scope(origScope);
         }
+    }
+
+    @Test
+    public void testRejectResourceOwnerCredentialsGrantExecutorWithClientProtocolCondition() throws Exception {
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+
+        // Create client
+        createClientForResourceOwnerPasswordCredential(clientId, clientSecret);
+        // Register profile
+        registerClientProfileWithResourceOwnerRejectExecutor();
+
+        // register policies - client protocol condition
+        String json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
+                        .addCondition(ClientProtocolConditionFactory.PROVIDER_ID,
+                                createClientProtocolConditionConfig(OIDCLoginProtocol.LOGIN_PROTOCOL))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        oauth.client(clientId, clientSecret);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+        assertEquals("resource owner password credentials grant is prohibited.", response.getErrorDescription());
+    }
+
+    @Test
+    public void testRejectResourceOwnerCredentialsGrantExecutorWithClientRolesCondition() throws Exception {
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+
+        // Create client
+        String clientUUID = createClientForResourceOwnerPasswordCredential(clientId, clientSecret);
+        // Register profile
+        registerClientProfileWithResourceOwnerRejectExecutor();
+
+        // add the role to the client to execute condition
+        adminClient.realm(REALM_NAME).clients().get(clientUUID).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        // register policies - client roles condition
+        String json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
+                        .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
+                                createClientRolesConditionConfig(List.of(SAMPLE_CLIENT_ROLE)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        oauth.client(clientId, clientSecret);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+        assertEquals("resource owner password credentials grant is prohibited.", response.getErrorDescription());
+    }
+
+    @Test
+    public void testRejectResourceOwnerCredentialsGrantExecutorWithClientAttributesCondition() throws Exception {
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+
+        // Create client
+        String clientUUID = createClientForResourceOwnerPasswordCredential(clientId, clientSecret);
+        // Register profile
+        registerClientProfileWithResourceOwnerRejectExecutor();
+
+        // add the role to the client to execute condition
+        adminClient.realm(REALM_NAME).clients().get(clientUUID).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        // register policies - client attributes condition
+        String json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
+                        .addCondition(ClientAttributesConditionFactory.PROVIDER_ID,
+                                createClientAttributesConditionConfig(new MultivaluedHashMap<>() {
+                                    {
+                                        putSingle(USE_REFRESH_TOKEN, "true");
+                                    }
+                                }))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        oauth.client(clientId, clientSecret);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+        assertEquals("resource owner password credentials grant is prohibited.", response.getErrorDescription());
+    }
+
+    private String createClientForResourceOwnerPasswordCredential(String clientId, String clientSecret) throws ClientPolicyException {
+        return createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setDirectAccessGrantsEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.FALSE);
+            clientRep.getAttributes().put(USE_REFRESH_TOKEN, "true"); // Just some attribute to be able to test clientAttributes condition
+        });
+    }
+
+    private void registerClientProfileWithResourceOwnerRejectExecutor() throws Exception {
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Purofairu desu")
+                        .addExecutor(RejectResourceOwnerPasswordCredentialsGrantExecutorFactory.PROVIDER_ID,
+                                createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig(Boolean.TRUE))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
     }
 
     @Test

@@ -83,6 +83,7 @@ public class ClientProtocolCondition extends AbstractClientPolicyConditionProvid
             case UPDATE:
             case UPDATED:
             case REGISTERED:
+            case RESOURCE_OWNER_PASSWORD_CREDENTIALS_REQUEST:
             case SAML_AUTHN_REQUEST:
             case SAML_LOGOUT_REQUEST:
                 if (isCorrectProtocolFromContext()) {
