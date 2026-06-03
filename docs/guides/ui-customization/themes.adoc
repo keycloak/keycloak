@@ -133,6 +133,8 @@ Theme properties are set in the file `<THEME TYPE>/theme.properties` in the them
 * abstract - Boolean that, when present and `true`, marks the theme is only used as base for other extensions and is not displayed to be selected in the admin console on the realm themes page. Examples of this are the `base` themes described on this guide.
 * common - Override the common resource path. The default value is `common/keycloak` when not specified. This value would be used as value of suffix of ${r"`${url.resourcesCommonPath}`"} and ${r"`${url.resourcesCommonUrl}`"}, which are used typically in freemarker templates. ${r"`${url.resourcesCommonPath}`"} returns only the path, while ${r"`${url.resourcesCommonUrl}`"} returns the full URL including scheme and host, which is required for email templates.
 * styles - Space-separated list of styles to include
+* scripts - Space-separated list of scripts to include
+* favicons - Space-separated list of favicons to include, or dot-notation entries (see below)
 * locales - Comma-separated list of supported locales
 * contentHashPattern - Regex pattern of a file path in the theme where files have a content hash as part of their file name.
 A content hash is usually an abbreviated hash of the file's contents.
@@ -201,6 +203,52 @@ styles=css/login.css css/styles.css
 ----
 +
 NOTE: To override styles from the parent stylesheets, ensure that your stylesheet is listed last.
+
+[[_theme_resource_attributes]]
+=== Advanced CSS, script, and favicon imports
+
+In addition to the space-separated `styles`, `stylesCommon`, `scripts`, and `favicons` properties, you can configure individual resources with HTML attributes using dot notation:
+
+[source,properties]
+----
+styles.file1=css/file1.css
+styles.file1.media=(prefers-color-scheme: light)
+styles.file2=css/file2.css
+styles.file2.media=(prefers-color-scheme: dark)
+
+scripts.analytics=js/analytics.js
+scripts.analytics.integrity=sha384-abc...
+scripts.analytics.defer=true
+scripts.analytics.type=module
+
+favicons.svg=favicon/favicon.svg
+favicons.light=favicon/favicon-light.png
+favicons.light.media=(prefers-color-scheme: light)
+favicons.dark=favicon/favicon-dark.png
+favicons.dark.media=(prefers-color-scheme: dark)
+favicons.ico=favicon/favicon.ico
+----
+
+Each resource is defined with `<type>.<id>=<path>`, where `<id>` is an arbitrary label. Optional attributes are set with `<type>.<id>.<attribute>=<value>`.
+
+Supported attributes:
+
+* styles / stylesCommon: `media`, `integrity`, `crossorigin`
+* scripts: `media`, `integrity`, `defer`, `async`, `type`, `crossorigin`, `blocking`
+* favicons: `media`, `type`, `rel`
+
+Favicon MIME types are inferred from the file extension when `type` is not set.
+
+You can combine the legacy space-separated lists with dot-notation entries. Legacy entries are included first, followed by dot-notation entries. To control the order of dot-notation entries, use numeric ids (for example, `styles.1`, `styles.2`) or an explicit order property:
+
+[source,properties]
+----
+styles.order=dark,light
+styles.light=css/light.css
+styles.dark=css/dark.css
+----
+
+NOTE: Resource ids must not contain dots, because dots separate the id from attribute names.
 
 === Adding a script to a theme
 

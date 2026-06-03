@@ -56,6 +56,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeResourcesParser;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
@@ -217,6 +218,7 @@ public class WelcomeResource {
             map.put("bootstrap", bootstrap);
             map.put("adminConsoleEnabled", adminConsoleEnabled);
             map.put("properties", themeProperties);
+            map.put("themeResources", ThemeResourcesParser.parse(themeProperties));
             map.put("adminUrl", adminUrl);
             map.put("baseUrl", session.getContext().getUri(UrlType.FRONTEND).getBaseUri());
             map.put("productName", Version.NAME);

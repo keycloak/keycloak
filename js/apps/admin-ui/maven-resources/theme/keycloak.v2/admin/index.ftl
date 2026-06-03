@@ -1,8 +1,13 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <#import "theme-resources.ftl" as themeResourceTags>
     <meta charset="utf-8">
-    <link rel="icon" type="${properties.favIconType!'image/svg+xml'}" href="${resourceUrl}${properties.favIcon!'/favicon.svg'}">
+    <#if themeResources?? && themeResources.favicons?has_content>
+      <@themeResourceTags.renderFavicons themeResources.favicons resourceUrl />
+    <#else>
+      <link rel="icon" type="${properties.favIconType!'image/svg+xml'}" href="${resourceUrl}${properties.favIcon!'/favicon.svg'}">
+    </#if>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light${darkMode?then(' dark', '')}">
     <meta name="description" content="${properties.description!'The Keycloak Administration Console is a web-based interface for managing Keycloak.'}">
@@ -103,18 +108,14 @@
         <link rel="stylesheet" href="${resourceUrl}/${style}">
       </#list>
     </#if>
-    <#if properties.styles?has_content>
-      <#list properties.styles?split(' ') as style>
-        <link rel="stylesheet" href="${resourceUrl}/${style}">
-      </#list>
+    <#if themeResources?? && themeResources.styles?has_content>
+      <@themeResourceTags.renderStyles themeResources.styles resourceUrl />
     </#if>
     <#if entryScript?has_content>
       <script type="module" src="${resourceUrl}/${entryScript}"></script>
     </#if>
-    <#if properties.scripts?has_content>
-      <#list properties.scripts?split(' ') as script>
-        <script type="module" src="${resourceUrl}/${script}"></script>
-      </#list>
+    <#if themeResources?? && themeResources.scripts?has_content>
+      <@themeResourceTags.renderScripts themeResources.scripts resourceUrl "module" />
     </#if>
     <#if entryImports?has_content>
       <#list entryImports as import>
