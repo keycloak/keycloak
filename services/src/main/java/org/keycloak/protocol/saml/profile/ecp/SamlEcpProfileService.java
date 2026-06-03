@@ -58,6 +58,8 @@ public class SamlEcpProfileService extends SamlService {
     private static final String NS_PREFIX_SAML_PROTOCOL = "samlp";
     private static final String NS_PREFIX_SAML_ASSERTION = "saml";
 
+    public static final String AUTHN_REQUEST_CANNOT_BE_PROCESSED = "Authentication request cannot be processed.";
+
     public SamlEcpProfileService(KeycloakSession session, EventBuilder event, long maxInflatingSize, DestinationValidator destinationValidator) {
         super(session, event, maxInflatingSize, destinationValidator);
     }
@@ -72,7 +74,8 @@ public class SamlEcpProfileService extends SamlService {
 
                 @Override
                 protected Response error(KeycloakSession session, AuthenticationSessionModel authenticationSession, Response.Status status, String message, Object... parameters) {
-                    return Soap.createFault().code("error").reason(message).build();
+                    logger.debugf("Error while authenticating request. Reason '%s'", message);
+                    return Soap.createFault().code("error").reason(AUTHN_REQUEST_CANNOT_BE_PROCESSED).build();
                 }
 
                 @Override
