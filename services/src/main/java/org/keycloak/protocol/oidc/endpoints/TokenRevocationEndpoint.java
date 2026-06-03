@@ -255,7 +255,7 @@ public class TokenRevocationEndpoint {
         if (userSession != null) {
             AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
             if (clientSession != null) {
-                TokenManager.dettachClientSession(clientSession);
+                TokenManager.detachClientSession(clientSession);
 
                 revokeTokenExchangeSession(userSession);
 
@@ -289,7 +289,7 @@ public class TokenRevocationEndpoint {
         clientSessionModelMap.forEach((key, clientSessionModel) -> {
             if (clientSessionModel.getNote(Constants.TOKEN_EXCHANGE_SUBJECT_CLIENT + token.getIssuedFor()) != null) {
                 revokedClients.add(clientSessionModel.getClient().getClientId());
-                TokenManager.dettachClientSession(clientSessionModel);
+                TokenManager.detachClientSession(clientSessionModel);
             }
         });
         if (!revokedClients.isEmpty()) {

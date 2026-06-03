@@ -47,6 +47,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
+import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ABCAResult;
 import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
@@ -63,6 +64,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.http.HttpRequest;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.HashUtils;
@@ -132,15 +134,18 @@ import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.tracing.TracingAttributes;
 import org.keycloak.tracing.TracingProvider;
+import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OAuth2Constants.ORGANIZATION;
+import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ABCA_JKT_TYPE;
 import static org.keycloak.events.Details.REASON;
 import static org.keycloak.models.Constants.AUTHORIZATION_DETAILS_RESPONSE;
 import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 import static org.keycloak.representations.IDToken.NONCE;
+import static org.keycloak.services.util.DPoPUtil.DPOP_JKT_TYPE;
 
 /**
  * Stateless object that creates tokens and manages oauth access codes
@@ -174,7 +179,7 @@ public class TokenManager {
             userSession = sessionManager.findOfflineUserSession(realm, oldToken.getSessionState());
             if (userSession != null) {
 
-                // Revoke timeouted offline userSession
+                // Revoke timed out offline userSession
                 if (!AuthenticationManager.isSessionValid(realm, userSession)) {
                     sessionManager.revokeOfflineUserSession(userSession);
                     throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Offline session not active", "Offline session not active");
@@ -347,16 +352,36 @@ public class TokenManager {
                 }
             }
 
-            if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
-                if (DPoPUtil.isDPoPToken(refreshToken)) {
-                    DPoP dPoP = (DPoP) session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE);
-                    if (dPoP == null) {
-                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "DPoP proof is missing");
+            // Verify RefreshToken Confirmation
+            //
+            AccessToken.Confirmation cnf = refreshToken.getConfirmation();
+            if (cnf != null && cnf.getKeyThumbprint() != null) {
+                String jktType = Optional.ofNullable(cnf.getJktType()).orElse(DPOP_JKT_TYPE);
+                switch (jktType) {
+                    case ABCA_JKT_TYPE -> {
+                        ABCAResult abcaResult = session.getAttribute(ABCAResult.ABCA_RESULT, ABCAResult.class);
+                        if (abcaResult == null) {
+                            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Client attestation must be used with this refresh token");
+                        }
+                        JWK jwk = abcaResult.getAttestationJwt().getConfirmation().getJwk();
+                        String thumbprint = JWKSUtils.computeThumbprint(jwk);
+                        if (!Objects.equals(thumbprint, cnf.getKeyThumbprint())) {
+                            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Attestation-Based Key mismatch");
+                        }
                     }
-                    try {
-                        DPoPUtil.validateBinding(refreshToken, dPoP);
-                    } catch (VerificationException ex) {
-                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, ex.getMessage());
+                    case DPOP_JKT_TYPE -> {
+                        DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
+                        if (dPoP == null) {
+                            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "DPoP proof is missing");
+                        }
+                        try {
+                            DPoPUtil.validateBinding(refreshToken, dPoP);
+                        } catch (VerificationException ex) {
+                            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, ex.getMessage());
+                        }
+                    }
+                    default -> {
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unknown jkt type: " + jktType);
                     }
                 }
             }
@@ -462,7 +487,7 @@ public class TokenManager {
     }
 
 
-    public static void dettachClientSession(AuthenticatedClientSessionModel clientSession) {
+    public static void detachClientSession(AuthenticatedClientSessionModel clientSession) {
         UserSessionModel userSession = clientSession.getUserSession();
         if (userSession == null) {
             return;
@@ -1182,9 +1207,9 @@ public class TokenManager {
 
         private void generateRefreshToken(boolean offlineTokenRequested) {
             AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
-            AccessToken.Confirmation confirmation = getConfirmation(clientSession, accessToken);
+            AccessToken.Confirmation cnf = getRefreshTokenConfirmation(clientSession, accessToken);
 
-            InitialRefreshTokenContext initialRefreshTokenContext = new InitialRefreshTokenContext(clientSessionCtx, this, event, offlineTokenRequested, confirmation);
+            InitialRefreshTokenContext initialRefreshTokenContext = new InitialRefreshTokenContext(clientSessionCtx, this, event, offlineTokenRequested, cnf);
 
             RefreshTokenProvider refreshTokenProvider = session.getKeycloakSessionFactory()
                     .getProviderFactoriesStream(RefreshTokenProvider.class)
@@ -1203,9 +1228,10 @@ public class TokenManager {
             if (bindOnlyRefreshToken) {
                 DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
                 if (dPoP != null) {
-                    confirmation = new AccessToken.Confirmation();
-                    confirmation.setKeyThumbprint(dPoP.getThumbprint());
-                    refreshToken.setConfirmation(confirmation);
+                    cnf = new AccessToken.Confirmation();
+                    cnf.setKeyThumbprint(dPoP.getThumbprint());
+                    cnf.setJktType(DPOP_JKT_TYPE);
+                    refreshToken.setConfirmation(cnf);
                 }
             }
         }
@@ -1220,17 +1246,28 @@ public class TokenManager {
             sessionManager.createOrUpdateOfflineSession(clientSessionCtx.getClientSession(), userSession);
         }
 
-       /**
-        * RFC9449 chapter 5<br/>
-        * Refresh tokens issued to confidential clients are not bound to the DPoP proof public key because
-        * they are already sender-constrained with a different existing mechanism.<br/>
-        * <br/>
-        * Based on the definition above the confirmation is only returned for public-clients.
-        */
-        private AccessToken.Confirmation getConfirmation(AuthenticatedClientSessionModel clientSession,
-                                                         AccessToken accessToken) {
-            final boolean isPublicClient = clientSession.getClient().isPublicClient();
-            return isPublicClient ? accessToken.getConfirmation() : null;
+        private AccessToken.Confirmation getRefreshTokenConfirmation(AuthenticatedClientSessionModel clientSession, AccessToken accessToken) {
+
+            // RFC9449 chapter 5
+            // Refresh tokens issued to confidential clients are not bound to the DPoP proof public key because
+            // they are already sender-constrained with a different existing mechanism.
+            if (clientSession.getClient().isPublicClient()) {
+                AccessToken.Confirmation cnf = accessToken.getConfirmation();
+                return cnf;
+            }
+
+            // Authorization servers issuing a refresh token in response to a token request using the client attestation
+            // mechanism MUST bind the refresh token to the Client Instance and its associated public key
+            // https://datatracker.ietf.org/doc/html/draft-ietf-oauth-attestation-based-client-auth-07#section-10.3
+            ABCAResult abcaResult = session.getAttribute(ABCAResult.ABCA_RESULT, ABCAResult.class);
+            if (abcaResult != null) {
+                JWK jwk = abcaResult.getAttestationJwt().getConfirmation().getJwk();
+                AccessToken.Confirmation cnf = new AccessToken.Confirmation();
+                cnf.setKeyThumbprint(JWKSUtils.computeThumbprint(jwk));
+                cnf.setJktType(ABCA_JKT_TYPE);
+                return cnf;
+            }
+            return null;
         }
 
         public AccessTokenResponseBuilder generateIDToken() {
