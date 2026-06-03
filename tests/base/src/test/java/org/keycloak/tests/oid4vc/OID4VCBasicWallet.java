@@ -624,6 +624,11 @@ public class OID4VCBasicWallet {
             return this;
         }
 
+        public AuthorizationEndpointRequest dpopJkt(String dpopJkt) {
+            loginForm.dpopJkt(dpopJkt);
+            return this;
+        }
+
         public AuthorizationEndpointRequest issuerState(String issuerState) {
             loginForm.issuerState(issuerState);
             return this;
