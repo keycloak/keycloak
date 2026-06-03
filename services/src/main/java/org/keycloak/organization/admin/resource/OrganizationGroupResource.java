@@ -92,6 +92,11 @@ public class OrganizationGroupResource {
         this.auth = auth;
     }
 
+    /**
+     * Precondition: caller must have passed through {@link OrganizationsResource#get(String)}
+     * which enforces {@code auth.orgs().requireView(organization)}, and then through
+     * {@link OrganizationGroupsResource#getGroupById(String)} which enforces the same check.
+     */
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
@@ -186,6 +191,11 @@ public class OrganizationGroupResource {
         }
     }
 
+    /**
+     * Precondition: caller must have passed through {@link OrganizationsResource#get(String)}
+     * which enforces {@code auth.orgs().requireView(organization)}, and then through
+     * {@link OrganizationGroupsResource#getGroupById(String)} which enforces the same check.
+     */
     @GET
     @Path("children")
     @NoCache
@@ -288,6 +298,12 @@ public class OrganizationGroupResource {
         }
     }
 
+    /**
+     * Precondition: caller must have passed through {@link OrganizationsResource#get(String)}
+     * which enforces {@code auth.orgs().requireView(organization)}, and then through
+     * {@link OrganizationGroupsResource#getGroupById(String)} which enforces the same check.
+     * This method additionally requires {@code auth.users().requireQuery()}.
+     */
     @GET
     @NoCache
     @Path("members")
