@@ -36,11 +36,13 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationMembershipMapper;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.AccessToken;
@@ -54,10 +56,12 @@ import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -70,6 +74,8 @@ import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+
+import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -1797,6 +1803,75 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(token.getOtherClaims().get("my_orgs"), notNullValue());
     }
 
+    @Test
+    public void testCustomOrganizationClaimDoesNotTriggerOrganizationValidation() throws Exception {
+        // Create a plain user – not a member of any organization.
+        UserRepresentation user = new UserRepresentation();
+        user.setEnabled(true);
+        user.setEmail("custom-org-claim@example.com");
+        user.setUsername("custom-org-claim@example.com");
+        Users.setPasswordFor(user, memberPassword);
+
+        try (Response response = managedRealm.admin().users().create(user)) {
+            user.setId(ApiUtil.getCreatedId(response));
+        }
+        getCleanup().addCleanup(() -> managedRealm.admin().users().get(user.getId()).remove());
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
+        realm.setOrganizationsEnabled(false);
+        managedRealm.admin().update(realm);
+        getCleanup().addCleanup(() -> {
+            realm.setOrganizationsEnabled(true);
+            managedRealm.admin().update(realm);
+        });
+
+        // Add a hardcoded-claim mapper that emits an "organization" claim whose value is not a real org alias.
+        // This simulates a customer using their own "organization" attribute unrelated to Keycloak Organizations.
+        ClientRepresentation clientRep = managedRealm.admin().clients().findByClientId("direct-grant").get(0);
+        ClientResource clientResource = managedRealm.admin().clients().get(clientRep.getId());
+
+        createMapperAndAddCleanup(clientResource, createHardcodedClaim(
+                "custom-org-mapper", OAuth2Constants.ORGANIZATION, "my-company", "String", true, true, true));
+        createMapperAndAddCleanup(clientResource, ModelToRepresentation.toRepresentation(
+                AudienceProtocolMapper.createClaimMapper(
+                        "audience-mapper-test",
+                        "direct-grant",
+                        null,
+                        true,
+                        false,
+                        false
+                )
+        ));
+
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest(user.getEmail(), memberPassword);
+        assertThat("Token request must succeed", tokenResponse.getStatusCode(), is(200));
+
+        // Confirm the custom "organization" claim is present in the access token.
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+        assertThat(accessToken.getOtherClaims(), hasKey(OAuth2Constants.ORGANIZATION));
+        assertThat(accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION), is("my-company"));
+
+        // Userinfo endpoint must not fail with invalid_grant.
+        UserInfoResponse userInfoResponse = oauth.userInfoRequest(tokenResponse.getAccessToken()).send();
+        assertThat("Userinfo must return 200 for a token carrying a custom 'organization' claim",
+                userInfoResponse.getStatusCode(), is(200));
+        assertThat(userInfoResponse.getUserInfo().getOtherClaims(), hasKey(OAuth2Constants.ORGANIZATION));
+
+        // Introspection endpoint must not fail with invalid_grant.
+        IntrospectionResponse introspectionResponse = oauth.introspectionRequest(tokenResponse.getAccessToken()).send();
+        assertThat("Introspection must return an active token carrying a custom 'organization' claim",
+                introspectionResponse.asTokenMetadata().isActive(), is(true));
+        assertThat(introspectionResponse.asTokenMetadata().getOtherClaims(), hasKey(OAuth2Constants.ORGANIZATION));
+
+        // Refresh token endpoint must not fail with invalid_grant.
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+        assertThat("Refresh must succeed for a session whose token carries a custom 'organization' claim",
+                refreshResponse.getStatusCode(), is(200));
+        accessToken = oauth.verifyToken(refreshResponse.getAccessToken());
+        assertThat(accessToken.getOtherClaims(), hasKey(OAuth2Constants.ORGANIZATION));
+    }
+
     private void assertResponseMissingOrganizationScopeAndClaims(AccessTokenResponse response) {
         assertThat(response.getScope(), not(containsString("organization")));
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
@@ -1998,5 +2073,15 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         assertThat(accessToken.getScope(), grantScope ? containsString(orgScope) : not(containsString(orgScope)));
         assertThat(accessToken.getOtherClaims().keySet(), not(hasItem(OAuth2Constants.ORGANIZATION)));
+    }
+
+    private void createMapperAndAddCleanup(ClientResource clientResource, ProtocolMapperRepresentation mapper) {
+        String mapperId;
+
+        try (Response response = clientResource.getProtocolMappers().createMapper(mapper)) {
+            mapperId = ApiUtil.getCreatedId(response);
+        }
+
+        getCleanup().addCleanup(() -> clientResource.getProtocolMappers().delete(mapperId));
     }
 }
