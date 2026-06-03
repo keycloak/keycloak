@@ -1,6 +1,8 @@
 package org.keycloak.admin.api;
 
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.QueryParam;
 
@@ -9,7 +11,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
 public class ListOptions {
 
-    @Parameter(description = "Field(s) to sort by, comma-separated for multi-field sort (e.g. displayName,clientId). Allowed values: clientId, displayName, description, protocol, enabled, appUrl. Defaults to clientId when omitted.")
+    @Parameter(description = "Field(s) to sort by, comma-separated for multi-field sort (e.g. displayName,clientId). Allowed values: clientId, displayName, description, protocol, enabled, appUrl. Defaults to clientId when omitted.", schema = @Schema(implementation = ClientSortField.class))
     @QueryParam("sortBy")
     protected String sortBy;
     
@@ -57,6 +59,16 @@ public class ListOptions {
 
     public void setSortBy(String sortBy) {
         this.sortBy = sortBy;
+    }
+
+    public void setSortBy(ClientSortField sortBy) {
+        this.sortBy = sortBy == null ? null : sortBy.toQueryValue();
+    }
+
+    public void setSortBy(List<ClientSortField> sortBy) {
+        this.sortBy = sortBy == null || sortBy.isEmpty()
+                ? null
+                : sortBy.stream().map(ClientSortField::toQueryValue).collect(Collectors.joining(","));
     }
 
     public String getSortOrder() {

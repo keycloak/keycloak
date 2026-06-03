@@ -1,4 +1,4 @@
-package org.keycloak.services.client;
+package org.keycloak.admin.api;
 
 import java.util.Comparator;
 import java.util.Optional;
@@ -7,10 +7,13 @@ import java.util.stream.Stream;
 
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 /**
  * Sortable fields for Client Admin API v2 list queries ({@code sortBy} / {@code sortOrder}).
  * API names map to scalar {@code CLIENT} table columns.
  */
+@Schema(enumeration = {"clientId", "displayName", "description", "protocol", "enabled", "appUrl"})
 public enum ClientSortField {
     CLIENT_ID("clientId", stringKey(BaseClientRepresentation::getClientId)),
     DISPLAY_NAME("displayName", stringKey(BaseClientRepresentation::getDisplayName)),
@@ -31,6 +34,10 @@ public enum ClientSortField {
         return apiName;
     }
 
+    public String toQueryValue() {
+        return apiName;
+    }
+
     public Comparator<BaseClientRepresentation> comparator(boolean ascending) {
         return ascending ? comparator : comparator.reversed();
     }
@@ -48,7 +55,7 @@ public enum ClientSortField {
             return Optional.empty();
         }
         if (fromApiName(field).isEmpty()) {
-            return Optional.of("%s is not a sortable field".formatted(field));
+            return Optional.of(String.format("%s is not a sortable field", field));
         }
         return Optional.empty();
     }

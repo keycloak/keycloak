@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.api.ClientSortField;
 import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.SortOrder;
 import org.keycloak.models.RealmModel;
