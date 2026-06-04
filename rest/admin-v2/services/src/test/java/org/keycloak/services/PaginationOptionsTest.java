@@ -17,7 +17,7 @@ class PaginationOptionsTest {
     }
 
     @Test
-    void normalizeCapsLimit() throws ServiceException {
+    void normalizePassTrough() throws ServiceException {
         ClientSortAndSliceOptions options = PaginationOptions.normalize(10, 200);
         assertEquals(10, options.offset());
         assertEquals(200, options.limit());

@@ -165,6 +165,8 @@ public class ClientPaginationTest extends AbstractClientApiV2Test {
         List<BaseClientRepresentation> nextPage = queryClients(query, 2, 2);
         assertThat(nextPage, hasSize(2));
         assertThat(page.get(0).getClientId(), is(not(nextPage.get(0).getClientId())));
+        // test that the last client of the first page is not the first client on the next page
+        assertThat(page.get(1).getClientId(), is(not(nextPage.get(0).getClientId())));
     }
 
     @Test

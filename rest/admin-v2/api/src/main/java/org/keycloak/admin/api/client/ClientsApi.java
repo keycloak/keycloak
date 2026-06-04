@@ -34,9 +34,9 @@ public interface ClientsApi {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get all clients", description = "Returns a list of clients in the realm, optionally filtered by a query expression. "
-            + "Results are paginated using offset (0-based, default 0) and limit (default 100, maximum 100).")
+            + "Results are paginated using offset (0-based, default 0) and limit (default 100).")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = BaseClientRepresentation.class)))
+            @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = BaseClientRepresentation.class)))
     })
     Stream<BaseClientRepresentation> getClients(@BeanParam ListOptions params);
 
@@ -49,7 +49,7 @@ public interface ClientsApi {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Create a new client", description = "Creates a new client in the realm")
     @APIResponses(value = {
-        @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = BaseClientRepresentation.class)))
+            @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = BaseClientRepresentation.class)))
     })
     Response createClient(@Valid BaseClientRepresentation client);
 
