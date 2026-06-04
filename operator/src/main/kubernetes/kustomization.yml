@@ -7,3 +7,14 @@ resources:
   - keycloaks.k8s.keycloak.org-v1.yml
   - keycloakrealmimports.k8s.keycloak.org-v1.yml
   - kubernetes.yml
+  
+transformers:
+  - |-
+    apiVersion: builtin
+    kind: NamespaceTransformer
+    metadata:
+      name: notImportantHere
+    setRoleBindingSubjects: allServiceAccounts
+    fieldSpecs:
+    - path: metadata/namespace
+      create: true

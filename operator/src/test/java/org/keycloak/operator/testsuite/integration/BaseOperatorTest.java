@@ -17,13 +17,11 @@
 
 package org.keycloak.operator.testsuite.integration;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -33,6 +31,7 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -72,9 +71,10 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.events.v1.Event;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -170,13 +170,10 @@ public enum OperatorDeployment {local_apiserver,local,remote}
 
   private static ApiServerHelper kubeApi;
 
+  private static List<HasMetadata> resources;
+
   @BeforeAll
   public static void before(TestInfo testInfo) throws FileNotFoundException {
-    initAll(testInfo, false);
-  }
-
-  protected static void initAll(TestInfo testInfo, boolean watchAllNamespaces) throws FileNotFoundException {
-    BaseOperatorTest.watchAllNamespaces = watchAllNamespaces;
     configuration = CDI.current().select(QuarkusConfigurationService.class).get();
     operatorDeployment = ConfigProvider.getConfig().getOptionalValue(OPERATOR_DEPLOYMENT_PROP, OperatorDeployment.class).orElse(OperatorDeployment.local_apiserver);
     if (testInfo.getTestClass().map(m -> m.getAnnotation(DisabledIfApiServerTest.class)).isPresent()) {
@@ -202,16 +199,18 @@ public enum OperatorDeployment {local_apiserver,local,remote}
     Log.info("Creating CRDs");
     createCRDs(k8sclient);
     isOpenShift = isOpenShift(k8sclient);
+    
+    watchAllNamespaces = testInfo.getTestClass().map(m -> m.getAnnotation(ClusterWide.class)).isPresent();
 
     if (operatorDeployment == OperatorDeployment.remote) {
-      createRBACresourcesAndOperatorDeployment(watchAllNamespaces);
+      createRBACresourcesAndOperatorDeployment();
     } else {
-      createOperator(watchAllNamespaces);
+      createOperator();
     }
 
     if (operatorDeployment == OperatorDeployment.local_apiserver) {
       deployDBSecret();
-    } else {
+    } else if (!watchAllNamespaces) {
       deployDB();
     }
   }
@@ -239,80 +238,51 @@ public enum OperatorDeployment {local_apiserver,local,remote}
       k8sclient.resource(new NamespaceBuilder().withNewMetadata().addToLabels("app","keycloak-test").withName(namespace).endMetadata().build()).create();
   }
 
-  protected static void createRBACresourcesAndOperatorDeployment(boolean watchAllNamespaces) throws FileNotFoundException {
+  protected static void createRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
     Log.info("Creating RBAC and Deployment into Namespace " + namespace);
 
-    if (watchAllNamespaces) {
-        // Use the kustomize cluster-wide overlay to test the real deployment manifests
-        try {
-            ProcessBuilder pb = new ProcessBuilder("kubectl", "kustomize", "overlays/cluster-wide");
-            Process process = pb.start();
-            byte[] output = process.getInputStream().readAllBytes();
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                throw new RuntimeException("kubectl kustomize overlays/cluster-wide failed with exit code " + exitCode + ": "
-                        + new String(process.getErrorStream().readAllBytes(), StandardCharsets.UTF_8));
-            }
-
-            K8sUtils.set(k8sclient, new ByteArrayInputStream(output), obj -> {
-                if (obj instanceof ClusterRoleBinding) {
-                    rewriteServiceAccountSubjectNamespaceForClusterWideTest(((ClusterRoleBinding) obj).getSubjects());
-                } else if (obj instanceof RoleBinding) {
-                    rewriteServiceAccountSubjectNamespaceForClusterWideTest(((RoleBinding) obj).getSubjects());
-                }
-
-                if (obj instanceof RoleBinding && "keycloak-operator-view".equals(obj.getMetadata().getName())) {
-                    return null; // exclude this role since it's not present in olm
-                }
-
-                // Only override namespaced resources. 
-                if (obj.getMetadata() != null && obj.getMetadata().getNamespace() != null) {
-                    obj.getMetadata().setNamespace(namespace);
-                }
-
-                if (obj instanceof Deployment) {
-                    var container = ((Deployment) obj).getSpec().getTemplate().getSpec().getContainers().get(0);
-                    container.getEnv().add(new EnvVar("KC_OPERATOR_KEYCLOAK_UPDATE_POD_DEADLINE_SECONDS", "60", null));
-                }
-                return obj;
-            });
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Failed to run kubectl kustomize", e);
+    resources = K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"), obj -> {
+        if (obj instanceof Role && watchAllNamespaces) {
+            Map<String, Object> map = k8sclient.getKubernetesSerialization().convertValue(obj, Map.class);
+            map.put("kind", "ClusterRole");
+            return k8sclient.getKubernetesSerialization().convertValue(map, ClusterRole.class);
         }
-    } else {
-        K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"), obj -> {
-            if (obj instanceof ClusterRoleBinding) {
-                ((ClusterRoleBinding)obj).getSubjects().forEach(s -> s.setNamespace(namespace));
-            } else if (obj instanceof RoleBinding && "keycloak-operator-view".equals(obj.getMetadata().getName())) {
+        if (obj instanceof RoleBinding) {
+            if ("keycloak-operator-view".equals(obj.getMetadata().getName())) {
                 return null; // exclude this role since it's not present in olm
-            } else if (obj instanceof Deployment) {
-                // set values useful for testing - TODO: could drive this in some way from the test/resource/application.properties
-                ((Deployment)obj).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar("KC_OPERATOR_KEYCLOAK_UPDATE_POD_DEADLINE_SECONDS", "60", null));
             }
-            return obj;
-        });
-    }
+            if (watchAllNamespaces) {
+                obj.getMetadata().setNamespace(null);
+                ((RoleBinding)obj).getRoleRef().setKind("ClusterRole");
+                Map<String, Object> map = k8sclient.getKubernetesSerialization().convertValue(obj, Map.class);
+                map.put("kind", "ClusterRoleBinding");
+                obj = k8sclient.getKubernetesSerialization().convertValue(map, ClusterRoleBinding.class);
+            }
+        }
+        if (obj instanceof ClusterRoleBinding) {
+            ((ClusterRoleBinding)obj).getSubjects().forEach(s -> s.setNamespace(namespace));
+        } else if (obj instanceof Deployment) {
+            // set values useful for testing - TODO: could drive this in some way from the test/resource/application.properties
+            List<EnvVar> env = ((Deployment)obj).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+            env.add(new EnvVar("KC_OPERATOR_KEYCLOAK_UPDATE_POD_DEADLINE_SECONDS", "60", null));
+            
+            if (watchAllNamespaces) {
+                env.stream().forEach(envVar -> {
+                            if (io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE.equals(envVar.getValue())) {
+                                envVar.setValue(io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACES);
+                            }
+                        });
+            }
+        }
+        return obj;
+    });
   }
 
   private static void cleanRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
-    Log.info("Deleting RBAC from Namespace " + namespace);
-    k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER +deploymentTarget+".yml"))
-            .inNamespace(namespace).delete();
-    if (watchAllNamespaces) {
-        k8sclient.load(new FileInputStream("overlays/cluster-wide/cluster-wide-rbac.yaml")).delete();
+    Log.info("Deleting from Namespace " + namespace);
+    if (resources != null) {
+        resources.forEach(resource -> k8sclient.resource(resource).delete());
     }
-  }
-
-  // The cluster-wide kustomize overlay renders ServiceAccount subjects in RBAC bindings for the
-  // fixed "keycloak" namespace. In integration tests the operator runs in a random namespace, so
-  // rewrite those subjects before applying the rendered manifests.
-  private static void rewriteServiceAccountSubjectNamespaceForClusterWideTest(List<Subject> subjects) {
-      if (subjects == null) {
-          return;
-      }
-      subjects.stream()
-              .filter(subject -> "ServiceAccount".equals(subject.getKind()))
-              .forEach(subject -> subject.setNamespace(namespace));
   }
 
   public static void createCRDs(KubernetesClient client) throws FileNotFoundException {
@@ -330,10 +300,6 @@ public enum OperatorDeployment {local_apiserver,local,remote}
   }
 
   private static void createOperator() {
-    createOperator(false);
-  }
-
-  protected static void createOperator(boolean watchAllNamespaces) {
     // create the operator to use the current client / namespace and injected dependent resources
     // to be replaced later with full cdi construction or test mechanics from quarkus operator sdk
     config = new BaseOperatorTestConfigurationService(k8sclient);
