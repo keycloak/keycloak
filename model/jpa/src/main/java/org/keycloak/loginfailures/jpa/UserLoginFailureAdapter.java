@@ -24,6 +24,10 @@ import jakarta.persistence.LockModeType;
 
 import org.keycloak.models.UserLoginFailureModel;
 
+/**
+ * All methods are idempotent, as they either set a time or value, or increment a failure count.
+ * With that, no failure count will be missed.
+ */
 public class UserLoginFailureAdapter implements UserLoginFailureModel {
 
     private final EntityManager em;
@@ -37,6 +41,12 @@ public class UserLoginFailureAdapter implements UserLoginFailureModel {
 
     private void ensureLocked() {
         if (!locked) {
+            // The em.refresh() will discard any non-persisted changes.
+            // To ensure that no other instance has modified it, we need to ensure that there is only one instance
+            // of UserLoginFailureAdapter per entity. The JpaUserLoginFailureProvider ensures this within the current session aka transaction.
+            // When using this pattern, one needs to ensure that the caller is not issuing updates on the entity based on previously read (and possibly stale) values.
+            // Looking at the current implementation of DefaultBruteForceProtector, this is not the case as once a success or failure is identified,
+            // it then only updates the state.
             em.refresh(entity, LockModeType.PESSIMISTIC_WRITE);
             locked = true;
         }

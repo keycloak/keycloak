@@ -27,6 +27,12 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
+/**
+ * This holds information about failed logins.
+ * <p>
+ * This table has no version column for optimistic locking, as it will be accessed via the {@link UserLoginFailureAdapter} only with pessimistic locking,
+ * and with idempotent methods.
+ */
 @NamedQueries({
         @NamedQuery(
                 name = "insertLoginFailure",
@@ -34,12 +40,8 @@ import jakarta.persistence.Table;
                         " on conflict (realmId, userId) do nothing"
         ),
         @NamedQuery(
-                name = "findLoginFailureUserIdsByRealm",
-                query = "select e.userId from LoginFailureEntity e where e.realmId = :realmId"
-        ),
-        @NamedQuery(
-                name = "deleteLoginFailureByRealmAndUserIds",
-                query = "delete from LoginFailureEntity e where e.realmId = :realmId and e.userId in :userIds"
+                name = "deleteLoginFailureByRealm",
+                query = "delete from LoginFailureEntity e where e.realmId = :realmId"
         ),
         @NamedQuery(
                 name = "findExpiredLoginFailureUserIdsByRealm",

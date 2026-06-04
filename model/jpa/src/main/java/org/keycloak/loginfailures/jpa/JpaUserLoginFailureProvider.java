@@ -17,6 +17,11 @@
 
 package org.keycloak.loginfailures.jpa;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 
@@ -29,22 +34,36 @@ import org.keycloak.models.UserLoginFailureProvider;
 public class JpaUserLoginFailureProvider implements UserLoginFailureProvider {
 
     private final KeycloakSession session;
-    private final int maxRemovals;
+    private final Set<LoginFailureKey> notInDatabaseCache = new HashSet<>();
+    private final Map<LoginFailureKey, UserLoginFailureModel> entityInSession = new HashMap();
 
-    public JpaUserLoginFailureProvider(KeycloakSession session, int maxRemovals) {
+    public JpaUserLoginFailureProvider(KeycloakSession session) {
         this.session = session;
-        this.maxRemovals = maxRemovals;
     }
 
     @Override
     public UserLoginFailureModel getUserLoginFailure(RealmModel realm, String userId) {
         var key = new LoginFailureKey(realm.getId(), userId);
+        if (notInDatabaseCache.contains(key)) {
+            // JPA will cache existing entries in the current persistence context. But if the entry doesn't exist, it would try to look it up multiple times.
+            // So with this small cache on the session level, it would only look it up once if it doesn't exist.
+            return null;
+        }
+        UserLoginFailureModel model = entityInSession.get(key);
+        if (model != null) {
+            // The Model class will refresh the entity, and we need to ensure that no changes get lost.
+            // We ensure this by having each entity wrapped with the model only once per session.
+            return model;
+        }
         var em = getEntityManager();
         var entity = em.find(LoginFailureEntity.class, key);
         if (entity == null) {
+            notInDatabaseCache.add(key);
             return null;
         }
-        return new UserLoginFailureAdapter(em, entity);
+        model = new UserLoginFailureAdapter(em, entity);
+        entityInSession.put(key, model);
+        return model;
     }
 
     @Override
@@ -55,8 +74,11 @@ public class JpaUserLoginFailureProvider implements UserLoginFailureProvider {
                 .setParameter("userId", userId)
                 .executeUpdate();
         var key = new LoginFailureKey(realm.getId(), userId);
+        notInDatabaseCache.remove(key);
         var entity = em.find(LoginFailureEntity.class, key);
-        return new UserLoginFailureAdapter(em, entity);
+        UserLoginFailureModel model = new UserLoginFailureAdapter(em, entity);
+        entityInSession.put(key, model);
+        return model;
     }
 
     @Override
@@ -68,31 +90,20 @@ public class JpaUserLoginFailureProvider implements UserLoginFailureProvider {
             return;
         }
         em.remove(entity);
-        em.flush();
+        entityInSession.remove(key);
+        // em.flush() should not be necessary, as there shouldn't be any stale entries.
     }
 
     @Override
     public void removeAllUserLoginFailures(RealmModel realm) {
         var em = getEntityManager();
-        int removed;
-        do {
-            var userIds = em.createNamedQuery("findLoginFailureUserIdsByRealm", String.class)
+        em.createNamedQuery("deleteLoginFailureByRealm")
                     .setParameter("realmId", realm.getId())
-                    .setMaxResults(maxRemovals)
-                    .getResultList();
-            if (userIds.isEmpty()) {
-                return;
-            }
-            removed = em.createNamedQuery("deleteLoginFailureByRealmAndUserIds")
-                    .setParameter("realmId", realm.getId())
-                    .setParameter("userIds", userIds)
                     .executeUpdate();
-        } while (removed >= maxRemovals);
     }
 
     @Override
     public void close() {
-
     }
 
     private EntityManager getEntityManager() {

@@ -55,7 +55,7 @@ public class JpaUserLoginFailureProviderFactory implements UserLoginFailureProvi
 
     @Override
     public JpaUserLoginFailureProvider create(KeycloakSession session) {
-        return new JpaUserLoginFailureProvider(session, expirationTaskMaxRemoval);
+        return new JpaUserLoginFailureProvider(session);
     }
 
     @Override
