@@ -84,6 +84,12 @@ ExampleSpi
 . Create the interfaces `ExampleServiceProviderFactory`, which extends from `ProviderFactory` and `ExampleService`, which extends from `Provider`.
 The `ExampleService` will usually contain the business methods you need for your use case. Note that the `ExampleServiceProviderFactory` instance
 is always scoped per application, however `ExampleService` is scoped per-request (or more accurately per `KeycloakSession` lifecycle).
+. Create the file `META-INF/services/com.acme.ExampleServiceProviderFactory` Add the implmentation to it. For example:
++
+[source]
+----
+com.acme.ExampleServiceProviderFactoryImpl
+----
 
 . Finally you need to implement your providers in the same manner as described in the <<_providers,Service Provider Interfaces>> chapter.
 
