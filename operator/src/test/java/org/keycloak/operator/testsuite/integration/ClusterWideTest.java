@@ -68,12 +68,16 @@ public class ClusterWideTest extends BaseOperatorTest {
             // Deploy Keycloak CR in both namespaces
             var kcA = getTestKeycloakDeployment(true);
             kcA.getMetadata().setNamespace(namespaceA);
+            // prevent a collision with ingress
+            kcA.getSpec().getHostnameSpec().setHostname("clusterwidetesta.com");
             var deploymentName = kcA.getMetadata().getName();
             Log.info("Deploying Keycloak CR '" + deploymentName + "' in namespace A: " + namespaceA);
             k8sclient.resource(kcA).inNamespace(namespaceA).create();
 
             var kcB = getTestKeycloakDeployment(true);
             kcB.getMetadata().setNamespace(namespaceB);
+            // prevent a collision with ingress
+            kcB.getSpec().getHostnameSpec().setHostname("clusterwidetestb.com");
             Log.info("Deploying Keycloak CR '" + deploymentName + "' in namespace B: " + namespaceB);
             k8sclient.resource(kcB).inNamespace(namespaceB).create();
 
