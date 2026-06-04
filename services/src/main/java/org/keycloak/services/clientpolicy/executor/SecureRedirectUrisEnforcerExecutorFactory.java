@@ -137,7 +137,7 @@ public class SecureRedirectUrisEnforcerExecutorFactory implements ClientPolicyEx
             .label("Allow wildcard subdomain")
             .helpText("If ON, this executor permits client registration and update requests to use a wildcard in the first DNS label of HTTP(S) redirect URIs. " +
                 "For example, 'https://*.example.com/callback' or 'https://*-preview.example.com/callback'. " +
-                "Exactly one wildcard is supported and it cannot cross dots. This setting is OFF by default. " +
+                "Exactly one host wildcard is supported and it cannot cross dots. This setting is OFF by default. " +
                 "WARNING: Wildcard subdomains are not recommended for production use (see RFC 9700 section 4.1). " +
                 "Use with caution; a compromised subdomain can redirect to an attacker-controlled endpoint.")
             .type(ProviderConfigProperty.BOOLEAN_TYPE)

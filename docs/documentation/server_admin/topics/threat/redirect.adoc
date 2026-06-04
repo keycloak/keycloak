@@ -10,4 +10,6 @@ The `allow-wildcard-subdomain` setting on the secure redirect uris enforcer exec
 
 Wildcard subdomains are not recommended for production use; see RFC 9700 section 4.1. Use them only when necessary and only for domains where every matching subdomain is trusted. A wildcard such as `https://*.example.com/callback` matches a single host label such as `https://preview.example.com/callback`, but not `https://foo.preview.example.com/callback`.
 
+A common use case is dynamic preview environments with hostnames like `https://app-<id>.example.com`, where `<id>` is assigned at deployment time and is not known when the client is configured. A wildcard-host redirect URI such as `https://app-*.example.com/callback` covers all preview deployments while remaining scoped to the `example.com` domain.
+
 When a client uses `+` for Web Origins, origins derived from wildcard-host redirect URIs remain wildcard origins. For example, `https://*.example.com/callback` derives the origin `https://*.example.com`.
