@@ -158,17 +158,10 @@ public class DPoPUtil {
         try {
             DPoP dPoP = new DPoPUtil.Validator(keycloakSession).request(request).uriInfo(keycloakSession.getContext().getUri()).validate();
             keycloakSession.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
-        } catch (final Exception ex) {
-            Throwable exception = ex;
-
-            // JWKParser will wrap errors like InvalidKeySpecException into RuntimeException.
-            if(ex.getCause() != null) {
-                exception = ex.getCause();
-            }
-
-            event.detail(Details.REASON, exception.getMessage());
+        } catch (VerificationException ex) {
+            event.detail(Details.REASON, ex.getMessage());
             event.error(Errors.INVALID_DPOP_PROOF);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, exception.getMessage(), Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, ex.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -203,7 +196,11 @@ public class DPoPUtil {
         if (jwk == null) {
             throw new VerificationException("No JWK in DPoP header");
         } else {
-            key = JWKSUtils.getKeyWrapper(jwk);
+            try {
+                key = JWKSUtils.getKeyWrapper(jwk);
+            } catch (final Exception ex) {
+                throw new VerificationException("Error parsing JWK in DPoP header", ex);
+            }
             if (key == null) {
                 throw new VerificationException("Unsupported key type in DPoP header");
             }
@@ -220,10 +217,10 @@ public class DPoPUtil {
         SignatureVerifierContext signatureVerifier = CryptoUtils.getSignatureProvider(session, algorithm).verifier(key);
         verifier.verifierContext(signatureVerifier);
         verifier.withChecks(
-                DPoPClaimsCheck.INSTANCE,
-                new DPoPHTTPCheck(uri, method),
-                new DPoPIsActiveCheck(session, lifetime, clockSkew),
-                new DPoPReplayCheck(session, lifetime + clockSkew));
+            DPoPClaimsCheck.INSTANCE,
+            new DPoPHTTPCheck(uri, method),
+            new DPoPIsActiveCheck(session, lifetime, clockSkew),
+            new DPoPReplayCheck(session, lifetime + clockSkew));
 
         if (accessToken != null) {
             verifier.withChecks(new DPoPAccessTokenHashCheck(accessToken));
@@ -246,35 +243,35 @@ public class DPoPUtil {
     public static TokenVerifier<AccessToken> withDPoPVerifier(TokenVerifier<AccessToken> verifier, RealmModel realm, DPoPUtil.Validator validator) {
         if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
             verifier = verifier.tokenType(List.of(TokenUtil.TOKEN_TYPE_BEARER, TokenUtil.TOKEN_TYPE_DPOP))
-                    .withChecks(token -> {
-                        boolean isSchemeDPoP = false;
-                        if (StringUtil.isNotBlank(validator.authHeader)) {
-                            String[] split = WHITESPACES.split(validator.authHeader);
-                            isSchemeDPoP = TokenUtil.TOKEN_TYPE_DPOP.equalsIgnoreCase(split[0]);
-                        }
+                .withChecks(token -> {
+                    boolean isSchemeDPoP = false;
+                    if (StringUtil.isNotBlank(validator.authHeader)) {
+                        String[] split = WHITESPACES.split(validator.authHeader);
+                        isSchemeDPoP = TokenUtil.TOKEN_TYPE_DPOP.equalsIgnoreCase(split[0]);
+                    }
 
-                        if (!isSchemeDPoP && DPoPUtil.DPOP_TOKEN_TYPE.equalsIgnoreCase(token.getType())) {
-                            throw new VerificationException("The access token type is DPoP but Authorization Header is not DPoP");
+                    if (!isSchemeDPoP && DPoPUtil.DPOP_TOKEN_TYPE.equalsIgnoreCase(token.getType())) {
+                        throw new VerificationException("The access token type is DPoP but Authorization Header is not DPoP");
+                    }
+                    if (isSchemeDPoP && !DPoPUtil.DPOP_TOKEN_TYPE.equalsIgnoreCase(token.getType())) {
+                        throw new VerificationException("The access token type is not DPoP but Authorization Header is DPoP");
+                    }
+                    ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
+                    if (clientModel == null) {
+                        throw new VerificationException("Client not found");
+                    }
+                    if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseDPoP() && !isSchemeDPoP) {
+                        throw new VerificationException("This client requires DPoP, but no DPoP Authorization header is present");
+                    }
+                    if (isSchemeDPoP) {
+                        if (validator.accessToken == null) {
+                            throw new VerificationException("Access Token not set for validator");
                         }
-                        if (isSchemeDPoP && !DPoPUtil.DPOP_TOKEN_TYPE.equalsIgnoreCase(token.getType())) {
-                            throw new VerificationException("The access token type is not DPoP but Authorization Header is DPoP");
-                        }
-                        ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
-                        if (clientModel == null) {
-                            throw new VerificationException("Client not found");
-                        }
-                        if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseDPoP() && !isSchemeDPoP) {
-                            throw new VerificationException("This client requires DPoP, but no DPoP Authorization header is present");
-                        }
-                        if (isSchemeDPoP) {
-                            if (validator.accessToken == null) {
-                                throw new VerificationException("Access Token not set for validator");
-                            }
-                            DPoP dPoP = validator.validate();
-                            DPoPUtil.validateBinding(token, dPoP);
-                        }
-                        return true;
-                    });
+                        DPoP dPoP = validator.validate();
+                        DPoPUtil.validateBinding(token, dPoP);
+                    }
+                    return true;
+                });
         }
         return verifier;
     }
@@ -282,8 +279,8 @@ public class DPoPUtil {
     public static void validateBinding(AccessToken token, DPoP dPoP) throws VerificationException {
         try {
             TokenVerifier.createWithoutSignature(token)
-                    .withChecks(new DPoPUtil.DPoPBindingCheck(dPoP))
-                    .verify();
+                .withChecks(new DPoPUtil.DPoPBindingCheck(dPoP))
+                .verify();
         } catch (TokenVerificationException ex) {
             throw ex;
         } catch (VerificationException ex) {
@@ -343,7 +340,7 @@ public class DPoPUtil {
 
     private static List<String> getSupportedAlgorithms(KeycloakSession session, Class<? extends Provider> clazz, boolean includeNone) {
         Stream<String> supportedAlgorithms = session.getKeycloakSessionFactory().getProviderFactoriesStream(clazz)
-                .map(ProviderFactory::getId);
+            .map(ProviderFactory::getId);
 
         if (includeNone) {
             supportedAlgorithms = Stream.concat(supportedAlgorithms, Stream.of("none"));
@@ -353,11 +350,11 @@ public class DPoPUtil {
 
     public static List<String> getDPoPSupportedAlgorithms(KeycloakSession session) {
         return getSupportedAlgorithms(session, SignatureProvider.class, false).stream()
-                .map(algorithm -> new AbstractMap.SimpleEntry<>(algorithm, session.getProvider(SignatureProvider.class, algorithm)))
-                .filter(entry -> entry.getValue() != null)
-                .filter(entry -> entry.getValue().isAsymmetricAlgorithm())
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+            .map(algorithm -> new AbstractMap.SimpleEntry<>(algorithm, session.getProvider(SignatureProvider.class, algorithm)))
+            .filter(entry -> entry.getValue() != null)
+            .filter(entry -> entry.getValue().isAsymmetricAlgorithm())
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toList());
     }
 
     private static class DPoPHTTPCheck implements TokenVerifier.Predicate<DPoP> {
@@ -568,8 +565,8 @@ public class DPoPUtil {
      * fly for TokenRequests to bind the created generated AccessTokens to the key of the DPoP HTTP Header.
      */
     private static final class DpopProtocolMapper extends AbstractOIDCProtocolMapper
-            implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper,
-            OIDCAccessTokenResponseMapper {
+        implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper,
+        OIDCAccessTokenResponseMapper {
 
         private final String providerId;
 
@@ -595,7 +592,7 @@ public class DPoPUtil {
         @Override
         public List<ProviderConfigProperty> getConfigProperties() {
             return List.of(new ProviderConfigProperty("multivalued", ProtocolMapperUtils.MULTIVALUED, "",
-                                                      ProviderConfigProperty.BOOLEAN_TYPE, false));
+                ProviderConfigProperty.BOOLEAN_TYPE, false));
         }
 
         @Override
@@ -619,7 +616,7 @@ public class DPoPUtil {
                 return super.transformAccessToken(token, mappingModel, session, userSession, clientSessionCtx);
             }
             AccessToken.Confirmation confirmation = (AccessToken.Confirmation) token.getOtherClaims()
-                    .get(OAuth2Constants.CNF);
+                .get(OAuth2Constants.CNF);
             if (confirmation == null) {
                 confirmation = new AccessToken.Confirmation();
                 token.setConfirmation(confirmation);
