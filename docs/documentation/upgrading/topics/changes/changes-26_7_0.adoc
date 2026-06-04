@@ -182,6 +182,7 @@ This parameter is sent by clients during token refresh and is used when the `${a
 It was primarily used by legacy adapters that have been removed.
 This improves security by ensuring that only trusted, pre-registered hosts can be used in backchannel logout URLs.
 
+// ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
 The following sections provide details on deprecated features.
@@ -203,6 +204,16 @@ future, this will not be possible anymore.
 === Option Allow regex pattern comparison is deprecated for the X509 client authenticator
 
 The option **Allow regex pattern comparison** is deprecated for the X509 client authenticator. This option allows to configure a Java regular expression instead of the exact DN for the client certificate subject DN. As previously commented in the breaking changes section, this option is now deprecated and it will be removed in a future version. The certificate for the client should be unambiguously identified because of security reasons.
+
+=== WebAuthn policy option `Require Discoverable Credential` deprecated in favor of `Discoverable key`
+
+The WebAuthn policy option `Require Discoverable Credential` (`requireResidentKey`) is deprecated and planned to be removed in the future.
+A new option `Discoverable key` (`residentKey`) is available in the WebAuthn Policy and WebAuthn Passwordless Policy, following the current https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-residentkey[WebAuthn specification].
+Unlike the deprecated Yes/No option, it supports the values `required`, `preferred` and `discouraged`, and is sent to the browser as `authenticatorSelection.residentKey` during the registration of WebAuthn credentials.
+
+The deprecated option keeps working and is only used when `Discoverable key` is left as `not specified`.
+A warning is logged when the deprecated option is set to a concrete value.
+The corresponding realm representation attributes `webAuthnPolicyRequireResidentKey` and `webAuthnPolicyPasswordlessRequireResidentKey` are deprecated in favor of `webAuthnPolicyResidentKey` and `webAuthnPolicyPasswordlessResidentKey`.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

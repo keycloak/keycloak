@@ -117,6 +117,7 @@ public class RealmAttributesTest extends AbstractRealmTest {
         rep.setWebAuthnPolicyAttestationConveyancePreference("Direct");
         rep.setWebAuthnPolicyAuthenticatorAttachment("Platform");
         rep.setWebAuthnPolicyRequireResidentKey("Yes");
+        rep.setWebAuthnPolicyResidentKey("required");
         rep.setWebAuthnPolicyUserVerificationRequirement("Required");
         rep.setWebAuthnPolicyCreateTimeout(dummyInt);
         rep.setWebAuthnPolicyAvoidSameAuthenticatorRegister(true);
@@ -128,6 +129,7 @@ public class RealmAttributesTest extends AbstractRealmTest {
         rep.setWebAuthnPolicyPasswordlessAttestationConveyancePreference("Direct");
         rep.setWebAuthnPolicyPasswordlessAuthenticatorAttachment("Platform");
         rep.setWebAuthnPolicyPasswordlessRequireResidentKey("Yes");
+        rep.setWebAuthnPolicyPasswordlessResidentKey("required");
         rep.setWebAuthnPolicyPasswordlessUserVerificationRequirement("Required");
         rep.setWebAuthnPolicyPasswordlessCreateTimeout(dummyInt);
         rep.setWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(true);
@@ -162,6 +164,7 @@ public class RealmAttributesTest extends AbstractRealmTest {
         assertEquals("Direct", rep.getWebAuthnPolicyAttestationConveyancePreference());
         assertEquals("Platform", rep.getWebAuthnPolicyAuthenticatorAttachment());
         assertEquals("Yes", rep.getWebAuthnPolicyRequireResidentKey());
+        assertEquals("required", rep.getWebAuthnPolicyResidentKey());
         assertEquals("Required", rep.getWebAuthnPolicyUserVerificationRequirement());
         assertEquals(dummyInt, rep.getWebAuthnPolicyCreateTimeout());
         assertTrue(rep.isWebAuthnPolicyAvoidSameAuthenticatorRegister());
@@ -173,6 +176,7 @@ public class RealmAttributesTest extends AbstractRealmTest {
         assertEquals("Direct", rep.getWebAuthnPolicyPasswordlessAttestationConveyancePreference());
         assertEquals("Platform", rep.getWebAuthnPolicyPasswordlessAuthenticatorAttachment());
         assertEquals("Yes", rep.getWebAuthnPolicyPasswordlessRequireResidentKey());
+        assertEquals("required", rep.getWebAuthnPolicyPasswordlessResidentKey());
         assertEquals("Required", rep.getWebAuthnPolicyPasswordlessUserVerificationRequirement());
         assertEquals(dummyInt, rep.getWebAuthnPolicyPasswordlessCreateTimeout());
         assertTrue(rep.isWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister());
@@ -181,6 +185,51 @@ public class RealmAttributesTest extends AbstractRealmTest {
         assertEquals(browserSecurityHeaders, rep.getBrowserSecurityHeaders());
 
         adminClient.realms().realm("attributes").remove();
+    }
+
+    @Test
+    public void testWebAuthnPolicyResidentKey() {
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm("attributes");
+        // a realm using only the legacy option keeps working; residentKey is left unset
+        rep.setWebAuthnPolicyRequireResidentKey("No");
+        // new option, including a value the legacy Yes/No option cannot express
+        rep.setWebAuthnPolicyPasswordlessResidentKey("preferred");
+
+        try {
+            adminClient.realms().create(rep);
+
+            rep = adminClient.realm("attributes").toRepresentation();
+
+            // residentKey left unset defaults to "not specified" and the legacy option is preserved,
+            // so the registration request falls back to it
+            assertEquals("not specified", rep.getWebAuthnPolicyResidentKey());
+            assertEquals("No", rep.getWebAuthnPolicyRequireResidentKey());
+
+            // explicit residentKey survives the round-trip
+            assertEquals("preferred", rep.getWebAuthnPolicyPasswordlessResidentKey());
+        } finally {
+            adminClient.realms().realm("attributes").remove();
+        }
+    }
+
+    @Test
+    public void testWebAuthnPolicyResidentKeyDefaults() {
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm("attributes");
+
+        try {
+            adminClient.realms().create(rep);
+
+            rep = adminClient.realm("attributes").toRepresentation();
+
+            // two-factor policy has no resident key requirement by default
+            assertEquals("not specified", rep.getWebAuthnPolicyResidentKey());
+            // passwordless policy requires a discoverable key by default
+            assertEquals("required", rep.getWebAuthnPolicyPasswordlessResidentKey());
+        } finally {
+            adminClient.realms().realm("attributes").remove();
+        }
     }
 
     @Test
