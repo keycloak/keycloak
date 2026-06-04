@@ -447,7 +447,66 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         try (CloseableHttpResponse response = oauth.httpClient().get().execute(post)) {
             assertEquals(400, response.getStatusLine().getStatusCode());
+            // Signature is valid (token was issued by Keycloak), so CORS headers should be set
+            // even though token validation failed due to the user being disabled (KEYCLOAK-15429)
             assertEquals("http://localhost", response.getFirstHeader("Access-Control-Allow-Origin").getValue());
+        }
+    }
+
+    @Test
+    public void testCORSHeadersSetForExpiredToken() throws Exception {
+        AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
+
+        PermissionRequest permissions = new PermissionRequest("Resource A", "ScopeA", "ScopeB");
+        String ticket = getAuthzClient().protection().permission().create(Arrays.asList(permissions)).getTicket();
+
+        String tokenEndpoint = getAuthzClient().getServerConfiguration().getTokenEndpoint();
+        HttpPost post = new HttpPost(tokenEndpoint);
+        post.addHeader("Origin", "http://localhost");
+        post.addHeader("Authorization", "Bearer " + accessTokenResponse.getToken());
+        List<NameValuePair> parameters = new LinkedList<>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE));
+        parameters.add(new BasicNameValuePair("ticket", ticket));
+
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+        post.setEntity(formEntity);
+
+        // Advance server time past access token lifespan to force expiration
+        try {
+            setTimeOffset(600);
+
+            try (CloseableHttpResponse response = oauth.httpClient().get().execute(post)) {
+                assertEquals(400, response.getStatusLine().getStatusCode());
+                // Signature is still valid on expired tokens, so CORS headers should be set (KEYCLOAK-15429)
+                assertEquals("http://localhost", response.getFirstHeader("Access-Control-Allow-Origin").getValue());
+            }
+        } finally {
+            setTimeOffset(0);
+        }
+    }
+
+    @Test
+    public void testCORSHeadersNotSetForForgedToken() throws Exception {
+        // CVE-2026-37977: CORS headers must not be set when the JWT signature is invalid
+        PermissionRequest permissions = new PermissionRequest("Resource A", "ScopeA", "ScopeB");
+        String ticket = getAuthzClient().protection().permission().create(Arrays.asList(permissions)).getTicket();
+
+        String tokenEndpoint = getAuthzClient().getServerConfiguration().getTokenEndpoint();
+        HttpPost post = new HttpPost(tokenEndpoint);
+        post.addHeader("Origin", "http://localhost");
+        // Forged token: valid structure but signed with an unknown key
+        post.addHeader("Authorization", "Bearer eyJhbGciOiJSUzI1NiJ9.eyJhenAiOiJyZXNvdXJjZS1zZXJ2ZXItdGVzdCJ9.invalidsignature");
+        List<NameValuePair> parameters = new LinkedList<>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE));
+        parameters.add(new BasicNameValuePair("ticket", ticket));
+
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+        post.setEntity(formEntity);
+
+        try (CloseableHttpResponse response = oauth.httpClient().get().execute(post)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            // Invalid signature: CORS headers must not be set based on unverified claims
+            assertNull(response.getFirstHeader("Access-Control-Allow-Origin"));
         }
     }
 
