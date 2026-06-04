@@ -19,10 +19,10 @@
                 <#if oauth.clientScopesRequested??>
                     <#list oauth.clientScopesRequested as clientScope>
                         <li>
-                            <span><#if !clientScope.dynamicScopeParameter??>
+                            <span><#if !clientScope.parameterizedScopeParameter??>
                                         ${advancedMsg(clientScope.consentScreenText)}
                                     <#else>
-                                        ${advancedMsg(clientScope.consentScreenText, clientScope.dynamicScopeParameter)}
+                                        ${advancedMsg(clientScope.consentScreenText, clientScope.parameterizedScopeParameter)}
                                 </#if>
                             </span>
                         </li>

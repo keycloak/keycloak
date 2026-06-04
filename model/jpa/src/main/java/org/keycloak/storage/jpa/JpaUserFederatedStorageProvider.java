@@ -386,7 +386,7 @@ public class JpaUserFederatedStorageProvider implements
                 }
                 if (grantedClientScopeModel != null) {
                     model.addGrantedClientScope(grantedClientScopeModel,
-                            ClientScopeModel.isDynamicScope(grantedClientScopeModel)
+                            ClientScopeModel.isParameterizedScope(grantedClientScopeModel)
                                     ? grantedClientScope.getParameter().orElse(null)
                                     : null);
                 }
@@ -402,7 +402,7 @@ public class JpaUserFederatedStorageProvider implements
         Collection<FederatedUserConsentClientScopeEntity> scopesToRemove = new HashSet<>(grantedClientScopeEntities);
 
         for (ClientScopeModel clientScope : consentModel.getGrantedClientScopes()) {
-            if (ClientScopeModel.isDynamicScope(clientScope)) {
+            if (ClientScopeModel.isParameterizedScope(clientScope)) {
                 consentModel.getParameters(clientScope).forEach(p -> createFederatedUserConsentClientScopeEntity(
                         consentEntity, clientScope, p, grantedClientScopeEntities, scopesToRemove));
             } else {

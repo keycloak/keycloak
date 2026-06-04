@@ -5,7 +5,7 @@ import { createTestBed } from "../support/testbed.ts";
 import adminClient from "../utils/AdminClient.js";
 import { SERVER_URL, ROOT_PATH } from "../utils/constants.ts";
 import { login } from "../utils/login.js";
-import { selectItem } from "../utils/form.ts";
+import { changeTimeUnit, selectItem } from "../utils/form.ts";
 
 test("OID4VCI section is hidden in Tokens tab when verifiable credentials are disabled", async ({
   page,
@@ -69,13 +69,15 @@ test("should render fields and save values with correct attribute keys", async (
   const nonceField = page.getByTestId(
     "attributes.vc🍺c-nonce-lifetime-seconds",
   );
-  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
+  const credentialOfferLifespanField = page.getByTestId(
+    "attributes.credentialOfferLifespanS",
+  );
 
   await expect(nonceField).toBeVisible();
-  await expect(preAuthField).toBeVisible();
+  await expect(credentialOfferLifespanField).toBeVisible();
 
   await nonceField.fill("60");
-  await preAuthField.fill("120");
+  await credentialOfferLifespanField.fill("120");
   await page.getByTestId("tokens-tab-save").click();
   await expect(
     page.getByText("Realm successfully updated").first(),
@@ -85,7 +87,7 @@ test("should render fields and save values with correct attribute keys", async (
   expect(realmData).toBeDefined();
   // TimeSelector converts values based on selected unit (60 minutes = 3600 seconds, 120 seconds = 120 seconds)
   expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBe("3600");
-  expect(realmData?.attributes?.["credentialOfferLifespanS"]).toBe("120");
+  expect(realmData?.attributes?.["credentialOfferLifespanS"]).toBe("7200");
 });
 
 test("should persist values after page refresh", async ({ page }) => {
@@ -103,10 +105,12 @@ test("should persist values after page refresh", async ({ page }) => {
   const nonceField = page.getByTestId(
     "attributes.vc🍺c-nonce-lifetime-seconds",
   );
-  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
+  const credentialOfferLifespanField = page.getByTestId(
+    "attributes.credentialOfferLifespanS",
+  );
 
   await nonceField.fill("60");
-  await preAuthField.fill("120");
+  await credentialOfferLifespanField.fill("120");
   await page.getByTestId("tokens-tab-save").click();
   await expect(
     page.getByText("Realm successfully updated").first(),
@@ -132,12 +136,12 @@ test("should persist values after page refresh", async ({ page }) => {
   const nonceValue = parseInt(
     realmData?.attributes?.["vc.c-nonce-lifetime-seconds"] || "0",
   );
-  const preAuthValue = parseInt(
+  const credentialOfferLifespanValue = parseInt(
     realmData?.attributes?.["credentialOfferLifespanS"] || "0",
   );
 
   expect(nonceValue).toBeGreaterThan(0);
-  expect(preAuthValue).toBeGreaterThan(0);
+  expect(credentialOfferLifespanValue).toBeGreaterThan(0);
 });
 
 test("should validate form fields and save valid values", async ({ page }) => {
@@ -155,21 +159,23 @@ test("should validate form fields and save valid values", async ({ page }) => {
   const nonceField = page.getByTestId(
     "attributes.vc🍺c-nonce-lifetime-seconds",
   );
-  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
+  const credentialOfferLifespanField = page.getByTestId(
+    "attributes.credentialOfferLifespanS",
+  );
   const saveButton = page.getByTestId("tokens-tab-save");
 
   // Test that fields are visible and can be filled
   await expect(nonceField).toBeVisible();
-  await expect(preAuthField).toBeVisible();
+  await expect(credentialOfferLifespanField).toBeVisible();
   await expect(saveButton).toBeVisible();
 
   // Test with valid values - this should work
   await nonceField.clear();
-  await preAuthField.clear();
+  await credentialOfferLifespanField.clear();
 
   // Fill with smaller, more reasonable values for testing
   await nonceField.fill("60");
-  await preAuthField.fill("120");
+  await credentialOfferLifespanField.fill("120");
 
   // Save button should be enabled when form has values
   await expect(saveButton).toBeEnabled();
@@ -188,12 +194,12 @@ test("should validate form fields and save valid values", async ({ page }) => {
   const nonceValue = parseInt(
     realmData?.attributes?.["vc.c-nonce-lifetime-seconds"] || "0",
   );
-  const preAuthValue = parseInt(
+  const credentialOfferLifespanValue = parseInt(
     realmData?.attributes?.["credentialOfferLifespanS"] || "0",
   );
 
   expect(nonceValue).toBeGreaterThan(0);
-  expect(preAuthValue).toBeGreaterThan(0);
+  expect(credentialOfferLifespanValue).toBeGreaterThan(0);
 });
 
 test("should show validation error for values below minimum threshold", async ({
@@ -213,12 +219,19 @@ test("should show validation error for values below minimum threshold", async ({
   const nonceField = page.getByTestId(
     "attributes.vc🍺c-nonce-lifetime-seconds",
   );
-  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
+  const credentialOfferLifespanField = page.getByTestId(
+    "attributes.credentialOfferLifespanS",
+  );
   const saveButton = page.getByTestId("tokens-tab-save");
 
   // Fill with values below the minimum threshold (29 seconds)
   await nonceField.fill("29");
-  await preAuthField.fill("29");
+  await credentialOfferLifespanField.fill("29");
+  await changeTimeUnit(
+    page,
+    "Seconds",
+    "#credential-offer-lifespan-select-menu",
+  );
 
   await saveButton.click();
 

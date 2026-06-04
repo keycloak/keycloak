@@ -46,6 +46,17 @@ As part of this change, the `displayName` attribute has been promoted from a rea
 Before migrating, check the current value of the `displayName` attribute for your realms. If the current value of `displayName` attribute
 exceeds 255 characters, it will be truncated during migration.
 
+== Dynamic Scopes feature renamed to Parameterized Scopes
+
+The experimental feature previously known as `dynamic-scopes` has been renamed to `parameterized-scopes` to better describe its purpose.
+If you enabled this feature using `--features=dynamic-scopes`, update your configuration to use `--features=parameterized-scopes`.
+
+== Typed parameters for parameterized scopes
+
+Parameterized scopes can now define a parameter type that validates the captured value at request time. Built-in types include `string`, `integer`, `boolean`, `username`, and `custom` (validated against an admin-defined regex). The type is required when creating parameterized scopes with the feature enabled.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
 = Configuring and Running
 
 == Deprecation of SHA1 hashing functions in {project_name} 27

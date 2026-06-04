@@ -41,9 +41,13 @@ import org.hibernate.annotations.DynamicUpdate;
                 query = "DELETE FROM RootAuthenticationSessionEntity sess" +
                         " WHERE sess.realmId = :realmId"),
         @NamedQuery(
-                name = "deleteExpiredRootAuthSessionByRealm",
-                query = "DELETE FROM RootAuthenticationSessionEntity sess" +
+                name = "findExpiredRootAuthSessionIdsByRealm",
+                query = "SELECT sess.id FROM RootAuthenticationSessionEntity sess" +
                         " WHERE sess.realmId = :realmId AND sess.timestamp < :timestamp"
+        ),
+        @NamedQuery(
+                name = "deleteExpiredRootAuthSessionByIds",
+                query = "DELETE FROM RootAuthenticationSessionEntity e WHERE e.id IN :ids AND e.timestamp < :timestamp"
         ),
         @NamedQuery(
                 name = "insertRootAuthSessionIfAbsent",

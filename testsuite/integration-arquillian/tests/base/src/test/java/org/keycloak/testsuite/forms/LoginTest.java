@@ -92,7 +92,7 @@ import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
 
-import static org.keycloak.common.Profile.Feature.DYNAMIC_SCOPES;
+import static org.keycloak.common.Profile.Feature.PARAMETERIZED_SCOPES;
 import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.SERVER_ROOT;
@@ -1053,14 +1053,14 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
-    public void loginSuccessfulWithDynamicScope() {
-        ProfileAssume.assumeFeatureEnabled(DYNAMIC_SCOPES);
+    @EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
+    public void loginSuccessfulWithParameterizedScope() {
+        ProfileAssume.assumeFeatureEnabled(PARAMETERIZED_SCOPES);
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("dynamic");
         clientScope.setAttributes(new HashMap<String, String>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic:*");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         Response response = managedRealm.admin().clientScopes().create(clientScope);

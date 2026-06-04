@@ -257,7 +257,14 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     }
 
     private Optional<OrganizationModel> resolveOrganization(KeycloakSession session, String id) {
-        return Optional.ofNullable(session.getProvider(OrganizationProvider.class).getById(id));
+        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+            return Optional.empty();
+        }
+        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+        if (provider == null || !provider.isEnabled()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(provider.getById(id));
     }
 
     private Optional<ClientModel> resolveClient(KeycloakSession session, String id) {

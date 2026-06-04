@@ -25,8 +25,8 @@ import {
   ClientScope,
   ClientScopeDefaultOptionalType,
   changeScope,
-  DynamicScopeLabel,
-  isDynamicScope,
+  ParameterizedScopeLabel,
+  isParameterizedScope,
   removeScope,
 } from "../components/client-scope/ClientScopeTypes";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -87,7 +87,7 @@ const ClientScopeDetailLink = (scope: ClientScopeDefaultOptionalType) => {
       >
         {scope.name}
       </Link>{" "}
-      {isDynamicScope(scope) && <DynamicScopeLabel />}
+      {isParameterizedScope(scope) && <ParameterizedScopeLabel />}
     </>
   );
 };

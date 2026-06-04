@@ -82,7 +82,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const providers = useLoginProviders();
   const serverInfo = useServerInfo();
   const isFeatureEnabled = useIsFeatureEnabled();
-  const isDynamicScopesEnabled = isFeatureEnabled(Feature.DynamicScopes);
+  const isParameterizedScopesEnabled = isFeatureEnabled(
+    Feature.ParameterizedScopes,
+  );
 
   // Get available hash algorithms from server info
   const hashAlgorithms = serverInfo.providers?.hash.providers
@@ -147,19 +149,34 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       clientScope?.attributes?.["display.on.consent.screen"] ?? "true",
   });
 
-  const dynamicScope = useWatch({
+  const parameterizedScope = useWatch({
     control,
     name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-      "attributes.is.dynamic.scope",
+      "attributes.is.parameterized.scope",
     ),
     defaultValue: "false",
   });
 
-  const isDynamic = isDynamicScopesEnabled && dynamicScope === "true";
-  const isDynamicScopeWithFeatureDisabled =
-    !isDynamicScopesEnabled &&
-    clientScope?.attributes?.["is.dynamic.scope"] === "true";
-  const scopeTypeOptions = isDynamic
+  const parameterTypeFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.parameterized.scope.type",
+    );
+
+  const parameterType: string = useWatch({
+    control,
+    name: parameterTypeFieldName,
+    defaultValue:
+      clientScope?.attributes?.["parameterized.scope.type"] ?? "string",
+  });
+
+  const scopeName = useWatch({ control, name: "name", defaultValue: "" }) ?? "";
+
+  const isParameterized =
+    isParameterizedScopesEnabled && parameterizedScope === "true";
+  const isParameterizedScopeWithFeatureDisabled =
+    !isParameterizedScopesEnabled &&
+    clientScope?.attributes?.["is.parameterized.scope"] === "true";
+  const scopeTypeOptions = isParameterized
     ? allClientScopeTypes.filter((key) => key !== "default")
     : allClientScopeTypes;
 
@@ -217,30 +234,23 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     defaultValue: clientScope?.attributes?.["vc.signing_key_id"] ?? "",
   });
 
-  const setDynamicRegex = (value: string, append: boolean) =>
-    setValue(
-      convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-        "attributes.dynamic.scope.regexp",
-      ),
-      append ? `${value}:*` : value,
-      { shouldDirty: true }, // Mark the field as dirty when we modify the field
-    );
+  const scopeTypeNames = serverInfo.parameterizedScopeTypes || [];
 
   useEffect(() => {
     convertToFormValues(clientScope ?? {}, setValue);
   }, [clientScope, setValue]);
 
   useEffect(() => {
-    if (isDynamicScopeWithFeatureDisabled) {
+    if (isParameterizedScopeWithFeatureDisabled) {
       setValue(
         convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-          "attributes.is.dynamic.scope",
+          "attributes.is.parameterized.scope",
         ),
         "false",
         { shouldDirty: true, shouldValidate: true },
       );
     }
-  }, [setValue, isDynamicScopeWithFeatureDisabled]);
+  }, [setValue, isParameterizedScopeWithFeatureDisabled]);
 
   useEffect(() => {
     if (isSigningKeySelected) {
@@ -258,6 +268,22 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       }
     }
   }, [isSigningKeySelected, realmKeys, setValue]);
+
+  const isCustomType = parameterType === "custom";
+
+  const regexpFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.parameterized.scope.regexp",
+    );
+
+  useEffect(() => {
+    if (parameterizedScope === "true" && isCustomType) {
+      const current = (form.getValues(regexpFieldName) as string) || "";
+      if (!current) {
+        setValue(regexpFieldName, ".+", { shouldDirty: true });
+      }
+    }
+  }, [parameterType, parameterizedScope]);
 
   /* Form-level validation handles correctness; here we only prune known optional
        OID4VC fields when empty. If new attributes are added, extend
@@ -281,47 +307,62 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           labelIcon={t("scopeNameHelp")}
           rules={{
             required: t("required"),
-            onChange: (e) => {
-              if (isDynamicScopesEnabled) setDynamicRegex(e.target.value, true);
-            },
           }}
         />
-        {isDynamicScopeWithFeatureDisabled && (
+        {isParameterizedScopeWithFeatureDisabled && (
           <Alert
             variant="warning"
             isInline
             isPlain
-            title={t("dynamicScopeDisabledInfo")}
+            title={t("parameterizedScopeDisabledInfo")}
           />
         )}
-        {isDynamicScopesEnabled && (
+        {isParameterizedScopesEnabled && (
           <>
             <DefaultSwitchControl
               name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                "attributes.is.dynamic.scope",
+                "attributes.is.parameterized.scope",
               )}
-              label={t("dynamicScope")}
-              labelIcon={t("dynamicScopeHelp")}
+              label={t("parameterizedScope")}
+              labelIcon={t("parameterizedScopeHelp")}
               onChange={(event, value) => {
-                setDynamicRegex(
-                  value ? form.getValues("name") || "" : "",
-                  value,
-                );
                 if (value && form.getValues("type") === ClientScope.default) {
                   setValue("type", ClientScope.optional, { shouldDirty: true });
                 }
               }}
               stringify
             />
-            {dynamicScope === "true" && (
-              <TextControl
-                name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                  "attributes.dynamic.scope.regexp",
+            {parameterizedScope === "true" && (
+              <>
+                <SelectControl
+                  id="kc-parameter-type"
+                  name={parameterTypeFieldName}
+                  label={t("parameterizedScopeType")}
+                  labelIcon={t("parameterizedScopeTypeHelp")}
+                  controller={{ defaultValue: "string" }}
+                  options={scopeTypeNames.map((key) => ({
+                    key,
+                    value: t(`parameterizedScopeType.${key}`),
+                  }))}
+                />
+                {isCustomType && (
+                  <TextControl
+                    name={regexpFieldName}
+                    label={t("parameterizedScopeFormat")}
+                    labelIcon={t("parameterizedScopeFormatHelp")}
+                    helperText={`${scopeName}:${form.watch(regexpFieldName) ?? ""}`}
+                    rules={{
+                      required: t("required"),
+                      validate: (value) => {
+                        if (value.includes("(") || value.includes(")")) {
+                          return t("regexGroupsNotAllowed");
+                        }
+                        return true;
+                      },
+                    }}
+                  />
                 )}
-                label={t("dynamicScopeFormat")}
-                labelIcon={t("dynamicScopeFormatHelp")}
-                isDisabled
-              />
+              </>
             )}
           </>
         )}
@@ -703,9 +744,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           <FormSubmitButton
             data-testid="save"
             formState={formState}
-            allowNonDirty={isDynamicScopeWithFeatureDisabled}
+            allowNonDirty={isParameterizedScopeWithFeatureDisabled}
             isDisabled={
-              !(isDirty || isDynamicScopeWithFeatureDisabled) || !isValid
+              !(isDirty || isParameterizedScopeWithFeatureDisabled) || !isValid
             }
           >
             {t("save")}

@@ -174,7 +174,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                     for (GroupMembership membership : values) {
                         GroupModel group = session.groups().getGroupById(realm, membership.getValue());
 
-                        if (group == null) {
+                        if (group == null || !canViewGroup(group)) {
                             throw new ModelValidationException("Group with id " + membership.getValue() + " not found");
                         }
 
@@ -207,7 +207,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                     for (GroupMembership membership : values) {
                         GroupModel group = session.groups().getGroupById(realm, membership.getValue());
 
-                        if (group == null) {
+                        if (group == null || !canViewGroup(group)) {
                             throw new ModelValidationException("Group with id " + membership.getValue() + " not found");
                         }
 
@@ -223,7 +223,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                     for (GroupMembership membership : values) {
                         GroupModel group = session.groups().getGroupById(realm, membership.getValue());
 
-                        if (group == null) {
+                        if (group == null || !canViewGroup(group)) {
                             throw new ModelValidationException("Group with id " + membership.getValue() + " not found");
                         }
 

@@ -62,6 +62,7 @@ import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeProvider;
 import org.keycloak.provider.ConfiguredPerClientProvider;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -166,7 +167,15 @@ public class ServerInfoAdminResource {
         setClientInstallations(info);
         setPasswordPolicies(info);
         info.setEnums(ENUMS);
+        info.setParameterizedScopeTypes(buildParameterizedScopeTypesList());
         return info;
+    }
+
+    private List<String> buildParameterizedScopeTypesList() {
+        return session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(ParameterizedScopeTypeProvider.class)
+                .map(f -> session.getProvider(ParameterizedScopeTypeProvider.class, f.getId()).getTypeName())
+                .collect(Collectors.toList());
     }
 
     private void setProviders(ServerInfoRepresentation info) {

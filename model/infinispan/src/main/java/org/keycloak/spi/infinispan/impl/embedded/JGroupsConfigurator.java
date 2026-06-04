@@ -188,6 +188,7 @@ public final class JGroupsConfigurator {
         readConfigAndSet(config, RACK_NAME, transport::rackId);
         readConfigAndSet(config, MACHINE_NAME, transport::machineId);
         readConfigAndSet(config, NODE_NAME, transport::nodeName);
+        readConfigAndSet(config, DefaultCacheEmbeddedConfigProviderFactory.CLUSTER_NAME, transport::clusterName);
     }
 
     static void createJGroupsProperties(ProviderConfigurationBuilder builder) {

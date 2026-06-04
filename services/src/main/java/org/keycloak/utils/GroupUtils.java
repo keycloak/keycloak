@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -207,8 +208,13 @@ public class GroupUtils {
 
     public static Set<GroupMembership> getAllMemberships(KeycloakSession session, Collection<GroupModel> groups, boolean direct) {
         Set<GroupMembership> memberships = new HashSet<>();
+        Permissions permissions = session.getContext().getPermissions();
 
         for (GroupModel group : groups) {
+            if (!permissions.hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW)) {
+                continue;
+            }
+
             GroupMembership membership = new GroupMembership(group, direct);
 
             if (!memberships.add(membership)) {

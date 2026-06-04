@@ -720,13 +720,13 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
-    public void testCreateDynamicScopeWithFeatureDisabledAndIsDynamicScopeTrue() {
+    public void testCreateParameterizedScopeWithFeatureDisabledAndIsParameterizedScopeTrue() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("dynamic-scope-def");
         scopeRep.setProtocol("openid-connect");
         scopeRep.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic-scope-def:*");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
         String scopeDefId = createClientScope(scopeRep);
 
@@ -734,8 +734,8 @@ public class ClientScopeTest extends AbstractClientScopeTest {
         ClientScopeResource scopeRes = clientScopes().get(scopeDefId);
         scopeRep = clientScopes().get(scopeDefId).toRepresentation();
         Assertions.assertEquals("dynamic-scope-def", scopeRep.getName());
-        Assertions.assertEquals("true", scopeRep.getAttributes().get(ClientScopeModel.IS_DYNAMIC_SCOPE));
-        Assertions.assertEquals("dynamic-scope-def:*", scopeRep.getAttributes().get(ClientScopeModel.DYNAMIC_SCOPE_REGEXP));
+        Assertions.assertEquals("true", scopeRep.getAttributes().get(ClientScopeModel.IS_PARAMETERIZED_SCOPE));
+        Assertions.assertEquals("string", scopeRep.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE));
 
         // update should work
         scopeRes.update(scopeRep);
@@ -744,7 +744,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
         ClientResource clientRes = AdminApiUtil.findClientByClientId(managedRealm.admin(), oauth.getClientId());
         clientRes.addOptionalClientScope(scopeDefId);
 
-        // check it works as a normal non-dynamic scope
+        // check it works as a normal non-parameterized scope
         oauth.scope("dynamic-scope-def");
         AuthorizationEndpointResponse authResponse = oauth.doLogin(user.getUsername(), user.getPassword());
         Assertions.assertNotNull(authResponse.getCode());
@@ -754,7 +754,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
         LogoutResponse logoutResponse = oauth.doLogout(tokenResponse.getRefreshToken());
         Assertions.assertTrue(logoutResponse.isSuccess());
 
-        // dynamic scope request does not work
+        // parameterized scope request does not work
         oauth.scope("dynamic-scope-def:something");
         oauth.openLoginForm();
         authResponse = oauth.parseLoginResponse();
@@ -763,15 +763,16 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
-    public void testCreateDynamicScopeWithFeatureDisabledAndNonEmptyDynamicScopeRegexp() {
+    public void testCreateNonParameterizedScopeIgnoresStaleAttributes() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("non-dynamic-scope-def3");
         scopeRep.setProtocol("openid-connect");
         scopeRep.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "false");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "not-empty");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "false");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "[invalid");
         }});
-        handleExpectedCreateFailure(scopeRep, 400, "Invalid format for the Dynamic Scope regexp not-empty");
+        String scopeId = createClientScope(scopeRep);
+        removeClientScope(scopeId);
     }
 
     @Test

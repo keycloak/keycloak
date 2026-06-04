@@ -47,7 +47,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
@@ -62,6 +61,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
@@ -240,7 +240,7 @@ public class AccountRestService {
     @Path("/organizations")
     public OrganizationsResource organizations() {
         checkAccountApiEnabled();
-        if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (!Organizations.isEnabled(session)) {
             throw new NotFoundException();
         }
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
@@ -295,7 +295,7 @@ public class AccountRestService {
     private ConsentRepresentation modelToRepresentation(UserConsentModel model, boolean briefRepresentation) {
         List<ConsentScopeRepresentation> grantedScopes = new ArrayList<>();
         model.getGrantedClientScopes().stream().forEach(m -> {
-            if (ClientScopeModel.isDynamicScope(m)) {
+            if (ClientScopeModel.isParameterizedScope(m)) {
                 model.getParameters(m).forEach(p -> grantedScopes.add(createContentScopeRepresentation(m, p, briefRepresentation)));
             } else {
                 grantedScopes.add(createContentScopeRepresentation(m, null, briefRepresentation));
@@ -486,8 +486,8 @@ public class AccountRestService {
                 event.error(msg);
                 throw new IllegalArgumentException(msg);
             }
-            if (ClientScopeModel.isDynamicScope(scopeModel)) {
-                String msg = String.format("Cannot create Scope id %s for client %s because is dynamic.", scopeRepresentation, consent.getClient().getName());
+            if (ClientScopeModel.isParameterizedScope(scopeModel)) {
+                String msg = String.format("Cannot create Scope id %s for client %s because is parameterized.", scopeRepresentation, consent.getClient().getName());
                 event.error(msg);
                 throw new IllegalArgumentException(msg);
             }

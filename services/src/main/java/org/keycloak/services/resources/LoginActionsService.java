@@ -54,7 +54,6 @@ import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAu
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.TriFunction;
@@ -989,7 +988,7 @@ public class LoginActionsService {
     }
 
     private void configureOrganization(BrokeredIdentityContext brokerContext) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (Organizations.isEnabled(session)) {
             String organizationId = brokerContext.getIdpConfig().getOrganizationId();
 
             if (organizationId != null) {
@@ -1020,7 +1019,7 @@ public class LoginActionsService {
 
     private boolean checkGranted(AuthorizationDetails details, UserConsentModel grantedConsent) {
         ClientScopeModel clientScope = details.getClientScope();
-        String parameter = details.getDynamicScopeParam();
+        String parameter = details.getParameterizedScopeParam();
         if (!grantedConsent.isClientScopeGranted(clientScope, parameter) && clientScope.isDisplayOnConsentScreen()) {
             grantedConsent.addGrantedClientScope(clientScope, parameter);
             return true;

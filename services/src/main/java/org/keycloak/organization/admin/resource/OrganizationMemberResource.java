@@ -280,6 +280,7 @@ public class OrganizationMemberResource {
         }
 
         return provider.getByMember(member)
+                .filter(org -> auth.orgs().canView(org))
                 .map(model -> ModelToRepresentation.toRepresentation(model, briefRepresentation));
     }
 

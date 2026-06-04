@@ -72,6 +72,7 @@ public class FeatureEnabledTest extends KeycloakModelTest {
     public void testEmbeddedCachesOnly() {
         assumeFalse("Multi-Site Feature enabled", MultiSiteUtils.isMultiSiteEnabled());
         assumeFalse("Clusterless Feature enabled", Profile.isFeatureEnabled(Profile.Feature.CLUSTERLESS));
+        assumeFalse(Profile.isFeatureEnabled(Profile.Feature.CACHELESS)); // TODO update test when all caches are gone
         assertFalse(InfinispanUtils.isRemoteInfinispan());
         assertTrue(InfinispanUtils.isEmbeddedInfinispan());
         inComittedTransaction(session -> {
