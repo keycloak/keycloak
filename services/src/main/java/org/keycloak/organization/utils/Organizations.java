@@ -62,8 +62,8 @@ public class Organizations {
     }
 
     public static boolean canManageOrganizationGroup(KeycloakSession session, GroupModel group) {
-        //  if it's not an organization group OR the feature is disabled, we don't need further checks
-        if (!isOrganizationGroup(group) || !Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        //  if it's not an organization group OR organizations are disabled, we don't need further checks
+        if (!isOrganizationGroup(group) || !isEnabled(session)) {
             return true;
         }
 
@@ -77,6 +77,9 @@ public class Organizations {
     }
 
     public static List<IdentityProviderModel> resolveHomeBroker(KeycloakSession session, UserModel user) {
+        if (!isEnabled(session)) {
+            return List.of();
+        }
         OrganizationProvider provider = getProvider(session);
         RealmModel realm = session.getContext().getRealm();
         List<OrganizationModel> organizations = Optional.ofNullable(user).stream().flatMap(provider::getByMember)
@@ -134,6 +137,14 @@ public class Organizations {
                 session.getContext().setOrganization(current);
             }
         };
+    }
+
+    public static boolean isEnabled(KeycloakSession session) {
+        if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            return false;
+        }
+        OrganizationProvider provider = getProvider(session);
+        return provider != null && provider.isEnabled();
     }
 
     public static boolean isEnabledAndOrganizationsPresent(OrganizationProvider orgProvider) {
