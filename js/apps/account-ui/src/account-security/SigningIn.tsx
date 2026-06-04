@@ -1,6 +1,5 @@
 import {
   Button,
-  ButtonVariant,
   DataList,
   DataListAction,
   DataListCell,
@@ -19,22 +18,16 @@ import {
   Split,
   SplitItem,
   Title,
-  Toolbar,
-  ToolbarContent,
-  ToolbarItem,
-  Tooltip,
 } from "@patternfly/react-core";
 import {
   EllipsisVIcon,
   ExclamationTriangleIcon,
   InfoAltIcon,
-  AngleUpIcon,
-  AngleDownIcon,
 } from "@patternfly/react-icons";
-import { CSSProperties, useState } from "react";
+import { CSSProperties, Fragment, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useEnvironment } from "@keycloak/keycloak-ui-shared";
-import { getCredentials, moveUp, moveDown } from "../api/methods";
+import { getCredentials } from "../api/methods";
 import {
   CredentialContainer,
   CredentialMetadataRepresentation,
@@ -46,6 +39,7 @@ import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 import { AccountEnvironment } from "..";
 import { joinPath } from "../utils/joinPath";
+import { CredentialOrder } from "./CredentialOrder";
 
 type MobileLinkProps = {
   title: string;
@@ -97,37 +91,12 @@ export const SigningIn = () => {
   const { login } = context.keycloak;
 
   const [credentials, setCredentials] = useState<CredentialContainer[]>();
-  const [key, setKey] = useState(1);
-  const refresh = () => setKey(key + 1);
+  const [key, setKey] = useState(0);
+  const handleOrderChanged = () => setKey((k) => k + 1);
 
   usePromise((signal) => getCredentials({ signal, context }), setCredentials, [
     key,
   ]);
-
-  const isVisibleUpDown = (container: CredentialContainer) => {
-    return container.userCredentialMetadatas.length > 0;
-  };
-
-  const isDisabledUp = (
-    credentials: CredentialContainer[],
-    container: CredentialContainer,
-  ) => {
-    return (
-      credentials[0].type === container.type || !isVisibleUpDown(container)
-    );
-  };
-
-  const isDisabledDown = (
-    credentials: CredentialContainer[],
-    container: CredentialContainer,
-  ) => {
-    const idx = credentials.findIndex((c) => c.type === container.type);
-    return (
-      !isVisibleUpDown(container) ||
-      idx >= credentials.length - 1 ||
-      !isVisibleUpDown(credentials[idx + 1])
-    );
-  };
 
   const credentialRowCells = (
     credMetadata: CredentialMetadataRepresentation,
@@ -226,7 +195,6 @@ export const SigningIn = () => {
         <DataListCell
           key={"warning-message" + credential.id}
           data-testrole="warning-message"
-          className="pf-v5-u-pt-0"
         >
           <>
             {credMetadata.infoMessage && (
@@ -307,172 +275,135 @@ export const SigningIn = () => {
     return <Spinner />;
   }
 
+  const uniqueCategories = [...new Set(credentials.map((c) => c.category))];
+  const categoryOrder = ["basic-authentication", "two-factor", "passwordless"];
+  const categoryIndex = (c: string) => {
+    const i = categoryOrder.indexOf(c);
+    return i === -1 ? categoryOrder.length : i;
+  };
+  const credentialUniqueCategories = uniqueCategories.sort(
+    (a, b) => categoryIndex(a) - categoryIndex(b),
+  );
+
   return (
     <Page title={t("signingIn")} description={t("signingInDescription")}>
-      {credentials.map((container) => (
-        <PageSection
-          key={container.type}
-          variant="light"
-          className="pf-v5-u-px-0"
-        >
-          <Split className="pf-v5-l-split pf-v5-u-mt-sm pf-v5-u-mb-sm">
-            <SplitItem>
-              <Title
-                headingLevel="h2"
-                size="xl"
-                className="pf-v5-u-mb-md"
-                data-testid={`${container.type}/help`}
-              >
-                <Toolbar className="pf-v5-u-pt-0 pf-v5-u-pb-0">
-                  <ToolbarContent className="pf-v5-u-pl-0">
-                    <ToolbarItem>
+      <CredentialOrder onOrderChanged={handleOrderChanged} />
+      {credentialUniqueCategories.map((category) => (
+        <PageSection key={category} variant="light" className="pf-v5-u-px-0">
+          <Title headingLevel="h2" size="xl" id={`${category}-categ-title`}>
+            {t(category as TFuncKey)}
+          </Title>
+          {credentials
+            .filter((cred) => cred.category == category)
+            .map((container) => (
+              <Fragment key={container.type}>
+                <Split className="pf-v5-u-mt-lg pf-v5-u-mb-lg">
+                  <SplitItem>
+                    <Title
+                      headingLevel="h3"
+                      size="md"
+                      className="pf-v5-u-mb-md"
+                      data-testid={`${container.type}/help`}
+                    >
                       <span
                         className="cred-title pf-v5-u-display-block"
                         data-testid={`${container.type}/title`}
                       >
                         {t(container.displayName as TFuncKey)}
                       </span>
-                    </ToolbarItem>
-                    {isVisibleUpDown(container) && (
-                      <>
-                        <ToolbarItem spacer={{ default: "spacerNone" }}>
-                          <Tooltip
-                            content={t("moveCredentialUp", {
-                              type: t(container.displayName),
-                            })}
-                          >
-                            <Button
-                              variant={ButtonVariant.link}
-                              isInline
-                              data-testid={`${container.type}/up`}
-                              isDisabled={isDisabledUp(credentials, container)}
-                              data-action="previous"
-                              onClick={async () => {
-                                await moveUp(context, container.type);
-                                refresh();
-                              }}
-                              icon={<AngleUpIcon />}
-                            />
-                          </Tooltip>
-                        </ToolbarItem>
-                        <ToolbarItem spacer={{ default: "spacerNone" }}>
-                          <Tooltip
-                            content={t("moveCredentialDown", {
-                              type: t(container.displayName),
-                            })}
-                          >
-                            <Button
-                              variant={ButtonVariant.link}
-                              isInline
-                              data-testid={`${container.type}/down`}
-                              isDisabled={isDisabledDown(
-                                credentials,
-                                container,
+                    </Title>
+                    <span data-testid={`${container.type}/help-text`}>
+                      {t(container.helptext as TFuncKey)}
+                    </span>
+                  </SplitItem>
+                  {container.createAction && (
+                    <SplitItem isFilled>
+                      <div className="pf-v5-u-float-right">
+                        <MobileLink
+                          onClick={() =>
+                            login({
+                              action: container.createAction,
+                            })
+                          }
+                          title={t("setUpNew", {
+                            name: t(
+                              `${container.type}-display-name` as TFuncKey,
+                            ),
+                          })}
+                          testid={`${container.type}/create`}
+                        />
+                      </div>
+                    </SplitItem>
+                  )}
+                </Split>
+
+                <DataList
+                  aria-label="credential list"
+                  className="pf-v5-u-mb-xl"
+                  data-testid={`${container.type}/credential-list`}
+                >
+                  {container.userCredentialMetadatas.length === 0 && (
+                    <EmptyRow
+                      message={t("notSetUp", {
+                        name: t(container.displayName as TFuncKey),
+                      })}
+                      data-testid={`${container.type}/not-set-up`}
+                    />
+                  )}
+
+                  {container.userCredentialMetadatas.map((meta) => (
+                    <DataListItem key={meta.credential.id}>
+                      <DataListItemRow id={`cred-${meta.credential.id}`}>
+                        <DataListItemCells
+                          className="pf-v5-u-py-0 pf-v5-u-align-items-center"
+                          dataListCells={[
+                            ...credentialRowCells(
+                              meta,
+                              container.type.startsWith("webauthn"),
+                            ),
+                            <DataListAction
+                              key="action"
+                              id={`action-${meta.credential.id}`}
+                              aria-label={t("updateCredAriaLabel")}
+                              aria-labelledby={`cred-${meta.credential.id}`}
+                            >
+                              {container.removeable && (
+                                <Button
+                                  variant="danger"
+                                  data-testrole="remove"
+                                  onClick={async () => {
+                                    await login({
+                                      action:
+                                        "delete_credential:" +
+                                        meta.credential.id,
+                                    });
+                                  }}
+                                >
+                                  {t("delete")}
+                                </Button>
                               )}
-                              data-action="previous"
-                              onClick={async () => {
-                                await moveDown(context, container.type);
-                                refresh();
-                              }}
-                              icon={<AngleDownIcon />}
-                            />
-                          </Tooltip>
-                        </ToolbarItem>
-                      </>
-                    )}
-                  </ToolbarContent>
-                </Toolbar>
-              </Title>
-              <Title headingLevel="h3" size="md" className="pf-v5-u-mb-md">
-                {t(container.category as TFuncKey)}
-              </Title>
-              <span data-testid={`${container.type}/help-text`}>
-                {t(container.helptext as TFuncKey)}
-              </span>
-            </SplitItem>
-            {container.createAction && (
-              <SplitItem isFilled>
-                <div className="pf-v5-u-float-right">
-                  <MobileLink
-                    onClick={() =>
-                      login({
-                        action: container.createAction,
-                      })
-                    }
-                    title={t("setUpNew", {
-                      name: t(`${container.type}-display-name` as TFuncKey),
-                    })}
-                    testid={`${container.type}/create`}
-                  />
-                </div>
-              </SplitItem>
-            )}
-          </Split>
-
-          <DataList
-            aria-label="credential list"
-            className="pf-v5-u-mb-xl"
-            data-testid={`${container.type}/credential-list`}
-          >
-            {container.userCredentialMetadatas.length === 0 && (
-              <EmptyRow
-                message={t("notSetUp", {
-                  name: t(container.displayName as TFuncKey),
-                })}
-                data-testid={`${container.type}/not-set-up`}
-              />
-            )}
-
-            {container.userCredentialMetadatas.map((meta) => (
-              <DataListItem key={meta.credential.id}>
-                <DataListItemRow id={`cred-${meta.credential.id}`}>
-                  <DataListItemCells
-                    className="pf-v5-u-py-0 pf-v5-u-align-items-center"
-                    dataListCells={[
-                      ...credentialRowCells(
-                        meta,
-                        container.type.startsWith("webauthn"),
-                      ),
-                      <DataListAction
-                        key="action"
-                        id={`action-${meta.credential.id}`}
-                        aria-label={t("updateCredAriaLabel")}
-                        aria-labelledby={`cred-${meta.credential.id}`}
-                      >
-                        {container.removeable && (
-                          <Button
-                            variant="danger"
-                            data-testrole="remove"
-                            onClick={async () => {
-                              await login({
-                                action:
-                                  "delete_credential:" + meta.credential.id,
-                              });
-                            }}
-                          >
-                            {t("delete")}
-                          </Button>
-                        )}
-                        {container.updateAction && (
-                          <Button
-                            variant="secondary"
-                            onClick={async () => {
-                              await login({
-                                action: container.updateAction,
-                              });
-                            }}
-                            data-testrole="update"
-                          >
-                            {t("update")}
-                          </Button>
-                        )}
-                      </DataListAction>,
-                    ]}
-                  />
-                </DataListItemRow>
-              </DataListItem>
+                              {container.updateAction && (
+                                <Button
+                                  variant="secondary"
+                                  onClick={async () => {
+                                    await login({
+                                      action: container.updateAction,
+                                    });
+                                  }}
+                                  data-testrole="update"
+                                >
+                                  {t("update")}
+                                </Button>
+                              )}
+                            </DataListAction>,
+                          ]}
+                        />
+                      </DataListItemRow>
+                    </DataListItem>
+                  ))}
+                </DataList>
+              </Fragment>
             ))}
-          </DataList>
         </PageSection>
       ))}
     </Page>

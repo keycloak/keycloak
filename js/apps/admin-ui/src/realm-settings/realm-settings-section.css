@@ -41,6 +41,11 @@ article.pf-v5-c-card.pf-m-flat.kc-email-connection
   padding-bottom: var(--pf-v5-global--spacer--2xl);
 }
 
+/* Override the large default .keycloak__form padding-bottom for the Login tab. Other tabs may benefit from the same adjustment. */
+.kc-login-tab .keycloak__form {
+  padding-bottom: var(--pf-v5-global--spacer--sm);
+}
+
 button.kc-certificate.pf-v5-c-button.pf-m-secondary {
   margin-left: var(--pf-v5-global--spacer--md);
 }

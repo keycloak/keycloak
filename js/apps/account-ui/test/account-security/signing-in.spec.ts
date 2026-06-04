@@ -70,6 +70,44 @@ test.describe("Signing in", () => {
     );
   });
 
+  test("unconfigured credential cards are disabled in order section", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed();
+
+    await login(page, testBed.realm);
+    await page.getByTestId("accountSecurity").click();
+    await page.getByTestId("account-security/signing-in").click();
+
+    const orderSection = page.getByTestId("credential-order-section");
+    await expect(orderSection).toBeVisible();
+
+    // password card should not be disabled (it is configured)
+    const passwordCard = orderSection.getByTestId("password/order-card");
+    await expect(passwordCard).not.toHaveClass(/disabled/);
+
+    // OTP card should be disabled (not configured)
+    const otpCard = orderSection.getByTestId("otp/order-card");
+    await expect(otpCard).toHaveClass(/disabled/);
+  });
+
+  test("arrows disabled when only one credential is configured", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed();
+
+    await login(page, testBed.realm);
+    await page.getByTestId("accountSecurity").click();
+    await page.getByTestId("account-security/signing-in").click();
+
+    const orderSection = page.getByTestId("credential-order-section");
+    await expect(orderSection).toBeVisible();
+
+    // only password is configured, so all move buttons should be disabled
+    await expect(page.getByTestId("password/down")).toBeDisabled();
+    await expect(page.getByTestId("otp/up")).toBeDisabled();
+  });
+
   test("move recovery codes credentials up and down", async ({ page }) => {
     await using testBed = await createTestBed();
 
@@ -95,16 +133,11 @@ test.describe("Signing in", () => {
     await page.getByTestId("accountSecurity").click();
     await page.getByTestId("account-security/signing-in").click();
 
-    // Verify the password credential is configured, and it is not possible to create a new one.
+    // Verify the password credential is configured
     await expect(
       page.getByTestId("password/credential-list").getByRole("listitem"),
     ).toContainText("My password");
     await expect(page.getByTestId("password/create")).toBeHidden();
-
-    // Verify the OTP credential not configured
-    await expect(
-      page.getByTestId("otp/credential-list").getByRole("listitem"),
-    ).toContainText("Authenticator application is not set up.");
 
     // Verify recovery codes not configured
     await expect(
@@ -113,20 +146,15 @@ test.describe("Signing in", () => {
         .getByRole("listitem"),
     ).toContainText("Recovery authentication codes is not set up.");
 
-    // check order of credentials
-    await expect(page.locator("span.cred-title")).toContainText([
+    // credential order section should be visible (multiple credential types available)
+    const orderSection = page.getByTestId("credential-order-section");
+    await expect(orderSection).toBeVisible();
+
+    // check initial order of credentials
+    await expect(orderSection.locator("span.cred-title")).toContainText([
       "Password",
-      "Authenticator application",
       "Recovery authentication codes",
     ]);
-
-    // verify up/down buttons are disabled
-    await expect(page.getByTestId("password/up")).toBeDisabled();
-    await expect(page.getByTestId("password/down")).toBeDisabled();
-    await expect(page.getByTestId("otp/up")).toHaveCount(0);
-    await expect(page.getByTestId("otp/down")).toHaveCount(0);
-    await expect(page.getByTestId("recovery-authn-codes/up")).toHaveCount(0);
-    await expect(page.getByTestId("recovery-authn-codes/down")).toHaveCount(0);
 
     // register recovery codes
     await page.getByTestId("recovery-authn-codes/create").click();
@@ -143,55 +171,49 @@ test.describe("Signing in", () => {
         .getByRole("listitem"),
     ).toContainText("Recovery codes");
 
-    // expect new order because now recovery codes are configured
-    await expect(page.locator("span.cred-title")).toHaveText([
+    // check order in the credential order section (password, recovery codes, OTP)
+    await expect(orderSection.locator("span.cred-title")).toContainText([
       "Password",
       "Recovery authentication codes",
       "Authenticator application",
     ]);
 
-    // expect up/down enabled
+    // password is first so up is disabled, recovery codes is in the middle so both enabled
     await expect(page.getByTestId("password/up")).toBeDisabled();
     await expect(page.getByTestId("password/down")).toBeEnabled();
     await expect(page.getByTestId("recovery-authn-codes/up")).toBeEnabled();
-    await expect(page.getByTestId("recovery-authn-codes/down")).toBeDisabled();
-    await expect(page.getByTestId("otp/up")).toHaveCount(0);
-    await expect(page.getByTestId("otp/down")).toHaveCount(0);
+    await expect(page.getByTestId("recovery-authn-codes/down")).toBeEnabled();
 
     // move recovery codes up
     await page.getByTestId("recovery-authn-codes/up").click();
 
     // now recovery codes are the first one
-    await expect(page.locator("span.cred-title")).toHaveText([
+    await expect(orderSection.locator("span.cred-title")).toContainText([
       "Recovery authentication codes",
       "Password",
       "Authenticator application",
     ]);
 
-    // expect up/down enabled
+    // recovery codes is first so up is disabled
     await expect(page.getByTestId("recovery-authn-codes/up")).toBeDisabled();
     await expect(page.getByTestId("recovery-authn-codes/down")).toBeEnabled();
     await expect(page.getByTestId("password/up")).toBeEnabled();
-    await expect(page.getByTestId("password/down")).toBeDisabled();
-    await expect(page.getByTestId("otp/up")).toHaveCount(0);
-    await expect(page.getByTestId("otp/down")).toHaveCount(0);
+    await expect(page.getByTestId("password/down")).toBeEnabled();
 
     // move recovery codes down again
     await page.getByTestId("recovery-authn-codes/down").click();
 
-    // now password is the first one
-    await expect(page.locator("span.cred-title")).toHaveText([
+    // now password is the first one again
+    await expect(orderSection.locator("span.cred-title")).toContainText([
       "Password",
       "Recovery authentication codes",
       "Authenticator application",
     ]);
 
-    // expect up/down enabled
+    // verify buttons back to original state
     await expect(page.getByTestId("password/up")).toBeDisabled();
     await expect(page.getByTestId("password/down")).toBeEnabled();
     await expect(page.getByTestId("recovery-authn-codes/up")).toBeEnabled();
-    await expect(page.getByTestId("recovery-authn-codes/down")).toBeDisabled();
-    await expect(page.getByTestId("otp/up")).toHaveCount(0);
-    await expect(page.getByTestId("otp/down")).toHaveCount(0);
+    await expect(page.getByTestId("recovery-authn-codes/down")).toBeEnabled();
   });
 });
