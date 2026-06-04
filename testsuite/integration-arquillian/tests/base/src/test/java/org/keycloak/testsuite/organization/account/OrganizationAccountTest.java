@@ -33,6 +33,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
@@ -111,6 +112,30 @@ public class OrganizationAccountTest extends AbstractOrganizationTest {
         Assert.assertEquals(orgA.getDescription(), organization.getDescription());
         Assert.assertEquals(orgA.getDomains().size(), organization.getDomains().size());
         Assert.assertTrue(organization.getDomains().containsAll(orgA.getDomains().stream().map(OrganizationDomainRepresentation::getName).toList()));
+    }
+
+    @Test
+    public void testGetOrganizationsWhenOrganizationsDisabled() throws Exception {
+        UserRepresentation member = createUser();
+        org.keycloak.representations.idm.OrganizationRepresentation orgA = createOrganization("orga");
+        testRealm().organizations().get(orgA.getId()).members().addMember(member.getId()).close();
+
+        // verify account API returns organization data when organizations are enabled
+        List<OrganizationRepresentation> organizations = getOrganizations();
+        Assert.assertEquals(1, organizations.size());
+        Assert.assertEquals(orgA.getId(), organizations.get(0).getId());
+
+        // disable organizations on the realm
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm())
+                .setOrganizationsEnabled(Boolean.FALSE)
+                .update()) {
+
+            // account API should not return organization data when organizations are disabled
+            try (SimpleHttpResponse response = SimpleHttpDefault.doGet(getAccountUrl("organizations"), client)
+                    .auth(tokenUtil.getToken()).acceptJson().asResponse()) {
+                Assert.assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
+            }
+        }
     }
 
     private SortedSet<LinkedAccountRepresentation> linkedAccountsRep() throws IOException {
