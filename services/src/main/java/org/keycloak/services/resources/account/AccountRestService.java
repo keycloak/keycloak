@@ -64,6 +64,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
@@ -238,7 +239,7 @@ public class AccountRestService {
     @Path("/organizations")
     public OrganizationsResource organizations() {
         checkAccountApiEnabled();
-        if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (!Organizations.isEnabled(session)) {
             throw new NotFoundException();
         }
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);

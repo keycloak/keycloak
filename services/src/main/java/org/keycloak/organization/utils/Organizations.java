@@ -62,7 +62,7 @@ public class Organizations {
             return true;
         }
 
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (isEnabled(session)) {
             OrganizationModel organization = resolveOrganization(session);
 
             return organization != null && organization.getId().equals(group.getName());
@@ -72,6 +72,9 @@ public class Organizations {
     }
 
     public static List<IdentityProviderModel> resolveHomeBroker(KeycloakSession session, UserModel user) {
+        if (!isEnabled(session)) {
+            return List.of();
+        }
         OrganizationProvider provider = getProvider(session);
         RealmModel realm = session.getContext().getRealm();
         List<OrganizationModel> organizations = Optional.ofNullable(user).stream().flatMap(provider::getByMember)
@@ -129,6 +132,14 @@ public class Organizations {
                 session.getContext().setOrganization(current);
             }
         };
+    }
+
+    public static boolean isEnabled(KeycloakSession session) {
+        if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            return false;
+        }
+        OrganizationProvider provider = getProvider(session);
+        return provider != null && provider.isEnabled();
     }
 
     public static boolean isEnabledAndOrganizationsPresent(OrganizationProvider orgProvider) {

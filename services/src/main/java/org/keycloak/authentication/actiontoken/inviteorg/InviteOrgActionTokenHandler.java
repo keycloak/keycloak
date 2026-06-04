@@ -36,6 +36,7 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -74,6 +75,11 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
     @Override
     public Response preHandleToken(InviteOrgActionToken token, ActionTokenContext<InviteOrgActionToken> tokenContext) {
         KeycloakSession session = tokenContext.getSession();
+
+        if (!Organizations.isEnabled(session)) {
+            return disabledOrganizationResponse(tokenContext, token);
+        }
+
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
 
@@ -95,6 +101,11 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
     public Response handleToken(InviteOrgActionToken token, ActionTokenContext<InviteOrgActionToken> tokenContext) {
         UserModel user = tokenContext.getAuthenticationSession().getAuthenticatedUser();
         KeycloakSession session = tokenContext.getSession();
+
+        if (!Organizations.isEnabled(session)) {
+            return disabledOrganizationResponse(tokenContext, token);
+        }
+
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
         EventBuilder event = tokenContext.getEvent();
@@ -146,6 +157,23 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
         }
 
         return AuthenticationManager.redirectToRequiredActions(session, realm, authSession, uriInfo, nextAction);
+    }
+
+    private Response disabledOrganizationResponse(ActionTokenContext<InviteOrgActionToken> tokenContext, InviteOrgActionToken token) {
+        EventBuilder event = tokenContext.getEvent();
+        KeycloakSession session = tokenContext.getSession();
+        AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
+
+        event.detail(Details.TOKEN_ID, token.getId())
+                .detail(Details.EMAIL, token.getEmail())
+                .detail(Details.ORG_ID, token.getOrgId())
+                .error(Errors.ORG_DISABLED);
+        return session.getProvider(LoginFormsProvider.class)
+                .setStatus(Status.BAD_REQUEST)
+                .setAuthenticationSession(authSession)
+                .setAttribute("messageHeader", Messages.STALE_INVITE_ORG_LINK)
+                .setInfo(Messages.ORG_DISABLED)
+                .createInfoPage();
     }
 
     private Response invalidOrganizationResponse(ActionTokenContext<InviteOrgActionToken> tokenContext, InviteOrgActionToken token) {
