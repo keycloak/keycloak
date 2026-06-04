@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.model.infinispan;
 
 import java.util.Arrays;
+import java.util.function.Predicate;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
@@ -31,6 +32,7 @@ import org.junit.Test;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -72,12 +74,16 @@ public class FeatureEnabledTest extends KeycloakModelTest {
     public void testEmbeddedCachesOnly() {
         assumeFalse("Multi-Site Feature enabled", MultiSiteUtils.isMultiSiteEnabled());
         assumeFalse("Clusterless Feature enabled", Profile.isFeatureEnabled(Profile.Feature.CLUSTERLESS));
-        assumeFalse(Profile.isFeatureEnabled(Profile.Feature.CACHELESS)); // TODO update test when all caches are gone
         assertFalse(InfinispanUtils.isRemoteInfinispan());
         assertTrue(InfinispanUtils.isEmbeddedInfinispan());
         inComittedTransaction(session -> {
             var clusterProvider = session.getProvider(InfinispanConnectionProvider.class);
-            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(s -> assertEmbeddedCacheExists(clusterProvider, s));
+            if (Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
+                assertEmbeddedCacheExists(clusterProvider, WORK_CACHE_NAME);
+                Arrays.stream(CLUSTERED_CACHE_NAMES).filter(Predicate.not(WORK_CACHE_NAME::equals)).forEach(s -> assertEmbeddedCacheDoesNotExists(clusterProvider, s));
+            } else {
+                Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(s -> assertEmbeddedCacheExists(clusterProvider, s));
+            }
             Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(s -> assertRemoteCacheCallThrowsException(clusterProvider, s));
         });
     }

@@ -352,4 +352,28 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.7.0-login-failure-table">
+        <createTable tableName="LOGIN_FAILURE">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="FAILED_LOGIN_NOT_BEFORE" type="BIGINT" defaultValueNumeric="0"/>
+            <column name="NUM_FAILURES" type="INT" defaultValueNumeric="0"/>
+            <column name="NUM_TEMPORARY_LOCKOUTS" type="INT" defaultValueNumeric="0"/>
+            <column name="LAST_FAILURE" type="BIGINT" defaultValueNumeric="0"/>
+            <column name="LAST_IP_FAILURE" type="VARCHAR(255)"/>
+            <column name="NUM_SECONDARY_AUTH_FAILURES" type="INT" defaultValueNumeric="0"/>
+        </createTable>
+        <addPrimaryKey columnNames="REALM_ID, USER_ID" constraintName="PK_LOGIN_FAILURE" tableName="LOGIN_FAILURE"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-login-failure-index">
+        <createIndex tableName="LOGIN_FAILURE" indexName="IDX_LOGIN_FAILURE_EXPIRE">
+            <column name="LAST_FAILURE"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

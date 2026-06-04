@@ -30,11 +30,13 @@ import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionPr
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionSpi;
 import org.keycloak.connections.jpa.updater.liquibase.lock.LiquibaseDBLockProviderFactory;
 import org.keycloak.events.jpa.JpaEventStoreProviderFactory;
+import org.keycloak.loginfailures.jpa.JpaUserLoginFailureProviderFactory;
 import org.keycloak.migration.MigrationProviderFactory;
 import org.keycloak.migration.MigrationSpi;
 import org.keycloak.models.IdentityProviderStorageSpi;
 import org.keycloak.models.RevokedTokenSpi;
 import org.keycloak.models.SingleUseObjectSpi;
+import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.dblock.DBLockSpi;
 import org.keycloak.models.jpa.JpaClientProviderFactory;
 import org.keycloak.models.jpa.JpaClientScopeProviderFactory;
@@ -79,6 +81,7 @@ public class Jpa extends KeycloakModelParameters {
       .add(AuthenticationSessionSpi.class)
       .add(RevokedTokenSpi.class)
       .add(SingleUseObjectSpi.class)
+      .add(UserLoginFailureSpi.class)
 
       .add(DatastoreSpi.class)
 
@@ -118,6 +121,7 @@ public class Jpa extends KeycloakModelParameters {
       .add(JpaAuthenticationSessionProviderFactory.class)
       .add(JpaRevokedTokenProviderFactory.class)
       .add(JpaSingleUseObjectProviderFactory.class)
+      .add(JpaUserLoginFailureProviderFactory.class)
 
       //required for migrateModel
       .add(MigrationProviderFactory.class)

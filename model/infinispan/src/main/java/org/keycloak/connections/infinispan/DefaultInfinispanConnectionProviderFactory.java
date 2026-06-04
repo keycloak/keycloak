@@ -254,7 +254,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         // remove clustered caches
         if (Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
             Arrays.stream(CLUSTERED_CACHE_NAMES)
-                    .filter(Predicate.not(LOGIN_FAILURE_CACHE_NAME::equals))
                     .filter(Predicate.not(WORK_CACHE_NAME::equals))
                     .forEach(holder.getNamedConfigurationBuilders()::remove);
         }
