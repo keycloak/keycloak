@@ -317,7 +317,7 @@ public class OrganizationMemberResource {
     }
 
     private MemberRepresentation toRepresentation(UserModel member) {
-        MemberRepresentation result = new MemberRepresentation(ModelToRepresentation.toRepresentation(session, realm, member));
+        MemberRepresentation result = new MemberRepresentation(ModelToRepresentation.toRepresentation(session, member, false));
         result.setMembershipType(provider.isManagedMember(organization, member) ? MembershipType.MANAGED : MembershipType.UNMANAGED);
         return result;
     }

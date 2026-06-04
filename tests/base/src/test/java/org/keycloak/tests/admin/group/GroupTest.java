@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,6 +48,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -55,6 +57,8 @@ import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
@@ -959,6 +963,72 @@ public class GroupTest extends AbstractGroupTest {
         } finally {
             cfg.setUnmanagedAttributePolicy(null);
             upResource.update(cfg);
+        }
+    }
+
+    @Test
+    public void testGroupMembersRespectsUserProfileAttributePermissions() {
+        RealmResource realm = managedRealm.admin();
+        String groupName = "profile-perm-group";
+        String userName = "profile-perm-user";
+
+        UserProfileResource upResource = realm.users().userProfile();
+        UPConfig originalCfg = upResource.getConfiguration();
+
+        try {
+            // Restrict email and firstName to user-role only — admins (USER_API context) cannot view them
+            UPConfig cfg = upResource.getConfiguration();
+
+            UPAttribute emailAttr = cfg.getAttribute(UserModel.EMAIL);
+            if (emailAttr == null) {
+                emailAttr = new UPAttribute(UserModel.EMAIL);
+            }
+            emailAttr.setPermissions(new UPAttributePermissions(Set.of("user"), Set.of("user")));
+            cfg.addOrReplaceAttribute(emailAttr);
+
+            UPAttribute firstNameAttr = cfg.getAttribute(UserModel.FIRST_NAME);
+            if (firstNameAttr == null) {
+                firstNameAttr = new UPAttribute(UserModel.FIRST_NAME);
+            }
+            firstNameAttr.setPermissions(new UPAttributePermissions(Set.of("user"), Set.of("user")));
+            cfg.addOrReplaceAttribute(firstNameAttr);
+
+            upResource.update(cfg);
+            adminEvents.poll(); // consume the user profile UPDATE event
+
+            String groupId = createGroup(managedRealm, GroupConfigBuilder.create().name(groupName).build());
+            GroupResource group = managedRealm.admin().groups().group(groupId);
+
+            UserRepresentation userRep = UserConfigBuilder.create()
+                    .username(userName)
+                    .firstName("Test")
+                    .email(userName + "@test.com")
+                    .build();
+            UsersResource users = realm.users();
+            Response response = users.create(userRep);
+            String userUuid = ApiUtil.getCreatedId(response);
+            managedRealm.cleanup().add(r -> r.users().get(userUuid).remove());
+            adminEvents.poll(); // consume CREATE USER event
+            users.get(userUuid).joinGroup(groupId);
+            adminEvents.poll(); // consume GROUP_MEMBERSHIP event
+
+            // Group members endpoint must respect user profile attribute permissions
+            for (Boolean briefRep : List.of(Boolean.TRUE, Boolean.FALSE)) {
+                List<UserRepresentation> members = group.members(null, null, briefRep);
+                assertEquals(1, members.size());
+                assertNull(members.get(0).getEmail());
+                assertNull(members.get(0).getFirstName());
+                assertNull(members.get(0).getUserProfileMetadata());
+            }
+
+            // User list endpoint must show the same filtering (parity check)
+            List<UserRepresentation> userList = realm.users().search(userName, true);
+            assertEquals(1, userList.size());
+            assertNull(userList.get(0).getEmail());
+            assertNull(userList.get(0).getFirstName());
+
+        } finally {
+            upResource.update(originalCfg);
         }
     }
 
