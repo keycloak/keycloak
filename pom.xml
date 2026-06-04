@@ -187,7 +187,7 @@
         <selenium.version>4.28.1</selenium.version>
 
         <!-- Maven Plugins -->
-        <maven.plugins.version>3.13.1</maven.plugins.version>
+        <maven.plugins.version>3.15.2</maven.plugins.version>
         <version.enforcer.plugin>3.6.2</version.enforcer.plugin>
         <replacer.plugin.version>1.4.1</replacer.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
@@ -212,6 +212,7 @@
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
         <maven-failsafe-plugin.version>2.22.2</maven-failsafe-plugin.version>
         <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
+        <plugin.antrun.version>1.8</plugin.antrun.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -1614,6 +1615,11 @@
                             </importOrder>
                         </java>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>${plugin.antrun.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
