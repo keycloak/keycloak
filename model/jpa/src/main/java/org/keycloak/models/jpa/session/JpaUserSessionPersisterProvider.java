@@ -73,6 +73,8 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     private final KeycloakSession session;
     private final EntityManager em;
     private final int expirationBatch;
+    private final Set<PersistentUserSessionEntity.Key> userSessionNotInDatabaseCache = new HashSet<>();
+    private final Set<PersistentClientSessionEntity.Key> clientSessionNotInDatabaseCache = new HashSet<>();
 
     public JpaUserSessionPersisterProvider(KeycloakSession session, EntityManager em, int expirationBatch) {
         this.session = session;
@@ -97,6 +99,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         entity.setBrokerSessionId(userSession.getBrokerSessionId());
         entity.setRememberMe(userSession.isRememberMe());
         em.persist(entity);
+        userSessionNotInDatabaseCache.remove(new PersistentUserSessionEntity.Key(userSession.getId(), offlineStr));
     }
 
     @Override
@@ -121,7 +124,14 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         String offlineStr = offlineToString(offline);
         boolean exists = false;
 
-        PersistentClientSessionEntity entity = em.find(PersistentClientSessionEntity.class, new PersistentClientSessionEntity.Key(userSessionId, clientId, clientStorageProvider, externalClientId, offlineStr));
+        PersistentClientSessionEntity entity = null;
+        PersistentClientSessionEntity.Key key = new PersistentClientSessionEntity.Key(userSessionId, clientId, clientStorageProvider, externalClientId, offlineStr);
+        if (!clientSessionNotInDatabaseCache.contains(key)) {
+            entity = em.find(PersistentClientSessionEntity.class, key);
+        } else {
+            clientSessionNotInDatabaseCache.remove(key);
+        }
+
         if (entity != null) {
             // client session can already exist in some circumstances (EG. in case it was already present, but expired in the infinispan, but not yet expired in the DB)
             exists = true;
@@ -295,12 +305,19 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     @Override
     public UserSessionModel loadUserSession(RealmModel realm, String userSessionId, boolean offline) {
-
         String offlineStr = offlineToString(offline);
 
-        PersistentUserSessionEntity entity = em.find(PersistentUserSessionEntity.class, new PersistentUserSessionEntity.Key(userSessionId, offlineStr));
-        if (entity != null && !Objects.equals(entity.getRealmId(), realm.getId())) {
-            entity = null;
+        PersistentUserSessionEntity.Key key = new PersistentUserSessionEntity.Key(userSessionId, offlineStr);
+
+        PersistentUserSessionEntity entity = null;
+        if (!userSessionNotInDatabaseCache.contains(key)) {
+            entity = em.find(PersistentUserSessionEntity.class, key);
+            if (entity == null) {
+                userSessionNotInDatabaseCache.add(key);
+            }
+            if (entity != null && !Objects.equals(entity.getRealmId(), realm.getId())) {
+                entity = null;
+            }
         }
 
         return handleSingleQuery(entity, offlineStr);
@@ -429,9 +446,15 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     public AuthenticatedClientSessionModel loadClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, boolean offline) {
         PersistentClientSessionEntity.Key key = getClientSessionKey(client.getId(), userSession.getId(), offline);
 
-        PersistentClientSessionEntity entity = em.find(PersistentClientSessionEntity.class, key);
-        if (entity != null && !Objects.equals(entity.getRealmId(), realm.getId())) {
-            entity = null;
+        PersistentClientSessionEntity entity = null;
+        if (!clientSessionNotInDatabaseCache.contains(key)) {
+            entity = em.find(PersistentClientSessionEntity.class, key);
+            if (entity == null) {
+                clientSessionNotInDatabaseCache.add(key);
+            }
+            if (entity != null && !Objects.equals(entity.getRealmId(), realm.getId())) {
+                entity = null;
+            }
         }
 
         return entity != null ? toAdapter(realm, client, userSession, entity) : null;

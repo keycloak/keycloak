@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
+import org.keycloak.authentication.jpa.JpaAuthenticationSessionProviderFactory;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
@@ -64,6 +65,7 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+import org.keycloak.sessions.AuthenticationSessionProvider;
 
 import org.jboss.logging.Logger;
 
@@ -101,6 +103,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private PersisterLastSessionRefreshStore persisterLastSessionRefreshStore;
     private boolean useCaches;
     private int expirationPeriodSeconds;
+    private boolean pessimisticLockingAuthenticationSession;
 
     @Override
     public UserSessionProvider create(KeycloakSession session) {
@@ -206,6 +209,9 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             expirationTask = ExpirationTaskFactory.create(session, expirationPeriodSeconds);
         }
         expirationTask.start();
+        if (factory.getProviderFactory(AuthenticationSessionProvider.class) instanceof JpaAuthenticationSessionProviderFactory) {
+            pessimisticLockingAuthenticationSession = true;
+        }
     }
 
     public void initializePersisterLastSessionRefreshStore(final KeycloakSessionFactory sessionFactory) {
@@ -357,7 +363,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
-        return Set.of(InfinispanConnectionProvider.class, InfinispanTransactionProvider.class);
+        return Set.of(InfinispanConnectionProvider.class, InfinispanTransactionProvider.class, AuthenticationSessionProvider.class);
     }
 
     public boolean useCaches() {
@@ -402,12 +408,14 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private PersistentTransaction createPersistentTransaction(KeycloakSession session) {
         var sessionTx = new UserSessionPersistentChangelogBasedTransaction(session,
                 sessionCacheHolder,
-                offlineSessionCacheHolder);
+                offlineSessionCacheHolder,
+                pessimisticLockingAuthenticationSession);
 
         var clientSessionTx = new ClientSessionPersistentChangelogBasedTransaction(session,
                 clientSessionCacheHolder,
                 offlineClientSessionCacheHolder,
-                sessionTx);
+                sessionTx,
+                pessimisticLockingAuthenticationSession);
 
         var transactionProvider = session.getProvider(InfinispanTransactionProvider.class);
         transactionProvider.registerTransaction(sessionTx);
