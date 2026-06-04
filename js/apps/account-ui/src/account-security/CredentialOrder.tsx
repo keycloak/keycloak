@@ -7,7 +7,6 @@ import {
   FlexItem,
   Gallery,
   PageSection,
-  Spinner,
   Switch,
   Title,
   Tooltip,
@@ -24,10 +23,9 @@ import {
 import { type ComponentType, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useEnvironment } from "@keycloak/keycloak-ui-shared";
-import { getCredentials, moveDown, moveUp } from "../api/methods";
+import { moveDown, moveUp } from "../api/methods";
 import { CredentialContainer } from "../api/representations";
 import type { TFuncKey } from "../i18n-type";
-import { usePromise } from "../utils/usePromise";
 import { AccountEnvironment } from "..";
 
 const credentialIcons: Partial<Record<string, ComponentType>> = {
@@ -82,28 +80,20 @@ const ArrowButton = ({
 };
 
 type CredentialOrderProps = {
+  credentials: CredentialContainer[];
   onOrderChanged: () => void;
 };
 
-export const CredentialOrder = ({ onOrderChanged }: CredentialOrderProps) => {
+export const CredentialOrder = ({
+  credentials,
+  onOrderChanged,
+}: CredentialOrderProps) => {
   const { t } = useTranslation();
   const context = useEnvironment<AccountEnvironment>();
 
-  const [credentials, setCredentials] = useState<CredentialContainer[]>();
-  const [key, setKey] = useState(0);
   const [includePasswordless, setIncludePasswordless] = useState(
     () => localStorage.getItem("includePasswordlessOrder") === "true",
   );
-
-  usePromise((signal) => getCredentials({ signal, context }), setCredentials, [
-    key,
-  ]);
-
-  const refresh = () => setKey((k) => k + 1);
-
-  if (!credentials) {
-    return <Spinner />;
-  }
 
   if (credentials.length < 2) {
     return null;
@@ -127,7 +117,6 @@ export const CredentialOrder = ({ onOrderChanged }: CredentialOrderProps) => {
 
   const handleMove = async (moveFn: typeof moveUp, type: string) => {
     await moveFn(context, type);
-    refresh();
     onOrderChanged();
   };
 

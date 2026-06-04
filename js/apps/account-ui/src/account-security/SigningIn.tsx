@@ -287,7 +287,10 @@ export const SigningIn = () => {
 
   return (
     <Page title={t("signingIn")} description={t("signingInDescription")}>
-      <CredentialOrder onOrderChanged={handleOrderChanged} />
+      <CredentialOrder
+        credentials={credentials}
+        onOrderChanged={handleOrderChanged}
+      />
       {credentialUniqueCategories.map((category) => (
         <PageSection key={category} variant="light" className="pf-v5-u-px-0">
           <Title headingLevel="h2" size="xl" id={`${category}-categ-title`}>
