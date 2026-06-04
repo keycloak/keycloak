@@ -21,8 +21,9 @@ import java.io.FileNotFoundException;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
@@ -33,11 +34,11 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests that the operator can reconcile Keycloak CRs in a namespace different

@@ -67,13 +67,13 @@ Install the CRD definition and the operator in the cluster in the `keycloak` nam
 
 ```bash
 kubectl create namespace keycloak
-kubectl apply -k target
+kubectl apply -k target/kubernetes
 ```
 
 to install in the `default` namespace:
 
 ```bash
-kubectl apply -k overlays/default-namespace
+kubectl apply -k target/overlays/default-namespace
 ```
 
 Remove the created resources with:

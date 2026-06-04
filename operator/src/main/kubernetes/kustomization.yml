@@ -4,6 +4,6 @@ kind: Kustomization
 namespace: keycloak
 
 resources:
-  - kubernetes/keycloaks.k8s.keycloak.org-v1.yml
-  - kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
-  - kubernetes/kubernetes.yml
+  - keycloaks.k8s.keycloak.org-v1.yml
+  - keycloakrealmimports.k8s.keycloak.org-v1.yml
+  - kubernetes.yml

@@ -198,7 +198,6 @@
             <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
-                <version>${quarkus.build.version}</version>
                 <extensions>true</extensions>
                 <executions>
                     <execution>
@@ -226,8 +225,12 @@
                             <outputDirectory>${basedir}/target</outputDirectory>
                             <resources>
                             <resource>
-                                <directory>src/main/kubernetes</directory>
+                                <directory>src/main</directory>
                                 <filtering>true</filtering>
+                                <includes>
+                                    <include>kubernetes/**</include>
+                                    <include>overlays/**</include>
+                                </includes>
                             </resource>
                             </resources>
                         </configuration>
