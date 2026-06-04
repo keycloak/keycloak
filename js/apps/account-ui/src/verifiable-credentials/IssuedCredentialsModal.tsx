@@ -2,18 +2,26 @@ import {
   useEnvironment,
   KeycloakDataTable,
   ErrorBoundaryProvider,
+  label,
 } from "@keycloak/keycloak-ui-shared";
 import type { Action } from "@keycloak/keycloak-ui-shared";
 import { Button, Label, Modal, ModalVariant } from "@patternfly/react-core";
-import { ExclamationTriangleIcon } from "@patternfly/react-icons";
+import {
+  ExclamationTriangleIcon,
+  ExternalLinkAltIcon,
+} from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   getIssuedVerifiableCredentials,
   revokeIssuedVerifiableCredential,
+  getApplications,
 } from "../api/methods";
-import { IssuedUserVerifiableCredentialRepresentation } from "../api/representations";
+import {
+  IssuedUserVerifiableCredentialRepresentation,
+  ClientRepresentation,
+} from "../api/representations";
 import { useAccountAlerts } from "../utils/useAccountAlerts";
 
 type IssuedCredentialsModalProps = {
@@ -22,14 +30,15 @@ type IssuedCredentialsModalProps = {
   onClose: () => void;
 };
 
-type IssuedCredentialWithClientName =
+type IssuedCredentialWithClientInfo =
   IssuedUserVerifiableCredentialRepresentation & {
     clientName?: string;
+    clientBaseUrl?: string;
   };
 
 type RevokeDialogProps = {
   isOpen: boolean;
-  credential: IssuedCredentialWithClientName | undefined;
+  credential: IssuedCredentialWithClientInfo | undefined;
   onClose: () => void;
   onConfirm: (credentialId: string) => Promise<void>;
   t: (key: string) => string;
@@ -80,13 +89,33 @@ export const IssuedCredentialsModal = ({
   const context = useEnvironment();
   const { addAlert, addError } = useAccountAlerts();
   const [selectedCredential, setSelectedCredential] =
-    useState<IssuedCredentialWithClientName>();
+    useState<IssuedCredentialWithClientInfo>();
   const [key, setKey] = useState(0);
   const [showRevokeDialog, setShowRevokeDialog] = useState(false);
+  const [clients, setClients] = useState<ClientRepresentation[]>([]);
+  const [clientsLoaded, setClientsLoaded] = useState(false);
 
   const refresh = () => setKey((prev) => prev + 1);
 
   const toggleRevokeDialog = () => setShowRevokeDialog(!showRevokeDialog);
+
+  // Fetch all applications/clients on mount
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const apps = await getApplications({
+          signal: new AbortController().signal,
+          context,
+        });
+        setClients(apps);
+        setClientsLoaded(true);
+      } catch (error) {
+        console.error("Failed to fetch clients:", error);
+        setClientsLoaded(true);
+      }
+    };
+    void fetchClients();
+  }, [context]);
 
   const hasManageRole = () => {
     const token = context.keycloak.tokenParsed;
@@ -98,6 +127,10 @@ export const IssuedCredentialsModal = ({
   };
 
   const loader = async (first?: number, max?: number, search?: string) => {
+    if (!clientsLoaded) {
+      return [];
+    }
+
     const data = await getIssuedVerifiableCredentials({
       signal: new AbortController().signal,
       context,
@@ -119,18 +152,23 @@ export const IssuedCredentialsModal = ({
       );
     }
 
-    const credentialsWithClientNames: IssuedCredentialWithClientName[] =
-      filtered.map((ic) => ({
-        ...ic,
-        clientName: ic.clientId,
-      }));
+    // Map clientId (UUID) to client name and base URL
+    const credentialsWithClientInfo: IssuedCredentialWithClientInfo[] =
+      filtered.map((ic) => {
+        const client = clients.find((c) => c.clientId === ic.clientId);
+        return {
+          ...ic,
+          clientName: client?.clientName || client?.clientId || ic.clientId,
+          clientBaseUrl: client?.effectiveUrl,
+        };
+      });
 
     // Apply pagination if provided
     if (first !== undefined && max !== undefined) {
-      return credentialsWithClientNames.slice(first, first + max);
+      return credentialsWithClientInfo.slice(first, first + max);
     }
 
-    return credentialsWithClientNames;
+    return credentialsWithClientInfo;
   };
 
   const handleRevoke = async (credentialId: string) => {
@@ -154,7 +192,7 @@ export const IssuedCredentialsModal = ({
       />
       <Modal
         variant={ModalVariant.large}
-        title={t("Issued Credentials")}
+        title={`${t("Issued Credentials")}: ${credentialScopeName}`}
         isOpen={true}
         onClose={onClose}
         width="90%"
@@ -162,24 +200,16 @@ export const IssuedCredentialsModal = ({
         <ErrorBoundaryProvider>
           <KeycloakDataTable
             loader={loader}
-            key={key}
+            key={clientsLoaded ? key : -1}
             ariaLabelKey="issuedCredentials"
             searchPlaceholderKey=" "
             columns={[
-              {
-                name: "id",
-                displayKey: "ID",
-                cellRenderer: ({ id }) => (
-                  <code className="pf-v5-u-font-size-sm">{id}</code>
-                ),
-                transforms: [cellWidth(25)],
-              },
               {
                 name: "issuedAt",
                 displayKey: "Issued At",
                 cellRenderer: ({ issuedAt }) =>
                   issuedAt ? new Date(issuedAt).toLocaleString("en-US") : "—",
-                transforms: [cellWidth(15)],
+                transforms: [cellWidth(25)],
               },
               {
                 name: "expiresAt",
@@ -205,14 +235,33 @@ export const IssuedCredentialsModal = ({
                     </span>
                   );
                 },
-                transforms: [cellWidth(15)],
+                transforms: [cellWidth(25)],
               },
               {
                 name: "clientId",
                 displayKey: "Wallet Client",
-                cellRenderer: (credential: IssuedCredentialWithClientName) =>
-                  credential.clientName || credential.clientId || "—",
-                transforms: [cellWidth(20)],
+                cellRenderer: (credential: IssuedCredentialWithClientInfo) => {
+                  const displayName =
+                    credential.clientName || credential.clientId;
+                  if (!displayName) return "—";
+
+                  if (credential.clientBaseUrl) {
+                    return (
+                      <Button
+                        className="pf-v5-u-pl-0 title-case"
+                        component="a"
+                        variant="link"
+                        onClick={() => window.open(credential.clientBaseUrl)}
+                      >
+                        {label(t, displayName)} <ExternalLinkAltIcon />
+                      </Button>
+                    );
+                  }
+
+                  // No base URL, just display the name/clientId
+                  return <>{label(t, displayName)}</>;
+                },
+                transforms: [cellWidth(35)],
               },
               {
                 name: "revision",
@@ -235,7 +284,7 @@ export const IssuedCredentialsModal = ({
                       )}
                   </>
                 ),
-                transforms: [cellWidth(20)],
+                transforms: [cellWidth(15)],
               },
             ]}
             actions={
@@ -247,7 +296,7 @@ export const IssuedCredentialsModal = ({
                         setSelectedCredential(credential);
                         toggleRevokeDialog();
                       },
-                    } as Action<IssuedCredentialWithClientName>,
+                    } as Action<IssuedCredentialWithClientInfo>,
                   ]
                 : []
             }
