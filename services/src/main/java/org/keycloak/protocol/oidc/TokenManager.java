@@ -729,6 +729,15 @@ public class TokenManager {
                             ClientScopeModel scope = allOptionalScopes.get(name);
 
                             if (scope != null) {
+                                // The "organization" scope is a default optional client scope, so it can be
+                                // resolved here bypassing the dynamic scope resolution in tryResolveOrganizationClientScope.
+                                // Skip it when organizations are disabled at the realm level.
+                                // The getProtocolMapperByType check identifies the organization scope by its mapper,
+                                // ensuring we only filter that scope and not unrelated ones like email or profile.
+                                if (!Organizations.isEnabled(session)
+                                        && !scope.getProtocolMapperByType(OrganizationMembershipMapper.PROVIDER_ID).isEmpty()) {
+                                    return null;
+                                }
                                 return scope;
                             }
 
@@ -783,7 +792,7 @@ public class TokenManager {
         Collection<String> rawScopes = TokenManager.parseScopeParameter(scopes).collect(Collectors.toSet());
 
         // validate organization scopes - allow multiple specific organization scopes, but reject mixed types
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (Organizations.isEnabled(session)) {
             Set<OrganizationScope> orgScopeTypes = new HashSet<>();
             for (String scope : rawScopes) {
                 OrganizationScope orgScopeType = OrganizationScope.valueOfScope(session, scope);
@@ -847,6 +856,12 @@ public class TokenManager {
         for (String requestedScope : rawScopes) {
             // we also check parameterized scopes in case the client is from a provider that dynamically provides scopes to their clients
             if (!clientScopes.contains(requestedScope) && client.getDynamicClientScope(requestedScope) == null) {
+                // when organizations are disabled at realm level, silently ignore organization scopes
+                // so that existing clients requesting them are not broken
+                if (!Organizations.isEnabled(session)
+                        && OrganizationScope.valueOfScope(session, requestedScope) != null) {
+                    continue;
+                }
                 return false;
             }
         }
@@ -1722,7 +1737,7 @@ public class TokenManager {
     }
 
     private void validateSelectedOrganization(KeycloakSession session, JsonWebToken token, UserModel user) {
-        if (token == null) {
+        if (token == null || !Organizations.isEnabled(session)) {
             return;
         }
 

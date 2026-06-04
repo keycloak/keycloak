@@ -5,6 +5,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 
 import org.jboss.logging.Logger;
 
@@ -71,15 +72,12 @@ public class SubjectResolver {
     }
 
     private static SubjectResolution resolveOrganization(KeycloakSession session, SubjectId tenantSubject) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+        if (!Organizations.isEnabled(session)) {
             log.debugf("Organization feature is disabled — cannot resolve tenant subject");
             return SubjectResolution.UNSUPPORTED_FORMAT;
         }
 
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-        if (orgProvider == null) {
-            return SubjectResolution.UNSUPPORTED_FORMAT;
-        }
 
         // opaque id → getById
         if (tenantSubject instanceof OpaqueSubjectId opaque) {

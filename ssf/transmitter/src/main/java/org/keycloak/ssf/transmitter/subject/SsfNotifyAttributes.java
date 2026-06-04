@@ -5,13 +5,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 
 /**
  * Helpers for reading and writing the {@code ssf.notify.<clientId>}
@@ -240,13 +240,10 @@ public final class SsfNotifyAttributes {
 
     public static Stream<OrganizationModel> findAllNotifiedOrganizations(KeycloakSession session,
                                                                          String clientId) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+        if (!Organizations.isEnabled(session)) {
             return Stream.empty();
         }
-        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-        if (orgProvider == null) {
-            return Stream.empty();
-        }
-        return orgProvider.getAllStream(Map.of(attributeKey(clientId), ATTRIBUTE_VALUE_TRUE), null, null);
+        return session.getProvider(OrganizationProvider.class)
+                .getAllStream(Map.of(attributeKey(clientId), ATTRIBUTE_VALUE_TRUE), null, null);
     }
 }
