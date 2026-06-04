@@ -108,9 +108,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
+ * This class is abstract to prevent execution in the old Arquillian test suite.
+ * Tests have been migrated to the new test framework in {@code org.keycloak.tests.oauth.tokenexchange}.
+ * Do not add new tests here.
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @deprecated Use the new test framework classes instead
  */
-public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
+@Deprecated
+public abstract class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
 
     @Page
     protected ConsentPage consentPage;
@@ -813,10 +819,10 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
 
     @Test
     @UncaughtServerErrorExpected
-    public void testExchangeWithDynamicScopesEnabled() throws Exception {
-        testingClient.enableFeature(Profile.Feature.DYNAMIC_SCOPES);
+    public void testExchangeWithParameterizedScopesEnabled() throws Exception {
+        testingClient.enableFeature(Profile.Feature.PARAMETERIZED_SCOPES);
         testExchange();
-        testingClient.disableFeature(Profile.Feature.DYNAMIC_SCOPES);
+        testingClient.disableFeature(Profile.Feature.PARAMETERIZED_SCOPES);
     }
 
     @Test

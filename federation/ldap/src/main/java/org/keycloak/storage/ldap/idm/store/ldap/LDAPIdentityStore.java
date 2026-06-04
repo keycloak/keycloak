@@ -528,13 +528,6 @@ public class LDAPIdentityStore implements IdentityStore {
                 .map(String::toLowerCase)
                 .collect(Collectors.toSet());
 
-        if (!isCreate) {
-            // for updates, assume the password modification time attribute is an operational attribute and read-only
-            // otherwise, updates will fail when trying to modify the attribute
-            // vendors like AD, support the same type of attribute differently and using a mapper
-            ldapObject.addReadOnlyAttributeName(getPasswordModificationTimeAttributeName());
-        }
-
         for (Map.Entry<String, Set<String>> attrEntry : ldapObject.getAttributes().entrySet()) {
             String attrName = attrEntry.getKey();
             Set<String> attrValue = attrEntry.getValue();

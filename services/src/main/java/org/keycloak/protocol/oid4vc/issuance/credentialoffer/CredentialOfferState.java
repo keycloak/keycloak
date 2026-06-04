@@ -67,7 +67,8 @@ public class CredentialOfferState {
         this.targetClientId = clientId;
         this.targetUserId = userId;
         this.expiresAt = expiresAt;
-        this.nonce = Base64Url.encode(RandomSecret.createRandomSecret(64));
+        String nonceSecret = Base64Url.encode(RandomSecret.createRandomSecret(64));
+        this.nonce = CredentialOfferLookupKey.embed(nonceSecret, credentialsOfferId);
         if (authDetailsProvider != null) {
             this.authDetails = authDetailsProvider.apply(credentialsOfferId);
         }

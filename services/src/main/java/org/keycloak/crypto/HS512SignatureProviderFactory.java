@@ -16,6 +16,8 @@
  */
 package org.keycloak.crypto;
 
+import java.util.Set;
+
 import org.keycloak.models.KeycloakSession;
 
 public class HS512SignatureProviderFactory implements SignatureProviderFactory {
@@ -30,6 +32,14 @@ public class HS512SignatureProviderFactory implements SignatureProviderFactory {
     @Override
     public SignatureProvider create(KeycloakSession session) {
         return new MacSecretSignatureProvider(session, Algorithm.HS512);
+    }
+
+    /**
+     * Returns the "k" claim which represents the secret key material for symmetric algorithms (oct JWKs).
+     */
+    @Override
+    public Set<String> getJwkPrivateKeyClaims() {
+        return OCT_PRIVATE_JWK_CLAIMS;
     }
 
 }

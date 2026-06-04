@@ -1,5 +1,11 @@
 import type UserVerifiableCredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userVerifiableCredentialRepresentation";
-import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
+import {
+  AlertVariant,
+  Button,
+  ButtonVariant,
+  Modal,
+  ModalVariant,
+} from "@patternfly/react-core";
 import { CubesIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
 import { sortBy } from "lodash-es";
@@ -14,6 +20,7 @@ import { emptyFormatter } from "../util";
 import useFormatDate from "../utils/useFormatDate";
 import { CreateVerifiableCredentialModal } from "./CreateVerifiableCredentialModal";
 import { UserAttributesDialog } from "./UserAttributesDialog";
+import { IssuedCredentialsDetailCell } from "./IssuedCredentialsDetailCell";
 
 type UserVerifiableCredentialsProps = {
   userId: string;
@@ -31,6 +38,8 @@ export const UserVerifiableCredentials = ({
     useState<UserVerifiableCredentialRepresentation>();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [attributesDialogCredential, setAttributesDialogCredential] =
+    useState<UserVerifiableCredentialRepresentation>();
+  const [issuedCredentialsModalOpen, setIssuedCredentialsModalOpen] =
     useState<UserVerifiableCredentialRepresentation>();
 
   const refresh = () => setKey(new Date().getTime());
@@ -108,6 +117,23 @@ export const UserVerifiableCredentials = ({
           }}
         />
       )}
+      {issuedCredentialsModalOpen && (
+        <Modal
+          variant={ModalVariant.large}
+          title={t("issuedCredentials")}
+          isOpen={true}
+          onClose={() => setIssuedCredentialsModalOpen(undefined)}
+          width="90%"
+        >
+          <IssuedCredentialsDetailCell
+            userId={userId}
+            credentialScopeName={
+              issuedCredentialsModalOpen.credentialScopeName!
+            }
+            parentRevision={issuedCredentialsModalOpen.revision}
+          />
+        </Modal>
+      )}
       <KeycloakDataTable
         loader={loader}
         key={key}
@@ -138,33 +164,20 @@ export const UserVerifiableCredentials = ({
             cellRenderer: ({ createdDate }) =>
               createdDate ? formatDate(new Date(createdDate)) : "—",
           },
-          {
-            name: "userAttributes",
-            displayKey: "userAttributes",
-            transforms: [cellWidth(40)],
-            cellRenderer: (credential) => {
-              if (
-                !credential.userAttributes ||
-                Object.keys(credential.userAttributes).length === 0
-              ) {
-                return (
-                  <span className="pf-v5-u-color-200">
-                    {t("credentialNoUserAttributes")}
-                  </span>
-                );
-              }
-              return (
-                <Button
-                  variant="link"
-                  onClick={() => setAttributesDialogCredential(credential)}
-                >
-                  {t("credentialViewAttributes")}
-                </Button>
-              );
-            },
-          },
         ]}
         actions={[
+          {
+            title: t("credentialViewAttributes"),
+            onRowClick: (credential) => {
+              setAttributesDialogCredential(credential);
+            },
+          } as Action<UserVerifiableCredentialRepresentation>,
+          {
+            title: t("viewIssuedCredentials"),
+            onRowClick: (credential) => {
+              setIssuedCredentialsModalOpen(credential);
+            },
+          } as Action<UserVerifiableCredentialRepresentation>,
           {
             title: t("updateCredential"),
             onRowClick: (credential) => {

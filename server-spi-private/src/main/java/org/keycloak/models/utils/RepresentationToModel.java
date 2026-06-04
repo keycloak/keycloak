@@ -102,7 +102,10 @@ import org.keycloak.models.credential.dto.OTPSecretData;
 import org.keycloak.models.credential.dto.PasswordCredentialData;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.policy.PasswordPolicyNotMetException;
+import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.rar.AuthorizationDetails;
+import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
@@ -962,7 +965,7 @@ public class RepresentationToModel {
         return model;
     }
 
-    public static UserConsentModel toModel(RealmModel newRealm, UserConsentRepresentation consentRep) {
+    public static UserConsentModel toModel(RealmModel newRealm, UserConsentRepresentation consentRep, KeycloakSession session) {
         ClientModel client = newRealm.getClientByClientId(consentRep.getClientId());
         if (client == null) {
             throw new RuntimeException("Unable to find client consent mappings for client: " + consentRep.getClientId());
@@ -975,10 +978,28 @@ public class RepresentationToModel {
         if (consentRep.getGrantedClientScopes() != null) {
             for (String scopeName : consentRep.getGrantedClientScopes()) {
                 ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(newRealm, scopeName);
-                if (clientScope == null) {
+                if (clientScope != null) {
+                    consentModel.addGrantedClientScope(clientScope);
+                } else if (Profile.isFeatureEnabled(Feature.PARAMETERIZED_SCOPES)) {
+                    // check for parameterized scopes
+                    AuthorizationRequestParserProvider clientScopeParser = session.getProvider(
+                            AuthorizationRequestParserProvider.class, "client-scope");
+                    if (clientScopeParser == null) {
+                        throw new RuntimeException("No provider found for authorization requests parser client-scope");
+                    }
+
+                    AuthorizationRequestContext ctx = clientScopeParser.parseScopes(client, scopeName);
+                    AuthorizationDetails authDetails = ctx.getAuthorizationDetailEntries().stream()
+                            .filter(a -> a.getAuthorizationDetails().getParameterizedScopeParamFromCustomData() != null)
+                            .findAny().orElse(null);
+                    if (authDetails == null) {
+                        throw new RuntimeException("Unable to find client scope referenced in consent mappings of user. Client scope name: " + scopeName);
+                    }
+
+                    consentModel.addGrantedClientScope(authDetails.getClientScope(), authDetails.getAuthorizationDetails().getParameterizedScopeParamFromCustomData());
+                } else {
                     throw new RuntimeException("Unable to find client scope referenced in consent mappings of user. Client scope name: " + scopeName);
                 }
-                consentModel.addGrantedClientScope(clientScope);
             }
         }
 

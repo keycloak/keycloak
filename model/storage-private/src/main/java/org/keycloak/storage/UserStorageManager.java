@@ -987,6 +987,15 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
+    public boolean removeIssuedVerifiableCredential(String credentialId) {
+        if (StorageId.isLocalStorage(credentialId)) {
+            return localStorage().removeIssuedVerifiableCredential(credentialId);
+        } else {
+            throw new UnsupportedOperationException("Issued verifiable credential operations not yet supported on federated users");
+        }
+    }
+
+    @Override
     public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
         if (StorageId.isLocalStorage(user.getId())) {
             localStorage().setNotBeforeForUser(realm, user, notBefore);

@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.marshalling.Marshalling;
@@ -105,7 +106,7 @@ public class RemoteUserLoginFailureProviderFactory implements UserLoginFailurePr
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return InfinispanUtils.isRemoteInfinispan();
+        return !Profile.isFeatureEnabled(Profile.Feature.CACHELESS) && InfinispanUtils.isRemoteInfinispan();
     }
 
     @Override

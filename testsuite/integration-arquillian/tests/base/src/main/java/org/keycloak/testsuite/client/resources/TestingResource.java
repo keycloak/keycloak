@@ -33,10 +33,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.representations.idm.AdminEventRepresentation;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.utils.MediaType;
 
 import org.infinispan.commons.time.TimeService;
@@ -85,56 +82,10 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     void revertTestingInfinispanTimeService();
 
-    @Path("/cache/{cache}")
-    TestingCacheResource cache(@PathParam("cache") String cacheName);
-
-    @Path("/ldap/{realm}")
-    TestingLDAPResource ldap(@PathParam("realm") final String realmName);
-
-    @POST
-    @Path("/update-pass-through-auth-state")
-    @Produces(MediaType.APPLICATION_JSON)
-    AuthenticatorState updateAuthenticator(AuthenticatorState state);
-
-    @GET
-    @Path("/valid-credentials")
-    @Produces(MediaType.APPLICATION_JSON)
-    public boolean validCredentials(@QueryParam("realmName") String realmName, @QueryParam("userName") String userName, @QueryParam("password") String password);
-
-    @GET
-    @Path("/user-by-federated-identity")
-    @Produces(MediaType.APPLICATION_JSON)
-    public UserRepresentation getUserByFederatedIdentity(@QueryParam("realmName") String realmName,
-                                                         @QueryParam("identityProvider") String identityProvider,
-                                                         @QueryParam("userId") String userId,
-                                                         @QueryParam("userName") String userName);
-
-    @GET
-    @Path("/user-by-username-from-fed-factory")
-    @Produces(MediaType.APPLICATION_JSON)
-    public UserRepresentation getUserByUsernameFromFedProviderFactory(@QueryParam("realmName") String realmName,
-                                                                      @QueryParam("userName") String userName);
-
-    @GET
-    @Path("/get-client-auth-flow")
-    @Produces(MediaType.APPLICATION_JSON)
-    public AuthenticationFlowRepresentation getClientAuthFlow(@QueryParam("realmName") String realmName);
-
-    @GET
-    @Path("/get-reset-cred-flow")
-    @Produces(MediaType.APPLICATION_JSON)
-    public AuthenticationFlowRepresentation getResetCredFlow(@QueryParam("realmName") String realmName);
-
-    @GET
-    @Path("/get-user-by-service-account-client")
-    @Produces(MediaType.APPLICATION_JSON)
-    public UserRepresentation getUserByServiceAccountClient(@QueryParam("realmName") String realmName, @QueryParam("clientId") String clientId);
-
     @GET
     @Path("/test-amphibian-component")
     @Produces(MediaType.APPLICATION_JSON)
     Map<String, Map<String, Object>> getTestAmphibianComponentDetails();
-
 
     @PUT
     @Path("/set-krb5-conf-file")

@@ -34,6 +34,7 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.TokenUtil;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -111,6 +112,30 @@ public class OrganizationAccountTest extends AbstractOrganizationTest {
         Assertions.assertEquals(orgA.getDescription(), organization.getDescription());
         Assertions.assertEquals(orgA.getDomains().size(), organization.getDomains().size());
         Assertions.assertTrue(organization.getDomains().containsAll(orgA.getDomains().stream().map(OrganizationDomainRepresentation::getName).toList()));
+    }
+
+    @Test
+    public void testGetOrganizationsWhenOrganizationsDisabled() throws Exception {
+        UserRepresentation member = createUser();
+        org.keycloak.representations.idm.OrganizationRepresentation orgA = createOrganization("orga");
+        managedRealm.admin().organizations().get(orgA.getId()).members().addMember(member.getId()).close();
+
+        // verify account API returns organization data when organizations are enabled
+        List<OrganizationRepresentation> organizations = getOrganizations();
+        Assertions.assertEquals(1, organizations.size());
+        Assertions.assertEquals(orgA.getId(), organizations.get(0).getId());
+
+        // disable organizations on the realm
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin())
+                .setOrganizationsEnabled(Boolean.FALSE)
+                .update()) {
+
+            // account API should not return organization data when organizations are disabled
+            try (SimpleHttpResponse response = SimpleHttpDefault.doGet(getAccountUrl("organizations"), client)
+                    .auth(tokenUtil.getToken()).acceptJson().asResponse()) {
+                Assertions.assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
+            }
+        }
     }
 
     private SortedSet<LinkedAccountRepresentation> linkedAccountsRep() throws IOException {

@@ -21,7 +21,12 @@
         <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-cred-offer-settings-form" method="post" novalidate="novalidate">
             <div class="pf-v5-c-form__group pf-m-action">
                 <div class="pf-v5-c-form__actions">
-                    <#if isAppInitiatedAction??>
+                    <#if skipCancelButton??>
+                        <input type="submit"
+                            class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
+                            id="continue-vc-offer" value="${msg("doContinue")}"
+                        />
+                    <#else>
                         <input type="submit"
                             class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}"
                             id="continue-vc-offer" value="${msg("doContinue")}"
@@ -30,11 +35,6 @@
                                 class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} ${properties.kcButtonLargeClass!}"
                                 id="cancel-vc-offer" name="cancel-aia" value="true">${msg("doCancel")}
                         </button>
-                    <#else>
-                        <input type="submit"
-                            class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                            id="continue-vc-offer" value="${msg("doContinue")}"
-                        />
                     </#if>
                 </div>
             </div>

@@ -17,6 +17,9 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.Collections;
+import java.util.Set;
+
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -60,7 +63,7 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
         String resourceParameter = formParams.getFirst(OAuth2Constants.RESOURCE);
 
         try {
-            session.clientPolicy().triggerOnEvent(new TokenRefreshContext(formParams, client));
+            session.clientPolicy().triggerOnEvent(new TokenRefreshContext(formParams, client, scopeParameter));
             refreshToken = formParams.getFirst(OAuth2Constants.REFRESH_TOKEN);
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
@@ -115,6 +118,11 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
     @Override
     public EventType getEventType() {
         return EventType.REFRESH_TOKEN;
+    }
+    
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Collections.emptySet();
     }
 
 }

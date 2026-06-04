@@ -269,6 +269,8 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
           availableSupportedEvents={availableSupportedEvents}
           nativelyEmittedEvents={nativelyEmittedEvents}
           defaultUserSubjectFormat={defaultUserSubjectFormat}
+          defaultPushConnectTimeoutMillis={defaultPushConnectTimeoutMillis}
+          defaultPushSocketTimeoutMillis={defaultPushSocketTimeoutMillis}
           save={save}
           reset={reset}
         />
@@ -280,8 +282,6 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
           setClientStream={setClientStream}
           defaultSupportedEvents={defaultSupportedEvents}
           nativelyEmittedEvents={nativelyEmittedEvents}
-          defaultPushConnectTimeoutMillis={defaultPushConnectTimeoutMillis}
-          defaultPushSocketTimeoutMillis={defaultPushSocketTimeoutMillis}
           save={save}
           reset={reset}
           refresh={refresh}

@@ -225,11 +225,11 @@ public class FlowOverrideTest extends AbstractFlowTest {
         testWithRemovedFlowOverrideByClient(AuthenticationFlowBindings.BROWSER_BINDING, this::testNoOverrideBrowser);
     }
 
-    // TODO remove this once DYNAMIC_SCOPES feature is enabled by default
+    // TODO remove this once PARAMETERIZED_SCOPES feature is enabled by default
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
-    public void testWithClientBrowserOverrideWithDynamicScope() throws Exception {
-        // Just use existing test with DYNAMIC_SCOPES feature enabled as it was failing with DYNAMIC_SCOPES
+    @EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
+    public void testWithClientBrowserOverrideWithParameterizedScope() throws Exception {
+        // Just use existing test with PARAMETERIZED_SCOPES feature enabled as it was failing with PARAMETERIZED_SCOPES
         testWithClientBrowserOverride();
     }
 

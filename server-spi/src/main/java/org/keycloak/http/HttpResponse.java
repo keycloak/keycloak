@@ -26,12 +26,16 @@ import jakarta.ws.rs.core.NewCookie;
  */
 public interface HttpResponse {
     /**
-     * Gets a status code.
+     * Gets the current status code.
+     *
+     * <p><strong>Warning:</strong> this will typically not be the actual status returned as that will be managed by JAX-RS based upon the return value or exception from the endpoint method.
      */
     int getStatus();
 
     /**
      * Sets a status code.
+     *
+     * <p><strong>Warning:</strong> this value is silently overwritten by the JAX-RS runtime based upon the return value or exception from the endpoint method. Please use a JAX-RS compatible way of setting the status instead.
      *
      * @param statusCode the status code
      */

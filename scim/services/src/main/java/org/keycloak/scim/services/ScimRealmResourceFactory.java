@@ -12,6 +12,8 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
+import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
 
@@ -26,6 +28,12 @@ public class ScimRealmResourceFactory implements RealmResourceProviderFactory, E
 
                 @Override
                 public Object getResource() {
+                    AuthResult authResult = new BearerTokenAuthenticator(session).authenticate();
+
+                    if (authResult == null) {
+                        throw new ErrorResponseException(Response.status(Status.UNAUTHORIZED).build());
+                    }
+
                     Token bearerToken = session.getContext().getBearerToken();
 
                     if (bearerToken == null) {

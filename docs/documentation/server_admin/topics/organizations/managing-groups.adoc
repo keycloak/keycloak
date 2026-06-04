@@ -110,6 +110,9 @@ Include groups in the UserInfo endpoint response.
 Add to introspection::
 Include groups in the Introspection endpoint response.
 
+Add group role mappings::
+When enabled, realm and client roles assigned to the user's organization groups are included in the token for each organization. See <<oidc-token-with-roles,Token structure with roles>> for the output format.
+
 . Click *Save*.
 
 The `organization` scope is added as an optional scope to all clients by default. Applications request it using `scope=organization` (or `scope=organization:alias` for a specific organization, or multiple specific organizations like `scope=organization:org-a organization:org-b`).
@@ -163,6 +166,35 @@ Notice:
 - Make sure you have a single `organization-membership` mapper so that groups are included in the same claim as the organization data
 - Multiple organizations can be included if the user is a member of multiple organizations and uses `scope=organization:*` or multiple specific scopes like `scope=organization:org-a organization:org-b`
 
+[[oidc-token-with-roles]]
+==== Token structure with roles
+
+When *Add group role mappings* is enabled on the mapper, realm and client roles assigned to the user's organization groups are included under `realm_access` and `resource_access` keys, following the same structure as standard Keycloak token role claims:
+
+[source,json]
+----
+{
+  "organization": {
+    "orgA": {
+      "id": "f8d3c4e1-...",
+      "groups": [ "/Engineering/Backend" ],
+      "realm_access": {
+        "roles": [ "org-admin", "viewer" ]
+      },
+      "resource_access": {
+        "my-client": {
+          "roles": [ "client-editor" ]
+        }
+      }
+    }
+  }
+}
+----
+
+Composite roles are automatically expanded—if a group has a composite role, all its child roles are included.
+
+NOTE: These roles are specific to the organization context and appear inside the `organization` claim. Standard `realm_access` and `resource_access` claims already include roles from all groups (including organization groups) regardless of this mapper setting.
+
 === SAML: Organization groups in assertions
 
 SAML automatically includes groups for all organizations the user is a member of. Like OIDC, the group mapper requires the organization membership mapper to be present in the same scope.
@@ -180,7 +212,12 @@ The built-in `saml_organization` scope already has the Organization Membership m
 . Select *Organization Group Membership*.
 . Click *Save*.
 
-The mapper has no additional configuration options. Groups are automatically included for all SAML clients.
+The mapper has one optional configuration:
+
+Add group role mappings::
+When enabled, realm and client roles assigned to the user's organization groups are included as additional SAML attributes. See <<saml-assertion-with-roles,SAML assertion structure with roles>> for the output format.
+
+Groups are automatically included for all SAML clients.
 
 ==== Option 2: Create custom SAML scope with both mappers
 
@@ -219,6 +256,30 @@ When a user from Organization A's `/Engineering/Backend` group authenticates, th
 
 Each organization gets its own attribute named `+organization.{alias}.groups+` with group paths as values, where `alias` is the organization alias.
 
+[[saml-assertion-with-roles]]
+==== SAML assertion structure with roles
+
+When *Add group role mappings* is enabled on the mapper, realm and client roles assigned to the user's organization groups are included as additional attributes:
+
+[source,xml]
+----
+<Attribute Name="organization.orgA.groups">
+  <AttributeValue>/Engineering/Backend</AttributeValue>
+</Attribute>
+<Attribute Name="organization.orgA.realm_access.roles">
+  <AttributeValue>org-admin</AttributeValue>
+  <AttributeValue>viewer</AttributeValue>
+</Attribute>
+<Attribute Name="organization.orgA.resource_access.my-client.roles">
+  <AttributeValue>client-editor</AttributeValue>
+</Attribute>
+----
+
+Composite roles are automatically expanded. Each role type uses a separate attribute:
+
+- `+organization.{alias}.realm_access.roles+` — realm roles from the user's organization groups
+- `+organization.{alias}.resource_access.{clientId}.roles+` — client roles, with one attribute per client
+
 NOTE: Unlike OIDC, SAML clients don't need to request a scope at runtime. The `saml_organization` scope is added as a default scope, so groups are automatically included in assertions for all organizations the user is a member of.
 
 == Managing group attributes
@@ -233,6 +294,24 @@ Groups can carry attributes—key/value metadata stored at the group level.
 . Click *Save*.
 
 Group attributes are stored separately from user attributes. To include group attributes in tokens, configure a *User Attribute* mapper with the *Aggregate attributes* option enabled. The mapper will then combine matching attributes from both the user and all their groups.
+
+== Assigning roles to groups
+
+Organization groups support realm and client role mappings, just like realm groups. This lets you define role-based access that applies to all members of a group.
+
+.Procedure
+
+. Select an organization group.
+. Click the *Role mapping* tab.
+. Click *Assign role*.
+. Select one or more realm or client roles.
+. Click *Assign*.
+
+Roles assigned to organization groups are automatically included in `realm_access` and `resource_access` token claims for members of those groups—no additional mapper configuration is required.
+
+To also include these roles within the `organization` claim (organized per organization), enable the *Add group role mappings* option on the *Organization Group Membership* mapper. See <<oidc-token-with-roles,Token structure with roles>> and <<saml-assertion-with-roles,SAML assertion structure with roles>> for details.
+
+NOTE: Assigning roles to organization groups requires the `manage-organizations` realm admin role (or equivalent Fine-Grained Admin Permission on the organization) and the `map-role` permission on the specific role being assigned.
 
 == Important distinctions
 
@@ -250,7 +329,7 @@ Group attributes are stored separately from user attributes. To include group at
 |Fully isolated—same paths can exist across organizations
 
 |Role assignment
-|Not supported (coming in future releases)
+|Supported—realm and client roles can be assigned to organization groups via the Admin API and Admin Console
 
 |Authorization policies
 |Cannot be used in authorization policies—use realm groups instead

@@ -58,6 +58,10 @@ frontend https_front
     http-request del-header uber-trace-id
     http-request del-header x-ot-span-context
 
+    # Optional. Forward client identities so that client certificate lookups work as expected
+    http-request set-header Client-Cert %[ssl_c_der,base64] if { ssl_c_used } { ssl_c_verify 0 }
+    http-request set-header Client-Cert-Chain %[ssl_c_chain_der,base64] if { ssl_c_used } { ssl_c_verify 0 }
+
     # Public paths. Revisit the reverse proxy guide for the latest guidance. # <4>
     # With these settings, the redirect to the welcome screen or Admin UI will not work from external IP addresses, and this is expected.
     acl is_public_path path_beg /realms/
@@ -81,9 +85,9 @@ backend keycloak_back
     option httpchk GET /health/ready # <8>
     http-check expect status 200
 
-    server keycloak1 keycloak1:8443 ssl verify required crt /path/to/haproxy-internal-certificate ca-file /path/to/keycloak-1-certificate check port 9000 check-ssl verify none inter 5s fall 3 rise 2 # <9>
+    server keycloak1 keycloak1:8443 ssl verify required crt /path/to/haproxy-internal-certificate ca-file /path/to/keycloak-1-certificate check port 9000 check-ssl verify none inter 5s fall 3 rise 2 slowstart 60s # <9>
 
-    server keycloak2 keycloak2:8443 ssl verify required crt /path/to/haproxy-internal-certificate ca-file /path/to/keycloak-2-certificate check port 9000 check-ssl verify none inter 5s fall 3 rise 2
+    server keycloak2 keycloak2:8443 ssl verify required crt /path/to/haproxy-internal-certificate ca-file /path/to/keycloak-2-certificate check port 9000 check-ssl verify none inter 5s fall 3 rise 2 slowstart 60s
 
 ----
 
@@ -121,6 +125,10 @@ Configures the link:https://docs.haproxy.org/3.2/configuration.html#5.2-inter[he
 poll every 5 seconds, mark a server as down after 3 consecutive failures, and mark it as up again after 2 consecutive successes.
 These values affect how quickly HAProxy detects that a {project_name} instance is shutting down (see <<graceful-shutdown-considerations-haproxy-reencrypt>>).
 
+`slowstart 60s`::
+Gradually increases the server's weight from 0 to its full value over 60 seconds after the server becomes available.
+This gives {project_name} and the JVM time to warm up (JIT compilation, class loading, cache population) before receiving full traffic, preventing performance degradation and timeouts during the warmup phase.
+
 [[keycloak-configuration-haproxy-reencrypt]]
 == {project_name} configuration
 
@@ -155,6 +163,17 @@ See the <@links.server id="mutual-tls"/> guide for additional details.
 
 `--https-management-client-auth=none`::
 Disables the client authentication requirement for the management endpoint.
+
+=== Enabling client certificate lookups
+
+To enable the client certificate lookups, the following CLI options are required when starting {project_name}:
+
+<@kc.start parameters="--spi-x509cert-lookup--provider=haproxy --spi-x509cert-lookup--haproxy--ssl-client-cert=Client-Cert --spi-x509cert-lookup--haproxy--ssl-cert-chain=Client-Cert-Chain --spi-x509cert-lookup--haproxy--certificate-chain-length=2"/>
+
+If the number of intermediate certificates in your certificate chain is longer than the default, you must set the
+`certificate-chain-length` option to an appropriate value. Otherwise, the provider will discard the request.
+
+See <@links.server id="reverseproxy" /> for more details.
 
 [[graceful-shutdown-considerations-haproxy-reencrypt]]
 == Graceful shutdown considerations

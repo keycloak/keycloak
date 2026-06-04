@@ -39,6 +39,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -52,7 +53,7 @@ import static org.keycloak.utils.StringUtil.isBlank;
 /**
  * <p>An enum with utility methods to process the {@link OIDCLoginProtocolFactory#ORGANIZATION} scope.
  *
- * <p>The {@link OrganizationScope} behaves like a dynamic scopes so that access to organizations is granted depending
+ * <p>The {@link OrganizationScope} behaves like a parameterized scope so that access to organizations is granted depending
  * on how the client requests the {@link OIDCLoginProtocolFactory#ORGANIZATION} scope.
  */
 public enum OrganizationScope {
@@ -228,6 +229,9 @@ public enum OrganizationScope {
      * @return the organizations mapped from the {@code scope} parameter. Or an empty stream if no organizations were mapped from the parameter.
      */
     public Stream<OrganizationModel> resolveOrganizations(UserModel user, String scope, KeycloakSession session) {
+        if (!Organizations.isEnabled(session)) {
+            return Stream.empty();
+        }
         return valueResolver.apply(user, Optional.ofNullable(scope).orElse(EMPTY_SCOPE), session).filter(OrganizationModel::isEnabled);
     }
 

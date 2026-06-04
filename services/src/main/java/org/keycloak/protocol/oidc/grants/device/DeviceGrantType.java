@@ -18,7 +18,9 @@
 package org.keycloak.protocol.oidc.grants.device;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
@@ -345,7 +347,7 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
         // Compute client scopes again from scope parameter. Check if user still has them granted
         // (but in device_code-to-token request, it could just theoretically happen that they are not available)
         String scopeParam = deviceCodeModel.getScope();
-        if (!TokenManager.verifyConsentStillAvailable(session, user, client, TokenManager.getRequestedClientScopes(session, scopeParam, client, user))) {
+        if (!TokenManager.verifyConsentStillAvailable(session, user, client, scopeParam)) {
             String errorMessage = "Client no longer has requested consent from user";
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
@@ -365,6 +367,11 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
     @Override
     public EventType getEventType() {
         return EventType.OAUTH2_DEVICE_CODE_TO_TOKEN;
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Collections.emptySet();
     }
 
 }

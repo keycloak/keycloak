@@ -200,7 +200,24 @@
             <column name="OWNER_ID"/>
             <column name="CONTAINER_ID"/>
         </createIndex>
+    </changeSet>
 
+    <changeSet author="keycloak" id="26.7.0-9686-dynamic-scopes-consent">
+        <addColumn tableName="USER_CONSENT_CLIENT_SCOPE">
+            <column name="PARAMETER" type="VARCHAR(255)" defaultValue="#N A#">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <dropPrimaryKey tableName="USER_CONSENT_CLIENT_SCOPE" constraintName="CONSTRAINT_GRNTCSNT_CLSC_PM"/>
+        <addPrimaryKey columnNames="USER_CONSENT_ID, SCOPE_ID, PARAMETER" constraintName="CONSTRAINT_GRNTCSNT_CLSC_PM" tableName="USER_CONSENT_CLIENT_SCOPE"/>
+
+        <addColumn tableName="FED_USER_CONSENT_CL_SCOPE">
+            <column name="PARAMETER" type="VARCHAR(255)" defaultValue="#N A#">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <dropPrimaryKey tableName="FED_USER_CONSENT_CL_SCOPE" constraintName="CONSTRAINT_FGRNTCSNT_CLSC_PM"/>
+        <addPrimaryKey columnNames="USER_CONSENT_ID, SCOPE_ID, PARAMETER" constraintName="CONSTRAINT_FGRNTCSNT_CLSC_PM" tableName="FED_USER_CONSENT_CL_SCOPE"/>
     </changeSet>
 
     <changeSet author="keycloak" id="26.7.0-46204-issued-ver-credential-table">
@@ -235,6 +252,127 @@
         <createIndex tableName="ISSUED_VER_CREDENTIAL" indexName="IDX_ISSUED_VER_CREDENTIAL_USER">
             <column name="USER_ID"/>
             <column name="ISSUED_AT"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-persistent-auth-session-root-table">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <tableExists tableName="ROOT_AUTH_SESSION"/>
+            </not>
+        </preConditions>
+        <createTable tableName="ROOT_AUTH_SESSION">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_ROOT_AUTH_SESSION"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TIMESTAMP" type="BIGINT"/>
+            <column name="VERSION" type="INT"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-persistent-auth-session-root-index">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <indexExists indexName="IDX_ROOT_AUTH_SESSION_REALM"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="ROOT_AUTH_SESSION" indexName="IDX_ROOT_AUTH_SESSION_REALM">
+            <column name="REALM_ID"/>
+            <column name="TIMESTAMP"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-persistent-auth-session-table">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <tableExists tableName="AUTH_SESSION"/>
+            </not>
+        </preConditions>
+        <createTable tableName="AUTH_SESSION">
+            <column name="TAB_ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_AUTH_SESSION"/>
+            </column>
+            <column name="ROOT_AUTH_SESSION_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CLIENT_UUID" type="VARCHAR(255)"/>
+            <column name="AUTH_USER_ID" type="VARCHAR(255)"/>
+            <column name="TIMESTAMP" type="BIGINT"/>
+            <column name="VERSION" type="INT"/>
+            <column name="REDIRECT_URI" type="TEXT"/>
+            <column name="ACTION" type="VARCHAR(255)"/>
+            <column name="PROTOCOL" type="VARCHAR(255)"/>
+            <column name="CLIENT_SCOPES" type="TEXT"/>
+            <column name="EXECUTION_STATUS" type="TEXT"/>
+            <column name="CLIENT_NOTES" type="TEXT"/>
+            <column name="AUTH_NOTES" type="TEXT"/>
+            <column name="REQUIRED_ACTIONS" type="TEXT"/>
+            <column name="USER_SESSION_NOTES" type="TEXT"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="ROOT_AUTH_SESSION_ID"
+                                 baseTableName="AUTH_SESSION"
+                                 constraintName="FK_AUTH_SESSION_ROOT"
+                                 referencedColumnNames="ID"
+                                 referencedTableName="ROOT_AUTH_SESSION"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-persistent-auth-session-index">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <indexExists indexName="IDX_AUTH_SESSION_ROOT"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="AUTH_SESSION" indexName="IDX_AUTH_SESSION_ROOT">
+            <column name="ROOT_AUTH_SESSION_ID"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-single-use-object-table">
+        <createTable tableName="SINGLE_USE_OBJECT">
+            <!-- cannot use varchar larger than 255, see org.keycloak.connections.jpa.updater.liquibase.MySQL8VarcharType -->
+            <!-- MySQL/MariaDB don't like it and fails with: BLOB/TEXT column 'ID' used in key specification without a key length -->
+            <column name="ID" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SINGLE_USE_OBJECT"/>
+            </column>
+            <column name="NOTES" type="TEXT"/>
+            <column name="EXPIRE" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-single-use-object-index">
+        <createIndex tableName="SINGLE_USE_OBJECT" indexName="IDX_SINGLE_USE_OBJ_EXPIRE">
+            <column name="EXPIRE"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-login-failure-table">
+        <createTable tableName="LOGIN_FAILURE">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="FAILED_LOGIN_NOT_BEFORE" type="BIGINT" defaultValueNumeric="0"/>
+            <column name="NUM_FAILURES" type="INT" defaultValueNumeric="0"/>
+            <column name="NUM_TEMPORARY_LOCKOUTS" type="INT" defaultValueNumeric="0"/>
+            <column name="LAST_FAILURE" type="BIGINT" defaultValueNumeric="0"/>
+            <column name="LAST_IP_FAILURE" type="VARCHAR(255)"/>
+            <column name="NUM_SECONDARY_AUTH_FAILURES" type="INT" defaultValueNumeric="0"/>
+        </createTable>
+        <addPrimaryKey columnNames="REALM_ID, USER_ID" constraintName="PK_LOGIN_FAILURE" tableName="LOGIN_FAILURE"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-login-failure-index">
+        <createIndex tableName="LOGIN_FAILURE" indexName="IDX_LOGIN_FAILURE_EXPIRE">
+            <column name="LAST_FAILURE"/>
         </createIndex>
     </changeSet>
 

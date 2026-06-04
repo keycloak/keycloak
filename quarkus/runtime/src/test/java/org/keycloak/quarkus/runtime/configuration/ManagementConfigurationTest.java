@@ -152,6 +152,11 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
                 "KC_HTTPS_KEY_STORE_PASSWORD", "ultra-password",
                 "KC_HTTPS_KEY_STORE_TYPE", "BCFKS"
         ));
+        putEnvVars(Map.of(
+                "KC_HTTPS_TRUST_STORE_FILE", "truststore.p12",
+                "KC_HTTPS_TRUST_STORE_PASSWORD", "trust-password",
+                "KC_HTTPS_TRUST_STORE_TYPE", "PKCS12"
+        ));
 
         initConfig();
 
@@ -166,8 +171,42 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
                 "https-management-key-store-password", "ultra-password",
                 "https-management-key-store-type", "BCFKS"
         ));
+        assertConfig(Map.of(
+                "https-management-trust-store-file", "truststore.p12",
+                "https-management-trust-store-password", "trust-password",
+                "https-management-trust-store-type", "PKCS12"
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.management.ssl.certificate.trust-store-file", "truststore.p12",
+                "quarkus.management.ssl.certificate.trust-store-password", "trust-password",
+                "quarkus.management.ssl.certificate.trust-store-file-type", "PKCS12"
+        ));
         assertManagementEnabled(true);
         assertManagementHttpsEnabled(true);
+    }
+
+    @Test
+    public void managementMappedTrustStoreValues() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_MANAGEMENT_TRUST_STORE_FILE", "management-truststore.p12",
+                "KC_HTTPS_MANAGEMENT_TRUST_STORE_PASSWORD", "management-trust-password",
+                "KC_HTTPS_MANAGEMENT_TRUST_STORE_TYPE", "JKS"
+        ));
+
+        initConfig();
+
+        assertConfig(Map.of(
+                "https-management-trust-store-file", "management-truststore.p12",
+                "https-management-trust-store-password", "management-trust-password",
+                "https-management-trust-store-type", "JKS"
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.management.ssl.certificate.trust-store-file", "management-truststore.p12",
+                "quarkus.management.ssl.certificate.trust-store-password", "management-trust-password",
+                "quarkus.management.ssl.certificate.trust-store-file-type", "JKS"
+        ));
+        assertManagementEnabled(true);
     }
 
     @Test

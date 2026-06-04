@@ -2,8 +2,11 @@ package org.keycloak.protocol.oid4vc.utils;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -38,5 +41,11 @@ public class OID4VCUtil {
     public static boolean hasVerifiableCredential(KeycloakSession session, UserModel user, CredentialScopeModel credentialScope) {
         return session.users().getVerifiableCredentialsByUser(user.getId())
                 .anyMatch(credential -> credential.getCredentialScopeName().equals(credentialScope.getName()));
+    }
+
+    public static List<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsByUserAndClient(KeycloakSession session, UserModel user, ClientModel client) {
+        return session.users().getIssuedVerifiableCredentialsStreamByUser(user.getId())
+                .filter(issuedCredential -> client.getId().equals(issuedCredential.getClientId()))
+                .toList();
     }
 }

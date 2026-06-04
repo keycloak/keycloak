@@ -385,7 +385,10 @@ public class JpaUserFederatedStorageProvider implements
                     grantedClientScopeModel = realm.getClientById(grantedClientScope.getScopeId());
                 }
                 if (grantedClientScopeModel != null) {
-                    model.addGrantedClientScope(grantedClientScopeModel);
+                    model.addGrantedClientScope(grantedClientScopeModel,
+                            ClientScopeModel.isParameterizedScope(grantedClientScopeModel)
+                                    ? grantedClientScope.getParameter().orElse(null)
+                                    : null);
                 }
             }
         }
@@ -399,17 +402,11 @@ public class JpaUserFederatedStorageProvider implements
         Collection<FederatedUserConsentClientScopeEntity> scopesToRemove = new HashSet<>(grantedClientScopeEntities);
 
         for (ClientScopeModel clientScope : consentModel.getGrantedClientScopes()) {
-            FederatedUserConsentClientScopeEntity grantedClientScopeEntity = new FederatedUserConsentClientScopeEntity();
-            grantedClientScopeEntity.setUserConsent(consentEntity);
-            grantedClientScopeEntity.setScopeId(clientScope.getId());
-
-            // Check if it's already there
-            if (!grantedClientScopeEntities.contains(grantedClientScopeEntity)) {
-                em.persist(grantedClientScopeEntity);
-                em.flush();
-                grantedClientScopeEntities.add(grantedClientScopeEntity);
+            if (ClientScopeModel.isParameterizedScope(clientScope)) {
+                consentModel.getParameters(clientScope).forEach(p -> createFederatedUserConsentClientScopeEntity(
+                        consentEntity, clientScope, p, grantedClientScopeEntities, scopesToRemove));
             } else {
-                scopesToRemove.remove(grantedClientScopeEntity);
+                createFederatedUserConsentClientScopeEntity(consentEntity, clientScope, null, grantedClientScopeEntities, scopesToRemove);
             }
         }
         // Those mappers were no longer on consentModel and will be removed
@@ -423,6 +420,24 @@ public class JpaUserFederatedStorageProvider implements
         em.flush();
     }
 
+    private void createFederatedUserConsentClientScopeEntity(
+            FederatedUserConsentEntity consentEntity, ClientScopeModel clientScope, String parameter,
+            Collection<FederatedUserConsentClientScopeEntity> grantedClientScopeEntities,
+            Collection<FederatedUserConsentClientScopeEntity> scopesToRemove) {
+        FederatedUserConsentClientScopeEntity grantedClientScopeEntity = new FederatedUserConsentClientScopeEntity();
+        grantedClientScopeEntity.setUserConsent(consentEntity);
+        grantedClientScopeEntity.setScopeId(clientScope.getId());
+        grantedClientScopeEntity.setParameter(parameter);
+
+        // Check if it's already there
+        if (!grantedClientScopeEntities.contains(grantedClientScopeEntity)) {
+            em.persist(grantedClientScopeEntity);
+            em.flush();
+            grantedClientScopeEntities.add(grantedClientScopeEntity);
+        } else {
+            scopesToRemove.remove(grantedClientScopeEntity);
+        }
+    }
 
     @Override
     public void setNotBeforeForUser(RealmModel realm, String userId, int notBefore) {

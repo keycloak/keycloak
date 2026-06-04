@@ -19,8 +19,10 @@ package org.keycloak.protocol.oidc.grants;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 
@@ -254,6 +256,11 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
     @Override
     public EventType getEventType() {
         return EventType.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT;
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Collections.emptySet();
     }
 
     /**

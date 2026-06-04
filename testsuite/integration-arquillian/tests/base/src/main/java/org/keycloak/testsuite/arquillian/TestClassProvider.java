@@ -30,7 +30,9 @@ public class TestClassProvider {
             "/com/webauthn4j",
             "/com/fasterxml/jackson/dataformat/cbor",
             "/org/slf4j",
-            "/org/apache"
+            "/org/apache",
+            "/org/keycloak/util/ldap",
+            "/kerberos"
     };
 
     private Undertow server;

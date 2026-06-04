@@ -356,4 +356,12 @@ public interface UserProvider extends Provider,
      */
     Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId);
 
+    /**
+     * Remove an issued verifiable credential by its ID.
+     *
+     * @param credentialId the ID of the issued credential to remove
+     * @return {@code true} if the credential was removed, {@code false} if it was not found
+     */
+    boolean removeIssuedVerifiableCredential(String credentialId);
+
 }
