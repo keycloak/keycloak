@@ -1,0 +1,5 @@
+org.keycloak.protocol.oidc.scope.StringScopeType
+org.keycloak.protocol.oidc.scope.IntegerScopeType
+org.keycloak.protocol.oidc.scope.BooleanScopeType
+org.keycloak.protocol.oidc.scope.UsernameScopeType
+org.keycloak.protocol.oidc.scope.CustomRegexScopeType

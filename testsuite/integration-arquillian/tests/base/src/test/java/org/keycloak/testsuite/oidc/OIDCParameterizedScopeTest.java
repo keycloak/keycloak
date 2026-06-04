@@ -217,7 +217,7 @@ public class OIDCParameterizedScopeTest extends OIDCScopeTest {
         clientScope.setName(scopeName);
         clientScope.setAttributes(new HashMap<String, String>() {{
             put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, String.format("%1s:*", scopeName));
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         return managedRealm.admin().clientScopes().create(clientScope);

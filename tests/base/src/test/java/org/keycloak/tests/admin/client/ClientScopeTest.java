@@ -726,7 +726,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
         scopeRep.setProtocol("openid-connect");
         scopeRep.setAttributes(new HashMap<>() {{
             put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic-scope-def:*");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
         String scopeDefId = createClientScope(scopeRep);
 
@@ -735,7 +735,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
         scopeRep = clientScopes().get(scopeDefId).toRepresentation();
         Assertions.assertEquals("dynamic-scope-def", scopeRep.getName());
         Assertions.assertEquals("true", scopeRep.getAttributes().get(ClientScopeModel.IS_PARAMETERIZED_SCOPE));
-        Assertions.assertEquals("dynamic-scope-def:*", scopeRep.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP));
+        Assertions.assertEquals("string", scopeRep.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE));
 
         // update should work
         scopeRes.update(scopeRep);
@@ -763,15 +763,16 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
-    public void testCreateParameterizedScopeWithFeatureDisabledAndNonEmptyParameterizedScopeRegexp() {
+    public void testCreateNonParameterizedScopeIgnoresStaleAttributes() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("non-dynamic-scope-def3");
         scopeRep.setProtocol("openid-connect");
         scopeRep.setAttributes(new HashMap<>() {{
             put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "false");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "not-empty");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "[invalid");
         }});
-        handleExpectedCreateFailure(scopeRep, 400, "Invalid format for the Parameterized Scope regexp not-empty");
+        String scopeId = createClientScope(scopeRep);
+        removeClientScope(scopeId);
     }
 
     @Test

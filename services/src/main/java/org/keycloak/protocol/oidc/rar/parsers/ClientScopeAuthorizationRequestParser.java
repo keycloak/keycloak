@@ -22,19 +22,22 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
 import org.keycloak.protocol.oidc.rar.model.IntermediaryScopeRepresentation;
+import org.keycloak.protocol.oidc.scope.InvalidScopeParameterException;
+import org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeProvider;
+import org.keycloak.protocol.oidc.scope.StringScopeType;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.rar.AuthorizationRequestSource;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+import org.keycloak.saml.common.util.StringUtil;
 
 import org.jboss.logging.Logger;
 
@@ -47,6 +50,12 @@ import static org.keycloak.representations.AuthorizationDetailsJSONRepresentatio
 public class ClientScopeAuthorizationRequestParser implements AuthorizationRequestParserProvider {
 
     protected static final Logger logger = Logger.getLogger(ClientScopeAuthorizationRequestParser.class);
+
+    private final KeycloakSession session;
+
+    public ClientScopeAuthorizationRequestParser(KeycloakSession session) {
+        this.session = session;
+    }
 
     /**
      * Creates a {@link AuthorizationRequestContext} with a list of {@link AuthorizationDetails} that will be parsed from
@@ -118,21 +127,37 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
     private Optional<IntermediaryScopeRepresentation> getMatchingClientScope(String requestScope, Collection<ClientScopeModel> optionalScopes) {
         for (ClientScopeModel clientScopeModel : optionalScopes) {
             if (clientScopeModel.isParameterizedScope()) {
-                // The regexp has been stored without a capture group to simplify how it's shown to the user, need to transform it now
-                // to capture the parameter value
-                Pattern p = Pattern.compile(clientScopeModel.getParameterizedScopeRegexp().replace("*", "(.*)"));
-                Matcher m = p.matcher(requestScope);
-                if (m.matches()) {
-                    return Optional.of(new IntermediaryScopeRepresentation(clientScopeModel, m.group(1), requestScope));
+                String paramValue = clientScopeModel.getParameterFromScope(requestScope).orElse(null);
+                if (paramValue == null) {
+                    continue;
                 }
+                try {
+                    resolveType(clientScopeModel).validateParameter(clientScopeModel, paramValue);
+                } catch (InvalidScopeParameterException e) {
+                    logger.warnf("Invalid scope parameter for '%s': %s", requestScope, e.getMessage());
+                    return Optional.empty();
+                }
+                return Optional.of(new IntermediaryScopeRepresentation(clientScopeModel, paramValue, requestScope));
             } else {
                 if (requestScope.equalsIgnoreCase(clientScopeModel.getName())) {
                     return Optional.of(new IntermediaryScopeRepresentation(clientScopeModel));
                 }
             }
         }
-        // Nothing matched, returning an empty Optional to avoid working with Nulls
         return Optional.empty();
+    }
+
+    private ParameterizedScopeTypeProvider resolveType(ClientScopeModel clientScopeModel) {
+        String typeId = clientScopeModel.getAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE);
+        if (StringUtil.isNullOrEmpty(typeId)) {
+            logger.warnf("Parameterized scope '%s' has no type set, defaulting to '%s'", clientScopeModel.getName(), StringScopeType.TYPE);
+            typeId = StringScopeType.TYPE;
+        }
+        ParameterizedScopeTypeProvider provider = session.getProvider(ParameterizedScopeTypeProvider.class, typeId);
+        if (provider == null) {
+            throw new IllegalStateException("Unknown parameterized scope type: " + typeId);
+        }
+        return provider;
     }
 
     @Override

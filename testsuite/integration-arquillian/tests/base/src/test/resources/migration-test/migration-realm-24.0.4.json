@@ -3486,6 +3486,32 @@
       "consentRequired" : false,
       "config" : { }
     } ]
+  }, {
+    "id" : "d1a1b2c3-0003-4000-a000-000000000003",
+    "name" : "dynamic-scope-default",
+    "description" : "",
+    "protocol" : "openid-connect",
+    "attributes" : {
+      "is.dynamic.scope" : "true",
+      "consent.screen.text" : "",
+      "include.in.token.scope" : "false",
+      "dynamic.scope.regexp" : "dynamic-scope-default:*",
+      "display.on.consent.screen" : "true",
+      "gui.order" : ""
+    }
+  }, {
+    "id" : "d1a1b2c3-0004-4000-a000-000000000004",
+    "name" : "dynamic-scope-custom",
+    "description" : "",
+    "protocol" : "openid-connect",
+    "attributes" : {
+      "is.dynamic.scope" : "true",
+      "consent.screen.text" : "",
+      "include.in.token.scope" : "false",
+      "dynamic.scope.regexp" : "dynamic-scope-custom:[a-z]+",
+      "display.on.consent.screen" : "true",
+      "gui.order" : ""
+    }
   } ],
   "defaultDefaultClientScopes" : [ "roles", "profile", "role_list", "email", "web-origins", "acr" ],
   "defaultOptionalClientScopes" : [ "phone", "offline_access", "address", "microprofile-jwt" ],
