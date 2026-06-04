@@ -20,7 +20,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.forms.login.freemarker.model.OrganizationBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
-import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.userprofile.UserProfileProvider;
@@ -89,12 +89,10 @@ public class ProfileBean {
 
     public List<OrganizationBean> getOrganizations() {
         if (organizations == null) {
-            final var organizationsProvider = session.getProvider(OrganizationProvider.class);
-            if (organizationsProvider == null) {
+            if (!Organizations.isEnabled(session)) {
                 organizations = Collections.emptyList();
-            }
-            else {
-                organizations = organizationsProvider.getByMember(user)
+            } else {
+                organizations = Organizations.getProvider(session).getByMember(user)
                         .map(o -> new OrganizationBean(o, user))
                         .toList();
             }

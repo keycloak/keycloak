@@ -19,7 +19,6 @@ package org.keycloak.services.resources;
 import jakarta.ws.rs.HEAD;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.MessageType;
 import org.keycloak.forms.login.freemarker.DetachedInfoStateChecker;
@@ -978,7 +977,7 @@ public class LoginActionsService {
     }
 
     private void configureOrganization(BrokeredIdentityContext brokerContext) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (Organizations.isEnabled(session)) {
             String organizationId = brokerContext.getIdpConfig().getOrganizationId();
 
             if (organizationId != null) {
