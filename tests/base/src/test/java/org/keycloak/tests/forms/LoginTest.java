@@ -50,7 +50,6 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
@@ -76,6 +75,7 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -113,7 +113,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @KeycloakIntegrationTest(config = LoginTest.DynamicScopeServerConfig.class)
 public class LoginTest {
 
-    @InjectRealm(config = LoginRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = LoginRealmConfig.class)
     ManagedRealm managedRealm;
 
     @InjectRunOnServer
@@ -155,18 +155,44 @@ public class LoginTest {
 
     private static final Map<String, String> userPasswords = new HashMap<>();
 
+    private static String defaultClientId;
+    private static String defaultClientSecret;
+    private static String defaultRedirectUri;
+
     @BeforeEach
     public void setupTest() {
-        userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), "login-test").getId();
-        user2Id = AdminApiUtil.findUserByUsername(managedRealm.admin(), "test-2-login").getId();
+        if (timeOffSet.hasChanged()) {
+            timeOffSet.set(0);
+        }
+
+        runOnServer.run(RunHelpers.removeUserSessions());
+        driver.cookies().deleteAll();
+
+        if (userId == null) {
+            userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), "login-test").getId();
+        }
+        if (user2Id == null) {
+            user2Id = AdminApiUtil.findUserByUsername(managedRealm.admin(), "test-2-login").getId();
+        }
+        if (defaultClientId == null) {
+            defaultClientId = oauth.getClientId();
+            defaultClientSecret = oauth.config().getClientSecret();
+            defaultRedirectUri = oauth.getRedirectUri();
+        }
 
         // Configure test-app client to accept redirect URIs with query parameters (for loginWithLongRedirectUri test)
+        // Also ensure it's enabled in case a previous test disabled it
         ClientResource testAppClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         if (testAppClient != null) {
             ClientRepresentation testAppRep = testAppClient.toRepresentation();
             testAppRep.setRedirectUris(List.of("*"));
+            testAppRep.setEnabled(true);
             testAppClient.update(testAppRep);
         }
+
+        oauth.client(defaultClientId, defaultClientSecret);
+        oauth.redirectUri(defaultRedirectUri);
+        oauth.scope(null);
     }
 
     @Test
@@ -220,13 +246,12 @@ public class LoginTest {
         post.setEntity(new UrlEncodedFormEntity(params));
 
         //POST request to http://localhost:8180/auth/realms/test/protocol/openid-connect/auth;
-        try(CloseableHttpResponse response = client.execute(post)){
-            assertThat(response.getStatusLine().getStatusCode(), is(equalTo(200)));
-            String body = EntityUtils.toString(response.getEntity());
-            assertThat(body, containsString("Sign in"));
+        CloseableHttpResponse response = client.execute(post);
+        assertThat(response.getStatusLine().getStatusCode(), is(equalTo(200)));
+        String body = EntityUtils.toString(response.getEntity());
+        assertThat(body, containsString("Sign in"));
 
-            EntityUtils.consume(response.getEntity());
-        }
+        EntityUtils.consume(response.getEntity());
     }
 
     @Test
@@ -532,7 +557,7 @@ public class LoginTest {
 
         updatePasswordPage.assertCurrent();
 
-        final String newPwd = LoginRealmConfig.generatePassword("login-test");
+        final String newPwd = LoginRealmConfig.generatePasswordForUser("login-test");
         updatePasswordPage.changePassword(newPwd, newPwd);
 
         timeOffSet.set(0);
@@ -585,8 +610,7 @@ public class LoginTest {
                 .type(EventType.LOGIN)
                 .userId(userId)
                 .details(Details.USERNAME, "login-test")
-                .getEvent()
-                .getSessionId();
+                .getEvent();
     }
 
     @Test
@@ -780,7 +804,7 @@ public class LoginTest {
 
         AccessTokenResponse response = oauth.accessTokenRequest(oauth.parseLoginResponse().getCode()).send();
 
-        managedRealm.updateWithCleanup(realm -> realm.setRememberMe(false));
+        managedRealm.admin().update(RealmBuilder.update(managedRealm.admin().toRepresentation()).setRememberMe(false).build());
 
         //refresh fail
         response = oauth.refreshRequest(response.getRefreshToken()).send();
@@ -1210,7 +1234,7 @@ public class LoginTest {
         }
 
         static String generatePassword(String base) {
-            return base + "-" + RandomStringUtils.random(PASSWORD_LENGTH, true, true);
+            return base + "-" + RandomStringUtils.secure().next(PASSWORD_LENGTH, true, true);
         }
     }
 

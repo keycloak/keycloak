@@ -18,7 +18,6 @@ package org.keycloak.testframework.ui.page;
 
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
-import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -62,18 +61,8 @@ public class LoginConfigTotpPage extends AbstractPage {
         super(driver);
     }
 
-
     public String getTotpSecret() {
         return totpSecret.getAttribute("value");
-    }
-
-    public boolean isCurrent() {
-        try {
-            driver.findElement(By.id("totp"));
-            return true;
-        } catch (Throwable t) {
-            return false;
-        }
     }
 
     public boolean isCancelDisplayed() {
