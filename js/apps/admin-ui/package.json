@@ -130,10 +130,10 @@
     "properties-file": "^3.6.3",
     "ts-node": "^10.9.2",
     "uuid": "^13.0.2",
-    "vite": "^7.3.0",
+    "vite": "^7.3.3",
     "vite-plugin-checker": "^0.12.0",
     "vite-plugin-dts": "^4.5.4",
-    "vitest": "^4.0.16"
+    "vitest": "^4.1.8"
   },
   "author": {
     "name": "Red Hat, Inc.",
