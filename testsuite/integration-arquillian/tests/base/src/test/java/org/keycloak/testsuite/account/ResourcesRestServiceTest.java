@@ -513,6 +513,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         final String sharedWithMeUrl = resourcesUrl + "/shared-with-me";
         final String resourceUrl = resourcesUrl + "/" + encodePathAsIs(resourceId);
         final String permissionsUrl = resourceUrl + "/permissions";
+        final String userPermissionsUrl = permissionsUrl + "/alice";
         final String requestsUrl = resourceUrl + "/permissions/requests";
 
         TokenUtil viewProfileTokenUtil = new TokenUtil("view-account-access", "password");
@@ -535,6 +536,12 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         assertEquals( 403,
                 SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).json(Collections.emptyList()).asStatus(),
                 "view-account-access PUT " + permissionsUrl);
+        assertEquals( 403,
+                SimpleHttpDefault.doDelete(userPermissionsUrl, httpClient).acceptJson().auth(noAccessTokenUtil.getToken()).asStatus(),
+                "no-account-access DELETE " + userPermissionsUrl);
+        assertEquals( 403,
+                SimpleHttpDefault.doDelete(userPermissionsUrl, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).asStatus(),
+                "view-account-access DELETE " + userPermissionsUrl);
     }
 
     @Test
@@ -548,6 +555,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         final String pendingRequestsUrl = resourcesUrl + "/pending-requests";
         final String resourceUrl = resourcesUrl + "/" + encodePathAsIs(resourceId);
         final String permissionsUrl = resourceUrl + "/permissions";
+        final String userPermissionsUrl = permissionsUrl + "/alice";
         final String requestsUrl = resourceUrl + "/permissions/requests";
         final String userLookupUrl = resourceUrl + "/user?value=alice";
 
@@ -571,6 +579,9 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
             assertEquals(403,
                     SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(tokenUtil.getToken()).json(permissions).asStatus(),
                     "UMA disabled PUT " + permissionsUrl);
+            assertEquals(403,
+                    SimpleHttpDefault.doDelete(userPermissionsUrl, httpClient).acceptJson().auth(tokenUtil.getToken()).asStatus(),
+                    "UMA disabled DELETE " + userPermissionsUrl);
 
             assertCannotAuthorizeWithUmaGrant("alice", permissionTicket);
         } finally {
@@ -627,6 +638,34 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 assertEquals(1, sharedResource.getScopes().size());
             }
         }
+    }
+
+    @Test
+    public void testRevokeAllPermissionsForUser() throws Exception {
+        AbstractResourceService.ResourcePermission sharedResource = getSharedWithMe("alice").get(0);
+
+        assertNotNull(sharedResource);
+        assertEquals(2, sharedResource.getScopes().size());
+
+        String resourceId = sharedResource.getId();
+        List<Permission> permissions = doGet("/" + encodePathAsIs(resourceId) + "/permissions",
+                new TypeReference<List<Permission>>() {});
+
+        assertTrue(permissions.stream().anyMatch(permission -> "alice".equals(permission.getUsername())));
+
+        SimpleHttpResponse response = SimpleHttpDefault
+                .doDelete(getAccountUrl("resources/" + encodePathAsIs(resourceId) + "/permissions/alice"), httpClient)
+                .auth(tokenUtil.getToken())
+                .asResponse();
+
+        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+
+        assertFalse(getSharedWithMe("alice").stream().anyMatch(resource -> resource.getId().equals(resourceId)));
+
+        permissions = doGet("/" + encodePathAsIs(resourceId) + "/permissions",
+                new TypeReference<List<Permission>>() {});
+
+        assertFalse(permissions.stream().anyMatch(permission -> "alice".equals(permission.getUsername())));
     }
 
     @Test
