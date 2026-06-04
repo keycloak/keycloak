@@ -81,7 +81,6 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
-
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testErrorPageWhenDuplicationNotAllowed_updateProfileOn
      */
