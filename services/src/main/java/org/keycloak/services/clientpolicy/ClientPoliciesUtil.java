@@ -417,6 +417,10 @@ public class ClientPoliciesUtil {
             policyModel.setName(policyRep.getName());
             policyModel.setDescription(policyRep.getDescription());
             policyModel.setEnable(true);
+            ClientPolicyMode mode = policyRep.getMode() == null
+                    ? ClientPolicyMode.DEFAULT
+                    : Enum.valueOf(ClientPolicyMode.class, policyRep.getMode().toUpperCase());
+            policyModel.setMode(mode);
 
             List<ClientPolicyConditionProvider> conditions = new ArrayList<>();
             if (policyRep.getConditions() != null) {
@@ -518,6 +522,7 @@ public class ClientPoliciesUtil {
             policyRep.setName(proposedPolicyRep.getName());
             policyRep.setDescription(proposedPolicyRep.getDescription());
             policyRep.setEnabled(proposedPolicyRep.isEnabled() != null ? proposedPolicyRep.isEnabled() : Boolean.FALSE);
+            policyRep.setMode(proposedPolicyRep.getMode());
 
             policyRep.setConditions(new ArrayList<>());
             if (proposedPolicyRep.getConditions() != null) {

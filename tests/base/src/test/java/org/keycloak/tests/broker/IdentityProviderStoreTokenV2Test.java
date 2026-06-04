@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyMode;
+import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.IdentityProviderConditionFactory;
 import org.keycloak.services.clientpolicy.executor.RejectRequestExecutorFactory;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -139,6 +141,51 @@ public class IdentityProviderStoreTokenV2Test implements InterfaceIdentityProvid
                 .profile("executor")
                 .build()));
         realm.admin().clientPoliciesPoliciesResource().updatePolicies(policiesToUpdate);
+
+        externalTokens = doFetchExternalIdpToken(tokenResponse.getAccessToken());
+        Assertions.assertTrue(externalTokens.isSuccess());
+        checkSuccessfulTokenResponse(externalTokens);
+    }
+
+    // Configure client policies in a way that call identity-brokering API for retrieve external tokens of specified IDP is allowed just if internal token has specified scope (EG. 'phone')
+    @Test
+    public void testClientPoliciesWithIDPAndScopeCondition() {
+        realm.updateClientProfile(List.of(ClientProfileBuilder.create()
+                .name("reject-profile")
+                .description("Profile to reject request")
+                .executor(RejectRequestExecutorFactory.PROVIDER_ID, null)
+                .build()));
+
+        realm.updateClientPolicy(List.of(ClientPolicyBuilder.create()
+                .name("client policy")
+                .description("Policy to allow to call IDP brokering API for tokens from 'allowed-idp' just if incoming token has scope 'phone'")
+                .mode(ClientPolicyMode.STRICT)
+                .condition(IdentityProviderConditionFactory.PROVIDER_ID, ClientPolicyBuilder.identityProviderConditionConfiguration(false, IDP_ALIAS))
+                .condition(ClientScopesConditionFactory.PROVIDER_ID, ClientPolicyBuilder.clientScopesConditionConfiguration(true, ClientScopesConditionFactory.ANY,"phone"))
+                .profile("reject-profile")
+                .build()));
+
+        // Test calling the brokering API with the token without scope 'phone'. Request should be rejected
+        OAuthClient oauth = getOAuthClient();
+        oauth.openLoginForm();
+        loginWithIdP();
+
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(tokenResponse.isSuccess());
+
+        AbstractHttpResponse externalTokens = doFetchExternalIdpToken(tokenResponse.getAccessToken());
+        Assertions.assertEquals(400, externalTokens.getStatusCode());
+        Assertions.assertEquals("Request not allowed", externalTokens.getErrorDescription());
+
+        logout();
+
+        // Test calling the brokering API with the token with scope 'phone'. Request should be allowed
+        oauth.scope("phone");
+        oauth.openLoginForm();
+        loginWithIdP();
+
+        tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(tokenResponse.isSuccess());
 
         externalTokens = doFetchExternalIdpToken(tokenResponse.getAccessToken());
         Assertions.assertTrue(externalTokens.isSuccess());
