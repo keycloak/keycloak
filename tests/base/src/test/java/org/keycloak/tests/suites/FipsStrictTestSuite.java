@@ -66,7 +66,7 @@ public class FipsStrictTestSuite {
                     .tlsEnabled(true)
                     .mTlsEnabled(true)
                     .keystoreFormat(KeystoreUtil.KeystoreFormat.BCFKS)
-                    .stores("keycloak.bcfks", "keycloak-truststore.pem", "client.bcfks", "keycloak-truststore.bcfks");
+                    .stores("keycloak.bcfks", "keycloak-truststore.bcfks", "client.bcfks", "keycloak-truststore.bcfks");
         }
     }
 }
