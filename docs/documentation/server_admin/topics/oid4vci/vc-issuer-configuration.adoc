@@ -525,7 +525,7 @@ curl -k -X POST "https://localhost:8443/admin/realms/oid4vc-vci/clients" \
   -d @oid4vc-rest-api-client.json
 ----
 
-=== Verify the Configuration
+=== Verifying the Configuration
 
 Validate the setup by accessing the **issuer metadata endpoint**:
 
@@ -535,7 +535,7 @@ Validate the setup by accessing the **issuer metadata endpoint**:
 ----
 https://localhost:8443/.well-known/openid-credential-issuer/realms/oid4vc-vci
 ----
-
++
 A successful response returns a JSON object containing details such as:
 - **Supported claims**
 - **Credential formats**
@@ -548,3 +548,5 @@ This setup leverages {project_name}'s robust **identity management capabilities*
 
 For a **complete reference implementation**, see the sample project:
 https://github.com/adorsys/{project_name}-ssi-deployment/tree/main[{project_name} SSI Deployment^].
+
+include::proofs.adoc[]
