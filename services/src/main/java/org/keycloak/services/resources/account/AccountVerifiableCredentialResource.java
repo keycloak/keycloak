@@ -73,6 +73,7 @@ public class AccountVerifiableCredentialResource {
         List<UserVerifiableCredentialRepresentation> credentials = session.users()
                 .getVerifiableCredentialsByUser(user.getId())
                 .map(ModelToRepresentation::toRepresentation)
+                .peek(rep -> rep.setUserAttributes(null))  // Do not expose attributes snapshot to users
                 .toList();
 
         return Cors.builder()

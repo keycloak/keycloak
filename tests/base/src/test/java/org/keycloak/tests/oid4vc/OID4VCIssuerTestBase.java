@@ -230,6 +230,15 @@ public abstract class OID4VCIssuerTestBase {
         upConfig.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ADMIN_EDIT);
         realmResource.users().userProfile().update(upConfig);
 
+        // Refresh all verifiable credentials to update snapshots with unmanaged attributes now that policy is set
+        // would be better to set UPConfig.UnmanagedAttributePolicy.ADMIN_EDIT in realm builder, but it is not still possible
+        realmResource.users().list().forEach(user -> {
+            var credentialsResource = realmResource.users().get(user.getId()).verifiableCredentials();
+            credentialsResource.getCredentials().forEach(cred -> {
+                credentialsResource.updateCredential(cred.getCredentialScopeName());
+            });
+        });
+
         AuthorizationDetailsParser.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsParser());
 
         boolean isRestCredentialEnabled = runOnServer.fetch(session -> Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER), Boolean.class);
