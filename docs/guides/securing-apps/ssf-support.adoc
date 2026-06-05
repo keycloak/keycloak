@@ -323,33 +323,6 @@ the default outcome:
   explicit override says otherwise.
 * `NONE`: opt-in delivery. A user is *not* a subject for any receiver unless explicitly subscribed.
 
-=== Explicit per-user and per-organization overrides
-
-Subject state is stored as a tri-state attribute keyed by the receiver's OAuth `client_id`:
-
-[source]
-----
-ssf.notify.<receiverClientId> = true   (explicitly include this user)
-ssf.notify.<receiverClientId> = false  (explicitly exclude this user)
-(absent)                               (defer to organization, then to default)
-----
-
-The same attribute may be set on the user's owning organization. The dispatcher's resolution precedence is:
-
-[source]
-----
-user attribute present?  -> use user attribute (true|false)
-       no
-       v
-org attribute present?   -> use org attribute  (true|false)
-       no
-       v
-default_subjects         -> ALL delivers, NONE drops
-----
-
-This lets an administrator flip an entire organization in or out of a receiver's subject set with a single
-attribute write, without touching individual users.
-
 === Subject management endpoints
 
 Receivers manage their own subject list via SSF §8.1.3:
