@@ -146,10 +146,9 @@ public class DefaultClientService implements ClientService {
                     .filter(client -> canView || permissions.clients().canView(client))
                     .filter(client -> client.getProtocol() != null)
                     .map(client -> getMapper(client.getProtocol()).fromModel(client))
-                    .filter(Objects::nonNull)
-                    .sorted(sortComparator);
+                    .filter(Objects::nonNull);
             stream = applySearchFilter(stream, searchOptions);
-            return applyProjection(stream, projectionOptions);
+            return applyProjection(stream, projectionOptions).sorted(sortComparator);
         } catch (ModelException e) {
             throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
         }

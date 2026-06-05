@@ -1,9 +1,9 @@
 package org.keycloak.admin.api;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Schema(enumeration = {"asc", "desc"})
 public enum SortOrder {
