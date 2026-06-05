@@ -25,6 +25,7 @@ import { useTranslation } from "react-i18next";
 import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { moveDown, moveUp } from "../api/methods";
 import { useAccountAlerts } from "../utils/useAccountAlerts";
+import style from "./CredentialOrder.module.css";
 import { CredentialContainer } from "../api/representations";
 import type { TFuncKey } from "../i18n-type";
 import { AccountEnvironment } from "..";
@@ -165,15 +166,7 @@ export const CredentialOrder = ({
                   <Tooltip content={t("setUpNew", { name: displayName })}>
                     <Button
                       variant="plain"
-                      style={{
-                        position: "absolute",
-                        top: "0.25rem",
-                        right: "0.25rem",
-                        fontSize: "1.25rem",
-                        color: "var(--pf-v5-global--primary-color--100)",
-                        lineHeight: 1,
-                        padding: 0,
-                      }}
+                      className={style.setupButton}
                       onClick={() =>
                         context.keycloak.login({
                           action: container.createAction,
