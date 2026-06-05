@@ -17,13 +17,14 @@
 
 package org.keycloak.authentication.jpa;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -34,15 +35,17 @@ import org.hibernate.annotations.DynamicUpdate;
 @Entity
 @Table(name = "AUTH_SESSION")
 @DynamicUpdate
+@IdClass(AuthenticationSessionEntity.Key.class)
 public class AuthenticationSessionEntity {
+
+    @Id
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ROOT_AUTH_SESSION_ID")
+    private RootAuthenticationSessionEntity rootAuthenticationSession;
 
     @Id
     @Column(name = "TAB_ID", length = 36)
     private String tabId;
-
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
-    @JoinColumn(name = "ROOT_AUTH_SESSION_ID")
-    private RootAuthenticationSessionEntity rootAuthenticationSession;
 
     @Column(name = "CLIENT_UUID")
     private String clientUUID;
@@ -222,5 +225,34 @@ public class AuthenticationSessionEntity {
                 "tabId='" + tabId + '\'' +
                 ", rootAuthenticationSessionId=" + (rootAuthenticationSession != null ? rootAuthenticationSession.getId() : null) + // avoid lazy-load just for a log message.
                 '}';
+    }
+
+    public static class Key implements Serializable {
+        private RootAuthenticationSessionEntity rootAuthenticationSession;
+        private String tabId;
+
+        public Key() {
+        }
+
+        public Key(RootAuthenticationSessionEntity rootAuthenticationSession, String tabId) {
+            this.rootAuthenticationSession = rootAuthenticationSession;
+            this.tabId = tabId;
+        }
+
+        public RootAuthenticationSessionEntity getRootAuthenticationSession() {
+            return rootAuthenticationSession;
+        }
+
+        public void setRootAuthenticationSession(RootAuthenticationSessionEntity rootAuthenticationSession) {
+            this.rootAuthenticationSession = rootAuthenticationSession;
+        }
+
+        public String getTabId() {
+            return tabId;
+        }
+
+        public void setTabId(String tabId) {
+            this.tabId = tabId;
+        }
     }
 }

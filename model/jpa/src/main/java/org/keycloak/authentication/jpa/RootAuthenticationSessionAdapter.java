@@ -134,7 +134,7 @@ class RootAuthenticationSessionAdapter implements RootAuthenticationSessionModel
 
     @Override
     public void removeAuthenticationSessionByTabId(String tabId) {
-        entity.getAuthenticationSessions().remove(tabId).setRootAuthenticationSession(null);
+        session.getProvider(JpaConnectionProvider.class).getEntityManager().remove(entity.getAuthenticationSessions().remove(tabId));
         if (adapters != null) {
             adapters.remove(tabId);
         }
