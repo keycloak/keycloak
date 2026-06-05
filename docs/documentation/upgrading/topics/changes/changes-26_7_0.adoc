@@ -159,6 +159,13 @@ This parameter is sent by clients during token refresh and is used when the `${a
 It was primarily used by legacy adapters that have been removed.
 This improves security by ensuring that only trusted, pre-registered hosts can be used in backchannel logout URLs.
 
+=== Account API credential ordering reflects user preference
+
+The `GET /account/credentials` endpoint now returns configured credential types in the user's preferred order, rather than the fixed provider-defined metadata order. Unconfigured credential types continue to be sorted by metadata priority and appear after configured ones. Two new endpoints, `POST
+/account/credentials/moveup/{type}` and `POST /account/credentials/movedown/{type}`, allow users to reorder their credential types. These endpoints require the `manage-account` role.
+
+If your integration depends on a fixed credential type ordering from this endpoint, you may need to sort the response client-side.
+
 == Deprecated features
 
 The following sections provide details on deprecated features.

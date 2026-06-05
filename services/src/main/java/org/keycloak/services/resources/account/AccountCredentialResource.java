@@ -259,7 +259,8 @@ public class AccountCredentialResource {
     @Path("moveup/{type}")
     @NoCache
     public void moveUp(final @PathParam("type") String type) {
-        List<CredentialModel> credentials = user.credentialManager().getCredentials().collect(Collectors.toList());
+        auth.require(AccountRoles.MANAGE_ACCOUNT);
+        List<CredentialModel> credentials = user.credentialManager().getCredentials().toList();
 
         boolean found = false;
         String previousId = null, currentTypeId = null, previousType = null;
@@ -268,7 +269,7 @@ public class AccountCredentialResource {
                 // this is the credential we have to move to previousId
                 found = true;
                 if (!user.credentialManager().moveStoredCredentialTo(cred.getId(), previousId)) {
-                    throw ErrorResponse.error(Messages.INTERNAL_SERVER_ERROR, Response.Status.BAD_REQUEST);
+                    throw ErrorResponse.error("Failed to update credential order", Response.Status.INTERNAL_SERVER_ERROR);
                 }
                 // maintain the current order inside the type
                 previousId = cred.getId();
@@ -282,13 +283,17 @@ public class AccountCredentialResource {
                 currentTypeId = cred.getId();
             }
         }
+        if (!found) {
+            throw new NotFoundException("Credential type not found");
+        }
     }
 
     @POST
     @Path("movedown/{type}")
     @NoCache
     public void moveDown(final @PathParam("type") String type) {
-        List<CredentialModel> credentials = user.credentialManager().getCredentials().collect(Collectors.toList());
+        auth.require(AccountRoles.MANAGE_ACCOUNT);
+        List<CredentialModel> credentials = user.credentialManager().getCredentials().toList();
         List<String> credsToMove = new LinkedList<>();
 
         String nextType = null;
@@ -310,11 +315,15 @@ public class AccountCredentialResource {
             }
         }
 
+        if (credsToMove.isEmpty()) {
+            throw new NotFoundException("Credential type not found");
+        }
+
         if (previousId != null) {
             for (String id : credsToMove) {
                 // move and maintain the current credential order inside the type
                 if (!user.credentialManager().moveStoredCredentialTo(id, previousId)) {
-                    throw ErrorResponse.error(Messages.INTERNAL_SERVER_ERROR, Response.Status.BAD_REQUEST);
+                    throw ErrorResponse.error("Failed to update credential order", Response.Status.INTERNAL_SERVER_ERROR);
                 }
                 previousId = id;
             }
