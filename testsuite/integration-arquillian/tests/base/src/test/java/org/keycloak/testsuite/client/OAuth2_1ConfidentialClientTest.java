@@ -118,6 +118,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
             clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
+            clientConfig.setTlsClientAuthCASubjectDn(MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN);
             clientConfig.setAllowRegexPatternComparison(false);
             clientRep.setDirectAccessGrantsEnabled(true);
         });
@@ -154,6 +155,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
             clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
+            clientConfig.setTlsClientAuthCASubjectDn(MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN);
             clientConfig.setAllowRegexPatternComparison(false);
             clientRep.setRedirectUris(Collections.singletonList(validRedirectUri.replace(":8543/", "/")));
         });
@@ -247,6 +249,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
         clientRep.setDirectAccessGrantsEnabled(false);
         clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
         clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
+            clientConfig.setTlsClientAuthCASubjectDn(MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN);
         clientConfig.setAllowRegexPatternComparison(false);
         clientConfig.setPkceCodeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
         clientConfig.setUseMtlsHoKToken(true);
