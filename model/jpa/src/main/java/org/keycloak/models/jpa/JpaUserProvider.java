@@ -82,6 +82,9 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.jpa.JpaHashUtils;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
@@ -411,7 +414,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
             userAttributes = verifCredentialModel.getUserAttributes();
         } else {
             UserModel user = getUserById(session.getContext().getRealm(), userId);
-            userAttributes = user.getAttributes();
+            // Filter attributes using UserProfile with admin context to include only admin-visible attributes
+            UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+            UserProfile profile = profileProvider.create(UserProfileContext.USER_API, user);
+            userAttributes = profile.getAttributes().getReadable();
         }
 
         try {
@@ -468,7 +474,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                         "Verifiable credential not found: " + credentialScopeName));
 
 
-        Map<String, List<String>> userAttributes = user.getAttributes();
+        // Filter attributes using UserProfile with admin context to include only admin-visible attributes
+        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = profileProvider.create(UserProfileContext.USER_API, user);
+        Map<String, List<String>> userAttributes = profile.getAttributes().getReadable();
+
         try {
             String attributesJson = JsonSerialization.writeValueAsString(userAttributes);
             entity.setUserAttributes(attributesJson);
