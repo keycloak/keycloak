@@ -154,7 +154,6 @@ export const StreamTab = ({
   // when no stream is registered yet. Kept as plain useState because the
   // surrounding react-hook-form context is bound to the client
   // representation's attributes, not to stream-create parameters.
-  const [createStreamAudience, setCreateStreamAudience] = useState("");
   const [createStreamMethod, setCreateStreamMethod] = useState<"PUSH" | "POLL">(
     "PUSH",
   );
@@ -260,7 +259,6 @@ export const StreamTab = ({
   };
 
   const resetCreateStreamForm = () => {
-    setCreateStreamAudience("");
     setCreateStreamEndpointUrl("");
     setCreateStreamAuthHeader("");
     setCreateStreamEvents([]);
@@ -344,9 +342,6 @@ export const StreamTab = ({
         }
       }
       const body: Record<string, unknown> = { delivery };
-      if (createStreamAudience.trim()) {
-        body.aud = [createStreamAudience.trim()];
-      }
       if (createStreamEvents.length > 0) {
         body.events_requested = createStreamEvents;
       }
@@ -456,23 +451,6 @@ export const StreamTab = ({
                   fineGrainedAccess={client.access?.configure}
                   isHorizontal
                 >
-                  <FormGroup
-                    label={t("ssfCreateStreamAudience")}
-                    fieldId="ssfCreateStreamAudience"
-                    labelIcon={
-                      <HelpItem
-                        helpText={t("ssfCreateStreamAudienceHelp")}
-                        fieldLabelId="ssfCreateStreamAudience"
-                      />
-                    }
-                  >
-                    <TextInput
-                      id="ssfCreateStreamAudience"
-                      data-testid="ssfCreateStreamAudience"
-                      value={createStreamAudience}
-                      onChange={(_e, value) => setCreateStreamAudience(value)}
-                    />
-                  </FormGroup>
                   <FormGroup
                     label={t("ssfProfile")}
                     fieldId="ssfCreateStreamProfile"
