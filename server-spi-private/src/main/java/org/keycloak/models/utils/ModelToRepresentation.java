@@ -898,8 +898,8 @@ public class ModelToRepresentation {
 
         rep.getAttributes().put(Constants.REALM_CLIENT, String.valueOf(isRealmClient(clientModel.getClientId(), clientModel.getRealm(), session)));
 
-        // adding the secret if non public or bearer only
-        if (clientModel.isBearerOnly() || clientModel.isPublicClient()) {
+        // adding the secret if non public
+        if (clientModel.isPublicClient()) {
             rep.setSecret(null);
         } else {
             rep.setSecret(clientModel.getSecret());

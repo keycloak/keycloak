@@ -690,8 +690,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            // 401 because the client is now a bearer without a secret
-            assertEquals(401, response.getStatus());
+            // 400 for a bearer-only client as it should not be allowed to do a resource-owner-password grant
+            assertEquals(400, response.getStatus());
             response.close();
 
             {
