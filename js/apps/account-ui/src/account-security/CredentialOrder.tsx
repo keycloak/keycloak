@@ -24,6 +24,7 @@ import { type ComponentType, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { moveDown, moveUp } from "../api/methods";
+import { useAccountAlerts } from "../utils/useAccountAlerts";
 import { CredentialContainer } from "../api/representations";
 import type { TFuncKey } from "../i18n-type";
 import { AccountEnvironment } from "..";
@@ -90,10 +91,12 @@ export const CredentialOrder = ({
 }: CredentialOrderProps) => {
   const { t } = useTranslation();
   const context = useEnvironment<AccountEnvironment>();
+  const { addError } = useAccountAlerts();
 
   const [includePasswordless, setIncludePasswordless] = useState(
     () => localStorage.getItem("includePasswordlessOrder") === "true",
   );
+  const [isMoving, setIsMoving] = useState(false);
 
   if (credentials.length < 2) {
     return null;
@@ -116,8 +119,15 @@ export const CredentialOrder = ({
   ).length;
 
   const handleMove = async (moveFn: typeof moveUp, type: string) => {
-    await moveFn(context, type);
-    onOrderChanged();
+    setIsMoving(true);
+    try {
+      await moveFn(context, type);
+      onOrderChanged();
+    } catch (error) {
+      addError("credentialMoveError", error);
+    } finally {
+      setIsMoving(false);
+    }
   };
 
   return (
@@ -137,7 +147,7 @@ export const CredentialOrder = ({
           const IconComponent = credentialIcons[container.type] || LockIcon;
           const displayName = t(`${container.type}-display-name` as TFuncKey);
           const isConfigured = container.userCredentialMetadatas.length > 0;
-          const canMove = isConfigured && configuredCount > 1;
+          const canMove = isConfigured && configuredCount > 1 && !isMoving;
 
           return (
             <Card
