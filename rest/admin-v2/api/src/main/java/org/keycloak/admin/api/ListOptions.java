@@ -17,7 +17,7 @@ public class ListOptions {
     
     @Parameter(description = "Sort direction. Allowed values: asc (default), desc.", schema = @Schema(implementation = SortOrder.class))
     @QueryParam("sortOrder")
-    protected String sortOrder;
+    protected SortOrder sortOrder;
 
     @Parameter(description = "Set of fields to include in the response. Must be top-level fields. If omitted or empty, all fields will be populated.")
     @QueryParam("fields")
@@ -71,15 +71,11 @@ public class ListOptions {
                 : sortBy.stream().map(ClientSortField::toQueryValue).collect(Collectors.joining(","));
     }
 
-    public String getSortOrder() {
+    public SortOrder getSortOrder() {
         return sortOrder;
     }
 
-    public void setSortOrder(String sortOrder) {
-        this.sortOrder = sortOrder;
-    }
-
     public void setSortOrder(SortOrder sortOrder) {
-        this.sortOrder = sortOrder == null ? null : sortOrder.toQueryValue();
+        this.sortOrder = sortOrder;
     }
 }

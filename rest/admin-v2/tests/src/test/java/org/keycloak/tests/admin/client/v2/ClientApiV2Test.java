@@ -421,11 +421,13 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
-    public void getClientsInvalidSortOrderReturns400() {
-        ListOptions listOptions = new ListOptions();
-        listOptions.setSortOrder("what");
-        BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(listOptions));
-        assertThat(e.getResponse().readEntity(String.class), containsString("sortOrder must be asc or desc"));
+    public void getClientsInvalidSortOrderReturns400() throws IOException {
+        HttpGet request = new HttpGet(getClientsApiUrl() + "?sortOrder=what");
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            assertThat(EntityUtils.toString(response.getEntity()), containsString("sortOrder must be asc or desc"));
+        }
     }
 
     private void createSortTestClient(String clientId, String displayName, String description) {

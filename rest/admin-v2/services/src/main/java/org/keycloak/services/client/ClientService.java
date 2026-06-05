@@ -54,7 +54,7 @@ public interface ClientService extends Service {
             List<ClientSortField> fields = isBlank(listOptions.getSortBy())
                     ? List.of(ClientSortField.defaultField())
                     : parseSortBy(listOptions.getSortBy());
-            return new ClientSortAndSliceOptions(fields, parseSortOrder(listOptions.getSortOrder()));
+            return new ClientSortAndSliceOptions(fields, resolveSortOrder(listOptions.getSortOrder()));
         }
 
         private static List<ClientSortField> parseSortBy(String sortBy) {
@@ -76,10 +76,8 @@ public interface ClientService extends Service {
             return ClientSortField.fromApiName(field).orElseThrow();
         }
 
-        private static boolean parseSortOrder(String sortOrder) {
-            return SortOrder.fromQueryValue(sortOrder)
-                    .orElseThrow(() -> new ServiceException("sortOrder must be asc or desc", Response.Status.BAD_REQUEST))
-                    .isAscending();
+        private static boolean resolveSortOrder(SortOrder sortOrder) {
+            return (sortOrder == null ? SortOrder.ASC : sortOrder).isAscending();
         }
 
         public Comparator<BaseClientRepresentation> getSortComparator() {

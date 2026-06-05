@@ -1,9 +1,9 @@
 package org.keycloak.admin.api;
 
-import java.util.Locale;
-import java.util.Optional;
-
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 
 @Schema(enumeration = {"asc", "desc"})
 public enum SortOrder {
@@ -14,19 +14,15 @@ public enum SortOrder {
         return this == ASC;
     }
 
-    public static Optional<SortOrder> fromQueryValue(String value) {
+    public static SortOrder fromString(String value) {
         if (value == null || value.isBlank()) {
-            return Optional.of(ASC);
+            return ASC;
         }
         for (SortOrder order : values()) {
             if (order.name().equalsIgnoreCase(value)) {
-                return Optional.of(order);
+                return order;
             }
         }
-        return Optional.empty();
-    }
-
-    public String toQueryValue() {
-        return name().toLowerCase(Locale.ROOT);
+        throw new WebApplicationException("sortOrder must be asc or desc", Response.Status.BAD_REQUEST);
     }
 }
