@@ -54,7 +54,6 @@ import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAu
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.TriFunction;
@@ -85,7 +84,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
@@ -97,6 +95,7 @@ import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
+import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorPageException;
@@ -989,7 +988,7 @@ public class LoginActionsService {
     }
 
     private void configureOrganization(BrokeredIdentityContext brokerContext) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (Organizations.isEnabled(session)) {
             String organizationId = brokerContext.getIdpConfig().getOrganizationId();
 
             if (organizationId != null) {
@@ -1016,6 +1015,16 @@ public class LoginActionsService {
         logger.debugf("Redirecting to '%s' ", redirect);
 
         return Response.status(302).location(redirect).build();
+    }
+
+    private boolean checkGranted(AuthorizationDetails details, UserConsentModel grantedConsent) {
+        ClientScopeModel clientScope = details.getClientScope();
+        String parameter = details.getParameterizedScopeParam();
+        if (!grantedConsent.isClientScopeGranted(clientScope, parameter) && clientScope.isDisplayOnConsentScreen()) {
+            grantedConsent.addGrantedClientScope(clientScope, parameter);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -1062,26 +1071,19 @@ public class LoginActionsService {
             return DeviceGrantType.denyOAuth2DeviceAuthorization(authSession, Error.CONSENT_DENIED, session);
         }
 
-        UserConsentModel grantedConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
-        if (grantedConsent == null) {
+        UserConsentModel existingConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
+        UserConsentModel grantedConsent;
+        if (existingConsent == null) {
             grantedConsent = new UserConsentModel(client);
             UserConsentManager.addConsent(session, realm, user, grantedConsent);
+        } else {
+            grantedConsent = existingConsent;
         }
 
         // Update may not be required if all clientScopes were already granted (May happen for example with prompt=consent)
-        boolean updateConsentRequired = false;
-
-        for (String clientScopeId : authSession.getClientScopes()) {
-            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
-            if (clientScope != null) {
-                if (!grantedConsent.isClientScopeGranted(clientScope) && clientScope.isDisplayOnConsentScreen()) {
-                    grantedConsent.addGrantedClientScope(clientScope);
-                    updateConsentRequired = true;
-                }
-            } else {
-                logger.warnf("Client scope or client with ID '%s' not found", clientScopeId);
-            }
-        }
+        Boolean updateConsentRequired = AuthenticationManager.getClientScopeModelStream(session, client)
+                .map(d -> checkGranted(d, grantedConsent))
+                .reduce(Boolean::logicalOr).orElse(Boolean.FALSE);
 
         if (updateConsentRequired) {
             UserConsentManager.updateConsent(session, realm, user, grantedConsent);

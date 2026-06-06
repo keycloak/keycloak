@@ -349,7 +349,7 @@ spec:
     type: Route
   configMapName: "cluster-config"
   image: 
-  version: 16.0.8
+  version: 16.0.12
   configListener:
     enabled: false
   container:

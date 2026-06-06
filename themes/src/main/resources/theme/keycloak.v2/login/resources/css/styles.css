@@ -134,7 +134,11 @@ hr {
 }
 
 @media (min-width: 768px) {
-    div.pf-v5-c-login__main-header {
+    div.pf-v5-c-login__main-header:has(.pf-v5-c-login__main-header-utilities) {
         grid-template-columns: 70% 30%;
     }
+}
+
+#kc-form-webauthn {
+    gap: 0.875rem;
 }

@@ -33,6 +33,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Details;
@@ -335,7 +336,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
             realm.updateComponent(model);
         });
         testIsCached();
-        setTimeOffset(2 * 60 * 60); // 2 hours in future
+        timeOffSet.set(2 * 60 * 60); // 2 hours in future
         testNotCached();
         testIsCached();
 
@@ -360,9 +361,9 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
             realm.updateComponent(model);
         });
         testIsCached();
-        setTimeOffset(2 * 24 * 60 * 60); // 2 days in future
+        timeOffSet.set(2 * 24 * 60 * 60); // 2 days in future
         testIsCached();
-        setTimeOffset(5 * 24 * 60 * 60); // 5 days in future
+        timeOffSet.set(5 * 24 * 60 * 60); // 5 days in future
         testNotCached();
         testIsCached();
 
@@ -384,11 +385,11 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         });
         testIsCached();
 
-        setTimeOffset(1/2 * 60 * 60); // 1/2 hour in future
+        timeOffSet.set(1/2 * 60 * 60); // 1/2 hour in future
 
         testIsCached();
 
-        setTimeOffset(2 * 60 * 60); // 2 hours in future
+        timeOffSet.set(2 * 60 * 60); // 2 hours in future
 
         testNotCached();
         testIsCached();
@@ -496,14 +497,14 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     private String testRefreshWithOfflineToken(AccessToken oldToken, RefreshToken offlineToken, String offlineTokenString,
                                                final String sessionId, String userId) {
         // Change offset to big value to ensure userSession expired
-        setTimeOffset(99999);
+        timeOffSet.set(99999);
         Assertions.assertFalse(oldToken.isActive());
         Assertions.assertTrue(offlineToken.isActive());
 
         // Assert userSession expired
-        testingClient.testing().removeExpired("test");
+        runOnServer.run(RunHelpers.removeExpired());
         try {
-            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
+            runOnServer.run(RunHelpers.removeUserSession(sessionId));
         } catch (RunOnServerException nfe) {
             if (!(nfe.getCause() instanceof NotFoundException)) {
                 throw nfe;
@@ -529,15 +530,15 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         Assertions.assertTrue(refreshedToken.getRealmAccess().isUserInRole(Constants.OFFLINE_ACCESS_ROLE));
 
 
-        EventRepresentation refreshEvent = events.expectRefresh(offlineToken.getId(), sessionId)
-                .client("hardcoded-client")
-                .user(userId)
-                .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
-                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
-                .assertEvent();
+        EventRepresentation refreshEvent = EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .clientId("hardcoded-client")
+                .userId(userId)
+                .details(Details.REFRESH_TOKEN_ID, offlineToken.getId()).sessionId(sessionId)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE).getEvent();
         Assertions.assertNotEquals(oldToken.getId(), refreshEvent.getDetails().get(Details.TOKEN_ID));
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
         return newRefreshToken;
     }
 

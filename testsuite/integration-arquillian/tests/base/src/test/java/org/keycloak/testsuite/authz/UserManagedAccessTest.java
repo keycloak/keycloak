@@ -19,15 +19,25 @@ package org.keycloak.testsuite.authz;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.resource.PermissionResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.authorization.client.util.HttpResponseException;
+import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.events.EventType;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
@@ -39,7 +49,9 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.AssertEvents;
 
 import org.junit.Before;
@@ -48,6 +60,7 @@ import org.junit.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -320,11 +333,10 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
                 .userId(koloId);
         EventAssertion.assertSuccess(events.poll()).clientId(clientId)
                 .userId(koloId);
-        events.expect(EventType.PERMISSION_TOKEN_ERROR).realm(realmId).client(clientId).user(koloId)
-                .session((String) null)
+        EventAssertion.assertError(events.poll()).type(EventType.PERMISSION_TOKEN_ERROR).clientId(clientId).userId(koloId)
+                .sessionId(null)
                 .error("access_denied")
-                .detail("reason", "request_submitted")
-                .assertEvent();
+                .details("reason", "request_submitted");
 
         PermissionResource permissionResource = getAuthzClient().protection().permission();
         List<PermissionTicketRepresentation> permissionTickets = permissionResource.findByResource(resource.getId());
@@ -372,10 +384,8 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
                 .userId(koloId);
         EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().clientId(clientId)
                 .userId(koloId);
-        events.expect(EventType.PERMISSION_TOKEN).realm(realmId).client(clientId).user(koloId)
-                .session((String) null)
-                .clearDetails()
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.PERMISSION_TOKEN).clientId(clientId).userId(koloId)
+                .sessionId(null);
     }
 
     @Test
@@ -685,6 +695,42 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertPermissions(permissions, "Resource A");
         assertTrue(permissions.isEmpty());
     }
+    
+    @Test
+    public void testGrantedTicketReferencesRemovedScope() throws Exception {
+        resource = addResource("Resource Drift", "marta", true, "ScopeA", "ScopeB");
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+        permission.setName(resource.getName() + " Permission");
+        permission.addResource(resource.getId());
+        permission.addPolicy(onlyOwnerPolicy.getName());
+        getClient(getRealm()).authorization().permissions().resource().create(permission).close();
+
+        // Remove ScopeA from the resource, then create a stale granted ticket at the model level.
+        ResourceRepresentation resourceRep = getAuthzClient().protection().resource().findById(resource.getId());
+        Set<ScopeRepresentation> updatedScopes = new HashSet<>(resourceRep.getScopes());
+        updatedScopes.removeIf(s -> "ScopeA".equals(s.getName()));
+        resourceRep.setScopes(updatedScopes);
+        getAuthzClient().protection().resource().update(resourceRep);
+
+        testingClient.server().run(StaleTicketCreator.forResource(resource.getName(), "marta", "ScopeA", "kolo"));
+
+        // kolo sends a UMA grant request with permission=resourceName#ScopeA
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.addPermission(resource.getName(), "ScopeA");
+
+        try {
+            getAuthzClient().authorization("kolo", "password").authorize(request);
+            fail("Should be denied — ScopeA is no longer associated with the resource");
+        } catch (AuthorizationDeniedException e) {
+            // expected
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof HttpResponseException) {
+                int status = ((HttpResponseException) e.getCause()).getStatusCode();
+                assertNotEquals(500, status, "Server returned HTTP 500");
+            }
+        }
+    }
 
     @Test
     public void testResourceIsUserManagedCheck() throws Exception {
@@ -716,5 +762,32 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         AccessToken token = toAccessToken(response.getToken());
         AccessToken.Authorization authorization = token.getAuthorization();
         return new ArrayList<>(authorization.getPermissions());
+    }
+
+    /**
+     * Separate class so that {@code RunOnServer} lambda serialization does not trigger loading
+     * of the outer test class, which imports {@code authz-client} types absent from the Quarkus
+     * server classpath.
+     */
+    static class StaleTicketCreator {
+        static RunOnServer forResource(
+                String resourceName, String ownerUsername, String scopeName, String requesterUsername) {
+            return session -> {
+                RealmModel realm = session.realms().getRealmByName("authz-test");
+                session.getContext().setRealm(realm);
+                AuthorizationProvider authz = session.getProvider(AuthorizationProvider.class);
+                StoreFactory sf = authz.getStoreFactory();
+
+                ClientModel client = session.clients().getClientByClientId(realm, "resource-server-test");
+                ResourceServer rs = sf.getResourceServerStore().findByClient(client);
+                String ownerId = session.users().getUserByUsername(realm, ownerUsername).getId();
+                Resource resource = sf.getResourceStore().findByName(rs, resourceName, ownerId);
+                Scope scope = sf.getScopeStore().findByName(rs, scopeName);
+
+                String requesterId = session.users().getUserByUsername(realm, requesterUsername).getId();
+                PermissionTicket ticket = sf.getPermissionTicketStore().create(rs, resource, scope, requesterId);
+                ticket.setGrantedTimestamp(System.currentTimeMillis());
+            };
+        }
     }
 }

@@ -179,9 +179,19 @@ public interface UserProvider extends Provider,
      * Return all verifiable credentials of specified user
      *
      * @param userId id if the user
-     * @return all verifiable credentials of specified user
+     * @return a non-null {@link Stream} of all verifiable credentials of specified user
      */
     Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId);
+
+    /**
+     * Update verifiable credential by refreshing user attributes snapshot and incrementing revision
+     *
+     * @param userId id of the user
+     * @param credentialScopeName credential scope name to update
+     * @return updated credential model
+     * @throws ModelException if credential doesn't exist
+     */
+    UserVerifiableCredentialModel updateVerifiableCredential(String userId, String credentialScopeName);
 
     /* FEDERATED IDENTITIES methods */
 
@@ -329,5 +339,29 @@ public interface UserProvider extends Provider,
      * @return user credential manager
      */
     UserCredentialManager getUserCredentialManager(UserModel user);
+
+    /**
+     * Record that a verifiable credential was issued to a user.
+     *
+     * @param issuedVc model with userId, clientId, credentialType set
+     *
+     */
+    void addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc);
+
+    /**
+     * Get all issued verifiable credentials for a specific user.
+     *
+     * @param userId user ID
+     * @return stream of issued verifiable credentials, sorted by issuedAt descending
+     */
+    Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId);
+
+    /**
+     * Remove an issued verifiable credential by its ID.
+     *
+     * @param credentialId the ID of the issued credential to remove
+     * @return {@code true} if the credential was removed, {@code false} if it was not found
+     */
+    boolean removeIssuedVerifiableCredential(String credentialId);
 
 }

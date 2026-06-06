@@ -202,7 +202,7 @@ export const WebauthnPolicy = ({
             labelPrefix="attestationPreference"
             validate={(value) => {
               const hasValidAAGUIDs = acceptableAAGUIDs.some(
-                (guid: string) => guid?.trim().length > 0,
+                (guid: string) => guid.trim().length > 0,
               );
 
               if (

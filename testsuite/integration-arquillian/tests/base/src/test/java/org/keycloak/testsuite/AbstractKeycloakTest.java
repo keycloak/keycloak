@@ -51,6 +51,7 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -58,6 +59,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.KcArquillian;
 import org.keycloak.testsuite.arquillian.SuiteContext;
@@ -77,7 +79,6 @@ import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.TestEventsLogger;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
-import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -99,6 +100,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
@@ -137,7 +139,10 @@ public abstract class AbstractKeycloakTest {
 
     protected KeycloakTestingClient testingClient;
 
+    protected KeycloakTestingClient.Server runOnServerMaster;
     protected KeycloakTestingClient.Server runOnServer;
+
+    protected TimeOffSet timeOffSet = new TimeOffSet(this);
 
     @ArquillianResource
     protected OAuthClient oauth;
@@ -184,7 +189,8 @@ public abstract class AbstractKeycloakTest {
         }
 
         getTestingClient();
-        runOnServer = testingClient.server();
+        runOnServerMaster = testingClient.server();
+        runOnServer = testingClient.server(TEST);
 
         setDefaultPageUriParameters();
 
@@ -237,7 +243,7 @@ public abstract class AbstractKeycloakTest {
     @After
     public void afterAbstractKeycloakTest() throws Exception {
         if (resetTimeOffset) {
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
 
         if (isImportAfterEachMethod()) {
@@ -248,7 +254,10 @@ public abstract class AbstractKeycloakTest {
         } else {
             log.info("calling all TestCleanup");
             // Remove all sessions
-            testContext.getTestRealmReps().stream().forEach((r)->runOnServer.run(RunHelpers.removeUserSessions(r.getRealm())));
+            testContext.getTestRealmReps().stream().map(RealmRepresentation::getRealm).forEach((r)-> runOnServerMaster.run(session -> {
+                RealmModel realm = session.realms().getRealmByName(r);
+                session.sessions().removeUserSessions(realm);
+            }));
 
             // Cleanup objects
             for (TestCleanup cleanup : testContext.getCleanups().values()) {
@@ -674,29 +683,15 @@ public abstract class AbstractKeycloakTest {
         now.set(Calendar.SECOND, second);
         int offset = (int) ((now.getTime().getTime() - System.currentTimeMillis()) / 1000);
 
-        setTimeOffset(offset + addSeconds);
+        timeOffSet.set(offset + addSeconds);
     }
 
-    /**
-     * Sets time offset in seconds that will be added to Time.currentTime() and Time.currentTimeMillis() both for client and server.
-     * Moves time on the remote Infinispan server as well if the HotRod storage is used.
-     *
-     * @param offset
-     */
-    public void setTimeOffset(int offset) {
-        String response = invokeTimeOffset(offset);
-        resetTimeOffset = offset != 0;
-        log.debugv("Set time offset, response {0}", response);
-    }
-
-    public void resetTimeOffset() {
-        String response = invokeTimeOffset(0);
-        resetTimeOffset = false;
-        log.debugv("Reset time offset, response {0}", response);
+    public void shouldResetTimeOffset(boolean resetTimeOffset) {
+        this.resetTimeOffset = resetTimeOffset;
     }
 
     public void setOtpTimeOffset(int offsetSeconds, TimeBasedOTP otp) {
-        setTimeOffset(offsetSeconds);
+        timeOffSet.set(offsetSeconds);
         final Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.SECOND, offsetSeconds);
         otp.setCalendar(calendar);
@@ -704,18 +699,6 @@ public abstract class AbstractKeycloakTest {
 
     public int getCurrentTime() {
         return Time.currentTime();
-    }
-
-    protected String invokeTimeOffset(int offset) {
-        // adminClient depends on Time.offset for auto-refreshing tokens
-        Time.setOffset(offset);
-        Map result = testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(offset)));
-
-        // force getting new token after time offset has changed
-        adminClient.tokenManager().grantToken();
-
-
-        return String.valueOf(result);
     }
 
     private void loadConstantsProperties() throws ConfigurationException {

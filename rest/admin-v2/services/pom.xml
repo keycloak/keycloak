@@ -61,6 +61,17 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-v2-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-scim-core</artifactId>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- used by OAS Filter during OpenAPI spec generation -->
         <dependency>
             <groupId>io.smallrye</groupId>
@@ -98,7 +109,7 @@
                 <artifactId>smallrye-open-api-maven-plugin</artifactId>
                 <configuration>
                     <enableStandardStaticFiles>false</enableStandardStaticFiles>
-                    <scanPackages>org.keycloak.representations.admin.v2,org.keycloak.admin.api</scanPackages>
+                    <scanPackages>org.keycloak.representations.admin.v2,org.keycloak.admin.api,jakarta.validation.constraints</scanPackages>
                     <filter>org.keycloak.admin.internal.openapi.OASModelFilter</filter>
                     <outputDirectory>${project.build.directory}</outputDirectory>
                     <outputFileTypeFilter>ALL</outputFileTypeFilter>

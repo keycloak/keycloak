@@ -75,7 +75,11 @@ public class DefaultThemeManager implements ThemeManager {
             if (theme == null) {
                 String defaultThemeName = session.getProvider(ThemeSelectorProvider.class).getDefaultThemeName(type);
                 theme = loadTheme(defaultThemeName, type, realm);
-                log.errorv("Failed to find {0} theme {1}, using built-in themes", type, name);
+                if (theme == null) {
+                    log.warnv("Failed to find {0} theme {1}, as it might be unavailable because a required feature is disabled", type, name);
+                } else {
+                    log.errorv("Failed to find {0} theme {1}, using built-in themes", type, name);
+                }
             } else {
                 theme = factory.addCachedTheme(name, type, theme);
             }

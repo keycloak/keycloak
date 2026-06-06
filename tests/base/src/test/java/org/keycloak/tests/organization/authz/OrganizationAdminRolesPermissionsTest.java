@@ -25,6 +25,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -390,6 +391,66 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
         }
     }
 
+    @Test
+    public void testOrgGroupMembersRequiresQueryUsers() {
+        OrganizationRepresentation orgRep = createRepresentation("testGroupMembersOrg", "testGroupMembersOrg.org");
+        String orgId;
+        String userId;
+        String groupId;
+
+        try (
+                Keycloak realmAdminClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("realm-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            RealmResource realmAdminResource = realmAdminClient.realm(realm.getName());
+
+            try (Response response = realmAdminResource.organizations().create(orgRep)) {
+                assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+                orgId = ApiUtil.getCreatedId(response);
+                realm.cleanup().add(r -> r.organizations().get(orgId).delete().close());
+            }
+
+            GroupRepresentation groupRep = new GroupRepresentation();
+            groupRep.setName("test-group");
+            try (Response response = realmAdminResource.organizations().get(orgId).groups().addTopLevelGroup(groupRep)) {
+                assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+                groupId = ApiUtil.getCreatedId(response);
+            }
+
+            UserRepresentation userRep = UserBuilder.create()
+                    .username("user@testGroupMembersOrg.org")
+                    .email("user@testGroupMembersOrg.org")
+                    .build();
+            try (Response response = realmAdminResource.users().create(userRep)) {
+                userId = ApiUtil.getCreatedId(response);
+            }
+            try (Response response = realmAdminResource.organizations().get(orgId).members().addMember(userId)) {
+                assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+            }
+            realmAdminResource.organizations().get(orgId).groups().group(groupId).addMember(userId);
+        }
+
+        // view-orgs-admin has view-organizations but NOT query-users — should get 403
+        try (
+                Keycloak viewOrgsClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("view-orgs-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            try {
+                viewOrgsClient.realm(realm.getName()).organizations().get(orgId).groups().group(groupId).getMembers(null, null, null);
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+        }
+
+        // view-orgs-and-users-admin has view-organizations + view-users — should succeed
+        try (
+                Keycloak viewOrgsAndUsersClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("view-orgs-and-users-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            assertThat(viewOrgsAndUsersClient.realm(realm.getName()).organizations().get(orgId).groups().group(groupId).getMembers(null, null, null),
+                    Matchers.not(Matchers.empty()));
+        }
+    }
+
 //    @Test
     // todo do we enforce manage-identity-providers ??
     public void testIdpLinkingRequiresManageIdentityProviders() {
@@ -680,14 +741,43 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             }
 
             invitationId = manageOrgsResource.organizations().get(orgId).invitations().list().get(0).getId();
+            assertThat(manageOrgsResource.organizations().get(orgId).invitations().get(invitationId), Matchers.notNullValue());
         }
 
-        // view-orgs-manage-users-admin cannot delete or resend invitations
+        // view-orgs-admin (view-organizations only) cannot list or get invitations
+        try (
+                Keycloak viewOrgsClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("view-orgs-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            RealmResource viewOrgsResource = viewOrgsClient.realm(realm.getName());
+
+            try {
+                viewOrgsResource.organizations().get(orgId).invitations().list();
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+
+            try {
+                viewOrgsResource.organizations().get(orgId).invitations().get(invitationId);
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+        }
+
+        // view-orgs-manage-users-admin cannot list, get, delete, or resend invitations
         try (
                 Keycloak viewOrgsManageUsersClient = adminClientFactory.create()
                         .realm(realm.getName()).username("view-orgs-manage-users-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
         ) {
             RealmResource viewOrgsManageUsersResource = viewOrgsManageUsersClient.realm(realm.getName());
+
+            try {
+                viewOrgsManageUsersResource.organizations().get(orgId).invitations().list();
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+
+            try {
+                viewOrgsManageUsersResource.organizations().get(orgId).invitations().get(invitationId);
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
 
             try (Response response = viewOrgsManageUsersResource.organizations().get(orgId).invitations().delete(invitationId)) {
                 assertThat(response.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));

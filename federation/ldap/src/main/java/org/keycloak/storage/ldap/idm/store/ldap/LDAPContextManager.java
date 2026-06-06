@@ -159,6 +159,11 @@ public final class LDAPContextManager implements AutoCloseable {
         String url = ldapConfig.getConnectionUrl();
 
         if (url != null) {
+            if (url.contains(",")) {
+                logger.warnf("LDAP connection URL contains commas, which are not supported as URL separators. "
+                        + "Use spaces to separate multiple LDAP URLs for failover (e.g. \"ldap://host1:389 ldap://host2:389\"). "
+                        + "Current URL: %s", url);
+            }
             env.put(Context.PROVIDER_URL, url);
         } else {
             logger.warn("LDAP URL is null. LDAPOperationManager won't work correctly");

@@ -110,18 +110,25 @@ public class BERDecoder {
 
         // Short form.
         if ((length & 0x80) == 0) {
+            if (length > encoded.remaining()) {
+                throw new DecodeException("Length " + length + " exceeds remaining buffer size " + encoded.remaining());
+            }
             return length;
         }
 
-        // Long form.
+        // Long form. numBytes == 0 is the indefinite form, which is not supported.
         int numBytes = length & 0x7F;
-        if (numBytes > 4) {
+        if (numBytes == 0 || numBytes > 4) {
             throw new DecodeException("Cannot handle more than 4 bytes of length, got " + numBytes + " bytes");
         }
 
         length = 0;
         for (int i = 0; i < numBytes; i++) {
             length = (length << 8) | (encoded.get() & 0xFF);
+        }
+
+        if (length < 0 || length > encoded.remaining()) {
+            throw new DecodeException("Length " + length + " exceeds remaining buffer size " + encoded.remaining());
         }
 
         return length;

@@ -173,13 +173,13 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
             Assertions.assertEquals(1, crlRule.getCounter("cached-crl"));
 
             // wait the min time and it should be refreshed now and fail
-            setTimeOffset(10);
+            timeOffSet.set(10);
             assertLoginFailedDueRevokedCertificate();
             AccountHelper.logout(managedRealm.admin(), "test-user@localhost");
             Assertions.assertEquals(2, crlRule.getCounter("cached-crl"));
 
             // now it's cached until next update 50 years
-            setTimeOffset(3600);
+            timeOffSet.set(3600);
             assertLoginFailedDueRevokedCertificate();
             AccountHelper.logout(managedRealm.admin(), "test-user@localhost");
             Assertions.assertEquals(2, crlRule.getCounter("cached-crl"));

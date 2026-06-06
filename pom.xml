@@ -40,8 +40,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.33.1.1</quarkus.version>
-        <quarkus.build.version>3.33.1.1</quarkus.build.version>
+        <quarkus.version>3.33.2</quarkus.version>
+        <quarkus.build.version>3.33.2</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -58,8 +58,8 @@
         <dist.archive.dir>${dist.archive.dir.prefix}-${dist.archive.dir.version}</dist.archive.dir>
 
         <!-- Upstream WildFly Versions -->
-        <upstream.wildfly.version>35.0.1.Final</upstream.wildfly.version>
-        <upstream.wildfly.core.version>27.0.1.Final</upstream.wildfly.core.version>
+        <upstream.wildfly.version>39.0.1.Final</upstream.wildfly.version>
+        <upstream.wildfly.core.version>31.0.3.Final</upstream.wildfly.core.version>
 
         <!-- Downstream Builds WildFly Versions Override -->
         <eap8.version>8.1.0.GA-redhat-00015</eap8.version>  <!-- G:A = org.jboss.eap:jboss-eap-parent -->
@@ -84,8 +84,8 @@
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
         <microprofile-metrics-api.version>5.1.2</microprofile-metrics-api.version>
-        <infinispan.version>16.0.8</infinispan.version>
-        <protostream.version>6.0.6</protostream.version> <!-- For the annotation processor: keep in sync with the version shipped with Infinispan -->
+        <infinispan.version>16.0.12</infinispan.version>
+        <protostream.version>6.0.7</protostream.version> <!-- For the annotation processor: keep in sync with the version shipped with Infinispan -->
         <protostream.plugin.version>${protostream.version}</protostream.plugin.version>
 
         <!--JAKARTA-->
@@ -100,7 +100,7 @@
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j2-api.version>2.25.3</log4j2-api.version> <!-- Odd name needs to align with Quarkus -->
-        <resteasy.version>6.2.15.Final</resteasy.version>
+        <resteasy.version>6.2.16.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20260101.1</owasp.html.sanitizer.version>
         <slf4j.version>2.0.6</slf4j.version>
@@ -111,7 +111,7 @@
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
         <undertow.version>2.3.24.Final</undertow.version>
-        <wildfly-elytron.version>2.8.3.Final</wildfly-elytron.version>
+        <wildfly-elytron.version>2.8.4.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <woodstox.version>6.0.3</woodstox.version>
         <wildfly.common.quarkus.aligned.version>1.5.4.Final-format-001</wildfly.common.quarkus.aligned.version>
@@ -131,6 +131,7 @@
         <freemarker.version>2.3.32</freemarker.version>
         <sundrio.version>0.200.0</sundrio.version>
         <antlr4.version>4.13.2</antlr4.version>
+        <dbus-java.version>5.2.0</dbus-java.version>
 
         <!-- json-ld processing for oid4vci ld-proofs -->
         <com.apicatalog.titanium-json-ld.version>1.3.3</com.apicatalog.titanium-json-ld.version>
@@ -153,7 +154,7 @@
         <cnpg.major-minor-version>1.29</cnpg.major-minor-version>
         <cnpg.patch-version>0</cnpg.patch-version>
         <cnpg.version>${cnpg.major-minor-version}.${cnpg.patch-version}</cnpg.version>
-        <postgresql-jdbc.version>42.7.10</postgresql-jdbc.version>
+        <postgresql-jdbc.version>42.7.11</postgresql-jdbc.version>
         <mariadb.version>11.8</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
         <mariadb-jdbc.version>3.5.7</mariadb-jdbc.version>
@@ -186,7 +187,7 @@
         <selenium.version>4.28.1</selenium.version>
 
         <!-- Maven Plugins -->
-        <maven.plugins.version>3.13.1</maven.plugins.version>
+        <maven.plugins.version>3.15.2</maven.plugins.version>
         <version.enforcer.plugin>3.6.2</version.enforcer.plugin>
         <replacer.plugin.version>1.4.1</replacer.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
@@ -211,6 +212,7 @@
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
         <maven-failsafe-plugin.version>2.22.2</maven-failsafe-plugin.version>
         <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
+        <plugin.antrun.version>1.8</plugin.antrun.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -236,7 +238,7 @@
         <webauthn4j.version>0.30.3.RELEASE</webauthn4j.version>
 
         <!-- Used to test SAML Galleon feature-pack layers discovery -->
-        <version.org.wildfly.glow>1.0.0.Alpha8</version.org.wildfly.glow>
+        <version.org.wildfly.glow>1.5.2.Final</version.org.wildfly.glow>
 
         <!-- Galleon -->
         <galleon.fork.embedded>true</galleon.fork.embedded>
@@ -319,6 +321,7 @@
         <module>tests</module>
         <module>quarkus</module>
         <module>scim</module>
+        <module>ssf</module>
         <module>authzen</module>
     </modules>
 
@@ -338,6 +341,12 @@
                 <version>${quarkus.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <!-- Remove the override in https://github.com/keycloak/keycloak/issues/48990 -->
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${postgresql-jdbc.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.sundr</groupId>
@@ -644,6 +653,13 @@
                         <artifactId>annotations</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <!-- dbus-java for SSSD -->
+            <dependency>
+                <groupId>com.github.hypfvieh</groupId>
+                <artifactId>dbus-java-transport-native-unixsocket</artifactId>
+                <version>${dbus-java.version}</version>
             </dependency>
 
             <!-- QR Code Generator -->
@@ -1352,6 +1368,23 @@
                 <artifactId>keycloak-scim-model</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <!-- SSF -->
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-ssf-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-ssf-transmitter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-ssf-services</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1413,9 +1446,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-install-plugin</artifactId>
-                    <configuration>
-                        <createChecksum>true</createChecksum>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1586,6 +1616,11 @@
                         </java>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>${plugin.antrun.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -1662,8 +1697,8 @@
                 <!-- relative directory for galleon pack with layer spec files -->
                 <saml.adapter.galleon.pack.metadata.dir>metadata</saml.adapter.galleon.pack.metadata.dir>
                 <!-- WildFly Galleon Build related properties -->
-                <org.wildfly.galleon-plugins.version>7.3.1.Final</org.wildfly.galleon-plugins.version>
-                <org.jboss.galleon.version>6.0.4.Final</org.jboss.galleon.version>
+                <org.wildfly.galleon-plugins.version>8.1.2.Final</org.wildfly.galleon-plugins.version>
+                <org.jboss.galleon.version>7.0.5.Final</org.jboss.galleon.version>
                 <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
             </properties>
 

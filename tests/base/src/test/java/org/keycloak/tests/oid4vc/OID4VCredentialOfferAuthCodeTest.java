@@ -13,7 +13,6 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestServerConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
@@ -46,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * | yes      | yes      | yes     | Pre-auth for a specific target user.                 |
  * +----------+----------+---------+------------------------------------------------------+
  */
-@KeycloakIntegrationTest(config = VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithRestCredentialOfferEnabled.class)
 public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
     @Test
@@ -72,31 +71,10 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         issuerState = credOffer.getIssuerState();
         assertNotNull(issuerState, "No IssuerState");
 
-        // Send AuthorizationRequest
+        // Fetch Credential by Offer
         //
-        AuthorizationEndpointResponse authResponse = wallet
-                .authorizationRequest()
-                .scope(ctx.getScope())
-                .issuerState(issuerState)
-                .send(ctx.getHolder(), TEST_PASSWORD);
-        String authCode = authResponse.getCode();
-        assertNotNull(authCode, "No authCode");
-
-        // Build and send AccessTokenRequest
-        //
-        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode).send();
-        String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
-        assertNotNull(accessToken, "No accessToken");
-
-        String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
-        assertNotNull(authorizedIdentifier, "Has authorized credential identifier");
-
-        // Send the CredentialRequest
-        //
-        CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
-                .credentialIdentifier(authorizedIdentifier)
-                .proofs(wallet.generateJwtProof(ctx))
-                .send().getCredentialResponse();
+        CredentialResponse credResponse = wallet.fetchCredentialByOffer(ctx, credOffer)
+                .getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
 
@@ -200,6 +178,8 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
     @Test
     public void testAuthCodeOffer_Anonymous_expiredOffer() throws Exception {
+        // Bigger accessToken lifespan to avoid same timeout like credential-offer (to enforce that accessToken is still valid in the credential-request, when credential-offer would be invalid)
+        testRealm.updateWithCleanup(r -> r.accessTokenLifespan(600));
 
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
 

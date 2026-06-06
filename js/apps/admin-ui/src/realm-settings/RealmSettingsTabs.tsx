@@ -27,7 +27,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toDashboard } from "../dashboard/routes/Dashboard";
-import type { Environment } from "../environment";
+import type { Environment } from "../environment-types";
 import helpUrls from "../help-urls";
 import {
   convertFormValuesToObject,
@@ -206,10 +206,10 @@ export const RealmSettingsTabs = () => {
           combinedLocales.map(async (locale) => {
             try {
               const response =
-                await adminClient.realms.getRealmLocalizationTexts({
+                (await adminClient.realms.getRealmLocalizationTexts({
                   realm: realmName,
                   selectedLocale: locale,
-                });
+                })) as Record<string, string> | undefined;
 
               if (response) {
                 setTableData([response]);
@@ -278,7 +278,7 @@ export const RealmSettingsTabs = () => {
       addError("realmSaveError", error);
     }
 
-    const isRealmRenamed = realmName !== (r.realm || realm?.realm);
+    const isRealmRenamed = realmName !== (r.realm || realm.realm);
     if (isRealmRenamed) {
       navigate(toRealmSettings({ realm: r.realm!, tab: "general" }));
     }
@@ -328,7 +328,7 @@ export const RealmSettingsTabs = () => {
           <RealmSettingsHeader
             value={field.value}
             onChange={field.onChange}
-            realmName={resolveDisplayName(t, realm?.displayName, realmName)}
+            realmName={resolveDisplayName(t, realm.displayName, realmName)}
             refresh={refreshHeader}
             save={() => save(getValues())}
           />

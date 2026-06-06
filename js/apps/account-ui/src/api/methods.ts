@@ -13,6 +13,7 @@ import {
   LinkedAccountRepresentation,
   Permission,
   UserRepresentation,
+  UserVerifiableCredentialRepresentation,
 } from "./representations";
 import { request } from "./request";
 
@@ -152,4 +153,29 @@ export async function getGroups({ signal, context }: CallOptions) {
 export async function getUserOrganizations({ signal, context }: CallOptions) {
   const response = await request("/organizations", context, { signal });
   return parseResponse<OrganizationRepresentation[]>(response);
+}
+
+export async function getVerifiableCredentials({
+  signal,
+  context,
+}: CallOptions): Promise<UserVerifiableCredentialRepresentation[]> {
+  const response = await request("/verifiable-credentials", context, {
+    signal,
+  });
+  return parseResponse<UserVerifiableCredentialRepresentation[]>(response);
+}
+
+export async function deleteVerifiableCredential(
+  context: KeycloakContext<BaseEnvironment>,
+  credentialScopeName: string,
+): Promise<void> {
+  const response = await request(
+    `/verifiable-credentials/${credentialScopeName}`,
+    context,
+    { method: "DELETE" },
+  );
+  if (!response.ok) {
+    const error = await parseResponse(response);
+    throw error;
+  }
 }

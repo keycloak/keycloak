@@ -67,7 +67,7 @@
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
         </dependency>
-        <!-- This is here because BloomFilter is used in the Javadoc within BlacklistPasswordPolicyProviderFactory -->
+        <!-- This is here because BloomFilter is used in the Javadoc within DenylistPasswordPolicyProviderFactory -->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>

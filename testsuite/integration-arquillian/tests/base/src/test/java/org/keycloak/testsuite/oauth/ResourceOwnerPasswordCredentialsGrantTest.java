@@ -68,6 +68,8 @@ import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
+import org.keycloak.testsuite.util.runonserver.CacheHelper;
+import org.keycloak.util.TokenUtil;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -80,6 +82,7 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -193,13 +196,13 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
-    public void grantAccessTokenWithDynamicScope() throws Exception {
+    @EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
+    public void grantAccessTokenWithParameterizedScope() throws Exception {
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("dynamic-scope");
         clientScope.setAttributes(new HashMap<String, String>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic-scope:*");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         RealmResource realmResource = adminClient.realm("test");
@@ -242,8 +245,8 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
-    public void grantAccessTokenWithUnassignedDynamicScope() throws Exception {
+    @EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
+    public void grantAccessTokenWithUnassignedParameterizedScope() throws Exception {
         oauth.scope("unknown-scope:123");
         oauth.client("resource-owner-public");
         AccessTokenResponse response = oauth.doPasswordGrantRequest("direct-login", "password");
@@ -351,7 +354,13 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
         assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState()).user(userId).client(clientId).assertEvent();
+        EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .sessionId(refreshToken.getSessionState())
+                .userId(userId)
+                .clientId(clientId)
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
     }
 
     @Test
@@ -425,7 +434,13 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
         assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState()).user(userId).client(clientId).assertEvent();
+        EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .sessionId(refreshToken.getSessionState())
+                .userId(userId)
+                .clientId(clientId)
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
     }
 
     @Test
@@ -461,12 +476,15 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         assertEquals(400, response.getStatusCode());
         assertEquals("invalid_grant", response.getError());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState())
-                .client("resource-owner")
-                .user((String) null)
-                .removeDetail(Details.TOKEN_ID)
-                .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
-                .error(Errors.INVALID_TOKEN).assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.REFRESH_TOKEN_ERROR)
+                .sessionId(refreshToken.getSessionState())
+                .clientId("resource-owner")
+                .userId(null)
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .withoutDetails(Details.TOKEN_ID)
+                .withoutDetails(Details.UPDATED_REFRESH_TOKEN_ID)
+                .error(Errors.INVALID_TOKEN);
     }
 
     @Test
@@ -538,7 +556,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         oauth.client("resource-owner", "secret");
 
-        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("direct-login", "password");
 
         assertEquals(400, response.getStatusCode());
 
@@ -553,12 +571,31 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .userId(null);
 
         RealmManager.realm(realmResource).verifyEmail(false);
-        UserManager.realm(realmResource).username("test-user@localhost").removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.toString());
+        UserManager.realm(realmResource).username("direct-login").removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.toString());
 
         // Check that count of authSessions is same as before authentication (as authentication session was removed)
         Assertions.assertEquals(authSessionsBefore, getAuthenticationSessionsCount());
     }
-    
+
+    @Test
+    public void grantAccessTokenVerifyEmailUserWithoutEmail() throws Exception {
+        RealmResource realmResource = adminClient.realm("test");
+        RealmManager.realm(realmResource).verifyEmail(true);
+
+        oauth.client("resource-owner", "secret");
+
+        // "test-user@localhost" has no email set
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+
+        assertEquals(200, response.getStatusCode());
+        assertNotNull(response.getAccessToken());
+
+        UserRepresentation user = realmResource.users().search("test-user@localhost", true).get(0);
+        assertFalse(user.getRequiredActions().contains(UserModel.RequiredAction.VERIFY_EMAIL.name()));
+
+        RealmManager.realm(realmResource).verifyEmail(false);
+    }
+
     @Test
     public void grantAccessTokenVerifyEmailInvalidPassword() throws Exception {
 
@@ -596,7 +633,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         RealmManager.realm(realmResource).passwordPolicy("forceExpiredPasswordChange(1)");
 
         try {
-            setTimeOffset(60 * 60 * 48);
+            timeOffSet.set(60 * 60 * 48);
 
             oauth.client("resource-owner", "secret");
 
@@ -607,7 +644,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
             assertEquals("invalid_grant", response.getError());
             assertEquals("Account is not fully set up", response.getErrorDescription());
 
-            setTimeOffset(0);
+            timeOffSet.set(0);
 
             EventAssertion.assertError(events.poll())
                     .type(EventType.LOGIN_ERROR)
@@ -629,7 +666,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         RealmManager.realm(realmResource).passwordPolicy("forceExpiredPasswordChange(1)");
 
         try {
-            setTimeOffset(60 * 60 * 48);
+            timeOffSet.set(60 * 60 * 48);
 
             oauth.client("resource-owner", "secret");
 
@@ -805,6 +842,6 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     }
 
     private int getAuthenticationSessionsCount() {
-        return testingClient.testing().cache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME).size();
+        return runOnServerMaster.fetch(CacheHelper.size(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME));
     }
 }

@@ -22,8 +22,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.truststore.TruststoreBuilder;
 
@@ -35,7 +36,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 
-@DistributionTest(keepAlive = true)
+@DistributionTest(stopServer = Mode.MANUAL)
 @RawDistOnly(reason = "Containers are immutable")
 @Tag(DistributionTest.SMOKE)
 public class TruststoreDistTest {
@@ -46,19 +47,19 @@ public class TruststoreDistTest {
     }
 
     @Test
-    void testMutualAuthWithTruststorePaths(KeycloakDistribution dist) {
+    void testMutualAuthWithTruststorePaths(KeycloakRunner runner) {
         String[] truststoreNames = new String[] { "keycloak-truststore.p12", "self-signed.pem" };
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
         Stream.of(truststoreNames).forEach(truststoreName -> {
-            dist.copyOrReplaceFileFromClasspath("/" + truststoreName, Path.of("conf", truststoreName));
+            rawDist.copyOrReplaceFileFromClasspath("/" + truststoreName, Path.of("conf", truststoreName));
         });
 
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
         String paths = Stream.of(truststoreNames).map(truststoreName -> rawDist.getDistPath().resolve("conf")
                 .resolve(truststoreName).toAbsolutePath().toString()).collect(Collectors.joining(","));
-        dist.copyOrReplaceFileFromClasspath("/self-signed.p12", Path.of("conf", "self-signed.p12"));
+        rawDist.copyOrReplaceFileFromClasspath("/self-signed.p12", Path.of("conf", "self-signed.p12"));
         Path keyStore = rawDist.getDistPath().resolve("conf").resolve("self-signed.p12").toAbsolutePath();
 
-        rawDist.run("--verbose", "start", "--db=dev-file", "--http-enabled=true", "--hostname=mykeycloak.org",
+        runner.run("--verbose", "start", "--db=dev-file", "--http-enabled=true", "--hostname=mykeycloak.org",
                 "--truststore-paths=" + paths, "--https-client-auth=required", "--https-key-store-file=" + keyStore);
 
         given().trustStore(TruststoreDistTest.class.getResource("/self-signed-truststore.p12").getPath(), TruststoreBuilder.DUMMY_PASSWORD)
@@ -67,17 +68,17 @@ public class TruststoreDistTest {
     }
 
     @Test
-    void testMutualAuthWithDefaultTruststoresDir(KeycloakDistribution dist) {
+    void testMutualAuthWithDefaultTruststoresDir(KeycloakRunner runner) {
         String[] truststoreNames = new String[] { "keycloak-truststore.p12", "self-signed.pem" };
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
         Stream.of(truststoreNames).forEach(truststoreName -> {
-            dist.copyOrReplaceFileFromClasspath("/" + truststoreName, Path.of("conf", "truststores", truststoreName));
+            rawDist.copyOrReplaceFileFromClasspath("/" + truststoreName, Path.of("conf", "truststores", truststoreName));
         });
 
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        dist.copyOrReplaceFileFromClasspath("/self-signed.p12", Path.of("conf", "self-signed.p12"));
+        rawDist.copyOrReplaceFileFromClasspath("/self-signed.p12", Path.of("conf", "self-signed.p12"));
         Path keyStore = rawDist.getDistPath().resolve("conf").resolve("self-signed.p12").toAbsolutePath();
 
-        rawDist.run("--verbose", "start", "--db=dev-file", "--http-enabled=true", "--hostname=mykeycloak.org",
+        runner.run("--verbose", "start", "--db=dev-file", "--http-enabled=true", "--hostname=mykeycloak.org",
                 "--https-client-auth=required", "--https-key-store-file=" + keyStore);
 
         given().trustStore(TruststoreDistTest.class.getResource("/self-signed-truststore.p12").getPath(), TruststoreBuilder.DUMMY_PASSWORD)

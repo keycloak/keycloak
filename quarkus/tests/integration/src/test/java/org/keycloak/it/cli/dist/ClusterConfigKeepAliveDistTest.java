@@ -27,10 +27,11 @@ import java.util.stream.Stream;
 
 import org.keycloak.config.CachingOptions;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
-import org.keycloak.it.utils.KeycloakDistribution;
 
 import com.google.common.base.CaseFormat;
 import org.infinispan.commons.dataconversion.MediaType;
@@ -39,10 +40,13 @@ import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NUM_OWNERS;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.REALM_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 import static io.restassured.RestAssured.when;
@@ -51,12 +55,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * @author Ryan Emerson <remerson@redhat.com>
  */
-@DistributionTest(keepAlive = true, enableTls = true)
+@DistributionTest(stopServer = Mode.MANUAL, enableTls = true)
 @RawDistOnly(reason = "Containers are immutable")
 public class ClusterConfigKeepAliveDistTest {
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testMaxCountApplied(KeycloakDistribution dist) {
+    void testMaxCountApplied(KeycloakRunner runner) {
         int maxCount = 100;
         Set<String> maxCountCaches = Stream.of(CachingOptions.LOCAL_MAX_COUNT_CACHES, CachingOptions.CLUSTERED_MAX_COUNT_CACHES)
               .flatMap(Arrays::stream)
@@ -67,7 +71,7 @@ public class ClusterConfigKeepAliveDistTest {
             sb.append(" --").append(CachingOptions.cacheMaxCountProperty(cache)).append("=").append(maxCount);
 
         String args = sb.toString();
-        dist.run(args.split(" "));
+        runner.run(args.split(" "));
 
         for (String cache : maxCountCaches) {
             Configuration config = getCacheConfiguration(cache);
@@ -77,19 +81,106 @@ public class ClusterConfigKeepAliveDistTest {
 
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testNumOwnersWithPersistentSessions(KeycloakDistribution dist) {
-        doNumOwnerTest(dist, false);
+    void testLifespanApplied(KeycloakRunner runner) {
+        long expectedLifespanMs = 30000;
+        String[] caches = {AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME};
+
+        List<String> args = new ArrayList<>();
+        args.add("start-dev");
+        for (String cache : caches) {
+            args.add("--spi-cache-embedded--default--%s-lifespan=30s".formatted(cache));
+        }
+        runner.run(args);
+
+        for (String cache : caches) {
+            Configuration config = getCacheConfiguration(cache);
+            assertEquals(expectedLifespanMs, config.expiration().lifespan(),
+                    "Wrong lifespan for cache " + cache);
+        }
     }
 
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testNumOwnersWithVolatileSessions(KeycloakDistribution dist) {
-        doNumOwnerTest(dist, true);
+    void testDefaultLifespanIsImmortal(KeycloakRunner runner) {
+        String[] caches = {AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME};
+
+        runner.run("start-dev");
+
+        for (String cache : caches) {
+            Configuration config = getCacheConfiguration(cache);
+            assertEquals(-1, config.expiration().lifespan(),
+                    "Expected immortal entries (lifespan=-1) for cache " + cache);
+        }
     }
 
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testCheckMinimumNumOwners(KeycloakDistribution dist) {
+    void testDefaultLifespanWithCachelessFeature(KeycloakRunner runner) {
+        String[] caches = {AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME};
+
+        runner.run("start-dev", "--features=cacheless");
+
+        for (String cache : caches) {
+            Configuration config = getCacheConfiguration(cache);
+            assertEquals(10000, config.expiration().lifespan(),
+                    "Expected 10s default lifespan for cache " + cache);
+        }
+    }
+
+    @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    void testZeroOrNegativeLifespanFallsBackToDefault(KeycloakRunner runner) {
+        String[] caches = {AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME};
+
+        List<String> args = new ArrayList<>();
+        args.add("start-dev");
+        args.add("--spi-cache-embedded--default--%s-lifespan=0s".formatted(AUTHORIZATION_CACHE_NAME));
+        args.add("--spi-cache-embedded--default--%s-lifespan=-30s".formatted(REALM_CACHE_NAME));
+        args.add("--spi-cache-embedded--default--%s-lifespan=0".formatted(USER_CACHE_NAME));
+        runner.run(args);
+
+        for (String cache : caches) {
+            Configuration config = getCacheConfiguration(cache);
+            assertEquals(-1, config.expiration().lifespan(),
+                    "Expected immortal entries (lifespan=-1) for cache " + cache);
+        }
+    }
+
+    @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    void testZeroOrNegativeLifespanOverridesCachelessDefault(KeycloakRunner runner) {
+        String[] caches = {AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME};
+
+        List<String> args = new ArrayList<>();
+        args.add("start-dev");
+        args.add("--features=cacheless");
+        args.add("--spi-cache-embedded--default--%s-lifespan=0s".formatted(AUTHORIZATION_CACHE_NAME));
+        args.add("--spi-cache-embedded--default--%s-lifespan=-1s".formatted(REALM_CACHE_NAME));
+        args.add("--spi-cache-embedded--default--%s-lifespan=0".formatted(USER_CACHE_NAME));
+        runner.run(args);
+
+        for (String cache : caches) {
+            Configuration config = getCacheConfiguration(cache);
+            assertEquals(-1, config.expiration().lifespan(),
+                    "Expected immortal entries (lifespan=-1) for cache " + cache + " even with cacheless feature enabled");
+        }
+    }
+
+    @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    void testNumOwnersWithPersistentSessions(KeycloakRunner runner) {
+        doNumOwnerTest(runner, false);
+    }
+
+    @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    void testNumOwnersWithVolatileSessions(KeycloakRunner runner) {
+        doNumOwnerTest(runner, true);
+    }
+
+    @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    void testCheckMinimumNumOwners(KeycloakRunner runner) {
         List<String> args = new ArrayList<>();
         args.add("start-dev");
         args.add("--cache=ispn");
@@ -99,13 +190,13 @@ public class ClusterConfigKeepAliveDistTest {
                 .map(cache -> CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, cache))
                 .map("--spi-cache-embedded--default--%s-owners=1"::formatted)
                 .forEach(args::add);
-        dist.run(args);
+        runner.run(args);
 
         // forces the numOwner to 2 to prevent data loss.
         assertNumOwner(Arrays.stream(CLUSTERED_CACHE_NUM_OWNERS), 2);
     }
 
-    private void doNumOwnerTest(KeycloakDistribution dist, boolean volatileSessions) {
+    private void doNumOwnerTest(KeycloakRunner runner, boolean volatileSessions) {
         final int owners = 5;
         List<String> args = new ArrayList<>();
         args.add("start-dev");
@@ -118,7 +209,7 @@ public class ClusterConfigKeepAliveDistTest {
                 .map(cache -> CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, cache))
                 .map(cache -> "--spi-cache-embedded--default--%s-owners=%s".formatted(cache, owners))
                 .forEach(args::add);
-        dist.run(args);
+        runner.run(args);
 
         Stream<String> caches = Arrays.stream(CLUSTERED_CACHE_NUM_OWNERS);
         if (!volatileSessions) {

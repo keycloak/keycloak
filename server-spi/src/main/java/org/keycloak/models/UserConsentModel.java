@@ -17,8 +17,12 @@
 
 package org.keycloak.models;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import org.keycloak.common.util.MultivaluedHashMap;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -26,7 +30,8 @@ import java.util.Set;
 public class UserConsentModel {
 
     private final ClientModel client;
-    private Set<ClientScopeModel> clientScopes = new HashSet<>();
+    private final Set<ClientScopeModel> clientScopes = new HashSet<>();
+    private final MultivaluedHashMap<String, String> parameters = new MultivaluedHashMap<>();
     private Long createdDate;
     private Long lastUpdatedDate;
 
@@ -39,17 +44,43 @@ public class UserConsentModel {
     }
 
     public void addGrantedClientScope(ClientScopeModel clientScope) {
+        addGrantedClientScope(clientScope, null);
+    }
+
+    public void addGrantedClientScope(ClientScopeModel clientScope, String parameter) {
         clientScopes.add(clientScope);
+        if (ClientScopeModel.isParameterizedScope(clientScope)) {
+            if (parameter == null) {
+                throw new IllegalArgumentException("Parameter value is compulsory for Parameterized Scope " + clientScope.getName());
+            }
+            parameters.add(clientScope.getId(), parameter);
+        }
     }
 
     public Set<ClientScopeModel> getGrantedClientScopes() {
         return clientScopes;
     }
 
+    public List<String> getParameters(ClientScopeModel clientScope) {
+        if (ClientScopeModel.isParameterizedScope(clientScope)) {
+            return parameters.getList(clientScope.getId());
+        }
+        return Collections.emptyList();
+    }
+
     public boolean isClientScopeGranted(ClientScopeModel clientScope) {
-        // TODO: May need to be changed with adding support for client scopes inheritance
+        return isClientScopeGranted(clientScope, null);
+    }
+
+    public boolean isClientScopeGranted(ClientScopeModel clientScope, String parameter) {
         for (ClientScopeModel apprClientScope : clientScopes) {
-            if (apprClientScope.getId().equals(clientScope.getId())) return true;
+            if (apprClientScope.getId().equals(clientScope.getId())) {
+                if (ClientScopeModel.isParameterizedScope(clientScope)) {
+                    return parameter != null && parameters.getList(apprClientScope.getId()).contains(parameter);
+                } else {
+                    return parameter == null && parameters.getList(apprClientScope.getId()).isEmpty();
+                }
+            }
         }
         return false;
     }

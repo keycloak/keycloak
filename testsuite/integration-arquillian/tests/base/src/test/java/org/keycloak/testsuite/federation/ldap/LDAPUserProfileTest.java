@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
+import jakarta.ws.rs.BadRequestException;
+
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
@@ -472,6 +474,44 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
             }
 
         });
+    }
+
+    @Test
+    public void testUpdateLdapUserOmittingReadOnlyTimestampAttributesShouldSucceed() {
+        // Reproducer for https://github.com/keycloak/keycloak/issues/49272
+        // Updating a federated LDAP user via Admin API without including read-only
+        // attributes (createTimestamp, modifyTimestamp) in the PUT body must not
+        // trigger a 400 "updateReadOnlyAttributesRejectedMessage" error.
+        UserResource johnResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "johnkeycloak");
+        UserRepresentation john = johnResource.toRepresentation();
+
+        // The test-ldap mapper config has always.read.value.from.ldap=true and read.only=true
+        // for both createTimestamp and modifyTimestamp, so the attributes must be present.
+        Assertions.assertNotNull(john.getAttributes().get(LDAPConstants.CREATE_TIMESTAMP));
+        Assertions.assertNotNull(john.getAttributes().get(LDAPConstants.MODIFY_TIMESTAMP));
+
+        // Simulate a client that sends a PUT without echoing the read-only LDAP timestamps
+        john.getAttributes().remove(LDAPConstants.CREATE_TIMESTAMP);
+        john.getAttributes().remove(LDAPConstants.MODIFY_TIMESTAMP);
+
+        // This must succeed — omitting a read-only attribute is not an attempt to change it
+        johnResource.update(john);
+
+        // Read-only attributes must be preserved on the server side
+        john = johnResource.toRepresentation();
+        Assertions.assertNotNull(john.getAttributes().get(LDAPConstants.CREATE_TIMESTAMP));
+        Assertions.assertNotNull(john.getAttributes().get(LDAPConstants.MODIFY_TIMESTAMP));
+
+        // Explicitly changing a read-only attribute must still be rejected
+        String existingTimestamp = john.getAttributes().get(LDAPConstants.CREATE_TIMESTAMP).get(0);
+        john.getAttributes().put(LDAPConstants.CREATE_TIMESTAMP, List.of(existingTimestamp + "X"));
+
+        try {
+            johnResource.update(john);
+            Assertions.fail("Should have thrown an exception");
+        } catch (BadRequestException ignore) {
+
+        }
     }
 
     @Test

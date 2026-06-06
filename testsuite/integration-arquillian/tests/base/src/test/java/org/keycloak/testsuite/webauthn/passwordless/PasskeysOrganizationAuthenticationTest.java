@@ -216,10 +216,9 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             loginPage.login("invalid-password");
             loginPage.assertCurrent();
             MatcherAssert.assertThat(loginPage.getPasswordInputError(), Matchers.is("Invalid username or password."));
-            events.expect(EventType.LOGIN_ERROR)
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR)
                     .error(Errors.INVALID_USER_CREDENTIALS)
-                    .user(user.getId())
-                    .assertEvent();
+                    .userId(user.getId());
 
             // correct login now
             MatcherAssert.assertThat(loginPage.getAttemptedUsername(), Matchers.is("UserWebAuthn"));

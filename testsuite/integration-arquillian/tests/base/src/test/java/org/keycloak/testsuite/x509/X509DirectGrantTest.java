@@ -284,12 +284,12 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
         Assertions.assertNotNull(cfgId);
 
-        setTimeOffset(50 * 365 * 24 * 60 * 60);
+        timeOffSet.set(50 * 365 * 24 * 60 * 60);
 
         oauth.client("resource-owner", "secret");
         AccessTokenResponse response = oauth.doPasswordGrantRequest("", "");
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
 
         assertEquals(401, response.getStatusCode());
         assertEquals("invalid_request", response.getError());

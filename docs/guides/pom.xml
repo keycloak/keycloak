@@ -227,6 +227,18 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>admin-api-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/admin-api</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/admin-api</outputDirectory>
+                            <preserveDirectories>true</preserveDirectories>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>ui-customization-asciidoc-to-html</id>
                         <phase>generate-resources</phase>
                         <goals>

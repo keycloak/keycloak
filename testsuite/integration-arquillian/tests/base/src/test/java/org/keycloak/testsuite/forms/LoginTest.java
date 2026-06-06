@@ -42,6 +42,7 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.SessionTimeoutHelper;
@@ -51,10 +52,14 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.EventMatchers;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServerWrapper;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
@@ -87,7 +92,7 @@ import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
 
-import static org.keycloak.common.Profile.Feature.DYNAMIC_SCOPES;
+import static org.keycloak.common.Profile.Feature.PARAMETERIZED_SCOPES;
 import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.SERVER_ROOT;
@@ -539,7 +544,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         try {
             // Setting offset to more than one day to force password update
             // elapsedTime > timeToExpire
-            setTimeOffset(86405);
+            timeOffSet.set(86405);
 
             oauth.openLoginForm();
 
@@ -550,10 +555,10 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             final String newPwd = generatePassword("login-test");
             updatePasswordPage.changePassword(newPwd, newPwd);
 
-            setTimeOffset(0);
+            timeOffSet.set(0);
 
-            events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
-            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId).details(Details.USERNAME, "login-test");
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId).details(Details.USERNAME, "login-test");
 
             String currentUrl = driver.getCurrentUrl();
             String pageSource = driver.getPageSource();
@@ -573,7 +578,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         try {
             // Setting offset to less than one day to avoid forced password update
             // elapsedTime < timeToExpire
-            setTimeOffset(86205);
+            timeOffSet.set(86205);
 
             oauth.openLoginForm();
 
@@ -582,7 +587,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-            setTimeOffset(0);
+            timeOffSet.set(0);
 
             EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
         } finally {
@@ -594,11 +599,11 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     public void loginNoTimeoutWithLongWait() {
         oauth.openLoginForm();
 
-        setTimeOffset(1700);
+        timeOffSet.set(1700);
 
         loginPage.login("login-test", getPassword("login-test"));
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
 
         EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
     }
@@ -658,7 +663,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             String sessionId = loginEvent.getSessionId();
 
             // Expire session
-            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
+            runOnServer.run(RunHelpers.removeUserSession(sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();
@@ -716,7 +721,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             String sessionId = loginEvent.getSessionId();
 
             // Expire session
-            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
+            runOnServer.run(RunHelpers.removeUserSession(sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();
@@ -731,7 +736,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId)
                                                    .details(Details.USERNAME, "login-test").getEvent();
             sessionId = loginEvent.getSessionId();
-            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
+            runOnServer.run(RunHelpers.removeUserSession(sessionId));
 
             // Assert rememberMe not checked nor username/email prefilled
             oauth.openLoginForm();
@@ -761,7 +766,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             String sessionId = loginEvent.getSessionId();
 
             // Expire session
-            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
+            runOnServer.run(RunHelpers.removeUserSession(sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();
@@ -817,13 +822,13 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     public void loginExpiredCode() {
         oauth.openLoginForm();
         // authSession expired and removed from the storage
-        setTimeOffset(5000);
+        timeOffSet.set(5000);
 
         loginPage.login("login@test.com", getPassword("login-test"));
         loginPage.assertCurrent();
 
         Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
-        setTimeOffset(0);
+        timeOffSet.set(0);
 
         EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null).sessionId(null).error(Errors.EXPIRED_CODE);
     }
@@ -832,7 +837,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     @Test
     public void loginExpiredCodeWithExplicitRemoveExpired() {
         oauth.openLoginForm();
-        setTimeOffset(5000);
+        timeOffSet.set(5000);
 
         loginPage.login("login@test.com", getPassword("login-test"));
 
@@ -840,7 +845,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
 
         EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null).sessionId(null).error(Errors.EXPIRED_CODE)
                 .details(Details.RESTART_AFTER_TIMEOUT, "true");
@@ -860,7 +865,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             EventAssertion.expectLoginSuccess(events.poll()).userId(userId);
 
             // wait for a timeout
-            setTimeOffset(6);
+            timeOffSet.set(6);
 
             oauth.openLoginForm();
             loginPage.login("login@test.com", getPassword("login-test"));
@@ -897,10 +902,9 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         // Cookie has been deleted or disabled, the error shown in the UI should be Errors.COOKIE_NOT_FOUND
         loginPage.login("login@test.com", getPassword("login-test"));
 
-        events.expect(EventType.LOGIN_ERROR)
-                .user(new UserRepresentation())
-                .error(Errors.COOKIE_NOT_FOUND)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR)
+                .userId(null)
+                .error(Errors.COOKIE_NOT_FOUND);
 
         errorPage.assertCurrent();
     }
@@ -923,12 +927,11 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
             errorPage.assertCurrent();
             assertEquals("Login requester not enabled", errorPage.getError());
-            events.expect(EventType.LOGIN)
-                    .client("test-app")
-                    .user((String) null)
-                    .session((String) null)
-                    .error(Errors.CLIENT_DISABLED)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR)
+                    .clientId("test-app")
+                    .userId(null)
+                    .sessionId(null)
+                    .error(Errors.CLIENT_DISABLED);
         } finally {
             clientRepresentation.setEnabled(wasEnabled);
             clientResource.update(clientRepresentation);
@@ -957,7 +960,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     public void openLoginFormAfterExpiredCode() throws Exception {
         oauth.openLoginForm();
 
-        setTimeOffset(5000);
+        timeOffSet.set(5000);
 
         oauth.openLoginForm();
 
@@ -978,17 +981,17 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
         // Assert authenticationSession in cache with 2 tabs
         String authSessionId = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName()).getValue();
-        Assertions.assertEquals((Integer) 2, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
+        Assertions.assertEquals((Integer) 2, runOnServer.fetch(getAuthenticationSessionTabsCount(authSessionId)));
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
         // authentication session should still exists with remaining browser tab
-        Assertions.assertEquals((Integer) 1, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
+        Assertions.assertEquals((Integer) 1, runOnServer.fetch(getAuthenticationSessionTabsCount(authSessionId)));
 
         // authentication session should be expired after 1 minute
-        setTimeOffset(300);
-        Assertions.assertEquals((Integer) 0, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
+        timeOffSet.set(300);
+        Assertions.assertEquals((Integer) 0, runOnServer.fetch(getAuthenticationSessionTabsCount(authSessionId)));
     }
 
 
@@ -1013,7 +1016,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             appPage.assertCurrent();
 
             // expire idle timeout using the timeout window.
-            setTimeOffset(2 + (ProfileAssume.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) ? 0 : SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS));
+            timeOffSet.set(2 + (ProfileAssume.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) ? 0 : SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS));
 
             // trying to open the account page with an expired idle timeout should redirect back to the login page.
             oauth.openLoginForm();
@@ -1041,7 +1044,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             appPage.assertCurrent();
 
             // expire the max lifespan.
-            setTimeOffset(2);
+            timeOffSet.set(2);
 
             // trying to open the account page with an expired lifespan should redirect back to the login page.
             oauth.openLoginForm();
@@ -1050,14 +1053,14 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
-    public void loginSuccessfulWithDynamicScope() {
-        ProfileAssume.assumeFeatureEnabled(DYNAMIC_SCOPES);
+    @EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
+    public void loginSuccessfulWithParameterizedScope() {
+        ProfileAssume.assumeFeatureEnabled(PARAMETERIZED_SCOPES);
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("dynamic");
         clientScope.setAttributes(new HashMap<String, String>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic:*");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         Response response = managedRealm.admin().clientScopes().create(clientScope);
@@ -1136,5 +1139,34 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         testingClient.server().run(session-> {
            Assertions.assertNotNull(session.authenticationSessions().getRootAuthenticationSession(session.getContext().getRealm(), authSessionId));
         });
+   }
+
+   /**
+    * Get count of tabs (child authentication sessions) for given "root authentication session"
+    *
+    * @param authSessionId ID of authentication session
+    * @return count of tabs. Return 0 if authentication session of given ID does not exists (or if it exists, but without any authenticationSessions attached, which should not happen with normal usage)
+    */
+   private static FetchOnServerWrapper<Integer> getAuthenticationSessionTabsCount(String authSessionId) {
+        return new FetchOnServerWrapper<>() {
+            @Override
+            public FetchOnServer getRunOnServer() {
+                return session ->{
+                    RealmModel realm = session.getContext().getRealm();
+                    String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId);
+                    RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, decodedAuthSessionId);
+                    if (rootAuthSession == null) {
+                        return 0;
+                    }
+
+                    return rootAuthSession.getAuthenticationSessions().size();
+                };
+            }
+
+            @Override
+            public Class<Integer> getResultClass() {
+                return Integer.class;
+            }
+        };
    }
 }

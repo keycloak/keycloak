@@ -39,6 +39,7 @@ import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ProtocolMapperModel;
@@ -106,7 +107,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     protected Set<String> realmInvalidations = new HashSet<>();
     protected Set<InvalidationEvent> invalidationEvents = new HashSet<>(); // Events to be sent across cluster
     protected Map<String, UserModel> managedUsers = new HashMap<>();
-    private StoreManagers datastoreProvider;
+    private final StoreManagers datastoreProvider;
 
     public UserCacheSession(UserCacheManager cache, KeycloakSession session) {
         this.cache = cache;
@@ -847,7 +848,12 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         for (String clientScopeId : cachedConsent.getClientScopeIds()) {
             ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
             if (clientScope != null) {
-                consentModel.addGrantedClientScope(clientScope);
+                if (ClientScopeModel.isParameterizedScope(clientScope)) {
+                    cachedConsent.getParameters(clientScopeId).stream()
+                            .forEach(p -> consentModel.addGrantedClientScope(clientScope, p));
+                } else {
+                    consentModel.addGrantedClientScope(clientScope);
+                }
             }
         }
 
@@ -868,6 +874,26 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     @Override
     public Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId) {
         return getDelegate().getVerifiableCredentialsByUser(userId);
+    }
+
+    @Override
+    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String credentialScopeName) {
+        return getDelegate().updateVerifiableCredential(userId, credentialScopeName);
+    }
+
+    @Override
+    public void addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc) {
+        getDelegate().addIssuedVerifiableCredential(issuedVc);
+    }
+
+    @Override
+    public Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId) {
+        return getDelegate().getIssuedVerifiableCredentialsStreamByUser(userId);
+    }
+
+    @Override
+    public boolean removeIssuedVerifiableCredential(String credentialId) {
+        return getDelegate().removeIssuedVerifiableCredential(credentialId);
     }
 
     @Override

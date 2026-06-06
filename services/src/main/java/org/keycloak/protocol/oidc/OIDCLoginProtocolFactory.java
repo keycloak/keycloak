@@ -67,7 +67,9 @@ import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_R
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_NUMBER;
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_OVERALL_SIZE;
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_SIZE;
+import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_REQ_TOKEN_PARAMS_FAIL_FAST;
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE;
+import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -125,16 +127,22 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String ORGANIZATION_SCOPE_CONSENT_TEXT = "${organizationScopeConsentText}";
 
     public static final String CONFIG_OIDC_REQ_PARAMS_DEFAULT_MAX_SIZE = "req-params-default-max-size";
+    public static final String CONFIG_OIDC_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE = "req-token-params-default-max-size";
     public static final String CONFIG_OIDC_REQ_PARAMS_MAX_SIZE_PREFIX = "req-params-max-size";
     public static final String CONFIG_OIDC_ADD_REQ_PARAMS_MAX_NUMBER = "add-req-params-max-number";
     public static final String CONFIG_OIDC_ADD_REQ_PARAMS_MAX_SIZE = "add-req-params-max-size";
     public static final String CONFIG_OIDC_ADD_REQ_PARAMS_MAX_OVERALL_SIZE = "add-req-params-max-overall-size";
     public static final String CONFIG_OIDC_ADD_REQ_PARAMS_FAIL_FAST = "add-req-params-fail-fast";
+    public static final String CONFIG_OIDC_ADD_REQ_TOKEN_PARAMS_FAIL_FAST = "add-req-token-params-fail-fast";
 
     /**
      * @deprecated To be removed in Keycloak 27
      */
     public static final String CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION = "allow-multiple-audiences-for-jwt-client-authentication";
+
+    public static final String CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK = "allow-token-introspection-without-audience-check";
+
+    public static final String CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN = "allow-userinfo-with-lightweight-access-token";
 
     private OIDCProviderConfig providerConfig;
 
@@ -144,6 +152,20 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         if (this.providerConfig.isAllowMultipleAudiencesForJwtClientAuthentication()) {
             logger.warnf("It is allowed to have multiple audiences for the JWT client authentication. This option is not recommended and will be removed in one of the future releases."
                     + " It is recommended to update your OAuth/OIDC clients to rather use single audience in the JWT token used for the client authentication.");
+        }
+
+        if (this.providerConfig.isAllowTokenIntrospectionWithoutAudienceCheck()) {
+            logger.warnf("Token introspection audience check is disabled globally. " +
+                    "Any authenticated client can introspect any token. " +
+                    "Enable per-client settings and disable this option: %s=false",
+                    CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK);
+        }
+
+        if (this.providerConfig.isAllowUserinfoWithLightweightAccessToken()) {
+            logger.warnf("UserInfo endpoint accepts lightweight access tokens globally. " +
+                    "Lightweight tokens should use token introspection instead. " +
+                    "Enable per-client settings and disable this option: %s=false",
+                    CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN);
         }
 
         initBuiltIns();
@@ -583,6 +605,13 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                             "'. It is needed to add the name of the parameter after this prefix into the configuration. In this example, the '" + OIDCLoginProtocol.LOGIN_HINT_PARAM + "' parameter is used, but this format is supported for any known standard OIDC/OAuth2 parameter.")
                     .add()
                 .property()
+                    .name(CONFIG_OIDC_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE)
+                    .type("int")
+                    .helpText("Maximum default length of the 'token' parameter sent to the OIDC token endpoint. As 'token' parameter is considered a parameter containing possibly long token (for example big JWT or SAML assertion) with unbounded data (For example possibly big amount of roles inside JWT). " +
+                            "Example of such parameter is for example 'subject_token' parameter case of token exchange grant.")
+                    .defaultValue(DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE)
+                    .add()
+                .property()
                     .name(CONFIG_OIDC_ADD_REQ_PARAMS_MAX_NUMBER)
                     .type("int")
                     .helpText("Maximum number of additional request parameters sent to the OIDC authentication or token endpoints. As 'additional request parameter' is meant some custom parameter not directly treated as standard OIDC/OAuth2 protocol parameter. Additional parameters might be useful for example to add custom claims to the OIDC token (in case that also particular protocol mappers are configured).")
@@ -606,6 +635,27 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     .helpText("Whether the fail-fast strategy should be enforced in case if the limit for some standard OIDC parameter or additional OIDC parameter is not met for the parameters sent to the OIDC authentication or token endpoints." +
                             " If false, then all additional request parameters to not meet the configuration are silently ignored. If true, an exception will be raised and request to the OIDC authentication or token endpoints will not be allowed.")
                     .defaultValue(DEFAULT_ADDITIONAL_REQ_PARAMS_FAIL_FAST)
+                    .add()
+                .property()
+                    .name(CONFIG_OIDC_ADD_REQ_TOKEN_PARAMS_FAIL_FAST)
+                    .type("boolean")
+                    .helpText("Whether the fail-fast strategy should be enforced in case if the limit for some 'token' parameter is not met for the parameters sent to the OIDC token endpoint." +
+                            " If false, then all additional request parameters to not meet the configuration are silently ignored. If true, an exception will be raised and request to the OIDC token endpoints will not be allowed. " +
+                            "As 'token' parameter is considered a parameter containing possibly long token (for example big JWT or SAML assertion) with unbounded data (For example possibly big amount of roles inside JWT). " +
+                            "Example of such parameter is for example 'subject_token' parameter case of token exchange grant.")
+                    .defaultValue(DEFAULT_ADDITIONAL_REQ_TOKEN_PARAMS_FAIL_FAST)
+                    .add()
+                .property()
+                    .name(CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK)
+                    .type("boolean")
+                    .helpText("Allows token introspection without audience validation for any client. This option is deprecated and will be removed in some future release.")
+                    .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK)
+                    .add()
+                .property()
+                    .name(CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN)
+                    .type("boolean")
+                    .helpText("Allows lightweight access tokens to be used with the UserInfo endpoint. This option is deprecated and will be removed in some future release.")
+                    .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN)
                     .add()
                 .build();
     }

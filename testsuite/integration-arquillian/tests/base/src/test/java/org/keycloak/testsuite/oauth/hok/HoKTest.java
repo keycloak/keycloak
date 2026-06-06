@@ -7,6 +7,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.client.Client;
@@ -17,6 +18,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.crypto.Algorithm;
@@ -37,9 +39,11 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
+import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -55,9 +59,9 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.util.TokenUtil;
 
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Assume;
 import org.junit.Before;
@@ -146,24 +150,43 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         testRealm.getUsers().add(user);
     }
 
-    // enable HoK Token as default
     @Before
-    public void enableHoKToken() {
-        // Enable MTLS HoK Token
-        for (String clientId : CLIENT_LIST) enableHoKToken(clientId);
+    public void configureClients() {
+        for (String clientId : CLIENT_LIST) {
+            ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), clientId);
+            ClientRepresentation clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper oidc = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
+            // Enable MTLS HoK Token
+            oidc.setUseMtlsHoKToken(true);
+
+            if (clientId.equals("test-app")) {
+                // Enable token exchange
+                oidc.setStandardTokenExchangeEnabled(true);
+
+                ProtocolMapperRepresentation namedAudMapper = new ProtocolMapperRepresentation();
+                namedAudMapper.setName("oidc-named-audience-mapper");
+                namedAudMapper.setProtocol("openid-connect");
+                namedAudMapper.setProtocolMapper("oidc-audience-mapper");
+                namedAudMapper.setConfig(Map.of(
+                      "included.client.audience", "named-test-app",
+                      "access.token.claim", "true"
+                ));
+                ProtocolMapperRepresentation audMapper = new ProtocolMapperRepresentation();
+                audMapper.setName("oidc-audience-mapper");
+                audMapper.setProtocol("openid-connect");
+                audMapper.setProtocolMapper("oidc-audience-mapper");
+                audMapper.setConfig(Map.of(
+                        "included.client.audience", "confidential-cli",
+                        "access.token.claim", "true"
+                ));
+                clientRep.setProtocolMappers(List.of(audMapper, namedAudMapper));
+            }
+            clientResource.update(clientRep);
+        }
     }
 
-    private void enableHoKToken(String clientId) {
-        // Enable MTLS HoK Token
-        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), clientId);
-        ClientRepresentation clientRep = clientResource.toRepresentation();
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
-        clientResource.update(clientRep);
-    }
-    
-    // Authorization Code Flow 
+    // Authorization Code Flow
     // Bind HoK Token
-
     @Test
     public void accessTokenRequestWithClientCertificate() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
@@ -253,7 +276,11 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         assertEquals(1, token.getResourceAccess(oauth.getClientId()).getRoles().size());
         assertTrue(token.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
 
-        EventRepresentation event = events.expectCodeToToken(codeId, sessionId).assertEvent();
+        EventRepresentation event = EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID).getEvent();
         assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
         assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
@@ -307,7 +334,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         // Error Pattern
         assertEquals(401, response.getStatusCode());
         assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
-        assertEquals("Client certificate missing, or its thumbprint and one in the refresh token did NOT match", response.getErrorDescription());
+        assertEquals("Client certificate missing, or its thumbprint and one in the token did NOT match", response.getErrorDescription());
     }
 
     @Test
@@ -334,7 +361,11 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String refreshTokenString = tokenResponse.getRefreshToken();
         RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
-        EventRepresentation tokenEvent = events.expectCodeToToken(codeId, sessionId).assertEvent();
+        EventRepresentation tokenEvent = EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID).getEvent();
 
         Assertions.assertNotNull(refreshTokenString);
         assertEquals("Bearer", tokenResponse.getTokenType());
@@ -343,7 +374,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         assertThat(actual, allOf(greaterThanOrEqualTo(1799L - OAuthProofKeyForCodeExchangeTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800L + OAuthProofKeyForCodeExchangeTest.ALLOWED_CLOCK_SKEW)));
         assertEquals(sessionId, refreshToken.getSessionState());
 
-        setTimeOffset(2);
+        timeOffSet.set(2);
 
         AccessTokenResponse response = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
@@ -384,7 +415,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         assertThat(actual, allOf(greaterThanOrEqualTo(1799L - OAuthProofKeyForCodeExchangeTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800L + OAuthProofKeyForCodeExchangeTest.ALLOWED_CLOCK_SKEW)));
         assertEquals(sessionId, refreshToken.getSessionState());
 
-        setTimeOffset(2);
+        timeOffSet.set(2);
 
         AccessTokenResponse response = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
@@ -399,7 +430,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         // Error Pattern
         assertEquals(401, response.getStatusCode());
         assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
-        assertEquals("Client certificate missing, or its thumbprint and one in the refresh token did NOT match", response.getErrorDescription());
+        assertEquals("Client certificate missing, or its thumbprint and one in the token did NOT match", response.getErrorDescription());
     }
 
     private void expectSuccessfulResponseFromTokenEndpoint(AccessTokenResponse response, String sessionId, AccessToken token, RefreshToken refreshToken, EventRepresentation tokenEvent) {
@@ -440,11 +471,16 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         assertEquals(1, refreshedToken.getResourceAccess(oauth.getClientId()).getRoles().size());
         Assertions.assertTrue(refreshedToken.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
 
-        EventRepresentation refreshEvent = events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), sessionId).user(refreshToken.getSubject()).assertEvent();
+        EventRepresentation refreshEvent = EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .userId(refreshToken.getSubject())
+                .details(Details.REFRESH_TOKEN_ID, tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID))
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID).getEvent();
         Assertions.assertNotEquals(tokenEvent.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
         Assertions.assertNotEquals(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
     }
 
     // verify HoK Token - Get UserInfo
@@ -470,7 +506,11 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
             oauth.httpClient().reset();
         }
         verifyHoKTokenDefaultCertThumbPrint(tokenResponse);
-        events.expectCodeToToken(codeId, sessionId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         // execute the access token to get UserInfo with token binded client certificate in mutual authentication TLS
         ClientBuilder clientBuilder = ClientBuilder.newBuilder();
@@ -512,7 +552,11 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
             oauth.httpClient().reset();
         }
         verifyHoKTokenDefaultCertThumbPrint(tokenResponse);
-        events.expectCodeToToken(codeId, sessionId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         // execute the access token to get UserInfo without token binded client certificate in mutual authentication TLS
         Client client = KeycloakTestingClient.getRestEasyClientBuilder().build();
@@ -530,12 +574,11 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void testSuccessfulUserInfoResponse(Response response) {
-        events.expect(EventType.USER_INFO_REQUEST)
-                .session(Matchers.notNullValue(String.class))
-                .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                .detail(Details.USERNAME, "test-user@localhost")
-                .detail(Details.SIGNATURE_REQUIRED, "false")
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.USER_INFO_REQUEST)
+                .hasSessionId()
+                .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                .details(Details.USERNAME, "test-user@localhost")
+                .details(Details.SIGNATURE_REQUIRED, "false");
         UserInfoClientUtil.testSuccessfulUserInfoResponse(response, "test-user@localhost", "test-user@localhost");
     }
 
@@ -743,6 +786,73 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    @Test
+    public void testTokenExchangeV2() throws Exception {
+        // Obtain a HoK-bound access token with client certificate
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+
+        oauth.client("test-app", "password");
+        AccessTokenResponse tokenResponse;
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+            oauth.httpClient().set(client);
+            tokenResponse = oauth.doAccessTokenRequest(code);
+        } finally {
+            oauth.httpClient().reset();
+        }
+
+        assertEquals(200, tokenResponse.getStatusCode(), tokenResponse.getErrorDescription());
+        verifyHoKTokenDefaultCertThumbPrint(tokenResponse);
+
+        // Exchange the token for a new one with "named-test-app" as audience and assert that cnf is still present
+        AccessTokenResponse exchangeResponse;
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+            oauth.httpClient().set(client);
+            exchangeResponse = oauth.tokenExchangeRequest(tokenResponse.getAccessToken())
+                  .audience("named-test-app")
+                  .send();
+        } finally {
+            oauth.httpClient().reset();
+        }
+
+        assertEquals(200, exchangeResponse.getStatusCode(), tokenResponse.getErrorDescription());
+        verifyHoKTokenCertThumbPrint(exchangeResponse, MutualTLSUtils.getThumbprintFromDefaultClientCert(), false);
+    }
+
+    @Test
+    public void testTokenExchangeV2WithMismatchedClientCertificate() throws Exception {
+        // Obtain a HoK-bound access token with the default client certificate
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+
+        oauth.client("test-app", "password");
+        AccessTokenResponse tokenResponse;
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+            oauth.httpClient().set(client);
+            tokenResponse = oauth.doAccessTokenRequest(code);
+        } finally {
+            oauth.httpClient().reset();
+        }
+
+        assertEquals(200, tokenResponse.getStatusCode(), tokenResponse.getErrorDescription());
+        verifyHoKTokenDefaultCertThumbPrint(tokenResponse);
+
+        // Attempt token exchange using a different client certificate — cnf thumbprint will not match
+        AccessTokenResponse exchangeResponse;
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithOtherKeyStoreAndTrustStore()) {
+            oauth.httpClient().set(client);
+            exchangeResponse = oauth.tokenExchangeRequest(tokenResponse.getAccessToken())
+                  .audience("named-test-app")
+                  .send();
+        } finally {
+            oauth.httpClient().reset();
+        }
+
+        assertEquals(400, exchangeResponse.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, exchangeResponse.getError());
+        assertEquals(MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC, exchangeResponse.getErrorDescription());
+    }
+
     private void verifyHoKTokenDefaultCertThumbPrint(AccessTokenResponse response) throws Exception {
         verifyHoKTokenCertThumbPrint(response, MutualTLSUtils.getThumbprintFromDefaultClientCert(), true);
     }
@@ -752,7 +862,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void verifyHoKTokenCertThumbPrint(AccessTokenResponse response, String certThumbPrint, boolean checkRefreshToken) {
-        JWSInput jws = null;
+        JWSInput jws;
         AccessToken at = null;
         try {
             jws = new JWSInput(response.getAccessToken());
@@ -760,6 +870,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         } catch (JWSInputException e) {
             Assertions.fail(e.toString());
         }
+        assertNotNull(at.getConfirmation());
         assertTrue(MessageDigest.isEqual(certThumbPrint.getBytes(), at.getConfirmation().getCertThumbprint().getBytes()));
 
         if (checkRefreshToken) {

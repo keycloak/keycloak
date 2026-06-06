@@ -18,6 +18,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.docker.DockerAuthV2Protocol;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -27,6 +28,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -211,7 +213,7 @@ public class DockerClientTest extends AbstractKeycloakTest {
     private void assertLogin(UserRepresentation dockerUser) {
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
-                .isCodeId()
+                .hasCodeId()
                 .clientId(CLIENT_ID)
                 .userId(dockerUser.getId())
                 .details(Details.AUTH_METHOD, DockerAuthV2Protocol.LOGIN_PROTOCOL)
@@ -220,12 +222,10 @@ public class DockerClientTest extends AbstractKeycloakTest {
     }
 
     private void assertLoginErrorClientDisabled() {
-        events.expect(EventType.LOGIN_ERROR)
-                .realm(REALM_ID)
-                .ipAddress(Matchers.any(String.class))
-                .client(CLIENT_ID)
-                .user((String) null)
-                .error(Errors.CLIENT_DISABLED)
-                .assertEvent();
+        EventRepresentation eventRep = EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR)
+                .clientId(CLIENT_ID)
+                .userId(null)
+                .error(Errors.CLIENT_DISABLED).getEvent();
+        MatcherAssert.assertThat(eventRep.getIpAddress(), Matchers.any(String.class));
     }
 }

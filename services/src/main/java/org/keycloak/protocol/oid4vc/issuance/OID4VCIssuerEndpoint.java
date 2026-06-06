@@ -51,7 +51,9 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
+import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.Details;
@@ -67,6 +69,8 @@ import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -107,7 +111,7 @@ import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
-import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
+import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
@@ -177,7 +181,11 @@ public class OID4VCIssuerEndpoint {
     private AuthenticationManager.AuthResult cachedAuthResult;
 
     public static final String CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY = "credentialOfferLifespanS";
-    public static final int DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S = 30;
+
+    /**
+     * Default credential-offer lifespan is same as default "User-Initiated Action Lifespan" (5 minutes)
+     */
+    public static final int DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S = Constants.DEFAULT_ACCESS_CODE_LIFESPAN_USER_ACTION;
 
     public static final String DEFLATE_COMPRESSION = "DEF";
     public static final String NONCE_PATH = "nonce";
@@ -269,6 +277,29 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
+     * Validates if the REST credential offer feature is enabled.
+     * If disabled, logs the status and throws
+     * a {@link CorsErrorResponseException}.
+     */
+    private void checkRestCredentialOfferEnabled(EventBuilder eventBuilder) {
+        if (!Profile.isFeatureEnabled(org.keycloak.common.Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER)) {
+            LOGGER.debugf("REST credential offer endpoint is disabled. Feature oid4vci-rest-credential-offer is not enabled.");
+            if (eventBuilder != null) {
+                eventBuilder.error(ErrorType.INVALID_CLIENT.getValue());
+            }
+            if (cors == null) {
+                configureCors(false);
+            }
+            throw new CorsErrorResponseException(
+                    cors,
+                    ErrorType.INVALID_CLIENT.getValue(),
+                    "REST credential offer functionality is not enabled",
+                    Response.Status.FORBIDDEN
+            );
+        }
+    }
+
+    /**
      * Validates whether the authenticated client is enabled for OID4VCI features.
      * <p>
      * If the client is not enabled, this method logs the status and throws a
@@ -282,9 +313,18 @@ public class OID4VCIssuerEndpoint {
         ClientModel client = clientSession.getClient();
 
         boolean oid4vciEnabled = Boolean.parseBoolean(client.getAttributes().get(OID4VCI_ENABLED_ATTRIBUTE_KEY));
+        boolean clientEnabled = client.isEnabled();
+        String errorDescription = null;
 
         if (!oid4vciEnabled) {
             LOGGER.debugf("Client '%s' is not enabled for OID4VCI features.", client.getClientId());
+            errorDescription = "Client not enabled for OID4VCI";
+        }
+        if (!clientEnabled) {
+            LOGGER.debugf("Client '%s' disabled.", client.getClientId());
+            errorDescription = "Client not enabled for OID4VCI";
+        }
+        if (!oid4vciEnabled || !clientEnabled) {
             if (eventBuilder != null) {
                 eventBuilder.client(client).error(ErrorType.INVALID_CLIENT.getValue());
             }
@@ -294,7 +334,7 @@ public class OID4VCIssuerEndpoint {
             throw new CorsErrorResponseException(
                     cors,
                     ErrorType.INVALID_CLIENT.getValue(),
-                    "Client not enabled for OID4VCI",
+                    errorDescription,
                     Response.Status.FORBIDDEN
             );
         }
@@ -462,6 +502,7 @@ public class OID4VCIssuerEndpoint {
 
         cors.checkAllowedOrigins(session, clientModel);
         checkIsOid4vciEnabled(eventBuilder);
+        checkRestCredentialOfferEnabled(eventBuilder);
         checkClientEnabled(eventBuilder);
 
         // Verify required credConfigId
@@ -684,6 +725,18 @@ public class OID4VCIssuerEndpoint {
             }
         } else {
             clientSession.removeNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
+        }
+    }
+
+    private void checkUserHasVerifiableCredential(UserModel user, CredentialScopeModel requestedCredential, EventBuilder event) {
+        if (!OID4VCUtil.hasVerifiableCredential(session, user, requestedCredential)) {
+            String errorMessage = String.format("User '%s' does not have requested verifiable credential '%s'", user.getUsername(), requestedCredential.getCredentialConfigurationId());
+            LOGGER.debugf(errorMessage);
+            event.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+            throw new CorsErrorResponseException(cors,
+                    ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(),
+                    errorMessage,
+                    Response.Status.BAD_REQUEST);
         }
     }
 
@@ -910,7 +963,7 @@ public class OID4VCIssuerEndpoint {
 
         // Find credential client scope by requested/authorized credential_configuration_id
         //
-        CredentialScopeModel authorizedCredentialScope = CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId(
+        CredentialScopeModel authorizedCredentialScope = CredentialScopeUtils.findCredentialScopeModelByConfigurationId(
                 realmModel, () -> clientModel.getClientScopes(false).values().stream(), authorizedCredentialConfigurationId);
 
         if (authorizedCredentialScope == null) {
@@ -923,6 +976,7 @@ public class OID4VCIssuerEndpoint {
         eventBuilder.detail(Details.CREDENTIAL_TYPE, authorizedCredentialConfigurationId);
 
         checkScope(authorizedCredentialScope);
+        checkUserHasVerifiableCredential(userModel, authorizedCredentialScope, eventBuilder);
 
         SupportedCredentialConfiguration supportedCredential =
                 OID4VCIssuerWellKnownProvider.toSupportedCredentialConfiguration(session, authorizedCredentialScope);
@@ -975,6 +1029,9 @@ public class OID4VCIssuerEndpoint {
         eventBuilder.detail(Details.SCOPE, supportedCredential.getScope())
                 .detail(Details.VERIFIABLE_CREDENTIAL_FORMAT, supportedCredential.getFormat())
                 .detail(Details.VERIFIABLE_CREDENTIALS_ISSUED, String.valueOf(responseVO.getCredentials().size()));
+
+        recordIssuedVerifiableCredentials(userModel, clientModel, authorizedCredentialScope, responseVO.getCredentials().size());
+
         eventBuilder.success();
 
         // Clean up offer state after successful credential issuance
@@ -985,6 +1042,24 @@ public class OID4VCIssuerEndpoint {
         }
 
         return response;
+    }
+
+    private void recordIssuedVerifiableCredentials(UserModel userModel, ClientModel clientModel, CredentialScopeModel credentialScope, int count) {
+        String credentialScopeName = credentialScope.getName();
+        try {
+            if (count > 0) {
+                IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(userModel.getId(), credentialScopeName, clientModel.getId());
+
+                long issuedAt = Time.currentTimeMillis();
+                model.setIssuedAt(issuedAt);
+                model.setExpiresAt(issuedAt + (credentialScope.getExpiryInSeconds() * 1000));
+
+                session.users().addIssuedVerifiableCredential(model);
+                LOGGER.debugf("Recorded VC issuance: user=%s, client=%s, type=%s, credentials=%d", userModel.getUsername(), clientModel.getClientId(), credentialScopeName, count);
+            }
+        } catch (Exception e) {
+            LOGGER.warnf(e, "Failed to record VC issuance for user=%s, client=%s, type=%s", userModel.getUsername(), clientModel.getClientId(), credentialScopeName);
+        }
     }
 
     private List<OID4VCAuthorizationDetail> getAuthorizationDetailsResponse(AccessToken accessToken) {

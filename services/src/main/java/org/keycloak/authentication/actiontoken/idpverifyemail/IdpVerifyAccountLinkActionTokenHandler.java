@@ -148,16 +148,16 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         int singleObjectLifespan = realm.getActionTokenGeneratedByUserLifespan();
         String userId = user.getId();
         String idpAlias = token.getIdentityProviderAlias();
-        session.singleUseObjects().put(getUserVerifiedSingleObjectKey(userId, idpAlias), singleObjectLifespan, Map.of());
+        session.singleUseObjects().put(getUserVerifiedSingleObjectKey(userId, idpAlias, token.getExternalId()), singleObjectLifespan, Map.of());
     }
 
-    public static boolean runIfUserVerified(KeycloakSession session, UserModel user, IdentityProviderModel broker, Runnable runnable) {
+    public static boolean runIfUserVerified(KeycloakSession session, UserModel user, IdentityProviderModel broker, String externalId, Runnable runnable) {
         if (user == null) {
             return false;
         }
 
         SingleUseObjectProvider singleObjects = session.singleUseObjects();
-        String singleObjectKey = getUserVerifiedSingleObjectKey(user.getId(), broker.getAlias());
+        String singleObjectKey = getUserVerifiedSingleObjectKey(user.getId(), broker.getAlias(), externalId);
         boolean isUserVerified = singleObjects.remove(singleObjectKey) != null;
 
         if (isUserVerified) {
@@ -167,8 +167,8 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         return isUserVerified;
     }
 
-    private static String getUserVerifiedSingleObjectKey(String userId, String idpAlias) {
-        return "kc.brokering.user.verified." + userId  + "." + idpAlias;
+    private static String getUserVerifiedSingleObjectKey(String userId, String idpAlias, String externalId) {
+        return "kc.brokering.user.verified." + userId  + "." + idpAlias + "." + externalId;
     }
 
     private Response sendEmailAlreadyVerified(KeycloakSession session, EventBuilder event, UserModel user) {

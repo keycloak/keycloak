@@ -425,8 +425,10 @@ public class ClientResource {
         if (clientScope == null) {
             throw new jakarta.ws.rs.NotFoundException("Client scope not found");
         }
-        if (defaultScope && clientScope.isDynamicScope()) {
-            throw new ErrorResponseException("invalid_request", "Can't assign a Dynamic Scope to a Client as a Default Scope", Response.Status.BAD_REQUEST);
+        // Parameterized scopes currently require the caller to explicitly provide the scope parameter (e.g. "scope_name:value"),
+        // so they cannot be included automatically as default scopes. This restriction may be lifted in the future.
+        if (defaultScope && clientScope.isParameterizedScope()) {
+            throw new ErrorResponseException("invalid_request", "Can't assign a Parameterized Scope to a Client as a Default Scope", Response.Status.BAD_REQUEST);
         }
 
         validateClientScopeAssignment(session, clientScope, defaultScope, realm);

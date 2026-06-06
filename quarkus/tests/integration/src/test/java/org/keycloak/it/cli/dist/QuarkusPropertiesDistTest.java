@@ -24,11 +24,10 @@ import java.util.function.Consumer;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
-import org.keycloak.it.junit5.extension.KeepServerAlive;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.junit5.extension.WithEnvVars;
-import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 import io.restassured.RestAssured;
@@ -46,8 +45,7 @@ import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DistributionTest(reInstall = DistributionTest.ReInstall.NEVER, defaultOptions = "--db=dev-file")
-@WithEnvVars({"KC_CACHE", "local"}) // avoid flakey port conflicts
+@DistributionTest(defaultOptions = "--db=dev-file")
 @RawDistOnly(reason = "Containers are immutable")
 @Tag(DistributionTest.WIN)
 @TestMethodOrder(OrderAnnotation.class)
@@ -55,14 +53,6 @@ public class QuarkusPropertiesDistTest {
 
     private static final String QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY = "quarkus.datasource.metrics.enabled";
     private static final String QUARKUS_RUNTIME_CONSOLE_HANDLER_ENABLED_KEY = "quarkus.log.handler.console.\"console-2\".enable";
-
-    @DryRun
-    @Test
-    @Launch({"build"})
-    @Order(1)
-    void testBuildWithPropertyFromQuarkusProperties(CLIResult cliResult) {
-        cliResult.assertBuild();
-    }
 
     @Test
     @BeforeStartDistribution(QuarkusPropertiesDistTest.AddConsoleHandlerFromQuarkusProps.class)
@@ -72,7 +62,7 @@ public class QuarkusPropertiesDistTest {
         cliResult.assertMessage("Keycloak is the best");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @BeforeStartDistribution(UpdateConsoleHandlerFromKeycloakConf.class)
     @Launch({"build"})
@@ -82,7 +72,7 @@ public class QuarkusPropertiesDistTest {
         cliResult.assertBuild();
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @BeforeStartDistribution(UpdateConsoleHandlerFromQuarkusProps.class)
     @Launch({"start", "--http-enabled=true", "--hostname-strict=false"})
@@ -102,7 +92,8 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @KeepServerAlive
+    @BeforeStartDistribution(UpdateHibernateMetricsFromQuarkusProps.class)
+    @StopServer(Mode.MANUAL)
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--metrics-enabled=true"})
     @Order(8)
     void testUnknownQuarkusBuildTimePropertyApplied(CLIResult cliResult) {
@@ -123,15 +114,6 @@ public class QuarkusPropertiesDistTest {
                                 || s.contains("is required but it could not be found in any config source"))
                         .isPresent(),
                 () -> "The Error Output:\n " + cliResult.getErrorOutput() + " doesn't warn about the missing password");
-    }
-
-    @Disabled("Ensuring config-keystore is used only at runtime removes proactive validation of the path when only the keystore is used")
-    @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore-password=secret" })
-    @Order(10)
-    void testMissingSmallRyeKeyStorePathProperty(CLIResult cliResult) {
-        cliResult.assertBuild();
-        cliResult.assertError("config-keystore must be specified");
     }
 
     @Test
@@ -186,45 +168,45 @@ public class QuarkusPropertiesDistTest {
         cliResult.assertMessage("ERROR: Failed to load 'https-*' material: NoSuchFileException C:");
     }
 
-    public static class AddConsoleHandlerFromQuarkusProps implements Consumer<KeycloakDistribution> {
+    public static class AddConsoleHandlerFromQuarkusProps implements Consumer<RawKeycloakDistribution> {
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(RawKeycloakDistribution distribution) {
             distribution.setQuarkusProperty(QUARKUS_RUNTIME_CONSOLE_HANDLER_ENABLED_KEY, "true");
             distribution.setQuarkusProperty("quarkus.log.handler.console.\"console-2\".format", "Keycloak is the best");
             distribution.setQuarkusProperty("quarkus.log.handlers", "console-2");
         }
     }
 
-    public static class UpdateConsoleHandlerFromKeycloakConf implements Consumer<KeycloakDistribution> {
+    public static class UpdateConsoleHandlerFromKeycloakConf implements Consumer<RawKeycloakDistribution> {
 
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(RawKeycloakDistribution distribution) {
             distribution.deleteQuarkusProperties();
             distribution.setProperty(QUARKUS_RUNTIME_CONSOLE_HANDLER_ENABLED_KEY, "false");
         }
     }
 
-    public static class UpdateConsoleHandlerFromQuarkusProps implements Consumer<KeycloakDistribution> {
+    public static class UpdateConsoleHandlerFromQuarkusProps implements Consumer<RawKeycloakDistribution> {
 
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(RawKeycloakDistribution distribution) {
             distribution.deleteQuarkusProperties();
             distribution.setQuarkusProperty(QUARKUS_RUNTIME_CONSOLE_HANDLER_ENABLED_KEY, "true");
         }
     }
 
-    public static class UpdateHibernateMetricsFromQuarkusProps implements Consumer<KeycloakDistribution> {
+    public static class UpdateHibernateMetricsFromQuarkusProps implements Consumer<RawKeycloakDistribution> {
 
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(RawKeycloakDistribution distribution) {
             distribution.deleteQuarkusProperties();
             distribution.setQuarkusProperty(QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY, "true");
         }
     }
 
-    public static class CopyKeystoreToConf implements Consumer<KeycloakDistribution> {
+    public static class CopyKeystoreToConf implements Consumer<RawKeycloakDistribution> {
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(RawKeycloakDistribution distribution) {
             distribution.copyOrReplaceFileFromClasspath("/keystore", Path.of("conf", "keystore"));
         }
     }

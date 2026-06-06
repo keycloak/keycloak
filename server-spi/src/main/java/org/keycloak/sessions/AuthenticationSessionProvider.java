@@ -92,7 +92,7 @@ public interface AuthenticationSessionProvider extends Provider {
      * @deprecated to remove, all implementations are empty.
      */
     @Deprecated(since = "26.5", forRemoval = true)
-    void onClientRemoved(RealmModel realm, ClientModel client);
+    default void onClientRemoved(RealmModel realm, ClientModel client) {}
 
     /**
      * Requests update of authNotes of a root authentication session that is not owned

@@ -19,6 +19,7 @@ package org.keycloak.services.util;
 import java.util.stream.Stream;
 
 import org.keycloak.common.Profile;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
@@ -39,12 +40,13 @@ public class AuthorizationContextUtil {
     /**
      * Base function to obtain a bare AuthorizationRequestContext with just OAuth2 Scopes
      * @param session
+     * @param client
      * @param scope
      * @return an {@link AuthorizationRequestContext} with scope entries
      */
-    public static AuthorizationRequestContext getAuthorizationRequestContextFromScopes(KeycloakSession session, String scope) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            throw new RuntimeException("The Dynamic Scopes feature is not enabled and the AuthorizationRequestContext hasn't been generated");
+    public static AuthorizationRequestContext getAuthorizationRequestContextFromScopes(KeycloakSession session, ClientModel client, String scope) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
+            throw new RuntimeException("The Parameterized Scopes feature is not enabled and the AuthorizationRequestContext hasn't been generated");
         }
         AuthorizationRequestParserProvider clientScopeParser = session.getProvider(AuthorizationRequestParserProvider.class,
                 ClientScopeAuthorizationRequestParserProviderFactory.CLIENT_SCOPE_PARSER_ID);
@@ -54,18 +56,19 @@ public class AuthorizationContextUtil {
                     ClientScopeAuthorizationRequestParserProviderFactory.CLIENT_SCOPE_PARSER_ID));
         }
 
-        return clientScopeParser.parseScopes(scope);
+        return clientScopeParser.parseScopes(client, scope);
     }
 
     /**
-     * An extension of {@link AuthorizationContextUtil#getAuthorizationRequestContextFromScopes} that appends the current context's client
+     * An extension of {@link AuthorizationContextUtil#getAuthorizationRequestContextFromScopes} that appends the client reference
      * @param session
+     * @param client
      * @param scope
      * @return an {@link AuthorizationRequestContext} with scope entries and a ClientModel
      */
-    public static AuthorizationRequestContext getAuthorizationRequestContextFromScopesWithClient(KeycloakSession session, String scope) {
-        AuthorizationRequestContext authorizationRequestContext = getAuthorizationRequestContextFromScopes(session, scope);
-        authorizationRequestContext.getAuthorizationDetailEntries().add(new AuthorizationDetails(session.getContext().getClient()));
+    public static AuthorizationRequestContext getAuthorizationRequestContextFromScopesWithClient(KeycloakSession session, ClientModel client, String scope) {
+        AuthorizationRequestContext authorizationRequestContext = getAuthorizationRequestContextFromScopes(session, client, scope);
+        authorizationRequestContext.getAuthorizationDetailEntries().add(new AuthorizationDetails(client));
         return authorizationRequestContext;
     }
 
@@ -75,8 +78,8 @@ public class AuthorizationContextUtil {
      * @param scope
      * @return a Stream of {@link AuthorizationDetails} containing a ClientModel
      */
-    public static Stream<AuthorizationDetails> getAuthorizationRequestsStreamFromScopesWithClient(KeycloakSession session, String scope) {
-        AuthorizationRequestContext authorizationRequestContext = getAuthorizationRequestContextFromScopesWithClient(session, scope);
+    public static Stream<AuthorizationDetails> getAuthorizationRequestsStreamFromScopesWithClient(KeycloakSession session, ClientModel client, String scope) {
+        AuthorizationRequestContext authorizationRequestContext = getAuthorizationRequestContextFromScopesWithClient(session, client, scope);
         return authorizationRequestContext.getAuthorizationDetailEntries().stream();
     }
 
@@ -86,8 +89,8 @@ public class AuthorizationContextUtil {
      * @param scope
      * @return see description
      */
-    public static Stream<ClientScopeModel> getClientScopesStreamFromAuthorizationRequestContextWithClient(KeycloakSession session, String scope) {
-        return getAuthorizationRequestContextFromScopesWithClient(session, scope).getAuthorizationDetailEntries().stream()
+    public static Stream<ClientScopeModel> getClientScopesStreamFromAuthorizationRequestContextWithClient(KeycloakSession session, ClientModel client, String scope) {
+        return getAuthorizationRequestContextFromScopesWithClient(session, client, scope).getAuthorizationDetailEntries().stream()
                 .filter(authorizationDetails -> authorizationDetails.getSource() == AuthorizationRequestSource.SCOPE)
                 .map(AuthorizationDetails::getClientScope);
     }

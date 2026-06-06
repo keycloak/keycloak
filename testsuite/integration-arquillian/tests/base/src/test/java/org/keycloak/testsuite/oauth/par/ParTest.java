@@ -997,7 +997,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         // Authorization Request with request_uri of PAR
         // remove parameters as query strings of uri
         // PAR expired
-        setTimeOffset(expiresIn + 5);
+        timeOffSet.set(expiresIn + 5);
         oauth.redirectUri(null);
         oauth.scope(null);
         oauth.responseType(null);
@@ -1073,6 +1073,32 @@ public class ParTest extends AbstractClientPoliciesTest {
         ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(400, pResp.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
+    }
+
+    // valid PAR when Request Object Required is set to request_uri
+    @Test
+    public void testSuccessfulParWithRequiredRequestUri() throws Exception {
+        // create client dynamically
+        String clientId = createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+            clientRep.setRedirectUris(new ArrayList<>(List.of(CLIENT_REDIRECT_URI)));
+        });
+        OIDCClientRepresentation oidcCRep = getClientDynamically(clientId);
+        String clientSecret = oidcCRep.getClientSecret();
+        assertEquals(Boolean.FALSE, oidcCRep.getRequirePushedAuthorizationRequests());
+        assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
+        updateClientByAdmin(clientId, (ClientRepresentation cRep)->
+                OIDCAdvancedConfigWrapper.fromClientRepresentation(cRep)
+                        .setRequestObjectRequired(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST_URI));
+
+        // Pushed Authorization Request
+        oauth.client(clientId, clientSecret);
+        oauth.redirectUri(CLIENT_REDIRECT_URI);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
+        assertEquals(201, pResp.getStatusCode());
+        String requestUri = pResp.getRequestUri();
+        assertTrue(requestUri.startsWith("urn:ietf:params:oauth:request_uri:"));
+
+        doNormalAuthzProcess(requestUri, CLIENT_REDIRECT_URI, clientId, clientSecret);
     }
 
     // PAR including invalid redirect_uri

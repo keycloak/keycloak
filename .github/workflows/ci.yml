@@ -65,29 +65,36 @@ jobs:
         id: auroradb-tests
         run: |
           RUN_AURORADB_TESTS=false
-          if [[ $GITHUB_EVENT_NAME != "pull_request" && -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]]; then
+          if [[ $GITHUB_EVENT_NAME != "pull_request" && -n "${AWS_SECRET_ACCESS_KEY}" ]]; then
             RUN_AURORADB_TESTS=true
           fi
           echo "run-aurora-tests=$RUN_AURORADB_TESTS" >> $GITHUB_OUTPUT
 
+        env:
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - name: Azure conditional check
         id: azure-tests
         run: |
           RUN_AZURE_TESTS=false
-          if [[ $GITHUB_EVENT_NAME != "pull_request" && -n "${{ secrets.AZURE_CREDENTIALS }}" ]]; then
+          if [[ $GITHUB_EVENT_NAME != "pull_request" && -n "${AZURE_CREDENTIALS}" ]]; then
             RUN_AZURE_TESTS=true
           fi
           echo "run-azure-tests=$RUN_AZURE_TESTS" >> $GITHUB_OUTPUT
 
+        env:
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Additional DBs conditional check
         id: additional-dbs-tests
         run: |
           RUN_ADDITIONAL_DBS_TESTS=false
-          if [[ $GITHUB_EVENT_NAME != "pull_request" && -n "${{ secrets.PRIVATE_DBS_QUAY_USERNAME }}" && -n "${{ secrets.PRIVATE_DBS_QUAY_TOKEN }}" ]]; then
+          if [[ $GITHUB_EVENT_NAME != "pull_request" && -n "${PRIVATE_DBS_QUAY_USERNAME}" && -n "${PRIVATE_DBS_QUAY_TOKEN}" ]]; then
             RUN_ADDITIONAL_DBS_TESTS=true
           fi
           echo "run-additional-dbs-tests=$RUN_ADDITIONAL_DBS_TESTS" >> $GITHUB_OUTPUT
 
+        env:
+          PRIVATE_DBS_QUAY_USERNAME: ${{ secrets.PRIVATE_DBS_QUAY_USERNAME }}
+          PRIVATE_DBS_QUAY_TOKEN: ${{ secrets.PRIVATE_DBS_QUAY_TOKEN }}
   testsuite-deprecation-check:
     name: Testsuite Deprecation Check
     runs-on: ubuntu-latest
@@ -262,7 +269,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        suite: [zip-slow, zip-fast, container, storage, smoke]
+        suite: [zip-slow, zip-fast, storage, smoke]
         full-testsuite:
           - ${{ needs.conditional.outputs.ci-quarkus == 'true' }}
         # Win runs always as includes are evaluated after excludes
@@ -275,8 +282,6 @@ jobs:
             suite: zip-slow
           - full-testsuite: false
             suite: zip-fast
-          - full-testsuite: false
-            suite: container
           - full-testsuite: false
             suite: storage
           - full-testsuite: true
@@ -304,15 +309,11 @@ jobs:
         run: |
           declare -A PARAMS
           PARAMS["win"]="-Dkc.quarkus.tests.groups=win"
-          PARAMS["zip-slow"]="-Dkc.quarkus.tests.groups=slow"
-          PARAMS["zip-fast"]='-Dkc.quarkus.tests.groups=!slow'
-          PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
+          PARAMS["zip-slow"]="-Dkc.quarkus.tests.groups=slow -Dkc.quarkus.tests.aot=true"
+          PARAMS["zip-fast"]='-Dkc.quarkus.tests.groups=!slow -Dkc.quarkus.tests.aot=true'
           PARAMS["storage"]="-Ptest-database"
           PARAMS["smoke"]="-Dkc.quarkus.tests.groups=smoke"
 
-          if [ "${{ matrix.suite }}" == "container" ]; then
-            ./mvnw install -pl quarkus/tests/integration -am -DskipTests
-          fi
           ./mvnw test -pl quarkus/tests/integration ${PARAMS["${{ matrix.suite }}"]} 2>&1 | misc/log/trimmer.sh
 
   jdk-integration-tests:
@@ -461,6 +462,36 @@ jobs:
         with:
           job-name: External Infinispan IT
 
+  cacheless-tests:
+    name: Cacheless IT
+    needs: [ build, conditional ]
+    if: needs.conditional.outputs.ci-store == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run base tests without caches
+        run: |
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh clusterless`
+          echo "Tests: $TESTS"
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dauth.server.feature=cacheless -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+
+      - name: Run new base tests without caches
+        run: |          
+          ./mvnw package -f tests/pom.xml -Dtest=CachelessTestSuite
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Cacheless IT
+
   auroradb-integration-tests:
     name: AuroraDB IT
     needs: conditional
@@ -487,8 +518,8 @@ jobs:
           AWS_REGION=us-east-1
           echo "AWS Region: ${AWS_REGION}"
           
-          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set aws_access_key_id "${AWS_ACCESS_KEY_ID}"
+          aws configure set aws_secret_access_key "${AWS_SECRET_ACCESS_KEY}"
           aws configure set region ${AWS_REGION}
           
           AURORA_CLUSTER_NAME="gh-action-$(git rev-parse --short HEAD)-${{ github.run_id }}-${{ github.run_attempt }}"
@@ -503,6 +534,9 @@ jobs:
           JDBC_PARAMS='?ssl=true&sslmode=verify-ca&sslrootcert=/opt/keycloak/aws.pem'
           echo "jdbc_params=${JDBC_PARAMS}" >> $GITHUB_OUTPUT
 
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - id: aurora-create
         name: Create Aurora DB
         uses: ./.github/actions/aurora-create-database
@@ -659,9 +693,10 @@ jobs:
             -f name=${{ steps.aurora-init.outputs.aurora-cluster-name }} \
             -f region=${{ steps.aurora-init.outputs.region }} \
             --repo ${{ github.repository }} \
-            --ref ${{ github.ref_name }}
+            --ref "${REF_NAME}"
         env:
           GH_TOKEN: ${{ github.token }}
+          REF_NAME: ${{ github.ref_name }}
 
   azure-integration-tests:
     name: AzureDB IT
@@ -700,7 +735,7 @@ jobs:
         id: parse-creds
         shell: bash
         run: |
-          SUBSCRIPTION=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.subscriptionId')
+          SUBSCRIPTION=$(echo "${AZURE_CREDENTIALS}" | jq -r '.subscriptionId')
           if [[ -z "$SUBSCRIPTION" || "$SUBSCRIPTION" == "null" ]]; then
             echo "ERROR: Failed to parse subscriptionId from AZURE_CREDENTIALS"
             exit 1
@@ -709,6 +744,8 @@ jobs:
           echo "::add-mask::$SUBSCRIPTION"
           echo "subscription=$SUBSCRIPTION" >> $GITHUB_OUTPUT
 
+        env:
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Login to Azure
         uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
         with:
@@ -906,7 +943,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Login to Quay.io
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           username: ${{ secrets.PRIVATE_DBS_QUAY_USERNAME }}
           password: ${{ secrets.PRIVATE_DBS_QUAY_TOKEN }}
@@ -1263,6 +1300,27 @@ jobs:
       - name: Run tests
         run: ./mvnw package -f scim/tests/pom.xml
 
+  ssf-integration-tests:
+    name: SSF IT
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
+        # file that is not part of m2-keycloak.tzts archive
+      - name: Build tar keycloak-quarkus-dist
+        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+
+      - name: Run tests
+        run: ./mvnw package -f ssf/tests/pom.xml
+
   authzen-integration-tests:
     name: AuthZen IT
     runs-on: ubuntu-latest
@@ -1361,6 +1419,7 @@ jobs:
       - authzen-integration-tests
       - admin-v2-tests
       - testsuite-deprecation-check
+      - cacheless-tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0

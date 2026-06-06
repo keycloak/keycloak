@@ -176,6 +176,75 @@ For example:
 
 <@kc.start parameters="--proxy-headers forwarded --proxy-trusted-addresses=192.168.0.32,127.0.0.0/8"/>
 
+[[header-filtering-recommendations]]
+=== Header filtering recommendations
+
+When using TLS re-encrypt, the proxy can inspect and modify HTTP traffic.
+Use this capability to prevent external clients from injecting headers that affect identity resolution, access control, or observability.
+
+NOTE: The following assumes that there is only a single proxy layer in front of {project_name}, and that it is not receiving traffic from another trusted proxy layer with trusted headers.
+
+Configure the proxy to apply the following rules to incoming requests before forwarding them to {project_name}:
+
+* *Overwrite* `Forwarded` and `+X-Forwarded-*+` headers with the proxy's own values rather than removing them, because {project_name} relies on these headers when `--proxy-headers` is configured.
+* *Strip* all other headers listed below entirely.
+
+[%autowidth]
+|===
+|Header(s) |Category |Risk if not filtered
+
+|`Forwarded`, `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, `X-Forwarded-Port`, `X-Forwarded-Prefix`
+|Proxy identity
+|Clients can spoof their IP address, protocol, or host, affecting access control and audit logging.
+*Overwrite* these headers rather than stripping them.
+
+|`X-Original-Forwarded-For`
+|Proxy identity
+|Variant of `X-Forwarded-For` recognized by some proxies.
+Can be spoofed to bypass IP-based access controls.
+
+|`X-Real-IP`
+|Proxy identity
+|Trusted by some applications for rate limiting and audit logging.
+Can be spoofed to bypass IP-based restrictions.
+
+|`X-Original-URL`, `X-Original-Method`
+|Proxy identity
+|Used by authentication sub-request mechanisms in some proxies.
+Can be spoofed to manipulate path-based authorization decisions.
+
+|`X-Forwarded-Access-Token`
+|Proxy identity
+|Injected by some OAuth2 proxies.
+Can be spoofed to inject forged access tokens.
+
+|`traceparent`, `tracestate`
+|Distributed tracing
+|https://www.w3.org/TR/trace-context/[W3C Trace Context] headers.
+External injection allows attackers to correlate requests in the tracing backend and map internal service dependencies.
+
+|`baggage`
+|Distributed tracing
+|https://www.w3.org/TR/baggage/[W3C Baggage] header.
+Can inject arbitrary key-value pairs into the trace context propagated to downstream services.
+
+|`b3`, `x-b3-traceid`, `x-b3-spanid`, `x-b3-parentspanid`, `x-b3-sampled`, `x-b3-flags`
+|Distributed tracing
+|https://github.com/openzipkin/b3-propagation[Zipkin B3] propagation headers.
+External injection inflates observability costs and enables cross-service correlation.
+
+|`uber-trace-id`
+|Distributed tracing
+|https://www.jaegertracing.io/sdk-migration/#propagation-format[Jaeger] propagation header (deprecated in favor of W3C Trace Context).
+Same risks as other tracing headers.
+
+|`x-ot-span-context`
+|Distributed tracing
+|OpenTracing propagation header (deprecated in favor of W3C Trace Context).
+Same risks as other tracing headers.
+
+|===
+
 === Exposed path recommendations
 
 When using a reverse proxy, {project_name} only requires certain paths to be exposed.
@@ -353,13 +422,58 @@ Common options for configuring providers are:
 | The prefix of the headers holding additional certificates in the chain and used to retrieve individual
 certificates according to the length of the chain. For instance, a value `CERT_CHAIN` will tell the server
 to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if `certificate-chain-length` is set to `10`.
-| `apache`, `haproxy`, `nginx`
+| `apache`, `nginx`
+
+|ssl-cert-chain
+| The name of the header holding the full certificate chain as a single value.
+All chain certificates are contained in one header rather than split across indexed headers.
+| `haproxy`, `rfc9440`
 
 |certificate-chain-length
 | The maximum length of the certificate chain beyond the client certificate
 | all but `envoy` (defaults to 1)
 
 |===
+
+==== Configuring the HAProxy provider
+
+HAProxy can forward client certificates as base64-encoded DER using its `ssl_c_der,base64` and `ssl_c_chain_der,base64` sample fetches.
+The `haproxy` provider reads the client certificate from the `ssl-client-cert` header and the certificate chain from the `ssl-cert-chain` header.
+
+The options and defaults specific to `haproxy` are as follows:
+
+[%autowidth]
+|===
+|Option|Description|Default
+
+|ssl-client-cert
+| The name of the header holding the client certificate.
+| (none)
+
+|ssl-cert-chain
+| The name of the header holding the full certificate chain as a single base64-encoded DER value. HAProxy's `ssl_c_chain_der,base64` produces the concatenated DER encoding of all CA certificates in one value.
+| (none)
+
+|certificate-chain-length
+| The maximum number of certificates to load from the chain header.
+| 1
+
+|===
+
+Example HAProxy configuration:
+
+[source]
+----
+http-request set-header Client-Cert %[ssl_c_der,base64] if { ssl_c_used } { ssl_c_verify 0 }
+http-request set-header Client-Cert-Chain %[ssl_c_chain_der,base64] if { ssl_c_used } { ssl_c_verify 0 }
+----
+
+Corresponding {project_name} configuration:
+
+<@kc.start parameters="--spi-x509cert-lookup--provider=haproxy --spi-x509cert-lookup--haproxy--ssl-client-cert=Client-Cert --spi-x509cert-lookup--haproxy--ssl-cert-chain=Client-Cert-Chain --spi-x509cert-lookup--haproxy--certificate-chain-length=2"/>
+
+If the number of intermediate certificates in your certificate chain is longer than the default, you must set the
+`certificate-chain-length` option to an appropriate value. Otherwise, the provider will discard the request.
 
 ==== Configuring the NGINX provider
 
@@ -402,8 +516,8 @@ The options and defaults specific to `rfc9440` are as follows:
 
 |===
 
-If your certificate chain is longer than the default, you must set the `certificate-chain-length` option to an appropriate value.
-Otherwise, the provider will discard the request.
+If the number of intermediate certificates in your certificate chain is longer than the default, you must set the
+`certificate-chain-length` option to an appropriate value. Otherwise, the provider will discard the request.
 
 ==== Configuring the Traefik provider
 
@@ -417,6 +531,11 @@ Other than possibly changing the `certificate-chain-length`, you do not need to 
 
 The Envoy provider automatically retrieves the client certificate and optional certificate chain from the `x-forwarded-client-cert` header.
 You do not need to configure additional options for the `envoy` provider.
+
+=== Blueprints
+
+* <@links.server id="haproxy-reencrypt"/>
+* <@links.server id="traefik-reencrypt"/>
 
 [[graceful-http-shutdown]]
 == Graceful HTTP shutdown
@@ -524,11 +643,11 @@ Calculation:
 
 For production with TLS passthrough:
 
-<@kc.start parameters="--shutdown-delay=30s --shutdown-timeout=1s"/>
+<@kc.start parameters="--shutdown-delay=30s" />
 
 For load balancers that poll readiness:
 
-<@kc.start parameters="--shutdown-delay=16s --shutdown-timeout=1s"/>
+<@kc.start parameters="--shutdown-delay=16s"/>
 
 For test environments:
 

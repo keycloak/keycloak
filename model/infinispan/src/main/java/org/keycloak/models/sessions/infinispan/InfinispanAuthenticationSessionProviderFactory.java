@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -198,7 +199,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return InfinispanUtils.isEmbeddedInfinispan();
+        return !Profile.isFeatureEnabled(Profile.Feature.CACHELESS) && InfinispanUtils.isEmbeddedInfinispan();
     }
 
     private InfinispanChangelogBasedTransaction<String, RootAuthenticationSessionEntity> createTransaction(KeycloakSession session) {

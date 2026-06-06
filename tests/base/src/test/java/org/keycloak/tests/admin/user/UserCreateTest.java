@@ -484,6 +484,52 @@ public class UserCreateTest extends AbstractUserTest {
     }
 
     @Test
+    public void createUserWithNotUsernameInvalidPassword() {
+        RealmRepresentation rep = managedRealm.admin().toRepresentation();
+        String passwordPolicy = rep.getPasswordPolicy();
+        rep.setPasswordPolicy("notUsername()");
+        managedRealm.admin().update(rep);
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("User8");
+        user.setEmail("User8@localhost");
+        CredentialRepresentation rawPassword = new CredentialRepresentation();
+        rawPassword.setValue("user8");
+        rawPassword.setType(CredentialRepresentation.PASSWORD);
+        user.setCredentials(Collections.singletonList(rawPassword));
+        managedRealm.admin().clearAdminEvents();
+
+        try (Response response = managedRealm.admin().users().create(user)) {
+            assertEquals(400, response.getStatus());
+            Assert.assertTrue(response.readEntity(String.class).contains("Invalid password: must not be equal to the username."));
+            rep.setPasswordPolicy(passwordPolicy);
+            managedRealm.admin().update(rep);
+        }
+    }
+    
+    @Test
+    public void createUserWithNotEmailInvalidPassword() {
+        RealmRepresentation rep = managedRealm.admin().toRepresentation();
+        String passwordPolicy = rep.getPasswordPolicy();
+        rep.setPasswordPolicy("notEmail()");
+        managedRealm.admin().update(rep);
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("User9");
+        user.setEmail("User9@localhost");
+        CredentialRepresentation rawPassword = new CredentialRepresentation();
+        rawPassword.setValue("user9@localhost");
+        rawPassword.setType(CredentialRepresentation.PASSWORD);
+        user.setCredentials(Collections.singletonList(rawPassword));
+        managedRealm.admin().clearAdminEvents();
+
+        try (Response response = managedRealm.admin().users().create(user)) {
+            assertEquals(400, response.getStatus());
+            Assert.assertTrue(response.readEntity(String.class).contains("Invalid password: must not be equal to the email."));
+            rep.setPasswordPolicy(passwordPolicy);
+            managedRealm.admin().update(rep);
+        }
+    }
+
+    @Test
     public void createUserWithInvalidPolicyPassword() {
         RealmRepresentation rep = managedRealm.admin().toRepresentation();
         String passwordPolicy = rep.getPasswordPolicy();

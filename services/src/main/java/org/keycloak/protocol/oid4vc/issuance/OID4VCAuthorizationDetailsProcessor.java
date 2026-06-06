@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
@@ -38,6 +39,7 @@ import org.keycloak.protocol.oid4vc.model.IssuerState;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
+import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.rar.InvalidAuthorizationDetailsException;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
@@ -50,8 +52,8 @@ import static org.keycloak.OAuth2Constants.ISSUER_STATE;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIALS_OFFER_ID_ATTR;
-import static org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId;
-import static org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils.findCredentialScopeModelByName;
+import static org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils.findCredentialScopeModelByConfigurationId;
+import static org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils.findCredentialScopeModelByName;
 import static org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX;
 
 public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetailsProcessor<OID4VCAuthorizationDetail> {
@@ -229,6 +231,11 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         if (credScope == null)
             throw getInvalidRequestException("Cannot find or access client scope for credential_configuration_id: " + requestedCredentialConfigurationId);
 
+        UserModel user = clientSessionCtx.getClientSession().getUserSession().getUser();
+        if (!OID4VCUtil.hasVerifiableCredential(session, user, credScope)) {
+            throw getInvalidRequestException("User '" + user.getUsername() + "' does not have verifiable credential '" + credScope.getCredentialConfigurationId() + "'.");
+        }
+
         OID4VCAuthorizationDetail responseAuthDetail = generateResponseAuthorizationDetails(credScope, null);
         responseAuthDetail.setClaims(requestAuthDetail.getClaims());
 
@@ -257,6 +264,9 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         for (String scope : scopeParam.split(" ")) {
             CredentialScopeModel credScope = findCredentialScopeModelByName(realmModel, clientSessionCtx::getClientScopesStream, scope);
             if (credScope != null) {
+                if (!OID4VCUtil.hasVerifiableCredential(session, userSession.getUser(), credScope)) {
+                    throw getInvalidRequestException("User '" + userSession.getUser().getUsername() + "' does not have verifiable credential '" + credScope.getCredentialConfigurationId() + "'.");
+                }
 
                 // Generate `authorization_details` for the AccessToken Response
                 // This is the same logic as we use when a credential offer is created
@@ -348,6 +358,13 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
             offerState = Optional.ofNullable(offerStorage.getOfferStateById(credOfferId))
                     .orElseThrow(() -> new IllegalStateException("No credential offer state for: " + auxCredOfferId));
+
+            // Check same login client as the client for which the credential offer is target (in case of credential offer target for specific client only)
+            String offerClientId = offerState.getTargetClientId();
+            String loginClientId = clientSessionCtx.getClientSession().getClient().getClientId();
+            if (offerClientId != null && !offerClientId.equals(loginClientId)) {
+                throw new IllegalStateException("Credential offer target client '" + offerClientId + "' different from login client '" + loginClientId + "'");
+            }
         }
 
         return offerState;

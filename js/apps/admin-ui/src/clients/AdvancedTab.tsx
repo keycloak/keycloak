@@ -17,7 +17,7 @@ import { FineGrainSamlEndpointConfig } from "./advanced/FineGrainSamlEndpointCon
 import { OpenIdConnectCompatibilityModes } from "./advanced/OpenIdConnectCompatibilityModes";
 import { OpenIdVerifiableCredentials } from "./advanced/OpenIdVerifiableCredentials";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { PROTOCOL_OIDC, PROTOCOL_OID4VC } from "./constants";
+import { PROTOCOL_OIDC } from "./constants";
 
 export const parseResult = (
   result: GlobalRequestResult,
@@ -209,9 +209,9 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
           {
             title: t("openIdVerifiableCredentials"),
             isHidden:
-              (protocol !== PROTOCOL_OIDC && protocol !== PROTOCOL_OID4VC) ||
+              protocol !== PROTOCOL_OIDC ||
               !isFeatureEnabled(Feature.OpenId4VCI) ||
-              !realmRepresentation?.verifiableCredentialsEnabled,
+              !realmRepresentation.verifiableCredentialsEnabled,
             panel: (
               <>
                 <Text className="pf-v5-u-pb-lg">

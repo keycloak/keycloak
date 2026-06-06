@@ -55,7 +55,9 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.ClaimsParameterWithValueIdTokenMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -68,6 +70,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientAttributesConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientProtocolConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
@@ -107,6 +111,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
@@ -119,9 +124,12 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.OAuth2Constants.SCOPE_PHONE;
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_REFRESH_TOKEN;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.AdminApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientAttributesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientProtocolConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
@@ -139,7 +147,6 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExep
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
@@ -266,8 +273,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         });
         OIDCClientRepresentation clientRep = getClientDynamically(clientId);
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, clientRep.getTokenEndpointAuthMethod());
-        events.expect(EventType.CLIENT_REGISTER).client(clientId).user(is(emptyOrNullString())).assertEvent();
-        events.expect(EventType.CLIENT_INFO).client(clientId).user(is(emptyOrNullString())).assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_REGISTER).clientId(clientId).userId(null);
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_INFO).clientId(clientId).userId(null);
         adminClient.realm(REALM_NAME).clients().get(clientId).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
 
         successfulLoginAndLogout(clientId, clientRep.getClientSecret());
@@ -397,14 +404,27 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         String clientName = generateSuffixedName(CLIENT_NAME);
         String clientId = createClientDynamically(clientName, (OIDCClientRepresentation clientRep) -> {
         });
-        events.expect(EventType.CLIENT_REGISTER).client(clientId).user(is(emptyOrNullString())).assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_REGISTER).clientId(clientId).userId(null);
         OIDCClientRepresentation response = getClientDynamically(clientId);
         String clientSecret = response.getClientSecret();
         assertEquals(clientName, response.getClientName());
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, response.getTokenEndpointAuthMethod());
-        events.expect(EventType.CLIENT_INFO).client(clientId).user(is(emptyOrNullString())).assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_INFO).clientId(clientId).userId(null);
 
         adminClient.realm(REALM_NAME).clients().get(clientId).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        // Add audience mapper so the client can introspect its own tokens
+        org.keycloak.representations.idm.ProtocolMapperRepresentation audienceMapper = new org.keycloak.representations.idm.ProtocolMapperRepresentation();
+        audienceMapper.setName("audience-mapper");
+        audienceMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        audienceMapper.setProtocolMapper(AudienceProtocolMapper.PROVIDER_ID);
+
+        Map<String, String> audienceConfig = new HashMap<>();
+        audienceConfig.put(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE, response.getClientId());
+        audienceConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        audienceMapper.setConfig(audienceConfig);
+
+        adminClient.realm(REALM_NAME).clients().get(clientId).getProtocolMappers().createMapper(audienceMapper);
 
         successfulLoginAndLogoutWithPKCE(response.getClientId(), clientSecret, TEST_USER_NAME, TEST_USER_PASSWORD);
     }
@@ -929,29 +949,17 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
     }
 
     @Test
-    public void testRejectResourceOwnerCredentialsGrantExecutor() throws Exception {
-
+    public void testRejectResourceOwnerCredentialsGrantExecutorWithAnyClientCondition() throws Exception {
         String clientId = generateSuffixedName(CLIENT_NAME);
         String clientSecret = "secret";
 
-        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-            clientRep.setSecret(clientSecret);
-            clientRep.setStandardFlowEnabled(Boolean.TRUE);
-            clientRep.setDirectAccessGrantsEnabled(Boolean.TRUE);
-            clientRep.setPublicClient(Boolean.FALSE);
-        });
-
-        // register profiles
-        String json = (new ClientProfilesBuilder()).addProfile(
-                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Purofairu desu")
-                        .addExecutor(RejectResourceOwnerPasswordCredentialsGrantExecutorFactory.PROVIDER_ID,
-                                createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig(Boolean.TRUE))
-                        .toRepresentation()
-        ).toString();
-        updateProfiles(json);
+        // Create client
+        createClientForResourceOwnerPasswordCredential(clientId, clientSecret);
+        // Register profile
+        registerClientProfileWithResourceOwnerRejectExecutor();
 
         // register policies
-        json = (new ClientPoliciesBuilder()).addPolicy(
+        String json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Porisii desu", Boolean.TRUE)
                         .addCondition(AnyClientConditionFactory.PROVIDER_ID,
                                 createAnyClientConditionConfig())
@@ -974,24 +982,13 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         String clientId = generateSuffixedName(CLIENT_NAME);
         String clientSecret = "secret";
 
-        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-            clientRep.setSecret(clientSecret);
-            clientRep.setStandardFlowEnabled(Boolean.TRUE);
-            clientRep.setDirectAccessGrantsEnabled(Boolean.TRUE);
-            clientRep.setPublicClient(Boolean.FALSE);
-        });
+        // Create client
+        createClientForResourceOwnerPasswordCredential(clientId, clientSecret);
+        // Register profile
+        registerClientProfileWithResourceOwnerRejectExecutor();
 
-        // register profiles
-        String json = (new ClientProfilesBuilder()).addProfile(
-                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Purofairu desu")
-                        .addExecutor(RejectResourceOwnerPasswordCredentialsGrantExecutorFactory.PROVIDER_ID,
-                                createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig(Boolean.TRUE))
-                        .toRepresentation()
-        ).toString();
-        updateProfiles(json);
-
-        // register policies
-        json = (new ClientPoliciesBuilder()).addPolicy(
+        // register policies - client scopes condition
+        String json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
                         .addCondition(ClientScopesConditionFactory.PROVIDER_ID,
                                 createClientScopesConditionConfig(ClientScopesConditionFactory.ANY, Arrays.asList(SCOPE_PHONE)))
@@ -1018,6 +1015,120 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         } finally {
             oauth.scope(origScope);
         }
+    }
+
+    @Test
+    public void testRejectResourceOwnerCredentialsGrantExecutorWithClientProtocolCondition() throws Exception {
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+
+        // Create client
+        createClientForResourceOwnerPasswordCredential(clientId, clientSecret);
+        // Register profile
+        registerClientProfileWithResourceOwnerRejectExecutor();
+
+        // register policies - client protocol condition
+        String json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
+                        .addCondition(ClientProtocolConditionFactory.PROVIDER_ID,
+                                createClientProtocolConditionConfig(OIDCLoginProtocol.LOGIN_PROTOCOL))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        oauth.client(clientId, clientSecret);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+        assertEquals("resource owner password credentials grant is prohibited.", response.getErrorDescription());
+    }
+
+    @Test
+    public void testRejectResourceOwnerCredentialsGrantExecutorWithClientRolesCondition() throws Exception {
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+
+        // Create client
+        String clientUUID = createClientForResourceOwnerPasswordCredential(clientId, clientSecret);
+        // Register profile
+        registerClientProfileWithResourceOwnerRejectExecutor();
+
+        // add the role to the client to execute condition
+        adminClient.realm(REALM_NAME).clients().get(clientUUID).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        // register policies - client roles condition
+        String json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
+                        .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
+                                createClientRolesConditionConfig(List.of(SAMPLE_CLIENT_ROLE)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        oauth.client(clientId, clientSecret);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+        assertEquals("resource owner password credentials grant is prohibited.", response.getErrorDescription());
+    }
+
+    @Test
+    public void testRejectResourceOwnerCredentialsGrantExecutorWithClientAttributesCondition() throws Exception {
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+
+        // Create client
+        String clientUUID = createClientForResourceOwnerPasswordCredential(clientId, clientSecret);
+        // Register profile
+        registerClientProfileWithResourceOwnerRejectExecutor();
+
+        // add the role to the client to execute condition
+        adminClient.realm(REALM_NAME).clients().get(clientUUID).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        // register policies - client attributes condition
+        String json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
+                        .addCondition(ClientAttributesConditionFactory.PROVIDER_ID,
+                                createClientAttributesConditionConfig(new MultivaluedHashMap<>() {
+                                    {
+                                        putSingle(USE_REFRESH_TOKEN, "true");
+                                    }
+                                }))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        oauth.client(clientId, clientSecret);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+        assertEquals("resource owner password credentials grant is prohibited.", response.getErrorDescription());
+    }
+
+    private String createClientForResourceOwnerPasswordCredential(String clientId, String clientSecret) throws ClientPolicyException {
+        return createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setDirectAccessGrantsEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.FALSE);
+            clientRep.getAttributes().put(USE_REFRESH_TOKEN, "true"); // Just some attribute to be able to test clientAttributes condition
+        });
+    }
+
+    private void registerClientProfileWithResourceOwnerRejectExecutor() throws Exception {
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Purofairu desu")
+                        .addExecutor(RejectResourceOwnerPasswordCredentialsGrantExecutorFactory.PROVIDER_ID,
+                                createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig(Boolean.TRUE))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
     }
 
     @Test
@@ -1048,9 +1159,12 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             oauth.openLoginForm();
             assertTrue(errorPage.isCurrent());
             assertEquals(ERR_MSG_REQ_NOT_ALLOWED, errorPage.getError());
-            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                            Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                            ERR_MSG_REQ_NOT_ALLOWED).client((String) null).user((String) null).assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                    .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.CLIENT_POLICY_ERROR_DETAIL, ERR_MSG_REQ_NOT_ALLOWED)
+                    .clientId(null)
+                    .userId(null);
 
             revertToBuiltinProfiles();
             successfulLoginAndLogout(clientBetaId, "secretBeta");
@@ -1105,7 +1219,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertThat(updated.getClientSecretExpiresAt(), equalTo(firstSecretExpiration));
 
         //force secret expiration
-        setTimeOffset(61);
+        timeOffSet.set(61);
 
         updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> clientRep.setClientName(generateSuffixedName(CLIENT_NAME)));
 
@@ -1123,7 +1237,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertLoginAndLogoutStatus(clientId, firstSecret, Response.Status.OK);
 
         //force rotated secret expiration
-        setTimeOffset(100);
+        timeOffSet.set(100);
 
         //login with updated secret (remains valid)
         assertLoginAndLogoutStatus(clientId, updatedSecret, Response.Status.OK);
@@ -1156,7 +1270,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertThat(firstSecretExpiration, is(greaterThan(Time.currentTime())));
 
         //Enter in Remaining expiration window
-        setTimeOffset(41);
+        timeOffSet.set(41);
 
         //update client to force rotation (due to remaining expiration)
         updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> clientRep.setContacts(Collections.singletonList("keycloak@keycloak.org")));
@@ -1237,10 +1351,12 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("The intent is not bound with the client", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                "The intent is not bound with the client").client(clientId).user((String) null)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "The intent is not bound with the client")
+                .clientId(clientId)
+                .userId(null);
 
         // register a binding of an intent with a valid client
         r = testingClient.testApp().oidcClientEndpoints().bindIntentWithClient(intentId, clientId);
@@ -1267,7 +1383,12 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         // check a token response
         assertEquals(200, response.getStatusCode());
-        events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(clientId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
         idToken = new JWSInput(response.getIdToken());
         parser = mapper.getFactory().createParser(idToken.readContentAsString());
         treeNode = mapper.readTree(parser);
@@ -1293,10 +1414,12 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("no claim for an intent value for ID token" , authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        "no claim for an intent value for ID token").client(clientId)
-                .user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "no claim for an intent value for ID token")
+                .clientId(clientId)
+                .userId(null);
     }
 
     @Test

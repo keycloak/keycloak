@@ -37,6 +37,9 @@
     },
     "generate:openapi": {
       "command": "kiota generate -l typescript -d openapi.yaml -c AdminClient -n ApiSdk -o ./src/generated --clean-output",
+      "env": {
+        "KIOTA_VERSION": "v1.31.1"
+      },
       "files": [
         "openapi.yaml"
       ],
@@ -48,7 +51,10 @@
       "command": "eslint ."
     },
     "test": {
-      "command": "TS_NODE_PROJECT=tsconfig.test.json mocha --recursive \"test/**/*.spec.ts\" --timeout 10000"
+      "command": "TS_NODE_PROJECT=tsconfig.test.json mocha --recursive \"test/**/*.spec.ts\" --timeout 10000",
+      "dependencies": [
+        "build"
+      ]
     }
   },
   "dependencies": {

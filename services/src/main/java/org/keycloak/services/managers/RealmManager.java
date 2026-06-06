@@ -285,10 +285,10 @@ public class RealmManager {
         realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
         realm.setLoginWithEmailAllowed(true);
 
-        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER)) {
             // Only create the role if it doesn't exist in the realm representation (during import)
             // or if it doesn't exist in the realm model (during fresh creation)
-            if ((realmRep == null || !hasRealmRole(realmRep, CREDENTIAL_OFFER_CREATE.getName())) 
+            if ((realmRep == null || !hasRealmRole(realmRep, CREDENTIAL_OFFER_CREATE.getName()))
                     && realm.getRole(CREDENTIAL_OFFER_CREATE.getName()) == null) {
                 RoleModel roleModel = realm.addRole(CREDENTIAL_OFFER_CREATE.getName());
                 roleModel.setDescription(CREDENTIAL_OFFER_CREATE.getDescription());
@@ -506,6 +506,14 @@ public class RealmManager {
             manageConsentRole.addCompositeRole(viewConsentRole);
             RoleModel viewGroups = accountClient.addRole(AccountRoles.VIEW_GROUPS);
             viewGroups.setDescription("${role_" + AccountRoles.VIEW_GROUPS + "}");
+
+            if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) {
+                RoleModel viewVerifiableCredentials = accountClient.addRole(AccountRoles.VIEW_VERIFIABLE_CREDENTIALS);
+                viewVerifiableCredentials.setDescription("${role_" + AccountRoles.VIEW_VERIFIABLE_CREDENTIALS + "}");
+                RoleModel manageVerifiableCredentials = accountClient.addRole(AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
+                manageVerifiableCredentials.setDescription("${role_" + AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS + "}");
+                manageVerifiableCredentials.addCompositeRole(viewVerifiableCredentials);
+            }
 
             KeycloakModelUtils.setupDeleteAccount(accountClient);
 

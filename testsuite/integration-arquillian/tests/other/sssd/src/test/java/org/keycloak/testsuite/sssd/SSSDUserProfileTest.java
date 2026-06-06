@@ -114,9 +114,8 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
         // check events
         WaitUtils.waitForPageToLoad();
         appPage.assertCurrent();
-        events.expectRequiredAction(EventType.UPDATE_PROFILE)
-                .user(user.getId())
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE)
+                .userId(user.getId());
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
                 .hasUserId()
@@ -156,9 +155,8 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
         // check events
         WaitUtils.waitForPageToLoad();
         appPage.assertCurrent();
-        events.expectRequiredAction(EventType.UPDATE_PROFILE)
-                .user(test.getId())
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE)
+                .userId(test.getId());
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
                 .hasUserId()
@@ -204,10 +202,9 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             appPage.assertCurrent();
 
             // check events
-            events.expectRequiredAction(EventType.UPDATE_PROFILE)
-                    .user(user.getId())
-                    .detail("updated_postal_code", "123456")
-                    .assertEvent();
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE)
+                    .userId(user.getId())
+                    .details("updated_postal_code", "123456");
             Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
                     .hasUserId()
@@ -254,10 +251,9 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             appPage.assertCurrent();
 
             // check events
-            events.expectRequiredAction(EventType.UPDATE_PROFILE)
-                    .user(test.getId())
-                    .detail("updated_postal_code", "123456")
-                    .assertEvent();
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE)
+                    .userId(test.getId())
+                    .details("updated_postal_code", "123456");
             Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
                     .hasUserId()
