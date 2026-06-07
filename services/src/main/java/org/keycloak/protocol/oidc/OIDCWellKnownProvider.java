@@ -235,6 +235,9 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         // HAIP-1.0 does not want to see this property (don't set to false)
         if (Profile.isFeatureEnabled(Profile.Feature.CIMD)) {
             config.setClientIdMetadataDocumentSupported(true);
+            if (!clientAuthMethodsSupported.contains("none")) {
+                clientAuthMethodsSupported.add("none");
+            }
         }
 
         config = checkConfigOverride(config);
