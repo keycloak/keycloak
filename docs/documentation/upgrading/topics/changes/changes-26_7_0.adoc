@@ -62,6 +62,13 @@ The experimental feature `dynamic-scopes` has been renamed to `parameterized-sco
 
 The corresponding Java model methods in `ClientScopeModel` (`isDynamicScope()`, `setIsDynamicScope()`, `getDynamicScopeRegexp()`) and constants (`IS_DYNAMIC_SCOPE`, `DYNAMIC_SCOPE_REGEXP`) have been deprecated in favor of their `parameterized` counterparts. The deprecated methods and constants will be removed in a future major release. The underlying database attribute names (`is.dynamic.scope`, `dynamic.scope.regexp`) are automatically migrated to `is.parameterized.scope` and `parameterized.scope.regexp` during upgrade.
 
+=== Asynchronous commit on PostgreSQL databases
+
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use PostgreSQL's async commit feature.
+Logouts will still force a synchronous commit.
+
+You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
+
 === Parameterized scopes now require a parameter type
 
 When the `parameterized-scopes` feature is enabled, creating or updating a parameterized scope via the Admin REST API now requires a `parameterized.scope.type` attribute. Available types are `string`, `integer`, `boolean`, `username`, and `custom`. The `custom` type additionally requires a `parameterized.scope.regexp` attribute with a valid regular expression. Requests using the old regexp-only format (without a type) are rejected.

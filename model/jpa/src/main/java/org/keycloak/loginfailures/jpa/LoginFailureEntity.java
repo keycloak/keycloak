@@ -27,6 +27,8 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
+import org.keycloak.connections.jpa.AsynchronousCommitAllowed;
+
 /**
  * This holds information about failed logins.
  * <p>
@@ -55,7 +57,7 @@ import jakarta.persistence.Table;
 @Entity
 @IdClass(LoginFailureKey.class)
 @Table(name = "LOGIN_FAILURE")
-public class LoginFailureEntity {
+public class LoginFailureEntity implements AsynchronousCommitAllowed {
 
     @Id
     @Column(name = "REALM_ID", length = 36)

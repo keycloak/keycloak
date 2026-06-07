@@ -29,13 +29,15 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
+import org.keycloak.connections.jpa.AsynchronousCommitAllowed;
+
 import org.hibernate.annotations.DynamicUpdate;
 
 @Entity
 @Table(name = "AUTH_SESSION")
 @DynamicUpdate
 @IdClass(AuthenticationSessionKey.class)
-public class AuthenticationSessionEntity {
+public class AuthenticationSessionEntity implements AsynchronousCommitAllowed {
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
