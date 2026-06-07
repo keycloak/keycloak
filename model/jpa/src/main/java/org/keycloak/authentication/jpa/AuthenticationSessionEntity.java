@@ -17,7 +17,6 @@
 
 package org.keycloak.authentication.jpa;
 
-import java.io.Serializable;
 import java.util.Objects;
 
 import jakarta.persistence.Column;
@@ -35,7 +34,7 @@ import org.hibernate.annotations.DynamicUpdate;
 @Entity
 @Table(name = "AUTH_SESSION")
 @DynamicUpdate
-@IdClass(AuthenticationSessionEntity.Key.class)
+@IdClass(AuthenticationSessionKey.class)
 public class AuthenticationSessionEntity {
 
     @Id
@@ -227,32 +226,4 @@ public class AuthenticationSessionEntity {
                 '}';
     }
 
-    public static class Key implements Serializable {
-        private RootAuthenticationSessionEntity rootAuthenticationSession;
-        private String tabId;
-
-        public Key() {
-        }
-
-        public Key(RootAuthenticationSessionEntity rootAuthenticationSession, String tabId) {
-            this.rootAuthenticationSession = rootAuthenticationSession;
-            this.tabId = tabId;
-        }
-
-        public RootAuthenticationSessionEntity getRootAuthenticationSession() {
-            return rootAuthenticationSession;
-        }
-
-        public void setRootAuthenticationSession(RootAuthenticationSessionEntity rootAuthenticationSession) {
-            this.rootAuthenticationSession = rootAuthenticationSession;
-        }
-
-        public String getTabId() {
-            return tabId;
-        }
-
-        public void setTabId(String tabId) {
-            this.tabId = tabId;
-        }
-    }
 }

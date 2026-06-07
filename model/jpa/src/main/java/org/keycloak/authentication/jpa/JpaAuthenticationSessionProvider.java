@@ -39,7 +39,7 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import org.jboss.logging.Logger;
 
-public class JpaAuthenticationSessionProvider implements AuthenticationSessionProvider {
+public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransaction implements AuthenticationSessionProvider {
 
     private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -47,6 +47,7 @@ public class JpaAuthenticationSessionProvider implements AuthenticationSessionPr
     private final int authSessionsLimit;
     private final Map<String, RootAuthenticationSessionAdapter> transientSessions = new HashMap<>();
     private KeycloakTransaction transaction;
+    private boolean enlisted;
 
     public JpaAuthenticationSessionProvider(KeycloakSession session, int authSessionsLimit) {
         this.session = Objects.requireNonNull(session);
@@ -64,19 +65,9 @@ public class JpaAuthenticationSessionProvider implements AuthenticationSessionPr
     }
 
     private void prepareTransaction() {
-        if (transaction == null) {
-            transaction = new AbstractKeycloakTransaction() {
-                @Override
-                protected void commitImpl() {
-                    transientSessions.forEach((key, value) -> getEntityManager().persist(value.getEntity()));
-                }
-
-                @Override
-                protected void rollbackImpl() {
-
-                }
-            };
-            session.getTransactionManager().enlistPrepare(transaction);
+        if (!enlisted) {
+            enlisted = true;
+            session.getTransactionManager().enlistPrepare(this);
         }
     }
 
@@ -158,5 +149,14 @@ public class JpaAuthenticationSessionProvider implements AuthenticationSessionPr
 
     private EntityManager getEntityManager() {
         return session.getProvider(JpaConnectionProvider.class).getEntityManager();
+    }
+
+    @Override
+    protected void commitImpl() {
+        transientSessions.forEach((key, value) -> getEntityManager().persist(value.getEntity()));
+    }
+
+    @Override
+    protected void rollbackImpl() {
     }
 }
