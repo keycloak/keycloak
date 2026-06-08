@@ -735,6 +735,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
     @Test
     public void testBoundedDomainNamesInCache() {
         String wildcardDomain = "*.bounded.test.org";
+        realm.admin().clearRealmCache();
 
         // 1. Create an organization whose only configured domain is a wildcard so that all
         //    sub*.bounded.test.org look-ups resolve to it without needing per-domain DB entries.
