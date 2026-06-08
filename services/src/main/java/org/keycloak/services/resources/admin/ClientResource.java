@@ -113,6 +113,7 @@ import org.jboss.resteasy.reactive.NoCache;
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ClientResource {
     protected static final Logger logger = Logger.getLogger(ClientResource.class);
+    private static final String HIDDEN_USER_PLACEHOLDER = "(hidden)";
     protected final RealmModel realm;
     private final AdminPermissionEvaluator auth;
     private final AdminEventBuilder adminEvent;
@@ -577,7 +578,7 @@ public class ClientResource {
         auth.clients().requireView(client);
         return session.sessions()
                 .readOnlyStreamUserSessions(client.getRealm(), client, computeFirstResult(firstResult), computeMaxResults(maxResults))
-                .map(ModelToRepresentation::toRepresentation);
+                .map(userSession -> hideUserInfoIfNeeded(ModelToRepresentation.toRepresentation(userSession), userSession.getUser()));
     }
 
     /**
@@ -624,7 +625,7 @@ public class ClientResource {
         auth.clients().requireView(client);
         return session.sessions()
                 .readOnlyStreamOfflineUserSessions(client.getRealm(), client, computeFirstResult(firstResult), computeMaxResults(maxResults))
-                .map(this::toUserSessionRepresentation);
+                .map(userSession -> hideUserInfoIfNeeded(toUserSessionRepresentation(userSession), userSession.getUser()));
     }
 
     /**
@@ -886,6 +887,29 @@ public class ClientResource {
         var clientSession = userSession.getAuthenticatedClientSessionByClient(client.getClientId());
         if (clientSession != null) {
             rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
+        }
+        return rep;
+    }
+
+    /**
+     * Masks the user identifying fields of a session representation when the caller does not have
+     * permission to view the user owning that session. The session entry is still returned, but
+     * {@code userId} and {@code username} are replaced with a placeholder so that {@code view-clients}
+     * alone cannot be used to enumerate which users are logged into a client.
+     * <p>
+     * The check is performed per session against the specific user, reusing the same per-user
+     * {@code canView} check as {@code SessionsResource.clientSessions} in the admin-ui-ext module,
+     * but masking the identity fields rather than filtering the session out, so that a caller with
+     * fine-grained view access to only some users still sees those users while the rest stay masked.
+     *
+     * @param rep  the session representation to mask in place.
+     * @param user the user owning the session, already resolved while building {@code rep}.
+     * @return the (possibly masked) representation.
+     */
+    private UserSessionRepresentation hideUserInfoIfNeeded(UserSessionRepresentation rep, UserModel user) {
+        if (user == null || !auth.users().canView(user)) {
+            rep.setUserId(HIDDEN_USER_PLACEHOLDER);
+            rep.setUsername(HIDDEN_USER_PLACEHOLDER);
         }
         return rep;
     }
