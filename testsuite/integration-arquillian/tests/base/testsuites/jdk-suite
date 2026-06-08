@@ -3,7 +3,6 @@ DeployedScriptAuthenticatorTest
 KcOidcBrokerTest
 KerberosLdapTest
 LDAPUserLoginTest
-MutualTLSClientTest
 SamlClientTest
 X509BrowserLoginTest
 ThemeResourceProviderTest
