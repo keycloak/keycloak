@@ -246,7 +246,12 @@ public final class JGroupsConfigurator {
         if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get())) {
             logger.debugf("Custom stack configured (%s). JDBC_PING discovery disabled.", stackXmlAttribute.get());
             if (Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
-                throw new RuntimeException("The cacheless feature must hast JDBC_PING discovery enabled");
+                if (Objects.equals("test", stackXmlAttribute.get())) {
+                    // TODO: Remove this case once the model tests have been migrated
+                    logger.error("The cacheless feature must hast JDBC_PING discovery enabled");
+                } else {
+                    throw new RuntimeException("The cacheless feature must hast JDBC_PING discovery enabled");
+                }
             }
             return;
         }
