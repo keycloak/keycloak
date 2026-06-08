@@ -522,7 +522,16 @@ public class ClientPoliciesUtil {
             policyRep.setName(proposedPolicyRep.getName());
             policyRep.setDescription(proposedPolicyRep.getDescription());
             policyRep.setEnabled(proposedPolicyRep.isEnabled() != null ? proposedPolicyRep.isEnabled() : Boolean.FALSE);
-            policyRep.setMode(proposedPolicyRep.getMode());
+
+            // Check if mode is valid
+            try {
+                if (proposedPolicyRep.getMode() != null) {
+                    Enum.valueOf(ClientPolicyMode.class, proposedPolicyRep.getMode());
+                }
+                policyRep.setMode(proposedPolicyRep.getMode());
+            } catch (IllegalArgumentException iae) {
+                throw new ClientPolicyException("Policy " + proposedPolicyRep.getName() + " has invalid mode");
+            }
 
             policyRep.setConditions(new ArrayList<>());
             if (proposedPolicyRep.getConditions() != null) {
