@@ -1,0 +1,202 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Managing Keycloak Clients"
+summary="Manage Keycloak OIDC and SAML clients declaratively using the operator.">
+
+== Managing OIDC and SAML clients with the Operator
+
+<#-- TODO: per docs/features.md, experimental features should link to a GitHub Discussion in the Feedback category. Coordinate with PR #48001 (Admin API v2 docs) to create a shared Discussion. -->
+<#include "/templates/experimental-feature.adoc">
+
+The {project_name} Operator can manage OIDC and SAML clients declaratively through Custom Resources.
+The operator creates, updates, and deletes clients on the {project_name} server to match the desired state defined in the CR.
+
+[WARNING]
+====
+Do not modify operator-managed clients through the Admin UI or API, including server-side client secret rotation.
+The operator does not detect external changes and will overwrite them.
+A future release will introduce resource ownership controls that prevent such modifications automatically.
+====
+
+=== Prerequisites
+
+The following must be in place before creating client CRs.
+
+==== Enable the Client Admin API feature
+
+The `client-admin-api:v2` feature must be enabled on the {project_name} server.
+For more details about this API, see the <@links.adminapi id="admin-api-v2"/> guide.
+Add it to the Keycloak CR:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2beta1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  features:
+    enabled:
+      - client-admin-api:v2
+  ...
+----
+
+==== Configure the admin credentials
+
+The operator authenticates to {project_name} using the client credentials flow against the `master` realm.
+It reads credentials from a Kubernetes Secret named `<keycloak-cr-name>-admin` in the same namespace, which must contain `client-id` and `client-secret` keys.
+This Secret must be created manually as part of the bootstrap admin setup.
+For setup details, see the Admin Bootstrapping section in the <@links.operator id="advanced-configuration"/> guide.
+A future release may simplify this by automating the credential setup.
+
+==== Mutual TLS
+
+If {project_name} <@links.server id="mutual-tls">requires client certificates</@links.server>,
+`spec.admin.tlsSecret` is used to provide the name of a Kubernetes TLS Secret containing the operator's client certificate and private key (`tls.crt` and `tls.key`), which must be trusted by the server.
+
+=== Creating an OIDC Client
+
+Create a file `my-oidc-client.yaml`:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: KeycloakOIDCClient
+metadata:
+  name: my-oidc-app # <1>
+spec:
+  keycloakCRName: example-kc # <2>
+  realm: my-realm # <3>
+  client: # <4>
+    loginFlows:
+      - STANDARD
+    redirectUris:
+      - "https://my-app.example.com/*"
+----
+<1> Becomes the `clientId` in {project_name}. Cannot be changed after creation.
+<2> Must match the `metadata.name` of the Keycloak CR (e.g., `example-kc` from the prerequisite example). Cannot be changed after creation.
+<3> The realm where the client is created. Cannot be changed after creation.
+<4> Available fields are defined by the client representations in the <@links.adminapi id="admin-api-v2"/> guide.
+
+Apply the CR:
+
+[source,bash]
+----
+kubectl apply -f my-oidc-client.yaml
+----
+
+=== Creating a SAML Client
+
+Create a file `my-saml-client.yaml`:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: KeycloakSAMLClient
+metadata:
+  name: my-saml-app
+spec:
+  keycloakCRName: example-kc
+  realm: my-realm
+  client:
+    nameIdFormat: persistent
+    signDocuments: true
+    signAssertions: true
+    forcePostBinding: true
+----
+
+Apply the CR:
+
+[source,bash]
+----
+kubectl apply -f my-saml-client.yaml
+----
+
+=== Using Secret References for OIDC Authentication
+
+OIDC clients that use `client-secret` authentication can store the secret in a Kubernetes Secret rather than inline in the CR.
+
+[source,yaml]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-app-credentials
+stringData:
+  client-secret-key: "my-secret"
+----
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: KeycloakOIDCClient
+metadata:
+  name: my-confidential-app
+spec:
+  keycloakCRName: example-kc
+  realm: my-realm
+  client:
+    auth:
+      method: client-secret
+      secretRef:
+        name: my-app-credentials # <1>
+        key: client-secret-key # <2>
+----
+<1> Name of the Kubernetes Secret in the same namespace.
+<2> Key within the Secret that holds the client secret value.
+
+If the referenced Secret does not exist, the CR will report a `HasErrors` status condition.
+When the value in the Kubernetes Secret changes, the operator detects the change within its polling interval and updates the client on the {project_name} server.
+
+=== Checking Client Status
+
+To check the status of a client CR:
+
+[source,bash]
+----
+kubectl get keycloakoidcclients/my-oidc-app -o go-template='{{range .status.conditions}}CONDITION: {{.type}}{{"\n"}}  STATUS: {{.status}}{{"\n"}}  MESSAGE: {{.message}}{{"\n"}}{{end}}'
+----
+
+When the client has been created successfully:
+
+[source]
+----
+CONDITION: HasErrors
+  STATUS: false
+  MESSAGE:
+----
+
+Common error causes include a missing `client-admin-api:v2` feature, a missing secret reference, or the {project_name} server not being ready.
+The operator retries the operation periodically until it succeeds.
+
+=== Updating a Client
+
+To update a client, modify the `spec.client` fields in the CR and re-apply:
+
+[source,bash]
+----
+kubectl apply -f my-oidc-client.yaml
+----
+
+The Custom Resource must contain the complete desired client configuration.
+The operator detects changes and updates the client on the {project_name} server.
+
+=== Deleting a Client
+
+To delete a client from {project_name}, delete the CR:
+
+[source,bash]
+----
+kubectl delete keycloakoidcclients/my-oidc-app
+----
+
+The operator deletes the client from the {project_name} server before removing the CR.
+
+[NOTE]
+====
+If the Keycloak CR is deleted before the client CR, the operator cannot reach the server and the client will remain on the {project_name} server.
+====
+
+</@tmpl.guide>
