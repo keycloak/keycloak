@@ -509,7 +509,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
     @Test
     public void testSecureRequestObjectExecutor() throws Exception {
         Integer availablePeriod = SecureRequestObjectExecutor.DEFAULT_AVAILABLE_PERIOD + 400;
-        Integer allowedClockSkew = SecureRequestObjectExecutor.DEAULT_ALLOWED_CLOCK_SKEW + 15; // 30 sec
+        Integer allowedClockSkew = SecureRequestObjectExecutor.DEFAULT_ALLOWED_CLOCK_SKEW + 15; // 30 sec
 
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
@@ -1702,12 +1702,12 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.client(clientBetaId);
         oauth.loginForm().state("randomstatesomething").requestUri(requestUri).open();
         assertTrue(errorPage.isCurrent());
-        assertEquals("PAR request did not include necessary parameters", errorPage.getError());
+        assertEquals("PAR request did not include query parameter", errorPage.getError());
         EventAssertion.assertError(events.poll())
-                .type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
                 .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
-                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
-                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "PAR request did not include necessary parameters").clientId(null)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "PAR request did not include query parameter").clientId(null)
                 .userId(null);
 
         oauth.client(clientBetaId, "secretBeta");
@@ -1753,12 +1753,12 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         // only query parameters include state parameter
         oauth.loginForm().requestUri(requestUri).state("mystate2").open();
         assertTrue(errorPage.isCurrent());
-        assertEquals("PAR request did not include necessary parameters", errorPage.getError());
+        assertEquals("PAR request did not include query parameter", errorPage.getError());
         EventAssertion.assertError(events.poll())
-                .type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
                 .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
-                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
-                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "PAR request did not include necessary parameters").clientId(null)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "PAR request did not include query parameter").clientId(null)
                 .userId(null);
 
         // Pushed Authorization Request with state parameter
