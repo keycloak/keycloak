@@ -171,6 +171,11 @@ public class ResourceAdminManager {
 
     public Response logoutClientSessionWithBackchannelLogoutUrl(ClientModel resource,
             AuthenticatedClientSessionModel clientSession) {
+        return logoutClientSessionWithBackchannelLogoutUrl(resource, clientSession, false);
+    }
+
+    public Response logoutClientSessionWithBackchannelLogoutUrl(ClientModel resource,
+            AuthenticatedClientSessionModel clientSession, boolean logoutAllUserSessions) {
         String backchannelLogoutUrl = getBackchannelLogoutUrl(session, resource);
 
         if (backchannelLogoutUrl == null) {
@@ -194,12 +199,12 @@ public class ResourceAdminManager {
                           "clientId='%s' clientSessionId='%s' host='%s' backchannelLogoutUrl='%s'",
                     resource.getClientId(), clientSession.getId(), host, backchannelLogoutUrl);
             String currentHostMgmtUrl = backchannelLogoutUrl.replace(CLIENT_SESSION_HOST_PROPERTY, host);
-            return sendBackChannelLogoutRequestToClientUri(resource, clientSession, currentHostMgmtUrl);
+            return sendBackChannelLogoutRequestToClientUri(resource, clientSession, currentHostMgmtUrl, logoutAllUserSessions);
         } else {
             logger.debugf("Attempting backchannel-logout for client. " +
                           "clientId='%s' clientSessionId='%s' backchannelLogoutUrl='%s'",
                     resource.getClientId(), clientSession.getId(), backchannelLogoutUrl);
-            return sendBackChannelLogoutRequestToClientUri(resource, clientSession, backchannelLogoutUrl);
+            return sendBackChannelLogoutRequestToClientUri(resource, clientSession, backchannelLogoutUrl, logoutAllUserSessions);
         }
     }
 
@@ -214,6 +219,12 @@ public class ResourceAdminManager {
 
     protected Response sendBackChannelLogoutRequestToClientUri(ClientModel resource,
                                                               AuthenticatedClientSessionModel clientSessionModel, String managementUrl) {
+        return sendBackChannelLogoutRequestToClientUri(resource, clientSessionModel, managementUrl, false);
+    }
+
+    protected Response sendBackChannelLogoutRequestToClientUri(ClientModel resource,
+                                                              AuthenticatedClientSessionModel clientSessionModel, String managementUrl,
+                                                              boolean logoutAllUserSessions) {
         UserModel user = clientSessionModel.getUserSession().getUser();
 
         HttpPost post = null;
@@ -221,7 +232,7 @@ public class ResourceAdminManager {
         try {
             session.getContext().setClient(resource);
 
-            LogoutToken logoutToken = session.tokens().initLogoutToken(resource, user, clientSessionModel);
+            LogoutToken logoutToken = session.tokens().initLogoutToken(resource, user, clientSessionModel, logoutAllUserSessions);
             String token = session.tokens().encode(logoutToken);
             if (logger.isDebugEnabled()) {
                 logger.debugf("Sending backchannel-logout request to client. " +
