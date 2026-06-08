@@ -128,13 +128,12 @@ public class EntityManagerProxy {
 
     // For JTA, the database operations are executed during the commit phase of a transaction, and DB exceptions can be propagated differently
     public static ModelException convert(Throwable t) {
+        Predicate<Throwable> throwModelDuplicateEx = throwable ->
+                throwable instanceof EntityExistsException
+                        || throwable instanceof ConstraintViolationException
+                        || isSqlStateClass23(throwable)
+                        || throwable instanceof SQLIntegrityConstraintViolationException;
         while (true) {
-            Predicate<Throwable> throwModelDuplicateEx = throwable ->
-                    throwable instanceof EntityExistsException
-                            || throwable instanceof ConstraintViolationException
-                            || isSqlStateClass23(throwable)
-                            || throwable instanceof SQLIntegrityConstraintViolationException;
-
             if (t instanceof ModelException me) {
                 throw me;
             } else if (throwModelDuplicateEx.test(t)) {
