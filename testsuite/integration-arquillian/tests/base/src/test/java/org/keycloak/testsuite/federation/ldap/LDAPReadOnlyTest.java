@@ -141,7 +141,7 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Revert TOTP
         setTotpRequirementExecutionForRealm(AuthenticationExecutionModel.Requirement.CONDITIONAL, AuthenticationExecutionModel.Requirement.ALTERNATIVE);

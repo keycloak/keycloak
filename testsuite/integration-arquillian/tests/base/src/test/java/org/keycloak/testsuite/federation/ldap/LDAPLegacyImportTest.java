@@ -102,7 +102,7 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
         loginPage.login("marykeycloak", "password-app");
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
     }
 
@@ -112,7 +112,7 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
         loginPage.login("johnkeycloak", "Password1");
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(managedRealm.admin(), "johnkeycloak");
 

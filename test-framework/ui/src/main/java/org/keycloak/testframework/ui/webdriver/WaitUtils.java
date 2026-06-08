@@ -3,6 +3,7 @@ package org.keycloak.testframework.ui.webdriver;
 import java.time.Duration;
 import java.util.function.Function;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.testframework.ui.page.AbstractPage;
 
 import org.junit.jupiter.api.Assertions;
@@ -30,8 +31,13 @@ public class WaitUtils {
     }
 
     public WaitUtils waitForOAuthCallback() {
+        waitForOAuthCallback(webdriver1 -> webdriver1.getCurrentUrl().contains(OAuth2Constants.CODE + "=") || webdriver1.getCurrentUrl().contains(OAuth2Constants.ERROR + "="));
+        return this;
+    }
+
+    public WaitUtils waitForOAuthCallback(Function<? super WebDriver, Boolean> oAuthResponseIsPresent) {
         try {
-            createDefaultWait().until(d -> d.getCurrentUrl().contains("code=") || d.getCurrentUrl().contains("error="));
+            createDefaultWait().until(oAuthResponseIsPresent);
         } catch (TimeoutException e) {
             Assertions.fail("Expected OAuth callback, but URL was '" + managed.getCurrentUrl() + "' after timeout");
         }

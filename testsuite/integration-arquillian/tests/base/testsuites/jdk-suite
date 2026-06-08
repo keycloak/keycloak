@@ -1,4 +1,3 @@
-AuthorizationCodeTest
 DeployedScriptAuthenticatorTest
 KcOidcBrokerTest
 KerberosLdapTest
