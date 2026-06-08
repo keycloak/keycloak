@@ -260,9 +260,8 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     }
 
     /**
-     * This method should not be overridden
-     *
-     * @return
+     * Override this when implementing {@link org.keycloak.storage.user.UserServiceAccountProvider}
+     * to return the persisted client link for this service account user.
      */
     @Override
     public String getServiceAccountClientLink() {
@@ -270,9 +269,8 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     }
 
     /**
-     * This method should not be overridden
-     *
-     * @return
+     * Override this when implementing {@link org.keycloak.storage.user.UserServiceAccountProvider}
+     * to durably persist the client link in your backing store.
      */
     @Override
     public void setServiceAccountClientLink(String clientInternalId) {
