@@ -95,6 +95,7 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
     String IS_PARAMETERIZED_SCOPE = "is.parameterized.scope";
     String PARAMETERIZED_SCOPE_REGEXP = "parameterized.scope.regexp";
     String PARAMETERIZED_SCOPE_TYPE = "parameterized.scope.type";
+    String IS_ALWAYS_CONSENT = "always.display.consent";
 
     /** @deprecated Use {@link #IS_PARAMETERIZED_SCOPE} instead. */
     @Deprecated
@@ -149,6 +150,12 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
 
     default boolean isParameterizedScope() {
         return Boolean.parseBoolean(getAttribute(IS_PARAMETERIZED_SCOPE));
+    }
+
+    default boolean isAlwaysConsent() {
+        return isParameterizedScope() && isDisplayOnConsentScreen()
+                && Boolean.parseBoolean(getAttribute(IS_ALWAYS_CONSENT))
+                && Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES);
     }
 
     default void setIsParameterizedScope(boolean isParameterizedScope) {
