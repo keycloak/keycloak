@@ -11,17 +11,13 @@ import {
   ExternalLinkAltIcon,
 } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   getIssuedVerifiableCredentials,
   revokeIssuedVerifiableCredential,
-  getApplications,
 } from "../api/methods";
-import {
-  IssuedUserVerifiableCredentialRepresentation,
-  ClientRepresentation,
-} from "../api/representations";
+import type { IssuedUserVerifiableCredentialRepresentation } from "../api/representations";
 import { useAccountAlerts } from "../utils/useAccountAlerts";
 
 type IssuedCredentialsModalProps = {
@@ -30,15 +26,9 @@ type IssuedCredentialsModalProps = {
   onClose: () => void;
 };
 
-type IssuedCredentialWithClientInfo =
-  IssuedUserVerifiableCredentialRepresentation & {
-    clientName?: string;
-    clientBaseUrl?: string;
-  };
-
 type RevokeDialogProps = {
   isOpen: boolean;
-  credential: IssuedCredentialWithClientInfo | undefined;
+  credential: IssuedUserVerifiableCredentialRepresentation | undefined;
   onClose: () => void;
   onConfirm: (credentialId: string) => Promise<void>;
   t: (key: string) => string;
@@ -89,33 +79,13 @@ export const IssuedCredentialsModal = ({
   const context = useEnvironment();
   const { addAlert, addError } = useAccountAlerts();
   const [selectedCredential, setSelectedCredential] =
-    useState<IssuedCredentialWithClientInfo>();
+    useState<IssuedUserVerifiableCredentialRepresentation>();
   const [key, setKey] = useState(0);
   const [showRevokeDialog, setShowRevokeDialog] = useState(false);
-  const [clients, setClients] = useState<ClientRepresentation[]>([]);
-  const [clientsLoaded, setClientsLoaded] = useState(false);
 
   const refresh = () => setKey((prev) => prev + 1);
 
   const toggleRevokeDialog = () => setShowRevokeDialog(!showRevokeDialog);
-
-  // Fetch all applications/clients on mount
-  useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const apps = await getApplications({
-          signal: new AbortController().signal,
-          context,
-        });
-        setClients(apps);
-        setClientsLoaded(true);
-      } catch (error) {
-        console.error("Failed to fetch clients:", error);
-        setClientsLoaded(true);
-      }
-    };
-    void fetchClients();
-  }, [context]);
 
   const hasManageRole = () => {
     const token = context.keycloak.tokenParsed;
@@ -127,10 +97,6 @@ export const IssuedCredentialsModal = ({
   };
 
   const loader = async (first?: number, max?: number, search?: string) => {
-    if (!clientsLoaded) {
-      return [];
-    }
-
     const data = await getIssuedVerifiableCredentials({
       signal: new AbortController().signal,
       context,
@@ -148,27 +114,17 @@ export const IssuedCredentialsModal = ({
         (ic) =>
           ic.id?.toLowerCase().includes(searchLower) ||
           ic.clientId?.toLowerCase().includes(searchLower) ||
+          ic.clientName?.toLowerCase().includes(searchLower) ||
           ic.revision?.toLowerCase().includes(searchLower),
       );
     }
 
-    // Map clientId (UUID) to client name and base URL
-    const credentialsWithClientInfo: IssuedCredentialWithClientInfo[] =
-      filtered.map((ic) => {
-        const client = clients.find((c) => c.clientId === ic.clientId);
-        return {
-          ...ic,
-          clientName: client?.clientName || client?.clientId || ic.clientId,
-          clientBaseUrl: client?.effectiveUrl,
-        };
-      });
-
     // Apply pagination if provided
     if (first !== undefined && max !== undefined) {
-      return credentialsWithClientInfo.slice(first, first + max);
+      return filtered.slice(first, first + max);
     }
 
-    return credentialsWithClientInfo;
+    return filtered;
   };
 
   const handleRevoke = async (credentialId: string) => {
@@ -200,7 +156,7 @@ export const IssuedCredentialsModal = ({
         <ErrorBoundaryProvider>
           <KeycloakDataTable
             loader={loader}
-            key={clientsLoaded ? key : -1}
+            key={key}
             ariaLabelKey="issuedCredentials"
             searchPlaceholderKey=" "
             columns={[
@@ -240,11 +196,15 @@ export const IssuedCredentialsModal = ({
               {
                 name: "clientId",
                 displayKey: "Wallet Client",
-                cellRenderer: (credential: IssuedCredentialWithClientInfo) => {
+                cellRenderer: (
+                  credential: IssuedUserVerifiableCredentialRepresentation,
+                ) => {
+                  // Backend now provides clientName and clientBaseUrl
                   const displayName =
                     credential.clientName || credential.clientId;
                   if (!displayName) return "—";
 
+                  // If client has a base URL, create a clickable link
                   if (credential.clientBaseUrl) {
                     return (
                       <Button
@@ -296,7 +256,7 @@ export const IssuedCredentialsModal = ({
                         setSelectedCredential(credential);
                         toggleRevokeDialog();
                       },
-                    } as Action<IssuedCredentialWithClientInfo>,
+                    } as Action<IssuedUserVerifiableCredentialRepresentation>,
                   ]
                 : []
             }
