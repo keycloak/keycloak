@@ -110,7 +110,7 @@ public class EntityManagerProxy {
             }
             return result;
         } catch (InvocationTargetException e) {
-            throw convert(e.getCause());
+            throw convert(e);
         }
     }
 
@@ -128,20 +128,24 @@ public class EntityManagerProxy {
 
     // For JTA, the database operations are executed during the commit phase of a transaction, and DB exceptions can be propagated differently
     public static ModelException convert(Throwable t) {
-        Predicate<Throwable> throwModelDuplicateEx = throwable ->
-                throwable instanceof EntityExistsException
-                || throwable instanceof ConstraintViolationException
-                || isSqlStateClass23(throwable)
-                || throwable instanceof SQLIntegrityConstraintViolationException;
+        while (true) {
+            Predicate<Throwable> throwModelDuplicateEx = throwable ->
+                    throwable instanceof EntityExistsException
+                            || throwable instanceof ConstraintViolationException
+                            || isSqlStateClass23(throwable)
+                            || throwable instanceof SQLIntegrityConstraintViolationException;
 
-        if (throwModelDuplicateEx.test(t)) {
-            return new ModelDuplicateException("Duplicate resource error", t);
-        } else if (t instanceof OptimisticLockException) {
-            return new ModelIllegalStateException("Database operation failed", t);
-        } else if (t.getCause() != null) {
-            return convert(t.getCause());
-        } else {
-            return new ModelException("Database operation failed", t);
+            if (t instanceof ModelException me) {
+                throw me;
+            } else if (throwModelDuplicateEx.test(t)) {
+                return new ModelDuplicateException("Duplicate resource error", t);
+            } else if (t instanceof OptimisticLockException) {
+                return new ModelIllegalStateException("Database operation failed", t);
+            } else if (t.getCause() == null) {
+                return new ModelException("Database operation failed", t);
+            } else {
+                t = t.getCause();
+            }
         }
     }
 
