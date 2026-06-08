@@ -20,9 +20,6 @@ import { useSearchParams } from "react-router-dom";
 
 import { useAdminClient } from "../../../admin-client";
 import { FormAccess } from "../../../components/form/FormAccess";
-import { useRealm } from "../../../context/realm-context/RealmContext";
-import { addTrailingSlash } from "../../../util";
-import { getAuthorizationHeaders } from "../../../utils/getAuthorizationHeaders";
 import useFormatDate from "../../../utils/useFormatDate";
 
 type SsfPendingEvent = {
@@ -56,7 +53,6 @@ export type EventSearchTabProps = {
 export const EventSearchTab = ({ client }: EventSearchTabProps) => {
   const { t } = useTranslation();
   const { adminClient } = useAdminClient();
-  const { realm } = useRealm();
   const formatDate = useFormatDate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -88,26 +84,17 @@ export const EventSearchTab = ({ client }: EventSearchTabProps) => {
       // We update them in place once the new fetch resolves.
       setPendingActionLoading(true);
       try {
-        const response = await fetch(
-          `${addTrailingSlash(adminClient.baseUrl)}admin/realms/${realm}/ssf/clients/${client.clientId}/pending-events/${encodeURIComponent(lookupJti)}`,
-          {
-            headers: getAuthorizationHeaders(
-              await adminClient.getAccessToken(),
+      const result = await adminClient.ssf.findPendingEvent({
+        clientId: client.clientId!,
+        jti: encodeURIComponent(lookupJti),
+      });
+      if (result === null) {
             ),
-          },
-        );
-        if (response.status === 404) {
           setPendingLookupError(t("ssfPendingLookupNotFound"));
           setPendingLookupResult(null);
           return;
         }
-        if (!response.ok) {
-          const text = await response.text();
-          setPendingLookupError(text || `HTTP ${response.status}`);
-          setPendingLookupResult(null);
-          return;
-        }
-        setPendingLookupResult((await response.json()) as SsfPendingEvent);
+      setPendingLookupResult(result as SsfPendingEvent);
         setPendingLookupError(null);
       } catch (error) {
         setPendingLookupError(String(error));

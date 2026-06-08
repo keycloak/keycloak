@@ -17,9 +17,6 @@ import {
   CardHeader,
   CardTitle,
   FormGroup,
-  FormHelperText,
-  HelperText,
-  HelperTextItem,
   InputGroup,
   InputGroupItem,
   Label,
@@ -43,18 +40,11 @@ import { useAdminClient } from "../../../admin-client";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
 import { CopyToClipboardButton } from "../../../components/copy-to-clipboard-button/CopyToClipboardButton";
 import { FormAccess } from "../../../components/form/FormAccess";
-import { useRealm } from "../../../context/realm-context/RealmContext";
-import { addTrailingSlash, convertAttributeNameToForm } from "../../../util";
-import { getAuthorizationHeaders } from "../../../utils/getAuthorizationHeaders";
+import { convertAttributeNameToForm } from "../../../util";
 import useFormatDate from "../../../utils/useFormatDate";
 import type { FormFields } from "../../ClientDetails";
-
-const DELIVERY_METHOD_PUSH_URI = "urn:ietf:rfc:8935";
-const DELIVERY_METHOD_POLL_URI = "urn:ietf:rfc:8936";
-
-const isPollDeliveryMethod = (method: string | undefined): boolean =>
-  method === DELIVERY_METHOD_POLL_URI ||
-  method === "https://schemas.openid.net/secevent/risc/delivery-method/poll";
+import { isPollDeliveryMethod } from "../utils";
+import { CreateStreamForm } from "./CreateStreamForm";
 
 /**
  * Order-insensitive equality for the events_requested /
@@ -71,26 +61,6 @@ const arraysEqualUnordered = (a: string[], b: string[]): boolean => {
     if (aSorted[i] !== bSorted[i]) return false;
   }
   return true;
-};
-
-/**
- * Best-effort URL validation for the receiver's push endpoint. Uses
- * the URL constructor (no regex juggling) and additionally requires
- * an http/https protocol — the SSF dispatcher only knows how to push
- * over HTTP, so accepting e.g. ftp:// or javascript: would just
- * dead-letter the queued events on first push attempt. An empty
- * string is treated as "not yet typed" and not validated here so the
- * field's existing isRequired check owns that case.
- */
-const isValidPushEndpointUrl = (value: string): boolean => {
-  const trimmed = value.trim();
-  if (trimmed === "") return true;
-  try {
-    const parsed = new URL(trimmed);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
 };
 
 /**
@@ -160,7 +130,6 @@ export const StreamTab = ({
 }: StreamTabProps) => {
   const { t } = useTranslation();
   const { adminClient } = useAdminClient();
-  const { realm } = useRealm();
   const { control, setValue } = useFormContext<FormFields>();
   const { addAlert, addError } = useAlerts();
   const formatDate = useFormatDate();
@@ -186,23 +155,6 @@ export const StreamTab = ({
     // availableSupportedEvents.
     .sort((a, b) => a.localeCompare(b));
 
-  // Admin-side create-stream form state — used by the empty-state form
-  // when no stream is registered yet. Kept as plain useState because the
-  // surrounding react-hook-form context is bound to the client
-  // representation's attributes, not to stream-create parameters.
-  const [createStreamMethod, setCreateStreamMethod] = useState<"PUSH" | "POLL">(
-    "PUSH",
-  );
-  const [createStreamEndpointUrl, setCreateStreamEndpointUrl] = useState("");
-  const [createStreamAuthHeader, setCreateStreamAuthHeader] = useState("");
-  const [createStreamEvents, setCreateStreamEvents] = useState<string[]>([]);
-  const [createStreamEventsFilter, setCreateStreamEventsFilter] = useState("");
-  const [createStreamProfile, setCreateStreamProfile] = useState<
-    "SSF_1_0" | "SSE_CAEP"
-  >(client.attributes?.["ssf.profile"] as "SSF_1_0" | "SSE_CAEP");
-  const [createStreamDescription, setCreateStreamDescription] = useState("");
-  const [createStreamEventsOpen, setCreateStreamEventsOpen] = useState(false);
-  const [createStreamSubmitting, setCreateStreamSubmitting] = useState(false);
   const [createStreamFormOpen, setCreateStreamFormOpen] = useState(false);
 
   const [statusActionLoading, setStatusActionLoading] = useState(false);
@@ -350,25 +302,13 @@ export const StreamTab = ({
     }
     setStatusActionLoading(true);
     try {
-      const response = await fetch(
-        `${addTrailingSlash(
-          adminClient.baseUrl,
-        )}admin/realms/${realm}/ssf/clients/${client.clientId}/stream/status`,
+      await adminClient.ssf.updateClientStreamStatus(
+        { clientId: client.clientId! },
         {
-          method: "POST",
-          headers: {
-            ...getAuthorizationHeaders(await adminClient.getAccessToken()),
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            stream_id: clientStream.streamId,
-            status: targetStatus,
-          }),
+          stream_id: clientStream.streamId,
+          status: targetStatus,
         },
       );
-      if (!response.ok) {
-        throw new Error(await ssfErrorMessage(response));
-      }
       // Keep the form-bound status field in sync immediately so a
       // subsequent generic Save doesn't clobber the just-applied
       // backend status with a stale form value (the parent's
@@ -394,144 +334,15 @@ export const StreamTab = ({
       return;
     }
     try {
-      const response = await fetch(
-        `${addTrailingSlash(
-          adminClient.baseUrl,
-        )}admin/realms/${realm}/ssf/clients/${client.clientId}/stream/verify`,
-        {
-          method: "POST",
-          headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
-        },
-      );
-      if (!response.ok) {
-        throw new Error(
-          `${response.status} ${response.statusText || "Request failed"}`,
-        );
-      }
+      await adminClient.ssf.verifyClientStream({
+        clientId: client.clientId!,
+      });
       addAlert(t("ssfVerifyStreamSuccess"), AlertVariant.success);
       // Refetch the stream endpoint so the Last verified field in the UI
       // picks up the new timestamp the backend just stamped.
       refresh();
     } catch (error) {
       addError("ssfVerifyStreamError", error);
-    }
-  };
-
-  const resetCreateStreamForm = () => {
-    setCreateStreamEndpointUrl("");
-    setCreateStreamAuthHeader("");
-    setCreateStreamEvents([]);
-    setCreateStreamDescription("");
-    setCreateStreamMethod("PUSH");
-  };
-
-  // Prefill events_requested with the receiver's Supported Events on
-  // open. The vast majority of streams want every event the receiver
-  // declared support for; the operator can still narrow the selection
-  // before submitting. Seeded fresh each open so unsaved Receiver-tab
-  // edits flow through.
-  const openCreateStreamForm = () => {
-    setCreateStreamEvents([...receiverSupportedEvents]);
-    setCreateStreamFormOpen(true);
-  };
-
-  const submitCreateStream = async () => {
-    if (!client.id) {
-      return;
-    }
-    // PUSH requires the receiver to supply its own endpoint URL; POLL
-    // doesn't (the transmitter generates the URL itself per SSF §6.1.2
-    // and writes it back on the response).
-    if (createStreamMethod === "PUSH" && !createStreamEndpointUrl.trim()) {
-      addError(
-        "ssfCreateStreamError",
-        new Error(t("ssfCreateStreamEndpointUrlRequired")),
-      );
-      return;
-    }
-    if (
-      createStreamMethod === "PUSH" &&
-      !isValidPushEndpointUrl(createStreamEndpointUrl)
-    ) {
-      addError(
-        "ssfCreateStreamError",
-        new Error(t("ssfCreateStreamEndpointUrlInvalid")),
-      );
-      return;
-    }
-    setCreateStreamSubmitting(true);
-    try {
-      // SSF profile is a per-receiver attribute; the create-stream
-      // backend reads it from the client (resolveReceiverProfile).
-      // If the operator picked a different profile in the create
-      // form, persist the receiver attribute first so the subsequent
-      // create-stream call sees the new value. Two API calls instead
-      // of one, but the side effect is OK — profile is a one-time
-      // decision per receiver, and the create form is precisely
-      // where you'd be making it the first time.
-      const savedProfile = client.attributes?.["ssf.profile"] || "SSF_1_0";
-      if (createStreamProfile !== savedProfile) {
-        await adminClient.clients.update(
-          { id: client.id! },
-          {
-            ...client,
-            attributes: {
-              ...(client.attributes ?? {}),
-              "ssf.profile": createStreamProfile,
-            },
-          },
-        );
-      }
-
-      // Event aliases stored in local state are resolved back to their
-      // canonical URIs by the transmitter at create time — the admin UI
-      // shows/stores aliases because that's what the admin picks from
-      // the receiver's supported-events list, and the backend accepts
-      // either form.
-      const delivery: Record<string, unknown> = {
-        method:
-          createStreamMethod === "POLL"
-            ? DELIVERY_METHOD_POLL_URI
-            : DELIVERY_METHOD_PUSH_URI,
-      };
-      if (createStreamMethod === "PUSH") {
-        delivery.endpoint_url = createStreamEndpointUrl.trim();
-        if (createStreamAuthHeader.trim()) {
-          delivery.authorization_header = createStreamAuthHeader.trim();
-        }
-      }
-      const body: Record<string, unknown> = { delivery };
-      if (createStreamEvents.length > 0) {
-        body.events_requested = createStreamEvents;
-      }
-      if (createStreamDescription.trim()) {
-        body.description = createStreamDescription.trim();
-      }
-
-      const response = await fetch(
-        `${addTrailingSlash(
-          adminClient.baseUrl,
-        )}admin/realms/${realm}/ssf/clients/${client.clientId}/stream`,
-        {
-          method: "POST",
-          headers: {
-            ...getAuthorizationHeaders(await adminClient.getAccessToken()),
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(body),
-        },
-      );
-      if (!response.ok) {
-        throw new Error(await ssfErrorMessage(response));
-      }
-      addAlert(t("ssfCreateStreamSuccess"), AlertVariant.success);
-      resetCreateStreamForm();
-      setCreateStreamFormOpen(false);
-      refresh();
-    } catch (error) {
-      addError("ssfCreateStreamError", error);
-    } finally {
-      setCreateStreamSubmitting(false);
     }
   };
 
@@ -545,22 +356,9 @@ export const StreamTab = ({
         return;
       }
       try {
-        const response = await fetch(
-          `${addTrailingSlash(
-            adminClient.baseUrl,
-          )}admin/realms/${realm}/ssf/clients/${client.clientId}/stream`,
-          {
-            method: "DELETE",
-            headers: getAuthorizationHeaders(
-              await adminClient.getAccessToken(),
-            ),
-          },
-        );
-        if (!response.ok) {
-          throw new Error(
-            `${response.status} ${response.statusText || "Request failed"}`,
-          );
-        }
+        await adminClient.ssf.deleteClientStream({
+          clientId: client.clientId!,
+        });
         addAlert(t("ssfDeleteStreamSuccess"), AlertVariant.success);
         setClientStream(null);
         refresh();
@@ -602,250 +400,20 @@ export const StreamTab = ({
                   message={t("ssfStreamNotRegistered")}
                   instructions={t("ssfStreamNotRegisteredHelp")}
                   primaryActionText={t("ssfCreateStream")}
-                  onPrimaryAction={openCreateStreamForm}
+                  onPrimaryAction={() => setCreateStreamFormOpen(true)}
                 />
               )}
               {createStreamFormOpen && (
-                <FormAccess
-                  role="manage-clients"
-                  fineGrainedAccess={client.access?.configure}
-                  isHorizontal
-                >
-                  <FormGroup
-                    label={t("ssfProfile")}
-                    fieldId="ssfCreateStreamProfile"
-                    labelIcon={
-                      <HelpItem
-                        helpText={t("ssfCreateStreamProfileHelp")}
-                        fieldLabelId="ssfCreateStreamProfile"
-                      />
-                    }
-                  >
-                    <select
-                      id="ssfCreateStreamProfile"
-                      data-testid="ssfCreateStreamProfile"
-                      className="pf-v5-c-form-control"
-                      value={createStreamProfile}
-                      onChange={(e) =>
-                        setCreateStreamProfile(
-                          e.target.value === "SSE_CAEP"
-                            ? "SSE_CAEP"
-                            : "SSF_1_0",
-                        )
-                      }
-                    >
-                      <option value="SSF_1_0">{t("ssfProfile.SSF_1_0")}</option>
-                      <option value="SSE_CAEP">
-                        {t("ssfProfile.SSE_CAEP")}
-                      </option>
-                    </select>
-                  </FormGroup>
-                  <FormGroup
-                    label={t("ssfCreateStreamDeliveryMethod")}
-                    fieldId="ssfCreateStreamDeliveryMethod"
-                    labelIcon={
-                      <HelpItem
-                        helpText={t("ssfCreateStreamDeliveryMethodHelp")}
-                        fieldLabelId="ssfCreateStreamDeliveryMethod"
-                      />
-                    }
-                  >
-                    <select
-                      id="ssfCreateStreamDeliveryMethod"
-                      data-testid="ssfCreateStreamDeliveryMethod"
-                      className="pf-v5-c-form-control"
-                      value={createStreamMethod}
-                      onChange={(e) =>
-                        setCreateStreamMethod(
-                          e.target.value === "POLL" ? "POLL" : "PUSH",
-                        )
-                      }
-                    >
-                      <option value="PUSH">{t("ssfDelivery.PUSH")}</option>
-                      <option value="POLL">{t("ssfDelivery.POLL")}</option>
-                    </select>
-                  </FormGroup>
-                  {createStreamMethod === "PUSH" && (
-                    <>
-                      <FormGroup
-                        label={t("ssfCreateStreamEndpointUrl")}
-                        fieldId="ssfCreateStreamEndpointUrl"
-                        isRequired
-                        labelIcon={
-                          <HelpItem
-                            helpText={t("ssfCreateStreamEndpointUrlHelp")}
-                            fieldLabelId="ssfCreateStreamEndpointUrl"
-                          />
-                        }
-                      >
-                        <TextInput
-                          id="ssfCreateStreamEndpointUrl"
-                          data-testid="ssfCreateStreamEndpointUrl"
-                          isRequired
-                          value={createStreamEndpointUrl}
-                          validated={
-                            isValidPushEndpointUrl(createStreamEndpointUrl)
-                              ? "default"
-                              : "error"
-                          }
-                          onChange={(_e, value) =>
-                            setCreateStreamEndpointUrl(value)
-                          }
-                        />
-                        {!isValidPushEndpointUrl(createStreamEndpointUrl) && (
-                          <FormHelperText>
-                            <HelperText>
-                              <HelperTextItem
-                                variant="error"
-                                data-testid="ssfCreateStreamEndpointUrlError"
-                              >
-                                {t("ssfCreateStreamEndpointUrlInvalid")}
-                              </HelperTextItem>
-                            </HelperText>
-                          </FormHelperText>
-                        )}
-                      </FormGroup>
-                      <FormGroup
-                        label={t("ssfStreamPushAuthHeader")}
-                        fieldId="ssfCreateStreamAuthHeader"
-                        labelIcon={
-                          <HelpItem
-                            helpText={t("ssfStreamPushAuthHeaderHelp")}
-                            fieldLabelId="ssfStreamPushAuthHeader"
-                          />
-                        }
-                      >
-                        <InputGroup>
-                          <InputGroupItem isFill>
-                            <PasswordInput
-                              id="ssfCreateStreamAuthHeader"
-                              data-testid="ssfCreateStreamAuthHeader"
-                              value={createStreamAuthHeader}
-                              onChange={(event) =>
-                                setCreateStreamAuthHeader(
-                                  (event.target as HTMLInputElement).value,
-                                )
-                              }
-                            />
-                          </InputGroupItem>
-                          <InputGroupItem>
-                            <CopyToClipboardButton
-                              id="ssfCreateStreamAuthHeader"
-                              text={createStreamAuthHeader}
-                              label="ssfStreamPushAuthHeader"
-                              variant="control"
-                            />
-                          </InputGroupItem>
-                        </InputGroup>
-                      </FormGroup>
-                    </>
-                  )}
-                  <FormGroup
-                    label={t("ssfCreateStreamEventsRequested")}
-                    fieldId="ssfCreateStreamEventsRequested"
-                    labelIcon={
-                      <HelpItem
-                        helpText={t("ssfCreateStreamEventsRequestedHelp")}
-                        fieldLabelId="ssfCreateStreamEventsRequested"
-                      />
-                    }
-                  >
-                    <KeycloakSelect
-                      toggleId="ssfCreateStreamEventsRequested"
-                      data-testid="ssfCreateStreamEventsRequested"
-                      variant={SelectVariant.typeaheadMulti}
-                      chipGroupProps={{
-                        numChips: 5,
-                        expandedText: t("hide"),
-                        collapsedText: t("showRemaining"),
-                      }}
-                      typeAheadAriaLabel={t("ssfCreateStreamEventsRequested")}
-                      onToggle={setCreateStreamEventsOpen}
-                      isOpen={createStreamEventsOpen}
-                      selections={createStreamEvents}
-                      onSelect={(value) => {
-                        const option = value.toString();
-                        if (!option) return;
-                        setCreateStreamEvents((current) =>
-                          current.includes(option)
-                            ? current.filter((e) => e !== option)
-                            : [...current, option],
-                        );
-                        setCreateStreamEventsFilter("");
-                      }}
-                      onClear={() => {
-                        setCreateStreamEvents([]);
-                        setCreateStreamEventsFilter("");
-                      }}
-                      onFilter={setCreateStreamEventsFilter}
-                    >
-                      {receiverSupportedEvents
-                        .filter((event) =>
-                          event
-                            .toLowerCase()
-                            .includes(createStreamEventsFilter.toLowerCase()),
-                        )
-                        .map((event) => (
-                          <SelectOption key={event} value={event}>
-                            {event}
-                            {nativelyEmittedEvents.includes(event) && (
-                              <Label
-                                color="blue"
-                                isCompact
-                                className="pf-v5-u-ml-sm"
-                              >
-                                {t("ssfNativelyEmittedBadge")}
-                              </Label>
-                            )}
-                          </SelectOption>
-                        ))}
-                    </KeycloakSelect>
-                  </FormGroup>
-                  <FormGroup
-                    label={t("ssfCreateStreamDescription")}
-                    fieldId="ssfCreateStreamDescription"
-                    labelIcon={
-                      <HelpItem
-                        helpText={t("ssfCreateStreamDescriptionHelp")}
-                        fieldLabelId="ssfCreateStreamDescription"
-                      />
-                    }
-                  >
-                    <TextInput
-                      id="ssfCreateStreamDescription"
-                      data-testid="ssfCreateStreamDescription"
-                      value={createStreamDescription}
-                      onChange={(_e, value) =>
-                        setCreateStreamDescription(value)
-                      }
-                    />
-                  </FormGroup>
-                  <ActionGroup>
-                    <Button
-                      variant="primary"
-                      isDisabled={
-                        createStreamSubmitting ||
-                        (createStreamMethod === "PUSH" &&
-                          (!createStreamEndpointUrl.trim() ||
-                            !isValidPushEndpointUrl(createStreamEndpointUrl)))
-                      }
-                      onClick={submitCreateStream}
-                      data-testid="ssfCreateStreamSubmit"
-                    >
-                      {t("ssfCreateStream")}
-                    </Button>
-                    <Button
-                      variant="link"
-                      onClick={() => {
-                        resetCreateStreamForm();
-                        setCreateStreamFormOpen(false);
-                      }}
-                      data-testid="ssfCreateStreamCancel"
-                    >
-                      {t("cancel")}
-                    </Button>
-                  </ActionGroup>
-                </FormAccess>
+                <CreateStreamForm
+                  client={client}
+                  receiverSupportedEvents={receiverSupportedEvents}
+                  nativelyEmittedEvents={nativelyEmittedEvents}
+                  onCancel={() => setCreateStreamFormOpen(false)}
+                  onSuccess={() => {
+                    setCreateStreamFormOpen(false);
+                    refresh();
+                  }}
+                />
               )}
             </>
           ) : (

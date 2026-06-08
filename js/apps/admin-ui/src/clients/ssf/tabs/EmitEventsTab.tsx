@@ -1,4 +1,3 @@
-import { NetworkError, fetchWithError } from "@keycloak/keycloak-admin-client";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import {
   HelpItem,
@@ -30,8 +29,6 @@ import { useAdminClient } from "../../../admin-client";
 import CodeEditor from "../../../components/form/CodeEditor";
 import { FormAccess } from "../../../components/form/FormAccess";
 import { useRealm } from "../../../context/realm-context/RealmContext";
-import { addTrailingSlash } from "../../../util";
-import { getAuthorizationHeaders } from "../../../utils/getAuthorizationHeaders";
 import { toSsfClientTab } from "../../routes/ClientSsfTab";
 import type { SsfClientStream } from "./StreamTab";
 
@@ -190,23 +187,15 @@ export const EmitEventsTab = ({
       // resulting SET matches the shape native events for this
       // receiver would have. Org subjects produce a complex tenant-
       // only subject for org-scoped routing.
-      const response = await fetchWithError(
-        `${addTrailingSlash(adminClient.baseUrl)}admin/realms/${realm}/ssf/clients/${client.clientId}/events/emit`,
+      const result = (await adminClient.ssf.emitEvent(
+        { clientId: client.clientId! },
         {
-          method: "POST",
-          headers: {
-            ...getAuthorizationHeaders(await adminClient.getAccessToken()),
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            eventType: values.emitEventType,
-            subjectType: values.emitSubjectType,
-            subjectValue: values.emitSubjectValue.trim(),
-            event: parsedPayload,
-          }),
+          eventType: values.emitEventType,
+          subjectType: values.emitSubjectType,
+          subjectValue: values.emitSubjectValue.trim(),
+          event: parsedPayload as Record<string, unknown>,
         },
-      );
-      const result = (await response.json()) as SsfEmitResult;
+      )) as SsfEmitResult;
       setEmitResult(result);
     } catch (error) {
       setEmitError(translateEmitError(error, values));
