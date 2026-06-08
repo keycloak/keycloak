@@ -7,6 +7,8 @@ import java.util.List;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyMode;
+import org.keycloak.services.clientpolicy.condition.ClientScopesCondition;
 import org.keycloak.services.clientpolicy.condition.GrantTypeCondition;
 import org.keycloak.services.clientpolicy.condition.IdentityProviderCondition;
 import org.keycloak.util.JsonSerialization;
@@ -49,6 +51,14 @@ public class ClientPolicyBuilder extends Builder<ClientPolicyRepresentation> {
         return config;
     }
 
+    public static ClientScopesCondition.Configuration clientScopesConditionConfiguration(boolean negativeLogic, String type, String... scopes) {
+        ClientScopesCondition.Configuration config = new ClientScopesCondition.Configuration();
+        config.setNegativeLogic(negativeLogic);
+        config.setType(type);
+        config.setScopes(List.of(scopes));
+        return config;
+    }
+
     public ClientPolicyBuilder enabled(boolean enabled) {
         rep.setEnabled(enabled);
         return this;
@@ -61,6 +71,11 @@ public class ClientPolicyBuilder extends Builder<ClientPolicyRepresentation> {
 
     public ClientPolicyBuilder description(String description) {
         rep.setDescription(description);
+        return this;
+    }
+
+    public ClientPolicyBuilder mode(ClientPolicyMode mode) {
+        rep.setMode(mode.toString());
         return this;
     }
 

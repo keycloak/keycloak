@@ -1,4 +1,5 @@
 
+[[_identity-brokering-apis-tokens]]
 === Retrieving external IDP tokens
 
 {project_name} allows you to store tokens and responses from the authentication process with the external IDP. There are two versions of this feature that are slightly different in their behavior.
