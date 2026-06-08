@@ -99,7 +99,7 @@ public class PolicyResourceService {
 
         audit(representation, OperationType.UPDATE);
 
-        return Response.status(Status.CREATED).build();
+        return Response.noContent().build();
     }
 
     @DELETE
