@@ -376,4 +376,28 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.7.0-cluster-event">
+        <createTable tableName="CLUSTER_EVENT">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_CLUSTER_EVENT"/>
+            </column>
+            <column name="TARGET_CLUSTER" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SENDER_CLUSTER" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="EVENT_DATA" type="BLOB">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREATED_AT" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="CLUSTER_EVENT" indexName="IDX_CLUSTER_EVENT_TARGET">
+            <column name="TARGET_CLUSTER"/>
+            <column name="CREATED_AT"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

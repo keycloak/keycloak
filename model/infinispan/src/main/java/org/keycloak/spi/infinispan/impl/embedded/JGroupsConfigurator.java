@@ -36,6 +36,7 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.TrustManager;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.config.CachingOptions;
@@ -244,6 +245,9 @@ public final class JGroupsConfigurator {
         var stackXmlAttribute = transportStackOf(holder);
         if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get())) {
             logger.debugf("Custom stack configured (%s). JDBC_PING discovery disabled.", stackXmlAttribute.get());
+            if (Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
+                throw new RuntimeException("The cacheless feature must hast JDBC_PING discovery enabled");
+            }
             return;
         }
 
