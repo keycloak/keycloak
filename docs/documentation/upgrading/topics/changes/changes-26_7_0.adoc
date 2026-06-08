@@ -179,6 +179,16 @@ The following sections provide details on deprecated features.
 
 The Identity Brokering API V1 is now deprecated but remains enabled by default for backward compatibility. See the link:{releasenotes_link}[Release Notes] for more details.
 
+=== Switch Bearer-only on OpenID Connect clients is deprecated
+
+The switch **Bearer only** on OIDC clients is deprecated now and will be removed in some future version.
+
+The switch was possible to be used to specify that client can act just as service, which is not able to authenticate by any grant and obtain tokens issued to itself. However bearer-only client can
+be already simulated by creating OIDC client without any grants supported.
+
+The switch is already unavailable in the admin console client settings, but it was still possible to use it for example by directly updating client through admin REST API. In the
+future, this will not be possible anymore.
+
 === Option Allow regex pattern comparison is deprecated for the X509 client authenticator
 
 The option **Allow regex pattern comparison** is deprecated for the X509 client authenticator. This option allows to configure a Java regular expression instead of the exact DN for the client certificate subject DN. As previously commented in the breaking changes section, this option is now deprecated and it will be removed in a future version. The certificate for the client should be unambiguously identified because of security reasons.
