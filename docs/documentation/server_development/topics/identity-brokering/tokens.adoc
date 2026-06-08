@@ -69,4 +69,36 @@ The endpoint tries to obtain the external token from the user session associated
 
 The response in V2 is always a JSON access token response, in which the parameter `access_token` is present for a successful request, and parameter `error` is added in case of a problem. Version V2 follows OAuth 2.0 specification in this regard.
 
-V2 also applies client policies when calling the external token endpoint. This way, administrators can configure them to enforce extra security to the client and the Identity provider involved in the call.
+[[_identity-brokering-apis-client-policies]]
+==== Integration with client policies
+
+V2 also applies link:{adminguide_link}#_client_policies[clients policies] when calling the external token endpoint. This way, administrators can configure them to enforce extra security to the client and the Identity provider involved in the call.
+
+Client policies can be configured to enforce some more complex requirements. For instance, we may have a requirement that returning external token of identity provider `my-idp` is
+allowed just in case when internal token calling endpoint has specific scope (For example scope `phone`).
+
+For setup such a client policy, it might be possible to do the steps like these:
+
+* Create client profile named for example `reject-profile` with only `reject-request` executor. Such a client profile will always reject the request when it is reached. So now it is just a matter of creating
+client policy with this profile together with the conditions, which targets identity provider `my-idp` and at the same time, the scope `phone` is missing in the token.
+
+* Next step is to create client policy and add profile `reject-profile` from previous step to this policy.
+
+* Once the policy is created, add the condition of type `identity-provider-alias` for the identity provider `my-idp` . Assumption is, that such identity provider exists in the realm.
+
+.Identity provider condition
+image::images/idp-api-client-policy-1_idp-condition.png[Identity provider condition]
+
+* Add another condition of type `client-scopes` and configure it with **Negative logic** and scope `phone`
+
+.Client scopes condition
+image::images/idp-api-client-policy-2_scope-condition.png[Client scopes condition]
+
+* Make sure that client policy is configured with `STRICT` mode. This mode means that both conditions should be achieved in order of the client profile to be triggered.
+
+.Client policy configuration
+image::images/idp-api-client-policy-3_policy.png[Client policy configuration]
+
+Client policies are powerful, but at the same time, they could be tricky to setup. So just a note that when configuring client policy with some more complex requirement
+like above, it is recommended to properly test it and enable logging for client policies to see what is going on. See the link:{adminguide_link}#_client_policies[clients policies]
+for more details.
