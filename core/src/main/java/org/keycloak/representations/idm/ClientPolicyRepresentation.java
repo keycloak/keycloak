@@ -30,6 +30,7 @@ public class ClientPolicyRepresentation {
     protected String name;
     protected String description;
     protected Boolean enabled;
+    protected String mode;
     protected List<ClientPolicyConditionRepresentation> conditions;
     protected List<String> profiles;
 
@@ -55,6 +56,14 @@ public class ClientPolicyRepresentation {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
     }
 
     public List<ClientPolicyConditionRepresentation> getConditions() {

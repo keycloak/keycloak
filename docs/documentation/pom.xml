@@ -124,7 +124,9 @@
                                         <directory>${project.basedir}</directory>
                                         <includes>
                                             <include>images/**/*.png</include>
+                                            <include>images/**/*.svg</include>
                                             <include>${imagesDir}/**/*.png</include>
+                                            <include>${imagesDir}/**/*.svg</include>
                                         </includes>
                                     </resource>
                                 </resources>

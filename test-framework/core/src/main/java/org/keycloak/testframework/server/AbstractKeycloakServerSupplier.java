@@ -2,6 +2,7 @@ package org.keycloak.testframework.server;
 
 import java.util.List;
 
+import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.database.TestDatabase;
@@ -61,12 +62,21 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
         if (managedCert.isTlsEnabled()) {
             command.option("https-key-store-file", managedCert.getServerKeyStorePath());
             command.option("https-key-store-password", managedCert.getServerKeyStorePassword());
+            command.option("https-key-store-type", managedCert.getKeystoreFormat().name());
         }
 
         if (managedCert.isMTlsEnabled()) {
             command.option("https-client-auth", "request");
-            command.option("https-trust-store-file", managedCert.getServerTrustStorePath());
-            command.option("https-trust-store-password", managedCert.getServerTrustStorePassword());
+            if (KeystoreUtil.TruststoreFormat.PEM.name().equalsIgnoreCase(KeystoreUtil.getTruststoreType(
+                    null, managedCert.getServerTrustStorePath(), managedCert.getKeystoreFormat().name()))) {
+                // for PEM file use common truststore paths option
+                command.option("truststore-paths", managedCert.getServerTrustStorePath());
+            } else {
+                // for other formats use the https-trust-store-file option
+                command.option("https-trust-store-file", managedCert.getServerTrustStorePath());
+                command.option("https-trust-store-password", managedCert.getServerTrustStorePassword());
+                command.option("https-trust-store-type", managedCert.getKeystoreFormat().name());
+            }
         }
 
         command.log().fromConfig(Config.getConfig());

@@ -19,6 +19,7 @@ package org.keycloak.singleobject.jpa;
 
 import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,7 +29,6 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.expiration.jpa.ExpirationHelper;
 import org.keycloak.expiration.jpa.ExpirationTask;
 import org.keycloak.models.KeycloakSession;
@@ -39,8 +39,6 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
-import org.keycloak.storage.configuration.ServerConfigStorageProvider;
-import org.keycloak.timer.TimerProvider;
 
 import org.jboss.logging.Logger;
 
@@ -116,7 +114,9 @@ public class JpaSingleUseObjectProviderFactory implements SingleUseObjectProvide
 
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
-        return Set.of(JpaConnectionProvider.class, ExecutorsProvider.class, ServerConfigStorageProvider.class, TimerProvider.class);
+        var deps = new HashSet<>(ExpirationHelper.dependsOn());
+        deps.add(JpaConnectionProvider.class);
+        return Set.copyOf(deps);
     }
 
     @Override

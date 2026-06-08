@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -51,9 +52,14 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.utils.StringUtil;
 
+import org.jboss.logging.Logger;
+
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
 public class DefaultClientValidationProvider implements ClientValidationProvider {
+
+    private static final Logger logger = Logger.getLogger(DefaultClientValidationProvider.class);
+
     private enum FieldMessages {
         ROOT_URL("rootUrl",
                 "Root URL is not a valid URL", "clientRootURLInvalid",
@@ -203,6 +209,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validateDefaultAcrValues(context);
         validateMinimumAcrValue(context);
         validateClientSessionTimeout(context);
+        validateX509Credentials(context);
 
         return context.toResult();
     }
@@ -542,6 +549,21 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
             }
         }
 
+    }
+
+    private void validateX509Credentials(ValidationContext<ClientModel> context) {
+        ClientModel client = context.getObjectToValidate();
+        if (!client.isPublicClient() && !client.isBearerOnly() && X509ClientAuthenticator.PROVIDER_ID.equals(client.getClientAuthenticatorType())) {
+            // TODO: return validation error for keycloak 27.0
+            if (Boolean.parseBoolean(client.getAttribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON))) {
+                logger.warnf("Option '%s' is deprecated. Please configure the X.509 client authenticator to use exact Subject DN for client '%s' in realm '%s'.",
+                        X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, client.getClientId(), context.getSession().getContext().getRealm().getName());
+            }
+            if (StringUtil.isBlank(client.getAttribute(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN))) {
+                logger.warnf("Option '%s' is null or empty, this configuration is deprecated, please configure it for better security for client '%s' in realm '%s'",
+                        X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, client.getClientId(), context.getSession().getContext().getRealm().getName());
+            }
+        }
     }
 
     private Integer parseIntAttribute(String value) {
