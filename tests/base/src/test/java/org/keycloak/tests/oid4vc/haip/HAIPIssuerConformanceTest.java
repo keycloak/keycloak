@@ -20,11 +20,13 @@ import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
+import org.keycloak.tests.oid4vc.OID4VCBasicWallet.AuthorizationEndpointRequest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.tests.oid4vc.abca.OIDCClientAttester;
 import org.keycloak.tests.oid4vc.abca.OIDCMockClientAttester;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -33,21 +35,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
+import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_DEFAULT_TRUST_IDP_ALIAS;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_HEADER;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_POP_HEADER;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createRsaKeyPair;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CLIENT_ATTESTER_ATTACHMENT_KEY;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * Mirrors oid4vci-1_0-issuer-haip-test-plan:oid4vci-1_0-issuer-happy-flow
+ * Replicates various tests in oid4vci-1_0-issuer-haip-test-plan
  */
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithABCAEnabled.class)
 public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
-
-    private static final String ATTESTER_DEFAULT_TRUST_IDP_ALIAS = "abca-attester-default-trust";
 
     private static OIDCClientAttester attester;
     private static String attesterJwks;
@@ -70,16 +73,19 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
         String jwks = attesterJwks;
         runOnServer.run(session -> {
             RealmModel realm = session.getContext().getRealm();
-
-            configureTrustIdentityProvider(realm, ATTESTER_DEFAULT_TRUST_IDP_ALIAS,
+            configureTrustIdentityProvider(realm, OAUTH_CLIENT_ATTESTATION_DEFAULT_TRUST_IDP_ALIAS,
                     DefaultTrustIdentityProviderFactory.PROVIDER_ID,
                     Map.of(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS, jwks));
         });
-        setClientTrustSource(ATTESTER_DEFAULT_TRUST_IDP_ALIAS);
         setClientPolicyEnabled(VCI_CLIENT_POLICY_HAIP, true);
         oauth.client(abcaClient.getClientId(), null);
     }
 
+    /**
+     * oid4vci-1_0-issuer-happy-flow
+     *
+     * Validates the standard credential issuance flow using an emulated wallet, as defined by OpenID4VCI.
+     */
     @Test
     public void testIssuerHappyFlow() throws Exception {
 
@@ -154,6 +160,55 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
         //
         verifyCredentialResponse(ctx, credResponse);
     }
+
+    /**
+     * fapi2-security-profile-final-state-only-outside-request-object-not-used
+     *
+     * Uses a request object that does not contain state, but state is passed in the url parameters to the authorization endpoint
+     * (hence state should be ignored, as FAPI says only parameters inside the request object should be used).
+     * The expected result is a successful authentication that returns neither state nor s_hash.
+     *
+     * It is also permissible to return an error message: invalid_request, invalid_request_object or access_denied.
+     */
+    @Test
+    public void testOnlyParametersInsideRequestObjectAreUsed() throws Exception {
+
+        var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);
+        ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
+
+        var pkce = PkceGenerator.s256();
+
+        // Generate ABCA Headers
+        //
+        KeyWrapper rsaKey = wallet.getRSAKeyPair(ctx);
+        String attestationJwt = wallet.buildClientAttestationJWT(ctx, rsaKey);
+        String attestationPoPJwt = wallet.buildClientAttestationPoPJWT(ctx, rsaKey);
+
+        // Send PAR Request
+        //
+        String requestUri = oauth.pushedAuthorizationRequest()
+                .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                .scopeParam(ctx.getScope())
+                .codeChallenge(pkce)
+                .send().getRequestUri();
+        assertNotNull(requestUri, "No requestUri");
+
+        // Send Authorization Request
+        //
+        AuthorizationEndpointRequest authRequest = wallet.authorizationRequest()
+                .requestUri(requestUri)
+                .codeChallenge(pkce)
+                .state("123456");
+        assertFalse(authRequest.openLoginForm(), "Error expected");
+        AuthorizationEndpointResponse authResponse = authRequest.parseLoginResponse();
+
+        assertNull(authResponse.getCode(), "Expected no auth code");
+        assertEquals("invalid_request", authResponse.getError());
+        assertEquals("PAR request did not include necessary parameters", authResponse.getErrorDescription());
+    }
+
+    // Private ---------------------------------------------------------------------------------------------------------
 
     private void verifyCredentialResponse(OID4VCTestContext ctx, CredentialResponse credResponse) throws Exception {
 
