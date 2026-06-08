@@ -380,7 +380,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         ListOptions listOptions = new ListOptions();
         listOptions.setFields(Set.of("clientId", "displayName"));
-        listOptions.setSortBy(List.of(ClientSortField.DISPLAY_NAME, ClientSortField.CLIENT_ID));
+        listOptions.setSortBy(List.of(ClientSortField.DISPLAY_NAME.toQueryValue(), ClientSortField.CLIENT_ID.toQueryValue()));
 
         try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
             List<String> sortTestClientIds = clients
@@ -399,7 +399,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         ListOptions listOptions = new ListOptions();
         listOptions.setFields(Set.of("clientId", "displayName"));
-        listOptions.setSortBy(List.of(ClientSortField.DISPLAY_NAME, ClientSortField.CLIENT_ID));
+        listOptions.setSortBy(List.of(ClientSortField.DISPLAY_NAME.toQueryValue(), ClientSortField.CLIENT_ID.toQueryValue()));
         listOptions.setSortOrder(SortOrder.DESC);
 
         try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
@@ -412,12 +412,38 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
-    public void getClientsSortByInvalidField() {
-        ListOptions listOptions = new ListOptions();
-        listOptions.setFields(Set.of("clientId", "displayName"));
-        listOptions.setSortBy("displayName,unknown");
-        BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(listOptions));
-        assertThat(e.getResponse().readEntity(String.class), containsString("unknown is not a sortable field"));
+    public void getClientsSortByInvalidField() throws IOException {
+        HttpGet request = new HttpGet(getClientsApiUrl() + "?fields=clientId&sortBy=displayName,unknown");
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            assertThat(EntityUtils.toString(response.getEntity()), containsString("unknown is not a sortable field"));
+        }
+    }
+
+    @Test
+    public void getClientsSortByMultipleFieldsViaHttp() throws IOException {
+        createSortTestClient("sort-b", "B", "beta");
+        createSortTestClient("sort-a", "A", "alpha");
+        createSortTestClient("sort-c", "A", "gamma");
+
+        HttpGet request = new HttpGet(getClientsApiUrl() + "?fields=clientId,displayName&sortBy=displayName,clientId");
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            String responseBody = EntityUtils.toString(response.getEntity());
+            if (response.getStatusLine().getStatusCode() != 200) {
+                System.err.println("Error response: " + responseBody);
+            }
+            assertEquals(200, response.getStatusLine().getStatusCode(), "Response body: " + responseBody);
+            List<BaseClientRepresentation> clients = mapper.readValue(
+                    responseBody,
+                    mapper.getTypeFactory().constructCollectionType(List.class, BaseClientRepresentation.class));
+            List<String> sortTestClientIds = clients.stream()
+                    .map(BaseClientRepresentation::getClientId)
+                    .filter(id -> id.startsWith("sort-"))
+                    .toList();
+            assertThat(sortTestClientIds, is(List.of("sort-a", "sort-c", "sort-b")));
+        }
     }
 
     @Test

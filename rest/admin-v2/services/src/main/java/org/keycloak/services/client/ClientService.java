@@ -8,6 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
@@ -21,8 +22,6 @@ import org.keycloak.services.PatchType;
 import org.keycloak.services.Service;
 import org.keycloak.services.ServiceException;
 
-import static org.keycloak.utils.StringUtil.isBlank;
-
 public interface ClientService extends Service {
 
     record ClientSearchOptions(String query) {}
@@ -32,7 +31,12 @@ public interface ClientService extends Service {
 
         public ClientProjectionOptions(Set<String> fields) {
             if (fields != null) {
-                this.fields.addAll(fields);
+                // Split comma-separated values to support both "field1,field2" and multiple parameters
+                fields.stream()
+                    .flatMap(value -> Arrays.stream(value.split(",")))
+                    .map(String::trim)
+                    .filter(field -> !field.isEmpty())
+                    .forEach(this.fields::add);
             }
         }
         
@@ -51,18 +55,19 @@ public interface ClientService extends Service {
         }
 
         public static ClientSortAndSliceOptions fromQuery(ListOptions listOptions) {
-            List<ClientSortField> fields = isBlank(listOptions.getSortBy())
+            List<ClientSortField> fields = listOptions.getSortBy() == null || listOptions.getSortBy().isEmpty()
                     ? List.of(ClientSortField.defaultField())
                     : parseSortBy(listOptions.getSortBy());
             return new ClientSortAndSliceOptions(fields, resolveSortOrder(listOptions.getSortOrder()));
         }
 
-        private static List<ClientSortField> parseSortBy(String sortBy) {
-            List<ClientSortField> fields = Arrays.stream(sortBy.split(","))
+        private static List<ClientSortField> parseSortBy(List<String> sortBy) {
+            List<ClientSortField> fields = sortBy.stream()
+                    .flatMap(value -> Arrays.stream(value.split(",")))
                     .map(String::trim)
                     .filter(field -> !field.isEmpty())
                     .map(ClientSortAndSliceOptions::parseSortField)
-                    .toList();
+                    .collect(Collectors.toList());
             if (fields.isEmpty()) {
                 throw new ServiceException("sortBy must specify at least one field", Response.Status.BAD_REQUEST);
             }
