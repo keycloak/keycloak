@@ -99,7 +99,7 @@ public class ParEndpoint extends AbstractParEndpoint {
         MultivaluedMap<String, String> decodedFormParameters = httpRequest.getDecodedFormParameters();
 
         if (decodedFormParameters.containsKey(REQUEST_URI_PARAM)) {
-            throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "It is not allowed to include request_uri to PAR.", Response.Status.BAD_REQUEST);
+            throw errorResponseException(OAuthErrorException.INVALID_REQUEST, "It is not allowed to include request_uri to PAR.", Response.Status.BAD_REQUEST);
         }
 
         // https://datatracker.ietf.org/doc/html/rfc9449#section-10.1
@@ -109,9 +109,9 @@ public class ParEndpoint extends AbstractParEndpoint {
             authorizationRequest = ParEndpointRequestParserProcessor.parseRequest(event, session, client, decodedFormParameters);
         } catch (Exception e) {
             if (!decodedFormParameters.containsKey(OIDCLoginProtocol.REQUEST_PARAM)) {
-                throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
+                throw errorResponseException(OAuthErrorException.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
             }
-            throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST_OBJECT, e.getMessage(), Response.Status.BAD_REQUEST);
+            throw errorResponseException(OAuthErrorException.INVALID_REQUEST_OBJECT, e.getMessage(), Response.Status.BAD_REQUEST);
         }
 
         AuthorizationEndpointChecker checker = new AuthorizationEndpointChecker()
@@ -124,14 +124,14 @@ public class ParEndpoint extends AbstractParEndpoint {
         try {
             checker.checkRedirectUri();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
-            throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter: redirect_uri", Response.Status.BAD_REQUEST);
+            throw errorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter: redirect_uri", Response.Status.BAD_REQUEST);
         }
 
         try {
             checker.checkResponseType();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
             if (ex.getError().equals(OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE)) {
-                throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Unsupported response type", Response.Status.BAD_REQUEST);
+                throw errorResponseException(OAuthErrorException.INVALID_REQUEST, "Unsupported response type", Response.Status.BAD_REQUEST);
             } else {
                 checker.throwAsCorsErrorResponseException(cors, ex);
             }
@@ -141,7 +141,7 @@ public class ParEndpoint extends AbstractParEndpoint {
             checker.checkValidScope();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
             // PAR throws this as "invalid_request" error
-            throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, ex.getErrorDescription(), Response.Status.BAD_REQUEST);
+            throw errorResponseException(OAuthErrorException.INVALID_REQUEST, ex.getErrorDescription(), Response.Status.BAD_REQUEST);
         }
 
         try {
@@ -161,7 +161,7 @@ public class ParEndpoint extends AbstractParEndpoint {
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
-            throw throwErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+            throw errorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
         Map<String, String> params = new HashMap<>();
