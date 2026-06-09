@@ -165,6 +165,7 @@ public class ScopeMappedClientResource {
             if (roleModel == null) {
                 throw new NotFoundException("Role not found");
             }
+            auth.roles().requireMapClientScope(roleModel);
             scopeContainer.addScopeMapping(roleModel);
         }
 
@@ -185,6 +186,7 @@ public class ScopeMappedClientResource {
 
         if (roles == null) {
             roles = KeycloakModelUtils.getClientScopeMappingsStream(scopedClient, scopeContainer)
+                    .filter(auth.roles()::canMapClientScope)
                     .peek(scopeContainer::deleteScopeMapping)
                     .map(ModelToRepresentation::toBriefRepresentation)
                     .collect(Collectors.toList());
@@ -194,6 +196,7 @@ public class ScopeMappedClientResource {
                 if (roleModel == null) {
                     throw new NotFoundException("Role not found");
                 }
+                auth.roles().requireMapClientScope(roleModel);
                 scopeContainer.deleteScopeMapping(roleModel);
             }
         }
