@@ -61,8 +61,8 @@ public interface ClientService extends Service {
             return new ClientSortAndSliceOptions(fields, resolveSortOrder(listOptions.getSortOrder()));
         }
 
-        private static List<ClientSortField> parseSortBy(List<String> sortBy) {
-            List<ClientSortField> fields = sortBy.stream()
+        private static List<ClientSortField> parseSortBy(String sortBy) {
+            List<ClientSortField> fields = Arrays.stream(sortBy.split(","))
                     .flatMap(value -> Arrays.stream(value.split(",")))
                     .map(String::trim)
                     .filter(field -> !field.isEmpty())

@@ -279,7 +279,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(201, response.getStatus());
             OIDCClientRepresentation created = response.readEntity(OIDCClientRepresentation.class);
             assertThat(created, notNullValue());
-            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
 
         // Create a SAML client with SAML-specific fields
@@ -298,7 +298,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(201, response.getStatus());
             SAMLClientRepresentation created = response.readEntity(SAMLClientRepresentation.class);
             assertThat(created, notNullValue());
-            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
 
         // Get all clients - this should work with mixed protocols
@@ -380,7 +380,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         ListOptions listOptions = new ListOptions();
         listOptions.setFields(Set.of("clientId", "displayName"));
-        listOptions.setSortBy(List.of(ClientSortField.DISPLAY_NAME.toQueryValue(), ClientSortField.CLIENT_ID.toQueryValue()));
+        listOptions.setSortBy(String.format("%s, %s", ClientSortField.DISPLAY_NAME.toQueryValue(), ClientSortField.CLIENT_ID.toQueryValue()));
 
         try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
             List<String> sortTestClientIds = clients
@@ -399,7 +399,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         ListOptions listOptions = new ListOptions();
         listOptions.setFields(Set.of("clientId", "displayName"));
-        listOptions.setSortBy(List.of(ClientSortField.DISPLAY_NAME.toQueryValue(), ClientSortField.CLIENT_ID.toQueryValue()));
+        listOptions.setSortBy(String.format("%s, %s", ClientSortField.DISPLAY_NAME.toQueryValue(), ClientSortField.CLIENT_ID.toQueryValue()));
         listOptions.setSortOrder(SortOrder.DESC);
 
         try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
@@ -431,9 +431,6 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         setAuthHeader(request);
         try (var response = client.execute(request)) {
             String responseBody = EntityUtils.toString(response.getEntity());
-            if (response.getStatusLine().getStatusCode() != 200) {
-                System.err.println("Error response: " + responseBody);
-            }
             assertEquals(200, response.getStatusLine().getStatusCode(), "Response body: " + responseBody);
             List<BaseClientRepresentation> clients = mapper.readValue(
                     responseBody,
@@ -786,7 +783,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("client-update-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
+        assertClientUpdateFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
     }
 
     @Test
@@ -805,7 +802,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-update-invalid-fragment");
         rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
-        assertClientCreationFailsWithError(rep, "{\"error\":\"Redirect URIs must not contain an URI fragment\"}");
+        assertClientUpdateFailsWithError(rep, "{\"error\":\"Redirect URIs must not contain an URI fragment\"}");
     }
 
     @Test
@@ -814,7 +811,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-update-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
+        assertClientUpdateFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
     }
 
     @Test
@@ -1150,7 +1147,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertThat(response.getStatus(), is(201));
             BaseClientRepresentation created = response.readEntity(BaseClientRepresentation.class);
             assertThat(created, notNullValue());
-            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
 
         // Now try to update with invalid data
