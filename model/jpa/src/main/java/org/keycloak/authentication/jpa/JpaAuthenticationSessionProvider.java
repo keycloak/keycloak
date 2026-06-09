@@ -18,6 +18,8 @@
 package org.keycloak.authentication.jpa;
 
 import java.lang.invoke.MethodHandles;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import jakarta.persistence.EntityManager;
@@ -26,7 +28,9 @@ import jakarta.persistence.LockModeType;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.SessionExpiration;
@@ -35,12 +39,15 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import org.jboss.logging.Logger;
 
-public class JpaAuthenticationSessionProvider implements AuthenticationSessionProvider {
+public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransaction implements AuthenticationSessionProvider {
 
     private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     private final KeycloakSession session;
     private final int authSessionsLimit;
+    private final Map<String, RootAuthenticationSessionAdapter> transientSessions = new HashMap<>();
+    private KeycloakTransaction transaction;
+    private boolean enlisted;
 
     public JpaAuthenticationSessionProvider(KeycloakSession session, int authSessionsLimit) {
         this.session = Objects.requireNonNull(session);
@@ -50,8 +57,18 @@ public class JpaAuthenticationSessionProvider implements AuthenticationSessionPr
     @Override
     public RootAuthenticationSessionModel createRootAuthenticationSession(RealmModel realm) {
         var model = RootAuthenticationSessionAdapter.create(session, realm, SecretGenerator.SECURE_ID_GENERATOR.get(), Time.currentTime(), authSessionsLimit);
-        getEntityManager().persist(model.getEntity());
+        // Those newly created authentication sessions with a random ID do not exist in the database, so there can not be any conflict.
+        // For resource owner password grants, those sessions are created temporarily, so we only insert them if they are not removed within the same session.
+        transientSessions.put(model.getEntity().getId(), model);
+        prepareTransaction();
         return model;
+    }
+
+    private void prepareTransaction() {
+        if (!enlisted) {
+            enlisted = true;
+            session.getTransactionManager().enlistPrepare(this);
+        }
     }
 
     @Override
@@ -82,6 +99,12 @@ public class JpaAuthenticationSessionProvider implements AuthenticationSessionPr
         if (id == null) {
             return null;
         }
+        var model = transientSessions.get(id);
+        if (model != null && Objects.equals(model.getRealm().getId(), realm.getId())) {
+            // NOTE: Check if this session belongs to the correct realm to avoid a wrong cross-reference
+            // as a second line of defense.
+            return model;
+        }
 
         var em = getEntityManager();
         var entity = em.find(RootAuthenticationSessionEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
@@ -99,6 +122,9 @@ public class JpaAuthenticationSessionProvider implements AuthenticationSessionPr
 
     @Override
     public void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession) {
+        if (transientSessions.remove(authenticationSession.getId()) != null) {
+            return;
+        }
         var em = getEntityManager();
         if (authenticationSession instanceof RootAuthenticationSessionAdapter adapter) {
             em.remove(adapter.getEntity());
@@ -125,5 +151,14 @@ public class JpaAuthenticationSessionProvider implements AuthenticationSessionPr
 
     private EntityManager getEntityManager() {
         return session.getProvider(JpaConnectionProvider.class).getEntityManager();
+    }
+
+    @Override
+    protected void commitImpl() {
+        transientSessions.forEach((key, value) -> getEntityManager().persist(value.getEntity()));
+    }
+
+    @Override
+    protected void rollbackImpl() {
     }
 }
