@@ -237,6 +237,7 @@ public class GroupResource {
                 if (child == null) {
                     throw new NotFoundException("Could not find child by id");
                 }
+                auth.groups().requireManage(child);
                 if (!Objects.equals(child.getParentId(), group.getId())) {
                     realm.moveGroup(child, group);
                 }

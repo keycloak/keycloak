@@ -211,6 +211,7 @@ public class GroupsResource {
                     throw new NotFoundException("Could not find child by id");
                 }
                 if (child.getParentId() != null) {
+                    auth.groups().requireManage(child);
                     realm.moveGroup(child, null);
                 }
                 adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri());

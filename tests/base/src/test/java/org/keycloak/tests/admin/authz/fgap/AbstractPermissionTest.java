@@ -20,6 +20,7 @@ package org.keycloak.tests.admin.authz.fgap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import jakarta.ws.rs.core.Response;
 
@@ -75,6 +76,11 @@ public abstract class AbstractPermissionTest {
     protected static void createPermission(ManagedClient client, ScopePermissionRepresentation permission, Response.Status expected) {
         try (Response response = getScopePermissionsResource(client).create(permission)) {
             assertEquals(expected.getStatusCode(), response.getStatus());
+            if (Response.Status.CREATED.equals(expected)) {
+                ScopePermissionRepresentation created = client.admin().authorization().permissions().scope().findByName(permission.getName());
+                assertNotNull(created);
+                permission.setId(created.getId());
+            }
         }
     }
 

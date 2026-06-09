@@ -324,6 +324,86 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testMoveGroupRequiresManagePermissionOnChild() {
+        // create two groups: parentGroup and childGroup
+        GroupRepresentation parentGroup = new GroupRepresentation();
+        parentGroup.setName("parent_group");
+        try (Response response = realm.admin().groups().add(parentGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            parentGroup.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.groups().group(parentGroup.getId()).remove());
+        }
+
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("child_group");
+        try (Response response = realm.admin().groups().add(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            childGroup.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.groups().group(childGroup.getId()).remove());
+        }
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, client, "Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+
+        // grant manage on parentGroup only
+        createGroupPermission(parentGroup, Set.of(VIEW, MANAGE), policy);
+
+        // moving childGroup into parentGroup should be forbidden — myadmin has no manage permission on childGroup
+        try (Response response = realmAdminClient.realm(realm.getName()).groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
+        }
+
+        // now grant manage on childGroup as well
+        createGroupPermission(childGroup, Set.of(VIEW, MANAGE), policy);
+
+        // moving childGroup into parentGroup should succeed
+        try (Response response = realmAdminClient.realm(realm.getName()).groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+        }
+    }
+
+    @Test
+    public void testMoveGroupToTopLevelRequiresManagePermissionOnChild() {
+        // create parentGroup and childGroup, with childGroup nested under parentGroup
+        GroupRepresentation parentGroup = new GroupRepresentation();
+        parentGroup.setName("parent_group");
+        try (Response response = realm.admin().groups().add(parentGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            parentGroup.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.groups().group(parentGroup.getId()).remove());
+        }
+
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("child_group");
+        try (Response response = realm.admin().groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            childGroup.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.groups().group(childGroup.getId()).remove());
+        }
+
+        UserPolicyRepresentation allowPolicy = createUserPolicy(realm, client, "Allow My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        UserPolicyRepresentation denyPolicy = createUserPolicy(Logic.NEGATIVE, realm, client, "Deny My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+
+        // positive: allow manage on all groups
+        createAllPermission(client, GROUPS_RESOURCE_TYPE, allowPolicy, Set.of(VIEW, MANAGE));
+
+        // negative: deny manage on childGroup specifically
+        ScopePermissionRepresentation denyPermission = createGroupPermission(childGroup, Set.of(VIEW, MANAGE), denyPolicy);
+
+        // moving childGroup to top-level should be forbidden — myadmin is denied manage on childGroup
+        try (Response response = realmAdminClient.realm(realm.getName()).groups().add(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
+        }
+
+        // remove the deny permission
+        getScopePermissionsResource(client).findById(denyPermission.getId()).remove();
+
+        // moving childGroup to top-level should now succeed
+        try (Response response = realmAdminClient.realm(realm.getName()).groups().add(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+        }
+    }
+
+    @Test
     public void testEvaluateAllResourcePermissionsForSpecificResourcePermission() {
         UserRepresentation adminUser = realm.admin().users().search("myadmin").get(0);
         UserPolicyRepresentation allowPolicy = createUserPolicy(realm, client, "Only My Admin", adminUser.getId());
