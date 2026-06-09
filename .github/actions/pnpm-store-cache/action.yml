@@ -18,3 +18,7 @@ runs:
           ~/AppData/Local/pnpm/store
           ~/Library/pnpm/store
         key: ${{ runner.os }}-${{ steps.weekly-cache-key.outputs.key }}
+
+    - name: Set up Wireit GitHub Actions caching
+      uses: google/wireit@9d7c2e5346f8ef1b1ab6014c4e96c74e234f7ed5 # setup-github-actions-caching/v2
+      if: runner.os != 'Windows'
