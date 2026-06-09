@@ -75,7 +75,6 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
                     DefaultTrustIdentityProviderFactory.PROVIDER_ID,
                     Map.of(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS, jwks));
         });
-        setClientTrustSource(ATTESTER_DEFAULT_TRUST_IDP_ALIAS);
         setClientPolicyEnabled(VCI_CLIENT_POLICY_HAIP, true);
         oauth.client(abcaClient.getClientId(), null);
     }

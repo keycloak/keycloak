@@ -47,6 +47,7 @@ import org.keycloak.util.JsonSerialization;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_DEFAULT_TRUST_IDP_ALIAS;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_HEADER;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_POP_HEADER;
 import static org.keycloak.protocol.oidc.OIDCLoginProtocol.ATTEST_JWT_CLIENT_AUTH;
@@ -61,8 +62,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithABCAEnabled.class)
 public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTestBase {
-
-    private static final String ATTESTER_DEFAULT_TRUST_IDP_ALIAS = "abca-attester-default-trust";
 
     private static OIDCClientAttester attester;
     private static String attesterJwks;
@@ -85,11 +84,10 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
         String jwks = attesterJwks;
         runOnServer.run(session -> {
             RealmModel realm = session.getContext().getRealm();
-            configureTrustIdentityProvider(realm, ATTESTER_DEFAULT_TRUST_IDP_ALIAS,
+            configureTrustIdentityProvider(realm, OAUTH_CLIENT_ATTESTATION_DEFAULT_TRUST_IDP_ALIAS,
                     DefaultTrustIdentityProviderFactory.PROVIDER_ID,
                     Map.of(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS, jwks));
         });
-        setClientTrustSource(ATTESTER_DEFAULT_TRUST_IDP_ALIAS);
         oauth.client(abcaClient.getClientId(), null);
     }
 
@@ -140,7 +138,6 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
 
     @Test
     public void testClientAttestationHappyFlow() {
-        setClientTrustSource(ATTESTER_DEFAULT_TRUST_IDP_ALIAS);
 
         var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);
         ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
