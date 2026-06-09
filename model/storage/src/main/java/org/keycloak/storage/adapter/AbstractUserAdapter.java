@@ -255,7 +255,8 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
     }
 
     /**
-     * This method should not be overridden
+     * Providers that store service account users can override this method to
+     * return the internal client id linked to this user.
      *
      * @return
      */
@@ -265,7 +266,8 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
     }
 
     /**
-     * This method should not be overridden
+     * Providers that store service account users can override this method to
+     * persist the internal client id linked to this user.
      *
      * @return
      */
