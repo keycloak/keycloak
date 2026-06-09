@@ -49,12 +49,12 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
 
             // Merge update
             exe = execute("update my_client --config '" + configFile.getName() + "' -o " +
-                        " -s enabled=false -s 'redirectUris=[\"http://localhost:8980/myapp/*\"]'");
+                        " -s enabled=true -s 'redirectUris=[\"http://localhost:8980/myapp/*\"]'");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
             client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-            Assert.assertEquals("enabled", false, client.isEnabled());
+            Assert.assertEquals("enabled", true, client.isEnabled());
             Assert.assertEquals("redirectUris", Arrays.asList("http://localhost:8980/myapp/*"), client.getRedirectUris());
 
 
@@ -109,7 +109,7 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
             exe = KcRegExec.newBuilder()
                     .argsLine("update my_client --config '" + configFile.getName() +
                             "' -o  -s clientId=my_client -s 'redirectUris=[\"http://localhost:8980/myapp/*\"]' -f -")
-                    .stdin(new ByteArrayInputStream("{ \"enabled\": false }".getBytes()))
+                    .stdin(new ByteArrayInputStream("{ \"enabled\": true }".getBytes()))
                     .execute();
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
@@ -117,7 +117,7 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
             client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
             // web origin is not sent to the server, thus it retains the current value
             Assert.assertEquals("webOrigins", Arrays.asList("http://localhost:8981/myapp"), client.getWebOrigins());
-            Assert.assertFalse("enabled is false", client.isEnabled());
+            Assert.assertTrue("enabled is true", client.isEnabled());
             Assert.assertEquals("redirectUris", Arrays.asList("http://localhost:8980/myapp/*"), client.getRedirectUris());
 
 
