@@ -1080,7 +1080,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
         localStorage().preRemove(realm, component);
         if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, component);
-        StoreSyncEvent.fire(session, realm, component, true);
+        // enlistAfterCompletion(..) as we need to ensure that the realm is updated with the final settings
+        session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                StoreSyncEvent.fire(session, realm, component, true);
+            }
+
+            @Override
+            protected void rollbackImpl() {
+                // NOOP
+            }
+        });
     }
 
     @Override
@@ -1130,7 +1141,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         UserStorageProviderModel actual= new UserStorageProviderModel(newModel);
 
         if (isSyncSettingsUpdated(previous, actual)) {
-            StoreSyncEvent.fire(session, realm, actual, false);
+            // enlistAfterCompletion(..) as we need to ensure that the realm is updated with the final settings
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    StoreSyncEvent.fire(session, realm, actual, false);
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    // NOOP
+                }
+            });
         }
     }
 
