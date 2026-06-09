@@ -11,6 +11,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
@@ -22,6 +23,7 @@ import org.keycloak.util.JsonSerialization;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -63,6 +65,41 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         } finally {
             userRep.setEnabled(true);
             userResource.update(userRep);
+        }
+    }
+
+    @Test
+    public void testPreAuthOffer_DisabledClient() throws Exception {
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        // Create Pre-Authorized CredentialOffer
+        //
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        // Disable the client
+        ClientRepresentation clientRep = testRealm.admin().clients().get(ctx.getClient().getId()).toRepresentation();
+        clientRep.setEnabled(false);
+        testRealm.admin().clients().get(ctx.getClient().getId()).update(clientRep);
+
+        try {
+            // Attempt to redeem Pre-Authorized Code for AccessToken should fail
+            //
+            AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+            assertFalse(tokenResponse.isSuccess(), "Token request should have failed for disabled client");
+            assertEquals("invalid_request", tokenResponse.getError());
+            assertTrue(tokenResponse.getErrorDescription().contains("disabled"),
+                    "Error description should mention disabled: " + tokenResponse.getErrorDescription());
+        } finally {
+            // Re-enable client
+            clientRep.setEnabled(true);
+            testRealm.admin().clients().get(ctx.getClient().getId()).update(clientRep);
         }
     }
 
