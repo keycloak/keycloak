@@ -38,19 +38,19 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class LoginSSLTest {
 
     // Use separate realm instance to avoid conflicts with LoginTest
-    @InjectRealm(ref = "login-ssl-test", config = LoginTest.LoginRealmConfig.class)
+    @InjectRealm(ref = "login-test", config = LoginTest.LoginRealmConfig.class)
     ManagedRealm managedRealm;
 
     @InjectWebDriver
     ManagedWebDriver driver;
 
-    @InjectOAuthClient(realmRef = "login-ssl-test")
+    @InjectOAuthClient(realmRef = "login-test")
     OAuthClient oauth;
 
     @InjectKeycloakUrls
     KeycloakUrls keycloakUrls;
 
-    @InjectEvents(realmRef = "login-ssl-test")
+    @InjectEvents(realmRef = "login-test")
     Events events;
 
     @InjectPage

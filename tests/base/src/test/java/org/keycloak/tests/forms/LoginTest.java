@@ -113,7 +113,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @KeycloakIntegrationTest(config = LoginTest.DynamicScopeServerConfig.class)
 public class LoginTest {
 
-    @InjectRealm(config = LoginRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(ref = "login-test", config = LoginRealmConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm managedRealm;
 
     @InjectRunOnServer
@@ -122,13 +122,13 @@ public class LoginTest {
     @InjectWebDriver
     ManagedWebDriver driver;
 
-    @InjectOAuthClient
+    @InjectOAuthClient(realmRef = "login-test")
     OAuthClient oauth;
 
     @InjectKeycloakUrls
     KeycloakUrls keycloakUrls;
 
-    @InjectEvents
+    @InjectEvents(realmRef = "login-test")
     Events events;
 
     @InjectPage
@@ -185,6 +185,7 @@ public class LoginTest {
                 assertThat(headerValue.getValue(), is(equalTo(expectedValue)));
             }
         }
+        response.close();
     }
 
     @Test
@@ -224,8 +225,7 @@ public class LoginTest {
         assertThat(response.getStatusLine().getStatusCode(), is(equalTo(200)));
         String body = EntityUtils.toString(response.getEntity());
         assertThat(body, containsString("Sign in"));
-
-        EntityUtils.consume(response.getEntity());
+        response.close();
     }
 
     @Test
