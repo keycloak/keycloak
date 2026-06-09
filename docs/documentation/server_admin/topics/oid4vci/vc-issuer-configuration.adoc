@@ -136,7 +136,10 @@ To enable the feature, add the following flag to the startup command:
 --features=oid4vc-vci
 ----
 
-Verify the feature is active by checking the server logs for the `OID4VC_VCI` initialization message.
+Verify the feature is active in the {project_name} Admin Console. Navigate to the *master* realm's *Dashboard*, switch to the *Server Info* tab, and confirm that `OID4VC_VCI` appears under **Enabled Features**.
+
+.OID4VC_VCI Feature in Server Info
+image::images/oid4vci/screenshot-server-info-features.png[Enabled Features list showing OID4VC_VCI, width=650]
 
 === Configuring Credential Issuance in Keycloak
 
@@ -145,6 +148,11 @@ In {project_name}, Verifiable Credentials are managed through *ClientScopes*, wi
 During the OAuth2 authorization process, the credential-specific scope can be requested by including the ClientScope's name in the `scope` parameter of the authorization request. Once the user has successfully authenticated, the resulting Access Token *MUST* include the requested ClientScope in its `scope` claim. To ensure this, make sure the ClientScope option *Include in token scope* is enabled.
 
 With this Access Token, the Verifiable Credential can be issued at the Credential Endpoint.
+
+[NOTE]
+====
+Because some configurations are not yet supported via the Admin Console, we may need to use the {project_name} Admin REST API to configure certain aspects. To interact with the Admin REST API, you first need to obtain a valid access token.
+====
 
 === Authentication
 
@@ -159,7 +167,11 @@ Refer to the following {project_name} documentation sections for detailed steps 
 
 Follow these steps to configure {project_name} as a Verifiable Credential Issuer. Each section is detailed with procedures, explanations, and examples where applicable.
 
-=== Creating a Realm
+=== Configuring OpenID4VCI at the Realm Level
+
+The behavior of OID4VCI across the entire realm is determined by a combination of realm settings, cryptographic keys, and realm-level attributes. This section guides you through each step.
+
+==== Creating a Realm
 
 A realm in {project_name} is a logical container that manages users, clients, roles, and authentication flows.
 For Verifiable Credential (VC) issuance, create a dedicated realm to ensure isolation and maintain a clear separation of functionality.
@@ -169,6 +181,123 @@ For Verifiable Credential (VC) issuance, create a dedicated realm to ensure isol
 For detailed instructions on creating a realm, refer to the {project_name} documentation:
 <<proc-creating-a-realm_{context},Creating a Realm>>.
 ====
+
+===== Enabling Verifiable Credentials for the Realm
+
+Before configuring OID4VCI settings, you must enable Verifiable Credentials at the realm level:
+
+. In the {project_name} Admin Console, navigate to *Realm Settings*.
+. On the *General* tab, toggle the **Verifiable Credentials** switch **On**.
+
+.Enabling Verifiable Credentials in Realm Settings
+image::images/oid4vci/screenshot-realm-verifiable-credentials.png[Enabling Verifiable Credentials switch in Realm Settings, width=650]
+
+This enables the OID4VCI functionality for the realm. Once enabled, the **OID4VC Issuer Metadata** link appears in the *Endpoints* section of the General tab, and an **OID4VCI Attributes** section appears in the *Tokens* tab.
+
+==== Key Management Configuration
+
+Because EC (Elliptic Curve) cryptography is strongly encouraged in the OpenID4VC ecosystem, add a **P-256 Elliptic Curve key pair** to the realm's set of keys under *Realm Settings > Keys > Providers*. This will later enable configuring the signing of issued VCs with the `ES256` algorithm.
+
+.Adding ECDSA Key Provider
+image::images/oid4vci/screenshot-realm-ecdsa-generated-provider.png[Adding ECDSA key provider in Realm Settings, width=650]
+
+[NOTE]
+====
+For a detailed guide on configuring realm keys, refer to the {project_name} documentation:
+<<realm_keys,Managing Realm Keys>>.
+====
+
+==== Configuring Realm-Level OID4VCI Attributes
+
+Realm attributes define the behavior of Verifiable Credential issuance across the entire realm. {project_name} provides a dedicated **OID4VCI Attributes** section in the Admin Console under *Realm Settings* > *Tokens* tab to configure these settings. Sensible defaults apply out of the box, so you can start with minimal changes.
+
+.OID4VCI Attributes in the Tokens Tab
+image::images/oid4vci/screenshot-realm-config-oid4vci-attributes.png[OID4VCI Attributes section in Realm Settings Tokens tab, width=750]
+
+The following table describes the available OID4VCI realm attributes:
+
+[cols="1,1,1,2", options="header"]
+|===
+| Setting
+| Realm Attribute
+| Default
+| Description
+
+| Nonce Lifetime
+| `vc.c-nonce-lifetime-seconds`
+| `60` seconds
+| Lifetime of the `c_nonce` value returned by the nonce endpoint. Wallets must include this nonce when presenting proofs at the credential endpoint. Minimum: 30 seconds.
+
+| Credential Offer Lifespan
+| `credentialOfferLifespanS`
+| `300` seconds (5 minutes)
+| Defines how long a credential offer remains valid before it expires. Applies to both authorization code and pre-authorized code flows. Minimum: 30 seconds.
+
+| Signed Metadata Lifespan
+| `oid4vci.signed_metadata.lifespan`
+| `60` seconds
+| Lifetime of the signed metadata JWT returned when the client requests the credential issuer metadata with `Accept: application/jwt`.
+
+| Signed Metadata Signing Algorithm
+| `oid4vci.signed_metadata.alg`
+| `RS256`
+| Asymmetric signing algorithm used to sign the metadata JWT. Must be supported by the realm's active keys.
+
+| Require Request Encryption
+| `oid4vci.request.encryption.required`
+| Off
+| When enabled, all incoming credential requests must be encrypted as JWE. The issuer's public encryption keys are advertised in the credential issuer metadata.
+
+| Require Response Encryption
+| `oid4vci.response.encryption.required`
+| Off
+| When enabled, all credential responses are encrypted using the wallet's provided encryption key.
+
+| Enable DEFLATE Compression
+| `oid4vci.request.zip.algorithms`
+| Off
+| Only available when request encryption is required. Enabling this advertises DEFLATE compression support in the issuer metadata. The wallet can compress the JWE payload using the `DEF` algorithm.
+
+| Batch Issuance Size
+| `oid4vci.batch_credential_issuance.batch_size`
+| `2`
+| Maximum number of credentials that can be issued in a single batch request. Must be 2 or greater. Disabled if not set or invalid.
+|===
+
+===== Time Claim Correlation Mitigation
+
+To reduce the risk of correlation across multiple issuances or presentations, you can normalize time-related claims. This is an opt-in privacy feature configured in the **Time Claim Correlation Mitigation** section:
+
+.Time Claim Correlation Mitigation
+image::images/oid4vci/screenshot-time-claim-mitigation.png[Time Claim Correlation Mitigation settings, width=650]
+
+[cols="1,1,1,2", options="header"]
+|===
+| Setting
+| Realm Attribute
+| Default
+| Description
+
+| Time Claims Strategy
+| `oid4vci.time.claims.strategy`
+| Off
+| Strategy to apply to time claims. Supported values: `off` (no normalization), `randomize` (subtract a random offset), `round` (truncate to a time unit boundary).
+
+| Randomize Window
+| `oid4vci.time.randomize.window.seconds`
+| `86400` (24 hours)
+| When strategy is `randomize`, the system subtracts a random number of seconds between 0 and this value from the original timestamp.
+
+| Round Unit
+| `oid4vci.time.round.unit`
+| `SECOND`
+| When strategy is `round`, timestamps are truncated to the selected unit boundary (UTC). Supported values: `SECOND`, `MINUTE`, `HOUR`, `DAY`.
+|===
+
+How normalization is applied during issuance:
+
+* For JWT-VC, the credential `issuanceDate` is normalized at issuance; the JWT `nbf` is derived from the normalized value. If a mapper sets a VC `expirationDate`, it is normalized and emitted as JWT `exp`.
+* For SD-JWT VCs, time-related claims (`iat`, `nbf`, `exp`) are typically set using protocol mappers such as the Issued At Time Claim Mapper. Values are automatically normalized according to the realm strategy.
 
 === Creating a User Account
 
@@ -181,136 +310,6 @@ For step-by-step instructions on creating a user, refer to the {project_name} do
 ====
 
 Ensure that the user has a valid username, email, and password. If the password should not be reset upon first login, disable the "Temporary" toggle during password configuration.
-
-=== Key Management Configuration
-
-{project_name} uses cryptographic keys for signing and encrypting Verifiable Credentials (VCs). To ensure secure and standards-compliant issuance, configure **ECDSA (ES256) for signing**, **RSA (RS256) for signing**, and **RSA-OAEP for encryption** using a keystore.
-
-[NOTE]
-====
-For a detailed guide on configuring realm keys, refer to the {project_name} documentation:
-<<realm_keys,Managing Realm Keys>>.
-====
-
-==== Configuring Key Providers
-
-To enable cryptographic operations for VC issuance:
-
-- **ECDSA (ES256) Key**: Used for signing VCs with the ES256 algorithm.
-- **RSA (RS256) Key**: Alternative signing mechanism using RS256.
-- **RSA-OAEP Key**: Used for encrypting sensitive data in VCs.
-
-Each key must be registered as a **java-keystore provider** within the **Realm Settings** > **Keys** section, ensuring:
-- The keystore file is correctly specified and securely stored.
-- The appropriate algorithm (ES256, RS256, or RSA-OAEP) is selected.
-- The key is active, enabled, and configured with the correct usage (signing or encryption).
-- Priority values are set to define precedence among keys.
-
-[WARNING]
-====
-Ensure the keystore file is **securely stored** and accessible to the {project_name} server. Use **strong passwords** to protect both the keystore and the private keys.
-====
-
-=== Registering Realm Attributes
-
-Realm attributes define metadata for Verifiable Credentials (VCs), such as **expiration times, supported formats, and scope definitions**. These attributes allow {project_name} to issue VCs with predefined settings.
-
-Since the **{project_name} Admin Console does not support direct attribute creation**, use the **{project_name} Admin REST API** to configure these attributes.
-
-==== Define Realm Attributes
-
-Create a JSON file (e.g., `realm-attributes.json`) with the following content:
-
-[source,json]
-----
-{
-  "realm": "oid4vc-vci",
-  "enabled": true,
-  "attributes": {
-    "credentialOfferLifespanS": 120
-  }
-}
-----
-
-==== Attribute Breakdown
-
-The attributes section contains issuer-specific metadata:
-- **credentialOfferLifespanS** – Defines the default lifespan of credential offers in seconds. Applies to both the authorization code and pre-authorized code grant flows.
-- **oid4vc.attestation.trusted_keys** – JSON array of trusted JWK (JSON Web Key) objects for attestation proof validation. Each JWK must include a `kid` (key ID) field. These keys take precedence over realm session keys when there are conflicts. Useful for configuring additional trusted keys beyond the realm's default keys. Format: JSON array of JWK objects, e.g., `[{"kid":"key1","kty":"EC",...},{"kid":"key2","kty":"RSA",...}]`.
-- **oid4vc.attestation.trusted_key_ids** – Comma-separated list of key IDs from the realm's key providers to use for attestation proof validation. Keys are looked up by their `kid` regardless of enabled status, allowing the use of disabled keys that are not exposed in well-known endpoints. This attribute takes the highest priority when merging trusted keys. Format: comma-separated list of key IDs, e.g., `key-id-1,key-id-2,key-id-3`.
-
-==== Import Realm Attributes
-
-Use the following `curl` command to import the attributes into {project_name}:
-
-[source,bash]
-----
-curl -X PUT "https://localhost:8443/admin/realms/oid4vc-vci" \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d @realm-attributes.json
-----
-
-[NOTE]
-====
-- Replace `$ACCESS_TOKEN` with a valid **{project_name} Admin API access token**.
-- **Avoid using `-k` in production**; instead, configure a **trusted TLS certificate**.
-====
-
-==== Time-claim correlation mitigation
-
-To reduce unintended correlation across multiple issuances or presentations, you can normalize time-related claims by either randomizing them within a time window or rounding them to a coarse time unit. This behavior is opt-in and controlled by the following realm attributes:
-
-[cols="1,1,2", options="header"]
-|===
-| Attribute
-| Default
-| Description
-
-| `oid4vci.time.claims.strategy`
-| `off`
-| Strategy to apply to time claims. Supported values: `off`, `randomize`, `round`.
-
-| `oid4vci.time.randomize.window.seconds`
-| `86400`
-| When strategy is `randomize`, subtract a random number of seconds between 0 and the value of this attribute from the original timestamp to mitigate correlation attacks.
-
-| `oid4vci.time.round.unit`
-| `SECOND`
-| When strategy is `round`, truncate timestamps to the selected unit boundary (UTC). Supported values: `SECOND`, `MINUTE`, `HOUR`, `DAY`.
-|===
-
-How it is applied during issuance:
-
-- For JWT-VC, the credential `issuanceDate` is normalized at issuance; the JWT `nbf` is derived from the normalized value. If a mapper sets a VC `expirationDate`, it is normalized and emitted as JWT `exp`.
-- For SD-JWT VCs, time-related claims (`iat`, `nbf`, `exp`) are typically set using protocol mappers. Use the available OID4VC mappers, such as the Issued At Time Claim Mapper for `iat`, to populate these claims. Values are automatically normalized according to the realm strategy.
-
-Examples:
-
-[source,bash]
-----
-# Round to start of day (UTC)
-curl -X PUT "https://localhost:8443/admin/realms/oid4vc-vci" \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-        "attributes": {
-          "oid4vci.time.claims.strategy": "round",
-          "oid4vci.time.round.unit": "DAY"
-        }
-      }'
-
-# Randomize within the last 24 hours
-curl -X PUT "https://localhost:8443/admin/realms/oid4vc-vci" \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-        "attributes": {
-          "oid4vci.time.claims.strategy": "randomize",
-          "oid4vci.time.randomize.window.seconds": "86400"
-        }
-      }'
-----
 
 === Create Client Scopes with Mappers
 
