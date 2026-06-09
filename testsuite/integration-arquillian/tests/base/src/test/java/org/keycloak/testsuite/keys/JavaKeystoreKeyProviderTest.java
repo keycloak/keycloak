@@ -21,6 +21,9 @@ import jakarta.ws.rs.core.Response;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -52,7 +55,12 @@ import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.KeystoreUtils;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -73,8 +81,8 @@ import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 @EnableVault
 public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    public static File realmFolder;
+    public TemporaryFolder folder;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -87,10 +95,40 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     private KeystoreUtils.KeystoreInfo generatedKeystore;
     private String keyAlgorithm;
 
+    @AfterClass
+    public static void afterClass() throws IOException {
+        Files.deleteIfExists(realmFolder.toPath());
+    }
+
+    @After
+    public void after() {
+        folder.delete();
+    }
+
+    @Before
+    public void before() throws IOException {
+        folder = new TemporaryFolder(realmFolder);
+        folder.create();
+    }
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
         testRealms.add(realm);
+    }
+
+    @Override
+    protected void afterAbstractKeycloakTestRealmImport() {
+        String kcHome = testingClient.server().fetch(session -> System.getProperty("kc.home.dir"), String.class);
+        Path path = Paths.get(kcHome).normalize().resolve("data").resolve("test");
+        try {
+            if (!Files.exists(path)) {
+                Files.createDirectory(path);
+            }
+            realmFolder = path.toFile();
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Test
@@ -219,10 +257,20 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     public void invalidKeystore() throws Exception {
         generateKeystore(KeystoreUtils.getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
-        rep.getConfig().putSingle("keystore", "/nosuchfile");
+        rep.getConfig().putSingle("keystore", "nosuchfile");
 
         Response response = adminClient.realm("test").components().add(rep);
         assertError(response, "Failed to load keys. File not found on server.");
+    }
+
+    @Test
+    public void invalidKeystoreOutsideKeystoreDirectories() throws Exception {
+        generateKeystore(KeystoreUtils.getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
+        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
+        rep.getConfig().putSingle("keystore", "/invalid");
+
+        Response response = adminClient.realm("test").components().add(rep);
+        assertError(response, "is not under the realm directory");
     }
 
     @Test

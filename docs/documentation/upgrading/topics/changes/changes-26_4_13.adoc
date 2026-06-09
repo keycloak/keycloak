@@ -9,6 +9,22 @@ The wildcard comparison for valid redirect URIs does not affect the hostname any
 
 Note that OAuth 2.0 recommends exact string matching in the link:https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics#name-protecting-redirect-based-f[Security Best Current Practice] and draft for OAuth 2.1 enforces it. {project_name} recommends to not use any wildcard valid redirect URI for clients. See link:{adminguide_link}#unspecific-redirect-uris_server_administration_guide[Unspecific redirect URIs] in the {adminguide_name} for more information.
 
+=== Files for the Java Keystore provider should be placed inside a fixed realm directory
+
+The Java Keystore provider allows the realm administrator to load keys from an encrypted Java keystore file instead of the {project_name}'s database. Since this release, the path of the file is restricted to be inside a folder whose name should be the realm name and, in turn, this realm folder should be inside a fixed main directory for keystores (by default the `data` directory, `${kc.home.dir}/data`). For example, for a realm called `test`, all keystore files should be located under `${kc.home.dir}/data/test`. This way, {project_name} avoids leaking information from the File System and the keys are isolated between realms.
+
+The main keystores directory, where the different realm folders are located, can be customized using a provider startup option:
+
+```
+kc.[sh|bat] start --spi-keys--java-keystore--keystores-path /path/to/keystores
+```
+
+When a keystore is created or updated, the `keystore` configuration option is checked to be a file under the commented realm folder. If the keystore is outside its boundaries, the operation fails. This new behavior means that existing keystores continue working but cannot be updated or modified until the file is copied to an allowed path. Imports from a previous configuration, with store files outside the realm folder, will fail in the same way.
+
+If you are using a Java Keystore file to provide keys for a realm, please copy the keystore inside the appropriate realm folder and update the `java-keystore` provider configuration accordingly.
+
+For more information, see link:{adminguide_link}#realm_keys[Configuring realm keys] chapter in the {adminguide_name}.
+
 == Notable changes
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.

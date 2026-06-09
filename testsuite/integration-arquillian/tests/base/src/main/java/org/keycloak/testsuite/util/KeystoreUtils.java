@@ -80,7 +80,9 @@ public class KeystoreUtils {
         keyStore.setKeyEntry(subject, privKey, keyPassword.trim().toCharArray(), chain);
 
         File file = folder.newFile(fileName);
-        keyStore.store(new FileOutputStream(file), keystorePassword.trim().toCharArray());
+        try (FileOutputStream is = new FileOutputStream(file)) {
+            keyStore.store(is, keystorePassword.trim().toCharArray());
+        }
 
         CertificateRepresentation certRep = new CertificateRepresentation();
         certRep.setPrivateKey(PemUtils.encodeKey(privKey));
@@ -101,7 +103,9 @@ public class KeystoreUtils {
         keyStore.setEntry(alias, secretKeyEntry, protection);
 
         File file = folder.newFile(fileName);
-        keyStore.store(new FileOutputStream(file), keystorePassword.trim().toCharArray());
+        try (FileOutputStream is = new FileOutputStream(file)) {
+            keyStore.store(is, keystorePassword.trim().toCharArray());
+        }
 
         return new KeystoreInfo(null, file);
     }

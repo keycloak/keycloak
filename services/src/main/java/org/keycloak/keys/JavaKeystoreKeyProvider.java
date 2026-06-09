@@ -34,6 +34,9 @@ import org.keycloak.vault.VaultTranscriber;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyPair;
@@ -71,7 +74,7 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
 
     private final String algorithm;
 
-    public JavaKeystoreKeyProvider(RealmModel realm, ComponentModel model, VaultTranscriber vault) {
+    public JavaKeystoreKeyProvider(Path keystoresPath, RealmModel realm, ComponentModel model, VaultTranscriber vault) {
         this.model = model;
         this.vault = vault;
         this.status = KeyStatus.from(model.get(Attributes.ACTIVE_KEY, true), model.get(Attributes.ENABLED_KEY, true));
@@ -81,16 +84,23 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
 
         KeyWrapper tmpKey = KeyNoteUtils.retrieveKeyFromNotes(model, KeyWrapper.class.getName());
         if (tmpKey == null) {
-            tmpKey = loadKey(realm, model);
+            tmpKey = loadKey(keystoresPath, realm, model);
             KeyNoteUtils.attachKeyNotes(model, KeyWrapper.class.getName(), tmpKey);
         }
         this.key = tmpKey;
     }
 
-    protected KeyWrapper loadKey(RealmModel realm, ComponentModel model) {
-        String keystorePath = model.get(JavaKeystoreKeyProviderFactory.KEYSTORE_KEY);
-        try (FileInputStream is = new FileInputStream(keystorePath)) {
-            KeyStore keyStore = loadKeyStore(is, keystorePath);
+    protected KeyWrapper loadKey(Path keystoresPath, RealmModel realm, ComponentModel model) {
+        Path keystorePath = Paths.get(model.get(JavaKeystoreKeyProviderFactory.KEYSTORE_KEY));
+        if (!keystorePath.isAbsolute()) {
+            // resolve the path from the keystores directory if file exists, if not use previous file for backwards compatibility
+            Path path = keystoresPath.resolve(realm.getName()).resolve(keystorePath);
+            if (Files.exists(path)) {
+                keystorePath = path;
+            }
+        }
+        try (FileInputStream is = new FileInputStream(keystorePath.toFile())) {
+            KeyStore keyStore = loadKeyStore(is, keystorePath.toString());
             String keyAlias = model.get(JavaKeystoreKeyProviderFactory.KEY_ALIAS_KEY);
 
             return switch (algorithm) {
