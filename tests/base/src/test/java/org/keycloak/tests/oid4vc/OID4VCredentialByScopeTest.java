@@ -8,6 +8,7 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientPoliciesPoliciesResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.protocol.oid4vc.clientpolicy.PredicateCredentialClientPolicy;
+import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
@@ -213,7 +214,7 @@ public class OID4VCredentialByScopeTest extends OID4VCIssuerTestBase {
         assertEquals("did:web:test.org", jsonWebToken.getIssuer());
         Object vc = jsonWebToken.getOtherClaims().get("vc");
         VerifiableCredential credential = JsonSerialization.mapper.convertValue(vc, VerifiableCredential.class);
-        assertEquals(List.of(scope), credential.getType());
+        assertEquals(List.of(CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE, scope), credential.getType());
         assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
         assertEquals(expUser + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
     }
