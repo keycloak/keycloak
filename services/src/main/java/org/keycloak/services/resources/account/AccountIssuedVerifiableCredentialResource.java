@@ -29,6 +29,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
 import org.keycloak.models.AccountRoles;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -37,20 +38,21 @@ import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialReprese
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.Auth;
+import org.keycloak.services.util.ResolveRelative;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
-public class AccountIssuedCredentialResource {
+public class AccountIssuedVerifiableCredentialResource {
 
-    private static final Logger logger = Logger.getLogger(AccountIssuedCredentialResource.class);
+    private static final Logger logger = Logger.getLogger(AccountIssuedVerifiableCredentialResource.class);
 
     private final KeycloakSession session;
     private final Auth auth;
     private final UserModel user;
     private final RealmModel realm;
 
-    public AccountIssuedCredentialResource(KeycloakSession session, Auth auth, UserModel user) {
+    public AccountIssuedVerifiableCredentialResource(KeycloakSession session, Auth auth, UserModel user) {
         this.session = session;
         this.auth = auth;
         this.user = user;
@@ -73,6 +75,7 @@ public class AccountIssuedCredentialResource {
         List<IssuedVerifiableCredentialRepresentation> credentials = session.users()
                 .getIssuedVerifiableCredentialsStreamByUser(user.getId())
                 .map(ModelToRepresentation::toRepresentation)
+                .map(rep -> enrichWithClientInfo(rep, session, realm))
                 .toList();
 
         return Cors.builder()
@@ -109,6 +112,31 @@ public class AccountIssuedCredentialResource {
         if (!realm.isVerifiableCredentialsEnabled()) {
             throw ErrorResponse.error("Verifiable credentials not enabled for the realm", Response.Status.BAD_REQUEST);
         }
+    }
+
+    /**
+     * Enriches the issued credential representation with client name and base URL
+     */
+    private IssuedVerifiableCredentialRepresentation enrichWithClientInfo(IssuedVerifiableCredentialRepresentation rep, KeycloakSession session, RealmModel realm) {
+        if (rep.getClientId() == null) {
+            return rep;
+        }
+
+        ClientModel client = realm.getClientByClientId(rep.getClientId());
+        if (client == null) {
+            return rep;
+        }
+
+        String clientName = client.getName();
+        if (clientName == null || clientName.isEmpty()) {
+            clientName = client.getClientId();
+        }
+        rep.setClientName(clientName);
+
+        String effectiveUrl = ResolveRelative.resolveRelativeUri(session,client.getRootUrl(),client.getBaseUrl());
+        rep.setClientBaseUrl(effectiveUrl);
+
+        return rep;
     }
 
 }
