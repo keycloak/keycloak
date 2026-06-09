@@ -216,6 +216,7 @@ public class GroupsResource {
                     throw ErrorResponse.error("Cannot manage organization related group via non Organization API.", Status.BAD_REQUEST);
                 }
                 if (child.getParentId() != null) {
+                    auth.groups().requireManage(child);
                     realm.moveGroup(child, null);
                 }
                 adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri());
