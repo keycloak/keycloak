@@ -45,7 +45,6 @@ import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapper;
 import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapperFactory;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -132,15 +131,13 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
 
-        assertTrue(totpPage.isCurrent());
+        totpPage.assertCurrent();
         assertFalse(totpPage.isCancelDisplayed());
 
         // KEYCLOAK-11753 - Verify OTP label element present on "Configure OTP" required action form
         driver.findElement(By.id("userLabel"));
 
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
-
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Revert TOTP

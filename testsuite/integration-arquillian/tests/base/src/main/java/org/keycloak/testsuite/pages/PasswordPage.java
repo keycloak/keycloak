@@ -4,7 +4,6 @@ import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -66,30 +65,8 @@ public class PasswordPage extends LanguageComboboxAwarePage {
         }
     }
 
-
-    public boolean isCurrent() {
-        String realm = "test";
-        return isCurrent(realm);
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-password";
     }
-
-    public boolean isCurrent(String realm) {
-        // Check there is NO username field
-        try {
-            driver.findElement(By.id("username"));
-            return false;
-        } catch (NoSuchElementException nfe) {
-            // Expected
-        }
-
-        // Check there is password field
-        try {
-            driver.findElement(By.id("kc-attempted-username"));
-            driver.findElement(By.id("password"));
-        } catch (NoSuchElementException nfe) {
-            return false;
-        }
-
-        return true;
-    }
-
 }

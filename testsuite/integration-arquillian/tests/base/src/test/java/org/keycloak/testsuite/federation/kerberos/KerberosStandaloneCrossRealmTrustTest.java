@@ -91,12 +91,14 @@ public class KerberosStandaloneCrossRealmTrustTest extends AbstractKerberosTest 
     @Test
     public void test03SpnegoLoginWithCorrectKerberosPrincipalRealm() throws Exception {
         // Login in username/password form as "jduke@KEYCLOAK.ORG"
-        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
-        Assertions.assertTrue(testAppHelper.login("jduke", "theduke"));
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage);
+        testAppHelper.login("jduke", "theduke");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         Assertions.assertTrue(testAppHelper.logout());
 
         // Login in username/password form as "jduke@KC2.COM"
-        Assertions.assertTrue(testAppHelper.login("jduke@kc2.com", "theduke2"));
+        testAppHelper.login("jduke@kc2.com", "theduke2");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         Assertions.assertTrue(testAppHelper.logout());
 
         assertUser("jduke", "jduke@keycloak.org", null, null, "jduke@KEYCLOAK.ORG", false);

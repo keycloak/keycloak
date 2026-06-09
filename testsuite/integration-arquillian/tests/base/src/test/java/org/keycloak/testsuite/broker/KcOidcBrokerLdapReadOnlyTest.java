@@ -27,6 +27,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentationWithoutConfig;
 
@@ -70,12 +71,13 @@ public final class KcOidcBrokerLdapReadOnlyTest extends AbstractInitializedBaseB
 
         // federate user and link account
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "f", "l");
         confirmLinkPage.clickLinkAccount();
         loginPage.login(bc.getUserLogin(), "Password1");
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // unset email on the provider realm
         UserRepresentation user = adminClient.realm(bc.providerRealmName()).users().search(bc.getUserLogin()).get(0);
@@ -86,9 +88,10 @@ public final class KcOidcBrokerLdapReadOnlyTest extends AbstractInitializedBaseB
         user = adminClient.realm(bc.consumerRealmName()).users().search(bc.getUserLogin()).get(0);
         adminClient.realm(bc.consumerRealmName()).users().get(user.getId()).logout();
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // email should remain unchanged
         user = adminClient.realm(bc.consumerRealmName()).users().search(bc.getUserLogin()).get(0);

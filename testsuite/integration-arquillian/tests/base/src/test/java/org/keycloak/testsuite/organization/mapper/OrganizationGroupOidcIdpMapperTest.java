@@ -286,7 +286,8 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
         // navigating directly with kc_idp_hint. The IdP still exists in the realm so login succeeds,
         // but the mapper cannot resolve the org group and the user is NOT re-added to it.
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         driver.navigate().to(driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias());
         loginOrgIdp(bc.getUserLogin(), bc.getUserEmail(), false, true);
 

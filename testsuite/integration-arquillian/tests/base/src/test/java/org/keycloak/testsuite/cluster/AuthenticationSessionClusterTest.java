@@ -27,7 +27,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 import org.keycloak.sessions.StickySessionEncoderProviderFactory;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
@@ -62,10 +61,7 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
     @Page
     protected LoginUpdateProfilePage updateProfilePage;
 
-    @Page
-    protected AppPage appPage;
-
-
+    
     @Before
     public void setup() {
         try {
