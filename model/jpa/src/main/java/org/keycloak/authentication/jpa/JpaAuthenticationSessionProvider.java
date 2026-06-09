@@ -101,6 +101,8 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
         }
         var model = transientSessions.get(id);
         if (model != null && Objects.equals(model.getRealm().getId(), realm.getId())) {
+            // NOTE: Check if this session belongs to the correct realm to avoid a wrong cross-reference
+            // as a second line of defense.
             return model;
         }
 

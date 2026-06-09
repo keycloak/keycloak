@@ -210,6 +210,12 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         }
         expirationTask.start();
         if (factory.getProviderFactory(AuthenticationSessionProvider.class) instanceof JpaAuthenticationSessionProviderFactory) {
+            // Based on our internal knowledge on the JpaAuthenticationSessionProviderFactory, we can now assume that
+            // all actions on the authentication sessions are done with pessimistic locking in place. With this knowledge,
+            // we can later INSERT user session and client sessions and can be sure that there are no concurrent transactions
+            // running to do the same due pessimistic lock created earlier.
+            // TODO: In a future version, we might have a method in AuthenticationSessionProvider to query about that
+            // behavior to avoid reflection and internal knowledge.
             pessimisticLockingAuthenticationSession = true;
         }
     }
