@@ -431,13 +431,13 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
 
 
         exe = execute("update test-client --no-config --server " + serverUrl + " --realm test " +
-                credentials + " " + extraOptions + " -s enabled=false -o");
+                credentials + " " + extraOptions + " -s enabled=true -o");
 
         assertExitCodeAndStdErrSize(exe, 0, 1);
 
         ClientRepresentation client4 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
         Assert.assertEquals("clientId", "test-client", client4.getClientId());
-        Assert.assertFalse("enabled", client4.isEnabled());
+        Assert.assertTrue("enabled", client4.isEnabled());
 
         Assert.assertNull("registrationAccessToken in null", client4.getRegistrationAccessToken());
 

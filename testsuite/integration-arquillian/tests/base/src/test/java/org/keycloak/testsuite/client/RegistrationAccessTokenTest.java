@@ -25,6 +25,7 @@ import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.representations.idm.ClientRepresentation;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -172,6 +173,43 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
             assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
         assertNotNull(getClient(client.getId()));
+    }
+
+    @Test
+    public void testDisabledClientWithRegistrationToken() {
+        // Admin disables the client
+        ClientRepresentation adminRep = adminClient.realm(REALM_NAME).clients().get(client.getId()).toRepresentation();
+        adminRep.setEnabled(false);
+        adminClient.realm(REALM_NAME).clients().get(client.getId()).update(adminRep);
+
+        //get
+        try {
+            reg.get(client.getClientId());
+            fail("Should not be able to get a disabled client using a registration access token");
+        } catch (ClientRegistrationException e) {
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+
+        //update
+        try {
+            client.setEnabled(true);
+            reg.update(client);
+            fail("Should not be able to update a disabled client using a registration access token");
+        } catch (ClientRegistrationException e) {
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+
+        //delete
+        try {
+            reg.delete(client);
+            fail("Should not be able to delete a disabled client using a registration access token");
+        } catch (ClientRegistrationException e) {
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+
+        ClientRepresentation updatedClient = adminClient.realm(REALM_NAME).clients().get(client.getId()).toRepresentation();
+        assertNotNull(updatedClient);
+        assertFalse(updatedClient.isEnabled());
     }
 
 }

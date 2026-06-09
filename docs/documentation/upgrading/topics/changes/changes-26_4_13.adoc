@@ -31,3 +31,12 @@ This parameter is sent by clients during token refresh and is used when the `${a
 
 It was primarily used by legacy adapters that have been removed.
 This improves security by ensuring that only trusted, pre-registered hosts can be used in backchannel logout URLs.
+
+=== Registration Access Tokens cannot be used when client is disabled
+
+Registration Access Tokens (RAT) can no longer be used to retrieve, update, or delete a client when the client is disabled.
+
+If you attempt to use a RAT to manage a disabled client, the request will be rejected with an HTTP 401 Unauthorized response. To manage a disabled client, you must use admin credentials instead of the client's RAT.
+
+Note that a RAT can still be used to disable a client, but once the client is disabled, the RAT can no longer be used to enable it again or perform other operations.
+
