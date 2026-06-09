@@ -38,7 +38,6 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
@@ -111,10 +110,7 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
     @Rule
     public MailServer mail = new MailServer();
 
-    @Page
-    protected AppPage appPage;
-
-    @Page
+       @Page 
     protected LoginPage loginPage;
 
     @Page

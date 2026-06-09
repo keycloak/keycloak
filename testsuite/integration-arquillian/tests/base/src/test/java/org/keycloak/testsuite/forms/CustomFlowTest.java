@@ -48,8 +48,6 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
@@ -191,10 +189,7 @@ public class CustomFlowTest extends AbstractFlowTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
-    @Page
-    protected AppPage appPage;
-
-    @Page
+       @Page 
     protected LoginPage loginPage;
 
     @Page
@@ -254,7 +249,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         loginPage.login("test-user@localhost", "bad-password");
         Assert.assertTrue(loginPage.isCurrent());
         loginPage.login("test-user@localhost", "password");*/
-        Assertions.assertTrue(termsPage.isCurrent());
+        termsPage.assertCurrent();
 
         // Revert dummy flow
         rep.setBrowserFlow("dummy");
@@ -310,8 +305,6 @@ public class CustomFlowTest extends AbstractFlowTest {
         runOnServerMaster.run(updateAuthenticator(state));
 
         oauth.openLoginForm();
-
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");

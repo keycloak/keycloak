@@ -34,7 +34,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 
@@ -56,10 +55,7 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
     @Page
     protected LoginUpdateProfilePage updateProfilePage;
 
-    @Page
-    protected AppPage appPage;
-
-    @Before
+        @Before
     public void onBefore() {
         RealmResource realm = realmsResouce().realm(bc.consumerRealmName());
         RealmRepresentation rep = realm.toRepresentation();
@@ -86,7 +82,8 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         }
 
         // organization available to regular login page
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         Assertions.assertTrue(driver.getPageSource().contains("Sign-in to the realm"));
         loginPage.loginUsername("tom@myorg.com");
         Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
@@ -101,7 +98,8 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         managedRealm.admin().identityProviders().get(broker.getAlias()).update(broker);
 
         // organization available to identity-first login page
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         Assertions.assertTrue(driver.getPageSource().contains("Sign-in to the realm"));
         Assertions.assertFalse(loginPage.isPasswordInputPresent());
         loginPage.loginUsername("non-user@myorg.com");
@@ -124,7 +122,8 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         createOrganization("myorg", "myorg.com");
 
         // organization available to broker review profile
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername("tom@myorg.com");
         waitForPage(driver, "sign in to", true);
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
@@ -152,7 +151,8 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         }
         createOrganization("myorg", "myorg.com", "myorg.org");
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername("tom");
         Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
         loginPage.login("password");
@@ -171,7 +171,8 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         managedRealm.admin().identityProviders().get(broker.getAlias()).update(broker);
 
         // organization available to identity-first login page
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         Assertions.assertTrue(driver.getPageSource().contains("Sign-in to the realm"));
         Assertions.assertFalse(loginPage.isPasswordInputPresent());
         loginPage.loginUsername("non-user@myorg.com");
@@ -206,7 +207,8 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         organization.members().addMember(user.getId()).close();
 
         // organization available to identity-first login page
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(user.getEmail());
         Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
         Assertions.assertTrue(driver.getPageSource().contains("User is member of " + orgRep.getName()));

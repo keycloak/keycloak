@@ -48,8 +48,6 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
@@ -90,10 +88,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     @Rule
     public MailServer mail = new MailServer();
 
-    @Page
-    protected AppPage appPage;
-
-    @Page
+       @Page 
     protected LoginPage loginPage;
 
     @Page
@@ -1096,7 +1091,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         driver.navigate().to(passwordResetEmailLink.trim());
 
-        assertTrue(passwordUpdatePage.isCurrent());
+        passwordUpdatePage.assertCurrent();
 
         UserRepresentation userRepresentation = managedRealm.admin().users().get(userId).toRepresentation();
         assertTrue(userRepresentation.isEnabled());
@@ -1113,11 +1108,11 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         bruteForceStatus = managedRealm.admin().attackDetection().bruteForceUserStatus(userId);
         assertEquals(Boolean.FALSE, bruteForceStatus.get("disabled"));
 
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
-        appPage.logout(idTokenHint);
+        oauth.logoutForm().idTokenHint(idTokenHint).withRedirect().open();
 
         events.clear();
     }
@@ -1157,7 +1152,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         loginTotpPage.assertCurrent();
         loginTotpPage.login(totpSecret);
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         String sessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
 
         getTestToken("wrongpass", totpSecret);
@@ -1168,7 +1163,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         events.clear();
 
         oauth.openLoginForm();
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType(), "Expected SSO cookie re-authentication to skip the login form");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventRepresentation ssoLogin = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
         Assertions.assertEquals(sessionId, ssoLogin.getSessionId(), "SSO re-auth must reuse the existing user session");
 
@@ -1295,13 +1290,13 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         String totpSecret = totp.generateTOTP("totpSecret");
         loginTotpPage.login(totpSecret);
 
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll());
 
         String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code ).getIdToken();
-        appPage.logout(idTokenHint);
+        oauth.logoutForm().idTokenHint(idTokenHint).withRedirect().open();
         events.clear();
     }
 
@@ -1323,12 +1318,12 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         String totpSecret = totp.generateTOTP("totpSecret");
         loginTotpPage.login(totpSecret);
 
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll());
         String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
-        appPage.logout(idTokenHint);
+        oauth.logoutForm().idTokenHint(idTokenHint).withRedirect().open();
         events.clear();
     }
 

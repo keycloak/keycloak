@@ -28,8 +28,6 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.util.MailServer;
@@ -67,10 +65,7 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
     @Rule
     public MailServer mail = new MailServer();
 
-    @Page
-    protected AppPage appPage;
-
-    @Page
+       @Page 
     protected LoginPage loginPage;
 
     @Page
@@ -102,7 +97,7 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assertions.assertTrue(loginTotpPage.isCurrent());
+        loginTotpPage.assertCurrent();
 
         loginTotpPage.login("123456");
         loginTotpPage.assertCurrent();
@@ -121,7 +116,7 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assertions.assertTrue(loginTotpPage.isCurrent());
+        loginTotpPage.assertCurrent();
 
         loginTotpPage.login(null);
         loginTotpPage.assertCurrent();
@@ -140,13 +135,11 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assertions.assertTrue(loginTotpPage.isCurrent(), "expecting totpPage got: " + driver.getCurrentUrl());
+        loginTotpPage.assertCurrent();
 
         loginTotpPage.login(otp.generateHOTP("hotpSecret", counter++));
 
-        appPage.assertCurrent();
-
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll());
     }
@@ -156,7 +149,7 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "invalid");
 
-        Assertions.assertTrue(loginPage.isCurrent());
+        loginPage.assertCurrent();
 
         Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 

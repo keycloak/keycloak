@@ -81,8 +81,8 @@ public class X509IdentityConfirmationPage extends LanguageComboboxAwarePage {
         return loginErrorMessage != null ? loginErrorMessage.getText() : null;
     }
 
-    public boolean isCurrent() {
-        return driver.getTitle().equals("Sign in to test") || driver.getTitle().equals("Anmeldung bei test");
+    public String getExpectedPageId() {
+        return "login-login-x509-info";
     }
 
 }

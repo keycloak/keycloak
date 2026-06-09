@@ -43,7 +43,8 @@ public class KcOidcBrokerUiLocalesEnabledTest extends AbstractBrokerTest {
     @Override
     protected void loginUser() {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         driver.navigate().to(driver.getCurrentUrl());
 

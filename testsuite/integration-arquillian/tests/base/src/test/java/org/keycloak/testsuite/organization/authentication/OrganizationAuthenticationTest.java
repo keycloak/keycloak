@@ -74,7 +74,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         // the member should be able to log in using the credentials
         loginPage.login(memberPassword);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -93,7 +93,8 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         createOrganization();
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         Assertions.assertFalse(loginPage.isPasswordInputPresent());
         loginPage.loginUsername("");
 
@@ -118,7 +119,8 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         // first try to access login page
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         Assertions.assertFalse(loginPage.isPasswordInputPresent());
         Assertions.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
@@ -128,7 +130,8 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
                 .update()) {
 
             // access the page again, now it should be present username and password fields
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
 
             waitForPage(driver, "sign in to", true);
             assertThat("Driver should be on the consumer realm page right now",
@@ -139,7 +142,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
             // the member should be able to log in using the credentials
             loginPage.login(member.getEmail(), memberPassword);
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         }
     }
 
@@ -149,10 +152,11 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         UserRepresentation member = addMember(organization);
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         try {
             timeOffSet.set(10);
@@ -163,7 +167,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             assertThat(loginPage.getInfoMessage(), expectedInfo);
             loginPage.login(memberPassword);
             updatePasswordPage.updatePasswords(memberPassword, memberPassword);
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } finally {
             timeOffSet.set(0);
         }
@@ -179,7 +183,8 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             UserRepresentation member = addMember(organization);
             organization.members().member(member.getId()).delete().close();
             oauth.client("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             loginPage.loginUsername(member.getEmail());
             // user is not a member of any organization
             assertThat(errorPage.getError(), Matchers.containsString("User is not a member of the organization " + org.getName()));
@@ -188,7 +193,8 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             OrganizationRepresentation orgB = createOrganization("org-b");
             oauth.client("broker-app");
             oauth.scope("organization:org-b");
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             loginPage.loginUsername(member.getEmail());
             // user is not a member of the organization selected by the client
             assertThat(errorPage.getError(), Matchers.containsString("User is not a member of the organization " + orgB.getName()));
@@ -197,7 +203,8 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             organization.members().member(member.getId()).delete().close();
             oauth.client("broker-app");
             oauth.scope("organization:*");
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             loginPage.loginUsername(member.getEmail());
             // user is not a member of any organization
             assertThat(errorPage.getError(), Matchers.containsString("User is not a member of any organization"));
@@ -206,7 +213,8 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             managedRealm.admin().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
             oauth.client("broker-app");
             oauth.scope("organization");
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             loginPage.loginUsername(member.getEmail());
             selectOrganizationPage.assertCurrent();
             organization.members().member(member.getId()).delete().close();
@@ -233,7 +241,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         // continue authenticating without setting the username
         loginPage.login(memberPassword);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -265,7 +273,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginPage.loginUsername(member.getUsername());
         loginPage.clickSignIn();
         loginPage.login(memberPassword);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         managedRealm.admin().users().get(member.getId()).logout();
 
         // a different account with the same email can also authenticate using a unique username
@@ -273,7 +281,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginPage.loginUsername(duplicatedUser.getUsername());
         loginPage.clickSignIn();
         loginPage.login(duplicatedUser.getUsername());
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         managedRealm.admin().users().get(duplicatedUser.getId()).logout();
 
         // trying to authenticate with the duplicated user using the email will fail because the username is the email of a different account
@@ -288,7 +296,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginPage.loginUsername(member.getEmail());
         loginPage.clickSignIn();
         loginPage.login(memberPassword);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -380,13 +388,13 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
                 .enabled(true)
                 .password(memberPassword)
                 .build();
-        
+
         String memberId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), member, memberPassword);
         organization.members().addMember(memberId).close();
-        
+
         // Enter the email address in the login form
         openIdentityFirstLoginPage(member.getEmail(), false, null, false, false);
-        
+
         // when we enter an email, the attempted username should show the email, not the actual username of the resolved user account
         loginPage.assertAttemptedUsernameAvailability(true);
         String displayedUsername = loginPage.getAttemptedUsername();
@@ -400,9 +408,9 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginPage.assertAttemptedUsernameAvailability(true);
         String displayedUsernameUpper = loginPage.getAttemptedUsername();
         assertEquals(upperCaseEmail, displayedUsernameUpper, "Should show what user entered (uppercase email)");
-        
+
         Assertions.assertTrue(loginPage.isPasswordInputPresent(), "Password input should be present");
-        
+
         // Clean up
         managedRealm.admin().users().get(memberId).remove();
     }
@@ -420,7 +428,8 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         // login with "organization" scope (ANY) to trigger org selection
         oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
         oauth.scope("organization");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
 
         // org selection page should be shown
@@ -454,7 +463,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         // complete login
         loginPage.login(memberPassword);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // verify the token contains org B (the final selection), not org A
         String code = oauth.parseLoginResponse().getCode();
@@ -475,7 +484,8 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         // login with "organization" scope — single org member should NOT see org selection
         oauth.client("broker-app");
         oauth.scope("organization");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
 
         // should go directly to password page (no org selection for single-org users)
@@ -497,7 +507,8 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         // login with specific organization scope — no org selection should be shown
         oauth.client("broker-app");
         oauth.scope("organization:" + orgA.getAlias());
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
 
         // should go directly to password page (specific org requested by client)
@@ -519,7 +530,8 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         // login with wildcard organization scope — no org selection should be shown
         oauth.client("broker-app");
         oauth.scope("organization:*");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
 
         // should go directly to password page (all orgs mapped)
@@ -541,7 +553,8 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         // login with "organization" scope to trigger org selection
         oauth.client("broker-app");
         oauth.scope("organization");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
 
         // select org A

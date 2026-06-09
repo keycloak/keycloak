@@ -53,7 +53,6 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.userprofile.config.UPConfigUtils;
@@ -90,10 +89,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
     @Page
     protected RegisterPage registerPage;
 
-    @Page
-    protected AppPage appPage;
-
-    @Rule
+        @Rule
     public AssertEvents events = new AssertEvents(this);
 
     @Rule
@@ -229,14 +225,13 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
 
         // open the registration form
         oauth.openLoginForm();
-        loginPage.form().register();
+        loginPage.clickRegister();
         registerPage.assertCurrent();
 
         Assertions.assertTrue(registerPage.isEmailPresent(), "Email is missing on the registration page.");
 
         registerPage.registerWithEmailAsUsername("Tom", "Brady", "tbrady@email.com", "password", "password");
 
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId()).details(Details.USERNAME, "tbrady@email.com").details(Details.EMAIL, "tbrady@email.com").getEvent().getUserId();
@@ -259,7 +254,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
 
         // open the registration form
         oauth.openLoginForm();
-        loginPage.form().register();
+        loginPage.clickRegister();
         registerPage.assertCurrent();
 
         Assertions.assertTrue(registerPage.isUsernamePresent(), "Username is missing on the registration page.");
@@ -267,7 +262,6 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
 
         registerPage.register("Alice", "Wood",  null, "awood", "password", "password");
 
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId()).details(Details.USERNAME, "awood").details(Details.EMAIL, null).getEvent().getUserId();

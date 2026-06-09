@@ -59,7 +59,6 @@ import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.federation.UserMapStorage;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.federation.UserPropertyFileStorageFactory;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
@@ -125,10 +124,7 @@ public class UserStorageTest extends AbstractAuthTest {
     @Page
     protected LoginPage loginPage;
 
-    @Page
-    protected AppPage appPage;
-
-    @Page
+       @Page 
     protected RegisterPage registerPage;
 
     @Page
@@ -228,14 +224,14 @@ public class UserStorageTest extends AbstractAuthTest {
 
     private void loginSuccessAndLogout(String username, String password) {
         oauth.openLoginForm();
-        testRealmLoginPage.form().login(username, password);
-        appPage.assertCurrent();
+        testRealmLoginPage.login(username, password);
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         AccountHelper.logout(testRealmResource(), username);
     }
 
     public void loginBadPassword(String username) {
         oauth.openLoginForm();
-        testRealmLoginPage.form().login(username, "badpassword");
+        testRealmLoginPage.login(username, "badpassword");
         assertCurrentUrlDoesntStartWith(oauth.APP_AUTH_ROOT);
     }
 
@@ -270,8 +266,8 @@ public class UserStorageTest extends AbstractAuthTest {
     @Test
     public void testLoginSuccessWithSpecialCharacter() {
         oauth.openLoginForm();
-        testRealmLoginPage.form().login("spécial", "pw");
-        appPage.assertCurrent();
+        testRealmLoginPage.login("spécial", "pw");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/" + testRealmResource().toRepresentation().getRealm() + "/login-actions/authenticate/" );
 
         Cookie sameSiteSessionCookie = driver.manage().getCookieNamed(CookieType.SESSION.getName());
@@ -416,7 +412,7 @@ public class UserStorageTest extends AbstractAuthTest {
             // Update password after email verified
             updatePasswordPage.updatePasswords("password", "password");
 
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         }
     }
 

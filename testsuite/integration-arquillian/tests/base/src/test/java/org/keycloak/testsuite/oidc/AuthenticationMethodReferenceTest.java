@@ -507,7 +507,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
      * @param totpSecret The secret to use to generate the TOTP token
      */
     private void authenticateTOTP(String totpSecret){
-        Assertions.assertTrue(loginTotpPage.isCurrent());
+        loginTotpPage.assertCurrent();
         setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
         loginTotpPage.login(totp.generateTOTP(totpSecret));

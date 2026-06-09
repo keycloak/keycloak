@@ -35,7 +35,6 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPRule.LDAPConnectionParameters;
@@ -141,10 +140,7 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
         }
     }
 
-    @Page
-    protected AppPage appPage;
-
-    @Page
+       @Page 
     protected LoginPage loginPage;
 
     // Helper methods
@@ -152,12 +148,10 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
         String userId = findUser(username).getId();
         oauth.openLoginForm();
         loginPage.login(username, password);
-        appPage.assertCurrent();
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).getEvent();
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
-        appPage.logout(tokenResponse.getIdToken());
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
         EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(userId);
     }
 

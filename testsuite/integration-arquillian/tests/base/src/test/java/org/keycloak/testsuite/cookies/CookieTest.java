@@ -30,7 +30,6 @@ import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -53,6 +52,7 @@ import org.apache.http.util.EntityUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.Cookie;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
@@ -73,10 +73,7 @@ public class CookieTest extends AbstractKeycloakTest {
     @Page
     protected LoginPage loginPage;
 
-    @Page
-    protected AppPage appPage;
-
-    @Before
+        @Before
     public void beforeCookieTest() {
         createAppClientInRealm("test");
     }
@@ -107,8 +104,7 @@ public class CookieTest extends AbstractKeycloakTest {
         AccessTokenResponse accTokenResp = oauth.doAccessTokenRequest(codeResponse.getCode());
         String accessToken = accTokenResp.getAccessToken();
 
-        appPage.open();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         try (CloseableHttpClient hc = HttpClientUtils.createDefault()) {
             BasicCookieStore cookieStore = new BasicCookieStore();
@@ -144,8 +140,7 @@ public class CookieTest extends AbstractKeycloakTest {
         AccessTokenResponse accTokenResp = oauth.doAccessTokenRequest(codeResponse.getCode());
         String accessToken = accTokenResp.getAccessToken();
 
-        appPage.open();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         AccountHelper.logout(realmsResouce().realm("test"), "test-user@localhost");
 
         try (CloseableHttpClient hc = HttpClientUtils.createDefault()) {
@@ -178,7 +173,7 @@ public class CookieTest extends AbstractKeycloakTest {
         ContainerAssume.assumeAuthServerSSL();
 
         oauth.doLogin("test-user@localhost", "password");
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/authenticate/");
 

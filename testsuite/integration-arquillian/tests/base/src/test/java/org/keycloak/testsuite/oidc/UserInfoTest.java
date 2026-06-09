@@ -133,7 +133,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
     @Page
     protected LoginPage loginPage;
 
-    @Override
+        @Override
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
     }
@@ -622,7 +622,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         oauth.fillLoginForm("test-user@localhost", "password");
         EventAssertion.expectLoginSuccess(events.poll());
 
-        Assertions.assertFalse(loginPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         events.clear();
 

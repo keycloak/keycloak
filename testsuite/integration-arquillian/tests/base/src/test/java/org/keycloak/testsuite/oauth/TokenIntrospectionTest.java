@@ -96,7 +96,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
     @Page
     protected LoginPage loginPage;
 
-    @Override
+        @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         ClientRepresentation confApp = KeycloakModelUtils.createClient(testRealm, "confidential-cli");
         confApp.setSecret("secret1");
@@ -298,7 +298,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         oauth.fillLoginForm("test-user@localhost", "password");
         EventAssertion.expectLoginSuccess(events.poll());
 
-        Assertions.assertFalse(loginPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code);

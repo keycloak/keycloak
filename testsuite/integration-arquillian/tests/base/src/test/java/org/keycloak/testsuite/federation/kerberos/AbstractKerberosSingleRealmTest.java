@@ -38,13 +38,11 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.TestAppHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.ietf.jgss.GSSCredential;
-import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assume;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -58,10 +56,7 @@ import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
  */
 public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTest {
 
-    @Page
-    protected AppPage appPage;
-
-    @Test
+        @Test
     public void spnegoNotAvailableTest() throws Exception {
         initHttpClient(false);
 
@@ -135,15 +130,18 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         // Change editMode to READ_ONLY
         updateProviderEditMode(UserStorageProvider.EditMode.READ_ONLY);
 
-        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage);
 
-        Assertions.assertTrue(testAppHelper.login("jduke", "theduke"));
+        testAppHelper.login("jduke", "theduke");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         Assertions.assertTrue(testAppHelper.logout());
 
         // Change password is not possible as editMode is READ_ONLY
         Assertions.assertFalse(AccountHelper.updatePassword(testRealmResource(), "jduke", "newPass"));
 
-        Assertions.assertFalse(testAppHelper.login("jduke", "newPass"));
+        // login will fail
+        testAppHelper.login("jduke", "newPass");
+        loginPage.assertCurrent();
 
         // Change editMode to UNSYNCED
         updateProviderEditMode(UserStorageProvider.EditMode.UNSYNCED);
@@ -152,9 +150,10 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         Assertions.assertTrue(AccountHelper.updatePassword(testRealmResource(), "jduke", "newPass"));
 
         // Login with old password doesn't work, but with new password works
-        Assertions.assertFalse(testAppHelper.login("jduke", "theduke"));
-        Assertions.assertTrue(testAppHelper.login("jduke", "newPass"));
-
+        testAppHelper.login("jduke", "theduke");
+        loginPage.assertCurrent();
+        testAppHelper.login("jduke", "newPass");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         testAppHelper.logout();
 
         // Assert SPNEGO login still with the old password as mode is unsynced

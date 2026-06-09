@@ -58,7 +58,6 @@ import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.util.KerberosUtils;
@@ -103,10 +102,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
     @Page
     protected LoginPage loginPage;
 
-    @Page
-    protected AppPage appPage;
-
-    @Rule
+        @Rule
     public AssertEvents events = new AssertEvents(this);
 
     protected abstract KerberosRule getKerberosRule();
