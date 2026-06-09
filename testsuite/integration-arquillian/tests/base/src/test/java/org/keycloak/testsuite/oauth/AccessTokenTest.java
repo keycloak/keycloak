@@ -205,6 +205,11 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void accessTokenRequest() throws Exception {
+        // Avoid existing authentication session to interfere with Hibernate statistics count
+        oauth.openLoginForm();
+        driver.manage().deleteAllCookies();
+        driver.get("about:blank");
+
         runOnServerMaster.run(session -> {
             Statistics stats = statistics(session);
             stats.setStatisticsEnabled(true);
@@ -225,7 +230,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
                 assertEquals(0, stats.getEntityStatistics("org.keycloak.models.jpa.session.PersistentUserSessionEntity").getFetchCount());
                 // authentication session
                 assertEquals(1, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getLoadCount());
-                assertEquals(1, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getUpdateCount());
+                assertEquals(0, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getUpdateCount());
                 assertEquals(1, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getInsertCount());
                 assertEquals(1, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getDeleteCount());
                 assertEquals(0, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getFetchCount());
