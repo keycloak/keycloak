@@ -530,6 +530,10 @@ public class UserResource {
             throw ErrorResponse.exists("User is already linked with provider");
         }
 
+        if (!Organizations.resolveHomeBroker(session, user).isEmpty()) {
+            throw ErrorResponse.error("Cannot add identity provider link to a managed organization member.", Status.BAD_REQUEST);
+        }
+
         FederatedIdentityModel socialLink = new FederatedIdentityModel(provider, rep.getUserId(), rep.getUserName());
         session.users().addFederatedIdentity(realm, user, socialLink);
         adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(rep).success();
