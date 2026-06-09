@@ -235,6 +235,16 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         // HAIP-1.0 does not want to see this property (don't set to false)
         if (Profile.isFeatureEnabled(Profile.Feature.CIMD)) {
             config.setClientIdMetadataDocumentSupported(true);
+
+            // CIMD clients authenticate as public clients at the token endpoint (RFC 7591 "none"),
+            // so advertise "none" as a supported token endpoint auth method (see #49730).
+            // Note: only the token endpoint is affected, not introspection/revocation, so a new
+            // list is used here instead of mutating the shared clientAuthMethodsSupported list.
+            List<String> tokenEndpointAuthMethods = new ArrayList<>(config.getTokenEndpointAuthMethodsSupported());
+            if (!tokenEndpointAuthMethods.contains("none")) {
+                tokenEndpointAuthMethods.add("none");
+                config.setTokenEndpointAuthMethodsSupported(tokenEndpointAuthMethods);
+            }
         }
 
         config = checkConfigOverride(config);

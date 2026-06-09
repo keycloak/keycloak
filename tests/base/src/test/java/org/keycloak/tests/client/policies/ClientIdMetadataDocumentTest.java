@@ -16,6 +16,7 @@ import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.AbstractClientIdM
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutor;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactory;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactoryProviderConfig;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.representations.AccessToken;
@@ -97,6 +98,16 @@ public class ClientIdMetadataDocumentTest {
 
     @InjectPage
     protected OAuthGrantPage grantPage;
+
+    @Test
+    public void testTokenEndpointAuthMethodsIncludesNone() {
+        // With the CIMD feature enabled, public CIMD clients authenticate at the token endpoint
+        // with "none", so the discovery document must advertise it (see #49730).
+        OIDCConfigurationRepresentation oidcConfiguration = oauth.doWellKnownRequest();
+        Assertions.assertTrue(
+                oidcConfiguration.getTokenEndpointAuthMethodsSupported().contains("none"),
+                "token_endpoint_auth_methods_supported should include \"none\" when the CIMD feature is enabled");
+    }
 
     @Test
     public void testClientIdUriSchemeCondition() {
