@@ -17,8 +17,6 @@ import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RealmBuilder;
-import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
@@ -48,7 +46,7 @@ public class ClientPaginationTest extends AbstractClientApiV2Test {
     @InjectHttpClient
     CloseableHttpClient httpClient;
 
-    @InjectRealm(config = PaginationRealmConfig.class)
+    @InjectRealm
     ManagedRealm testRealm;
 
     @Override
@@ -60,13 +58,6 @@ public class ClientPaginationTest extends AbstractClientApiV2Test {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.CLIENT_ADMIN_API_V2);
-        }
-    }
-
-    public static class PaginationRealmConfig implements RealmConfig {
-        @Override
-        public RealmBuilder configure(RealmBuilder realm) {
-            return realm;
         }
     }
 

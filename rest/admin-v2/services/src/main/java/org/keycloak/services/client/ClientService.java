@@ -7,6 +7,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.PatchType;
@@ -48,4 +51,16 @@ public interface ClientService extends Service {
     BaseClientRepresentation createClient(RealmModel realm, BaseClientRepresentation client) throws ServiceException;
 
     BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, InputStream patch) throws ServiceException;
+
+    public static ClientSortAndSliceOptions normalize(Integer offset, Integer limit) throws ServiceException {
+        if (offset != null && offset < 0) {
+            throw new ServiceException("offset must be greater than or equal to 0", Response.Status.BAD_REQUEST);
+        }
+        if (limit != null && limit < 0) {
+            throw new ServiceException("limit must be greater than or equal to 0", Response.Status.BAD_REQUEST);
+        }
+        int normalizedOffset = offset != null ? offset : 0;
+        int normalizedLimit = limit != null ? limit : Constants.DEFAULT_MAX_RESULTS;
+        return new ClientSortAndSliceOptions(normalizedOffset, normalizedLimit);
+    }
 }

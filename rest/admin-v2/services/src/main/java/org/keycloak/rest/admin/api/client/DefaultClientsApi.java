@@ -20,7 +20,6 @@ import org.keycloak.admin.api.client.ClientsApi;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
-import org.keycloak.services.PaginationOptions;
 import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.ClientService.ClientProjectionOptions;
 import org.keycloak.services.client.DefaultClientService;
@@ -49,7 +48,7 @@ public class DefaultClientsApi implements ClientsApi {
     public Stream<BaseClientRepresentation> getClients(ListOptions params) {
         try {
             var searchOptions = params.getQuery() != null ? new ClientService.ClientSearchOptions(params.getQuery()) : null;
-            var sortAndSliceOptions = PaginationOptions.normalize(params.getOffset(), params.getLimit());
+            var sortAndSliceOptions = ClientService.normalize(params.getOffset(), params.getLimit());
             return clientService.getClients(realm, new ClientProjectionOptions(params.getFields()), searchOptions,
                     sortAndSliceOptions);
         } catch (ClientQueryException e) {
