@@ -96,6 +96,10 @@
           }
         }
       },
+      "ClientField" : {
+        "type" : "string",
+        "enum" : [ "clientId", "displayName", "description", "protocol", "enabled", "appUrl" ]
+      },
       "Flow" : {
         "type" : "string",
         "enum" : [ "STANDARD", "IMPLICIT", "DIRECT_GRANT", "SERVICE_ACCOUNT", "TOKEN_EXCHANGE", "DEVICE", "CIBA" ]
@@ -213,6 +217,10 @@
       "SignatureAlgorithm" : {
         "type" : "string",
         "enum" : [ "RSA_SHA1", "RSA_SHA256", "RSA_SHA256_MGF1", "RSA_SHA512", "RSA_SHA512_MGF1", "DSA_SHA1" ]
+      },
+      "SortOrder" : {
+        "type" : "string",
+        "enum" : [ "asc", "desc" ]
       }
     },
     "securitySchemes" : {
@@ -269,6 +277,25 @@
           "schema" : {
             "type" : "string"
           }
+        }, {
+          "description" : "Field(s) to sort by, comma-separated for multi-field sort (e.g. displayName,clientId). Allowed values: clientId, displayName, description, protocol, enabled, appUrl. Defaults to clientId when omitted.",
+          "explode" : false,
+          "name" : "sortBy",
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ClientField"
+            }
+          },
+          "style" : "form",
+          "in" : "query"
+        }, {
+          "description" : "Sort direction. Allowed values: asc (default), desc.",
+          "schema" : {
+            "$ref" : "#/components/schemas/SortOrder"
+          },
+          "name" : "sortOrder",
+          "in" : "query"
         } ],
         "responses" : {
           "200" : {
@@ -283,6 +310,9 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "Invalid sort parameter"
           }
         }
       },

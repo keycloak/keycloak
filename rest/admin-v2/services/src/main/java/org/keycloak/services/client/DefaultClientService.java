@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -16,6 +17,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.validation.groups.Default;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.api.ListOptions;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -140,6 +142,10 @@ public class DefaultClientService implements ClientService {
         boolean useJpaPagination = canView && !hasQuery;
         int offset = sortAndSliceOptions.offset();
         int limit = sortAndSliceOptions.limit();
+        ClientSortAndSliceOptions sortOptions = sortAndSliceOptions != null
+                ? sortAndSliceOptions
+                : ClientSortAndSliceOptions.fromQuery(new ListOptions());
+        Comparator<BaseClientRepresentation> sortComparator = sortOptions.getSortComparator();
 
         try {
             Stream<ClientModel> clientModels = useJpaPagination
@@ -158,7 +164,7 @@ public class DefaultClientService implements ClientService {
                 stream = paginatedStream(stream, offset, limit);
             }
 
-            return applyProjection(stream, projectionOptions);
+            return applyProjection(stream, projectionOptions).sorted(sortComparator);
         } catch (ModelException e) {
             throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
         }

@@ -10,6 +10,8 @@ import jakarta.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.enums.Explode;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterStyle;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
 public class ListOptions {
@@ -18,6 +20,18 @@ public class ListOptions {
             explode = Explode.FALSE, schema = @Schema(type = SchemaType.ARRAY, uniqueItems = true, implementation = String.class))
     @QueryParam("fields")
     protected String fields;
+
+    @Parameter(name = "sortBy",
+               description = "Field(s) to sort by, comma-separated for multi-field sort (e.g. displayName,clientId). Allowed values: clientId, displayName, description, protocol, enabled, appUrl. Defaults to clientId when omitted.",
+               style = ParameterStyle.FORM,
+               explode = Explode.FALSE,
+               schema = @Schema(type = SchemaType.ARRAY, implementation = ClientField.class))
+    @QueryParam("sortBy")
+    protected String sortBy;
+
+    @Parameter(description = "Sort direction. Allowed values: asc (default), desc.", schema = @Schema(implementation = SortOrder.class))
+    @QueryParam("sortOrder")
+    protected SortOrder sortOrder;
 
     @Parameter(description = "Filter expression using SCIM-like syntax, e.g. clientId eq \"my-app\" and enabled eq true")
     @QueryParam("q")
@@ -89,4 +103,32 @@ public class ListOptions {
         this.offset = offset;
     }
     
+    public String getSortBy() {
+        return sortBy;
+    }
+
+    public void setSortBy(String sortBy) {
+        this.sortBy = sortBy;
+    }
+
+    public void setSortBy(ClientField sortBy) {
+        this.sortBy = sortBy == null ? null : sortBy.toQueryValue();
+    }
+
+    public void setSortBy(List<ClientField> sortBy) {
+        this.sortBy = parseSortBy(sortBy);
+    }
+
+    public SortOrder getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(SortOrder sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+
+    private String parseSortBy(List<ClientField> list) {
+        return list == null || list.isEmpty() ? null :
+                 list.stream().map(ClientField::toQueryValue).collect(Collectors.joining(","));
+    }
 }
