@@ -139,6 +139,8 @@ The User Attribute LDAP mapper now includes a *Decode Binary Attribute As* confi
 
 This change reverts a regression introduced in 26.6.1 where the `objectGUID` binary attribute format was silently changed from base64 to UUID string for user attribute mappers. Existing binary attribute mappers are automatically migrated to use *base64* decoding to preserve their current behavior. If you were relying on the UUID string format introduced in 26.6.x, explicitly set the decoder to *uuid* after upgrading.
 
+The Group LDAP mapper also includes a new *Decode UUID Attribute to UUID Format* toggle. When enabled, the UUID LDAP attribute (e.g. `objectGUID` in Active Directory) listed in "Mapped Group Attributes" is decoded to UUID string format instead of base64. New group mappers default to enabled (UUID format). Existing group mappers are automatically migrated to disabled (base64) to preserve their current behavior.
+
 === DPoP not supported for implicit and hybrid flows
 
 DPoP (Demonstrating Proof of Possession) is no longer supported for implicit and hybrid flows. If a client has the *Require DPoP bound tokens* option enabled, authorization requests using implicit or hybrid response types will be rejected with an error.
