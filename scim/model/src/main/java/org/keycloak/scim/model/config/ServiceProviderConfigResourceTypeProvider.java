@@ -15,6 +15,7 @@ import org.keycloak.scim.resource.config.ServiceProviderConfig.BulkSupport;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.FilterSupport;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.Supported;
 import org.keycloak.scim.resource.schema.ModelSchema;
+import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 import org.keycloak.scim.resource.spi.SingletonResourceTypeProvider;
 
 public class ServiceProviderConfigResourceTypeProvider implements SingletonResourceTypeProvider<ServiceProviderConfig> {
@@ -47,6 +48,7 @@ public class ServiceProviderConfigResourceTypeProvider implements SingletonResou
         FilterSupport filter = new FilterSupport();
 
         filter.setSupported(true);
+        filter.setMaxResults(ScimResourceTypeProvider.DEFAULT_MAX_RESULTS);
 
         return filter;
     }
