@@ -91,7 +91,7 @@ public class KcAdmV2EditCLITest extends AbstractKcAdmV2CLITest {
         CommandResult result = kcAdmV2Cmd("client", "edit", "non-existent-id");
 
         assertThat("edit non-existent should fail", result.exitCode(), is(not(0)));
-        assertThat(result.err().trim(), is("Could not find client"));
+        assertThat(result.err().trim(), is("Cannot find the specified client"));
     }
 
     @Test
