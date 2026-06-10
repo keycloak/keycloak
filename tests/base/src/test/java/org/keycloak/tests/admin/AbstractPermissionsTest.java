@@ -73,6 +73,19 @@ public class AbstractPermissionsTest {
             managedMasterRealm.admin().users().get(roleUserUuid).roles().clientLevel(clientUuid).add(Collections.singletonList(roleRep));
         }
 
+        for (String role : AdminRoles.ALL_REALM_ROLES) {
+            response = managedMasterRealm.admin().users().create(UserConfigBuilder.create()
+                    .username("master-user-" + role)
+                    .password("password")
+                    .build());
+            String roleUserUuid = ApiUtil.getCreatedId(response);
+            managedMasterRealm.cleanup().add(r -> r.users().delete(roleUserUuid).close());
+
+            String clientUuid = managedMasterRealm.admin().clients().findByClientId("master-realm").get(0).getId();
+            RoleRepresentation roleRep = managedMasterRealm.admin().clients().get(clientUuid).roles().get(role).toRepresentation();
+            managedMasterRealm.admin().users().get(roleUserUuid).roles().clientLevel(clientUuid).add(Collections.singletonList(roleRep));
+        }
+
         clients.put(AdminRoles.REALM_ADMIN,
                 adminClientFactory.create().realm(REALM_NAME).username(AdminRoles.REALM_ADMIN).password("password").clientId("test-client").clientSecret("secret").build());
 
@@ -97,6 +110,10 @@ public class AbstractPermissionsTest {
                     adminClientFactory.create().realm("master").username("permissions-test-master-" + role).password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build());
         }
 
+        for (String role : AdminRoles.ALL_ROLES) {
+            clients.put("master-admin-" + role,
+                    adminClientFactory.create().realm("master").username("master-user-" + role).password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build());
+        }
     }
 
     protected void invoke(final Invocation invocation, AdminAuth.Resource resource, boolean manage) {
