@@ -51,7 +51,6 @@ import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.AdminRoles;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -126,17 +125,20 @@ public class ServerInfoAdminResource {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         RealmModel userRealm = session.getContext().getRealm();
         AdminPermissionEvaluator adminEvaluator = AdminPermissions.evaluator(session, userRealm, auth);
-        if (RealmManager.isAdministrationRealm(userRealm) || adminEvaluator.hasOneAdminRole(AdminRoles.VIEW_SYSTEM)) {
-            // system information is only for admins in the administration realm or fallback view-system role
-            info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp(), Version.VERSION));
-            info.setCpuInfo(CpuInfoRepresentation.create());
-            info.setMemoryInfo(MemoryInfoRepresentation.create());
-        } else if (adminEvaluator.realm().canManageRealm()) {
-            // If the user can manage his own realm just add the version information
-            SystemInfoRepresentation systemInfo = new SystemInfoRepresentation();
-            systemInfo.setVersion(Version.VERSION);
-            info.setSystemInfo(systemInfo);
+
+        if (adminEvaluator.realm().canManageRealm()) {
+            if (RealmManager.isAdministrationRealm(userRealm)) {
+                info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp(), Version.VERSION));
+                info.setCpuInfo(CpuInfoRepresentation.create());
+                info.setMemoryInfo(MemoryInfoRepresentation.create());
+            } else {
+                // If the user can manage his own realm just add the version information
+                SystemInfoRepresentation systemInfo = new SystemInfoRepresentation();
+                systemInfo.setVersion(Version.VERSION);
+                info.setSystemInfo(systemInfo);
+            }
         }
+
         info.setProfileInfo(createProfileInfo());
         info.setFeatures(createFeatureRepresentations());
 
