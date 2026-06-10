@@ -14,7 +14,11 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 
+import org.jboss.logging.Logger;
+
 public class ScimRealmResource {
+
+    private static final Logger logger = Logger.getLogger(ScimRealmResource.class);
 
     private final KeycloakSession session;
 
@@ -24,9 +28,10 @@ public class ScimRealmResource {
 
     @Path("/v2/{resourceType}")
     public Object resourceType(@PathParam("resourceType") String resourceType) {
-        ScimResourceTypeProvider<?> provider = session.getProvider(ScimResourceTypeProvider.class, resourceType);// Ensure the provider is loaded
+        ScimResourceTypeProvider<?> provider = session.getProvider(ScimResourceTypeProvider.class, resourceType);
 
         if (provider == null) {
+            logger.debugf("SCIM resource type '%s' not found", resourceType);
             throw new ErrorResponseException(Response.status(Response.Status.NOT_FOUND).entity(new ErrorResponse("Resource type not found", Status.NOT_FOUND.getStatusCode())).build());
         }
 

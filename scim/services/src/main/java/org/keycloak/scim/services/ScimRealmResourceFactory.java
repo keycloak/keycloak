@@ -17,7 +17,11 @@ import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
 
+import org.jboss.logging.Logger;
+
 public class ScimRealmResourceFactory implements RealmResourceProviderFactory, EnvironmentDependentProviderFactory {
+
+    private static final Logger logger = Logger.getLogger(ScimRealmResourceFactory.class);
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
@@ -31,12 +35,14 @@ public class ScimRealmResourceFactory implements RealmResourceProviderFactory, E
                     AuthResult authResult = new BearerTokenAuthenticator(session).authenticate();
 
                     if (authResult == null) {
+                        logger.debug("SCIM request rejected: no valid bearer token provided");
                         throw new ErrorResponseException(Response.status(Status.UNAUTHORIZED).build());
                     }
 
                     Token bearerToken = session.getContext().getBearerToken();
 
                     if (bearerToken == null) {
+                        logger.debug("SCIM request rejected: bearer token could not be resolved");
                         throw new ErrorResponseException(Response.status(Status.UNAUTHORIZED).build());
                     }
 
@@ -50,6 +56,7 @@ public class ScimRealmResourceFactory implements RealmResourceProviderFactory, E
             };
         }
 
+        logger.warnf("SCIM API is not enabled for realm '%s'", realm.getName());
         return null;
     }
 
