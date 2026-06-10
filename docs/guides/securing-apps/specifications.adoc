@@ -106,6 +106,15 @@ This {section} presents a list of specifications and standards that {project_nam
 |link:https://www.rfc-editor.org/rfc/rfc8037.html[CFRG Elliptic Curve Diffie-Hellman (ECDH) and Signatures in JSON Object Signing and Encryption (JOSE) (RFC 8037)]|Supported||
 |===
 
+== System for Cross-domain Identity Management (SCIM)
+
+[%autowidth,options="header"]
+|===
+|Specification|Status|Conformity|Comments
+|link:https://datatracker.ietf.org/doc/html/rfc7643[System for Cross-domain Identity Management: Core Schema (RFC 7643)]|Tech Preview||Supports User and Group resource types, including the Enterprise User extension (Section 4.3).
+|link:https://datatracker.ietf.org/doc/html/rfc7644[System for Cross-domain Identity Management: Protocol (RFC 7644)]|Tech Preview||Supports CRUD operations, filtering, pagination, PATCH, and schema discovery. Bulk operations are not yet supported.
+|===
+
 == Misc
 
 [%autowidth,options="header"]
