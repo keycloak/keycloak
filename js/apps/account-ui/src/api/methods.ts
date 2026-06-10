@@ -112,6 +112,24 @@ export async function getCredentials({ signal, context }: CallOptions) {
   return parseResponse<CredentialContainer[]>(response);
 }
 
+export async function moveUp(
+  context: KeycloakContext<BaseEnvironment>,
+  type: string,
+) {
+  await request(`/credentials/moveup/${type}`, context, {
+    method: "POST",
+  });
+}
+
+export async function moveDown(
+  context: KeycloakContext<BaseEnvironment>,
+  type: string,
+) {
+  await request(`/credentials/movedown/${type}`, context, {
+    method: "POST",
+  });
+}
+
 export type LinkedAccountQueryParams = PaginationParams & {
   search?: string;
   linked?: boolean;

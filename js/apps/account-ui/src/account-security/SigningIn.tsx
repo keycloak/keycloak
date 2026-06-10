@@ -39,6 +39,7 @@ import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 import { AccountEnvironment } from "..";
 import { joinPath } from "../utils/joinPath";
+import { CredentialOrder } from "./CredentialOrder";
 
 type MobileLinkProps = {
   title: string;
@@ -90,12 +91,12 @@ export const SigningIn = () => {
   const { login } = context.keycloak;
 
   const [credentials, setCredentials] = useState<CredentialContainer[]>();
+  const [key, setKey] = useState(0);
+  const handleOrderChanged = () => setKey((k) => k + 1);
 
-  usePromise(
-    (signal) => getCredentials({ signal, context }),
-    setCredentials,
-    [],
-  );
+  usePromise((signal) => getCredentials({ signal, context }), setCredentials, [
+    key,
+  ]);
 
   const credentialRowCells = (
     credMetadata: CredentialMetadataRepresentation,
@@ -274,12 +275,22 @@ export const SigningIn = () => {
     return <Spinner />;
   }
 
-  const credentialUniqueCategories = [
-    ...new Set(credentials.map((c) => c.category)),
-  ];
+  const uniqueCategories = [...new Set(credentials.map((c) => c.category))];
+  const categoryOrder = ["basic-authentication", "two-factor", "passwordless"];
+  const categoryIndex = (c: string) => {
+    const i = categoryOrder.indexOf(c);
+    return i === -1 ? categoryOrder.length : i;
+  };
+  const credentialUniqueCategories = uniqueCategories.sort(
+    (a, b) => categoryIndex(a) - categoryIndex(b),
+  );
 
   return (
     <Page title={t("signingIn")} description={t("signingInDescription")}>
+      <CredentialOrder
+        credentials={credentials}
+        onOrderChanged={handleOrderChanged}
+      />
       {credentialUniqueCategories.map((category) => (
         <PageSection key={category} variant="light" className="pf-v5-u-px-0">
           <Title headingLevel="h2" size="xl" id={`${category}-categ-title`}>

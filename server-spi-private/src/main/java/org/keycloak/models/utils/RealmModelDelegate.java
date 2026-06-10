@@ -1208,4 +1208,5 @@ public class RealmModelDelegate implements RealmModel {
     public boolean isScimApiEnabled() {
         return delegate.isScimApiEnabled();
     }
+
 }

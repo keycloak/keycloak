@@ -67,3 +67,7 @@ NIST is going to fully https://www.nist.gov/news-events/news/2022/12/nist-retire
 ====
 Consider SHA1 hashing retired in all uses within {project_name}. Users should configure other secure hashing functions as soon as possible (for example SHA2, SHA3).
 ====
+
+== Credential type reordering in the account console
+
+Users can now reorder their credential types from the account console's signing-in page. The credential order determines which authentication method is presented first when alternative methods are configured, for example whether OTP or a security key is offered as the default second factor. This was a highly requested community feature.

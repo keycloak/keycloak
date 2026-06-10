@@ -47,7 +47,7 @@ export const RealmSettingsLoginTab = ({
   };
 
   return (
-    <PageSection variant="light">
+    <PageSection variant="light" className="kc-login-tab">
       <FormPanel
         className="kc-login-screen"
         title={t("loginScreenCustomization")}
