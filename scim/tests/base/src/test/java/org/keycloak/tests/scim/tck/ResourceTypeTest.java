@@ -2,6 +2,9 @@ package org.keycloak.tests.scim.tck;
 
 import java.util.List;
 
+import jakarta.ws.rs.core.Response.Status;
+
+import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.group.Group;
@@ -18,6 +21,7 @@ import static org.keycloak.scim.resource.Scim.getCoreSchema;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest(config = ScimServerConfig.class)
 public class ResourceTypeTest extends AbstractScimTest {
@@ -31,6 +35,16 @@ public class ResourceTypeTest extends AbstractScimTest {
 
         assertResourceType(response, User.class, "User Account", List.of(ENTERPRISE_USER_SCHEMA));
         assertResourceType(response, Group.class, "Group", List.of());
+    }
+
+    @Test
+    public void testInvalidResourceType() {
+        try {
+            client.get("InvalidType");
+            fail("Expected exception for invalid resource type");
+        } catch (ScimClientException e) {
+            assertEquals(Status.NOT_FOUND.getStatusCode(), e.getError().getStatusInt());
+        }
     }
 
     private static void assertResourceType(ListResponse<ResourceType> response, Class<? extends ResourceTypeRepresentation> resourceType,
