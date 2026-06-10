@@ -17,6 +17,7 @@ import jakarta.validation.groups.Default;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.events.admin.v2.AdminEventV2Builder;
@@ -302,6 +303,7 @@ public class DefaultClientService implements ClientService {
 
                         // Update model
                         mapper.toModel(client, model);
+                        model.setLastModifiedTimestamp(Time.currentTimeMillis());
 
                         // Validate the fully populated model
                         ValidationUtil.validateClient(session, model, false, r -> {

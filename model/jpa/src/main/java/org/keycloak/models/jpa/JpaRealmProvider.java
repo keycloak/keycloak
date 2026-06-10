@@ -898,6 +898,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         entity.setEnabled(true);
         entity.setStandardFlowEnabled(true);
         entity.setRealmId(realm.getId());
+        long now = Time.currentTimeMillis();
+        entity.setCreatedTimestamp(now);
+        entity.setLastModifiedTimestamp(now);
         em.persist(entity);
 
         resource = toClientModel(realm, entity);

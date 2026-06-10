@@ -68,6 +68,8 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
         // TODO: consider built-in logic for copying collections
         this.addMapping("redirectUris", BaseClientRepresentation::getRedirectUris, BaseClientRepresentation::setRedirectUris, model -> new LinkedHashSet<>(model.getRedirectUris()), (model, uris) -> model.setRedirectUris(new LinkedHashSet<>(uris)));
         this.addMapping("roles", BaseClientRepresentation::getRoles, BaseClientRepresentation::setRoles, model -> model.getRolesStream().map(RoleModel::getName).collect(Collectors.toSet()), null);
+        this.addMapping("createdTimestamp", BaseClientRepresentation::getCreatedTimestamp, BaseClientRepresentation::setCreatedTimestamp, ClientModel::getCreatedTimestamp, null);
+        this.addMapping("updatedTimestamp", BaseClientRepresentation::getUpdatedTimestamp, BaseClientRepresentation::setUpdatedTimestamp, ClientModel::getLastModifiedTimestamp, null);
     }
     
     @Override

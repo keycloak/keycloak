@@ -95,6 +95,12 @@ public class ClientEntity {
     @Column(name = "REALM_ID")
     protected String realmId;
 
+    @Column(name = "CREATED_TIMESTAMP")
+    private Long createdTimestamp;
+
+    @Column(name = "LAST_MODIFIED_TIMESTAMP")
+    private Long lastModifiedTimestamp;
+
     @ElementCollection
     @Column(name="VALUE")
     @CollectionTable(name = "WEB_ORIGINS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
@@ -167,6 +173,22 @@ public class ClientEntity {
 
     public void setRealmId(String realmId) {
         this.realmId = realmId;
+    }
+
+    public Long getCreatedTimestamp() {
+        return createdTimestamp;
+    }
+
+    public void setCreatedTimestamp(Long createdTimestamp) {
+        this.createdTimestamp = createdTimestamp;
+    }
+
+    public Long getLastModifiedTimestamp() {
+        return lastModifiedTimestamp;
+    }
+
+    public void setLastModifiedTimestamp(Long lastModifiedTimestamp) {
+        this.lastModifiedTimestamp = lastModifiedTimestamp;
     }
 
     public String getId() {

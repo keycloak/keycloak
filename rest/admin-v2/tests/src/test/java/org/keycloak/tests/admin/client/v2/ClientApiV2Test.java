@@ -234,6 +234,40 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
+    public void clientTimestamps() throws InterruptedException, JsonProcessingException {
+        var clientId = "timestamp-client";
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setDescription("Timestamp test client");
+
+        long beforeCreate = System.currentTimeMillis();
+        OIDCClientRepresentation created;
+        try (var response = getClientsApi().createClient(rep)) {
+            assertThat(response.getStatus(), is(201));
+            created = response.readEntity(OIDCClientRepresentation.class);
+        }
+        long afterCreate = System.currentTimeMillis();
+
+        assertThat(created.getCreatedTimestamp(), notNullValue());
+        assertThat(created.getUpdatedTimestamp(), notNullValue());
+        assertThat(created.getCreatedTimestamp(), is(created.getUpdatedTimestamp()));
+        assertThat(created.getCreatedTimestamp() >= beforeCreate, is(true));
+        assertThat(created.getCreatedTimestamp() <= afterCreate, is(true));
+
+        Thread.sleep(5);
+
+        OIDCClientRepresentation patch = new OIDCClientRepresentation();
+        patch.setDescription("Updated description");
+        BaseClientRepresentation updated = getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
+        assertThat(updated.getDescription(), is("Updated description"));
+        assertThat(updated.getCreatedTimestamp(), is(created.getCreatedTimestamp()));
+        assertThat(updated.getUpdatedTimestamp(), notNullValue());
+        assertThat(updated.getUpdatedTimestamp() >= updated.getCreatedTimestamp(), is(true));
+        assertThat(updated.getUpdatedTimestamp() > created.getUpdatedTimestamp(), is(true));
+    }
+
+    @Test
     public void deleteClient() {
         var clientIdToDelete = "to-delete";
         OIDCClientRepresentation rep = new OIDCClientRepresentation();

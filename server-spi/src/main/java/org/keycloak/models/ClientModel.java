@@ -298,4 +298,25 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
         }
         return consentScreenText;
     }
+
+    /**
+     * Get timestamp of client creation. May be null for clients created before this feature introduction.
+     */
+    default Long getCreatedTimestamp() {
+        return null;
+    }
+
+    default void setCreatedTimestamp(Long timestamp) {
+    }
+
+    /**
+     * Get timestamp of last client modification. May be null for clients that have not been modified
+     * since this feature was introduced.
+     */
+    default Long getLastModifiedTimestamp() {
+        return null;
+    }
+
+    default void setLastModifiedTimestamp(Long timestamp) {
+    }
 }

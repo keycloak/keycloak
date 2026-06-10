@@ -91,6 +91,36 @@ public class ClientAdapter implements ClientModel, CachedObject {
         return cached.getId();
     }
 
+    @Override
+    public Long getCreatedTimestamp() {
+        if (isUpdated()) return updated.getCreatedTimestamp();
+        return cached.getCreatedTimestamp();
+    }
+
+    @Override
+    public void setCreatedTimestamp(Long timestamp) {
+        if (updated == null && Objects.equals(cached.getCreatedTimestamp(), timestamp)) {
+            return;
+        }
+        getDelegateForUpdate();
+        updated.setCreatedTimestamp(timestamp);
+    }
+
+    @Override
+    public Long getLastModifiedTimestamp() {
+        if (isUpdated()) return updated.getLastModifiedTimestamp();
+        return cached.getLastModifiedTimestamp();
+    }
+
+    @Override
+    public void setLastModifiedTimestamp(Long timestamp) {
+        if (updated == null && Objects.equals(cached.getLastModifiedTimestamp(), timestamp)) {
+            return;
+        }
+        getDelegateForUpdate();
+        updated.setLastModifiedTimestamp(timestamp);
+    }
+
     public Set<String> getWebOrigins() {
         if (isUpdated()) return updated.getWebOrigins();
         return cached.getWebOrigins();

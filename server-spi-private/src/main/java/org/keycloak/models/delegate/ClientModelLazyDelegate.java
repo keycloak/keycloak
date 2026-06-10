@@ -635,4 +635,24 @@ public class ClientModelLazyDelegate implements ClientModel {
         return getDelegate().getProtocolMapperByName(protocol, name);
     }
 
+    @Override
+    public Long getCreatedTimestamp() {
+        return getDelegate().getCreatedTimestamp();
+    }
+
+    @Override
+    public void setCreatedTimestamp(Long timestamp) {
+        getDelegate().setCreatedTimestamp(timestamp);
+    }
+
+    @Override
+    public Long getLastModifiedTimestamp() {
+        return getDelegate().getLastModifiedTimestamp();
+    }
+
+    @Override
+    public void setLastModifiedTimestamp(Long timestamp) {
+        getDelegate().setLastModifiedTimestamp(timestamp);
+    }
+
 }
