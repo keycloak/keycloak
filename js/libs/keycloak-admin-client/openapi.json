@@ -97,6 +97,10 @@
           }
         }
       },
+      "ClientField" : {
+        "type" : "string",
+        "enum" : [ "clientId", "displayName", "description", "protocol", "enabled", "appUrl" ]
+      },
       "Flow" : {
         "type" : "string",
         "enum" : [ "STANDARD", "IMPLICIT", "DIRECT_GRANT", "SERVICE_ACCOUNT", "TOKEN_EXCHANGE", "DEVICE", "CIBA" ]
@@ -214,6 +218,10 @@
       "SignatureAlgorithm" : {
         "type" : "string",
         "enum" : [ "RSA_SHA1", "RSA_SHA256", "RSA_SHA256_MGF1", "RSA_SHA512", "RSA_SHA512_MGF1", "DSA_SHA1" ]
+      },
+      "SortOrder" : {
+        "type" : "string",
+        "enum" : [ "asc", "desc" ]
       }
     },
     "securitySchemes" : {
@@ -237,15 +245,16 @@
         "tags" : [ "Clients (v2)" ],
         "parameters" : [ {
           "description" : "Set of fields to include in the response. Must be top-level fields. If omitted or empty, all fields will be populated.",
+          "explode" : false,
           "name" : "fields",
-          "in" : "query",
           "schema" : {
             "type" : "array",
-            "uniqueItems" : true,
             "items" : {
-              "type" : "string"
+              "$ref" : "#/components/schemas/ClientField"
             }
-          }
+          },
+          "style" : "form",
+          "in" : "query"
         }, {
           "description" : "Filter expression using SCIM-like syntax, e.g. clientId eq \"my-app\" and enabled eq true",
           "name" : "q",
@@ -253,6 +262,25 @@
           "schema" : {
             "type" : "string"
           }
+        }, {
+          "description" : "Field(s) to sort by, comma-separated for multi-field sort (e.g. displayName,clientId). Allowed values: clientId, displayName, description, protocol, enabled, appUrl. Defaults to clientId when omitted.",
+          "explode" : false,
+          "name" : "sortBy",
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ClientField"
+            }
+          },
+          "style" : "form",
+          "in" : "query"
+        }, {
+          "description" : "Sort direction. Allowed values: asc (default), desc.",
+          "schema" : {
+            "$ref" : "#/components/schemas/SortOrder"
+          },
+          "name" : "sortOrder",
+          "in" : "query"
         } ],
         "responses" : {
           "200" : {
@@ -267,6 +295,9 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "Invalid sort parameter"
           }
         }
       },

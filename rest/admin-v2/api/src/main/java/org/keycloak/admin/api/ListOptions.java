@@ -13,7 +13,8 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
 public class ListOptions {
 
-    @Parameter(description = "Field(s) to sort by, comma-separated for multi-field sort (e.g. displayName,clientId). Allowed values: clientId, displayName, description, protocol, enabled, appUrl. Defaults to clientId when omitted.",
+    @Parameter(name = "sortBy",
+               description = "Field(s) to sort by, comma-separated for multi-field sort (e.g. displayName,clientId). Allowed values: clientId, displayName, description, protocol, enabled, appUrl. Defaults to clientId when omitted.",
                style = ParameterStyle.FORM,
                explode = Explode.FALSE,
                schema = @Schema(type = SchemaType.ARRAY, implementation = ClientField.class))
@@ -24,7 +25,8 @@ public class ListOptions {
     @QueryParam("sortOrder")
     protected SortOrder sortOrder;
 
-    @Parameter(description = "Set of fields to include in the response. Must be top-level fields. If omitted or empty, all fields will be populated.",
+    @Parameter(name = "fields",
+               description = "Set of fields to include in the response. Must be top-level fields. If omitted or empty, all fields will be populated.",
                style = ParameterStyle.FORM,
                explode = Explode.FALSE,
                schema = @Schema(type = SchemaType.ARRAY, implementation = ClientField.class))
