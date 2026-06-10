@@ -38,6 +38,7 @@ import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.scim.services.Error.badRequest;
 import static org.keycloak.scim.services.Error.forbidden;
@@ -47,6 +48,7 @@ import static org.keycloak.scim.services.Error.toResponse;
 
 public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
 
+    private static final Logger logger = Logger.getLogger(ScimResourceTypeResource.class);
     private static final String APPLICATION_SCIM_JSON = "application/scim+json";
 
     private final KeycloakSession session;
@@ -74,6 +76,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         return onPersist(resource, Status.CREATED,
                 (rScimResourceTypeProvider, r) -> {
                     R created = resourceTypeProvider.create(r);
+                    logger.debugf("SCIM CREATE %s id=%s", resourceTypeProvider.getName(), created.getId());
                     adminEvent.operation(OperationType.CREATE)
                             .resourcePath(session.getContext().getUri(), created.getId())
                             .representation(created)
@@ -88,6 +91,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     public Response get(@PathParam("id") String id,
                         @QueryParam("attributes") String attributes,
                         @QueryParam("excludedAttributes") String excludedAttributes) {
+        logger.debugf("SCIM GET %s id=%s", resourceTypeProvider.getName(), id);
         List<String> attrList = attributes != null ? List.of(attributes.split(",")) : null;
         List<String> excludedList = excludedAttributes != null ? List.of(excludedAttributes.split(",")) : null;
 
@@ -126,6 +130,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     @Consumes({APPLICATION_SCIM_JSON, MediaType.APPLICATION_JSON})
     @Produces(APPLICATION_SCIM_JSON)
     public Response search(SearchRequest searchRequest) {
+        logger.debugf("SCIM SEARCH %s filter=%s", resourceTypeProvider.getName(), searchRequest.getFilter());
         try {
             Stream<R> stream = resourceTypeProvider.getAll(searchRequest)
                     .peek(this::setMetadata);
@@ -155,6 +160,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     @DELETE
     @Produces(APPLICATION_SCIM_JSON)
     public Response delete(@PathParam("id") String id) {
+        logger.debugf("SCIM DELETE %s id=%s", resourceTypeProvider.getName(), id);
         try {
             R resource = getResource(id);
 
@@ -181,6 +187,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     @Consumes({APPLICATION_SCIM_JSON, MediaType.APPLICATION_JSON})
     @Produces(APPLICATION_SCIM_JSON)
     public Response update(@PathParam("id") String id, InputStream is) {
+        logger.debugf("SCIM UPDATE %s id=%s", resourceTypeProvider.getName(), id);
         R existing = getResource(id);
 
         if (existing == null) {
@@ -209,6 +216,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     @Consumes({APPLICATION_SCIM_JSON, MediaType.APPLICATION_JSON})
     @Produces(APPLICATION_SCIM_JSON)
     public Response patch(@PathParam("id") String id, PatchRequest request) {
+        logger.debugf("SCIM PATCH %s id=%s", resourceTypeProvider.getName(), id);
         R existing = getResource(id);
 
         if (existing == null) {
