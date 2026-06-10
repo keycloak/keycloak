@@ -72,7 +72,7 @@ public class AccountVerifiableCredentialResource {
 
         List<UserVerifiableCredentialRepresentation> credentials = session.users()
                 .getVerifiableCredentialsByUser(user.getId())
-                .map(ModelToRepresentation::toRepresentation)
+                .map(model -> ModelToRepresentation.toRepresentation(model, realm))
                 .peek(rep -> rep.setUserAttributes(null))  // Do not expose attributes snapshot to users
                 .toList();
 
