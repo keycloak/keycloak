@@ -30,6 +30,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -291,20 +292,16 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
                     "invalid user hint", Response.Status.BAD_REQUEST);
         }
 
-        if (user == null)
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid user", Response.Status.BAD_REQUEST);
 
         BruteForceProtector protector = session.getProvider(BruteForceProtector.class);
-        if (protector != null) {
-            if (protector.isPermanentlyLockedOut(session, realm, user)) {
-                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "user permanently locked", Response.Status.BAD_REQUEST);
-            }
-            if (protector.isTemporarilyDisabled(session, realm, user)) {
-                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "user temporarily disabled", Response.Status.BAD_REQUEST);
-            }
+        boolean isInvalidUser = (user == null || !user.isEnabled());
+        if (!isInvalidUser && AuthenticatorUtils.getDisabledByBruteForceEventError(protector, session, realm, user) != null) {
+            isInvalidUser = true;
         }
-        if (!user.isEnabled())
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid user", Response.Status.BAD_REQUEST);
+
+        if (isInvalidUser) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_user", Response.Status.BAD_REQUEST);
+        }
 
         return user;
     }

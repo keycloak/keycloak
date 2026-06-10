@@ -2581,7 +2581,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
-            assertThat(response.getErrorDescription(), is("user temporarily disabled"));
+            assertThat(response.getErrorDescription(), is("invalid_user"));
 
             // Clear brute force lockout
             managedRealm.admin().attackDetection().clearBruteForceForUser(user.getId());
@@ -2665,7 +2665,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
-            assertThat(response.getErrorDescription(), is("user permanently locked"));
+            assertThat(response.getErrorDescription(), is("invalid_user"));
 
             // Clear brute force lockout and re-enable user (permanent lockout disables the account)
             managedRealm.admin().attackDetection().clearBruteForceForUser(user.getId());
