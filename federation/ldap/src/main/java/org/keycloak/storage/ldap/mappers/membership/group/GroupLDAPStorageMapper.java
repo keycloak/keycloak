@@ -361,7 +361,8 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             if (attrValues == null) {
                 kcGroup.removeAttribute(attrName);
             } else {
-                if (attrName.equalsIgnoreCase(ldapConfig.getUuidLDAPAttributeName())) {
+                if (config.isDecodeGroupUuidAttribute()
+                        && attrName.equalsIgnoreCase(ldapConfig.getUuidLDAPAttributeName())) {
                     attrValues = attrValues.stream()
                             .map(v -> LDAPUtil.decodeBase64ToUuid(v, ldapConfig))
                             .collect(Collectors.toCollection(java.util.LinkedHashSet::new));

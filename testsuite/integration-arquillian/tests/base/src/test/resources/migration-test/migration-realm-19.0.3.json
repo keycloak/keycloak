@@ -2981,24 +2981,7 @@
         "id": "307bba27-f8da-4c4d-a1b9-3c1bf49f824e",
         "name": "ldap",
         "providerId": "ldap",
-        "subComponents": {
-          "org.keycloak.storage.ldap.mappers.LDAPStorageMapper": [
-            {
-              "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-              "name": "objectGUID",
-              "providerId": "user-attribute-ldap-mapper",
-              "subComponents": {},
-              "config": {
-                "ldap.attribute": [ "objectGUID" ],
-                "is.binary.attribute": [ "true" ],
-                "always.read.value.from.ldap": [ "true" ],
-                "user.model.attribute": [ "objectGUID" ],
-                "read.only": [ "true" ],
-                "is.mandatory.in.ldap": [ "false" ]
-              }
-            }
-          ]
-        },
+        "subComponents": {},
         "config": {
           "pagination": [ "false" ],
           "fullSyncPeriod": [ "-1" ],

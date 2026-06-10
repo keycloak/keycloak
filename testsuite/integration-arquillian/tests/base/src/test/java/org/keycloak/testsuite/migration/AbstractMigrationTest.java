@@ -468,11 +468,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testSamlEncryptionAttributes(migrationRealm);
     }
 
-    protected void testMigrationTo26_7_0(boolean testLdapBinaryAttributeDecoderMigration) {
+    protected void testMigrationTo26_7_0() {
         testParameterizedScopeTypesMigration(migrationRealm);
-        if (testLdapBinaryAttributeDecoderMigration) {
-            testLdapBinaryAttributeDecoderMigration(migrationRealm2);
-        }
+        testLdapBinaryAttributeDecoderMigration(migrationRealm2);
+        testLdapGroupAttributeDecoderMigration(migrationRealm2);
     }
 
     private void testParameterizedScopeTypesMigration(RealmResource realm) {
@@ -1377,6 +1376,22 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                 .orElse(null);
         assertNotNull(binaryMapper, "Binary attribute mapper not found");
         assertThat(binaryMapper.getConfig().getFirst("binary.attribute.decoder"), equalTo("base64"));
+    }
+
+    private void testLdapGroupAttributeDecoderMigration(final RealmResource realm) {
+        RealmRepresentation rep = realm.toRepresentation();
+        List<ComponentRepresentation> ldapProviders = realm.components().query(rep.getId(), UserStorageProvider.class.getName());
+        assertThat(ldapProviders.size(), equalTo(1));
+        String ldapProviderId = ldapProviders.get(0).getId();
+
+        List<ComponentRepresentation> mappers = realm.components().query(ldapProviderId,
+                "org.keycloak.storage.ldap.mappers.LDAPStorageMapper");
+        ComponentRepresentation groupMapper = mappers.stream()
+                .filter(c -> "group-ldap-mapper".equals(c.getProviderId()))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(groupMapper, "Group mapper not found");
+        assertThat(groupMapper.getConfig().getFirst("decode.group.uuid.attribute"), equalTo("false"));
     }
 
     private void testHS512KeyCreated(RealmResource realm) {

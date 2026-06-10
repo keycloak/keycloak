@@ -5355,7 +5355,41 @@
       "id" : "307bba27-f8da-4c4d-a1b9-3c1bf49f824e",
       "name" : "ldap",
       "providerId" : "ldap",
-      "subComponents" : { },
+      "subComponents" : {
+        "org.keycloak.storage.ldap.mappers.LDAPStorageMapper" : [ {
+          "id" : "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "name" : "objectGUID",
+          "providerId" : "user-attribute-ldap-mapper",
+          "subComponents" : { },
+          "config" : {
+            "ldap.attribute" : [ "objectGUID" ],
+            "is.binary.attribute" : [ "true" ],
+            "always.read.value.from.ldap" : [ "true" ],
+            "user.model.attribute" : [ "objectGUID" ],
+            "read.only" : [ "true" ],
+            "is.mandatory.in.ldap" : [ "false" ]
+          }
+        }, {
+          "id" : "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+          "name" : "groups",
+          "providerId" : "group-ldap-mapper",
+          "subComponents" : { },
+          "config" : {
+            "groups.dn" : [ "ou=Groups,dc=keycloak,dc=org" ],
+            "group.name.ldap.attribute" : [ "cn" ],
+            "group.object.classes" : [ "groupOfNames" ],
+            "preserve.group.inheritance" : [ "true" ],
+            "ignore.missing.groups" : [ "false" ],
+            "mapped.group.attributes" : [ "objectGUID" ],
+            "membership.ldap.attribute" : [ "member" ],
+            "membership.attribute.type" : [ "DN" ],
+            "membership.user.ldap.attribute" : [ "uid" ],
+            "mode" : [ "LDAP_ONLY" ],
+            "user.roles.retrieve.strategy" : [ "LOAD_GROUPS_BY_MEMBER_ATTRIBUTE" ],
+            "drop.non.existing.groups.during.sync" : [ "false" ]
+          }
+        } ]
+      },
       "config" : {
         "fullSyncPeriod" : [ "-1" ],
         "pagination" : [ "false" ],
