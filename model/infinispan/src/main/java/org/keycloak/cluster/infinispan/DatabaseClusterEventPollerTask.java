@@ -19,6 +19,7 @@ package org.keycloak.cluster.infinispan;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.cluster.ClusterEventStoreProvider;
@@ -52,6 +53,8 @@ public class DatabaseClusterEventPollerTask implements ScheduledTask {
     private long staleEventHorizon;
 
     public DatabaseClusterEventPollerTask(String clusterName, ProtoStreamMarshaller marshaller) {
+        Objects.requireNonNull(clusterName);
+        Objects.requireNonNull(marshaller);
         this.clusterName = clusterName;
         this.marshaller = marshaller;
     }

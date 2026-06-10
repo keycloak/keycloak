@@ -19,6 +19,7 @@ package org.keycloak.cluster.infinispan;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
@@ -78,14 +79,14 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
     public void notify(String taskKey, ClusterEvent event, boolean ignoreSender, DCNotify dcNotify) {
         delegate.notify(taskKey, event, ignoreSender, dcNotify);
         if (dcNotify != DCNotify.LOCAL_DC_ONLY) {
-            persistToDatabase(taskKey, java.util.Collections.singleton(event), ignoreSender, dcNotify);
+            persistToDatabase(taskKey, Collections.singleton(event), ignoreSender, dcNotify);
         }
     }
 
     @Override
     public void notify(String taskKey, ClusterEvent event, boolean ignoreSender) {
         delegate.notify(taskKey, event, ignoreSender);
-        persistToDatabase(taskKey, java.util.Collections.singleton(event), ignoreSender, DCNotify.ALL_DCS);
+        persistToDatabase(taskKey, Collections.singleton(event), ignoreSender, DCNotify.ALL_DCS);
     }
 
     @Override

@@ -38,9 +38,9 @@ import org.infinispan.commons.marshall.ProtoStreamMarshaller;
 import org.jboss.logging.Logger;
 
 /**
- * This implementation is aware of Cross-Data-Center scenario too,
+ * This implementation sends information to other clusters via a database table.
  *
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @author Alexander Schwartz
  */
 public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProviderFactory {
 
@@ -48,7 +48,6 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
 
     private static final long DEFAULT_POLL_INTERVAL_MS = 2000;
 
-    private volatile InfinispanClusterProvider clusterProvider;
     private volatile NodeInfo nodeInfo;
     private volatile ProtoStreamMarshaller protoStreamMarshaller;
 
@@ -72,6 +71,12 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
     @Override
     public void init(Config.Scope config) {
         pollIntervalMs = config.getLong("pollInterval", DEFAULT_POLL_INTERVAL_MS);
+        if (pollIntervalMs <= 0) {
+            throw new IllegalArgumentException("pollInterval must be a positive number");
+        }
+        if (pollIntervalMs > 60000) {
+            logger.warnf("Polling interval is %d milliseconds. This is longer than 60 seconds, which seems to be too high for a production setting. Please verify.", pollIntervalMs);
+        }
     }
 
     @Override
@@ -79,17 +84,13 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
         KeycloakModelUtils.runJobInTransaction(factory, session -> {
             InfinispanConnectionProvider ispnConnections = session.getProvider(InfinispanConnectionProvider.class);
             nodeInfo = ispnConnections.getNodeInfo();
-            if (nodeInfo.clusterName() == null) {
-                logger.warn("No cluster name configured, cross-site event polling disabled");
-                return;
-            }
 
+            this.protoStreamMarshaller = createMarshaller();
             var pollerTask = new DatabaseClusterEventPollerTask(nodeInfo.clusterName(), protoStreamMarshaller);
             var runner = new ScheduledTaskRunner(factory, pollerTask);
             TimerProvider timer = session.getProvider(TimerProvider.class);
             timer.schedule(runner, pollIntervalMs, pollIntervalMs, "cluster-event-poller");
             logger.infof("Scheduled cluster event poller with interval %d ms for cluster '%s'", pollIntervalMs, nodeInfo.clusterName());
-            this.protoStreamMarshaller = createMarshaller();
         });
     }
 
