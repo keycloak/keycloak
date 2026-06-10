@@ -32,7 +32,9 @@ import org.keycloak.models.AccountRoles;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.cors.Cors;
@@ -72,7 +74,14 @@ public class AccountVerifiableCredentialResource {
 
         List<UserVerifiableCredentialRepresentation> credentials = session.users()
                 .getVerifiableCredentialsByUser(user.getId())
-                .map(model -> ModelToRepresentation.toRepresentation(model, realm))
+                .map(model -> {
+                    UserVerifiableCredentialRepresentation userVerifiableCredentialRepresentation = ModelToRepresentation.toRepresentation(model);
+                    CredentialScopeModel credScope = CredentialScopeUtils.findCredentialScopeModelByName(realm, realm::getClientScopesStream, model.getCredentialScopeName());
+                    if(credScope != null){
+                         userVerifiableCredentialRepresentation.setCredentialConfigurationId(credScope.getCredentialConfigurationId());
+                    }
+                    return userVerifiableCredentialRepresentation;
+                })
                 .peek(rep -> rep.setUserAttributes(null))  // Do not expose attributes snapshot to users
                 .toList();
 

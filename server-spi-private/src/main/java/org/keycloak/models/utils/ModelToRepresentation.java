@@ -91,7 +91,6 @@ import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.light.LightweightUserAdapter;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.account.LocalizedMessage;
@@ -1064,20 +1063,6 @@ public class ModelToRepresentation {
         rep.setRevision(model.getRevision());
         rep.setCreatedDate(model.getCreatedDate());
         rep.setUserAttributes(model.getUserAttributes());
-        return rep;
-    }
-
-    public static UserVerifiableCredentialRepresentation toRepresentation(UserVerifiableCredentialModel model, RealmModel realm) {
-        UserVerifiableCredentialRepresentation rep = toRepresentation(model);
-        ClientScopeModel clientScopeModel =  realm.getClientScopesStream()
-                                                  .filter(scope -> scope.getName().equals(model.getCredentialScopeName()))
-                                                  .findFirst()
-                                                  .orElse(null);
-        if(clientScopeModel != null) {
-            CredentialScopeModel credentialScopeModel = new CredentialScopeModel(clientScopeModel);
-            String credentialConfigurationId =  credentialScopeModel.getCredentialConfigurationId();
-            rep.setCredentialConfigurationId(credentialConfigurationId);
-        }
         return rep;
     }
 
