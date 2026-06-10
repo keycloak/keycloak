@@ -11,6 +11,7 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBody;
@@ -65,7 +66,7 @@ public class LDCredentialSignerTest extends OID4VCIssuerTestBase {
                         CredentialSignerException.class,
                         () -> new LDCredentialSigner(session, new StaticTimeProvider(1000))
                                 .signCredential(
-                                        new JwtCredentialBody(new JWSBuilder().jsonContent(Map.of())),
+                                        new JwtCredentialBody(new JWSBuilder(), new JsonWebToken()),
                                         new CredentialBuildConfig()
                                 )
                 )
