@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.admin.api.ClientSortField;
+import org.keycloak.admin.api.ClientField;
 import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.SortOrder;
 import org.keycloak.models.RealmModel;
@@ -34,6 +34,12 @@ public interface ClientService extends Service {
                 this.fields.addAll(fields);
             }
         }
+
+        public ClientProjectionOptions(String fields) {
+            if (fields != null && !fields.isBlank()) {
+                 this.fields.addAll(Arrays.stream(fields.split(",")).map(String::trim).collect(Collectors.toSet()));
+            }
+        }
         
         public Set<String> getFields() {
             return Collections.unmodifiableSet(fields);
@@ -41,23 +47,23 @@ public interface ClientService extends Service {
     }
 
     class ClientSortAndSliceOptions {
-        private final List<ClientSortField> sortFields;
+        private final List<ClientField> sortFields;
         private final boolean ascending;
 
-        private ClientSortAndSliceOptions(List<ClientSortField> sortFields, boolean ascending) {
+        private ClientSortAndSliceOptions(List<ClientField> sortFields, boolean ascending) {
             this.sortFields = List.copyOf(sortFields);
             this.ascending = ascending;
         }
 
         public static ClientSortAndSliceOptions fromQuery(ListOptions listOptions) {
-            List<ClientSortField> fields = listOptions.getSortBy() == null || listOptions.getSortBy().isEmpty()
-                    ? List.of(ClientSortField.defaultField())
+            List<ClientField> fields = listOptions.getSortBy() == null || listOptions.getSortBy().isEmpty()
+                    ? List.of(ClientField.defaultField())
                     : parseSortBy(listOptions.getSortBy());
             return new ClientSortAndSliceOptions(fields, resolveSortOrder(listOptions.getSortOrder()));
         }
 
-        private static List<ClientSortField> parseSortBy(String sortBy) {
-            List<ClientSortField> fields = Arrays.stream(sortBy.split(","))
+        private static List<ClientField> parseSortBy(String sortBy) {
+            List<ClientField> fields = Arrays.stream(sortBy.split(","))
                     .map(String::trim)
                     .filter(field -> !field.isEmpty())
                     .map(ClientSortAndSliceOptions::parseSortField)
@@ -68,11 +74,11 @@ public interface ClientService extends Service {
             return fields;
         }
 
-        private static ClientSortField parseSortField(String field) {
-            ClientSortField.validateApiName(field).ifPresent(msg -> {
+        private static ClientField parseSortField(String field) {
+            ClientField.validateApiName(field).ifPresent(msg -> {
                 throw new ServiceException(msg, Response.Status.BAD_REQUEST);
             });
-            return ClientSortField.fromApiName(field).orElseThrow();
+            return ClientField.fromApiName(field).orElseThrow();
         }
 
         private static boolean resolveSortOrder(SortOrder sortOrder) {

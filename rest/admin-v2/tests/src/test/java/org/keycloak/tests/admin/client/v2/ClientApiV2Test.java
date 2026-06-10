@@ -30,7 +30,7 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
-import org.keycloak.admin.api.ClientSortField;
+import org.keycloak.admin.api.ClientField;
 import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.admin.api.SortOrder;
@@ -350,8 +350,10 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         assertThat(samlClient.getForcePostBinding(), is(true));
         assertThat(samlClient.getFrontChannelLogout(), is(false));
         
+        var listOptions = new ListOptions();
+        listOptions.setFields(List.of(ClientField.CLIENT_ID, ClientField.PROTOCOL));
         // test projecting only id and protocol
-        try (Stream<BaseClientRepresentation> baseClientRepresentationStream = getClientsApi().getClients(new ListOptions().fields(Set.of("clientId", "protocol")))) {
+        try (Stream<BaseClientRepresentation> baseClientRepresentationStream = getClientsApi().getClients(listOptions)) {
             List<BaseClientRepresentation> clients = baseClientRepresentationStream.toList();
             for (BaseClientRepresentation client : clients) {
                 BaseClientRepresentation toCompare = null;
@@ -368,7 +370,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     
     @Test
     public void invalidFieldProjection() {
-        BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(new ListOptions().fields(Set.of("unknown!"))));
+        var listOptions = new ListOptions();
+        listOptions.setFields("unknown!");
+        BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(listOptions));
         assertEquals("{\"error\":\"unknown! is an unknown field\"}", e.getResponse().readEntity(String.class));
     }
 
@@ -379,8 +383,8 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         createSortTestClient("sort-c", "A", "gamma");
 
         ListOptions listOptions = new ListOptions();
-        listOptions.setFields(Set.of("clientId", "displayName"));
-        listOptions.setSortBy(List.of(ClientSortField.DISPLAY_NAME, ClientSortField.CLIENT_ID));
+        listOptions.setFields(List.of(ClientField.CLIENT_ID, ClientField.DISPLAY_NAME));
+        listOptions.setSortBy(List.of(ClientField.DISPLAY_NAME, ClientField.CLIENT_ID));
 
         try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
             List<String> sortTestClientIds = clients
@@ -398,8 +402,8 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         createSortTestClient("sort-c", "A", "gamma");
 
         ListOptions listOptions = new ListOptions();
-        listOptions.setFields(Set.of("clientId", "displayName"));
-        listOptions.setSortBy(List.of(ClientSortField.DISPLAY_NAME, ClientSortField.CLIENT_ID));
+        listOptions.setFields(List.of(ClientField.CLIENT_ID, ClientField.DISPLAY_NAME));
+        listOptions.setSortBy(List.of(ClientField.DISPLAY_NAME, ClientField.CLIENT_ID));
         listOptions.setSortOrder(SortOrder.DESC);
 
         try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {

@@ -10,11 +10,11 @@ import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
- * Sortable fields for Client Admin API v2 list queries ({@code sortBy} / {@code sortOrder}).
+ * Sortable and selectable fields for Client Admin API v2 list queries ({@code sortBy} / {@code sortOrder} / {@code fields}).
  * API names map to scalar {@code CLIENT} table columns.
  */
 @Schema(enumeration = {"clientId", "displayName", "description", "protocol", "enabled", "appUrl"})
-public enum ClientSortField {
+public enum ClientField {
     CLIENT_ID("clientId", stringKey(BaseClientRepresentation::getClientId)),
     DISPLAY_NAME("displayName", stringKey(BaseClientRepresentation::getDisplayName)),
     DESCRIPTION("description", stringKey(BaseClientRepresentation::getDescription)),
@@ -25,7 +25,7 @@ public enum ClientSortField {
     private final String apiName;
     private final Comparator<BaseClientRepresentation> comparator;
 
-    ClientSortField(String apiName, Comparator<BaseClientRepresentation> comparator) {
+    ClientField(String apiName, Comparator<BaseClientRepresentation> comparator) {
         this.apiName = apiName;
         this.comparator = comparator;
     }
@@ -42,11 +42,11 @@ public enum ClientSortField {
         return ascending ? comparator : comparator.reversed();
     }
 
-    public static ClientSortField defaultField() {
+    public static ClientField defaultField() {
         return CLIENT_ID;
     }
 
-    public static Optional<ClientSortField> fromApiName(String apiName) {
+    public static Optional<ClientField> fromApiName(String apiName) {
         return Stream.of(values()).filter(field -> field.apiName.equals(apiName)).findFirst();
     }
 

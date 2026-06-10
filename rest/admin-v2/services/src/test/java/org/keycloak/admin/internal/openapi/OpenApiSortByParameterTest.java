@@ -48,7 +48,7 @@ class OpenApiSortByParameterTest {
         assertNotNull(sortByParam, "sortBy parameter must exist in the spec");
         assertEquals("array", sortByParam.at("/schema/type").asText(),
                 "sortBy schema type must be 'array' to support multi-field sort");
-        assertEquals("#/components/schemas/ClientSortField", sortByParam.at("/schema/items/$ref").asText(),
-                "sortBy array items must reference ClientSortField");
+        assertEquals("#/components/schemas/ClientField", sortByParam.at("/schema/items/$ref").asText(),
+                "sortBy array items must reference ClientField");
     }
 }
