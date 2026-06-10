@@ -31,11 +31,48 @@ Additionally, some methods where updated for consistency across the builders:
 The alias of an Identity Provider can no longer be changed after creation via the Admin REST API. Attempts to update the alias will result in a `400 Bad Request` error.
 Previously, although the admin console UI already treated the alias as read-only, the REST API still allowed alias changes.
 
+=== User profile metadata no longer returned on user search
+
+When searching for users using the Admin REST API, the user profile metadata is no longer included for each user in the search results.
+
+This change was made to improve performance of user search operations, as fetching user profile metadata for each user can be resource-intensive.
+The user profile metadata can still be retrieved when fetching a specific user by their identifier.
+
+=== X509 client authentication requires CA Subject DN
+
+Since this release, the X509 client authentication, that allows a client authenticate presenting a certificate in the mutual TLS (mTLS) handshake, requires to configure a new option called **Certificate Authority subject DN** to identify the trusted anchor CA for the client certificate. As the {project_name}'s trust-store (or mTLS store) is shared for all the realms, the new option allows to identify the correct CA of the certificate and avoids interferences with other unrelated CAs.
+
+The new option is compulsory in the administration console when configuring X509 credentials for the client. For the moment, previous configurations without the CA subject DN still work to maintain backwards compatibility. In the next major version, the validation will be present at the server side, making any update, creation or import invalid if the new configuration option is not present. Please, if you use the X509 authenticator for clients ensure you add this new attribute to avoid issues in the future.
+
+Besides, the option **Allow regex pattern comparison** is deprecated. This option allows to configure a regexp instead of the exact DN of the client certificate. It is now deprecated and it will be removed in a future version. The certificate for the client should be unambiguously identified.
+
+For the link:https://www.keycloak.org/securing-apps/client-registration[client registration service], there is a new link:{adminguide_link}#_client_policies[client policy executor] named `tls-client-auth-ca-subject-dn` which can be used to assign a default CA subject DN. The executor can also enforce the configured CA DN to reject unwanted CAs.
+
+In general, all this new configuration requires {project_name} to always revalidate the trusted anchors for the client certificate. This feature can be problematic in certain configurations (for example if a proxy is configured as a TLS termination and the certificates are passed to {project_name} using headers). The trust-store or mTLS store in {project_name} should always be configured correctly to validate the client certificate chain. Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] and link:https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS], for more information if you are using a TLS termination proxy and X509 client authentication.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
+
+=== Dynamic Scopes feature renamed to Parameterized Scopes
+
+The experimental feature `dynamic-scopes` has been renamed to `parameterized-scopes`. If you enabled this feature using `--features=dynamic-scopes`, update your configuration to use `--features=parameterized-scopes`.
+
+The corresponding Java model methods in `ClientScopeModel` (`isDynamicScope()`, `setIsDynamicScope()`, `getDynamicScopeRegexp()`) and constants (`IS_DYNAMIC_SCOPE`, `DYNAMIC_SCOPE_REGEXP`) have been deprecated in favor of their `parameterized` counterparts. The deprecated methods and constants will be removed in a future major release. The underlying database attribute names (`is.dynamic.scope`, `dynamic.scope.regexp`) are automatically migrated to `is.parameterized.scope` and `parameterized.scope.regexp` during upgrade.
+
+=== Parameterized scopes now require a parameter type
+
+When the `parameterized-scopes` feature is enabled, creating or updating a parameterized scope via the Admin REST API now requires a `parameterized.scope.type` attribute. Available types are `string`, `integer`, `boolean`, `username`, and `custom`. The `custom` type additionally requires a `parameterized.scope.regexp` attribute with a valid regular expression. Requests using the old regexp-only format (without a type) are rejected.
+
+During upgrade, existing parameterized scopes are automatically migrated to preserve their current behavior:
+
+* Scopes with the default `<scope-name>:*` regexp are set to the `string` type and the regexp is removed.
+* Scopes with a custom regexp are set to the `custom` type and the scope name prefix is stripped from the regexp.
+* Scopes with no regexp are set to the `string` type.
+
+No manual action is required — the migration ensures existing scopes continue to work as before.
 
 === Verify email required before credentials setup during user self-registration
 
@@ -119,6 +156,20 @@ See the link:{client_certificate_lookup_link}[Reverse Proxy guide] for more deta
 === Async Custom REST Endpoints should not be used
 
 Async custom REST endpoints using `AsyncResponse` or returning an async type such as `CompletableFuture` or `CompletionState` should not be used. If you are using them, be aware that the `KeycloakSession` used to initial the request will be immediately closed - it will not remain open for the entire lifespan of the request - and that you are fully responsible for transaction management in the async work.
+
+=== Validation of client_session_host parameter
+The `client_session_host` parameter is now validated against the client's registered nodes and management URL.
+This parameter is sent by clients during token refresh and is used when the `${application.session.host}` placeholder is present in a client's backchannel logout URL configuration.
+It was primarily used by legacy adapters that have been removed.
+This improves security by ensuring that only trusted, pre-registered hosts can be used in backchannel logout URLs.
+
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== Option Allow regex pattern comparison is deprecated for the X509 client authenticator
+
+The option **Allow regex pattern comparison** is deprecated for the X509 client authenticator. This option allows to configure a Java regular expression instead of the exact DN for the client certificate subject DN. As previously commented in the breaking changes section, this option is now deprecated and it will be removed in a future version. The certificate for the client should be unambiguously identified because of security reasons.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

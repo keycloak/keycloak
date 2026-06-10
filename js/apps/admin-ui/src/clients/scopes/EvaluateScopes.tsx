@@ -119,17 +119,31 @@ const EffectiveRoles = ({
 export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   const { adminClient } = useAdminClient();
 
-  const prefix = "openid";
+  const openidPrefix = "openid";
   const { t } = useTranslation();
   const { enabled } = useHelp();
   const { realm } = useRealm();
   const mapperTypes = useServerInfo().protocolMapperTypes![protocol];
 
+  const supportsScopeSelection = (proto: string) => {
+    return proto !== "saml";
+  };
+
+  const isOpenIdConnectProtocol = () => {
+    return protocol === "openid-connect";
+  };
+
+  const isSamlProtocol = () => {
+    return protocol === "saml";
+  };
+
   const [selectableScopes, setSelectableScopes] = useState<
     ClientScopeRepresentation[]
   >([]);
   const [isScopeOpen, setIsScopeOpen] = useState(false);
-  const [selected, setSelected] = useState<string[]>([prefix]);
+  const [selected, setSelected] = useState<string[]>(
+    isOpenIdConnectProtocol() ? [openidPrefix] : [],
+  );
   const [activeTab, setActiveTab] = useState(0);
 
   const [key, setKey] = useState("");
@@ -143,12 +157,14 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   const [accessToken, setAccessToken] = useState("");
   const [userInfo, setUserInfo] = useState("");
   const [idToken, setIdToken] = useState("");
+  const [samlResponse, setSamlResponse] = useState("");
 
   const tabContent1 = useRef(null);
   const tabContent2 = useRef(null);
   const tabContent3 = useRef(null);
   const tabContent4 = useRef(null);
   const tabContent5 = useRef(null);
+  const tabContent6 = useRef(null);
 
   const form = useForm();
   const { watch } = form;
@@ -208,29 +224,50 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
       }
       const audience = selectedAudience.join(" ");
 
-      return await Promise.all([
-        adminClient.clients.evaluateGenerateAccessToken({
-          id: clientId,
-          userId: user[0],
-          scope,
-          audience,
-        }),
-        adminClient.clients.evaluateGenerateUserInfo({
-          id: clientId,
-          userId: user[0],
-          scope,
-        }),
-        adminClient.clients.evaluateGenerateIdToken({
-          id: clientId,
-          userId: user[0],
-          scope,
-        }),
-      ]);
+      if (isOpenIdConnectProtocol()) {
+        return await Promise.all([
+          adminClient.clients.evaluateGenerateAccessToken({
+            id: clientId,
+            userId: user[0],
+            scope,
+            audience,
+          }),
+          adminClient.clients.evaluateGenerateUserInfo({
+            id: clientId,
+            userId: user[0],
+            scope,
+          }),
+          adminClient.clients.evaluateGenerateIdToken({
+            id: clientId,
+            userId: user[0],
+            scope,
+          }),
+        ]);
+      }
+
+      if (isSamlProtocol()) {
+        return await Promise.all([
+          adminClient.clients.evaluateGenerateSamlResponse({
+            id: clientId,
+            userId: user[0],
+            scope,
+          }),
+        ]);
+      }
+
+      return await Promise.all([]);
     },
-    ([accessToken, userInfo, idToken]) => {
-      setAccessToken(prettyPrintJSON(accessToken));
-      setUserInfo(prettyPrintJSON(userInfo));
-      setIdToken(prettyPrintJSON(idToken));
+    (responses) => {
+      if (isOpenIdConnectProtocol()) {
+        const [generatedAccessToken, generatedUserInfo, generatedIdToken] =
+          responses;
+        setAccessToken(prettyPrintJSON(generatedAccessToken));
+        setUserInfo(prettyPrintJSON(generatedUserInfo));
+        setIdToken(prettyPrintJSON(generatedIdToken));
+      } else if (isSamlProtocol()) {
+        const [generatedSamlResponse] = responses;
+        setSamlResponse(generatedSamlResponse as any);
+      }
     },
     [form.getValues("user"), selected, selectedAudience],
   );
@@ -246,52 +283,56 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
           </TextContent>
         )}
         <Form isHorizontal>
-          <FormGroup
-            label={t("scopeParameter")}
-            fieldId="scopeParameter"
-            labelIcon={
-              <HelpItem
-                helpText={t("scopeParameterHelp")}
-                fieldLabelId="scopeParameter"
-              />
-            }
-          >
-            <Split hasGutter>
-              <SplitItem isFilled>
-                <KeycloakSelect
-                  toggleId="scopeParameter"
-                  variant={SelectVariant.typeaheadMulti}
-                  typeAheadAriaLabel={t("scopeParameter")}
-                  onToggle={() => setIsScopeOpen(!isScopeOpen)}
-                  isOpen={isScopeOpen}
-                  selections={selected}
-                  onSelect={(value) => {
-                    const option = value as string;
-                    if (selected.includes(option)) {
-                      if (option !== prefix) {
-                        setSelected(selected.filter((item) => item !== option));
+          {supportsScopeSelection(protocol) && (
+            <FormGroup
+              label={t("scopeParameter")}
+              fieldId="scopeParameter"
+              labelIcon={
+                <HelpItem
+                  helpText={t("scopeParameterHelp")}
+                  fieldLabelId="scopeParameter"
+                />
+              }
+            >
+              <Split hasGutter>
+                <SplitItem isFilled>
+                  <KeycloakSelect
+                    toggleId="scopeParameter"
+                    variant={SelectVariant.typeaheadMulti}
+                    typeAheadAriaLabel={t("scopeParameter")}
+                    onToggle={() => setIsScopeOpen(!isScopeOpen)}
+                    isOpen={isScopeOpen}
+                    selections={selected}
+                    onSelect={(value) => {
+                      const option = value as string;
+                      if (selected.includes(option)) {
+                        if (option !== openidPrefix) {
+                          setSelected(
+                            selected.filter((item) => item !== option),
+                          );
+                        }
+                      } else {
+                        setSelected([...selected, option]);
                       }
-                    } else {
-                      setSelected([...selected, option]);
-                    }
-                  }}
-                  aria-labelledby={t("scopeParameter")}
-                  placeholderText={t("scopeParameterPlaceholder")}
-                >
-                  {selectableScopes.map((option, index) => (
-                    <SelectOption key={index} value={option.name}>
-                      {option.name}
-                    </SelectOption>
-                  ))}
-                </KeycloakSelect>
-              </SplitItem>
-              <SplitItem>
-                <ClipboardCopy className="keycloak__scopes_evaluate__clipboard-copy">
-                  {selected.join(" ")}
-                </ClipboardCopy>
-              </SplitItem>
-            </Split>
-          </FormGroup>
+                    }}
+                    aria-labelledby={t("scopeParameter")}
+                    placeholderText={t("scopeParameterPlaceholder")}
+                  >
+                    {selectableScopes.map((option, index) => (
+                      <SelectOption key={index} value={option.name}>
+                        {option.name}
+                      </SelectOption>
+                    ))}
+                  </KeycloakSelect>
+                </SplitItem>
+                <SplitItem>
+                  <ClipboardCopy className="keycloak__scopes_evaluate__clipboard-copy">
+                    {selected.join(" ")}
+                  </ClipboardCopy>
+                </SplitItem>
+              </Split>
+            </FormGroup>
+          )}
           {hasViewUsers && (
             <FormProvider {...form}>
               <UserSelect
@@ -336,46 +377,69 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
           >
             <EffectiveRoles effectiveRoles={effectiveRoles} />
           </TabContent>
-          <TabContent
-            aria-labelledby={t("generatedAccessToken")}
-            eventKey={2}
-            id="tab-generated-access-token"
-            ref={tabContent3}
-            hidden
-          >
-            <GeneratedCodeTab
-              text={accessToken}
-              user={form.getValues("user")}
-              label="generatedAccessToken"
-            />
-          </TabContent>
-          <TabContent
-            aria-labelledby={t("generatedIdToken")}
-            eventKey={3}
-            id="tab-generated-id-token"
-            ref={tabContent4}
-            hidden
-          >
-            <GeneratedCodeTab
-              text={idToken}
-              user={form.getValues("user")}
-              label="generatedIdToken"
-            />
-          </TabContent>
-          <TabContent
-            aria-labelledby={t("generatedUserInfo")}
-            eventKey={4}
-            id="tab-generated-user-info"
-            ref={tabContent5}
-            hidden
-          >
-            <GeneratedCodeTab
-              text={userInfo}
-              user={form.getValues("user")}
-              label="generatedUserInfo"
-            />
-          </TabContent>
+          {isOpenIdConnectProtocol() && (
+            <TabContent
+              aria-labelledby={t("generatedAccessToken")}
+              eventKey={2}
+              id="tab-generated-access-token"
+              ref={tabContent3}
+              hidden
+            >
+              <GeneratedCodeTab
+                text={accessToken}
+                user={form.getValues("user")}
+                label="generatedAccessToken"
+              />
+            </TabContent>
+          )}
+          {isOpenIdConnectProtocol() && (
+            <TabContent
+              aria-labelledby={t("generatedIdToken")}
+              eventKey={3}
+              id="tab-generated-id-token"
+              ref={tabContent4}
+              hidden
+            >
+              <GeneratedCodeTab
+                text={idToken}
+                user={form.getValues("user")}
+                label="generatedIdToken"
+              />
+            </TabContent>
+          )}
+          {isOpenIdConnectProtocol() && (
+            <TabContent
+              aria-labelledby={t("generatedUserInfo")}
+              eventKey={4}
+              id="tab-generated-user-info"
+              ref={tabContent5}
+              hidden
+            >
+              <GeneratedCodeTab
+                text={userInfo}
+                user={form.getValues("user")}
+                label="generatedUserInfo"
+              />
+            </TabContent>
+          )}
+
+          {isSamlProtocol() && (
+            <TabContent
+              aria-labelledby={t("generatedSamlResponse")}
+              eventKey={5}
+              id="tab-generated-saml-response"
+              ref={tabContent6}
+              hidden
+            >
+              <GeneratedCodeTab
+                text={samlResponse}
+                user={form.getValues("user")}
+                label="generatedSamlResponse"
+              />
+            </TabContent>
+          )}
         </GridItem>
+
         <GridItem span={4}>
           <Tabs
             id="tabs"
@@ -420,60 +484,86 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               }
               tabContentRef={tabContent2}
             ></Tab>
-            <Tab
-              id="generatedAccessToken"
-              aria-controls="generatedAccessToken"
-              data-testid="generated-access-token-tab"
-              eventKey={2}
-              title={
-                <TabTitleText>
-                  {t("generatedAccessToken")}{" "}
-                  <HelpItem
-                    fieldLabelId="generatedAccessToken"
-                    helpText={t("generatedAccessTokenHelp")}
-                    noVerticalAlign={false}
-                    unWrap
-                  />
-                </TabTitleText>
-              }
-              tabContentRef={tabContent3}
-            />
-            <Tab
-              id="generatedIdToken"
-              aria-controls="generatedIdToken"
-              data-testid="generated-id-token-tab"
-              eventKey={3}
-              title={
-                <TabTitleText>
-                  {t("generatedIdToken")}{" "}
-                  <HelpItem
-                    fieldLabelId="generatedIdToken"
-                    helpText={t("generatedIdTokenHelp")}
-                    noVerticalAlign={false}
-                    unWrap
-                  />
-                </TabTitleText>
-              }
-              tabContentRef={tabContent4}
-            />
-            <Tab
-              id="generatedUserInfo"
-              aria-controls="generatedUserInfo"
-              data-testid="generated-user-info-tab"
-              eventKey={4}
-              title={
-                <TabTitleText>
-                  {t("generatedUserInfo")}{" "}
-                  <HelpItem
-                    fieldLabelId="generatedUserInfo"
-                    helpText={t("generatedUserInfoHelp")}
-                    noVerticalAlign={false}
-                    unWrap
-                  />
-                </TabTitleText>
-              }
-              tabContentRef={tabContent5}
-            />
+            {isOpenIdConnectProtocol() && (
+              <Tab
+                id="generatedAccessToken"
+                aria-controls="generatedAccessToken"
+                data-testid="generated-access-token-tab"
+                eventKey={2}
+                title={
+                  <TabTitleText>
+                    {t("generatedAccessToken")}{" "}
+                    <HelpItem
+                      fieldLabelId="generatedAccessToken"
+                      helpText={t("generatedAccessTokenHelp")}
+                      noVerticalAlign={false}
+                      unWrap
+                    />
+                  </TabTitleText>
+                }
+                tabContentRef={tabContent3}
+              />
+            )}
+            {isOpenIdConnectProtocol() && (
+              <Tab
+                id="generatedIdToken"
+                aria-controls="generatedIdToken"
+                data-testid="generated-id-token-tab"
+                eventKey={3}
+                title={
+                  <TabTitleText>
+                    {t("generatedIdToken")}{" "}
+                    <HelpItem
+                      fieldLabelId="generatedIdToken"
+                      helpText={t("generatedIdTokenHelp")}
+                      noVerticalAlign={false}
+                      unWrap
+                    />
+                  </TabTitleText>
+                }
+                tabContentRef={tabContent4}
+              />
+            )}
+            {isOpenIdConnectProtocol() && (
+              <Tab
+                id="generatedUserInfo"
+                aria-controls="generatedUserInfo"
+                data-testid="generated-user-info-tab"
+                eventKey={4}
+                title={
+                  <TabTitleText>
+                    {t("generatedUserInfo")}{" "}
+                    <HelpItem
+                      fieldLabelId="generatedUserInfo"
+                      helpText={t("generatedUserInfoHelp")}
+                      noVerticalAlign={false}
+                      unWrap
+                    />
+                  </TabTitleText>
+                }
+                tabContentRef={tabContent5}
+              />
+            )}
+            {isSamlProtocol() && (
+              <Tab
+                id="generatedSamlResponse"
+                aria-controls="generatedSamlResponse"
+                data-testid="generated-saml-response-tab"
+                eventKey={5}
+                title={
+                  <TabTitleText>
+                    {t("generatedSamlResponse")}{" "}
+                    <HelpItem
+                      fieldLabelId="generatedSamlResponse"
+                      helpText={t("generatedSamlResponseHelp")}
+                      noVerticalAlign={false}
+                      unWrap
+                    />
+                  </TabTitleText>
+                }
+                tabContentRef={tabContent6}
+              />
+            )}
           </Tabs>
         </GridItem>
       </Grid>

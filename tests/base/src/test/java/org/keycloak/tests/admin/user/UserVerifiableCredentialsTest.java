@@ -1,6 +1,7 @@
 package org.keycloak.tests.admin.user;
 
 import java.util.List;
+import java.util.Set;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ClientErrorException;
@@ -19,6 +20,9 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
@@ -31,17 +35,19 @@ import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.jwtTypeNaturalPersonScopeName;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.sdJwtTypeNaturalPersonScopeName;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
@@ -63,11 +69,11 @@ public class UserVerifiableCredentialsTest extends AbstractUserTest {
         assertTrue(user.getCredentials().isEmpty());
 
         // Create first credential and assert it is present
-        createVerifiableCedential(user, userId ,SCOPE_1_NAME);
+        createVerifiableCredential(user, userId ,SCOPE_1_NAME);
         assertVerifiableCredentials(user.getCredentials(), SCOPE_1_NAME);
 
         // Create second credential and assert both are present
-        createVerifiableCedential(user, userId, SCOPE_2_NAME);
+        createVerifiableCredential(user, userId, SCOPE_2_NAME);
         assertVerifiableCredentials(user.getCredentials(), SCOPE_1_NAME, SCOPE_2_NAME);
 
         // Remove one of credentials
@@ -87,9 +93,9 @@ public class UserVerifiableCredentialsTest extends AbstractUserTest {
         String userId = createUser();
         UserVerifiableCredentialResource user = managedRealm.admin().users().get(userId).verifiableCredentials();
 
-        createVerifiableCedential(user, userId, SCOPE_1_NAME);
+        createVerifiableCredential(user, userId, SCOPE_1_NAME);
         try {
-            createVerifiableCedential(user, userId, SCOPE_1_NAME);
+            createVerifiableCredential(user, userId, SCOPE_1_NAME);
             Assertions.fail("Not expected to successfully create verifiable credential of same name");
         } catch (ClientErrorException cee) {
             ErrorRepresentation error = cee.getResponse().readEntity(ErrorRepresentation.class);
@@ -110,7 +116,7 @@ public class UserVerifiableCredentialsTest extends AbstractUserTest {
         String clientScopeId = ApiUtil.getCreatedId(resp);
         adminEvents.clear();
 
-        createVerifiableCedential(user, userId ,"new-scope");
+        createVerifiableCredential(user, userId ,"new-scope");
         assertVerifiableCredentials(user.getCredentials(), "new-scope");
 
         // Remove client scope. Assert automatically removed from the user as well
@@ -157,7 +163,7 @@ public class UserVerifiableCredentialsTest extends AbstractUserTest {
         UserVerifiableCredentialResource user = managedRealm.admin().users().get(userId).verifiableCredentials();
 
         try {
-            createVerifiableCedential(user, userId, SCOPE_1_NAME);
+            createVerifiableCredential(user, userId, SCOPE_1_NAME);
             Assertions.fail("Not expected to successfully create verifiable credential when disabled for the realm");
         } catch (BadRequestException cee) {
             ErrorRepresentation error = cee.getResponse().readEntity(ErrorRepresentation.class);
@@ -171,7 +177,7 @@ public class UserVerifiableCredentialsTest extends AbstractUserTest {
         UserVerifiableCredentialResource user = managedRealm.admin().users().get(userId).verifiableCredentials();
 
         try {
-            createVerifiableCedential(user, userId, "non-existent");
+            createVerifiableCredential(user, userId, "non-existent");
             Assertions.fail("Not expected to successfully create verifiable credential referencing unknown client scope");
         } catch (BadRequestException cee) {
             ErrorRepresentation error = cee.getResponse().readEntity(ErrorRepresentation.class);
@@ -179,7 +185,7 @@ public class UserVerifiableCredentialsTest extends AbstractUserTest {
         }
 
         try {
-            createVerifiableCedential(user, userId, OAuth2Constants.SCOPE_ADDRESS);
+            createVerifiableCredential(user, userId, OAuth2Constants.SCOPE_ADDRESS);
             Assertions.fail("Not expected to successfully create verifiable credential of OIDC protocol");
         } catch (BadRequestException cee) {
             ErrorRepresentation error = cee.getResponse().readEntity(ErrorRepresentation.class);
@@ -229,7 +235,7 @@ public class UserVerifiableCredentialsTest extends AbstractUserTest {
         userResource.update(user);
         adminEvents.clear();
 
-        UserVerifiableCredentialRepresentation created = createVerifiableCedential(credResource, userId, SCOPE_1_NAME);
+        UserVerifiableCredentialRepresentation created = createVerifiableCredential(credResource, userId, SCOPE_1_NAME);
 
         String originalRevision = created.getRevision();
         assertNotNull(created.getUserAttributes(), "Initial snapshot should have attributes");
@@ -268,14 +274,58 @@ public class UserVerifiableCredentialsTest extends AbstractUserTest {
         assertEquals("jane.doe@example.com", retrieved.getUserAttributes().get("email").get(0), "Retrieved snapshot should have updated email");
     }
 
-    private UserVerifiableCredentialRepresentation createVerifiableCedential(UserVerifiableCredentialResource user, String userId, String clientScopeName) {
+    @Test
+    @DatabaseTest
+    public void verifySnapshotContainsOnlyAllowedAttributes() {
+        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
+        managedRealm.cleanup().add(r -> r.users().userProfile().update(upConfig));
+
+        upConfig.addOrReplaceAttribute(new UPAttribute("adminOnlyAttr", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_ADMIN))));
+        managedRealm.admin().users().userProfile().update(upConfig);
+        adminEvents.clear();
+
+        String userId = createUser();
+        UserResource userResource = managedRealm.admin().users().get(userId);
+        UserVerifiableCredentialResource credResource = userResource.verifiableCredentials();
+
+        // Set attributes with different visibility
+        UserRepresentation user = userResource.toRepresentation();
+        user.setFirstName("John");
+        user.setLastName("Doe");
+        user.setEmail("john.doe@example.com");
+        user.singleAttribute("adminOnlyAttr", "adminValue");
+        userResource.update(user);
+        adminEvents.clear();
+
+        // Create verifiable credential
+        UserVerifiableCredentialRepresentation credential = createVerifiableCredential(credResource, userId, SCOPE_1_NAME);
+
+        // Verify snapshot contains admin-visible attributes
+        assertNotNull(credential.getUserAttributes(), "Snapshot should have attributes");
+        assertEquals("adminValue", credential.getUserAttributes().get("adminOnlyAttr").get(0), "adminOnlyAttr should be in snapshot");
+        
+        upConfig.addOrReplaceAttribute(new UPAttribute("adminOnlyAttr", new UPAttributePermissions(Set.of(ROLE_USER), Set.of(ROLE_USER))));
+        managedRealm.admin().users().userProfile().update(upConfig);
+        adminEvents.clear();
+
+        //attribute still in the snapshot
+        credential = credResource.getCredentials().stream().filter(cred-> cred.getCredentialScopeName().equals(SCOPE_1_NAME)).findFirst().get();
+        assertEquals("adminValue", credential.getUserAttributes().get("adminOnlyAttr").get(0), "adminOnlyAttr should be in snapshot");
+
+        credResource.updateCredential(SCOPE_1_NAME);
+
+        credential = credResource.getCredentials().stream().filter(cred-> cred.getCredentialScopeName().equals(SCOPE_1_NAME)).findFirst().get();
+        assertNull(credential.getUserAttributes().get("adminOnlyAttr"), "adminOnlyAttr should NOT be in snapshot");
+    }
+
+    private UserVerifiableCredentialRepresentation createVerifiableCredential(UserVerifiableCredentialResource user, String userId, String clientScopeName) {
         UserVerifiableCredentialRepresentation verifCred = new UserVerifiableCredentialRepresentation();
         verifCred.setCredentialScopeName(clientScopeName);
         UserVerifiableCredentialRepresentation createdRep = user.createCredential(verifCred);
 
-        Assert.assertEquals(clientScopeName, createdRep.getCredentialScopeName());
-        Assert.assertNotNull(createdRep.getCreatedDate());
-        Assert.assertNotNull(createdRep.getRevision());
+        assertEquals(clientScopeName, createdRep.getCredentialScopeName());
+        assertNotNull(createdRep.getCreatedDate());
+        assertNotNull(createdRep.getRevision());
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.userVerifiableCredentialsPath(userId), createdRep, ResourceType.USER);
         return createdRep;
     }
@@ -293,7 +343,6 @@ public class UserVerifiableCredentialsTest extends AbstractUserTest {
             assertTrue(verifCredNames.containsAll(List.of(expectedCredentialNames)), "Expected verifiable credentials " + List.of(expectedCredentialNames) + ", but was " + verifCredNames);
         }
     }
-
 
     private static class VCTestRealmConfig implements RealmConfig {
 

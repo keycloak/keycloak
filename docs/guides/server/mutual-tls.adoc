@@ -5,7 +5,7 @@
 <@tmpl.guide
 title="Configuring trusted certificates for mTLS"
 summary="Configure Mutual TLS to verify clients that are connecting to {project_name}."
-includedOptions="https-trust-store-* https-client-auth https-management-client-auth">
+includedOptions="https-trust-store-* https-client-auth https-management-client-auth https-management-trust-store-*">
 
 In order to properly validate client certificates and enable certain authentication methods like two-way TLS or mTLS, you can set
 a trust store with all the certificates (and certificate chain) the server should be trusting. There are number of capabilities that rely
@@ -24,9 +24,10 @@ the value to `request`, {project_name} will also accept requests without a certi
 
 WARNING: The mTLS configuration and the truststore is shared by all Realms. It is not possible to configure different truststores for different Realms.
 
-NOTE: Management interface properties are inherited from the main HTTP server, including mTLS settings.
+NOTE: Management interface properties are inherited from the main HTTP server, including mTLS settings and the truststore used for client certificate validation.
 It means when mTLS is set, it is also enabled for the management interface.
-To override the behavior, use the `https-management-client-auth` property.
+To override client authentication for the management interface, use the `https-management-client-auth` property.
+To use a different truststore on the management interface, use the `https-management-trust-store-*` properties.
 
 == Using a dedicated truststore for mTLS
 

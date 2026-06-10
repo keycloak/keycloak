@@ -726,8 +726,8 @@ public class RefreshTokenTimeoutsTest {
             runOnServer.run(session -> {
                 InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
                 if (connections != null) {
-                    Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache = connections.getCache(USER_SESSION_CACHE_NAME);
-                    Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(CLIENT_SESSION_CACHE_NAME);
+                    Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache = connections.getCache(USER_SESSION_CACHE_NAME, false);
+                    Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(CLIENT_SESSION_CACHE_NAME, false);
                     if (sessionCache != null) {
                         sessionCache.clear();
                     }

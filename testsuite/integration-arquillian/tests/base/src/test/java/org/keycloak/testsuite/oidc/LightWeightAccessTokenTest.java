@@ -557,8 +557,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
-    public void testAdminConsoleClientWithLightweightAccessTokenTransientSessionDynamicScopes() throws Exception {
+    @EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
+    public void testAdminConsoleClientWithLightweightAccessTokenTransientSessionParameterizedScopes() throws Exception {
         try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, oauth.getRealm(), TEST_CLIENT)
                 .setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.TRUE.toString())
                 .update()) {

@@ -131,6 +131,9 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.storage.StorageId;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
@@ -342,6 +345,21 @@ public class ModelToRepresentation {
                 rep.setAttributes(attrs);
             }
         }
+
+        return rep;
+    }
+
+    public static UserRepresentation toRepresentation(KeycloakSession session, UserModel user, boolean brief) {
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = provider.create(UserProfileContext.USER_API, user);
+        UserRepresentation rep = profile.toRepresentation(!brief);
+        RealmModel realm = session.getContext().getRealm();
+
+        rep = brief ?
+                ModelToRepresentation.toBriefRepresentation(user, rep, false) :
+                ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
+
+        rep.setUserProfileMetadata(null);
 
         return rep;
     }
@@ -880,8 +898,8 @@ public class ModelToRepresentation {
 
         rep.getAttributes().put(Constants.REALM_CLIENT, String.valueOf(isRealmClient(clientModel.getClientId(), clientModel.getRealm(), session)));
 
-        // adding the secret if non public or bearer only
-        if (clientModel.isBearerOnly() || clientModel.isPublicClient()) {
+        // adding the secret if non public
+        if (clientModel.isPublicClient()) {
             rep.setSecret(null);
         } else {
             rep.setSecret(clientModel.getSecret());
@@ -1023,9 +1041,9 @@ public class ModelToRepresentation {
         for (ClientScopeModel clientScope : model.getGrantedClientScopes()) {
             if (clientScope instanceof ClientModel) {
                 grantedClientScopes.add(((ClientModel) clientScope).getClientId());
-            } else if (ClientScopeModel.isDynamicScope(clientScope)) {
+            } else if (ClientScopeModel.isParameterizedScope(clientScope)) {
                 model.getParameters(clientScope).stream().forEach(p ->
-                        grantedClientScopes.add(clientScope.getDynamicScopeRegexp().replace("*", p)));
+                        grantedClientScopes.add(clientScope.getName() + ClientScopeModel.VALUE_SEPARATOR + p));
             } else {
                 grantedClientScopes.add(clientScope.getName());
             }
@@ -1196,7 +1214,15 @@ public class ModelToRepresentation {
             representation = (R) new PolicyRepresentation();
             PolicyRepresentation.class.cast(representation).setConfig(policy.getConfig());
             if (export) {
-                providerFactory.onExport(policy, PolicyRepresentation.class.cast(representation), authorization);
+                if (providerFactory != null) {
+                    providerFactory.onExport(policy, PolicyRepresentation.class.cast(representation), authorization);
+                } else {
+                    // Provider is unavailable at runtime (e.g. its feature is disabled or the provider was removed).
+                    // The policy is still exported with its stored config so it round-trips once the provider is registered again.
+                    LOG.warnf(
+                            "No policy provider registered for type '%s'; policy '%s' will be exported with its stored configuration only.",
+                            policy.getType(), policy.getName());
+                }
             }
         } else {
             try {

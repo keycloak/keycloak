@@ -78,7 +78,7 @@ async function clickOption(page: Page, option: string) {
 
 export async function changeTimeUnit(
   page: Page,
-  unit: "Minutes" | "Hours" | "Days",
+  unit: "Seconds" | "Minutes" | "Hours" | "Days",
   inputType: string,
 ) {
   await page.locator(inputType).click();

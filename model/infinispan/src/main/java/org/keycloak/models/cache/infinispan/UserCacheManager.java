@@ -44,13 +44,6 @@ public class UserCacheManager extends CacheManager {
         return logger;
     }
 
-    @Override
-    public void clear() {
-        cache.clear();
-        revisions.clear();
-    }
-
-
     public void userUpdatedInvalidations(String userId, String username, String email, String realmId, Set<String> invalidations) {
         invalidations.add(userId);
         if (email != null) invalidations.add(UserCacheSession.getUserByEmailCacheKey(realmId, email));

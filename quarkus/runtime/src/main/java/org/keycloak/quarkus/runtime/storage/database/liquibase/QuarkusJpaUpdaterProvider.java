@@ -96,12 +96,13 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
 
         Writer exportWriter = null;
         try {
+            if (file != null) {
+                exportWriter = new FileWriter(file);
+            }
+
             if (needVerifyMasterChangelog()) {
                 // Run update with keycloak master changelog first
                 KeycloakLiquibase liquibase = getLiquibaseForKeycloakUpdate(connection, defaultSchema);
-                if (file != null) {
-                    exportWriter = new FileWriter(file);
-                }
                 updateChangeSet(liquibase, exportWriter);
             }
 

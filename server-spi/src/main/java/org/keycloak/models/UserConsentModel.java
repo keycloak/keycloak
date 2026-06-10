@@ -49,9 +49,9 @@ public class UserConsentModel {
 
     public void addGrantedClientScope(ClientScopeModel clientScope, String parameter) {
         clientScopes.add(clientScope);
-        if (ClientScopeModel.isDynamicScope(clientScope)) {
+        if (ClientScopeModel.isParameterizedScope(clientScope)) {
             if (parameter == null) {
-                throw new IllegalArgumentException("Paramater value is compulsory for Dynamic Scope " + clientScope.getName());
+                throw new IllegalArgumentException("Parameter value is compulsory for Parameterized Scope " + clientScope.getName());
             }
             parameters.add(clientScope.getId(), parameter);
         }
@@ -62,7 +62,7 @@ public class UserConsentModel {
     }
 
     public List<String> getParameters(ClientScopeModel clientScope) {
-        if (ClientScopeModel.isDynamicScope(clientScope)) {
+        if (ClientScopeModel.isParameterizedScope(clientScope)) {
             return parameters.getList(clientScope.getId());
         }
         return Collections.emptyList();
@@ -75,7 +75,7 @@ public class UserConsentModel {
     public boolean isClientScopeGranted(ClientScopeModel clientScope, String parameter) {
         for (ClientScopeModel apprClientScope : clientScopes) {
             if (apprClientScope.getId().equals(clientScope.getId())) {
-                if (ClientScopeModel.isDynamicScope(clientScope)) {
+                if (ClientScopeModel.isParameterizedScope(clientScope)) {
                     return parameter != null && parameters.getList(apprClientScope.getId()).contains(parameter);
                 } else {
                     return parameter == null && parameters.getList(apprClientScope.getId()).isEmpty();

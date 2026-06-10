@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  *
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
  */
-@EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+@EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
 public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTest {
 
     @Rule

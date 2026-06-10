@@ -1,0 +1,2004 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.keycloak.tests.account;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
+import org.keycloak.authentication.requiredactions.DeleteCredentialAction;
+import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
+import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
+import org.keycloak.common.enums.AccountRestApiVersion;
+import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.credential.CredentialTypeMetadata;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.account.ClientRepresentation;
+import org.keycloak.representations.account.ConsentRepresentation;
+import org.keycloak.representations.account.ConsentScopeRepresentation;
+import org.keycloak.representations.account.DeviceRepresentation;
+import org.keycloak.representations.account.SessionRepresentation;
+import org.keycloak.representations.account.UserRepresentation;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
+import org.keycloak.representations.idm.UserProfileAttributeMetadata;
+import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.services.cors.Cors;
+import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.account.AccountCredentialResource;
+import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
+import org.keycloak.userprofile.UserProfileContext;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.http.Header;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ALL;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
+
+/**
+ * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ */
+@KeycloakIntegrationTest
+@DatabaseTest
+public class AccountRestServiceTest extends AbstractRestServiceTest {
+
+    @Test
+    public void testEditUsernameAllowed() throws IOException {
+        registerUserCleanup("test-user@localhost");
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(false).editUsernameAllowed(true));
+        UserRepresentation user = getUser(token);
+
+        Assertions.assertNotNull(user.getUserProfileMetadata());
+        // can write both username and email
+        assertUserProfileAttributeMetadata(user, "username", "${username}", true, false);
+        assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
+        assertUserProfileAttributeMetadata(user, "firstName", "${firstName}", true, false);
+        assertUserProfileAttributeMetadata(user, "lastName", "${lastName}", true, false);
+
+        user.setUsername("changed-username");
+        user.setEmail("changed-email@keycloak.org");
+        user = updateAndGet(user, token);
+        Assertions.assertEquals("changed-username", user.getUsername());
+        Assertions.assertEquals("changed-email@keycloak.org", user.getEmail());
+
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(false).editUsernameAllowed(false));
+        user = getUser(token);
+
+        Assertions.assertNotNull(user.getUserProfileMetadata());
+        // username is readonly but email is writable
+        assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
+        assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
+
+        user.setUsername("should-not-change");
+        user.setEmail("changed-email@keycloak.org");
+        updateError(user, 400, Messages.READ_ONLY_USERNAME, token);
+
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(true).editUsernameAllowed(true));
+        user = getUser(token);
+
+        Assertions.assertNotNull(user.getUserProfileMetadata());
+        // username is read-only, not required, and is the same as email
+        // but email is writable
+        assertUserProfileAttributeMetadata(user, "username", "${username}", false, true);
+        assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
+
+        user.setUsername("should-be-the-email");
+        user.setEmail("user@keycloak.org");
+        user = updateAndGet(user, token);
+        Assertions.assertEquals("user@keycloak.org", user.getUsername());
+        Assertions.assertEquals("user@keycloak.org", user.getEmail());
+
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(true).editUsernameAllowed(false));
+        user = getUser(token);
+
+        Assertions.assertNotNull(user.getUserProfileMetadata());
+        // username is read-only and is the same as email, but email is read-only
+        assertUserProfileAttributeMetadata(user, "username", "${username}", false, true);
+        assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
+
+        user.setUsername("should-be-the-email");
+        user.setEmail("should-not-change@keycloak.org");
+        user = updateAndGet(user, token);
+        Assertions.assertEquals("user@keycloak.org", user.getUsername());
+        Assertions.assertEquals("user@keycloak.org", user.getEmail());
+
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(false).editUsernameAllowed(true));
+        user = getUser(token);
+        user.setUsername("different-than-email");
+        user.setEmail("user@keycloak.org");
+        user = updateAndGet(user, token);
+        Assertions.assertEquals("different-than-email", user.getUsername());
+        Assertions.assertEquals("user@keycloak.org", user.getEmail());
+
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(true).editUsernameAllowed(false));
+        user = getUser(token);
+        user.setEmail("should-not-change@keycloak.org");
+        user = updateAndGet(user, token);
+        Assertions.assertEquals("user@keycloak.org", user.getEmail());
+        Assertions.assertEquals(user.getEmail(), user.getUsername());
+    }
+
+    @Test
+    public void testGetUserProfileWithoutMetadata() throws IOException {
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        UserRepresentation user = getUser(false, token);
+        Assertions.assertNull(user.getUserProfileMetadata());
+    }
+
+    protected static UserProfileAttributeMetadata getUserProfileAttributeMetadata(UserRepresentation user, String attName) {
+        if(user.getUserProfileMetadata() == null)
+            return null;
+        for(UserProfileAttributeMetadata uam : user.getUserProfileMetadata().getAttributes()) {
+            if(attName.equals(uam.getName())) {
+                return uam;
+            }
+        }
+        return null;
+    }
+
+    protected static UserProfileAttributeMetadata assertUserProfileAttributeMetadata(UserRepresentation user, String attName, String displayName, boolean required, boolean readOnly) {
+        UserProfileAttributeMetadata uam = getUserProfileAttributeMetadata(user, attName);
+
+        Assertions.assertNotNull(uam);
+        Assertions.assertEquals(displayName, uam.getDisplayName(), "Unexpected display name for attribute " + uam.getName());
+        Assertions.assertEquals(required, uam.isRequired(), "Unexpected required flag for attribute " + uam.getName());
+        Assertions.assertEquals(readOnly, uam.isReadOnly(), "Unexpected readonly flag for attribute " + uam.getName());
+
+        return uam;
+    }
+
+
+    @Test
+    public void testGetProfile() throws IOException {
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        UserRepresentation user = getUser(token);
+        Assertions.assertEquals("Tom", user.getFirstName());
+        Assertions.assertEquals("Brady", user.getLastName());
+        Assertions.assertEquals("test-user@localhost", user.getEmail());
+        Assertions.assertFalse(user.isEmailVerified());
+        Assertions.assertNull(user.getAttributes());
+    }
+
+    @Test
+    public void testUpdateSingleField() throws IOException {
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(false));
+        registerUserCleanup("test-user@localhost");
+        managedRealm.cleanup().add(r -> UserProfileUtil.setUserProfileConfiguration(r, null));
+        String userProfileConfig = "{\"attributes\": ["
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}}"
+                + "]}";
+        setUserProfileConfiguration(userProfileConfig);
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        UserRepresentation user = getUser(token);
+        user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
+
+        user.setFirstName(null);
+        user.setLastName("Bob");
+        user.setEmail(null);
+        user.getAttributes().clear();
+
+        user = updateAndGet(user, token);
+
+        Assertions.assertEquals("Bob", user.getLastName());
+        Assertions.assertNull(user.getFirstName());
+        Assertions.assertNull(user.getEmail());
+    }
+
+    /**
+     * Reproducer for bugs KEYCLOAK-17424 and KEYCLOAK-17582
+     */
+    @Test
+    public void testUpdateProfileEmailChangeSetsEmailVerified() throws IOException {
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(false));
+        registerUserCleanup("test-user@localhost");
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        UserRepresentation user = getUser(token);
+        String originalEmail = user.getEmail();
+
+        //set flag over adminClient to initial value
+        UserResource userResource = managedRealm.admin().users().get(user.getId());
+        org.keycloak.representations.idm.UserRepresentation ur = userResource.toRepresentation();
+        ur.setEmailVerified(true);
+        userResource.update(ur);
+        //make sure flag is correct before the test
+        user = getUser(token);
+        Assertions.assertTrue(user.isEmailVerified());
+
+        // Update without email change - flag not reset to false
+        user.setEmail(originalEmail);
+        user = updateAndGet(user, token);
+        Assertions.assertEquals(originalEmail, user.getEmail());
+        Assertions.assertTrue(user.isEmailVerified());
+
+
+        // Update email - flag must be reset to false
+        user.setEmail("bobby@localhost");
+        user = updateAndGet(user, token);
+        Assertions.assertEquals("bobby@localhost", user.getEmail());
+        Assertions.assertFalse(user.isEmailVerified());
+    }
+
+    @Test
+    public void testUpdateProfileEvent() throws IOException {
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(false));
+        registerUserCleanup("test-user@localhost");
+        managedRealm.cleanup().add(r -> UserProfileUtil.setUserProfileConfiguration(r, null));
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"attr1\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"attr2\"," + PERMISSIONS_ALL + "}"
+                + "]}");
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        UserRepresentation user = getUser(token);
+        String originalFirstName = user.getFirstName();
+        String originalLastName = user.getLastName();
+        String originalEmail = user.getEmail();
+        Assertions.assertNull(user.getAttributes());
+        user.setAttributes(new HashMap<>());
+
+        user.setEmail("bobby@localhost");
+        user.setFirstName("Homer");
+        user.setLastName("Simpsons");
+        user.getAttributes().put("attr1", Collections.singletonList("val1"));
+        user.getAttributes().put("attr2", Collections.singletonList("val2"));
+
+        user = updateAndGet(user, token);
+
+        //skip login to the REST API event
+        events.skip();
+        EventAssertion.assertSuccess(events.poll())
+            .type(EventType.UPDATE_PROFILE)
+            .userId(user.getId())
+            .clientId("account")
+            .details(Details.CONTEXT, UserProfileContext.ACCOUNT.name())
+            .details(Details.PREVIOUS_EMAIL, originalEmail)
+            .details(Details.UPDATED_EMAIL, "bobby@localhost")
+            .details(Details.PREVIOUS_FIRST_NAME, originalFirstName)
+            .details(Details.PREVIOUS_LAST_NAME, originalLastName)
+            .details(Details.UPDATED_FIRST_NAME, "Homer")
+            .details(Details.UPDATED_LAST_NAME, "Simpsons");
+        Assertions.assertNull(events.poll());
+    }
+
+    @Test
+    public void testUpdateProfile() throws IOException {
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(false));
+        registerUserCleanup("test-user@localhost");
+        managedRealm.cleanup().add(r -> UserProfileUtil.setUserProfileConfiguration(r, null));
+        String userProfileCfg = "{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"attr1\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"attr2\"," + PERMISSIONS_ALL + ", \"multivalued\": true}"
+                + "]}";
+        setUserProfileConfiguration(userProfileCfg);
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        UserRepresentation user = getUser(token);
+        user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
+
+        user.setFirstName("Homer");
+        user.setLastName("Simpsons");
+        user.getAttributes().put("attr1", Collections.singletonList("val1"));
+        user.getAttributes().put("attr2", Collections.singletonList("val2"));
+
+        user = updateAndGet(user, token);
+
+        Assertions.assertEquals("Homer", user.getFirstName());
+        Assertions.assertEquals("Simpsons", user.getLastName());
+        Assertions.assertEquals(2, user.getAttributes().size());
+        Assertions.assertEquals(1, user.getAttributes().get("attr1").size());
+        Assertions.assertEquals("val1", user.getAttributes().get("attr1").get(0));
+        Assertions.assertEquals(1, user.getAttributes().get("attr2").size());
+        Assertions.assertEquals("val2", user.getAttributes().get("attr2").get(0));
+
+        // Update attributes
+        user.getAttributes().remove("attr1");
+        user.getAttributes().get("attr2").add("val3");
+
+        user = updateAndGet(user, token);
+
+        Assertions.assertEquals(1, user.getAttributes().size());
+        Assertions.assertEquals(2, user.getAttributes().get("attr2").size());
+        assertThat(user.getAttributes().get("attr2"), containsInAnyOrder("val2", "val3"));
+
+        // Update email
+        user.setEmail("bobby@localhost");
+        user = updateAndGet(user, token);
+        Assertions.assertEquals("bobby@localhost", user.getEmail());
+
+        user.setEmail("john-doh@localhost");
+        updateError(user, 409, Messages.EMAIL_EXISTS, token);
+
+        user.setEmail("test-user@localhost");
+        user = updateAndGet(user, token);
+        Assertions.assertEquals("test-user@localhost", user.getEmail());
+
+        user.setUsername("john-doh@localhost");
+        updateError(user, 409, Messages.USERNAME_EXISTS, token);
+
+        user.setUsername("test-user@localhost");
+        user = updateAndGet(user, token);
+        Assertions.assertEquals("test-user@localhost", user.getUsername());
+
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(true));
+
+        user.setUsername("updatedUsername");
+        user = updateAndGet(user, token);
+        Assertions.assertEquals("test-user@localhost", user.getUsername());
+
+        user.setEmail("new@localhost");
+        user = updateAndGet(user, token);
+        Assertions.assertEquals("new@localhost", user.getUsername());
+
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(false));
+
+        user.setUsername("updatedUsername");
+        user = updateAndGet(user, token);
+        assertThat("updatedusername", Matchers.equalTo(user.getUsername()));
+
+        managedRealm.updateWithCleanup(r -> r.editUsernameAllowed(false).registrationEmailAsUsername(false));
+
+        user.setUsername("updatedUsername2");
+        updateError(user, 400, Messages.READ_ONLY_USERNAME, token);
+    }
+
+    @Test
+    public void testEmailReadableWhenEditUsernameDisabled() throws IOException {
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(true).editUsernameAllowed(false));
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        UserRepresentation user = getUser(token);
+        String email = user.getEmail();
+        Assertions.assertNotNull(email);
+        user = updateAndGet(user, token);
+        Assertions.assertEquals(email, user.getEmail());
+    }
+
+    @Test
+    public void testUpdateProfileCannotChangeThroughAttributes() throws IOException {
+        registerUserCleanup("test-user@localhost");
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        UserRepresentation user = getUser(token);
+        String originalUsername = user.getUsername();
+        user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
+
+        user.getAttributes().put("username", Collections.singletonList("Username"));
+        user.getAttributes().put("attr2", Collections.singletonList("val2"));
+
+        user = updateAndGet(user, token);
+
+        Assertions.assertEquals(user.getUsername(), originalUsername);
+    }
+
+    // KEYCLOAK-7572
+    @Test
+    public void testUpdateProfileWithRegistrationEmailAsUsername() throws IOException {
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(true));
+        registerUserCleanup("test-user@localhost");
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        UserRepresentation user = getUser(token);
+
+        user.setFirstName("Homer1");
+
+        user = updateAndGet(user, token);
+
+        Assertions.assertEquals("Homer1", user.getFirstName());
+    }
+
+    @Test
+    public void testCors() throws IOException {
+        String accountUrl = getAccountUrl(null);
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        SimpleHttpRequest a = simpleHttp.doGet(accountUrl + "/linked-accounts").auth(token)
+                .header("Origin", "http://localtest.me:8180")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        try (SimpleHttpResponse response = a.asResponse()) {
+            Set<String> expected = new HashSet<>();
+            Header[] actual = response.getAllHeaders();
+
+            for (Header header : actual) {
+                Assertions.assertTrue(expected.add(header.getName()));
+            }
+
+            assertThat(expected, Matchers.hasItems(Cors.ACCESS_CONTROL_ALLOW_ORIGIN, Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS));
+        }
+
+    }
+
+    protected UserRepresentation getUser(String token) throws IOException {
+        return getUser(true, token);
+    }
+
+    protected UserRepresentation getUser(boolean fetchMetadata, String token) throws IOException {
+        String accountUrl = getAccountUrl(null) + "?userProfileMetadata=" + fetchMetadata;
+        return getUser(accountUrl, simpleHttp, token);
+    }
+
+    protected static UserRepresentation getUser(String accountUrl, SimpleHttp simpleHttp, String token) throws IOException {
+        SimpleHttpRequest a = simpleHttp.doGet(accountUrl).auth(token);
+
+        try {
+            return a.asJson(UserRepresentation.class);
+        } catch (IOException e) {
+            System.err.println("Error during user reading: " + a.asString());
+            throw e;
+        }
+    }
+
+    protected UserRepresentation updateAndGet(UserRepresentation user, String token) throws IOException {
+        SimpleHttpRequest a = simpleHttp.doPost(getAccountUrl(null)).auth(token).json(user);
+        try {
+            Assertions.assertEquals(204, a.asStatus());
+        } catch (AssertionError e) {
+            System.err.println("Error during user update: " + a.asString());
+            throw e;
+        }
+        return getUser(token);
+    }
+
+
+    protected void updateError(UserRepresentation user, int expectedStatus, String expectedMessage, String token) throws IOException {
+        SimpleHttpResponse response = simpleHttp.doPost(getAccountUrl(null)).auth(token).json(user).asResponse();
+        Assertions.assertEquals(expectedStatus, response.getStatus());
+        ErrorRepresentation errorRep = response.asJson(ErrorRepresentation.class);
+        List<ErrorRepresentation> errors = errorRep.getErrors();
+
+        if (errors == null) {
+            Assertions.assertEquals(expectedMessage, errorRep.getErrorMessage());
+        } else {
+            assertThat(errors.stream().map(ErrorRepresentation::getErrorMessage)
+                    .filter(expectedMessage::equals).collect(Collectors.toList()), containsInAnyOrder(expectedMessage));
+        }
+    }
+
+    @Test
+    public void testProfilePermissions() throws IOException {
+        String noaccessToken = oauth.client("direct-grant", "password").doPasswordGrantRequest("no-account-access", "password").getAccessToken();
+        String viewToken = oauth.client("direct-grant", "password").doPasswordGrantRequest("view-account-access", "password").getAccessToken();
+
+        // Read with no access
+        Assertions.assertEquals(403, simpleHttp.doGet(getAccountUrl(null)).header("Accept", "application/json").auth(noaccessToken).asStatus());
+
+        // Update with no access
+        Assertions.assertEquals(403, simpleHttp.doPost(getAccountUrl(null)).auth(noaccessToken).json(new UserRepresentation()).asStatus());
+
+        // Update with read only
+        Assertions.assertEquals(403, simpleHttp.doPost(getAccountUrl(null)).auth(viewToken).json(new UserRepresentation()).asStatus());
+    }
+
+    @Test
+    public void testUpdateProfilePermissions() throws IOException {
+        String noaccessToken = oauth.client("direct-grant", "password").doPasswordGrantRequest("no-account-access", "password").getAccessToken();
+        int status = simpleHttp.doGet(getAccountUrl(null)).header("Accept", "application/json").auth(noaccessToken).asStatus();
+        Assertions.assertEquals(403, status);
+
+        String viewToken = oauth.client("direct-grant", "password").doPasswordGrantRequest("view-account-access", "password").getAccessToken();
+        status = simpleHttp.doGet(getAccountUrl(null)).header("Accept", "application/json").auth(viewToken).asStatus();
+        Assertions.assertEquals(200, status);
+    }
+
+    @Test
+    public void testCredentialsGet() throws IOException {
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        configureBrowserFlowWithWebAuthnAuthenticator("browser-webauthn");
+
+        // Register requiredActions for WebAuthn and WebAuthn Passwordless
+        RequiredActionProviderSimpleRepresentation requiredAction = new RequiredActionProviderSimpleRepresentation();
+        requiredAction.setId("12345");
+        requiredAction.setName(WebAuthnRegisterFactory.PROVIDER_ID);
+        requiredAction.setProviderId(WebAuthnRegisterFactory.PROVIDER_ID);
+
+        try {
+            managedRealm.admin().flows().registerRequiredAction(requiredAction);
+        } catch (ClientErrorException e) {
+            assertThat(e.getResponse(), notNullValue());
+            assertThat(e.getResponse().getStatus(), is(409));
+        }
+
+        String webAuthnRegisterAlias = requiredAction.getProviderId();
+        managedRealm.cleanup().add(r -> r.flows().removeRequiredAction(webAuthnRegisterAlias));
+
+        requiredAction = new RequiredActionProviderSimpleRepresentation();
+        requiredAction.setId("6789");
+        requiredAction.setName(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
+        requiredAction.setProviderId(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
+
+        try {
+            managedRealm.admin().flows().registerRequiredAction(requiredAction);
+        } catch (ClientErrorException e) {
+            assertThat(e.getResponse(), notNullValue());
+            assertThat(e.getResponse().getStatus(), is(409));
+        }
+
+        String webAuthnPasswordlessRegisterAlias = requiredAction.getProviderId();
+        managedRealm.cleanup().add(r -> r.flows().removeRequiredAction(webAuthnPasswordlessRegisterAlias));
+
+        List<AccountCredentialResource.CredentialContainer> credentials = getCredentials(token);
+
+        Assertions.assertEquals(4, credentials.size());
+
+        AccountCredentialResource.CredentialContainer password = credentials.get(0);
+        assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.BASIC_AUTHENTICATION.toString(),
+                "password-display-name", "password-help-text", "kcAuthenticatorPasswordClass",
+                null, UserModel.RequiredAction.UPDATE_PASSWORD.toString(), false, 1);
+
+        CredentialRepresentation password1 = password.getUserCredentialMetadatas().get(0).getCredential();
+        Assertions.assertNull(password1.getSecretData());
+        Assertions.assertNotNull(password1.getCredentialData());
+
+        AccountCredentialResource.CredentialContainer otp = credentials.get(1);
+        assertCredentialContainerExpected(otp, OTPCredentialModel.TYPE, CredentialTypeMetadata.Category.TWO_FACTOR.toString(),
+                "otp-display-name", "otp-help-text", "kcAuthenticatorOTPClass",
+                UserModel.RequiredAction.CONFIGURE_TOTP.toString(), null, true, 0);
+
+        // WebAuthn credentials will be returned, but createAction will be still null because requiredAction "webauthn register" not yet registered
+        AccountCredentialResource.CredentialContainer webauthn = credentials.get(2);
+        assertCredentialContainerExpected(webauthn, WebAuthnCredentialModel.TYPE_TWOFACTOR, CredentialTypeMetadata.Category.TWO_FACTOR.toString(),
+                "webauthn-display-name", "webauthn-help-text", "kcAuthenticatorWebAuthnClass",
+                WebAuthnRegisterFactory.PROVIDER_ID, null, true, 0);
+
+        AccountCredentialResource.CredentialContainer webauthnPasswordless = credentials.get(3);
+        assertCredentialContainerExpected(webauthnPasswordless, WebAuthnCredentialModel.TYPE_PASSWORDLESS, CredentialTypeMetadata.Category.PASSWORDLESS.toString(),
+                "webauthn-passwordless-display-name", "webauthn-passwordless-help-text", "kcAuthenticatorWebAuthnPasswordlessClass",
+                WebAuthnPasswordlessRegisterFactory.PROVIDER_ID, null, true, 0);
+
+        // disable WebAuthn passwordless required action. User doesn't have WebAuthnPasswordless credential, so WebAuthnPasswordless credentialType won't be returned
+        setRequiredActionEnabledStatus(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID, false);
+
+        credentials = getCredentials(token);
+        assertExpectedCredentialTypes(credentials, PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE, WebAuthnCredentialModel.TYPE_TWOFACTOR);
+
+        // Test that WebAuthn won't be returned when removed from the authentication flow
+        removeWebAuthnFlow("browser-webauthn");
+
+        credentials = getCredentials(token);
+
+        assertExpectedCredentialTypes(credentials, PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE);
+
+        // Test password-only
+        credentials = simpleHttp.doGet(getAccountUrl("credentials?" + AccountCredentialResource.TYPE + "=password"))
+                .auth(token).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
+        Assertions.assertEquals(1, credentials.size());
+        password = credentials.get(0);
+        Assertions.assertEquals(PasswordCredentialModel.TYPE, password.getType());
+        Assertions.assertEquals(1, password.getUserCredentialMetadatas().size());
+
+        // Test password-only and user-credentials
+        credentials = simpleHttp.doGet(getAccountUrl("credentials?" + AccountCredentialResource.TYPE + "=password&" +
+                                                            AccountCredentialResource.USER_CREDENTIALS + "=false"))
+                .auth(token).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
+        Assertions.assertEquals(1, credentials.size());
+        password = credentials.get(0);
+        Assertions.assertEquals(PasswordCredentialModel.TYPE, password.getType());
+        Assertions.assertNull(password.getUserCredentialMetadatas());
+    }
+
+
+    @Test
+    public void testCRUDCredentialOfDifferentUser() throws IOException {
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        // Get credential ID of the OTP credential of the different user thant currently logged user
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "user-with-one-configured-otp");
+        CredentialRepresentation otpCredential = user.credentials().stream()
+                .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
+                .findFirst()
+                .get();
+
+        // Test that current user can't update the credential, which belongs to the different user
+        try (SimpleHttpResponse response = simpleHttp
+                .doPut(getAccountUrl("credentials/" + otpCredential.getId() + "/label"))
+                .auth(token)
+                .json("new-label")
+                .asResponse()) {
+            Assertions.assertEquals(404, response.getStatus());
+        }
+
+        // Test that current user can't delete the credential, which belongs to the different user
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("credentials/" + otpCredential.getId()))
+                .acceptJson()
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(404, response.getStatus());
+        }
+
+        // Assert credential was not updated or removed
+        CredentialRepresentation otpCredentialLoaded = user.credentials().stream()
+                .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
+                .findFirst()
+                .get();
+        Assertions.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getUserLabel(), otpCredentialLoaded.getUserLabel()));
+    }
+
+    @Test
+    public void testRemoveCredentialWithNonOtpCredentialTriggeringNoEvent() throws IOException {
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
+        Assertions.assertEquals(1, user.credentials().size());
+
+        // Add non-OTP credential to the user through admin REST API
+        CredentialRepresentation nonOtpCredential = ModelToRepresentation.toRepresentation(
+                WebAuthnCredentialModel.create(WebAuthnCredentialModel.TYPE_TWOFACTOR, "foo", "foo", "foo", "foo", "foo", 2L, "foo"));
+        org.keycloak.representations.idm.UserRepresentation userRep = UserBuilder.update(user.toRepresentation())
+                .credential(nonOtpCredential)
+                .build();
+        user.update(userRep);
+
+        List<AccountCredentialResource.CredentialContainer> credentials = getCredentials(token);
+        Assertions.assertEquals(2, credentials.size());
+        Assertions.assertTrue(credentials.get(1).isRemoveable());
+
+        // Remove credential
+        CredentialRepresentation credential = user.credentials().stream()
+                .filter(credentialRep -> WebAuthnCredentialModel.TYPE_TWOFACTOR.equals(credentialRep.getType()))
+                .findFirst()
+                .get();
+        Assertions.assertNotNull(credential);
+        user.removeCredential(credential.getId());
+
+        events.skip();
+        Assertions.assertNull(events.poll());
+    }
+
+    @Test
+    public void testRemoveCredentialWithOtpCredentialTriggeringEvent() throws IOException {
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
+        Assertions.assertEquals(1, user.credentials().size());
+
+        // Add OTP credential to the user through admin REST API
+        org.keycloak.representations.idm.UserRepresentation userRep = UserBuilder.update(user.toRepresentation())
+                .totpSecret("totpSecret")
+                .build();
+        userRep.getCredentials().get(0).setUserLabel("totpCredentialUserLabel");
+        user.update(userRep);
+
+        List<AccountCredentialResource.CredentialContainer> credentials = getCredentials(token);
+        Assertions.assertEquals(2, credentials.size());
+        Assertions.assertTrue(credentials.get(1).isRemoveable());
+
+        // Remove credential
+        CredentialRepresentation otpCredential = user.credentials().stream()
+                .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
+                .findFirst()
+                .get();
+        events.clear();
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("credentials/" + otpCredential.getId()))
+                .acceptJson()
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+
+        // The two events can arrive in either order depending on server config (e.g. lightweight
+        // token policy reorders them), so assert them as a set.
+        String userId = user.toRepresentation().getId();
+        Set<EventType> expectedTypes = Set.of(EventType.REMOVE_TOTP, EventType.REMOVE_CREDENTIAL);
+        Set<EventType> actualTypes = new HashSet<>();
+        for (int i = 0; i < 2; i++) {
+            EventRepresentation event = events.poll();
+            EventAssertion.assertSuccess(event)
+                    .clientId("account")
+                    .userId(userId)
+                    .details(Details.SELECTED_CREDENTIAL_ID, otpCredential.getId())
+                    .details(Details.CREDENTIAL_USER_LABEL, "totpCredentialUserLabel")
+                    .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
+            actualTypes.add(EventType.valueOf(event.getType()));
+        }
+        Assertions.assertEquals(expectedTypes, actualTypes);
+        Assertions.assertNull(events.poll());
+    }
+
+    // Send REST request to get all credential containers and credentials of current user
+    private List<AccountCredentialResource.CredentialContainer> getCredentials(String token) throws IOException {
+        return simpleHttp.doGet(getAccountUrl("credentials"))
+                .auth(token).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
+    }
+
+    private void assertLogoutEventsForSessions(UserResource user, Set<String> expectedSessionIds) {
+        String userId = user.toRepresentation().getId();
+        Set<String> actualSessionIds = new HashSet<>();
+        for (int i = 0; i < expectedSessionIds.size(); i++) {
+            EventRepresentation event = events.poll();
+            EventAssertion.assertSuccess(event)
+                    .type(EventType.LOGOUT)
+                    .clientId("account")
+                    .userId(userId);
+            actualSessionIds.add(event.getSessionId());
+        }
+        Assertions.assertEquals(expectedSessionIds, actualSessionIds);
+    }
+
+    @Test
+    public void testCredentialsGetDisabledOtp() throws IOException {
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        // Disable OTP in all built-in flows
+
+        // Disable parent subflow - that should treat OTP execution as disabled too
+        AuthenticationExecutionModel.Requirement currentBrowserReq = setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
+                "Browser - Conditional 2FA", AuthenticationExecutionModel.Requirement.DISABLED);
+
+        // Disable OTP directly in first-broker-login and direct-grant
+        AuthenticationExecutionModel.Requirement currentFBLReq = setExecutionRequirement(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW,
+                "OTP Form", AuthenticationExecutionModel.Requirement.DISABLED);
+        AuthenticationExecutionModel.Requirement currentDirectGrantReq = setExecutionRequirement(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW,
+                "Direct Grant - Conditional OTP", AuthenticationExecutionModel.Requirement.DISABLED);
+        try {
+            // Test that OTP credential is not included. Only password
+            List<AccountCredentialResource.CredentialContainer> credentials = getCredentials(token);
+
+            Assertions.assertEquals(1, credentials.size());
+            Assertions.assertEquals(PasswordCredentialModel.TYPE, credentials.get(0).getType());
+
+            // Enable browser subflow. OTP should be available then
+            setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
+                    "Browser - Conditional 2FA", currentBrowserReq);
+            credentials = getCredentials(token);
+            Assertions.assertEquals(2, credentials.size());
+            Assertions.assertEquals(OTPCredentialModel.TYPE, credentials.get(1).getType());
+
+            // Disable browser subflow and enable FirstBrokerLogin. OTP should be available then
+            setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
+                    "Browser - Conditional 2FA", AuthenticationExecutionModel.Requirement.DISABLED);
+            setExecutionRequirement(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW,
+                    "OTP Form", currentFBLReq);
+            credentials = getCredentials(token);
+            Assertions.assertEquals(2, credentials.size());
+            Assertions.assertEquals(OTPCredentialModel.TYPE, credentials.get(1).getType());
+        } finally {
+            // Revert flows
+            setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
+                    "Browser - Conditional 2FA", currentBrowserReq);
+            setExecutionRequirement(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW,
+                    "Direct Grant - Conditional OTP", currentDirectGrantReq);
+        }
+    }
+
+    @Test
+    public void testCredentialsGetWithDisabledOtpRequiredAction() throws IOException {
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        // Assert OTP will be returned by default
+        List<AccountCredentialResource.CredentialContainer> credentials = getCredentials(token);
+        assertExpectedCredentialTypes(credentials, PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE);
+
+        // Disable OTP required action
+        setRequiredActionEnabledStatus(UserModel.RequiredAction.CONFIGURE_TOTP.name(), false);
+
+        // Assert OTP won't be returned
+        credentials = getCredentials(token);
+        assertExpectedCredentialTypes(credentials, PasswordCredentialModel.TYPE);
+
+        // Add OTP credential to the user through admin REST API
+        UserResource adminUserResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
+        org.keycloak.representations.idm.UserRepresentation userRep = UserBuilder.update(adminUserResource.toRepresentation())
+                .totpSecret("abcdefabcdef")
+                .build();
+        adminUserResource.update(userRep);
+
+        // Assert OTP will be returned without requiredAction
+        credentials = getCredentials(token);
+        assertExpectedCredentialTypes(credentials, PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE);
+        AccountCredentialResource.CredentialContainer otpCredential = credentials.get(1);
+        Assertions.assertNull(otpCredential.getCreateAction());
+        Assertions.assertNull(otpCredential.getUpdateAction());
+        Assertions.assertTrue(otpCredential.isRemoveable());
+
+        String otpCredentialId = otpCredential.getUserCredentialMetadatas().get(0).getCredential().getId();
+
+        // remove credential using account console as otp is removable
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("credentials/" + otpCredentialId))
+                .acceptJson()
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+
+        // Revert - re-enable requiredAction
+        setRequiredActionEnabledStatus(UserModel.RequiredAction.CONFIGURE_TOTP.name(), true);
+    }
+
+    // Issue 30204
+    @Test
+    public void testCredentialsGetWithDisabledDeleteCredentialAction() throws IOException {
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        // Assert OTP will be returned by default
+        List<AccountCredentialResource.CredentialContainer> credentials = getCredentials(token);
+        assertExpectedCredentialTypes(credentials, PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE);
+
+        // Assert OTP removeable
+        AccountCredentialResource.CredentialContainer otpCredential = credentials.get(1);
+        Assertions.assertTrue(otpCredential.isRemoveable());
+
+        // Disable "Delete credential" action
+        setRequiredActionEnabledStatus(DeleteCredentialAction.PROVIDER_ID, false);
+
+        // Assert OTP not removeable
+        credentials = getCredentials(token);
+        otpCredential = credentials.get(1);
+        Assertions.assertFalse(otpCredential.isRemoveable());
+
+        // Revert - re-enable requiredAction
+        setRequiredActionEnabledStatus(DeleteCredentialAction.PROVIDER_ID, true);
+    }
+
+    private void setRequiredActionEnabledStatus(String requiredActionProviderId, boolean enabled) {
+        RequiredActionProviderRepresentation requiredActionRep = managedRealm.admin().flows().getRequiredAction(requiredActionProviderId);
+        requiredActionRep.setEnabled(enabled);
+        managedRealm.admin().flows().updateRequiredAction(requiredActionProviderId, requiredActionRep);
+    }
+
+    private void assertExpectedCredentialTypes(List<AccountCredentialResource.CredentialContainer> credentialTypes, String... expectedCredentialTypes) {
+        Assertions.assertEquals(credentialTypes.size(), expectedCredentialTypes.length);
+        int i = 0;
+        for (AccountCredentialResource.CredentialContainer credential : credentialTypes) {
+            Assertions.assertEquals(credential.getType(), expectedCredentialTypes[i]);
+            i++;
+        }
+    }
+
+    @Test
+    public void testCredentialsForUserWithoutPassword() throws IOException {
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        // We won't be able to authenticate later as user won't have password
+        List<AccountCredentialResource.CredentialContainer> credentials = getCredentials(token);
+
+        // delete password should fail as it is not removable
+        AccountCredentialResource.CredentialContainer password = credentials.get(0);
+        assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.BASIC_AUTHENTICATION.toString(),
+                "password-display-name", "password-help-text", "kcAuthenticatorPasswordClass",
+                null, UserModel.RequiredAction.UPDATE_PASSWORD.toString(), false, 1);
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("credentials/" + password.getUserCredentialMetadatas().get(0).getCredential().getId()))
+                .acceptJson()
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(400, response.getStatus());
+            Assertions.assertEquals("Credential type cannot be removed", response.asJson(OAuth2ErrorRepresentation.class).getError());
+        }
+
+        // Remove password from the user now
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
+        for (CredentialRepresentation credential : user.credentials()) {
+            if (PasswordCredentialModel.TYPE.equals(credential.getType())) {
+                user.removeCredential(credential.getId());
+            }
+        }
+
+        // Get credentials. Ensure user doesn't have password credential and create action is UPDATE_PASSWORD
+        credentials = getCredentials(token);
+        password = credentials.get(0);
+        assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.BASIC_AUTHENTICATION.toString(),
+                "password-display-name", "password-help-text", "kcAuthenticatorPasswordClass",
+                UserModel.RequiredAction.UPDATE_PASSWORD.toString(), null, false, 0);
+
+        // Re-add the password to the user
+        AdminApiUtil.resetUserPassword(user, "password", false);
+
+    }
+
+    // Sets new requirement and returns current requirement
+    private AuthenticationExecutionModel.Requirement setExecutionRequirement(String flowAlias, String executionDisplayName, AuthenticationExecutionModel.Requirement newRequirement) {
+        List<AuthenticationExecutionInfoRepresentation> executionInfos = managedRealm.admin().flows().getExecutions(flowAlias);
+        for (AuthenticationExecutionInfoRepresentation exInfo : executionInfos) {
+            if (executionDisplayName.equals(exInfo.getDisplayName())) {
+                AuthenticationExecutionModel.Requirement currentRequirement = AuthenticationExecutionModel.Requirement.valueOf(exInfo.getRequirement());
+                exInfo.setRequirement(newRequirement.toString());
+                managedRealm.admin().flows().updateExecutions(flowAlias, exInfo);
+                return currentRequirement;
+            }
+        }
+
+        throw new IllegalStateException("Not found execution '" + executionDisplayName + "' in flow '" + flowAlias + "'.");
+    }
+
+    private void configureBrowserFlowWithWebAuthnAuthenticator(String newFlowAlias) {
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("newName", newFlowAlias);
+        Response response = managedRealm.admin().flows().copy("browser", params);
+        response.close();
+        String flowId = findFlowByAlias(newFlowAlias, managedRealm.admin().flows().getFlows()).getId();
+
+        AuthenticationExecutionRepresentation execution = new AuthenticationExecutionRepresentation();
+        execution.setParentFlow(flowId);
+        execution.setAuthenticator(WebAuthnAuthenticatorFactory.PROVIDER_ID);
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString());
+        response = managedRealm.admin().flows().addExecution(execution);
+        response.close();
+
+        execution = new AuthenticationExecutionRepresentation();
+        execution.setParentFlow(flowId);
+        execution.setAuthenticator( WebAuthnPasswordlessAuthenticatorFactory.PROVIDER_ID);
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE.toString());
+        response = managedRealm.admin().flows().addExecution(execution);
+        response.close();
+    }
+
+    private void removeWebAuthnFlow(String flowToDeleteAlias) {
+        List<AuthenticationFlowRepresentation> flows = managedRealm.admin().flows().getFlows();
+        AuthenticationFlowRepresentation flowRepresentation = findFlowByAlias(flowToDeleteAlias, flows);
+        managedRealm.admin().flows().deleteFlow(flowRepresentation.getId());
+    }
+
+    private void assertCredentialContainerExpected(AccountCredentialResource.CredentialContainer credential, String type, String category, String displayName, String helpText, String iconCssClass,
+                                                   String createAction, String updateAction, boolean removeable, int userCredentialsCount) {
+        Assertions.assertEquals(type, credential.getType());
+        Assertions.assertEquals(category, credential.getCategory());
+        Assertions.assertEquals(displayName, credential.getDisplayName());
+        Assertions.assertEquals(helpText, credential.getHelptext());
+        Assertions.assertEquals(iconCssClass, credential.getIconCssClass());
+        Assertions.assertEquals(createAction, credential.getCreateAction());
+        Assertions.assertEquals(updateAction, credential.getUpdateAction());
+        Assertions.assertEquals(removeable, credential.isRemoveable());
+        Assertions.assertEquals(userCredentialsCount, credential.getUserCredentialMetadatas().size());
+    }
+
+    public void testDeleteSessions() throws IOException {
+        String viewToken = oauth.client("direct-grant", "password").doPasswordGrantRequest("view-account-access", "password").getAccessToken();
+        oauth.doLogin("view-account-access", "password");
+        List<SessionRepresentation> sessions = simpleHttp.doGet(getAccountUrl("sessions")).auth(viewToken).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        Assertions.assertEquals(2, sessions.size());
+        int status = simpleHttp.doDelete(getAccountUrl("sessions?current=false")).acceptJson().auth(viewToken).asStatus();
+        Assertions.assertEquals(200, status);
+        sessions = simpleHttp.doGet(getAccountUrl("sessions")).auth(viewToken).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        Assertions.assertEquals(1, sessions.size());
+    }
+
+
+    @Test
+    public void testDeletionOfAllUserSessionsWillFireLogoutEvents() throws IOException {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        String username = "manage-account-access";
+        String password = "password";
+        String firstToken = oauth.client("direct-grant", "password").doPasswordGrantRequest(username, password).getAccessToken();
+        oauth.client("direct-grant", "password").doPasswordGrantRequest(username, password).getAccessToken();
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
+        List<UserSessionRepresentation> userSessions = user.getUserSessions();
+        Assertions.assertEquals(2, userSessions.size());
+
+        // skip the two direct access grant logins
+        events.skip(2);
+
+        int status = simpleHttp.doDelete(getAccountUrl("sessions?current=true")).acceptJson().auth(firstToken).asStatus();
+        Assertions.assertEquals(204, status);
+        Assertions.assertEquals(0, user.getUserSessions().size());
+
+        assertLogoutEventsForSessions(user, userSessions.stream().map(UserSessionRepresentation::getId).collect(Collectors.toSet()));
+        Assertions.assertNull(events.poll());
+    }
+
+    @Test
+    public void testDeletionOfAllUserSessionsExceptTheCurrentWillFireLogoutEvents() throws IOException, JWSInputException {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        String username = "manage-account-access";
+        String password = "password";
+        String firstToken = oauth.client("direct-grant", "password").doPasswordGrantRequest(username, password).getAccessToken();
+        oauth.client("direct-grant", "password").doPasswordGrantRequest(username, password).getAccessToken();
+        oauth.client("direct-grant", "password").doPasswordGrantRequest(username, password).getAccessToken();
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
+        List<UserSessionRepresentation> userSessions = user.getUserSessions();
+        Assertions.assertEquals(3, userSessions.size());
+
+        // skip the three direct access grant logins
+        events.skip(3);
+
+        int status = simpleHttp.doDelete(getAccountUrl("sessions?current=false")).acceptJson().auth(firstToken).asStatus();
+        Assertions.assertEquals(204, status);
+        Assertions.assertEquals(1, user.getUserSessions().size());
+
+        JWSInput input = new JWSInput(firstToken);
+        AccessToken token = input.readJsonContent(AccessToken.class);
+
+        userSessions = userSessions.stream().filter(session -> !session.getId().equals(token.getSessionId())).toList();
+
+        assertLogoutEventsForSessions(user, userSessions.stream().map(UserSessionRepresentation::getId).collect(Collectors.toSet()));
+        Assertions.assertNull(events.poll());
+    }
+
+
+    @Test
+    public void testDeletionOfSpecificSessionWillFireLogoutEvent() throws IOException, JWSInputException {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        String username = "manage-account-access";
+        String password = "password";
+        String firstToken = oauth.client("direct-grant", "password").doPasswordGrantRequest(username, password).getAccessToken();
+        oauth.client("direct-grant", "password").doPasswordGrantRequest(username, password).getAccessToken();
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
+        List<UserSessionRepresentation> userSessions = user.getUserSessions();
+        Assertions.assertEquals(2, userSessions.size());
+
+        // skip the two direct access grant logins
+        events.skip(2);
+
+        JWSInput input = new JWSInput(firstToken);
+        AccessToken token = input.readJsonContent(AccessToken.class);
+
+        int status = simpleHttp.doDelete(getAccountUrl(String.format("sessions/%s", token.getSessionId())))
+            .acceptJson().auth(firstToken).asStatus();
+        Assertions.assertEquals(204, status);
+        Assertions.assertEquals(1, user.getUserSessions().size());
+
+        EventAssertion.assertSuccess(events.poll())
+            .type(EventType.LOGOUT)
+            .clientId("account")
+            .userId(user.toRepresentation().getId())
+            .sessionId(token.getSessionId());
+
+        Assertions.assertNull(events.poll());
+    }
+
+    @Test
+    public void testListingAllSignedInDevicesEvenOfflineSessionsThenTerminatingAllSessions() throws IOException, JWSInputException {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        String username = "manage-account-access";
+        String password = "password";
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
+        // first direct access grant login
+        String firstToken = oauth.client("direct-grant", "password").doPasswordGrantRequest(username, password).getAccessToken();
+        EventAssertion.assertSuccess(events.poll())
+            .type(EventType.LOGIN)
+            .clientId("direct-grant")
+            .userId(user.toRepresentation().getId())
+            .sessionId(new JWSInput(firstToken).readJsonContent(AccessToken.class).getSessionId())
+            .hasScope("openid email profile");
+
+        // second direct access grant login
+        String secondToken = oauth.client("direct-grant", "password").doPasswordGrantRequest(username, password).getAccessToken();
+        EventAssertion.assertSuccess(events.poll())
+            .type(EventType.LOGIN)
+            .clientId("direct-grant")
+            .userId(user.toRepresentation().getId())
+            .sessionId(new JWSInput(secondToken).readJsonContent(AccessToken.class).getSessionId())
+            .hasScope("openid email profile");
+
+        // Login with scope 'offline_access'
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest(username, password);
+        Assertions.assertNull(offlineTokenResponse.getErrorDescription());
+        EventAssertion.assertSuccess(events.poll())
+            .type(EventType.LOGIN)
+            .clientId("offline-client")
+            .userId(user.toRepresentation().getId())
+            .sessionId(offlineTokenResponse.getSessionState())
+            .hasScope("openid email profile offline_access");
+
+        // Get all logged in 'devices'
+        Collection<DeviceRepresentation> devices = simpleHttp
+            .doGet(getAccountUrl("sessions/devices"))
+            .header("Accept", "application/json")
+            .auth(firstToken)
+            .asJson(new TypeReference<Collection<DeviceRepresentation>>() {
+            });
+        Assertions.assertFalse(devices.isEmpty());
+        List<SessionRepresentation> allSessions = devices.stream().flatMap(device -> device.getSessions().stream()).toList();
+        Assertions.assertEquals(3, allSessions.size());
+
+        // User deletes all of his sessions
+        int status = simpleHttp.doDelete(getAccountUrl("sessions?current=true"))
+            .acceptJson().auth(firstToken).asStatus();
+        Assertions.assertEquals(204, status);
+
+        assertLogoutEventsForSessions(user, allSessions.stream().map(SessionRepresentation::getId).collect(Collectors.toSet()));
+    }
+
+    @Test
+    public void testDeletionOfOfflineSessionWillFireLogoutEvent() throws IOException, JWSInputException {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        String username = "manage-account-access";
+        String password = "password";
+        String firstToken = oauth.client("direct-grant", "password").doPasswordGrantRequest(username, password).getAccessToken();
+
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest(username, password);
+        Assertions.assertNull(offlineTokenResponse.getErrorDescription());
+
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
+        Collection<DeviceRepresentation> devices = simpleHttp
+            .doGet(getAccountUrl("sessions/devices"))
+            .header("Accept", "application/json")
+            .auth(firstToken)
+            .asJson(new TypeReference<Collection<DeviceRepresentation>>() {
+            });
+        Assertions.assertEquals(2, devices.stream().flatMap(device -> device.getSessions().stream()).toList().size());
+
+        // skip direct access login and offline_access scoped login
+        events.skip(2);
+
+        int status = simpleHttp.doDelete(getAccountUrl(String.format("sessions/%s", offlineTokenResponse.getSessionState())))
+            .acceptJson().auth(firstToken).asStatus();
+        Assertions.assertEquals(204, status);
+
+        EventAssertion.assertSuccess(events.poll())
+            .type(EventType.LOGOUT)
+            .clientId("account")
+            .userId(user.toRepresentation().getId())
+            .sessionId(offlineTokenResponse.getSessionState());
+
+        Assertions.assertNull(events.poll());
+    }
+
+
+    @Test
+    public void listApplications() throws Exception {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        oauth.client("in-use-client", "secret1");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
+        Assertions.assertNull(tokenResponse.getErrorDescription());
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("view-applications-access", "password").getAccessToken();
+        List<ClientRepresentation> applications = simpleHttp
+                .doGet(getAccountUrl("applications"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asJson(new TypeReference<List<ClientRepresentation>>() {
+                });
+        Assertions.assertFalse(applications.isEmpty());
+
+        Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
+        assertThat(apps.keySet(), containsInAnyOrder("in-use-client", "always-display-client", "direct-grant"));
+
+        assertClientRep(apps.get("in-use-client"), "In Use Client", null, false, true, false, null, IN_USE_CLIENT_APP_URI);
+        assertClientRep(apps.get("always-display-client"), "Always Display Client", null, false, false, false, null, ALWAYS_DISPLAY_CLIENT_APP_URI);
+        assertClientRep(apps.get("direct-grant"), null, null, false, true, false, null, null);
+    }
+
+    @Test
+    public void listApplicationsFiltered() throws Exception {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        oauth.client("in-use-client", "secret1");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
+        Assertions.assertNull(tokenResponse.getErrorDescription());
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("view-applications-access", "password").getAccessToken();
+        List<ClientRepresentation> applications = simpleHttp
+                .doGet(getAccountUrl("applications"))
+                .header("Accept", "application/json")
+                .param("name", "In Use")
+                .auth(token)
+                .asJson(new TypeReference<List<ClientRepresentation>>() {
+                });
+        Assertions.assertFalse(applications.isEmpty());
+
+        Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
+        assertThat(apps.keySet(), containsInAnyOrder("in-use-client"));
+
+        assertClientRep(apps.get("in-use-client"), "In Use Client", null, false, true, false, null, IN_USE_CLIENT_APP_URI);
+    }
+
+    @Test
+    public void listApplicationsOfflineAccess() throws Exception {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
+        Assertions.assertNull(offlineTokenResponse.getErrorDescription());
+
+        oauth.client("offline-client-without-base-url", "secret1");
+        offlineTokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
+        Assertions.assertNull(offlineTokenResponse.getErrorDescription());
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("view-applications-access", "password").getAccessToken();
+        List<ClientRepresentation> applications = simpleHttp
+                .doGet(getAccountUrl("applications"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asJson(new TypeReference<List<ClientRepresentation>>() {
+                });
+        Assertions.assertFalse(applications.isEmpty());
+
+        Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
+        assertThat(apps.keySet(), containsInAnyOrder("offline-client", "offline-client-without-base-url", "always-display-client", "direct-grant"));
+
+        assertClientRep(apps.get("offline-client"), "Offline Client", null, false, false, true, null, OFFLINE_CLIENT_APP_URI);
+        assertClientRep(apps.get("offline-client-without-base-url"), "Offline Client Without Base URL", null, false, false, true, null, null);
+    }
+
+    @Test
+    public void listApplicationsThirdPartyWithoutConsentText() throws Exception {
+        listApplicationsThirdParty("acr", false);
+    }
+
+    @Test
+    public void listApplicationsThirdPartyWithConsentText() throws Exception {
+        listApplicationsThirdParty("profile", true);
+    }
+
+    private void listApplicationsThirdParty(String clientScopeName, boolean expectConsentTextAsName) throws Exception {
+        String appId = "third-party";
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("view-applications-access", "password").getAccessToken();
+
+        ClientScopeRepresentation clientScopeRepresentation = managedRealm.admin().clientScopes().findAll().stream()
+                .filter(s -> s.getName().equals(clientScopeName))
+                .findFirst().get();
+        ConsentScopeRepresentation consentScopeRepresentation = new ConsentScopeRepresentation();
+        consentScopeRepresentation.setId(clientScopeRepresentation.getId());
+
+        ConsentRepresentation requestedConsent = new ConsentRepresentation();
+        requestedConsent.setGrantedScopes(Collections.singletonList(consentScopeRepresentation));
+        simpleHttp
+                .doPost(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(token)
+                .asJson(ConsentRepresentation.class);
+
+        List<ClientRepresentation> applications = simpleHttp
+                .doGet(getAccountUrl("applications"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asJson(new TypeReference<List<ClientRepresentation>>() {
+                });
+        Assertions.assertFalse(applications.isEmpty());
+
+        simpleHttp
+                .doDelete(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse().close();
+
+        Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
+        assertThat(apps.keySet(), containsInAnyOrder(appId, "always-display-client", "direct-grant"));
+
+        ClientRepresentation app = apps.get(appId);
+        assertClientRep(app, null, "A third party application", true, false, false, null, "http://localhost:8180/auth/realms/master/app/auth");
+        Assertions.assertFalse(app.getConsent().getGrantedScopes().isEmpty());
+        ConsentScopeRepresentation grantedScope = app.getConsent().getGrantedScopes().get(0);
+        Assertions.assertEquals(clientScopeRepresentation.getId(), grantedScope.getId());
+
+        if (expectConsentTextAsName) {
+            Assertions.assertEquals(clientScopeRepresentation.getAttributes().get(ClientScopeModel.CONSENT_SCREEN_TEXT), grantedScope.getName());
+        }
+        else {
+            Assertions.assertEquals(clientScopeRepresentation.getName(), grantedScope.getName());
+        }
+    }
+
+    @Test
+    public void listApplicationsWithRootUrl() throws Exception {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        oauth.client("root-url-client", "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
+        Assertions.assertNull(tokenResponse.getErrorDescription());
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("view-applications-access", "password").getAccessToken();
+        List<ClientRepresentation> applications = simpleHttp
+                .doGet(getAccountUrl("applications"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asJson(new TypeReference<List<ClientRepresentation>>() {
+                });
+        Assertions.assertFalse(applications.isEmpty());
+
+        Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
+        assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "always-display-client", "direct-grant"));
+
+        assertClientRep(apps.get("root-url-client"), null, null, false, true, false, "http://localhost:8180/foo/bar", "/baz");
+    }
+
+    private void assertClientRep(ClientRepresentation clientRep, String name, String description, boolean userConsentRequired, boolean inUse, boolean offlineAccess, String rootUrl, String baseUrl) {
+        Assertions.assertNotNull(clientRep);
+        Assertions.assertEquals(name, clientRep.getClientName());
+        Assertions.assertEquals(description, clientRep.getDescription());
+        Assertions.assertEquals(userConsentRequired, clientRep.isUserConsentRequired());
+        Assertions.assertEquals(inUse, clientRep.isInUse());
+        Assertions.assertEquals(offlineAccess, clientRep.isOfflineAccess());
+        Assertions.assertEquals(rootUrl, clientRep.getRootUrl());
+        Assertions.assertEquals(baseUrl, clientRep.getBaseUrl());
+        Assertions.assertEquals(ResolveRelative.resolveRelativeUri(null, null, rootUrl, baseUrl), clientRep.getEffectiveUrl());
+    }
+
+    @Test
+    public void listApplicationsWithoutPermission() throws IOException {
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("no-account-access", "password").getAccessToken();
+        try (SimpleHttpResponse response = simpleHttp
+                .doGet(getAccountUrl("applications"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(403, response.getStatus());
+        }
+    }
+
+    @Test
+    public void getNotExistingApplication() throws IOException {
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("view-applications-access", "password").getAccessToken();
+        String appId = "not-existing";
+        try (SimpleHttpResponse response = simpleHttp
+                .doGet(getAccountUrl("applications/" + appId))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(404, response.getStatus());
+        }
+    }
+
+    private ConsentRepresentation createRequestedConsent(List<ClientScopeRepresentation> scopes) {
+        ConsentRepresentation requestedConsent = new ConsentRepresentation();
+        requestedConsent.setGrantedScopes(scopes.stream().map((scope)-> {
+            ConsentScopeRepresentation consentScopeRepresentation = new ConsentScopeRepresentation();
+            consentScopeRepresentation.setId(scope.getId());
+            return consentScopeRepresentation;
+        }).collect(Collectors.toList()));
+        return requestedConsent;
+    }
+
+    @Test
+    public void createConsentForClient() throws IOException {
+        String manageConsentToken = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-consent-access", "password").getAccessToken();
+        String appId = "security-admin-console";
+        List<ClientScopeRepresentation> requestedScopes = managedRealm.admin().clientScopes().findAll().subList(0,2);
+        ConsentRepresentation requestedConsent = createRequestedConsent(requestedScopes);
+
+        ConsentRepresentation consentRepresentation = simpleHttp
+                .doPost(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(manageConsentToken)
+                .asJson(ConsentRepresentation.class);
+        Assertions.assertTrue(consentRepresentation.getCreatedDate() > 0);
+        Assertions.assertTrue(consentRepresentation.getLastUpdatedDate() > 0);
+        assertThat(consentRepresentation.getGrantedScopes().stream().map(ConsentScopeRepresentation::getId).collect(Collectors.toList()),
+                containsInAnyOrder(requestedScopes.stream().map(ClientScopeRepresentation::getId).toArray()));
+
+        events.skip();
+        String expectedScopeDetails = requestedScopes.stream().map(cs->cs.getName()).collect(Collectors.joining(" "));
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.GRANT_CONSENT)
+                .clientId("account")
+                .userId(getUser(manageConsentToken).getId())
+                .details(Details.GRANTED_CLIENT, appId)
+                .details(Details.SCOPE, expectedScopeDetails);
+        Assertions.assertNull(events.poll());
+
+        //cleanup
+        simpleHttp.doDelete(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .auth(manageConsentToken)
+                .asResponse().close();
+    }
+
+    @Test
+    public void updateConsentForClient() throws IOException {
+        String manageConsentToken = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-consent-access", "password").getAccessToken();
+        String appId = "security-admin-console";
+        List<ClientScopeRepresentation> requestedScopes = managedRealm.admin().clientScopes().findAll().subList(0,1);
+        ConsentRepresentation requestedConsent = createRequestedConsent(requestedScopes);
+
+        ConsentRepresentation consentRepresentation = simpleHttp
+                .doPost(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(manageConsentToken)
+                .asJson(ConsentRepresentation.class);
+        Assertions.assertTrue(consentRepresentation.getCreatedDate() > 0);
+        Assertions.assertTrue(consentRepresentation.getLastUpdatedDate() > 0);
+        Assertions.assertEquals(1, consentRepresentation.getGrantedScopes().size());
+        Assertions.assertEquals(requestedScopes.get(0).getId(), consentRepresentation.getGrantedScopes().get(0).getId());
+
+        requestedScopes = managedRealm.admin().clientScopes().findAll().subList(1,2);
+        requestedConsent = createRequestedConsent(requestedScopes);
+
+        ConsentRepresentation consentRepresentation2 = simpleHttp
+                .doPost(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(manageConsentToken)
+                .asJson(ConsentRepresentation.class);
+        Assertions.assertTrue(consentRepresentation2.getCreatedDate() > 0);
+        Assertions.assertEquals(consentRepresentation.getCreatedDate(), consentRepresentation2.getCreatedDate());
+        Assertions.assertTrue(consentRepresentation2.getLastUpdatedDate() > 0);
+        Assertions.assertTrue(consentRepresentation2.getLastUpdatedDate() > consentRepresentation.getLastUpdatedDate());
+        Assertions.assertEquals(1, consentRepresentation2.getGrantedScopes().size());
+        Assertions.assertEquals(requestedScopes.get(0).getId(), consentRepresentation2.getGrantedScopes().get(0).getId());
+
+        events.skip(2);
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.UPDATE_CONSENT)
+                .clientId("account")
+                .userId(getUser(manageConsentToken).getId())
+                .details(Details.GRANTED_CLIENT, appId)
+                .details(Details.SCOPE, requestedScopes.get(0).getName());
+        Assertions.assertNull(events.poll());
+
+        //Cleanup
+        simpleHttp.doDelete(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .auth(manageConsentToken)
+                .asResponse().close();
+    }
+
+    @Test
+    public void createConsentForNotExistingClient() throws IOException {
+        String appId = "not-existing";
+
+        List<ClientScopeRepresentation> requestedScopes = managedRealm.admin().clientScopes().findAll().subList(0,1);
+        ConsentRepresentation requestedConsent = createRequestedConsent(requestedScopes);
+
+        try (SimpleHttpResponse response = simpleHttp
+                .doPost(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-consent-access", "password").getAccessToken())
+                .asResponse()) {
+            Assertions.assertEquals(404, response.getStatus());
+        }
+    }
+
+    @Test
+    public void createConsentForClientWithoutPermission() throws IOException {
+        String appId = "security-admin-console";
+
+        List<ClientScopeRepresentation> requestedScopes = managedRealm.admin().clientScopes().findAll().subList(0,1);
+        ConsentRepresentation requestedConsent = createRequestedConsent(requestedScopes);
+
+        try (SimpleHttpResponse response = simpleHttp
+                .doPost(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(oauth.client("direct-grant", "password").doPasswordGrantRequest("view-consent-access", "password").getAccessToken())
+                .asResponse()) {
+            Assertions.assertEquals(403, response.getStatus());
+        }
+    }
+
+    @Test
+    public void createConsentForClientWithPut() throws IOException {
+        String manageConsentToken = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-consent-access", "password").getAccessToken();
+        String appId = "security-admin-console";
+
+        List<ClientScopeRepresentation> requestedScopes = managedRealm.admin().clientScopes().findAll().subList(0,1);
+        ConsentRepresentation requestedConsent = createRequestedConsent(requestedScopes);
+
+        ConsentRepresentation consentRepresentation = simpleHttp
+                .doPut(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(manageConsentToken)
+                .asJson(ConsentRepresentation.class);
+        Assertions.assertTrue(consentRepresentation.getCreatedDate() > 0);
+        Assertions.assertTrue(consentRepresentation.getLastUpdatedDate() > 0);
+        Assertions.assertEquals(1, consentRepresentation.getGrantedScopes().size());
+        Assertions.assertEquals(requestedScopes.get(0).getId(), consentRepresentation.getGrantedScopes().get(0).getId());
+
+        events.skip();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.GRANT_CONSENT)
+                .clientId("account")
+                .userId(getUser(manageConsentToken).getId())
+                .details(Details.GRANTED_CLIENT, appId)
+                .details(Details.SCOPE, requestedScopes.get(0).getName());
+        Assertions.assertNull(events.poll());
+
+        //Cleanup
+        simpleHttp.doDelete(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .auth(manageConsentToken)
+                .asResponse().close();
+    }
+
+    @Test
+    public void updateConsentForClientWithPut() throws IOException {
+        String manageConsentToken = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-consent-access", "password").getAccessToken();
+        String appId = "security-admin-console";
+
+        List<ClientScopeRepresentation> requestedScopes = managedRealm.admin().clientScopes().findAll().subList(0,1);
+        ConsentRepresentation requestedConsent = createRequestedConsent(requestedScopes);
+
+        ConsentRepresentation consentRepresentation = simpleHttp
+                .doPut(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(manageConsentToken)
+                .asJson(ConsentRepresentation.class);
+        Assertions.assertTrue(consentRepresentation.getCreatedDate() > 0);
+        Assertions.assertTrue(consentRepresentation.getLastUpdatedDate() > 0);
+        Assertions.assertEquals(1, consentRepresentation.getGrantedScopes().size());
+        Assertions.assertEquals(requestedScopes.get(0).getId(), consentRepresentation.getGrantedScopes().get(0).getId());
+
+        requestedScopes = managedRealm.admin().clientScopes().findAll().subList(1,2);
+        requestedConsent = createRequestedConsent(requestedScopes);
+
+        ConsentRepresentation consentRepresentation2 = simpleHttp
+                .doPut(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(manageConsentToken)
+                .asJson(ConsentRepresentation.class);
+        Assertions.assertTrue(consentRepresentation2.getCreatedDate() > 0);
+        Assertions.assertEquals(consentRepresentation.getCreatedDate(), consentRepresentation2.getCreatedDate());
+        Assertions.assertTrue(consentRepresentation2.getLastUpdatedDate() > 0);
+        Assertions.assertTrue(consentRepresentation2.getLastUpdatedDate() > consentRepresentation.getLastUpdatedDate());
+        Assertions.assertEquals(1, consentRepresentation2.getGrantedScopes().size());
+        Assertions.assertEquals(requestedScopes.get(0).getId(), consentRepresentation2.getGrantedScopes().get(0).getId());
+
+        events.skip(2);
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.UPDATE_CONSENT)
+                .clientId("account")
+                .userId(getUser(manageConsentToken).getId())
+                .details(Details.GRANTED_CLIENT, appId)
+                .details(Details.SCOPE, requestedScopes.get(0).getName());
+        Assertions.assertNull(events.poll());
+
+        //Cleanup
+        simpleHttp.doDelete(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .auth(manageConsentToken)
+                .asResponse().close();
+    }
+
+    @Test
+    public void createConsentForNotExistingClientWithPut() throws IOException {
+        String appId = "not-existing";
+
+        List<ClientScopeRepresentation> requestedScopes = managedRealm.admin().clientScopes().findAll().subList(0,1);
+        ConsentRepresentation requestedConsent = createRequestedConsent(requestedScopes);
+
+        try (SimpleHttpResponse response = simpleHttp
+                .doPut(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-consent-access", "password").getAccessToken())
+                .asResponse()) {
+            Assertions.assertEquals(404, response.getStatus());
+        }
+    }
+
+    @Test
+    public void createConsentForClientWithoutPermissionWithPut() throws IOException {
+        String appId = "security-admin-console";
+
+        List<ClientScopeRepresentation> requestedScopes = managedRealm.admin().clientScopes().findAll().subList(0,1);
+        ConsentRepresentation requestedConsent = createRequestedConsent(requestedScopes);
+
+        try (SimpleHttpResponse response = simpleHttp
+                .doPut(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(oauth.client("direct-grant", "password").doPasswordGrantRequest("view-consent-access", "password").getAccessToken())
+                .asResponse()) {
+            Assertions.assertEquals(403, response.getStatus());
+        }
+    }
+
+    @Test
+    public void getConsentForClient() throws IOException {
+        String manageConsentToken = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-consent-access", "password").getAccessToken();
+        String appId = "security-admin-console";
+
+        List<ClientScopeRepresentation> requestedScopes = managedRealm.admin().clientScopes().findAll().subList(0,1);
+        ConsentRepresentation requestedConsent = createRequestedConsent(requestedScopes);
+
+        ConsentRepresentation consentRepresentation1 = simpleHttp
+                .doPost(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(manageConsentToken)
+                .asJson(ConsentRepresentation.class);
+        Assertions.assertTrue(consentRepresentation1.getCreatedDate() > 0);
+        Assertions.assertTrue(consentRepresentation1.getLastUpdatedDate() > 0);
+        Assertions.assertEquals(1, consentRepresentation1.getGrantedScopes().size());
+        Assertions.assertEquals(requestedScopes.get(0).getId(), consentRepresentation1.getGrantedScopes().get(0).getId());
+
+        ConsentRepresentation consentRepresentation2 = simpleHttp
+                .doGet(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .auth(manageConsentToken)
+                .asJson(ConsentRepresentation.class);
+        Assertions.assertEquals(consentRepresentation1.getLastUpdatedDate(), consentRepresentation2.getLastUpdatedDate());
+        Assertions.assertEquals(consentRepresentation1.getCreatedDate(), consentRepresentation2.getCreatedDate());
+        Assertions.assertEquals(consentRepresentation1.getGrantedScopes().get(0).getId(), consentRepresentation2.getGrantedScopes().get(0).getId());
+
+        ConsentRepresentation consentRepresentationFull = simpleHttp
+                .doGet(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .param("briefRepresentation", "false")
+                .json(requestedConsent)
+                .auth(manageConsentToken)
+                .asJson(ConsentRepresentation.class);
+        final var requestedScopeDescription = requestedScopes.get(0).getDescription();
+        final var requestedScopeProtocol = requestedScopes.get(0).getProtocol();
+
+        Assertions.assertFalse(requestedScopeDescription.isEmpty());
+        Assertions.assertFalse(requestedScopeProtocol.isEmpty());
+        Assertions.assertEquals(requestedScopeDescription, consentRepresentationFull.getGrantedScopes().get(0).getDescription());
+        Assertions.assertEquals(requestedScopeProtocol, consentRepresentationFull.getGrantedScopes().get(0).getProtocol());
+    }
+
+    @Test
+    public void getConsentForNotExistingClient() throws IOException {
+        String appId = "not-existing";
+        try (SimpleHttpResponse response = simpleHttp
+                .doGet(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .auth(oauth.client("direct-grant", "password").doPasswordGrantRequest("view-consent-access", "password").getAccessToken())
+                .asResponse()) {
+            Assertions.assertEquals(404, response.getStatus());
+        }
+    }
+
+    @Test
+    public void getNotExistingConsentForClient() throws IOException {
+        String appId = "security-admin-console";
+        try (SimpleHttpResponse response = simpleHttp
+                .doGet(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .auth(oauth.client("direct-grant", "password").doPasswordGrantRequest("view-consent-access", "password").getAccessToken())
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+    }
+
+    @Test
+    public void getConsentWithoutPermission() throws IOException {
+        String appId = "security-admin-console";
+        try (SimpleHttpResponse response = simpleHttp
+                .doGet(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .auth(oauth.client("direct-grant", "password").doPasswordGrantRequest("no-account-access", "password").getAccessToken())
+                .asResponse()) {
+            Assertions.assertEquals(403, response.getStatus());
+        }
+    }
+
+    @Test
+    public void deleteConsentForClient() throws IOException {
+        String manageConsentToken = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-consent-access", "password").getAccessToken();
+        String appId = "security-admin-console";
+
+        List<ClientScopeRepresentation> requestedScopes = managedRealm.admin().clientScopes().findAll().subList(0,1);
+        ConsentRepresentation requestedConsent = createRequestedConsent(requestedScopes);
+
+        ConsentRepresentation consentRepresentation = simpleHttp
+                .doPost(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(manageConsentToken)
+                .asJson(ConsentRepresentation.class);
+        Assertions.assertTrue(consentRepresentation.getCreatedDate() > 0);
+        Assertions.assertTrue(consentRepresentation.getLastUpdatedDate() > 0);
+        Assertions.assertEquals(1, consentRepresentation.getGrantedScopes().size());
+        Assertions.assertEquals(requestedScopes.get(0).getId(), consentRepresentation.getGrantedScopes().get(0).getId());
+
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .auth(manageConsentToken)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+
+        events.skip(2);
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.REVOKE_GRANT)
+                .clientId("account")
+                .userId(getUser(manageConsentToken).getId())
+                .details(Details.REVOKED_CLIENT, appId);
+        Assertions.assertNull(events.poll());
+
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .auth(manageConsentToken)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+    }
+
+    @Test
+    public void deleteConsentForNotExistingClient() throws IOException {
+        String appId = "not-existing";
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .auth(oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-consent-access", "password").getAccessToken())
+                .asResponse()) {
+            Assertions.assertEquals(404, response.getStatus());
+        }
+    }
+
+    @Test
+    public void deleteConsentWithoutPermission() throws IOException {
+        String appId = "security-admin-console";
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .auth(oauth.client("direct-grant", "password").doPasswordGrantRequest("view-consent-access", "password").getAccessToken())
+                .asResponse()) {
+            Assertions.assertEquals(403, response.getStatus());
+        }
+    }
+
+    //KEYCLOAK-14344
+    @Test
+    public void revokeOfflineAccess() throws Exception {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
+        Assertions.assertNull(offlineTokenResponse.getErrorDescription());
+
+        String viewAppsToken = oauth.client("direct-grant", "password").doPasswordGrantRequest("view-applications-access", "password").getAccessToken();
+
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/offline-client/consent"))
+                .header("Accept", "application/json")
+                .auth(viewAppsToken)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+
+        List<ClientRepresentation> applications = simpleHttp
+                .doGet(getAccountUrl("applications"))
+                .header("Accept", "application/json")
+                .auth(viewAppsToken)
+                .asJson(new TypeReference<List<ClientRepresentation>>() {
+                });
+        Assertions.assertFalse(applications.isEmpty());
+
+        Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
+        assertThat(apps.keySet(), containsInAnyOrder("always-display-client", "direct-grant"));
+
+        Assertions.assertNull(apps.get("offline-client"));
+    }
+
+    @Test
+    public void testApiVersion() throws IOException {
+        apiVersion = AccountRestApiVersion.DEFAULT.getStrVersion();
+
+        // a smoke test: profile and credentials endpoints respond at the versioned URL (e.g. "/v1/", "/v1/credentials")
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+
+        UserRepresentation user = getUser(token);
+        Assertions.assertNotNull(user);
+        Assertions.assertEquals("test-user@localhost", user.getUsername());
+
+        List<AccountCredentialResource.CredentialContainer> credentials = simpleHttp.doGet(getAccountUrl("credentials"))
+                .auth(token).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
+        Assertions.assertFalse(credentials.isEmpty());
+    }
+
+    @Test
+    public void testInvalidApiVersion() throws IOException {
+        apiVersion = "v2-foo";
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        try (SimpleHttpResponse response = simpleHttp.doGet(getAccountUrl("credentials")).auth(token).asResponse()) {
+            Assertions.assertEquals("API version not found", response.asJson().get("error").textValue());
+            Assertions.assertEquals(404, response.getStatus());
+        }
+    }
+
+    @Test
+    public void testAudience() throws Exception {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        oauth.client("custom-audience", "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        Assertions.assertNull(tokenResponse.getErrorDescription());
+
+        try (SimpleHttpResponse response = simpleHttp.doGet(getAccountUrl(null))
+                .auth(tokenResponse.getAccessToken())
+                .header("Accept", "application/json")
+                .asResponse()) {
+            Assertions.assertEquals(401, response.getStatus());
+        }
+
+        // update to correct audience
+        org.keycloak.representations.idm.ClientRepresentation clientRep = managedRealm.admin().clients().findByClientId("custom-audience").get(0);
+        ProtocolMapperRepresentation mapperRep = clientRep.getProtocolMappers().stream().filter(m -> m.getName().equals("aud")).findFirst().orElse(null);
+        Assertions.assertNotNull(mapperRep, "Audience mapper not found");
+        mapperRep.getConfig().put("included.custom.audience", "account");
+        managedRealm.admin().clients().get(clientRep.getId()).getProtocolMappers().update(mapperRep.getId(), mapperRep);
+
+        tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        Assertions.assertNull(tokenResponse.getErrorDescription());
+
+        try (SimpleHttpResponse response = simpleHttp.doGet(getAccountUrl(null))
+                .auth(tokenResponse.getAccessToken())
+                .header("Accept", "application/json")
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus());
+        }
+
+        // remove audience completely
+        managedRealm.admin().clients().get(clientRep.getId()).getProtocolMappers().delete(mapperRep.getId());
+
+        tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        Assertions.assertNull(tokenResponse.getErrorDescription());
+
+        try (SimpleHttpResponse response = simpleHttp.doGet(getAccountUrl(null))
+                .auth(tokenResponse.getAccessToken())
+                .header("Accept", "application/json")
+                .asResponse()) {
+            Assertions.assertEquals(401, response.getStatus());
+        }
+
+        // custom-audience client is used only in this test so no need to revert the changes
+    }
+
+    @Test
+    public void testUpdateProfileUnrecognizedPropertyInRepresentation() throws IOException {
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        final UserRepresentation user = getUser(token);
+        final Map<String,String> invalidRep = Map.of("id", user.getId(), "username", user.getUsername(), "invalid", "something");
+        try (SimpleHttpResponse response = simpleHttp.doPost(getAccountUrl(null))
+                .auth(token)
+                .json(invalidRep)
+                .asResponse()) {
+            Assertions.assertEquals(400, response.getStatus());
+            final OAuth2ErrorRepresentation error = response.asJson(OAuth2ErrorRepresentation.class);
+            assertThat(error.getError(), containsString("Invalid json representation for UserRepresentation. Unrecognized field \"invalid\" at line"));
+        }
+    }
+
+    @Test
+    public void testEmailWhenUpdateEmailEnabled() throws Exception {
+        managedRealm.cleanup().add(r -> setRequiredActionEnabled(r, RequiredAction.UPDATE_EMAIL, false));
+        setRequiredActionEnabled(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(true).editUsernameAllowed(true));
+        UserRepresentation user = getUser(true, token);
+        Assertions.assertNotNull(user.getEmail());
+        assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
+
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(false).editUsernameAllowed(false));
+        user = getUser(true, token);
+        Assertions.assertNotNull(user.getEmail());
+        assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
+    }
+
+    /**
+     * Verifies the account REST endpoint honors both client and realm <code>notBefore</code> when validating
+     * an access token. Ported from the upstream legacy testsuite fix for issue #49118.
+     */
+    @Test
+    public void testAccountAccessWithRealmNotBeforeAndClientNotBefore() throws IOException {
+        managedRealm.dirty();
+
+        String accessToken = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+
+        int status = simpleHttp.doGet(getAccountUrl(null))
+                .auth(accessToken)
+                .acceptJson()
+                .asStatus();
+        Assertions.assertEquals(200, status);
+
+        int currentTime = (int) (System.currentTimeMillis() / 1000);
+
+        org.keycloak.representations.idm.ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(managedRealm.admin(), "direct-grant").toRepresentation();
+        Integer originalRealmNotBefore = managedRealm.admin().toRepresentation().getNotBefore();
+
+        clientRep.setNotBefore(currentTime + 100);
+        AdminApiUtil.findClientByClientId(managedRealm.admin(), "direct-grant").update(clientRep);
+
+        status = simpleHttp.doGet(getAccountUrl(null))
+                .auth(accessToken)
+                .acceptJson()
+                .asStatus();
+        Assertions.assertEquals(401, status);
+
+        clientRep.setNotBefore(currentTime - 100);
+        AdminApiUtil.findClientByClientId(managedRealm.admin(), "direct-grant").update(clientRep);
+
+        status = simpleHttp.doGet(getAccountUrl(null))
+                .auth(accessToken)
+                .acceptJson()
+                .asStatus();
+        Assertions.assertEquals(200, status);
+
+        // Set realm notBefore to future
+        managedRealm.updateWithCleanup(r -> r.notBefore(currentTime + 100));
+
+        status = simpleHttp.doGet(getAccountUrl(null))
+                .auth(accessToken)
+                .acceptJson()
+                .asStatus();
+        Assertions.assertEquals(401, status);
+
+        // Restore realm notBefore so we can verify the client check still works
+        managedRealm.updateWithCleanup(r -> r.notBefore(originalRealmNotBefore));
+
+        status = simpleHttp.doGet(getAccountUrl(null))
+                .auth(accessToken)
+                .acceptJson()
+                .asStatus();
+        Assertions.assertEquals(200, status);
+    }
+
+    protected void setUserProfileConfiguration(String configuration) {
+        UserProfileUtil.setUserProfileConfiguration(managedRealm.admin(), configuration);
+    }
+
+    private static AuthenticationFlowRepresentation findFlowByAlias(String alias, List<AuthenticationFlowRepresentation> flows) {
+        return flows.stream().filter(f -> alias.equals(f.getAlias())).findAny().orElse(null);
+    }
+}

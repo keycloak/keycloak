@@ -40,10 +40,13 @@ import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NUM_OWNERS;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.REALM_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 import static io.restassured.RestAssured.when;
@@ -73,6 +76,93 @@ public class ClusterConfigKeepAliveDistTest {
         for (String cache : maxCountCaches) {
             Configuration config = getCacheConfiguration(cache);
             assertEquals(maxCount, config.memory().maxCount());
+        }
+    }
+
+    @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    void testLifespanApplied(KeycloakRunner runner) {
+        long expectedLifespanMs = 30000;
+        String[] caches = {AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME};
+
+        List<String> args = new ArrayList<>();
+        args.add("start-dev");
+        for (String cache : caches) {
+            args.add("--spi-cache-embedded--default--%s-lifespan=30s".formatted(cache));
+        }
+        runner.run(args);
+
+        for (String cache : caches) {
+            Configuration config = getCacheConfiguration(cache);
+            assertEquals(expectedLifespanMs, config.expiration().lifespan(),
+                    "Wrong lifespan for cache " + cache);
+        }
+    }
+
+    @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    void testDefaultLifespanIsImmortal(KeycloakRunner runner) {
+        String[] caches = {AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME};
+
+        runner.run("start-dev");
+
+        for (String cache : caches) {
+            Configuration config = getCacheConfiguration(cache);
+            assertEquals(-1, config.expiration().lifespan(),
+                    "Expected immortal entries (lifespan=-1) for cache " + cache);
+        }
+    }
+
+    @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    void testDefaultLifespanWithCachelessFeature(KeycloakRunner runner) {
+        String[] caches = {AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME};
+
+        runner.run("start-dev", "--features=cacheless");
+
+        for (String cache : caches) {
+            Configuration config = getCacheConfiguration(cache);
+            assertEquals(10000, config.expiration().lifespan(),
+                    "Expected 10s default lifespan for cache " + cache);
+        }
+    }
+
+    @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    void testZeroOrNegativeLifespanFallsBackToDefault(KeycloakRunner runner) {
+        String[] caches = {AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME};
+
+        List<String> args = new ArrayList<>();
+        args.add("start-dev");
+        args.add("--spi-cache-embedded--default--%s-lifespan=0s".formatted(AUTHORIZATION_CACHE_NAME));
+        args.add("--spi-cache-embedded--default--%s-lifespan=-30s".formatted(REALM_CACHE_NAME));
+        args.add("--spi-cache-embedded--default--%s-lifespan=0".formatted(USER_CACHE_NAME));
+        runner.run(args);
+
+        for (String cache : caches) {
+            Configuration config = getCacheConfiguration(cache);
+            assertEquals(-1, config.expiration().lifespan(),
+                    "Expected immortal entries (lifespan=-1) for cache " + cache);
+        }
+    }
+
+    @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    void testZeroOrNegativeLifespanOverridesCachelessDefault(KeycloakRunner runner) {
+        String[] caches = {AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME};
+
+        List<String> args = new ArrayList<>();
+        args.add("start-dev");
+        args.add("--features=cacheless");
+        args.add("--spi-cache-embedded--default--%s-lifespan=0s".formatted(AUTHORIZATION_CACHE_NAME));
+        args.add("--spi-cache-embedded--default--%s-lifespan=-1s".formatted(REALM_CACHE_NAME));
+        args.add("--spi-cache-embedded--default--%s-lifespan=0".formatted(USER_CACHE_NAME));
+        runner.run(args);
+
+        for (String cache : caches) {
+            Configuration config = getCacheConfiguration(cache);
+            assertEquals(-1, config.expiration().lifespan(),
+                    "Expected immortal entries (lifespan=-1) for cache " + cache + " even with cacheless feature enabled");
         }
     }
 

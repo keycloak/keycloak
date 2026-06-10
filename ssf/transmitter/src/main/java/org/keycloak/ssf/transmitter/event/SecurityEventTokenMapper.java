@@ -25,6 +25,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.event.InitiatingEntity;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
@@ -524,11 +525,11 @@ public class SecurityEventTokenMapper {
                     + (stream != null ? stream.getStreamId() : null) + ")");
         }
         RealmModel realm = session.getContext().getRealm();
-        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-        if (orgProvider == null) {
+        if (!Organizations.isEnabled(session)) {
             throw new SsfException("Cannot build tenant subject: organization feature is not enabled (stream "
                     + (stream != null ? stream.getStreamId() : null) + ")");
         }
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
         UserModel user = session.users().getUserById(realm, userId);
         if (user == null) {
             throw new SsfException("Cannot build tenant subject: user " + userId + " not found (stream "

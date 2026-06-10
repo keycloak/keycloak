@@ -468,6 +468,36 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testSamlEncryptionAttributes(migrationRealm);
     }
 
+    protected void testMigrationTo26_7_0() {
+        testParameterizedScopeTypesMigration(migrationRealm);
+    }
+
+    private void testParameterizedScopeTypesMigration(RealmResource realm) {
+        List<ClientScopeRepresentation> scopes = realm.clientScopes().findAll();
+
+        ClientScopeRepresentation defaultScope = scopes.stream()
+                .filter(s -> "dynamic-scope-default".equals(s.getName()))
+                .findFirst().orElseThrow(() -> new AssertionError("dynamic-scope-default not found"));
+        // verify rename migration: is.dynamic.scope -> is.parameterized.scope
+        assertThat(defaultScope.getAttributes().get("is.dynamic.scope"), is(nullValue()));
+        assertThat(defaultScope.getAttributes().get("is.parameterized.scope"), is("true"));
+        // verify type migration: default regexp -> string type, regexp removed
+        assertThat(defaultScope.getAttributes().get("parameterized.scope.type"), is("string"));
+        assertThat(defaultScope.getAttributes().get("dynamic.scope.regexp"), is(nullValue()));
+        assertThat(defaultScope.getAttributes().get("parameterized.scope.regexp"), is(nullValue()));
+
+        ClientScopeRepresentation customScope = scopes.stream()
+                .filter(s -> "dynamic-scope-custom".equals(s.getName()))
+                .findFirst().orElseThrow(() -> new AssertionError("dynamic-scope-custom not found"));
+        // verify rename migration: is.dynamic.scope -> is.parameterized.scope
+        assertThat(customScope.getAttributes().get("is.dynamic.scope"), is(nullValue()));
+        assertThat(customScope.getAttributes().get("is.parameterized.scope"), is("true"));
+        // verify type migration: custom regexp -> custom type, prefix stripped
+        assertThat(customScope.getAttributes().get("parameterized.scope.type"), is("custom"));
+        assertThat(customScope.getAttributes().get("dynamic.scope.regexp"), is(nullValue()));
+        assertThat(customScope.getAttributes().get("parameterized.scope.regexp"), is("[a-z]+"));
+    }
+
     private void testClientContainsExpectedClientScopes() {
         // Test OIDC client contains expected client scopes
         ClientResource migrationTestOIDCClient = AdminApiUtil.findClientByClientId(migrationRealm, "migration-test-client");
@@ -786,7 +816,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                 assertEquals("uid", component.getConfig().getFirst(LDAPConstants.RDN_LDAP_ATTRIBUTE));
                 assertEquals("nsuniqueid", component.getConfig().getFirst(LDAPConstants.UUID_LDAP_ATTRIBUTE));
                 assertEquals("inetOrgPerson, organizationalPerson", component.getConfig().getFirst(LDAPConstants.USER_OBJECT_CLASSES));
-                assertEquals("http://localhost", component.getConfig().getFirst(LDAPConstants.CONNECTION_URL));
+                assertEquals("ldap://localhost", component.getConfig().getFirst(LDAPConstants.CONNECTION_URL));
                 assertEquals("dn", component.getConfig().getFirst(LDAPConstants.USERS_DN));
                 assertEquals(LDAPConstants.AUTH_TYPE_NONE, component.getConfig().getFirst(LDAPConstants.AUTH_TYPE));
                 assertEquals("true", component.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION));
