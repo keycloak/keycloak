@@ -87,6 +87,8 @@
 :grafanadashboards_link: https://www.keycloak.org/observability/grafana-dashboards
 :highavailabilityguide_name: High Availability Guide
 :highavailabilityguide_link: https://www.keycloak.org/guides#high-availability
+:loggingguide_name: Logging Guide
+:loggingguide_link: {server_guide_base_link}/logging
 :observablitycategory_link: https://www.keycloak.org/guides#observability
 :operatorguide_name: Operator  Guide
 :operatorguide_link: https://www.keycloak.org/guides#operator
@@ -152,6 +154,7 @@
 :securing_apps_javascript_adapter_link: {securing_apps_base_link}/javascript-adapter
 :securing_apps_javascript_adapter_name: {project_name} Javascript adapter
 :securing_apps_token_exchange_link: {securing_apps_base_link}/token-exchange
+:securing_apps_jwt_authorization_grant_link: {securing_apps_base_link}/jwt-authorization-grant
 :securing_apps_dpop_link: {securing_apps_base_link}/dpop
 :securing_apps_token_exchange_name: Token exchange Documentation
 
