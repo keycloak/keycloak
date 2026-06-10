@@ -55,6 +55,8 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
     public static final KcSamlBrokerConfiguration INSTANCE = new KcSamlBrokerConfiguration();
     public static final String ATTRIBUTE_TO_MAP_FRIENDLY_NAME = "user-attribute-friendly";
+    public static final String CONSUMER_CLIENT_ID = "broker-app";
+    public static final String CONSUMER_CLIENT_SECRET = "broker-app-secret";
 
     private final boolean loginHint;
 
@@ -217,9 +219,9 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .attribute(SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, getConsumerRoot() + "/sales-post/saml")
             .build(),
           ClientBuilder.create()
-            .clientId("broker-app")
+            .clientId(CONSUMER_CLIENT_ID)
             .name("broker-app")
-            .secret("broker-app-secret")
+            .secret(CONSUMER_CLIENT_SECRET)
             .enabled(true)
             .directAccessGrantsEnabled()
             .redirectUris(getConsumerRoot() + "/auth/*")
