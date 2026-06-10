@@ -1197,7 +1197,6 @@ export const StreamTab = ({
                   isOpen={editEventsRequestedOpen}
                   selections={editStreamEventsRequested}
                   onSelect={(value) => {
-                    if (!canEditStream) return;
                     const event = value as string;
                     setEditStreamEventsRequested((prev) =>
                       prev.includes(event)
@@ -1243,7 +1242,6 @@ export const StreamTab = ({
                   isOpen={editEventsDeliveredOpen}
                   selections={editStreamEventsDelivered}
                   onSelect={(value) => {
-                    if (!canEditStream) return;
                     const event = value as string;
                     setEditStreamEventsDelivered((prev) =>
                       prev.includes(event)

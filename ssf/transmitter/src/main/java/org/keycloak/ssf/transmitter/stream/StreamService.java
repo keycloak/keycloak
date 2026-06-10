@@ -956,7 +956,7 @@ public class StreamService {
             throw new SsfException("Invalid stream update: request body is required");
         }
 
-        // Set the receiver client as the current client here to store the chnages on the proper target client.
+        // Set the receiver client as the current client here to store the changes on the proper target client.
         // Without this swap the merged stream is written to the wrong client and the receiver's stored config is left untouched.
         ClientModel previousClient = session.getContext().getClient();
         session.getContext().setClient(receiverClient);
