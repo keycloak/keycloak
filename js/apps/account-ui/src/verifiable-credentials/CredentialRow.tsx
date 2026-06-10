@@ -112,7 +112,7 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
     try {
       // Construct the AIA action parameter
       const config = {
-        credential_configuration_id: credential.credentialScopeName,
+        credential_configuration_id: credential.credentialConfigurationId,
         pre_authorized: false,
       };
 
