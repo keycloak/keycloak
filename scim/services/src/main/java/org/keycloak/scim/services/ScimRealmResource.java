@@ -2,6 +2,7 @@ package org.keycloak.scim.services;
 
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -27,7 +28,7 @@ public class ScimRealmResource {
         ScimResourceTypeProvider<?> provider = session.getProvider(ScimResourceTypeProvider.class, resourceType);// Ensure the provider is loaded
 
         if (provider == null) {
-            throw new ErrorResponseException(Response.status(Response.Status.NOT_FOUND).entity(new ErrorResponse("Resource type not found", Status.NOT_FOUND.getStatusCode())).build());
+            throw new ErrorResponseException(Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON).entity(new ErrorResponse("Resource type not found", Status.NOT_FOUND.getStatusCode())).build());
         }
 
         AdminEventBuilder adminEvent = createAdminEventBuilder();
