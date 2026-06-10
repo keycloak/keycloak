@@ -175,6 +175,10 @@ This improves security by ensuring that only trusted, pre-registered hosts can b
 
 The following sections provide details on deprecated features.
 
+=== Identity Brokering API V1 is deprecated
+
+The Identity Brokering API V1 is now deprecated but remains enabled by default for backward compatibility. See the link:{releasenotes_link}[Release Notes] for more details.
+
 === Option Allow regex pattern comparison is deprecated for the X509 client authenticator
 
 The option **Allow regex pattern comparison** is deprecated for the X509 client authenticator. This option allows to configure a Java regular expression instead of the exact DN for the client certificate subject DN. As previously commented in the breaking changes section, this option is now deprecated and it will be removed in a future version. The certificate for the client should be unambiguously identified because of security reasons.

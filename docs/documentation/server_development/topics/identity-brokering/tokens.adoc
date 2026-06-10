@@ -6,7 +6,9 @@
 
 ==== Identity brokering API V1
 
-Version 1 or V1 is the old feature and enabled by default. In a future {project_name} release V1 will be deprecated and substituted by V2.
+WARNING: Identity Brokering API V1 is *deprecated* and will be removed in a future version. Users should migrate to V2.
+
+Version 1 or V1 is the old feature and still enabled by default for backward compatibility.
 
 You can use the `Store Tokens` configuration option in the `Advanced settings` section of the IDP's settings page. Once this option is enabled, when a user authenticates using a external Identity provider, the returned token will be stored inside the database for each user and IDP.
 
@@ -31,11 +33,14 @@ These external tokens can be re-established by either logging in again through t
 
 ==== Identity brokering API V2
 
-:tech_feature_name: Identity Brokering API V2
-:tech_feature_id: identity-brokering-api:v2
-include::../templates/techpreview.adoc[]
+[NOTE]
+====
+Identity Brokering API V2 is *supported* and disabled by default.
 
-Version 2 or V2 is the new feature that is now in preview status. The new feature manages two different configuration options in the same Identity Provider page.
+To enable, start the server with `--features=identity-brokering-api:v2`.
+====
+
+Version 2 or V2 is the new feature that replaces V1. The new feature manages two different configuration options in the same Identity Provider page.
 
 * **Store token in session**: New option that stores the returned token in the user session associated to the login.
 * **Store tokens**: Same option used in V1 and with the same meaning. The store token returned by the external provider is stored in the database after a successful login.
