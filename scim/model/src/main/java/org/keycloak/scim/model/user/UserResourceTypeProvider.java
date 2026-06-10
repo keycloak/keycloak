@@ -32,6 +32,8 @@ import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.filter.ScimFilterParser.FilterContext;
 import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
+import org.keycloak.scim.protocol.ForbiddenException;
+import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
@@ -110,6 +112,66 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     protected String getRealmResourceType() {
         return AdminPermissionsSchema.USERS_RESOURCE_TYPE;
+    }
+
+    @Override
+    public User get(String id, List<String> attributes, List<String> excludedAttributes) {
+        UserModel model = getModel(id);
+
+        if (model == null) {
+            return null;
+        }
+
+        if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.VIEW)) {
+            throw new ForbiddenException();
+        }
+
+        RealmModel realm = session.getContext().getRealm();
+
+        if (AdminUserUtils.isAdminUser(session, realm, model)) {
+            User resource = new User();
+            resource.setId(model.getId());
+            resource.setUserName(model.getUsername());
+            return resource;
+        }
+
+        return super.get(id, attributes, excludedAttributes);
+    }
+
+    @Override
+    public User update(User resource) {
+        UserModel model = getModel(resource.getId());
+        RealmModel realm = session.getContext().getRealm();
+
+        if (model != null && AdminUserUtils.isAdminUser(session, realm, model)) {
+            throw new ForbiddenException();
+        }
+
+        return super.update(resource);
+    }
+
+    @Override
+    public boolean delete(String id) {
+        UserModel model = getModel(id);
+        RealmModel realm = session.getContext().getRealm();
+
+        if (model != null && AdminUserUtils.isAdminUser(session, realm, model)) {
+            throw new ForbiddenException();
+        }
+
+        return super.delete(id);
+    }
+
+    @Override
+    public void patch(User existing, List<PatchOperation> operations) {
+        UserModel model = getModel(existing.getId());
+        RealmModel realm = session.getContext().getRealm();
+
+        if (model != null && AdminUserUtils.isAdminUser(session, realm, model)) {
+            throw new ForbiddenException();
+        }
+
+        super.patch(existing, operations);
     }
 
     @Override

@@ -193,11 +193,11 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
                 || session.getContext().getPermissions().hasPermission(getRealmResourceType(), AdminPermissionsSchema.VIEW);
     }
 
-    private boolean hasPermission(String realmResourceType, String scope) {
+    protected boolean hasPermission(String realmResourceType, String scope) {
         return session.getContext().getPermissions().hasPermission(realmResourceType, scope);
     }
 
-    private boolean hasPermission(M model, String realmResourceType, String scope) {
+    protected boolean hasPermission(M model, String realmResourceType, String scope) {
         return session.getContext().getPermissions().hasPermission(model, realmResourceType, scope);
     }
 
