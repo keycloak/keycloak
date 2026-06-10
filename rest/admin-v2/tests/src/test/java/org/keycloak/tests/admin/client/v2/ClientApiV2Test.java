@@ -380,7 +380,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         ListOptions listOptions = new ListOptions();
         listOptions.setFields(Set.of("clientId", "displayName"));
-        listOptions.setSortBy(String.format("%s, %s", ClientSortField.DISPLAY_NAME.toQueryValue(), ClientSortField.CLIENT_ID.toQueryValue()));
+        listOptions.setSortBy(List.of(ClientSortField.DISPLAY_NAME, ClientSortField.CLIENT_ID));
 
         try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
             List<String> sortTestClientIds = clients
@@ -399,7 +399,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         ListOptions listOptions = new ListOptions();
         listOptions.setFields(Set.of("clientId", "displayName"));
-        listOptions.setSortBy(String.format("%s, %s", ClientSortField.DISPLAY_NAME.toQueryValue(), ClientSortField.CLIENT_ID.toQueryValue()));
+        listOptions.setSortBy(List.of(ClientSortField.DISPLAY_NAME, ClientSortField.CLIENT_ID));
         listOptions.setSortOrder(SortOrder.DESC);
 
         try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {

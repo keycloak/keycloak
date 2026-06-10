@@ -31,12 +31,7 @@ public interface ClientService extends Service {
 
         public ClientProjectionOptions(Set<String> fields) {
             if (fields != null) {
-                // Split comma-separated values to support both "field1,field2" and multiple parameters
-                fields.stream()
-                    .flatMap(value -> Arrays.stream(value.split(",")))
-                    .map(String::trim)
-                    .filter(field -> !field.isEmpty())
-                    .forEach(this.fields::add);
+                this.fields.addAll(fields);
             }
         }
         
@@ -63,7 +58,6 @@ public interface ClientService extends Service {
 
         private static List<ClientSortField> parseSortBy(String sortBy) {
             List<ClientSortField> fields = Arrays.stream(sortBy.split(","))
-                    .flatMap(value -> Arrays.stream(value.split(",")))
                     .map(String::trim)
                     .filter(field -> !field.isEmpty())
                     .map(ClientSortAndSliceOptions::parseSortField)
