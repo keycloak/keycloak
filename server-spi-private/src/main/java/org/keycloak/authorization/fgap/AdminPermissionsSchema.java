@@ -638,6 +638,11 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
 
         ResourceStore resourceStore = storeFactory.getResourceStore();
         Resource resourceTypeResource = resourceStore.findByName(resourceServer, resourceType);
+
+        if (resourceTypeResource == null) {
+            return;
+        }
+
         Set<Scope> newScopes = new HashSet<>(resourceTypeResource.getScopes());
 
         newScopes.add(newScope);
