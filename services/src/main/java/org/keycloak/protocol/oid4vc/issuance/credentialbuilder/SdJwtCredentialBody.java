@@ -21,6 +21,8 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.SdJwt;
+import org.keycloak.sdjwt.SdJwtClaimName;
+import org.keycloak.sdjwt.VisibleSdJwtClaim;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -40,12 +42,14 @@ public class SdJwtCredentialBody implements CredentialBody {
         this.sdJwtBuilder = sdJwtBuilder;
         this.issuerSignedJWT = issuerSignedJWT;
     }
-
+    
     public void addKeyBinding(JWK jwk) throws CredentialBuilderException {
         ObjectNode jwkNode = JsonSerialization.mapper.convertValue(jwk, ObjectNode.class);
         ObjectNode keyBindingNode = JsonSerialization.mapper.createObjectNode();
         keyBindingNode.set(CLAIM_NAME_JWK, jwkNode);
-        issuerSignedJWT.getPayload().set(CLAIM_NAME_CNF, keyBindingNode);
+
+        issuerSignedJWT.getDisclosureClaims().add(
+                new VisibleSdJwtClaim(new SdJwtClaimName(CLAIM_NAME_CNF), keyBindingNode));
     }
 
     public IssuerSignedJWT getIssuerSignedJWT() {

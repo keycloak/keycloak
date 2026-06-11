@@ -250,18 +250,23 @@ public class SdJwt {
             this.useDefaultDecoys = useDefaultDecoys;
             return this;
         }
-
+        
         public SdJwt build() {
-            int numberOfDecoys = Optional.ofNullable(issuerSignedJwt.getDecoyClaims()).map(List::size).orElse(0);
-            if (useDefaultDecoys && numberOfDecoys == 0) {
-                List<DecoyClaim> decoyClaims = new ArrayList<>();
-                for (int i = 0; i < DEFAULT_NUMBER_OF_DECOYS; i++) {
-                    decoyClaims.add(DecoyClaim.builder().build());
-                }
-                issuerSignedJwt.setDisclosureClaims(issuerSignedJwt.getDisclosureSpec(),
-                                                    issuerSignedJwt.getDisclosureClaims(),
-                                                    decoyClaims);
-            }
+            List<DecoyClaim> decoyClaims = Optional.ofNullable(issuerSignedJwt.getDecoyClaims())
+                    .filter(list -> !list.isEmpty())
+                    .orElseGet(() -> {
+                        if (!useDefaultDecoys) {
+                            return Collections.emptyList();
+                        }
+                        List<DecoyClaim> defaults = new ArrayList<>();
+                        for (int i = 0; i < DEFAULT_NUMBER_OF_DECOYS; i++) {
+                            defaults.add(DecoyClaim.builder().build());
+                        }
+                        return defaults;
+                    });
+            issuerSignedJwt.setDisclosureClaims(issuerSignedJwt.getDisclosureSpec(),
+                                                issuerSignedJwt.getDisclosureClaims(),
+                                                decoyClaims);
 
             SdJwt sdJwt = new SdJwt(issuerSignedJwt, keyBindingJWT, nestedSdJwts);
             AtomicInteger signCounter = new AtomicInteger(0);
