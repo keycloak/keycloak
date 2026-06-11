@@ -250,7 +250,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
     }
 
     @Test
-    public void testSignatureVerificationHardcodedPublicKeyHS512() throws Exception {
+    public void testSignatureVerificationHardcodedPublicKeyHS512NotAllowed() throws Exception {
         IdentityProviderRepresentation idpRep = getIdentityProvider();
         OIDCIdentityProviderConfigRep cfg = new OIDCIdentityProviderConfigRep(idpRep);
         cfg.setValidateSignature(true);
@@ -267,12 +267,8 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
                 .setAttribute(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG, Algorithm.HS512)
                 .update()) {
 
-            logInAsUserInIDPForFirstTime();
-            appPage.assertCurrent();
-            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
-
             logInAsUserInIDP();
-            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+            assertErrorPage("Unexpected error when authenticating with identity provider");
         }
     }
 

@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthenticator;
 import org.keycloak.broker.kubernetes.KubernetesIdentityProviderFactory;
 import org.keycloak.common.util.Time;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -78,6 +79,17 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
         assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
         assertSuccess(internalClientId, doClientGrant(jwt));
         assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
+    }
+
+    @Test
+    public void testHS256AlgorithmConfusion() {
+        JsonWebToken token = createDefaultToken();
+        String encodedToken = new JWSBuilder()
+                .type("JWT")
+                .jsonContent(token)
+                .hmac256(identityProvider.getKeys().getKeyWrapper().getPublicKey().getEncoded());
+
+        assertFailure("Invalid signature algorithm", doClientGrant(encodedToken));
     }
 
     @Override
