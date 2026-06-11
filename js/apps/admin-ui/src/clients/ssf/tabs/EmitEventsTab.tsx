@@ -242,6 +242,8 @@ export const EmitEventsTab = ({
         });
       case "invalid_request":
         return t("ssfEmitErrorInvalidRequest", { detail });
+      case "no_delivery_config":
+        return t("ssfEmitErrorNoDeliveryConfig");
       default:
         return t("ssfEmitErrorUnknown", { detail });
     }

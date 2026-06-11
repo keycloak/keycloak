@@ -330,6 +330,30 @@ public class SsfTransmitterEventEmitterTests {
         }
     }
 
+    // ---- stream state ----
+
+    @Test
+    public void emit_streamWithoutDeliveryConfig_returns400NoDeliveryConfig() throws Exception {
+        // Simulate an incomplete stream — e.g. stream state seeded
+        // externally, or a KEYCLOAK-managed stream whose push/poll
+        // delivery was never configured — by stripping the delivery
+        // attributes the store reconstructs StreamDeliveryConfig from.
+        // The stream itself stays registered. Without the guard the
+        // dispatcher would skip delivery before the outbox enqueue and
+        // the emitter would still see "dispatched" plus a jti that
+        // resolves to nothing.
+        removeReceiverDeliveryAttributes();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = emit(mgmtToken, "CaepCredentialChange", TEST_EMAIL,
+                Map.of("credential_type", "password", "change_type", "update"))) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "emit against a delivery-less stream must not report success");
+            Assertions.assertEquals("no_delivery_config", res.asJson().get("error").asText(),
+                    "error code should name the missing delivery configuration");
+        }
+    }
+
     // ---- dispatch filter branches ----
 
     @Test
@@ -654,6 +678,26 @@ public class SsfTransmitterEventEmitterTests {
         Map<String, String> attrs = rep.getAttributes();
         attrs.put(ClientStreamStore.SSF_ALLOW_EMIT_EVENTS_KEY, String.valueOf(allowEmit));
         attrs.put(ClientStreamStore.SSF_EMIT_EVENTS_ROLE_KEY, role);
+        rep.setAttributes(attrs);
+        clientResource.update(rep);
+    }
+
+    /**
+     * Strips the stored delivery attributes off the receiver client so
+     * {@code ClientStreamStore} reconstructs the stream with
+     * {@code getDelivery() == null} — the incomplete-stream state the
+     * {@code no_delivery_config} emit guard reports on.
+     */
+    protected void removeReceiverDeliveryAttributes() {
+        ClientResource clientResource = realm.admin().clients().get(findClientByClientId(RECEIVER).getId());
+        ClientRepresentation rep = clientResource.toRepresentation();
+        Map<String, String> attrs = rep.getAttributes();
+        // Client update merges attributes — absent keys are left alone, so
+        // plain remove() would be a no-op. An empty value goes through
+        // setAttribute, which treats null/empty as removal.
+        attrs.put(ClientStreamStore.SSF_STREAM_DELIVERY_METHOD_KEY, "");
+        attrs.put(ClientStreamStore.SSF_STREAM_DELIVERY_ENDPOINT_URL_KEY, "");
+        attrs.put(ClientStreamStore.SSF_STREAM_DELIVERY_AUTHORIZATION_HEADER_KEY, "");
         rep.setAttributes(attrs);
         clientResource.update(rep);
     }

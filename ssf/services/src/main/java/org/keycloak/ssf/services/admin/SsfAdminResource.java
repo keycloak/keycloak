@@ -1123,6 +1123,10 @@ public class SsfAdminResource {
                 // (e.g. on a stream that was deleted between check and emit).
                 return invalidRequest(emitErrorCode, emitMessage,
                         "No SSF stream registered for client");
+            case NO_DELIVERY_CONFIG:
+                // Stream exists but is not deliverable
+                return invalidRequest(emitErrorCode, emitMessage,
+                        "Stream has no delivery configuration");
             case DISPATCHED:
             case DROPPED_UNSUBSCRIBED:
             case DROPPED_FILTERED:

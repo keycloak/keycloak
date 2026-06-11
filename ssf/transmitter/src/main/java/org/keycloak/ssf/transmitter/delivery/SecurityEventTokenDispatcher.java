@@ -378,7 +378,7 @@ public class SecurityEventTokenDispatcher {
             // before the receiver has registered its push/poll endpoint.
             // There is nowhere to send the SET, so skip delivery instead of
             // NPEing on delivery.getMethod().
-            log.debugf("No delivery configured for stream; skipping delivery. clientId=%s streamId=%s jti=%s",
+            log.warnf("No delivery configured for stream; skipping delivery. clientId=%s streamId=%s jti=%s",
                     stream.getClientClientId(), stream.getStreamId(), eventToken.getJti());
             return false;
         }
