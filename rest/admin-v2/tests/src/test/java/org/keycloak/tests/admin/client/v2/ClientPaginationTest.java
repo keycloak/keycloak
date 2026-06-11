@@ -161,6 +161,18 @@ public class ClientPaginationTest extends AbstractClientApiV2Test {
     }
 
     @Test
+    public void pagination() throws IOException {
+        List<BaseClientRepresentation> page = queryClients(null, 0, 2);
+        assertThat(page, hasSize(2));
+
+        List<BaseClientRepresentation> nextPage = queryClients(null, 2, 2);
+        assertThat(nextPage, hasSize(2));
+        assertThat(page.get(0).getClientId(), is(not(nextPage.get(0).getClientId())));
+        // test that the last client of the first page is not the first client on the next page
+        assertThat(page.get(1).getClientId(), is(not(nextPage.get(0).getClientId())));
+    }
+
+    @Test
     public void queryWithPaginationBeyondResultsReturnsEmpty() throws IOException {
         String query = "clientId sw \"" + PAGINATION_QUERY_PREFIX + "\"";
         List<BaseClientRepresentation> page = queryClients(query, 100, 10);
@@ -169,8 +181,8 @@ public class ClientPaginationTest extends AbstractClientApiV2Test {
 
     private List<BaseClientRepresentation> queryClients(String query, int offset, int limit) throws IOException {
         String url = getClientsApiUrl()
-                + "?q=" + URLEncoder.encode(query, StandardCharsets.UTF_8)
-                + "&offset=" + offset
+                + (query == null ? "?" : "?q=" + URLEncoder.encode(query, StandardCharsets.UTF_8) + "&")
+                + "offset=" + offset
                 + "&limit=" + limit;
         HttpGet request = new HttpGet(url);
         setAuthHeader(request);

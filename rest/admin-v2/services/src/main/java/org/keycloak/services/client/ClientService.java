@@ -52,7 +52,7 @@ public interface ClientService extends Service {
 
     BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, InputStream patch) throws ServiceException;
 
-    public static ClientSortAndSliceOptions normalize(Integer offset, Integer limit) throws ServiceException {
+    public static ClientSortAndSliceOptions normalizePagination(Integer offset, Integer limit) throws ServiceException {
         if (offset != null && offset < 0) {
             throw new ServiceException("offset must be greater than or equal to 0", Response.Status.BAD_REQUEST);
         }

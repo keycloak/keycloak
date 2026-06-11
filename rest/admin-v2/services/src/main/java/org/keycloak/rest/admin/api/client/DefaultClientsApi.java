@@ -48,7 +48,7 @@ public class DefaultClientsApi implements ClientsApi {
     public Stream<BaseClientRepresentation> getClients(ListOptions params) {
         try {
             var searchOptions = params.getQuery() != null ? new ClientService.ClientSearchOptions(params.getQuery()) : null;
-            var sortAndSliceOptions = ClientService.normalize(params.getOffset(), params.getLimit());
+            var sortAndSliceOptions = ClientService.normalizePagination(params.getOffset(), params.getLimit());
             return clientService.getClients(realm, new ClientProjectionOptions(params.getFields()), searchOptions,
                     sortAndSliceOptions);
         } catch (ClientQueryException e) {
