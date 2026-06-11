@@ -27,6 +27,7 @@ import jakarta.persistence.EntityManagerFactory;
 
 import org.hibernate.Session;
 import org.hibernate.dialect.PostgreSQLDialect;
+import org.hibernate.engine.jdbc.connections.spi.JdbcConnectionAccess;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.event.spi.EventType;
@@ -145,7 +146,8 @@ public class AsyncCommitIntegrator implements PreInsertEventListener, PreUpdateE
      */
     private static boolean isAuroraWithLogicalReplication(SessionFactoryImplementor sf) {
         try {
-            Connection connection = sf.getJdbcServices().getBootstrapJdbcConnectionAccess().obtainConnection();
+            JdbcConnectionAccess bootstrapJdbcConnectionAccess = sf.getJdbcServices().getBootstrapJdbcConnectionAccess();
+            Connection connection = bootstrapJdbcConnectionAccess.obtainConnection();
             try {
                 try (Statement stmt = connection.createStatement();
                      ResultSet rs = stmt.executeQuery("SELECT aurora_version()")) {
@@ -161,7 +163,7 @@ public class AsyncCommitIntegrator implements PreInsertEventListener, PreUpdateE
                     return rs.next() && "logical".equals(rs.getString(1));
                 }
             } finally {
-                sf.getJdbcServices().getBootstrapJdbcConnectionAccess().releaseConnection(connection);
+                bootstrapJdbcConnectionAccess.releaseConnection(connection);
             }
         } catch (SQLException e) {
             logger.warn("Failed to detect Aurora/logical replication status; disabling asynchronous commit optimization", e);
