@@ -197,11 +197,12 @@ public class UserVerifiableCredentialsTest extends AbstractUserTest {
     public void verifiableCredentialsCreateErrors() {
         String userId = createUser();
         UserVerifiableCredentialResource user = managedRealm.admin().users().get(userId).verifiableCredentials();
-
+        long createdDate = Time.currentTimeMillis();
         try {
             UserVerifiableCredentialRepresentation verifCred = new UserVerifiableCredentialRepresentation();
             verifCred.setCredentialScopeName(SCOPE_1_NAME);
-            verifCred.setCreatedDate(Time.currentTimeMillis());
+            verifCred.setCreatedDate(createdDate);
+            verifCred.setUpdatedDate(createdDate);
             user.createCredential(verifCred);
             Assertions.fail("Not expected to successfully create verifiable credential with filled createdDate");
         } catch (BadRequestException cee) {
@@ -260,7 +261,9 @@ public class UserVerifiableCredentialsTest extends AbstractUserTest {
                                   "lastName should remain Doe in snapshot"),
                 () -> assertEquals("jane.doe@example.com", updated.getUserAttributes().get("email").get(0),
                                   "email should be updated in snapshot"),
-                () -> assertNotEquals(originalRevision, updated.getRevision(), "Revision should be updated")
+                () -> assertNotEquals(originalRevision, updated.getRevision(), "Revision should be updated"),
+                () -> assertNotEquals(updated.getCreatedDate(), updated.getUpdatedDate(), "Update Date should be different that of created date"),
+                () -> assertTrue(updated.getUpdatedDate() > updated.getCreatedDate(), "Update Date should be greater that of created date")
         );
 
         List<UserVerifiableCredentialRepresentation> all = credResource.getCredentials();
@@ -325,6 +328,7 @@ public class UserVerifiableCredentialsTest extends AbstractUserTest {
 
         assertEquals(clientScopeName, createdRep.getCredentialScopeName());
         assertNotNull(createdRep.getCreatedDate());
+        assertNotNull(createdRep.getUpdatedDate());
         assertNotNull(createdRep.getRevision());
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.userVerifiableCredentialsPath(userId), createdRep, ResourceType.USER);
         return createdRep;

@@ -75,9 +75,12 @@ export const VerifiableCredentials = () => {
                     <DataListCell key="credential-created-header" width={2}>
                       <strong>{t("credentialCreatedDate")}</strong>
                     </DataListCell>,
+                    <DataListCell key="credential-updated-header" width={2}>
+                      <strong>{t("credentialUpdatedDate")}</strong>
+                    </DataListCell>,
                     <DataListCell
-                      key="credential-placeholder-header"
-                      width={1}
+                      key="column-placeholder-header"
+                      width={2}
                     ></DataListCell>,
                   ]}
                 />

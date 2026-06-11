@@ -60,6 +60,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="CREATED_DATE" type="BIGINT"/>
+            <column name="UPDATED_DATE" type="BIGINT"/>
             <column name="USER_ATTRIBUTES" type="TEXT">
                 <constraints nullable="true"/>
             </column>

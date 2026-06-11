@@ -149,7 +149,7 @@ export const UserVerifiableCredentials = ({
             name: "credentialScopeName",
             displayKey: "credentialScopeName",
             cellFormatters: [emptyFormatter()],
-            transforms: [cellWidth(25)],
+            transforms: [cellWidth(30)],
           },
           {
             name: "revision",
@@ -160,9 +160,16 @@ export const UserVerifiableCredentials = ({
           {
             name: "createdDate",
             displayKey: "created",
-            transforms: [cellWidth(20)],
+            transforms: [cellWidth(15)],
             cellRenderer: ({ createdDate }) =>
               createdDate ? formatDate(new Date(createdDate)) : "—",
+          },
+          {
+            name: "updatedDate",
+            displayKey: "updatedAt",
+            transforms: [cellWidth(15)],
+            cellRenderer: ({ updatedDate }) =>
+              updatedDate ? formatDate(new Date(updatedDate)) : "—",
           },
         ]}
         actions={[

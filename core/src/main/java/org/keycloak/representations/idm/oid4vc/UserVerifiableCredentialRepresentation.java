@@ -11,6 +11,7 @@ public class UserVerifiableCredentialRepresentation {
     private String credentialConfigurationId;
     private String revision;
     private Long createdDate;
+    private Long updatedDate;
     private Map<String, List<String>> userAttributes;
 
     public String getCredentialConfigurationId() {
@@ -49,11 +50,16 @@ public class UserVerifiableCredentialRepresentation {
 
     public void setUserAttributes(Map<String, List<String>> userAttributes) { this.userAttributes = userAttributes; }
 
+    public Long getUpdatedDate() { return updatedDate; }
+
+    public void setUpdatedDate(Long updatedDate) { this.updatedDate = updatedDate; }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         UserVerifiableCredentialRepresentation that = (UserVerifiableCredentialRepresentation) o;
         return Objects.equals(credentialScopeName, that.credentialScopeName)
+                && Objects.equals(credentialConfigurationId, that.getCredentialConfigurationId())
                 && Objects.equals(revision, that.revision)
                 && Objects.equals(createdDate, that.createdDate)
                 && Objects.equals(userAttributes, that.userAttributes);
@@ -61,6 +67,6 @@ public class UserVerifiableCredentialRepresentation {
 
     @Override
     public int hashCode() {
-        return Objects.hash(credentialScopeName, revision, createdDate, userAttributes);
+        return Objects.hash(credentialScopeName, credentialConfigurationId ,revision, createdDate, userAttributes);
     }
 }

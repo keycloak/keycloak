@@ -407,6 +407,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         long createdDate = verifCredentialModel.getCreatedDate() == null ? Time.currentTimeMillis() : verifCredentialModel.getCreatedDate();
         vcEntity.setCreatedDate(createdDate);
 
+        long updatedDate = verifCredentialModel.getUpdatedDate() == null ? createdDate : verifCredentialModel.getUpdatedDate();
+        vcEntity.setUpdatedDate(updatedDate);
+
         vcEntity.setCredentialScopeName(verifCredentialModel.getCredentialScopeName());
 
         Map<String, List<String>> userAttributes;
@@ -488,6 +491,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         String newRevision = SecretGenerator.getInstance().generateSecureID();
         entity.setRevision(newRevision);
+        entity.setUpdatedDate(Time.currentTimeMillis());
         UserVerifiableCredentialEntity mergedEntity = em.merge(entity);
         em.flush();
 
@@ -504,6 +508,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         UserVerifiableCredentialModel model = new UserVerifiableCredentialModel(entity.getCredentialScopeName());
         model.setRevision(entity.getRevision());
         model.setCreatedDate(entity.getCreatedDate());
+        model.setUpdatedDate(entity.getUpdatedDate());
 
         if (entity.getUserAttributes() != null) {
             try {
