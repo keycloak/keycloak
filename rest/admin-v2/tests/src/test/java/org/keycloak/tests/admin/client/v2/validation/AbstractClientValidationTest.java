@@ -222,18 +222,9 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
             var responseBody = EntityUtils.toString(response.getEntity());
             switch (getHttpMethod()) {
                 case HttpPatch.METHOD_NAME -> assertThat(response.getStatusLine().getStatusCode(), is(200));
-                case HttpPut.METHOD_NAME -> {
-                    // PUT targets an existing seeded client: protocol may be omitted and is inferred server-side.
-                    assertThat(response.getStatusLine().getStatusCode(), is(200));
-                }
-                case HttpPost.METHOD_NAME -> {
-                    // POST creates a new client: protocol cannot be inferred; reject parse/mapping failures.
+                case HttpPost.METHOD_NAME, HttpPut.METHOD_NAME -> {
                     assertThat(response.getStatusLine().getStatusCode(), is(400));
-                    assertThat(responseBody, anyOf(
-                            containsString("Cannot parse the JSON"),
-                            containsString("unsupported client protocol"),
-                            containsString("Mapper not found"),
-                            containsString("protocol is required when creating a client")));
+                    assertThat(responseBody, containsString("protocol is required"));
                 }
             }
         }
@@ -254,28 +245,15 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
                 """.formatted(protocol, getPayloadClientId())));
 
         try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
             var responseBody = EntityUtils.toString(response.getEntity());
             assertThat(responseBody, notNullValue());
-            switch (getHttpMethod()) {
-                case HttpPatch.METHOD_NAME -> {
-                    if (protocol.isBlank()) {
-                        // Blank protocol in merge-patch is treated like omitting the field; server keeps persisted protocol.
-                        assertThat(response.getStatusLine().getStatusCode(), is(200));
-                    } else {
-                        assertThat(response.getStatusLine().getStatusCode(), is(400));
-                        assertThat(responseBody, anyOf(
-                                containsString("Invalid values for these fields: protocol"),
-                                containsString("unsupported client protocol"),
-                                containsString("protocol cannot be changed for an existing client")));
-                    }
-                }
-                case HttpPost.METHOD_NAME, HttpPut.METHOD_NAME -> {
-                    assertThat(response.getStatusLine().getStatusCode(), is(400));
-                    assertThat(responseBody, anyOf(
-                            containsString("Cannot parse the JSON"),
-                            containsString("unsupported client protocol"),
-                            containsString("Mapper not found")));
-                }
+            if (protocol.isBlank()) {
+                assertThat(responseBody, containsString("protocol is required"));
+            } else {
+                assertThat(responseBody, anyOf(
+                        containsString("unsupported client protocol"),
+                        containsString("protocol cannot be changed for an existing client")));
             }
         }
     }
