@@ -23,8 +23,9 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.provider.ProviderEvent;
+import org.keycloak.models.RealmModel;
 
-public interface OrganizationModel {
+public interface OrganizationModel extends RoleContainerModel {
 
     String ORGANIZATION_ATTRIBUTE = "kc.org";
     String ORGANIZATION_SWITCHABLE_ATTRIBUTE = "kc.org.switchable";
@@ -119,6 +120,8 @@ public interface OrganizationModel {
             });
         }
     }
+
+    RealmModel getRealm();
 
     String getId();
 

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+
+    <changeSet id="org-roles-column-add" author="yaroslav02678">
+        <addColumn tableName="KEYCLOAK_ROLE">
+            <column name="TYPE" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ORGANIZATION_ID" type="VARCHAR(36)"/>
+        </addColumn>
+
+        <update tableName="KEYCLOAK_ROLE">
+            <column name="TYPE" valueNumeric="1"/>
+            <where>CLIENT_ROLE = ${boolean.true}</where>
+        </update>
+    </changeSet>
+</databaseChangeLog>

@@ -33,6 +33,7 @@ import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.JpaModel;
 import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
@@ -65,7 +66,8 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         return entity.getId();
     }
 
-    RealmModel getRealm() {
+    @Override
+    public RealmModel getRealm() {
         return realm;
     }
 
@@ -299,5 +301,55 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
             group = realm.getGroupById(getGroupId());
         }
         return group;
+    }
+
+    @Override
+    public RoleModel getRole(String name) {
+        return session.roles().getOrganizationRole(this, name);
+    }
+
+    @Override
+    public RoleModel addRole(String name) {
+        return session.roles().addOrganizationRole(this, name);
+    }
+
+    @Override
+    public RoleModel addRole(String id, String name) {
+        return session.roles().addOrganizationRole(this, id, name);
+    }
+
+    @Override
+    public boolean removeRole(RoleModel role) {
+        if(role.getContainer() != this) return false;
+        return session.roles().removeRole(role);
+    }
+
+    @Override
+    public Stream<RoleModel> getRolesStream() {
+        return session.roles().getOrganizationRolesStream(this);
+    }
+
+    @Override
+    public Stream<RoleModel> getRolesStream(Integer first, Integer max) {
+        return session.roles().getOrganizationRolesStream(this, first, max);
+    }
+
+    @Override
+    public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
+        return session.roles().searchForOrganizationRolesStream(this, search, first, max);
+    }
+
+    @Override
+    public Stream<RoleModel> getDefaultRolesStream() {
+        return Stream.empty();
+    }
+
+    @Override
+    public void addDefaultRole(RoleModel role) {
+    }
+
+    @Override
+    public void removeDefaultRoles(RoleModel... roles) {
+        // Логіка видалення
     }
 }

@@ -154,4 +154,9 @@ public class OrganizationResource {
     public OrganizationGroupsResource groups() {
         return new OrganizationGroupsResource(session, organization, adminEvent, auth);
     }
+
+    @Path("roles")
+    public OrganizationRolesResource roles() {
+        return new OrganizationRolesResource(session, organization, adminEvent);
+    }
 }

@@ -965,4 +965,97 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         }
         return realm;
     }
+
+    private static final String ORG_ROLE_ATTRIBUTE = "organization.id";
+    private static final String ORG_ROLE_NAME_ATTRIBUTE = "org.role.name";
+
+    @Override
+    public org.keycloak.models.RoleModel createRole(OrganizationModel organization, String name) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        throwExceptionIfObjectIsNull(name, "Role name");
+
+        RealmModel realm = getRealm();
+
+        boolean exists = realm.getRolesStream()
+                .anyMatch(r -> organization.getId().equals(r.getFirstAttribute(ORG_ROLE_ATTRIBUTE))
+                        && name.equals(r.getFirstAttribute(ORG_ROLE_NAME_ATTRIBUTE)));
+        if (exists) {
+            throw new ModelDuplicateException("Role '" + name + "' already exists in this organization");
+        }
+
+        String internalName = "org." + organization.getId() + "." + name;
+        org.keycloak.models.RoleModel role = realm.addRole(internalName);
+        role.setSingleAttribute(ORG_ROLE_ATTRIBUTE, organization.getId());
+        role.setSingleAttribute(ORG_ROLE_NAME_ATTRIBUTE, name);
+
+        return role;
+    }
+
+    @Override
+    public Stream<org.keycloak.models.RoleModel> getRoles(OrganizationModel organization, Integer first, Integer max) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        return getRealm().getRolesStream()
+                .filter(r -> organization.getId().equals(r.getFirstAttribute(ORG_ROLE_ATTRIBUTE)));
+    }
+
+    @Override
+    public Stream<org.keycloak.models.RoleModel> searchRolesByName(OrganizationModel organization, String search, Integer first, Integer max) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        String lower = search == null ? "" : search.toLowerCase();
+        return getRoles(organization, null, null)
+                .filter(r -> {
+                    String displayName = r.getFirstAttribute(ORG_ROLE_NAME_ATTRIBUTE);
+                    return displayName != null && displayName.toLowerCase().contains(lower);
+                });
+    }
+
+    @Override
+    public org.keycloak.models.RoleModel getRoleById(OrganizationModel organization, String id) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        org.keycloak.models.RoleModel role = getRealm().getRoleById(id);
+        if (role == null) return null;
+        if (!organization.getId().equals(role.getFirstAttribute(ORG_ROLE_ATTRIBUTE))) return null;
+        return role;
+    }
+
+    @Override
+    public boolean removeRole(OrganizationModel organization, org.keycloak.models.RoleModel role) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        org.keycloak.models.RoleModel existing = getRealm().getRoleById(role.getId());
+        if (existing == null) return false;
+        if (!organization.getId().equals(existing.getFirstAttribute(ORG_ROLE_ATTRIBUTE))) return false;
+        getRealm().removeRole(existing);
+        return true;
+    }
+
+    @Override
+    public void grantRole(OrganizationModel organization, UserModel user, org.keycloak.models.RoleModel role) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        if (!isMember(organization, user)) {
+            throw new ModelException("User is not a member of the organization");
+        }
+        org.keycloak.models.RoleModel realmRole = getRealm().getRoleById(role.getId());
+        if (realmRole == null || !organization.getId().equals(realmRole.getFirstAttribute(ORG_ROLE_ATTRIBUTE))) {
+            throw new ModelException("Role does not belong to the organization");
+        }
+        user.grantRole(realmRole);
+    }
+
+    @Override
+    public void revokeRole(OrganizationModel organization, UserModel user, org.keycloak.models.RoleModel role) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        org.keycloak.models.RoleModel realmRole = getRealm().getRoleById(role.getId());
+        if (realmRole != null) {
+            user.deleteRoleMapping(realmRole);
+        }
+    }
+
+    @Override
+    public Stream<UserModel> getMembersWithRole(OrganizationModel organization, org.keycloak.models.RoleModel role) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        org.keycloak.models.RoleModel realmRole = getRealm().getRoleById(role.getId());
+        if (realmRole == null) return Stream.empty();
+        return session.users().getRoleMembersStream(getRealm(), realmRole)
+                .filter(u -> isMember(organization, u));
+    }
 }

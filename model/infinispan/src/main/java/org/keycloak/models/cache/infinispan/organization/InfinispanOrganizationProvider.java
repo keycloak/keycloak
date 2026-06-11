@@ -28,6 +28,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
@@ -435,6 +436,46 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         if (orgDelegate != null) {
             getDelegate().close();
         }
+    }
+
+    @Override
+    public RoleModel createRole(OrganizationModel organization, String name) {
+        return getDelegate().createRole(organization, name);
+    }
+
+    @Override
+    public Stream<RoleModel> getRoles(OrganizationModel organization, Integer first, Integer max) {
+        return getDelegate().getRoles(organization, first, max);
+    }
+
+    @Override
+    public Stream<RoleModel> searchRolesByName(OrganizationModel organization, String search, Integer first, Integer max) {
+        return getDelegate().searchRolesByName(organization, search, first, max);
+    }
+
+    @Override
+    public RoleModel getRoleById(OrganizationModel organization, String id) {
+        return getDelegate().getRoleById(organization, id);
+    }
+
+    @Override
+    public boolean removeRole(OrganizationModel organization, RoleModel role) {
+        return getDelegate().removeRole(organization, role);
+    }
+
+    @Override
+    public void grantRole(OrganizationModel organization, UserModel user, RoleModel role) {
+        getDelegate().grantRole(organization, user, role);
+    }
+
+    @Override
+    public void revokeRole(OrganizationModel organization, UserModel user, RoleModel role) {
+        getDelegate().revokeRole(organization, user, role);
+    }
+
+    @Override
+    public Stream<UserModel> getMembersWithRole(OrganizationModel organization, RoleModel role) {
+        return getDelegate().getMembersWithRole(organization, role);
     }
 
     void registerOrganizationInvalidation(OrganizationModel organization) {
