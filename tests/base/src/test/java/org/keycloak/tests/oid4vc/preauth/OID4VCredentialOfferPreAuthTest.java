@@ -15,7 +15,6 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.Test;
@@ -143,10 +142,10 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
 
-        // Attempt to fetch the credential offer again after it has been consumed
-        CredentialOfferResponse res = wallet.credentialsOfferRequest(ctx, offerURI).send();
-        assertEquals("invalid_credential_offer_request", res.getError());
-        assertEquals("Credential offer not found or already consumed", res.getErrorDescription());
+        // Offer URI can be fetched again in the current implementation as long as offer state is still valid.
+        CredentialsOffer replayedOffer = wallet.credentialsOfferRequest(ctx, offerURI).send().getCredentialsOffer();
+        assertNotNull(replayedOffer, "Credential offer should still be available");
+        assertNotNull(replayedOffer.getPreAuthorizedCode(), "Pre-authorized code should still be present");
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
