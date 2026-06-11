@@ -26,7 +26,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.NodeInfo;
 import org.keycloak.infinispan.util.InfinispanUtils;
-import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -34,7 +33,7 @@ import org.keycloak.provider.Provider;
 import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.timer.TimerProvider;
 
-import org.infinispan.commons.marshall.ProtoStreamMarshaller;
+import org.infinispan.commons.marshall.Marshaller;
 import org.jboss.logging.Logger;
 
 /**
@@ -49,7 +48,7 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
     private static final long DEFAULT_POLL_INTERVAL_MS = 2000;
 
     private volatile NodeInfo nodeInfo;
-    private volatile ProtoStreamMarshaller protoStreamMarshaller;
+    private volatile Marshaller protoStreamMarshaller;
 
     private long pollIntervalMs = DEFAULT_POLL_INTERVAL_MS;
 
@@ -57,15 +56,6 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
     public ClusterProvider create(KeycloakSession session) {
         return new DatabaseAwareClusterProvider(super.create(session), session.getKeycloakSessionFactory(),
                 nodeInfo, protoStreamMarshaller);
-    }
-
-    private ProtoStreamMarshaller createMarshaller() {
-        ProtoStreamMarshaller m = new ProtoStreamMarshaller();
-        Marshalling.getSchemas().forEach(s -> {
-            s.registerSchema(m.getSerializationContext());
-            s.registerMarshallers(m.getSerializationContext());
-        });
-        return m;
     }
 
     @Override
@@ -85,7 +75,7 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
             InfinispanConnectionProvider ispnConnections = session.getProvider(InfinispanConnectionProvider.class);
             nodeInfo = ispnConnections.getNodeInfo();
 
-            this.protoStreamMarshaller = createMarshaller();
+            this.protoStreamMarshaller = ispnConnections.getMarshaller();
             var pollerTask = new DatabaseClusterEventPollerTask(nodeInfo.clusterName(), protoStreamMarshaller);
             var runner = new ScheduledTaskRunner(factory, pollerTask);
             TimerProvider timer = session.getProvider(TimerProvider.class);

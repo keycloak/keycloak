@@ -32,7 +32,8 @@ import org.keycloak.connections.infinispan.NodeInfo;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import org.infinispan.commons.marshall.ProtoStreamMarshaller;
+import org.infinispan.commons.marshall.Marshaller;
+
 
 /**
  * Wraps an {@link InfinispanClusterProvider} and additionally persists events to the database
@@ -45,10 +46,10 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
     private final ClusterProvider delegate;
     private final KeycloakSessionFactory sessionFactory;
     private final NodeInfo nodeInfo;
-    private final ProtoStreamMarshaller marshaller;
+    private final Marshaller marshaller;
 
     public DatabaseAwareClusterProvider(ClusterProvider delegate, KeycloakSessionFactory sessionFactory,
-                                        NodeInfo nodeInfo, ProtoStreamMarshaller marshaller) {
+                                        NodeInfo nodeInfo, Marshaller marshaller) {
         this.delegate = delegate;
         this.sessionFactory = sessionFactory;
         this.nodeInfo = nodeInfo;

@@ -32,7 +32,7 @@ import org.keycloak.models.sessions.infinispan.CacheDecorators;
 import org.keycloak.timer.ScheduledTask;
 
 import org.infinispan.Cache;
-import org.infinispan.commons.marshall.ProtoStreamMarshaller;
+import org.infinispan.commons.marshall.Marshaller;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
@@ -49,10 +49,10 @@ public class DatabaseClusterEventPollerTask implements ScheduledTask {
     private static final long STALE_EVENT_RETENTION_MS = TimeUnit.MINUTES.toMillis(5);
 
     private final String clusterName;
-    private final ProtoStreamMarshaller marshaller;
+    private final Marshaller marshaller;
     private long staleEventHorizon;
 
-    public DatabaseClusterEventPollerTask(String clusterName, ProtoStreamMarshaller marshaller) {
+    public DatabaseClusterEventPollerTask(String clusterName, Marshaller marshaller) {
         Objects.requireNonNull(clusterName);
         Objects.requireNonNull(marshaller);
         this.clusterName = clusterName;
