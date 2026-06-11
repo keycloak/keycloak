@@ -313,261 +313,173 @@ Ensure that the user has a valid username, email, and password. If the password 
 
 === Create Client Scopes with Mappers
 
-Client scopes define **which user attributes** are included in Verifiable Credentials (VCs). Therefore, they are considered the Verifiable Credential configuration itself. These scopes use **protocol mappers** to map specific claims into VCs and the protocol mappers will also contain the corresponding metadata for claims that is displayed at the Credential Issuer Metadata Endpoint.
+Client scopes define **which user attributes** are included in Verifiable Credentials (VCs) and therefore represent the Verifiable Credential configuration itself. Each credential type is configured as a dedicated client scope using the **OpenID for Verifiable Credentials** protocol.
 
-You can create the ClientScopes using the {project_name} web Administration Console, but the web Administration Console does not yet support adding metadata configuration. For metadata configuration, you will need to use the Admin REST API.
+A client scope uses **protocol mappers** to map specific user attributes to claims within the credential. These protocol mappers also expose the corresponding metadata that is published through the Credential Issuer Metadata Endpoint.
 
-==== Define a Client Scope with a Mapper
+==== Creating a Client Scope via the Admin Console
 
-Create a JSON file (e.g., `client-scopes.json`) with the following content:
+Many OID4VCI client scope attributes can be configured directly through the {project_name} Admin Console:
 
-[source,json]
-----
-{
-  "name": "vc-scope-mapping",
-  "protocol": "oid4vc",
-  "attributes": {
-    "include.in.token.scope": "true",
-    "vc.issuer_did": "did:web:vc.example.com",
-    "vc.credential_configuration_id": "my-credential-configuration-id",
-    "vc.credential_identifier": "my-credential-identifier",
-    "vc.format": "jwt_vc_json",
-    "vc.expiry_in_seconds": 31536000,
-    "vc.verifiable_credential_type": "my-vct",
-    "vc.supported_credential_types": "credential-type-1,credential-type-2",
-    "vc.credential_contexts": "context-1,context-2",
-    "vc.credential_signing_alg": "ES256",
-    "vc.cryptographic_binding_methods_supported": "jwk",
-    "vc.signing_key_id": "key-id-123456",
-    "vc.display": "[{\"name\": \"IdentityCredential\", \"logo\": {\"uri\": \"https://university.example.edu/public/logo.png\", \"alt_text\": \"a square logo of a university\"}, \"locale\": \"en-US\", \"background_color\": \"#12107c\", \"text_color\": \"#FFFFFF\"}]",
-    "vc.sd_jwt.number_of_decoys": "2",
-    "vc.credential_build_config.sd_jwt.visible_claims": "iat,jti,nbf,exp,given_name",
-    "vc.credential_build_config.hash_algorithm": "SHA-256",
-    "vc.credential_build_config.token_jws_type": "vc+jwt",
-    "vc.include_in_metadata": "true"
-  },
-  "protocolMappers": [
-    {
-      "name": "academic_title-mapper-bsk",
-      "protocol": "oid4vc",
-      "protocolMapper": "oid4vc-static-claim-mapper",
-      "config": {
-        "claim.name": "academic_title",
-        "staticValue": "N/A"
-      }
-    },
-    {
-      "name": "givenName",
-      "protocol": "oid4vc",
-      "protocolMapper": "oid4vc-user-attribute-mapper",
-      "config": {
-        "claim.name": "given_name",
-        "userAttribute": "firstName",
-        "vc.mandatory": "false",
-        "vc.display": "[{\"name\": \"الاسم الشخصي\", \"locale\": \"ar-SA\"}, {\"name\": \"Vorname\", \"locale\": \"de-DE\"}, {\"name\": \"Given Name\", \"locale\": \"en-US\"}, {\"name\": \"Nombre\", \"locale\": \"es-ES\"}, {\"name\": \"نام\", \"locale\": \"fa-IR\"}, {\"name\": \"Etunimi\", \"locale\": \"fi-FI\"}, {\"name\": \"Prénom\", \"locale\": \"fr-FR\"}, {\"name\": \"पहचानी गई नाम\", \"locale\": \"hi-IN\"}, {\"name\": \"Nome\", \"locale\": \"it-IT\"}, {\"name\": \"名\", \"locale\": \"ja-JP\"}, {\"name\": \"Овог нэр\", \"locale\": \"mn-MN\"}, {\"name\": \"Voornaam\", \"locale\": \"nl-NL\"}, {\"name\": \"Nome Próprio\", \"locale\": \"pt-PT\"}, {\"name\": \"Förnamn\", \"locale\": \"sv-SE\"}, {\"name\": \"مسلمان نام\", \"locale\": \"ur-PK\"}]"
-      }
-    }
-  ]
-}
-----
+. Navigate to *Client Scopes* and click *Create client scope*.
+. Configure the basic settings:
+   * **Name** – A unique identifier for this credential type (e.g., `membership-credential`).
+   * **Type** – Select *Optional* (recommended for credential scopes).
+   * **Protocol** – Select **OpenID for Verifiable Credentials**.
+. Ensure **Include in token scope** is toggled **On** — this is required for the scope to appear in the access token's `scope` claim.
+. Ensure **Include in OpenID Provider Metadata** is toggled **On** — when enabled, this client scope is included in the OpenID Provider Metadata and the credential configuration will be advertised in the Issuer Metadata Endpoint response.
 
-[NOTE]
-====
-This is a **sample configuration**.
-You can define **additional protocol mappers** to support different claim mappings, such as:
+.Creating an OID4VCI Client Scope
+image::images/oid4vci/screenshot-create-oid4vci-client-scope.png[Creating a Client Scope with OID4VCI protocol, width=650]
 
-- Dynamic attribute values instead of static ones.
-- Mapping multiple attributes per credential type.
-- Alternative supported credential types.
-====
-
-From the example above:
-
-- It is important to set `include.in.token.scope=true`, see <<include.in.token.scope, Attribute table: include.in.token.scope>>.
-- Most of the named attributes above are optional. See below: <<client-scope-attribute-breakdown,Attribute Breakdown>>.
-- You can determine the appropriate `protocolMapper` names by first creating them through the Web Administration Console and then retrieving their definitions via the Admin REST API.
-
-==== Attribute Breakdown - ClientScope [[client-scope-attribute-breakdown]]
+After selecting the OID4VCI protocol, the following configuration fields become available:
 
 [cols="1,1,2", options="header"]
 |===
-| Property
-| Required
-| Description / Default
+| Field
+| Default
+| Description
 
-| `name`
-| required
-| Name of the client scope.
+| Credential Configuration ID
+| (scope name)
+| Identifier for this credential configuration. Exposed in the issuer metadata under `credential_configurations_supported`.
 
-| `protocol`
-| required
-| Protocol used by the client scope. Use `oid4vc` for OpenID for Verifiable Credential Issuance, which is an OAuth2 extension (like `openid-connect`).
+| Credential Identifier
+| (scope name)
+| Identifier used during the credential issuance process.
 
-| `include.in.token.scope`
-| required
-| [[include.in.token.scope]] This value MUST be `true`. It ensures that the scope’s name is included in the `scope` claim of the issued Access Token.
+| Credential Offer Required
+| Off
+| When enabled, a credential offer must be generated before issuance. Useful for pre-authorized code flows.
 
-| `protocolMappers`
-| optional
-| Defines how claims are mapped into the credential and how metadata is exposed via the issuer’s metadata endpoint.
+| Issuer DID
+| (scope name)
+| The Decentralized Identifier (DID) of the issuer (e.g., `did:web:vc.example.com`).
 
-| `vc.issuer_did`
-| optional
-| The Decentralized Identifier (DID) of the issuer. +
-_Default_: `$\{name}`
+| Credential Lifetime
+| `31536000` seconds (1 year)
+| How long the issued credential remains valid.
 
-| `vc.credential_configuration_id`
-| optional
-| The credentials configuration ID. +
-_Default_: `$\{name}+`
+| Supported Format
+| SD-JWT VC (`dc+sd-jwt`)
+| The credential format. Supported options: *SD-JWT VC* (`dc+sd-jwt`) and *JWT VC* (`jwt_vc_json`).
 
-| `vc.credential_identifier`
-| optional
-| The credentials identifier. +
-_Default_: `$\{name}+`
+| Token JWS Type
+| (auto)
+| The JWT type written into the `typ` header. The recommended value is automatically set based on the selected format.
 
-| `vc.format`
-| optional
-| Defines the VC format (e.g., `jwt_vc`). +
-_Default_: `dc+sd-jwt`
+| Signing Key ID
+| (default realm key)
+| Select a specific realm key for signing this credential. The signing algorithm updates automatically.
 
-| `vc.verifiable_credential_type`
-| optional
-| The Verifiable Credential Type (VCT). +
-_Default_: `$\{name}+`
+| Credential Signing Algorithm
+| (auto)
+| The algorithm used to sign the credential. Automatically populated when a signing key is selected.
 
-| `vc.supported_credential_types`
-| optional
-| The type values of the Verifiable Credential Type. +
-_Default_: `$\{name}+`
+| Hash Algorithm
+| `sha-256`
+| Hashing algorithm used before signing the credential.
 
-| `vc.credential_contexts`
-| optional
-| The context values of the Verifiable Credential Type. +
-_Default_: `$\{name}+`
+| Binding Required
+| Off
+| When enabled, the credential must be cryptographically bound to the holder's wallet.
 
-| `vc.credential_signing_alg`
-| optional
-| Supported signature algorithm for this credential. +
-_Default_: All asymmetric signing algorithms backed by realm keys.
+| Cryptographic Binding Methods
+| (when binding enabled)
+| Comma-separated cryptographic binding methods. Allowed value: `jwk`.
 
-| `vc.cryptographic_binding_methods_supported`
-| optional
-| Supported cryptographic methods (if applicable). +
-_Default_: `jwk`
+| Binding Supported Proof Types
+| (when binding enabled)
+| Comma-separated proof types. Allowed values: `jwt`, `attestation`.
 
-| `vc.signing_key_id`
-| optional
-| The ID of the key to sign this credential. +
-_Default_: _none_
+| Credential Display
+| (optional)
+| JSON array of display metadata for wallets.
+Example: `[{\"name\": \"Membership Credential\", \"locale\": \"en\"}]`.
 
-| `vc.display`
-| optional
-| Display information shown in the user's wallet about the issued credential. +
-_Default_: _none_
+| Supported Credential Types
+| (optional)
+| Comma-separated credential type values. Available for JWT VC and SD-JWT formats.
 
-| `vc.sd_jwt.number_of_decoys`
-| optional
-| Used only with format `dc+sd-jwt`. Number of decoy hashes in the SD-JWT. +
-_Default_: `10`
+| Verifiable Credential Type
+| (optional)
+| The VCT claim value for SD-JWT credentials.
 
-| `vc.credential_build_config.sd_jwt.visible_claims`
-| optional
-| Used only with format `dc+sd-jwt`. Claims always disclosed in the SD-JWT body. +
-_Default_: `id,iat,nbf,exp,jti`
-
-| `vc.credential_build_config.hash_algorithm`
-| optional
-| Hash algorithm used before signing the credential. +
-_Default_: `SHA-256`
-
-| `vc.credential_build_config.token_jws_type`
-| optional
-| JWT type written into the `typ` header of the token. +
-_Default_: format-specific (`dc+sd-jwt` for `dc+sd-jwt`, `vc+jwt` for `jwt_vc_json`)
-
-| `vc.expiry_in_s`
-| optional
-| Credential expiration time in seconds. +
-_Default_: `31536000` (one year)
-
-| `vc.include_in_metadata`
-| optional
-| If this claim should be listed in the credentials metadata. +
-_Default_: `true` but depends on the mapper-type. Claims like `jti`, `nbf`, `exp`, etc. are set to `false` by default.
-
-| `vc.key_attestations_required`
-| optional
-| Indicates whether issuing this credential requires a key attestation. +
-_Default_: `false`.
-
-| `vc.key_attestations_required.key_storage`
-| optional
-| Comma separated list of accepted key-storage attack potential levels (see ISO 18045 levels, e.g. `iso_18045_high`). +
-Only relevant if `vc.key_attestations_required` is present. +
-_Default_: none
-
-| `vc.key_attestations_required.user_authentication`
-| optional
-| Comma separated list of accepted user-authentication attack potential levels (see ISO 18045 levels). +
-Only relevant if `vc.key_attestations_required` is present. +
-_Default_: none
+| Visible Claims
+| `id,iat,nbf,exp,jti`
+| Claims always disclosed in the SD-JWT body (SD-JWT format only).
 |===
 
-==== Attribute Breakdown - ProtocolMappers
-
-- **name** – Mapper identifier.
-- **protocol** – Must be `oid4vc` for Verifiable Credentials.
-- **protocolMapper** – Specifies the claim mapping strategy (e.g., `oid4vc-static-claim-mapper`).
-- **config**: contains the protocol-mappers specific attributes.
-
-Most claims are dependent on the `protocolMapper`-value, but there are also commonly used claims available for all ProtocolMappers:
-
-[cols="1,1,2", options="header"]
-|===
-| Property
-| Required
-| Description / Default
-
-| `claim.name`
-| required
-| The name of the attribute that will be added into the Verifiable Credential. +
-Just like with OIDC user attributes, you may use dots to create nested JSON objects. +
-_Default_: _none_
-
-| `userAttribute`
-| required
-| The name of the users-attribute that will be used to map the value into the `claim.name` of the Verifiable Credential. +
-_Default_: _none_
-
-| `vc.mandatory`
-| optional
-| If the credential must be issued with this claim. +
-_Default_: `false`
-
-| `vc.display`
-| optional
-| Metadata information that is displayed at the credential-issuer metadata-endpoint. +
-_Default_: _none_
-|===
-
-==== Import the Client Scope
-
-Use the following `curl` command to import the client scope into {project_name}:
-
-[source,bash]
-----
-curl -X POST "https://localhost:8443/admin/realms/oid4vc-vci/client-scopes" \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d @client-scopes.json
-----
+.OID4VCI Configuration Fields in the Client Scope Form
+image::images/oid4vci/screenshot-oid4vci-scope-form.png[OID4VCI configuration fields in the Client Scope form, width=650]
 
 [NOTE]
 ====
-- Replace `$ACCESS_TOKEN` with a valid **{project_name} Admin API access token**.
-- **Avoid using `-k` in production**; instead, configure a **trusted TLS certificate**.
-- If updating an existing scope, use `PUT` instead of `POST`.
+When you select a **Signing Key ID**, the **Credential Signing Algorithm** is automatically populated with the corresponding algorithm of the selected key. To override the algorithm, leave the signing key field empty and set the algorithm manually.
+====
+
+==== Adding Protocol Mappers
+
+Protocol mappers map user attributes into specific claims within the credential and also expose the corresponding metadata displayed at the Credential Issuer Metadata Endpoint. This section explains how to configure protocol mappers through the Admin Console.
+
+After creating a client scope with the `oid4vc` protocol, add protocol mappers as follows:
+
+. In the {project_name} Admin Console, navigate to *Client Scopes* and select the created client scope (e.g., `membership-credential`).
+. Click the *Mappers* tab.
+. Click *Add mapper* and select *By configuration*.
+. From the list of mapper types, select the desired mapper (see <<available-mapper-types,Available Mapper Types>> below).
+. Provide a **Name** for the mapper and configure the required fields.
+. Click *Save*.
+
+[[available-mapper-types]]
+The following mapper types are available for the `oid4vc` protocol:
+
+.Available OID4VCI Mapper Types
+image::images/oid4vci/screenshot-oid4vci-add-mapper-selection.png[Available OID4VCI mapper type in the Add mapper dialog, width=650]
+
+===== Minimum Mapper Configuration for Issuance
+
+At a minimum, a credential should include the user's core identity attributes. For example, to issue a membership credential carrying the user's given name, family name, and email, configure the following mappers:
+
+[cols="1,1,1,2", options="header"]
+|===
+| Mapper Name
+| Mapper Type
+| Config
+| Description
+
+| `given_name-mapper`
+| User Attribute Mapper
+| `claim.name`: `given_name` +
+`userAttribute`: `firstName` +
+`vc.display`: `[{"name":"Given Name","locale":"en"}]`
+| Maps the user's first name to the `given_name` claim in the credential.
+
+| `family_name-mapper`
+| User Attribute Mapper
+| `claim.name`: `family_name` +
+`userAttribute`: `lastName` +
+`vc.display`: `[{"name":"Family Name","locale":"en"}]`
+| Maps the user's last name to the `family_name` claim.
+
+| `email-mapper`
+| User Attribute Mapper
+| `claim.name`: `email` +
+`userAttribute`: `email` +
+`vc.display`: `[{"name":"Email","locale":"en"}]`
+| Maps the user's email address to the `email` claim.
+
+| `iat-mapper`
+| Issued At Time Claim Mapper
+| `claim.name`: `iat` +
+`truncateToTimeUnit`: `HOURS` +
+`valueSource`: `COMPUTE`
+| Sets the `iat` (issued at) claim to the current timestamp, truncated to hour boundaries.
+|===
+
+[NOTE]
+====
+The `vc.display` property provides display metadata that wallets use to show human-readable descriptions for each claim. For time-based mappers like `iat`, display configuration is typically not required.
 ====
 
 === Create the Client
