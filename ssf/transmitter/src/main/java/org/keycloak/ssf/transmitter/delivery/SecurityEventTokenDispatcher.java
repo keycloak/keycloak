@@ -372,6 +372,16 @@ public class SecurityEventTokenDispatcher {
 
     private boolean deliverEventInternal(SsfSecurityEventToken eventToken, StreamConfig stream, boolean async) {
         var delivery = stream.getDelivery();
+        if (delivery == null) {
+            // A stream can legitimately exist without a delivery config —
+            // e.g. a KEYCLOAK-managed stream created from the admin console
+            // before the receiver has registered its push/poll endpoint.
+            // There is nowhere to send the SET, so skip delivery instead of
+            // NPEing on delivery.getMethod().
+            log.debugf("No delivery configured for stream; skipping delivery. clientId=%s streamId=%s jti=%s",
+                    stream.getClientClientId(), stream.getStreamId(), eventToken.getJti());
+            return false;
+        }
         String deliveryMethodUri = delivery.getMethod();
         DeliveryMethod deliveryMethod = DeliveryMethod.valueOfUri(deliveryMethodUri);
 

@@ -1465,7 +1465,12 @@ public class StreamService {
         // the new (or old) status.
         try {
             StreamConfig refreshed = streamStore.getStream(streamId);
-            if (refreshed != null) {
+            if (refreshed != null && refreshed.getDelivery() != null) {
+                // No delivery config means there is no receiver endpoint to
+                // notify yet (e.g. a KEYCLOAK-managed stream created from the
+                // admin console before the receiver registered its push/poll
+                // endpoint). Skip the stream-updated SET rather than attempt a
+                // delivery that has nowhere to go.
                 SsfSecurityEventToken updatedEvent = transmitterProvider.securityEventTokenMapper()
                         .generateStreamUpdatedEvent(refreshed, streamStatus);
                 if (updatedEvent != null) {
