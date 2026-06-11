@@ -29,7 +29,8 @@ The following table shows the core SCIM user attributes and how they map to {pro
 
 | `emails`
 | `email`
-| User email addresses.
+| User email addresses. Even though the attribute is multi-valued, {project_name} does not support mutiple emails for a
+given user account. When multiple email values are submitted, only the first value is persisted. In SCIM responses, the stored address is returned as a single `work` email entry that is marked as `primary`.
 
 | `active`
 | `enabled`
