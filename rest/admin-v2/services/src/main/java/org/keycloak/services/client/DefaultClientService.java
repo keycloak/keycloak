@@ -33,7 +33,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
-import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.PutClient;
@@ -386,34 +385,6 @@ public class DefaultClientService implements ClientService {
             return proposedRepresentation;
         } finally {
             realm.removeClient(tempModel.getId());
-        }
-    }
-
-    // TODO we should find a way on how to evoke it on the mapper level?
-    /**
-     * JSON without a {@code protocol} property deserializes to {@link BaseClientRepresentation}. Once protocol is
-     * known (from the payload or the existing client), map to the concrete subtype so protocol-specific mappers run.
-     */
-    private BaseClientRepresentation materializeProtocolSubtypeIfNeeded(BaseClientRepresentation client) {
-        String protocol = client.getProtocol();
-        if (protocol == null) {
-            return client;
-        }
-        if (client instanceof OIDCClientRepresentation || client instanceof SAMLClientRepresentation) {
-            return client;
-        }
-        BaseClientRepresentation target;
-        if (OIDCClientRepresentation.PROTOCOL.equals(protocol)) {
-            target = new OIDCClientRepresentation();
-        } else if (SAMLClientRepresentation.PROTOCOL.equals(protocol)) {
-            target = new SAMLClientRepresentation();
-        } else {
-            return client;
-        }
-        try {
-            return MAPPER.updateValue(target, client);
-        } catch (JsonMappingException e) {
-            throw new ServiceException("Failed to materialize protocol subtype: " + e.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
