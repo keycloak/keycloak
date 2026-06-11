@@ -16,8 +16,8 @@
  */
 package org.keycloak.keys.loader;
 
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.KeyUtils;
+import java.util.Collections;
+
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyType;
@@ -26,7 +26,7 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.keys.PublicKeyLoader;
 
-import java.util.Collections;
+import org.jboss.logging.Logger;
 
 /**
  *
@@ -34,27 +34,30 @@ import java.util.Collections;
  */
 public class HardcodedPublicKeyLoader implements PublicKeyLoader {
 
+    private static final Logger logger = Logger.getLogger(HardcodedPublicKeyLoader.class);
+
     private final KeyWrapper keyWrapper;
 
     public HardcodedPublicKeyLoader(String kid, String encodedKey, String algorithm) {
         if (encodedKey != null && !encodedKey.trim().isEmpty()) {
-            keyWrapper = new KeyWrapper();
-            keyWrapper.setKid(kid);
-            keyWrapper.setUse(KeyUse.SIG);
+            KeyWrapper kw = new KeyWrapper();
+            kw.setKid(kid);
+            kw.setUse(KeyUse.SIG);
             // depending the algorithm load the correct key from the encoded string
             if (JavaAlgorithm.isRSAJavaAlgorithm(algorithm)) {
-                keyWrapper.setType(KeyType.RSA);
-                keyWrapper.setPublicKey(PemUtils.decodePublicKey(encodedKey, KeyType.RSA));
+                kw.setType(KeyType.RSA);
+                kw.setPublicKey(PemUtils.decodePublicKey(encodedKey, KeyType.RSA));
             } else if (JavaAlgorithm.isECJavaAlgorithm(algorithm)) {
-                keyWrapper.setType(KeyType.EC);
-                keyWrapper.setPublicKey(PemUtils.decodePublicKey(encodedKey, KeyType.EC));
+                kw.setType(KeyType.EC);
+                kw.setPublicKey(PemUtils.decodePublicKey(encodedKey, KeyType.EC));
             } else if (JavaAlgorithm.isEddsaJavaAlgorithm(algorithm)) {
-                keyWrapper.setType(KeyType.OKP);
-                keyWrapper.setPublicKey(PemUtils.decodePublicKey(encodedKey, KeyType.OKP));
-            } else if (JavaAlgorithm.isHMACJavaAlgorithm(algorithm)) {
-                keyWrapper.setType(KeyType.OCT);
-                keyWrapper.setSecretKey(KeyUtils.loadSecretKey(Base64Url.decode(encodedKey), algorithm));
+                kw.setType(KeyType.OKP);
+                kw.setPublicKey(PemUtils.decodePublicKey(encodedKey, KeyType.OKP));
+            } else {
+                logger.warnf("Unrecognized or invalid algorithm %s for hardcoded public key", algorithm);
+                kw = null;
             }
+            keyWrapper = kw;
         } else {
             keyWrapper = null;
         }

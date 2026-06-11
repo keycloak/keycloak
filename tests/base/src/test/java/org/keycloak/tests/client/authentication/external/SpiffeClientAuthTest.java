@@ -9,6 +9,7 @@ import org.keycloak.broker.spiffe.SpiffeIdentityProviderConfig;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -69,6 +70,17 @@ public class SpiffeClientAuthTest extends AbstractBaseClientAuthTest {
         assertSuccess(INTERNAL_CLIENT_ID, jwt.getId(), null, EXTERNAL_CLIENT_ID, events.poll());
         assertSuccess(INTERNAL_CLIENT_ID, doClientGrant(jwt));
         assertSuccess(INTERNAL_CLIENT_ID, jwt.getId(), null, EXTERNAL_CLIENT_ID, events.poll());
+    }
+
+    @Test
+    public void testHS256AlgorithmConfusion() {
+        JsonWebToken token = createDefaultToken();
+        String encodedToken = new JWSBuilder()
+                .type("JWT")
+                .jsonContent(token)
+                .hmac256(identityProvider.getKeys().getKeyWrapper().getPublicKey().getEncoded());
+
+        assertFailure("Invalid signature algorithm", doClientGrant(encodedToken));
     }
 
     @Override

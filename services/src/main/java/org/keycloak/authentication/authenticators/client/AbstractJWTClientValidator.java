@@ -26,6 +26,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
@@ -138,11 +139,28 @@ public abstract class AbstractJWTClientValidator {
         return true;
     }
 
+    protected boolean isSymmetricAlgorithmAllowed() {
+        return false;
+    }
+
     private boolean validateSignatureAlgorithm() {
         JWSInput jws = clientAssertionState.getJws();
 
         if (jws.getHeader().getAlgorithm() == null) {
             return failure("Invalid signature algorithm");
+        }
+
+        String algorithmName = jws.getHeader().getAlgorithm().name();
+
+        if ("none".equalsIgnoreCase(algorithmName)) {
+            return failure("Invalid signature algorithm");
+        }
+
+        if (!isSymmetricAlgorithmAllowed()) {
+            ClientSignatureVerifierProvider signatureProvider = context.getSession().getProvider(ClientSignatureVerifierProvider.class, algorithmName);
+            if (signatureProvider == null || !signatureProvider.isAsymmetricAlgorithm()) {
+                return failure("Invalid signature algorithm");
+            }
         }
 
         String expectedSignatureAlg = getExpectedSignatureAlgorithm();

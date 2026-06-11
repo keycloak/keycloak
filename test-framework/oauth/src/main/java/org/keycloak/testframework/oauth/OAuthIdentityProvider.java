@@ -127,4 +127,7 @@ public class OAuthIdentityProvider {
         }
     }
 
+    public OAuthIdentityProviderKeys getKeys() {
+        return keys;
+    }
 }
