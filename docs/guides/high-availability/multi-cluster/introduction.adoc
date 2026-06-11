@@ -122,7 +122,8 @@ Additional performance tuning and security hardening are still recommended when 
 * <@links.ha id="multi-cluster-deploy-infinispan-kubernetes-crossdc" />
 * <@links.ha id="multi-cluster-deploy-keycloak-kubernetes" />
 * <@links.ha id="multi-cluster-deploy-aws-accelerator-loadbalancer" />
-* <@links.ha id="multi-cluster-deploy-aws-accelerator-fencing-lambda" />
+* <@links.ha id="multi-cluster-deploy-aws-accelerator-fencing-lambda" /> (Optional, see <@links.ha id="multi-cluster-site-health-checks" />)
+* <@links.ha id="multi-cluster-site-health-checks" />
 
 == Operational procedures
 

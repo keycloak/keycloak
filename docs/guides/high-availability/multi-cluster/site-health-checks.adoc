@@ -1,0 +1,203 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Cross-site automatic failover algorithm"
+summary="Understand the STONITH algorithm that automatically detects site failures and coordinates failover."
+tileVisible="false" >
+
+include::../partials/infinispan/infinispan-attributes.adoc[]
+
+{project_name} includes a built-in cross-site health check that runs periodically on every node.
+It uses a database-backed state machine to coordinate failover between two sites without requiring an external orchestrator.
+The algorithm is sometimes referred to as STONITH (Shoot The Other Node In The Head) because the surviving site disconnects the failed site to prevent split-brain data corruption.
+
+This mechanism is an alternative to the <@links.ha id="multi-cluster-deploy-aws-accelerator-fencing-lambda" /> approach.
+Unlike the AWS Lambda-based fencing, this algorithm is cloud-agnostic and works with any cloud vendor or on-premises deployment.
+It relies on the external load balancer checking the `/lb-check` endpoint to detect which site is active and route traffic accordingly.
+
+[IMPORTANT]
+====
+For backwards compatibility, the built-in site health check is **disabled by default**.
+To use this algorithm, you must explicitly enable it:
+
+[source]
+----
+--spi-connections-infinispan--default--site-health-enabled=true
+----
+
+If you are using the AWS Lambda-based fencing mechanism, keep the built-in health check disabled (the default).
+Running both mechanisms simultaneously is not supported.
+The Lambda directly reconfigures the AWS Global Accelerator load balancer to remove the failed site, while the built-in algorithm controls traffic via the `/lb-check` endpoint.
+Each mechanism may independently reach a different conclusion about which site is active, leading to split-brain or downtime.
+====
+
+== State machine
+
+The health check maintains a single shared state in the database.
+Both sites read and update this state using compare-and-set (CAS) operations, which guarantees that only one site can transition the state at a time.
+
+The state machine has four statuses:
+
+HEALTHY:: All sites are reachable and replication is functioning normally.
+Both sites serve traffic.
+SUSPECTING:: A site has detected that one or more remote sites are unreachable.
+A one-round delay is applied before taking action to avoid reacting to transient network issues.
+UNHEALTHY:: The remote site is confirmed unreachable.
+The active site has disconnected replication and is serving traffic alone.
+The non-active site marks itself as unhealthy and stops serving traffic.
+RECOVERING:: The remote site has come back online.
+The active site verifies stable connectivity before transitioning back to HEALTHY.
+
+== State transition diagram
+
+The following diagram shows the state transitions and the conditions that trigger them.
+
+image::high-availability/site-health-state-machine.svg[]
+
+== Algorithm details
+
+=== HEALTHY state
+
+Every node checks whether all remote sites are present in the Infinispan cluster view.
+If all sites are reachable, no action is taken.
+If any site is missing, the detecting node performs a CAS to transition to SUSPECTING, recording itself as the active site.
+
+=== SUSPECTING state
+
+Both sites remain healthy (serve traffic) during this state.
+
+Active site behavior::
+The active site waits one full health-check round before making a decision.
+On the first round, it records the current state.
+On the second round:
+* If all sites have recovered, it transitions back to HEALTHY.
+* If sites are still unreachable, it transitions to UNHEALTHY and disconnects replication.
+
+Non-active site behavior (steal)::
+The non-active site monitors whether the active site is making progress.
+If the state has not changed after one full round, the non-active site assumes the active site has crashed and steals the SUSPECTING state by performing a CAS that replaces the active site with itself.
+This prevents the system from getting stuck when the site that first detected the failure crashes before completing the transition.
+
+=== UNHEALTHY state
+
+The active site continues serving traffic and monitoring for recovery.
+The non-active site marks itself as unhealthy and stops serving traffic.
+
+When all remote sites reappear in the cluster view and their replication status is `online`, the active site transitions to RECOVERING.
+If sites that were marked offline come back partially, the active site re-disconnects them.
+
+=== RECOVERING state
+
+Only the active site can drive recovery.
+The non-active site remains unhealthy.
+
+The active site waits one full round (same pattern as SUSPECTING) to confirm that connectivity is stable.
+If all sites remain online after the delay, it transitions to HEALTHY.
+If connectivity is lost again during recovery, it falls back to UNHEALTHY.
+
+== Expected downtime windows
+
+This algorithm minimizes downtime, but cannot eliminate it entirely in all scenarios:
+
+JGroups failure detection::
+The Infinispan cluster uses JGroups for network communication, which relies on heartbeat-based failure detection with a default interval of 30 seconds.
+When a site fails, JGroups may take up to 60 seconds (two heartbeat intervals) to detect the failure and remove the site from the cluster view.
+All cross-site requests will fail during this window.
+
+Detection delay::
+After JGroups detects the failure, the health check state machine requires up to two additional health-check rounds to transition through SUSPECTING to UNHEALTHY.
+Until the transition completes, the surviving site has not yet updated `/lb-check` to reflect the failure, so the load balancer continues routing traffic to both sites.
+
+Active site crash during UNHEALTHY or RECOVERING::
+If the active site crashes while the state is UNHEALTHY or RECOVERING, the non-active site *cannot* take over.
+In these states the non-active site may have stale or incomplete data (replication was disconnected), so promoting it would risk data corruption.
+Manual intervention is required to restore the active site or reset the state.
+
+NOTE: The non-active site can only steal the SUSPECTING state, because at that point replication has not yet been disconnected and both sites still have consistent data.
+
+== Metrics
+
+{project_name} exposes the cross-site status as a Micrometer gauge when metrics are enabled.
+
+Metric name:: `keycloak.site.status`
+Description:: Cross-site health status.
+Type:: Gauge (integer value updated on every health-check round).
+
+The gauge value maps to the state machine statuses:
+
+[%autowidth]
+|===
+| Value | Status | Meaning
+
+| 0 | HEALTHY | All sites reachable, replication is normal.
+| 1 | SUSPECTING | Failure detected, waiting for one round before acting.
+| 2 | UNHEALTHY | The remote site confirmed unreachable, replication disconnected.
+| 3 | RECOVERING | Remote site back online, verifying stable connectivity.
+|===
+
+Use this metric to set up alerts.
+For example, alert when the value is >= 2 for longer than two health-check intervals, which indicates a confirmed outage requiring operator attention.
+
+== Recovery procedures
+
+This section describes the manual steps required to restore a healthy multi-cluster deployment after a failover.
+
+=== Recovering from UNHEALTHY state
+
+When the state machine reaches UNHEALTHY, the active site is serving traffic alone and replication to the inactive site has been disconnected.
+The inactive site has stale data in both its {project_name} and {jdgserver_name} caches and must not receive traffic until it is resynchronized.
+
+To restore the inactive site:
+
+. *Shut down {project_name} on the inactive site.*
+This clears all {project_name} caches and prevents stale data from being served.
++
+When deploying {project_name} using the {project_name} Operator, set the number of {project_name} instances in the {project_name} Custom Resource to 0.
+
+. *Resynchronize the {jdgserver_name} clusters.*
+Follow the steps described in <@links.ha id="multi-cluster-operate-synchronize" /> to clear the caches on the inactive site and transfer state from the active site.
++
+[WARNING]
+====
+Do not start {project_name} on the inactive site until the state transfer has fully completed.
+The active {project_name} is not aware of the synchronization in progress, and starting too early may result in the inactive site serving partially transferred data.
+====
+
+. *Start {project_name} on the inactive site.*
+Once the state transfer has completed, start {project_name} on the inactive site.
++
+When deploying {project_name} using the {project_name} Operator, set the number of {project_name} instances in the {project_name} Custom Resource back to its original value.
+
+. *Wait for automatic recovery.*
+After the state transfer restores connectivity between the {jdgserver_name} clusters, the active site will detect the remote site as reachable again.
+The state machine will transition automatically from `UNHEALTHY` to `RECOVERING` and then to `HEALTHY`.
+No further manual action is needed once synchronization is complete.
+
+=== Recovering when the active site is down
+
+If the active site crashes while the state is UNHEALTHY or RECOVERING, the state machine is stuck: only the active site can drive the transition, and the inactive site cannot safely take over because its data is stale.
+
+==== Option 1: Restore the active site
+
+If the active site can be brought back, it will resume the state machine from where it left off and eventually transition back to `HEALTHY`.
+No manual state changes are needed.
+
+==== Option 2: Reset the state machine manually
+
+If the active site cannot be restored, follow these steps:
+
+. *Delete the site state row from the database.*
++
+[source,sql]
+----
+DELETE FROM SERVER_CONFIG WHERE SERVER_CONFIG_KEY = 'site.state';
+----
++
+When the row is missing, the next {project_name} node to start will initialize the state as `HEALTHY`.
+
+. *Resynchronize before accepting traffic.*
+After resetting the state, the surviving site has stale {jdgserver_name} data from before the failure.
+Follow the <@links.ha id="multi-cluster-operate-synchronize" /> procedure to ensure data consistency before routing traffic to both sites.
+
+</@tmpl.guide>
