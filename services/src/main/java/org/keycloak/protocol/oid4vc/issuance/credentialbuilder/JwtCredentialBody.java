@@ -17,9 +17,6 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
-
 import java.util.Map;
 
 import org.keycloak.crypto.SignatureSignerContext;
@@ -27,6 +24,9 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.JsonSerialization;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
