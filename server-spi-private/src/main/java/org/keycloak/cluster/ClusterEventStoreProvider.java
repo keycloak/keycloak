@@ -26,9 +26,11 @@ public interface ClusterEventStoreProvider extends Provider {
 
     /**
      * Persist an event for all other active clusters.
-     * Queries JGROUPS_PING for distinct cluster names and inserts one row per target cluster.
+     *
+     * @return the generated id so you can check later if the event is still in the queue and is unprocessed,
+     * or null when no event has been sent to any other cluster as this is the only cluster.
      */
-    void persist(String senderCluster, byte[] eventData);
+    String persist(String senderCluster, byte[] eventData);
 
     /**
      * Read events addressed to the given cluster, ordered by creation time.
@@ -38,10 +40,15 @@ public interface ClusterEventStoreProvider extends Provider {
     /**
      * Delete consumed events by their IDs.
      */
-    void deleteEvents(Collection<String> ids);
+    void deleteEvents(String targetCluster, Collection<String> ids);
 
     /**
      * Delete events older than the given timestamp (milliseconds). Backstop for stale rows.
      */
     void deleteEventsOlderThan(long timestampMillis);
+
+    /**
+     * Check whether any event with the given ID still exists in the store.
+     */
+    boolean eventExists(String id);
 }

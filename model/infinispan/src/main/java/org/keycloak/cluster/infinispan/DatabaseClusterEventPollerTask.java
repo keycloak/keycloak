@@ -27,6 +27,7 @@ import org.keycloak.cluster.StoredClusterEvent;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.CacheDecorators;
 import org.keycloak.timer.ScheduledTask;
@@ -66,9 +67,15 @@ public class DatabaseClusterEventPollerTask implements ScheduledTask {
             return;
         }
 
+        processEvents(session, store, clusterName, marshaller);
+        cleanupStaleEvents(session, store);
+    }
+
+    static void processEvents(KeycloakSession session, ClusterEventStoreProvider store, String clusterName, Marshaller marshaller) {
+        if (!shouldProcessEvents(session)) return;
+
         List<StoredClusterEvent> events = store.readEvents(clusterName, BATCH_SIZE);
         if (events.isEmpty()) {
-            cleanupStaleEvents(store);
             return;
         }
 
@@ -98,20 +105,25 @@ public class DatabaseClusterEventPollerTask implements ScheduledTask {
         }
 
         if (!processedIds.isEmpty()) {
-            store.deleteEvents(processedIds);
+            store.deleteEvents(clusterName, processedIds);
             if (logger.isDebugEnabled()) {
                 logger.debugf("Consumed and deleted %d cluster event(s) for cluster '%s'", processedIds.size(), clusterName);
             }
         }
-
-        cleanupStaleEvents(store);
     }
 
-    private void cleanupStaleEvents(ClusterEventStoreProvider store) {
+    private void cleanupStaleEvents(KeycloakSession session, ClusterEventStoreProvider store) {
         if (staleEventHorizon < Time.currentTimeMillis()) {
+            if (!shouldProcessEvents(session)) return;
             store.deleteEventsOlderThan(Time.currentTimeMillis() - STALE_EVENT_RETENTION_MS);
             // Stale event deletion should run less frequently than the processing of events
             staleEventHorizon = Time.currentTimeMillis() + STALE_EVENT_RETENTION_MS;
         }
+    }
+
+    private static boolean shouldProcessEvents(KeycloakSession session) {
+        InfinispanConnectionProviderFactory providerFactory = (InfinispanConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(InfinispanConnectionProvider.class);
+        // It is sufficient to run this on the coordinator only, let's save the bandwidth on the other nodes
+        return !providerFactory.isCoordinatorSupported() || providerFactory.isCoordinator();
     }
 }
