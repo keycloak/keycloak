@@ -29,7 +29,7 @@
 
             <@field.input name="otp" label=msg("loginOtpOneTime") autocomplete="one-time-code" fieldName="totp" autofocus=true />
 
-            <#if otpLogin.trustedDevicePolicy.enabled>
+            <#if showTrustDevice?has_content>
                 <div class="${properties.kcFormGroupClass!}">
                     <@field.checkbox name="trustDevice" label=msg("trustDevice") description=msg("trusted-device-help-text") />
                 </div>

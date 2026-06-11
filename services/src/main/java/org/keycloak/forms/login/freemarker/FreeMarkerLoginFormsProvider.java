@@ -42,6 +42,7 @@ import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticator;
+import org.keycloak.authentication.authenticators.browser.TrustedDeviceConstants;
 import org.keycloak.authentication.forms.RegistrationPage;
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
@@ -308,9 +309,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case LOGIN_RESET_OTP:
                 attributes.put("configuredOtpCredentials", new TotpLoginBean(session, realm, user, (String) this.attributes.get(OTPFormAuthenticator.SELECTED_OTP_CREDENTIAL_ID)));
-                break;
-            case LOGIN_WEBAUTHN:
-                attributes.put("trustedDevicePolicy", context.getRealm().getTrustedDevicePolicy());
                 break;
             case REGISTER:
                 RegisterBean rb = new RegisterBean(formData, session);
@@ -607,6 +605,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         if (authenticationSession != null && authenticationSession.getClientNote(Constants.KC_ACTION_EXECUTING) != null
                 && !Boolean.TRUE.toString().equals(authenticationSession.getClientNote(Constants.KC_ACTION_ENFORCED))) {
             attributes.put("isAppInitiatedAction", true);
+        }
+
+        if (authenticationSession != null && TrustedDeviceConstants.AUTH_NOTE_SHOW.equals(
+                authenticationSession.getAuthNote(TrustedDeviceConstants.AUTH_NOTE))) {
+            attributes.put("showTrustDevice", "true");
         }
 
         attributes.put("lang", lang);

@@ -30,6 +30,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.TrustedDeviceCredentialInputModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * @author Norbert Kelemen
@@ -68,11 +69,16 @@ public class TrustedDeviceAuthenticator extends AbstractFormAuthenticator implem
 
         // Validate the secret stored in the cookie
         var model = new TrustedDeviceCredentialInputModel(cookieParts[0], cookieParts[1]);
-        if (context.getUser().credentialManager().isValid(model)) {
+        var credentialManager = context.getUser().credentialManager();
+        if (credentialManager.isValid(model)) {
             context.success();
             return;
         }
 
+        // Delete the invalid credential
+        credentialManager.removeStoredCredentialById(cookieParts[0]);
+
+        // Remove the cookie from browser
         cookieProvider.expire(cookieType);
         context.attempted();
     }
@@ -89,7 +95,16 @@ public class TrustedDeviceAuthenticator extends AbstractFormAuthenticator implem
 
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        var credentialProvider = getCredentialProvider(session);
+        AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+        String trustDeviceNote = authSession.getAuthNote(TrustedDeviceConstants.AUTH_NOTE);
+        if (trustDeviceNote == null) {
+            boolean isEnabled = realm.getAttribute(TrustedDeviceConstants.REALM_IS_ENABLED_ATTR, false);
+            // set note to show the trust device checkbox in 2FA if enabled for the realm
+            if(isEnabled) {
+                authSession.setAuthNote(TrustedDeviceConstants.AUTH_NOTE, TrustedDeviceConstants.AUTH_NOTE_SHOW);
+            }
+        }
+        TrustedDeviceCredentialProvider credentialProvider = getCredentialProvider(session);
         return user.credentialManager().isConfiguredFor(credentialProvider.getType());
     }
 

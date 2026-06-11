@@ -19,6 +19,7 @@ package org.keycloak.credential;
 
 import java.security.SecureRandom;
 
+import org.keycloak.authentication.authenticators.browser.TrustedDeviceConstants;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.cookie.CookieProvider;
@@ -28,7 +29,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.TrustedDeviceCredentialInputModel;
-import org.keycloak.models.TrustedDevicePolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.TrustedDeviceCredentialModel;
 import org.keycloak.models.credential.dto.TrustedDeviceSecretData;
@@ -66,10 +66,8 @@ public class TrustedDeviceCredentialProvider implements CredentialProvider<Trust
 
     public void createTrustedDeviceCredential(RealmModel realm, UserModel user) {
 
-        TrustedDevicePolicy policy = realm.getTrustedDevicePolicy();
-
         // Should not happen, but here is a safety check before creating the new credential
-        if (!policy.isEnabled()) {
+        if (getIsDisabled(realm)) {
             logger.warn("Skipping trusted device creation: Trusted device policy is disabled");
             return;
         }
@@ -91,7 +89,7 @@ public class TrustedDeviceCredentialProvider implements CredentialProvider<Trust
         credentialManager.moveStoredCredentialTo(credential.getId(), null);
 
         // Set cookie
-        setTrustedDeviceCookie(user.getId(), credential, policy.getTrustExpiration());
+        setTrustedDeviceCookie(user.getId(), credential, getExpirationSeconds(realm));
 
     }
 
@@ -108,8 +106,7 @@ public class TrustedDeviceCredentialProvider implements CredentialProvider<Trust
     }
 
     public void deleteExpiredCredentials(RealmModel realm, SubjectCredentialManager credentialManager) {
-        TrustedDevicePolicy policy = realm.getTrustedDevicePolicy();
-        long expirationLimit = Time.currentTimeMillis() - policy.getTrustExpiration();
+        long expirationLimit = Time.currentTimeMillis() - getExpirationSeconds(realm);
 
         credentialManager.getStoredCredentialsByTypeStream(TrustedDeviceCredentialModel.TYPE)
                 .filter(c -> c.getCreatedDate() <= expirationLimit)
@@ -160,10 +157,8 @@ public class TrustedDeviceCredentialProvider implements CredentialProvider<Trust
         if (challengeSecret == null || challengeSecret.isEmpty())
             return false;
 
-        TrustedDevicePolicy trustedDevicePolicy = realm.getTrustedDevicePolicy();
-
-        // Check whether trusted device policy is enabled
-        if (!trustedDevicePolicy.isEnabled())
+        // Check whether trusted device policy is disabled
+        if (getIsDisabled(realm))
             return false;
 
         // Get user saved credential
@@ -175,7 +170,7 @@ public class TrustedDeviceCredentialProvider implements CredentialProvider<Trust
         TrustedDeviceCredentialModel tdCredential = TrustedDeviceCredentialModel.createFromCredentialModel(credential);
         TrustedDeviceSecretData secretData = tdCredential.getTrustedDeviceSecretData();
 
-        long credentialExpiresAt = tdCredential.getCreatedDate() + trustedDevicePolicy.getTrustExpiration();
+        long credentialExpiresAt = tdCredential.getCreatedDate() + getExpirationSeconds(realm);
 
         if (credentialExpiresAt <= Time.currentTimeMillis()) {
             // Remove the credential if expired
@@ -184,6 +179,17 @@ public class TrustedDeviceCredentialProvider implements CredentialProvider<Trust
         }
 
         return challengeSecret.equals(secretData.getValue());
+    }
+
+    private static boolean getIsDisabled(RealmModel realm){
+        return !realm.getAttribute(TrustedDeviceConstants.REALM_IS_ENABLED_ATTR, false);
+    }
+
+    private static int getExpirationSeconds(RealmModel realm) {
+        return realm.getAttribute(
+                TrustedDeviceConstants.REALM_EXPIRATION_ATTR,
+                TrustedDeviceConstants.DEFAULT_EXPIRATION
+        );
     }
 
     private String generateSecret() {

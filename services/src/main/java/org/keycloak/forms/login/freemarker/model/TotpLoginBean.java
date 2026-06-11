@@ -29,7 +29,6 @@ import org.keycloak.credential.OTPCredentialProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.TrustedDevicePolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 
@@ -43,7 +42,6 @@ public class TotpLoginBean {
     private final String selectedCredentialId;
     private final List<OTPCredential> userOtpCredentials;
     private OTPPolicy policy;
-    private TrustedDevicePolicy trustedDevicePolicy;
 
     public TotpLoginBean(KeycloakSession session, RealmModel realm, UserModel user, String selectedCredentialId) {
 
@@ -62,7 +60,6 @@ public class TotpLoginBean {
 
         this.selectedCredentialId = selectedCredentialId;
         this.policy = realm.getOTPPolicy();
-        this.trustedDevicePolicy = realm.getTrustedDevicePolicy();
     }
 
 
@@ -76,10 +73,6 @@ public class TotpLoginBean {
 
     public OTPPolicy getPolicy() {
         return policy;
-    }
-
-    public TrustedDevicePolicy getTrustedDevicePolicy() {
-        return trustedDevicePolicy;
     }
 
     public static class OTPCredential {

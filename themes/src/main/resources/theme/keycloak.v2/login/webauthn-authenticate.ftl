@@ -114,8 +114,7 @@
                 <input type="hidden" id="credentialId" name="credentialId"/>
                 <input type="hidden" id="userHandle" name="userHandle"/>
                 <input type="hidden" id="error" name="error"/>
-
-                <#if trustedDevicePolicy.enabled>
+                <#if showTrustDevice?has_content>
                     <div class="${properties.kcFormGroupClass!}">
                         <@field.checkbox name="trustDevice" label=msg("trustDevice") description=msg("trusted-device-help-text") />
                     </div>

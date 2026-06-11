@@ -13,6 +13,7 @@ import { useAdminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
 import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { convertAttributeNameToForm } from "../../util";
 
 type TrustedDevicePolicyProps = {
   realm: RealmRepresentation;
@@ -29,13 +30,15 @@ export const TrustedDevicePolicy = ({
   realmUpdated,
 }: TrustedDevicePolicyProps) => {
   const { adminClient } = useAdminClient();
-
   const { t } = useTranslation();
   const form = useForm<FormFields>({
     mode: "onChange",
     defaultValues: {
-      trustedDeviceExpiration: realm.trustedDeviceExpiration ?? 604800,
-      trustedDeviceEnabled: realm.trustedDeviceEnabled ?? false,
+      attributes: {
+        trustedDeviceExpiration:
+          realm.attributes?.trustedDeviceExpiration ?? "",
+        trustedDeviceEnabled: realm.attributes?.trustedDeviceEnabled ?? false,
+      },
     },
   });
   const {
@@ -72,14 +75,19 @@ export const TrustedDevicePolicy = ({
       >
         <FormProvider {...form}>
           <TimeSelectorControl
-            name="trustedDeviceExpiration"
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.trustedDeviceExpiration",
+            )}
             label={t("trustedDeviceExpiration")}
             labelIcon={t("trustedDeviceExpirationHelp")}
             units={["hour", "day"]}
             controller={{
-              defaultValue: 604800, // 1 week
+              defaultValue: "",
               rules: {
-                min: 86400, // 1 day
+                min: {
+                  value: 86400, // 1 day
+                  message: t("minLength", { length: "1 " + t("day") }),
+                },
                 max: {
                   value: 7776000, // 90 days
                   message: t("maxLength", { length: "90 " + t("days") }),
@@ -88,11 +96,14 @@ export const TrustedDevicePolicy = ({
             }}
           />
           <SwitchControl
-            name="trustedDeviceEnabled"
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.trustedDeviceEnabled",
+            )}
             label={t("trustedDeviceEnabled")}
             labelIcon={t("trustedDeviceEnabledHelp")}
-            labelOn={t("on")}
-            labelOff={t("off")}
+            labelOn={t("enabled")}
+            labelOff={t("disabled")}
+            stringify
           />
 
           <ActionGroup>

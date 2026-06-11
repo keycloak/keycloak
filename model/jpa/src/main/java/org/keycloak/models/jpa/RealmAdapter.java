@@ -69,7 +69,6 @@ import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.StorageProviderRealmModel;
-import org.keycloak.models.TrustedDevicePolicy;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.WebAuthnPolicyPasswordlessDefaults;
 import org.keycloak.models.WebAuthnPolicyTwoFactorDefaults;
@@ -115,7 +114,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     private PasswordPolicy passwordPolicy;
     private OTPPolicy otpPolicy;
-    private TrustedDevicePolicy trustedDevicePolicy;
 
     public RealmAdapter(KeycloakSession session, EntityManager em, RealmEntity realm) {
         this.session = session;
@@ -1162,24 +1160,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         } else {
             removeAttribute(RealmAttributes.WEBAUTHN_POLICY_MEDIATION + attributePrefix);
         }
-    }
-
-    // Trusted device
-    @Override
-    public TrustedDevicePolicy getTrustedDevicePolicy() {
-        if (trustedDevicePolicy == null) {
-            trustedDevicePolicy = new TrustedDevicePolicy();
-            trustedDevicePolicy.setEnabled(getAttribute(TrustedDevicePolicy.REALM_IS_ENABLED_ATTRIBUTE, TrustedDevicePolicy.DEFAULT_IS_ENABLED));
-            trustedDevicePolicy.setTrustExpiration(getAttribute(TrustedDevicePolicy.REALM_EXPIRATION_ATTRIBUTE, TrustedDevicePolicy.DEFAULT_EXPIRATION));
-        }
-        return trustedDevicePolicy;
-    }
-
-    @Override
-    public void setTrustedDevicePolicy(TrustedDevicePolicy policy) {
-        setAttribute(TrustedDevicePolicy.REALM_IS_ENABLED_ATTRIBUTE, policy.isEnabled());
-        setAttribute(TrustedDevicePolicy.REALM_EXPIRATION_ATTRIBUTE, policy.getTrustExpiration());
-        em.flush();
     }
 
     @Override

@@ -23,7 +23,11 @@ import java.util.Map;
 import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.browser.TrustedDeviceConstants;
 import org.keycloak.common.util.Time;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.TrustedDeviceCredentialProvider;
+import org.keycloak.credential.TrustedDeviceCredentialProviderFactory;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -157,6 +161,17 @@ public final class AuthenticatorUtils {
             context.getEvent().detail(Details.REMEMBER_ME, "true");
         } else {
             context.getAuthenticationSession().removeAuthNote(Details.REMEMBER_ME);
+        }
+    }
+
+    public static void processTrustDevice(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
+        String trustDevice = inputData.getFirst("trustDevice");
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        String trustDeviceNote = authSession.getAuthNote(TrustedDeviceConstants.AUTH_NOTE);
+        if ("on".equals(trustDevice) && TrustedDeviceConstants.AUTH_NOTE_SHOW.equals(trustDeviceNote)) {
+            var tdcProvider = (TrustedDeviceCredentialProvider) context.getSession().getProvider(CredentialProvider.class, TrustedDeviceCredentialProviderFactory.PROVIDER_ID);
+            authSession.setAuthNote(TrustedDeviceConstants.AUTH_NOTE, TrustedDeviceConstants.AUTH_NOTE_CREATED);
+            tdcProvider.createTrustedDeviceCredential(context.getRealm(), context.getUser());
         }
     }
 }

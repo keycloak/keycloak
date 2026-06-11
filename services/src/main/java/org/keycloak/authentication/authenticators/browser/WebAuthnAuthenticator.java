@@ -30,6 +30,7 @@ import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.CredentialValidator;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.UriUtils;
@@ -260,6 +261,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
             context.getEvent()
                 .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, isUVChecked)
                 .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, encodedCredentialID);
+
+            AuthenticatorUtils.processTrustDevice(context, params);
             context.success(getCredentialType());
         } else {
             context.getEvent()

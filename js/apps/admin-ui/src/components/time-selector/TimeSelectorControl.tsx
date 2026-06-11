@@ -43,7 +43,11 @@ export const TimeSelectorControl = <
     formState: { errors },
   } = useFormContext();
 
-  const error = errors[name];
+  const getError = () => {
+    return name.split(".").reduce((record: any, key) => record?.[key], errors);
+  };
+
+  const error = getError();
 
   return (
     <FormGroup
