@@ -239,6 +239,8 @@ public class Messages {
 
     public static final String CONFIRM_EXECUTION_OF_ACTIONS = "confirmExecutionOfActions";
 
+    public static final String CONFIRM_CLAIM_CREDENTIAL = "credentialOfferTitle";
+
     public static final String STALE_CODE = "staleCodeMessage";
 
     public static final String STALE_CODE_ACCOUNT = "staleCodeAccountMessage";

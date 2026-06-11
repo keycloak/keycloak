@@ -1,23 +1,18 @@
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
 import java.io.IOException;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.constants.OID4VCIConstants;
-import org.keycloak.crypto.KeyType;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
@@ -132,22 +127,7 @@ public final class TrustedAttestationKeysLoader {
                 .filter(key -> keyIds.contains(key.getKid()) && key.getPublicKey() != null)
                 .forEach(key -> {
                     try {
-                        JWKBuilder builder = JWKBuilder.create()
-                                .kid(key.getKid())
-                                .algorithm(key.getAlgorithmOrDefault());
-                        List<X509Certificate> certificates = Optional.ofNullable(key.getCertificateChain())
-                                .filter(certs -> !certs.isEmpty())
-                                .orElseGet(() -> Optional.ofNullable(key.getCertificate())
-                                        .map(Collections::singletonList)
-                                        .orElseGet(Collections::emptyList));
-                        JWK jwk = null;
-                        if (Objects.equals(key.getType(), KeyType.RSA)) {
-                            jwk = builder.rsa(key.getPublicKey(), certificates, key.getUse());
-                        } else if (Objects.equals(key.getType(), KeyType.EC)) {
-                            jwk = builder.ec(key.getPublicKey(), certificates, key.getUse());
-                        } else if (Objects.equals(key.getType(), KeyType.OKP)) {
-                            jwk = builder.okp(key.getPublicKey(), key.getUse());
-                        }
+                        JWK jwk = JWKSServerUtils.toJwk(key);
                         if (jwk != null) {
                             keyMap.put(key.getKid(), jwk);
                         } else {

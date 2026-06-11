@@ -677,9 +677,9 @@ public class AuthorizationTokenService {
                         if (permissionScopes != null) {
                             permissionScopes.retainAll(scopes);
                         }
+                        // the permission is explicitly granted by the owner, mark this permission as granted so that we don't run the evaluation engine on it
+                        resourcePermission.setGranted(true);
                     }
-                    // the permission is explicitly granted by the owner, mark this permission as granted so that we don't run the evaluation engine on it
-                    resourcePermission.setGranted(true);
                 }
 
                 Resource serverResource = resourceStore.findByName(resourceServer, resourceId);

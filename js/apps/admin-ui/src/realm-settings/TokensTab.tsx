@@ -71,7 +71,7 @@ export const RealmSettingsTokensTab = ({
   const { control, register, reset, formState, handleSubmit } =
     useFormContext<RealmRepresentation>();
   const credentialOfferLifespanDefaultValue =
-    realm.attributes?.["credentialOfferLifespanS"] ?? 30;
+    realm.attributes?.["credentialOfferLifespanS"] ?? 300;
 
   // Show a global error notification if validation fails
   const onError = () => {
@@ -677,6 +677,7 @@ export const RealmSettingsTokensTab = ({
             )}
             label={t("oid4vciNonceLifetime")}
             labelIcon={t("oid4vciNonceLifetimeHelp")}
+            className="c-nonce-lifetime"
             controller={{
               defaultValue: 60,
               rules: { min: 30 },
@@ -690,6 +691,7 @@ export const RealmSettingsTokensTab = ({
             )}
             label={t("credentialOfferLifespan")}
             labelIcon={t("credentialOfferLifespanHelp")}
+            className="credential-offer-lifespan"
             controller={{
               defaultValue: credentialOfferLifespanDefaultValue,
               rules: { min: 30 },
@@ -703,6 +705,7 @@ export const RealmSettingsTokensTab = ({
             )}
             label={t("signedMetadataLifespan")}
             labelIcon={t("signedMetadataLifespanHelp")}
+            className="signed-metadata-lifespan"
             controller={{
               defaultValue: 60,
             }}

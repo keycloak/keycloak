@@ -103,12 +103,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
         return getUri(UrlType.FRONTEND);
     }
 
-    /**
-     * @deprecated
-     * Use {@link #getHttpRequest()} to obtain the request headers.
-     * @return
-     */
-    @Deprecated
+  
     @Override
     public HttpHeaders getRequestHeaders() {
         return getHttpRequest().getHttpHeaders();

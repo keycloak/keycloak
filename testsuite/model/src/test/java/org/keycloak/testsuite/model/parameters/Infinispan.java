@@ -26,6 +26,7 @@ import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.keys.PublicKeyStorageSpi;
 import org.keycloak.keys.infinispan.InfinispanCachePublicKeyProviderFactory;
 import org.keycloak.keys.infinispan.InfinispanPublicKeyStorageProviderFactory;
+import org.keycloak.models.RevokedTokenSpi;
 import org.keycloak.models.SingleUseObjectSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
@@ -39,6 +40,7 @@ import org.keycloak.models.cache.infinispan.authorization.InfinispanCacheStoreFa
 import org.keycloak.models.cache.infinispan.organization.InfinispanOrganizationProviderFactory;
 import org.keycloak.models.session.UserSessionPersisterSpi;
 import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory;
+import org.keycloak.models.sessions.infinispan.InfinispanRevokedTokenProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserLoginFailureProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
@@ -84,6 +86,7 @@ public class Infinispan extends KeycloakModelParameters {
             .add(JGroupsCertificateProviderSpi.class)
             .add(ServerConfigurationStorageProviderSpi.class)
             .add(InfinispanTransactionSpi.class)
+            .add(RevokedTokenSpi.class)
             .build();
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
@@ -105,6 +108,7 @@ public class Infinispan extends KeycloakModelParameters {
             .add(JGroupsCertificateProviderFactory.class)
             .add(ServerConfigStorageProviderFactory.class)
             .add(InfinispanTransactionProviderFactory.class)
+            .add(InfinispanRevokedTokenProviderFactory.class)
             .build();
 
     @Override

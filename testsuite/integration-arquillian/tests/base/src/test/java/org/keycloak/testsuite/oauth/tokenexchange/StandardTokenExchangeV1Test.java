@@ -474,9 +474,9 @@ public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
     @UncaughtServerErrorExpected
-    public void testExchangeWithDynamicScopesEnabled() throws Exception {
+    public void testExchangeWithParameterizedScopesEnabled() throws Exception {
         testExchange();
     }
 

@@ -110,7 +110,6 @@ export default function EditUser() {
     });
 
   const [activeEventsTab, setActiveEventsTab] = useState("userEvents");
-  const [activeVcTab, setActiveVcTab] = useState("vcCredentials");
 
   const settingsTab = useRoutableTab(toTab("settings"));
   const attributesTab = useRoutableTab(toTab("attributes"));
@@ -399,6 +398,17 @@ export default function EditUser() {
               >
                 <UserCredentials user={user} setUser={setUser} />
               </Tab>
+              {showVerifiableCredentials && (
+                <Tab
+                  data-testid="verifiable-credentials-tab"
+                  title={
+                    <TabTitleText>{t("verifiableCredentials")}</TabTitleText>
+                  }
+                  {...verifiableCredentialsTab}
+                >
+                  <UserVerifiableCredentials userId={user.id!} />
+                </Tab>
+              )}
               <Tab
                 data-testid="role-mapping-tab"
                 isHidden={!user.access?.view}
@@ -469,27 +479,6 @@ export default function EditUser() {
                       title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
                     >
                       <AdminEvents resourcePath={`users/${user.id}*`} />
-                    </Tab>
-                  </Tabs>
-                </Tab>
-              )}
-              {showVerifiableCredentials && (
-                <Tab
-                  data-testid="verifiable-credentials-tab"
-                  title={
-                    <TabTitleText>{t("verifiableCredentials")}</TabTitleText>
-                  }
-                  {...verifiableCredentialsTab}
-                >
-                  <Tabs
-                    activeKey={activeVcTab}
-                    onSelect={(_, key) => setActiveVcTab(key as string)}
-                  >
-                    <Tab
-                      eventKey="vcCredentials"
-                      title={<TabTitleText>{t("credentials")}</TabTitleText>}
-                    >
-                      <UserVerifiableCredentials userId={user.id!} />
                     </Tab>
                   </Tabs>
                 </Tab>

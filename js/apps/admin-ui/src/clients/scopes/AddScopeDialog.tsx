@@ -21,8 +21,8 @@ import { useTranslation } from "react-i18next";
 import {
   ClientScopeType,
   clientScopeTypesDropdown,
-  DynamicScopeLabel,
-  isDynamicScope,
+  ParameterizedScopeLabel,
+  isParameterizedScope,
 } from "../../components/client-scope/ClientScopeTypes";
 import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
@@ -321,7 +321,8 @@ export const AddScopeDialog = ({
             name: "name",
             cellRenderer: (row) => (
               <>
-                {row.name} {isDynamicScope(row) && <DynamicScopeLabel />}
+                {row.name}{" "}
+                {isParameterizedScope(row) && <ParameterizedScopeLabel />}
               </>
             ),
           },

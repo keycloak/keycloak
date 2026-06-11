@@ -59,6 +59,7 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -104,21 +105,41 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         RealmBuilder realm = RealmBuilder.create().name("test")
                 .eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID);
 
+        ProtocolMapperRepresentation audienceMapperRefreshOn = new ProtocolMapperRepresentation();
+        audienceMapperRefreshOn.setName("audience-service-account-cl-refresh-on");
+        audienceMapperRefreshOn.setProtocol("openid-connect");
+        audienceMapperRefreshOn.setProtocolMapper("oidc-audience-mapper");
+        audienceMapperRefreshOn.setConfig(Map.of(
+            "included.client.audience", "service-account-cl-refresh-on",
+            "access.token.claim", "true"
+        ));
+
         ClientRepresentation enabledApp = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .clientId("service-account-cl-refresh-on")
                 .secret("secret1")
                 .serviceAccountsEnabled(true)
                 .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
+                .protocolMappers(audienceMapperRefreshOn)
                 .build();
 
         realm.clients(enabledApp);
+
+        ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
+        audienceMapper.setName("audience-service-account-cl");
+        audienceMapper.setProtocol("openid-connect");
+        audienceMapper.setProtocolMapper("oidc-audience-mapper");
+        audienceMapper.setConfig(Map.of(
+            "included.client.audience", "service-account-cl",
+            "access.token.claim", "true"
+        ));
 
         ClientRepresentation enabledAppWithSkipRefreshToken = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .clientId("service-account-cl")
                 .secret("secret1")
                 .serviceAccountsEnabled(true)
+                .protocolMappers(audienceMapper)
                 .build();
 
         realm.clients(enabledAppWithSkipRefreshToken);
@@ -131,11 +152,21 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
         realm.clients(disabledApp);
 
+        ProtocolMapperRepresentation audienceMapperSpecialSecrets = new ProtocolMapperRepresentation();
+        audienceMapperSpecialSecrets.setName("audience-service-account-cl-special-secrets");
+        audienceMapperSpecialSecrets.setProtocol("openid-connect");
+        audienceMapperSpecialSecrets.setProtocolMapper("oidc-audience-mapper");
+        audienceMapperSpecialSecrets.setConfig(Map.of(
+            "included.client.audience", "service-account-cl-special-secrets",
+            "access.token.claim", "true"
+        ));
+
         ClientRepresentation secretsWithSpecialCharacterClient = ClientBuilder.create()
             .id(KeycloakModelUtils.generateId())
             .clientId("service-account-cl-special-secrets")
             .secret("secret/with=special?character")
             .serviceAccountsEnabled(true)
+            .protocolMappers(audienceMapperSpecialSecrets)
             .build();
 
         realm.clients(secretsWithSpecialCharacterClient);
@@ -424,7 +455,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         Assertions.assertNull(accessToken.getSessionState());
         Assertions.assertNull(response.getRefreshToken(), "Refresh-Token should not be present");
 
-        AccessTokenContext ctx = testingClient.testing("test").getTokenContext(accessToken.getId());
+        AccessTokenContext ctx = runOnServer.fetch(RunHelpers.getTokenContext(accessToken.getId()));
         Assertions.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.TRANSIENT);
         Assertions.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.REGULAR);
         Assertions.assertEquals(ctx.getGrantType(), OAuth2Constants.CLIENT_CREDENTIALS);

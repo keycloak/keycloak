@@ -1,4 +1,5 @@
 team/cloud-native:
+  - area/admin/api-v2
   - area/admin/cli
   - area/dist/quarkus
   - area/operator
@@ -8,8 +9,6 @@ team/cloud-native:
 team/continuous-delivery:
   - area/ci
   - area/testsuite
-
-team/core-clients:
 
 team/core-protocols:
   - area/adapter/fuse

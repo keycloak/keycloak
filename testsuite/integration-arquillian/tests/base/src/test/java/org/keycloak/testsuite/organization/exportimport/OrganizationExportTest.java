@@ -38,18 +38,20 @@ import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileImportProviderFactory;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.client.resources.TestingExportImportResource;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.util.runonserver.ExportImportHelper;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -74,6 +76,24 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         Map<String, List<String>> expectedUnmanagedMembers = new HashMap<>();
         Map<String, String> expectedGroupIds = new HashMap<>();
 
+        // Create realm role for org group role mapping
+        RoleRepresentation realmRole = new RoleRepresentation("org-export-realm-role", "Realm role for export test", false);
+        managedRealm.admin().roles().create(realmRole);
+        RoleRepresentation createdRealmRole = managedRealm.admin().roles().get("org-export-realm-role").toRepresentation();
+
+        // Create client with a role for org group role mapping
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId("org-export-test-client");
+        clientRep.setEnabled(true);
+        String clientUuid;
+        try (Response response = managedRealm.admin().clients().create(clientRep)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            clientUuid = ApiUtil.getCreatedId(response);
+        }
+        RoleRepresentation clientRole = new RoleRepresentation("org-export-client-role", "Client role for export test", false);
+        managedRealm.admin().clients().get(clientUuid).roles().create(clientRole);
+        RoleRepresentation createdClientRole = managedRealm.admin().clients().get(clientUuid).roles().get("org-export-client-role").toRepresentation();
+
         for (int i = 0; i < 2; i++) {
             IdentityProviderRepresentation broker = bc.setUpIdentityProvider();
             broker.setAlias("broker-org-" + i);
@@ -97,6 +117,10 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             expectedGroupIds.put("Team-" + i, teamId);
             expectedGroupIds.put("Development-" + i, devId);
             expectedGroupIds.put("QA-" + i, qaId);
+
+            // Add realm and client role mappings to the Department group
+            organization.groups().group(deptId).roles().realmLevel().add(List.of(createdRealmRole));
+            organization.groups().group(deptId).roles().clientLevel(clientUuid).add(List.of(createdClientRole));
 
             expectedOrganizations.add(orgRep);
 
@@ -225,6 +249,9 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
 
         // Validate group memberships are preserved
         validateGroupMemberships(organization, topLevelGroups);
+
+        // Validate role mappings are preserved
+        validateGroupRoleMappings(organization, topLevelGroups);
     }
 
     private void validateSubGroups(OrganizationResource organization, List<GroupRepresentation> topLevelGroups, Map<String, String> expectedGroupIds) {
@@ -262,6 +289,33 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         assertThat(devMembers, hasSize(1));
     }
 
+    private void validateGroupRoleMappings(OrganizationResource organization, List<GroupRepresentation> topLevelGroups) {
+        GroupRepresentation deptGroup = topLevelGroups.stream().filter(g -> g.getName().startsWith("Department-")).findFirst().orElseThrow();
+
+        // Validate via role mapping API
+        List<RoleRepresentation> realmRoles = organization.groups().group(deptGroup.getId()).roles().realmLevel().listAll();
+        assertThat(realmRoles, hasSize(1));
+        assertThat(realmRoles.get(0).getName(), equalTo("org-export-realm-role"));
+
+        List<RoleRepresentation> clientRoles = organization.groups().group(deptGroup.getId()).roles()
+                .clientLevel(managedRealm.admin().clients().findByClientId("org-export-test-client").get(0).getId()).listAll();
+        assertThat(clientRoles, hasSize(1));
+        assertThat(clientRoles.get(0).getName(), equalTo("org-export-client-role"));
+
+        // Validate via group representation
+        GroupRepresentation deptRep = organization.groups().group(deptGroup.getId()).toRepresentation(false);
+        assertThat(deptRep.getRealmRoles(), hasSize(1));
+        assertThat(deptRep.getRealmRoles(), hasItem("org-export-realm-role"));
+        assertThat(deptRep.getClientRoles(), notNullValue());
+        assertThat(deptRep.getClientRoles().get("org-export-test-client"), hasSize(1));
+        assertThat(deptRep.getClientRoles().get("org-export-test-client"), hasItem("org-export-client-role"));
+
+        // Team group should have no role mappings
+        GroupRepresentation teamGroup = topLevelGroups.stream().filter(g -> g.getName().startsWith("Team-")).findFirst().orElseThrow();
+        List<RoleRepresentation> teamRealmRoles = organization.groups().group(teamGroup.getId()).roles().realmLevel().listAll();
+        assertThat(teamRealmRoles, hasSize(0));
+    }
+
     private void validateGroupIds(List<GroupRepresentation> groups, Map<String, String> expectedGroupIds) {
         for (GroupRepresentation group : groups) {
             String expectedId = expectedGroupIds.get(group.getName());
@@ -291,35 +345,34 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     }
 
     private RealmRepresentation exportRemoveImportRealm(boolean file) {
-        TestingExportImportResource exportImport = testingClient.testing().exportImport();
         String fileOrDir;
 
         //export
         if (file) {
-            exportImport.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
-            fileOrDir = exportImport.getExportImportTestDirectory() + File.separator + "org-export.json";
-            exportImport.setFile(fileOrDir);
+            runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileExportProviderFactory.PROVIDER_ID));
+            fileOrDir = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","") + File.separator + "org-export.json";
+            runOnServerMaster.run(ExportImportHelper.setFile(fileOrDir));
         } else {
-            exportImport.setProvider(DirExportProviderFactory.PROVIDER_ID);
-            fileOrDir = exportImport.getExportImportTestDirectory();
-            exportImport.setDir(fileOrDir);
+            runOnServerMaster.run(ExportImportHelper.setProvider(DirExportProviderFactory.PROVIDER_ID));
+            fileOrDir = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","");
+            runOnServerMaster.run(ExportImportHelper.setDir(fileOrDir));
         }
-        exportImport.setAction(ExportImportConfig.ACTION_EXPORT);
-        exportImport.setRealmName(managedRealm.admin().toRepresentation().getRealm());
-        exportImport.runExport();
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_EXPORT));
+        runOnServerMaster.run(ExportImportHelper.setRealmName(managedRealm.admin().toRepresentation().getRealm()));
+        runOnServerMaster.run(ExportImportHelper.runExport());
+
 
         // remove the realm and import it back
         managedRealm.admin().remove();
-        exportImport = testingClient.testing().exportImport();
         if (file) {
-            exportImport.setProvider(SingleFileImportProviderFactory.PROVIDER_ID);
-            exportImport.setFile(fileOrDir);
+            runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileImportProviderFactory.PROVIDER_ID));
+            runOnServerMaster.run(ExportImportHelper.setFile(fileOrDir));
         } else {
-            exportImport.setProvider(DirImportProviderFactory.PROVIDER_ID);
-            exportImport.setDir(fileOrDir);
+            runOnServerMaster.run(ExportImportHelper.setProvider(DirImportProviderFactory.PROVIDER_ID));
+            runOnServerMaster.run(ExportImportHelper.setDir(fileOrDir));
         }
-        exportImport.setAction(ExportImportConfig.ACTION_IMPORT);
-        exportImport.runImport();
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
+        runOnServerMaster.run(ExportImportHelper.runImport());
         getCleanup().addCleanup(() -> {
             managedRealm.admin().remove();
             getTestContext().getTestRealmReps().clear();

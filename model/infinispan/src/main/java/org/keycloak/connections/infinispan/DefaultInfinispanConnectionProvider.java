@@ -80,7 +80,8 @@ public record DefaultInfinispanConnectionProvider(EmbeddedCacheManager cacheMana
         // We assume rolling-upgrade between KC 25 and KC 26 is not available, in other words, KC 25 and KC 26 servers are not present in the same cluster.
         var stage = CompletionStages.aggregateCompletionStage();
         Arrays.stream(CLUSTERED_CACHE_NAMES)
-                .map(this::getCache)
+                .map(cacheName -> cacheManager.getCache(cacheName, false))
+                .filter(Objects::nonNull)
                 .map(DefaultInfinispanConnectionProvider::persistenceManager)
                 .map(DefaultInfinispanConnectionProvider::clearPersistenceManager)
                 .forEach(stage::dependsOn);

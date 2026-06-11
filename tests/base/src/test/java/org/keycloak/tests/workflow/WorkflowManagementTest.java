@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
@@ -37,12 +39,14 @@ import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.RestartWorkflowStepProviderFactory;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
+import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.workflow.conditions.IdentityProviderWorkflowConditionFactory;
 import org.keycloak.models.workflow.conditions.RoleWorkflowConditionFactory;
 import org.keycloak.models.workflow.events.UserAuthenticatedWorkflowEventFactory;
 import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.workflows.StepExecutionStatus;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -78,6 +82,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -610,6 +615,53 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         }
     }
 
+
+    @Test
+    public void testWorkflowManagementForbiddenThroughComponentAPI() {
+        // create a workflow through the proper API
+        WorkflowsResource workflows = managedRealm.admin().workflows();
+        String workflowId;
+        try (Response response = workflows.create(WorkflowRepresentation.withName("test-workflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build()
+                ).build())) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            workflowId = ApiUtil.getCreatedId(response);
+        }
+
+        // workflow components should not be visible through the component API
+        String wfId = workflowId;
+        List<ComponentRepresentation> components = managedRealm.admin().components().query();
+        assertThat(components.stream().anyMatch(c -> c.getId().equals(wfId)), is(false));
+
+        // attempting to get a workflow component by ID should return 404
+        assertThrows(NotFoundException.class,
+                () -> managedRealm.admin().components().component(wfId).toRepresentation());
+
+        // attempt to create a workflow component directly through the component API — should be forbidden
+        ComponentRepresentation component = new ComponentRepresentation();
+        component.setName("malicious-workflow");
+        component.setProviderType(WorkflowProvider.class.getName());
+        component.setProviderId("default");
+        try (Response response = managedRealm.admin().components().add(component)) {
+            assertThat(response.getStatus(), is(Status.FORBIDDEN.getStatusCode()));
+        }
+
+        // attempt to update an existing workflow through the component API — should be forbidden
+        assertThrows(ForbiddenException.class,
+                () -> managedRealm.admin().components().component(wfId).update(component));
+
+        // attempt to delete an existing workflow through the component API — should be forbidden
+        assertThrows(ForbiddenException.class,
+                () -> managedRealm.admin().components().component(wfId).remove());
+
+        // verify the workflow is still intact through the proper API
+        WorkflowRepresentation workflow = workflows.workflow(workflowId).toRepresentation();
+        assertThat(workflow.getName(), is("test-workflow"));
+    }
 
     private static class DefaultUserConfig implements UserConfig {
 

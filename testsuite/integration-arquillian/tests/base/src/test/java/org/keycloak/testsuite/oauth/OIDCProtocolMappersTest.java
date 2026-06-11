@@ -496,7 +496,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertTrue(accessToken.getResourceAccess("app").getRoles().contains("hardcoded"));
 
             // Assert audiences added through AudienceResolve mapper
-            assertThat(accessToken.getAudience(), arrayContainingInAnyOrder( "app", "account"));
+            assertThat(accessToken.getAudience(), arrayContainingInAnyOrder( "test-app", "app", "account", "confidential-cli"));
 
             // Assert allowed origins
             Assert.assertNames(accessToken.getAllowedOrigins(), "http://localhost:8180", "https://localhost:8543");
@@ -791,7 +791,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // Verify attribute is filled
         Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
-        assertThat(roleMappings.keySet(), containsInAnyOrder("realm", "test-app"));
+        assertThat(roleMappings.keySet(),  containsInAnyOrder("realm", "test-app"));
         List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
         List<String> testAppMappings = (List<String>) roleMappings.get("test-app");
         assertRolesString(realmRoleMappings,
@@ -857,7 +857,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             Assert.assertNames(roles, "offline_access", "user", "customer-user", "hardcoded", AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS);
 
             // Assert audience
-            Assert.assertNames(Arrays.asList(accessToken.getAudience()), "account");
+            Assert.assertNames(Arrays.asList(accessToken.getAudience()), "account", "confidential-cli", "test-app");
         } finally {
             // Revert
             rolesScope.getProtocolMappers().delete(hardcodedMapperId);
@@ -894,7 +894,9 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             // Assert client not in the token audience. Just in "issuedFor"
             Assertions.assertEquals("test-app", accessToken.getIssuedFor());
-            Assertions.assertFalse(accessToken.hasAudience("test-app"));
+            Assertions.assertTrue(accessToken.hasAudience("test-app"));
+            Assert.assertEquals("test-app", accessToken.getIssuedFor());
+            Assert.assertTrue(accessToken.hasAudience("test-app"));
 
             // Assert IDToken still has "test-app" as an audience
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
@@ -1975,15 +1977,15 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
-    public void executeTokenMappersOnDynamicScopes() {
+    @EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
+    public void executeTokenMappersOnParameterizedScopes() {
         ClientResource clientResource = findClientResourceByClientId(adminClient.realm("test"), "test-app");
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("dyn-scope-with-mapper");
         scopeRep.setProtocol("openid-connect");
         scopeRep.setAttributes(new HashMap<String, String>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dyn-scope-with-mapper:*");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
         // create the attribute mapper
         ProtocolMapperRepresentation protocolMapperRepresentation = createHardcodedClaim("dynamic-scope-hardcoded-mapper", "hardcoded-foo", "hardcoded-bar", "String", true, true, true);
@@ -2013,12 +2015,12 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testStaticScopeUsingDynamicScopeFormatWithDedicatedMappers() {
+    public void testStaticScopeUsingParameterizedScopeFormatWithDedicatedMappers() {
         RealmResource realm = adminClient.realm("test");
         ClientResource clientResource = findClientResourceByClientId(realm, "test-app");
         ClientRepresentation client = clientResource.toRepresentation();
 
-        // make sure the name of the client maps to the prefix of the dynamic scope name
+        // make sure the name of the client maps to the prefix of the parameterized scope name
         client.setName("test");
         clientResource.update(client);
 
@@ -2055,16 +2057,16 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testStaticScopeUsingDynamicScopeFormatPrefixedWithScopeAsDefaultScope() {
+    public void testStaticScopeUsingParameterizedScopeFormatPrefixedWithScopeAsDefaultScope() {
         RealmResource realm = adminClient.realm("test");
         ClientResource clientResource = findClientResourceByClientId(realm, "test-app");
         ClientRepresentation client = clientResource.toRepresentation();
 
-        // make sure the name of the client maps to the prefix of the dynamic scope name
+        // make sure the name of the client maps to the prefix of the parameterized scope name
         client.setName("test");
         clientResource.update(client);
 
-        // creates a client scope using the dynamic scope format and add it to the client as default scope
+        // creates a client scope using the parameterized scope format and add it to the client as default scope
         createClientScope(realm, clientResource, "test", "from-scope-mapper", "value", true);
         createClientScope(realm, clientResource, "test:create", "from-dynamic-scope", "value", true);
 
@@ -2082,16 +2084,16 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testStaticScopeUsingDynamicScopeFormatPrefixedWithScopeAsOptionalScope() {
+    public void testStaticScopeUsingParameterizedScopeFormatPrefixedWithScopeAsOptionalScope() {
         RealmResource realm = adminClient.realm("test");
         ClientResource clientResource = findClientResourceByClientId(realm, "test-app");
         ClientRepresentation client = clientResource.toRepresentation();
 
-        // make sure the name of the client maps to the prefix of the dynamic scope name
+        // make sure the name of the client maps to the prefix of the parameterized scope name
         client.setName("test");
         clientResource.update(client);
 
-        // creates a client scope using the dynamic scope format and add it to the client as optional scope
+        // creates a client scope using the parameterized scope format and add it to the client as optional scope
         createClientScope(realm, clientResource, "test", "from-scope-mapper", "value", false);
         createClientScope(realm, clientResource, "test:create", "from-dynamic-scope", "value", false);
 

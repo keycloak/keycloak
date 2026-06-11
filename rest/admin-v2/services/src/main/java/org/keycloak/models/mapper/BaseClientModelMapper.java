@@ -91,6 +91,15 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
         fields.values().forEach(m -> m.toModel(rep, existingModel));
     }
 
+    @SuppressWarnings("unchecked")
+    public void applyProjection(BaseClientRepresentation rep, Set<String> includeFields) {
+        if (includeFields == null || includeFields.isEmpty()) return;
+        fields.entrySet().stream()
+                .filter(e -> !includeFields.contains(e.getKey()))
+                .filter(e -> e.getValue().repSetter != null)
+                .forEach(e -> e.getValue().repSetter.accept(rep, null));
+    }
+
     protected abstract T createClientRepresentation();
 
 }

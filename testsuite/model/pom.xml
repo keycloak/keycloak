@@ -226,6 +226,12 @@
                 <keycloak.model.parameters>Infinispan,Jpa,VolatileUserSessions</keycloak.model.parameters>
             </properties>
         </profile>
+        <profile>
+            <id>jpa+infinispan+cacheless</id>
+            <properties>
+                <keycloak.model.parameters>Infinispan,Jpa,Cacheless</keycloak.model.parameters>
+            </properties>
+        </profile>
 
         <profile>
             <id>jpa+infinispan+client-storage</id>

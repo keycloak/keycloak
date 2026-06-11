@@ -14,6 +14,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VCT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_HASH_ALGORITHM;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS;
@@ -202,6 +203,18 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
 
     public CredentialScopeRepresentation setSigningAlg(String signingAlg) {
         return setAttribute(VC_SIGNING_ALG, signingAlg);
+    }
+
+    /**
+     *
+     * Whether cryptographic holder binding is required for this credential configuration.
+     */
+    public boolean isBindingRequired() {
+        return Boolean.parseBoolean(getAttribute(VC_BINDING_REQUIRED));
+    }
+
+    public CredentialScopeRepresentation setBindingRequired(boolean required) {
+        return setAttribute(VC_BINDING_REQUIRED, String.valueOf(required));
     }
 
     public List<String> getCryptographicBindingMethods() {

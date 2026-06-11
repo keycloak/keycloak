@@ -449,6 +449,35 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
+    public void testShareResourceRejectsAmbiguousUsernameEmail() throws Exception {
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
+        realm.setLoginWithEmailAllowed(false);
+        managedRealm.admin().update(realm);
+
+        UserRepresentation alice = findUser("alice");
+
+        // Create an attacker user whose username matches the email of a legitimate user.
+        UserRepresentation attacker = createUser("alice@test.com", "password", "Attacker", "X", "attacker@test.com");
+        managedRealm.admin().users().create(attacker);
+
+        alice.setEmail("alice@test.com");
+        managedRealm.admin().users().get(alice.getId()).update(alice);
+
+        // The resource owner shares with "alice@test.com" intending alice (by email) but there is a clash as "alice@test.com" 
+        // is also the attacker's username -> reject the request due to unambiguity
+        List<Permission> permissions = new ArrayList<>();
+        permissions.add(new Permission("alice@test.com", "Scope A"));
+
+        String resourceId = getMyResources().get(0).getId();
+        SimpleHttpResponse response = SimpleHttpDefault.doPut(
+                getAccountUrl("resources/" + encodePathAsIs(resourceId) + "/permissions"), httpClient)
+                .auth(tokenUtil.getToken())
+                .json(permissions).asResponse();
+
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    }
+
+    @Test
     public void failShareResourceInvalidPermissions() throws Exception {
         List<Permission> permissions = new ArrayList<>();
 
@@ -502,6 +531,40 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         assertEquals( 403,
                 SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).json(Collections.emptyList()).asStatus(),
                 "view-account-access PUT " + permissionsUrl);
+    }
+
+    @Test
+    public void testResourceEndpointsBlockedWhenUmaDisabled() throws Exception {
+        Resource resource = getMyResources().get(0);
+        String resourceId = resource.getId();
+
+        final String resourcesUrl = getAccountUrl("resources");
+        final String sharedWithOthersUrl = resourcesUrl + "/shared-with-others";
+        final String sharedWithMeUrl = resourcesUrl + "/shared-with-me";
+        final String resourceUrl = resourcesUrl + "/" + encodePathAsIs(resourceId);
+        final String permissionsUrl = resourceUrl + "/permissions";
+        final String requestsUrl = resourceUrl + "/permissions/requests";
+
+        RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+        try {
+            realmRep.setUserManagedAccessAllowed(false);
+            adminClient.realm("test").update(realmRep);
+
+            for (String url : Arrays.asList(resourcesUrl, sharedWithOthersUrl, sharedWithMeUrl, resourceUrl, permissionsUrl, requestsUrl)) {
+                assertEquals(403,
+                        SimpleHttpDefault.doGet(url, httpClient).acceptJson().auth(tokenUtil.getToken()).asStatus(),
+                        "UMA disabled GET " + url);
+            }
+
+            List<Permission> permissions = new ArrayList<>();
+            permissions.add(new Permission("jdoe", "Scope A"));
+            assertEquals(403,
+                    SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(tokenUtil.getToken()).json(permissions).asStatus(),
+                    "UMA disabled PUT " + permissionsUrl);
+        } finally {
+            realmRep.setUserManagedAccessAllowed(true);
+            adminClient.realm("test").update(realmRep);
+        }
     }
 
     @Test

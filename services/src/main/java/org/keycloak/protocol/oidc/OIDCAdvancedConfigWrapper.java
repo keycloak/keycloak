@@ -305,6 +305,14 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN, tls_client_auth_subject_dn);
     }
 
+    public String getTlsClientAuthCASubjectDn() {
+        return getAttribute(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN);
+     }
+
+    public void setTlsClientAuthCASubjectDn(String caSubjectDn) {
+        setAttribute(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, caSubjectDn);
+    }
+
     public boolean getAllowRegexPatternComparison() {
         String attrVal = getAttribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON);
         // Allow Regex Pattern Comparison by default due the backwards compatibility
@@ -519,5 +527,23 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
 
     public void setMinimumAcrValue(String minimumAcrValue) {
         setAttribute(Constants.MINIMUM_ACR_VALUE, minimumAcrValue);
+    }
+
+    public boolean isAllowTokenIntrospectionWithoutAudienceCheck() {
+        String val = getAttribute(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, "false");
+        return Boolean.parseBoolean(val);
+    }
+
+    public void setAllowTokenIntrospectionWithoutAudienceCheck(boolean allow) {
+        setAttribute(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, String.valueOf(allow));
+    }
+
+    public boolean isAllowUserinfoWithLightweightAccessToken() {
+        String val = getAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, "false");
+        return Boolean.parseBoolean(val);
+    }
+
+    public void setAllowUserinfoWithLightweightAccessToken(boolean allow) {
+        setAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, String.valueOf(allow));
     }
 }

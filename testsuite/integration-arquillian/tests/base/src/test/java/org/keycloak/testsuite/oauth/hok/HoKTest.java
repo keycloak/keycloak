@@ -163,15 +163,23 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
                 // Enable token exchange
                 oidc.setStandardTokenExchangeEnabled(true);
 
+                ProtocolMapperRepresentation namedAudMapper = new ProtocolMapperRepresentation();
+                namedAudMapper.setName("oidc-named-audience-mapper");
+                namedAudMapper.setProtocol("openid-connect");
+                namedAudMapper.setProtocolMapper("oidc-audience-mapper");
+                namedAudMapper.setConfig(Map.of(
+                      "included.client.audience", "named-test-app",
+                      "access.token.claim", "true"
+                ));
                 ProtocolMapperRepresentation audMapper = new ProtocolMapperRepresentation();
                 audMapper.setName("oidc-audience-mapper");
                 audMapper.setProtocol("openid-connect");
                 audMapper.setProtocolMapper("oidc-audience-mapper");
                 audMapper.setConfig(Map.of(
-                      "included.client.audience", "named-test-app",
-                      "access.token.claim", "true"
+                        "included.client.audience", "confidential-cli",
+                        "access.token.claim", "true"
                 ));
-                clientRep.setProtocolMappers(List.of(audMapper));
+                clientRep.setProtocolMappers(List.of(audMapper, namedAudMapper));
             }
             clientResource.update(clientRep);
         }

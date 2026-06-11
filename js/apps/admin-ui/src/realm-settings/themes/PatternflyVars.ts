@@ -159,8 +159,8 @@ const flattenVariables = (theme: ThemeType): FlattenedVariable[] => {
     const defaultValue = convert(v.defaultValue, theme);
     const variable = convert(v.variable, theme);
 
-    // Skip variables that don't have a value for this theme
-    if (defaultValue === undefined && variable === undefined) return;
+    // Skip variables that don't apply to this theme (no CSS variable name to set)
+    if (variable === undefined) return;
 
     const flattenedVar: FlattenedVariable = {
       name: v.name,

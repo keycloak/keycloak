@@ -10,6 +10,7 @@ import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
@@ -21,17 +22,16 @@ import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
-import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 
 import org.junit.jupiter.api.Test;
 
@@ -58,9 +58,6 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
 
     @InjectRealm(config = AuthorizationRealmConfig.class)
     ManagedRealm testRealm;
-
-    @InjectClient(attachTo = Constants.ADMIN_PERMISSIONS_CLIENT_ID)
-    ManagedClient adminPermissionClient;
 
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM,
         user = "realm-admin",
@@ -519,7 +516,9 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         userPolicy.setLogic(Logic.POSITIVE);
 
         String userPolicyId;
-        try (var response = adminPermissionClient.admin().authorization().policies().user().create(userPolicy)) {
+        ClientResource adminPermissionClient = AdminApiUtil.findClientByClientId(testRealm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+
+        try (var response = adminPermissionClient.authorization().policies().user().create(userPolicy)) {
             assertThat(response.getStatusInfo().getStatusCode(), is(201));
             userPolicyId = response.readEntity(UserPolicyRepresentation.class).getId();
         }
@@ -533,7 +532,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         scopePermission.setPolicies(Set.of(userPolicyId));
         scopePermission.setLogic(Logic.POSITIVE);
 
-        try (var response = adminPermissionClient.admin().authorization().permissions().scope().create(scopePermission)) {
+        try (var response = adminPermissionClient.authorization().permissions().scope().create(scopePermission)) {
             assertThat(response.getStatusInfo().getStatusCode(), is(201));
         }
     }

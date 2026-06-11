@@ -1,7 +1,4 @@
-import {
-  ContinueCancelModal,
-  useEnvironment,
-} from "@keycloak/keycloak-ui-shared";
+import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   DataListAction,
@@ -11,24 +8,83 @@ import {
   DataListItemRow,
   Flex,
   FlexItem,
+  Modal,
+  ModalVariant,
 } from "@patternfly/react-core";
 import { ExternalLinkAltIcon } from "@patternfly/react-icons";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { deleteVerifiableCredential } from "../api/methods";
 import { UserVerifiableCredentialRepresentation } from "../api/representations";
 import { formatDate, FORMAT_DATE_ONLY } from "../utils/formatDate";
 import { useAccountAlerts } from "../utils/useAccountAlerts";
+import { UserAttributesDialog } from "./UserAttributesDialog";
+import { IssuedCredentialsModal } from "./IssuedCredentialsModal";
 
 type CredentialRowProps = {
   credential: UserVerifiableCredentialRepresentation;
   refresh: () => void;
 };
 
+type RevokeDialogProps = {
+  isOpen: boolean;
+  credentialName: string;
+  onClose: () => void;
+  onConfirm: () => Promise<void>;
+  t: (key: string, params?: any) => string;
+};
+
+const RevokeDialog = ({
+  isOpen,
+  credentialName,
+  onClose,
+  onConfirm,
+  t,
+}: RevokeDialogProps) => {
+  if (!isOpen) return null;
+
+  return (
+    <Modal
+      variant={ModalVariant.small}
+      title={t("Delete Credential")}
+      isOpen={true}
+      onClose={onClose}
+      actions={[
+        <Button
+          key="confirm"
+          variant="danger"
+          onClick={async () => {
+            await onConfirm();
+            onClose();
+          }}
+        >
+          {t("delete")}
+        </Button>,
+        <Button key="cancel" variant="link" onClick={onClose}>
+          {t("cancel")}
+        </Button>,
+      ]}
+    >
+      {t("Confirm Revoke Credential", {
+        credentialName,
+      })}
+    </Modal>
+  );
+};
+
 export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
   const { t } = useTranslation();
   const context = useEnvironment();
   const { addAlert, addError } = useAccountAlerts();
+  const [showAttributesDialog, setShowAttributesDialog] = useState(false);
+  const [showIssuedCredentialsModal, setShowIssuedCredentialsModal] =
+    useState(false);
+  const [showRevokeDialog, setShowRevokeDialog] = useState(false);
+
+  const hasUserAttributes =
+    credential.userAttributes != null &&
+    Object.keys(credential.userAttributes).length > 0;
 
   const hasManageRole = () => {
     const token = context.keycloak.tokenParsed;
@@ -56,7 +112,7 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
     try {
       // Construct the AIA action parameter
       const config = {
-        credential_configuration_id: credential.credentialScopeName,
+        credential_configuration_id: credential.credentialConfigurationId,
         pre_authorized: false,
       };
 
@@ -73,63 +129,103 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
   };
 
   return (
-    <DataListItem
-      id={`credential-${credential.credentialScopeName}`}
-      key={credential.credentialScopeName}
-      aria-label={t("verifiableCredentials")}
-    >
-      <DataListItemRow>
-        <DataListItemCells
-          dataListCells={[
-            <DataListCell key="name" width={2}>
-              {credential.credentialScopeName}
-            </DataListCell>,
-            <DataListCell key="created" width={2}>
-              {credential.createdDate
-                ? formatDate(
-                    new Date(credential.createdDate),
-                    undefined,
-                    FORMAT_DATE_ONLY,
-                  )
-                : "—"}
-            </DataListCell>,
-          ]}
+    <>
+      <RevokeDialog
+        isOpen={showRevokeDialog}
+        credentialName={credential.credentialScopeName!}
+        onClose={() => setShowRevokeDialog(false)}
+        onConfirm={handleDelete}
+        t={t}
+      />
+      {showAttributesDialog && hasUserAttributes && (
+        <UserAttributesDialog
+          credentialScopeName={credential.credentialScopeName!}
+          userAttributes={credential.userAttributes!}
+          onClose={() => setShowAttributesDialog(false)}
         />
-        <DataListAction
-          aria-labelledby={t("actions")}
-          aria-label={t("credentialActions")}
-          id="credentialActions"
-        >
-          <Flex>
-            <FlexItem>
-              <Button
-                id={`credential-${credential.credentialScopeName}-issue`}
-                variant="link"
-                onClick={handleIssueToWallet}
-                icon={<ExternalLinkAltIcon />}
-              >
-                {t("issueToWallet")}
-              </Button>
-            </FlexItem>
-            {hasManageRole() && (
+      )}
+      {showIssuedCredentialsModal && (
+        <IssuedCredentialsModal
+          credentialScopeName={credential.credentialScopeName!}
+          parentRevision={credential.revision}
+          onClose={() => setShowIssuedCredentialsModal(false)}
+        />
+      )}
+      <DataListItem
+        id={`credential-${credential.credentialScopeName}`}
+        key={credential.credentialScopeName}
+        aria-label={t("verifiableCredentials")}
+      >
+        <DataListItemRow>
+          <DataListItemCells
+            dataListCells={[
+              <DataListCell key="name" width={2}>
+                {credential.credentialScopeName}
+              </DataListCell>,
+              <DataListCell key="created" width={2}>
+                {credential.createdDate
+                  ? formatDate(
+                      new Date(credential.createdDate),
+                      undefined,
+                      FORMAT_DATE_ONLY,
+                    )
+                  : "—"}
+              </DataListCell>,
+              <DataListCell key="attributes" width={2}>
+                {hasUserAttributes ? (
+                  <Button
+                    variant="link"
+                    onClick={() => setShowAttributesDialog(true)}
+                  >
+                    {t("credentialViewAttributes")}
+                  </Button>
+                ) : (
+                  <span className="pf-v5-u-color-200">
+                    {t("credentialNoUserAttributes")}
+                  </span>
+                )}
+              </DataListCell>,
+            ]}
+          />
+          <DataListAction
+            aria-labelledby={t("actions")}
+            aria-label={t("credentialActions")}
+            id="credentialActions"
+          >
+            <Flex>
               <FlexItem>
-                <ContinueCancelModal
-                  buttonTitle={t("delete")}
-                  modalTitle={t("deleteCredential")}
-                  continueLabel={t("delete")}
-                  cancelLabel={t("cancel")}
-                  buttonVariant="link"
-                  onContinue={handleDelete}
+                <Button
+                  id={`credential-${credential.credentialScopeName}-view-issued`}
+                  variant="link"
+                  onClick={() => setShowIssuedCredentialsModal(true)}
                 >
-                  {t("deleteCredentialConfirm", {
-                    credentialName: credential.credentialScopeName,
-                  })}
-                </ContinueCancelModal>
+                  {t("View Issued Credentials")}
+                </Button>
               </FlexItem>
-            )}
-          </Flex>
-        </DataListAction>
-      </DataListItemRow>
-    </DataListItem>
+              <FlexItem>
+                <Button
+                  id={`credential-${credential.credentialScopeName}-issue`}
+                  variant="link"
+                  onClick={handleIssueToWallet}
+                  icon={<ExternalLinkAltIcon />}
+                >
+                  {t("issueToWallet")}
+                </Button>
+              </FlexItem>
+              {hasManageRole() && (
+                <FlexItem>
+                  <Button
+                    variant="link"
+                    onClick={() => setShowRevokeDialog(true)}
+                  >
+                    {t("revoke")}
+                  </Button>
+                </FlexItem>
+              )}
+            </Flex>
+          </DataListAction>
+        </DataListItemRow>
+      </DataListItem>
+    </>
   );
 };

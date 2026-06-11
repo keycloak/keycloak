@@ -61,6 +61,8 @@ public class DefaultPermissions implements Permissions {
                 return model != null && groups.canManageMembership((GroupModel) model);
             } else if (AdminPermissionsSchema.QUERY.equals(scope)) {
                 return groups.canList();
+            } else if (AdminPermissionsSchema.VIEW_MEMBERS.equals(scope)) {
+                return groups.canViewMembers((GroupModel) model);
             }
         }
 

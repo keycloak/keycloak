@@ -9,13 +9,12 @@ import {
   StackItem,
   Title,
 } from "@patternfly/react-core";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getVerifiableCredentials } from "../api/methods";
 import { UserVerifiableCredentialRepresentation } from "../api/representations";
 import { EmptyRow } from "../components/datalist/EmptyRow";
 import { Page } from "../components/page/Page";
-import { usePromise } from "../utils/usePromise";
 import { CredentialRow } from "./CredentialRow";
 
 export const VerifiableCredentials = () => {
@@ -24,14 +23,29 @@ export const VerifiableCredentials = () => {
   const [credentials, setCredentials] = useState<
     UserVerifiableCredentialRepresentation[]
   >([]);
+
   const [key, setKey] = useState(1);
   const refresh = () => setKey(key + 1);
 
-  usePromise(
-    (signal) => getVerifiableCredentials({ signal, context }),
-    (data) => setCredentials(data),
-    [key],
-  );
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function fetchCredentials() {
+      try {
+        const data = await getVerifiableCredentials({
+          signal: controller.signal,
+          context,
+        });
+        setCredentials(data);
+      } catch (error) {
+        console.error("Error fetching verifiable credentials:", error);
+        setCredentials([]);
+      }
+    }
+
+    void fetchCredentials();
+    return () => controller.abort();
+  }, [key, context]);
 
   return (
     <Page
@@ -60,6 +74,9 @@ export const VerifiableCredentials = () => {
                     </DataListCell>,
                     <DataListCell key="credential-created-header" width={2}>
                       <strong>{t("credentialCreatedDate")}</strong>
+                    </DataListCell>,
+                    <DataListCell key="credential-attributes-header" width={2}>
+                      <strong>{t("credentialUserAttributes")}</strong>
                     </DataListCell>,
                   ]}
                 />

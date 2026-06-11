@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.events.Details;
@@ -115,6 +116,10 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
             Time.setOffset(IDLE_TIMEOUT + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
             session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
 
+            if (Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
+                Awaitility.await().until(() -> eventsCount(session) == sessionIdAndUsers.size());
+                return;
+            }
             var hotRodServer = getParameters(HotRodServerRule.class).findFirst();
             if (hotRodServer.isEmpty()) {
                 InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);

@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
@@ -62,7 +63,9 @@ public class OID4VCExportImportTest extends OID4VCIssuerTestBase {
                 .findFirst().orElseThrow();
 
         List<UserVerifiableCredentialRepresentation> verifiableCreds = testRealm.admin().users().get(john.getId()).verifiableCredentials().getCredentials();
-        assertUserCredentials(verifiableCreds, jwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, jwtTypeNaturalPersonScopeName, sdJwtTypeNaturalPersonScopeName);
+        Map<String, List<String>> userAttributes = john.getRawAttributes();
+        assertNotNull(userAttributes);
+        assertUserCredentials(verifiableCreds, userAttributes, jwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, jwtTypeNaturalPersonScopeName, sdJwtTypeNaturalPersonScopeName);
 
         // Export realm
         exportRealm("oid4vc-test-realm.json");
@@ -74,11 +77,19 @@ public class OID4VCExportImportTest extends OID4VCIssuerTestBase {
         // Import the realm. Verify same verifiable credentials
         importRealm("oid4vc-test-realm.json");
         assertRealmExists(true);
-        List<UserVerifiableCredentialRepresentation> importedVerifiableCreds = testRealm.admin().users().get(john.getId()).verifiableCredentials().getCredentials();
+
+        UserRepresentation userAfterImport = testRealm.admin().users().search(TEST_USER).stream().findFirst().orElseThrow();
+        List<UserVerifiableCredentialRepresentation> importedVerifiableCreds = testRealm.admin().users().get(userAfterImport.getId()).verifiableCredentials().getCredentials();
+
+        // Verify same verifiable credentials
         assertEquals(verifiableCreds, importedVerifiableCreds);
+
+        // Verify each credential's userAttributes are preserved
+        assertUserCredentials(importedVerifiableCreds, userAttributes, jwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, jwtTypeNaturalPersonScopeName, sdJwtTypeNaturalPersonScopeName);
+
     }
 
-    private void assertUserCredentials(List<UserVerifiableCredentialRepresentation> userCreds, String... expectedCredentialNames) {
+    private void assertUserCredentials(List<UserVerifiableCredentialRepresentation> userCreds, Map<String, List<String>> expectedUserAttributes, String... expectedCredentialNames) {
         assertEquals(userCreds.size(), expectedCredentialNames.length);
         for (String expectedName : expectedCredentialNames) {
             UserVerifiableCredentialRepresentation rep = userCreds.stream()
@@ -87,6 +98,7 @@ public class OID4VCExportImportTest extends OID4VCIssuerTestBase {
                     .orElseThrow(() -> new RuntimeException("Not found credential scope " + expectedName + " on user"));
             assertNotNull(rep.getCreatedDate());
             assertNotNull(rep.getRevision());
+            assertEquals(expectedUserAttributes, rep.getUserAttributes());
         }
     }
 

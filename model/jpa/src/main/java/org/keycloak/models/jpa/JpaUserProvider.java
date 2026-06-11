@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -53,6 +54,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -67,6 +69,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
+import org.keycloak.models.jpa.entities.IssuedVerifiableCredentialEntity;
 import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserConsentClientScopeEntity;
 import org.keycloak.models.jpa.entities.UserConsentEntity;
@@ -79,7 +82,13 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.jpa.JpaHashUtils;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.storage.jpa.JpaHashUtils.predicateForFilteringUsersByAttributes;
@@ -166,6 +175,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         em.createNamedQuery("deleteUserConsentClientScopesByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentsByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteVerifiableCredentialsByUser").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("deleteIssuedVcsByUser").setParameter("userId", user.getId()).executeUpdate();
 
         em.remove(user);
         em.flush();
@@ -327,7 +337,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
             for (UserConsentClientScopeEntity grantedClientScope : grantedClientScopeEntities) {
                 ClientScopeModel grantedClientScopeModel = KeycloakModelUtils.findClientScopeById(realm, client, grantedClientScope.getScopeId());
                 if (grantedClientScopeModel != null) {
-                    model.addGrantedClientScope(grantedClientScopeModel);
+                    model.addGrantedClientScope(grantedClientScopeModel,
+                            ClientScopeModel.isParameterizedScope(grantedClientScopeModel)
+                                    ? grantedClientScope.getParameter().orElse(null)
+                                    : null);
                 }
             }
         }
@@ -341,17 +354,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         Collection<UserConsentClientScopeEntity> scopesToRemove = new HashSet<>(grantedClientScopeEntities);
 
         for (ClientScopeModel clientScope : consentModel.getGrantedClientScopes()) {
-            UserConsentClientScopeEntity grantedClientScopeEntity = new UserConsentClientScopeEntity();
-            grantedClientScopeEntity.setUserConsent(consentEntity);
-            grantedClientScopeEntity.setScopeId(clientScope.getId());
-
-            // Check if it's already there
-            if (!grantedClientScopeEntities.contains(grantedClientScopeEntity)) {
-                em.persist(grantedClientScopeEntity);
-                em.flush();
-                grantedClientScopeEntities.add(grantedClientScopeEntity);
+            if (ClientScopeModel.isParameterizedScope(clientScope)) {
+                consentModel.getParameters(clientScope).forEach(p -> createUserConsentClientScopeEntity(
+                        consentEntity, clientScope, p, grantedClientScopeEntities, scopesToRemove));
             } else {
-                scopesToRemove.remove(grantedClientScopeEntity);
+                createUserConsentClientScopeEntity(consentEntity, clientScope, null, grantedClientScopeEntities, scopesToRemove);
             }
         }
         // Those client scopes were no longer on consentModel and will be removed
@@ -363,6 +370,25 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         consentEntity.setLastUpdatedDate(Time.currentTimeMillis());
 
         em.flush();
+    }
+
+    private void createUserConsentClientScopeEntity(
+            UserConsentEntity consentEntity, ClientScopeModel clientScope, String parameter,
+            Collection<UserConsentClientScopeEntity> grantedClientScopeEntities,
+            Collection<UserConsentClientScopeEntity> scopesToRemove) {
+        UserConsentClientScopeEntity grantedClientScopeEntity = new UserConsentClientScopeEntity();
+        grantedClientScopeEntity.setUserConsent(consentEntity);
+        grantedClientScopeEntity.setScopeId(clientScope.getId());
+        grantedClientScopeEntity.setParameter(parameter);
+
+        // Check if it's already there
+        if (!grantedClientScopeEntities.contains(grantedClientScopeEntity)) {
+            em.persist(grantedClientScopeEntity);
+            em.flush();
+            grantedClientScopeEntities.add(grantedClientScopeEntity);
+        } else {
+            scopesToRemove.remove(grantedClientScopeEntity);
+        }
     }
 
     @Override
@@ -382,6 +408,24 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         vcEntity.setCreatedDate(createdDate);
 
         vcEntity.setCredentialScopeName(verifCredentialModel.getCredentialScopeName());
+
+        Map<String, List<String>> userAttributes;
+        if (verifCredentialModel.getUserAttributes() != null) {
+            userAttributes = verifCredentialModel.getUserAttributes();
+        } else {
+            UserModel user = getUserById(session.getContext().getRealm(), userId);
+            // Filter attributes using UserProfile with admin context to include only admin-visible attributes
+            UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+            UserProfile profile = profileProvider.create(UserProfileContext.USER_API, user);
+            userAttributes = profile.getAttributes().getReadable();
+        }
+
+        try {
+            String attributesJson = JsonSerialization.writeValueAsString(userAttributes);
+            vcEntity.setUserAttributes(attributesJson);
+        } catch (IOException e) {
+            throw new ModelException("Failed to serialize user attributes", e);
+        }
         em.persist(vcEntity);
         em.flush();
 
@@ -398,6 +442,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         if (found == null) return false;
 
         em.remove(found);
+
+        em.createNamedQuery("deleteIssuedVcsByUserAndType")
+                .setParameter("userId", userId)
+                .setParameter("credentialType", credentialScopeName)
+                .executeUpdate();
+
         em.flush();
         return true;
     }
@@ -407,6 +457,41 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         return getVerifiableCredentialsEntitiesByUser(userId)
                 .map(this::toVerifiableCredentialModel)
                 .sorted(Comparator.comparing(UserVerifiableCredentialModel::getCredentialScopeName));
+    }
+
+    @Override
+    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String credentialScopeName) {
+        UserEntity userEntity = em.find(UserEntity.class, userId);
+        if (userEntity == null || !session.getContext().getRealm().getId().equals(userEntity.getRealmId())) {
+            throw new ModelException("User not found: " + userId);
+        }
+        UserModel user = new UserAdapter(session, session.getContext().getRealm(), em, userEntity);
+
+        UserVerifiableCredentialEntity entity = getVerifiableCredentialsEntitiesByUser(userId)
+                .filter(vc -> credentialScopeName.equals(vc.getCredentialScopeName()))
+                .findFirst()
+                .orElseThrow(() -> new ModelException(
+                        "Verifiable credential not found: " + credentialScopeName));
+
+
+        // Filter attributes using UserProfile with admin context to include only admin-visible attributes
+        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = profileProvider.create(UserProfileContext.USER_API, user);
+        Map<String, List<String>> userAttributes = profile.getAttributes().getReadable();
+
+        try {
+            String attributesJson = JsonSerialization.writeValueAsString(userAttributes);
+            entity.setUserAttributes(attributesJson);
+        } catch (IOException e) {
+            throw new ModelException("Failed to serialize user attributes", e);
+        }
+
+        String newRevision = SecretGenerator.getInstance().generateSecureID();
+        entity.setRevision(newRevision);
+        UserVerifiableCredentialEntity mergedEntity = em.merge(entity);
+        em.flush();
+
+        return toVerifiableCredentialModel(mergedEntity);
     }
 
     private Stream<UserVerifiableCredentialEntity> getVerifiableCredentialsEntitiesByUser(String userId) {
@@ -419,6 +504,16 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         UserVerifiableCredentialModel model = new UserVerifiableCredentialModel(entity.getCredentialScopeName());
         model.setRevision(entity.getRevision());
         model.setCreatedDate(entity.getCreatedDate());
+
+        if (entity.getUserAttributes() != null) {
+            try {
+                TypeReference<Map<String, List<String>>> typeRef = new TypeReference<>() {};
+                Map<String, List<String>> attrs = JsonSerialization.readValue(entity.getUserAttributes(), typeRef);
+                model.setUserAttributes(attrs);
+            } catch (IOException e) {
+                throw new ModelException("Failed to deserialize user attributes", e);
+            }
+        }
         return model;
     }
 
@@ -457,6 +552,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         em.createNamedQuery("deleteUserConsentsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("deleteVerifiableCredentialsByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
+        em.createNamedQuery("deleteIssuedVcsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("deleteUserRoleMappingsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
@@ -537,6 +634,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
             em.createNamedQuery("deleteUserConsentsByClient")
                     .setParameter("clientId", client.getId())
                     .executeUpdate();
+            em.createNamedQuery("deleteIssuedVcsByClient")
+                    .setParameter("clientId", client.getId())
+                    .executeUpdate();
         } else {
             em.createNamedQuery("deleteUserConsentClientScopesByExternalClient")
                     .setParameter("clientStorageProvider", clientStorageId.getProviderId())
@@ -561,6 +661,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                 .setParameter("scopeId", clientScope.getId())
                 .executeUpdate();
         em.createNamedQuery("deleteVerifiableCredentialsByClientScope")
+                .setParameter("scopeName", clientScope.getName())
+                .executeUpdate();
+        em.createNamedQuery("deleteIssuedVcsByClientScope")
                 .setParameter("scopeName", clientScope.getName())
                 .executeUpdate();
     }
@@ -1020,6 +1123,56 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         return new org.keycloak.credential.UserCredentialManager(session, session.getContext().getRealm(), user);
     }
 
+    @Override
+    public void addIssuedVerifiableCredential(IssuedVerifiableCredentialModel model) {
+
+        String revision;
+        if (model.getRevision() != null) {
+            revision = model.getRevision();
+        } else {
+            UserVerifiableCredentialEntity userVerifiableCredentialEntity = getVerifiableCredentialsEntitiesByUser(model.getUserId())
+                    .filter(vc -> model.getCredentialType().equals(vc.getCredentialScopeName()))
+                    .findFirst()
+                    .orElseThrow(() -> new ModelException(
+                            "Verifiable credential not found: " + model.getCredentialType()));
+            revision = userVerifiableCredentialEntity.getRevision();
+        }
+
+        IssuedVerifiableCredentialEntity issuedVerifiableCredentialEntity = new IssuedVerifiableCredentialEntity();
+
+        issuedVerifiableCredentialEntity.setId(KeycloakModelUtils.generateId());
+        issuedVerifiableCredentialEntity.setUser(em.getReference(UserEntity.class, model.getUserId()));
+        issuedVerifiableCredentialEntity.setCredentialType(model.getCredentialType());
+        issuedVerifiableCredentialEntity.setClientId(model.getClientId());
+        issuedVerifiableCredentialEntity.setRevision(revision);
+
+        long issuedAt = model.getIssuedAt() != null ? model.getIssuedAt() : Time.currentTimeMillis();
+        issuedVerifiableCredentialEntity.setIssuedAt(issuedAt);
+
+        issuedVerifiableCredentialEntity.setExpiresAt(model.getExpiresAt());
+
+        em.persist(issuedVerifiableCredentialEntity);
+        em.flush();
+    }
+
+    @Override
+    public Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId) {
+        TypedQuery<IssuedVerifiableCredentialEntity> query = em.createNamedQuery("issuedVcsByUser", IssuedVerifiableCredentialEntity.class);
+        query.setParameter("userId", userId);
+        return closing(query.getResultStream()).map(this::toIssuedVcModel);
+    }
+
+    @Override
+    public boolean removeIssuedVerifiableCredential(String credentialId) {
+        IssuedVerifiableCredentialEntity entity = em.find(IssuedVerifiableCredentialEntity.class, credentialId, LockModeType.PESSIMISTIC_WRITE);
+        if (entity == null) {
+            return false;
+        }
+        em.remove(entity);
+        em.flush();
+        return true;
+    }
+
     // Could override this to provide a custom behavior.
     protected void ensureEmailConstraint(List<UserEntity> users, RealmModel realm) {
         UserEntity user = users.get(0);
@@ -1199,5 +1352,18 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         // Therefore, we use a standard count where possible.
         return query.select(from.getJoins().isEmpty() ? builder.count(from) : builder.countDistinct(from))
                 .where(predicates);
+    }
+
+    private IssuedVerifiableCredentialModel toIssuedVcModel(IssuedVerifiableCredentialEntity entity) {
+        IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel();
+        model.setId(entity.getId());
+        model.setUserId(entity.getUser().getId());
+        model.setCredentialType(entity.getCredentialType());
+        model.setRevision(entity.getRevision());
+        model.setIssuedAt(entity.getIssuedAt());
+        model.setExpiresAt(entity.getExpiresAt());
+        model.setClientId(entity.getClientId());
+
+        return model;
     }
 }
