@@ -283,13 +283,8 @@ public class DefaultClientService implements ClientService {
             model = realm.getClientByClientId(clientId);
         }
         boolean alreadyExists = model != null;
-        if (alreadyExists && (client.getProtocol() == null
-                || (strategy == CreateOrUpdateStrategy.PATCH && isBlank(client.getProtocol())))) {
-            client.setProtocol(model.getProtocol());
-        }
-        client = materializeProtocolSubtypeIfNeeded(client);
-        if (!alreadyExists && client.getProtocol() == null) {
-            throw new ServiceException("protocol is required when creating a client", Response.Status.BAD_REQUEST);
+        if (isBlank(client.getProtocol())) {
+            throw new ServiceException("protocol is required", Response.Status.BAD_REQUEST);
         }
         ClientModelMapper mapper = getMapper(client.getProtocol());
 
