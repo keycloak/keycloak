@@ -8,6 +8,8 @@ import jakarta.annotation.Nullable;
 
 import org.apache.commons.codec.binary.Hex;
 
+import org.keycloak.crypto.JavaAlgorithm;
+
 public final class CookieType {
 
     public static final CookieType[] OLD_UNUSED_COOKIES = new CookieType[] {
@@ -59,17 +61,19 @@ public final class CookieType {
             .build();
 
     public static CookieType getTrustedDeviceCookie(String postfix) {
+        // Generate SHA256 hash of the postfix
+        String algorithm = JavaAlgorithm.SHA256;
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-1");
+            MessageDigest md = MessageDigest.getInstance(algorithm);
             md.update(postfix.getBytes(StandardCharsets.UTF_8));
             String postFixDigest = Hex.encodeHexString(md.digest()).toUpperCase();
 
             return CookieType.create("KEYCLOAK_TRUSTED_DEVICE_" + postFixDigest)
-                    .scope(CookieScope.FEDERATION)
+                    .scope(CookieScope.INTERNAL)
                     .defaultMaxAge(CookieMaxAge.WEEK)
                     .build();
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("JVM does not support required cryptography algorithms: SHA-1/SHA1PRNG.", e);
+            throw new RuntimeException("JVM does not support required cryptography algorithms: " + algorithm, e);
         }
     }
 
