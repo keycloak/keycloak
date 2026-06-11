@@ -23,7 +23,6 @@ import org.keycloak.events.admin.v2.AdminEventV2Builder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -200,10 +199,7 @@ public class DefaultClientService implements ClientService {
 
         permissions.clients().requireManage(client);
         try {
-            AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
             session.clientPolicy().triggerOnEvent(new AdminClientUnregisterContext(client, permissions.adminAuth()));
-        } catch (ModelValidationException e) {
-            throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
         } catch (ClientPolicyException e) {
             throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
