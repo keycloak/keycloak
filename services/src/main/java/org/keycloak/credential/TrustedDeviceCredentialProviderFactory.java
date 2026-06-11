@@ -17,13 +17,17 @@
 
 package org.keycloak.credential;
 
+import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 /**
  * @author Norbert Kelemen
  * @version $Revision: 1 $
  */
-public class TrustedDeviceCredentialProviderFactory implements CredentialProviderFactory<TrustedDeviceCredentialProvider> {
+public class TrustedDeviceCredentialProviderFactory
+        implements CredentialProviderFactory<TrustedDeviceCredentialProvider>, EnvironmentDependentProviderFactory {
     public static final String PROVIDER_ID = "keycloak-trusted-device";
 
     @Override
@@ -34,5 +38,10 @@ public class TrustedDeviceCredentialProviderFactory implements CredentialProvide
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.TRUSTED_DEVICES);
     }
 }

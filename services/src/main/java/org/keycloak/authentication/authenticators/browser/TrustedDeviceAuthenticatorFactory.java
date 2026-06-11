@@ -22,17 +22,20 @@ import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.credential.TrustedDeviceCredentialModel;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
 /**
  * @author Norbert Kelemen
  * @version $Revision: 1 $
  */
-public class TrustedDeviceAuthenticatorFactory implements AuthenticatorFactory {
+public class TrustedDeviceAuthenticatorFactory
+        implements AuthenticatorFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "auth-trusted-device";
     public static final TrustedDeviceAuthenticator SINGLETON = new TrustedDeviceAuthenticator();
@@ -95,5 +98,10 @@ public class TrustedDeviceAuthenticatorFactory implements AuthenticatorFactory {
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return null;
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.TRUSTED_DEVICES);
     }
 }

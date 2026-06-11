@@ -24,6 +24,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.browser.TrustedDeviceConstants;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.TrustedDeviceCredentialProvider;
@@ -165,6 +166,10 @@ public final class AuthenticatorUtils {
     }
 
     public static void processTrustDevice(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
+        if(!Profile.isFeatureEnabled(Profile.Feature.TRUSTED_DEVICES)) {
+            return;
+        }
+
         String trustDevice = inputData.getFirst("trustDevice");
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
         String trustDeviceNote = authSession.getAuthNote(TrustedDeviceConstants.AUTH_NOTE);

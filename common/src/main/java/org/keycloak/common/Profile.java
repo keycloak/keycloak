@@ -184,7 +184,9 @@ public class Profile {
         RESOURCE_INDICATORS("Resource Indicators for OAuth 2.0", Type.EXPERIMENTAL),
 
         IDENTITY_BROKERING_API_V1("Identity Brokering API V1", Type.DEFAULT, 1, true, null, null),
-        IDENTITY_BROKERING_API_V2("Identity Brokering API V2", Type.DISABLED_BY_DEFAULT, 2);
+        IDENTITY_BROKERING_API_V2("Identity Brokering API V2", Type.DISABLED_BY_DEFAULT, 2),
+
+        TRUSTED_DEVICES("Trusted Device authentication", Type.EXPERIMENTAL);
 
         private final Type type;
         private final String label;
