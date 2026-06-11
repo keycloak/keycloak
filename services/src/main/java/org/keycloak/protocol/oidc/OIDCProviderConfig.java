@@ -12,7 +12,7 @@ public class OIDCProviderConfig {
     private final Config.Scope config;
 
     /**
-     * Maximum default length of the standard OIDC parameter sent to the OIDC authentication request.
+     * Maximum default length of the standard OIDC parameter sent to the OIDC authentication or token request.
      */
     public static final int DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE = 4000;
 
@@ -26,6 +26,15 @@ public class OIDCProviderConfig {
     private Map<String, Integer> DEFAULT_MAX_PARAMS_SIZES = Map.of(
             OIDCLoginProtocol.LOGIN_HINT_PARAM, 255 // Aligned with user-profile configuration for username and email
     );
+
+    /**
+     * Maximum default length of the standard OIDC parameter sent to the OIDC token request in case the parameter is "token" parameter.
+     * As "token" parameter is considered a parameter containing long token (for example JWT or SAML assertion) with unbounded data (For example possibly big amount of roles inside JWT).
+     * Applies for example for parameters like "subject_token" sent in case of token exchange grant.
+     */
+    public static final int DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE = 20000;
+
+    private final int reqTokenParamsDefaultMaxSize;
 
     /**
      * Default value for {@link #additionalReqParamsMaxNumber} if case no configuration property is set.
@@ -57,6 +66,20 @@ public class OIDCProviderConfig {
      * that to not meet the configuration are silently ignored. If <code>true</code> an exception will be raised.
      */
     private final boolean additionalReqParamsFailFast;
+
+    /**
+     * Default value for {@link #additionalReqTokenParamsFailFast} in case no configuration property is set.
+     */
+    public static final boolean DEFAULT_ADDITIONAL_REQ_TOKEN_PARAMS_FAIL_FAST = true;
+
+    /**
+     * Whether the fail-fast strategy should be enforced for "token" parameters. If <code>false</code> all additional request parameters
+     * that to not meet the configuration are silently ignored. If <code>true</code> an exception will be raised.
+     *
+     * As "token" parameter is considered a parameter containing long token (for example JWT or SAML assertion) with unbounded data (For example possibly big amount of roles inside JWT).
+     * Applies for example for parameters like "subject_token" sent in case of token exchange grant.
+     */
+    private final boolean additionalReqTokenParamsFailFast;
 
     /**
      * Default value for {@link #additionalReqParamsMaxOverallSize} in case no configuration property is set.
@@ -91,10 +114,12 @@ public class OIDCProviderConfig {
         this.config = config;
 
         this.reqParamsDefaultMaxSize = config.getInt(OIDCLoginProtocolFactory.CONFIG_OIDC_REQ_PARAMS_DEFAULT_MAX_SIZE, DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE);
+        this.reqTokenParamsDefaultMaxSize = config.getInt(OIDCLoginProtocolFactory.CONFIG_OIDC_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE, DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE);
         this.additionalReqParamsMaxNumber = config.getInt(OIDCLoginProtocolFactory.CONFIG_OIDC_ADD_REQ_PARAMS_MAX_NUMBER, DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_NUMBER);
         this.additionalReqParamsMaxSize = config.getInt(OIDCLoginProtocolFactory.CONFIG_OIDC_ADD_REQ_PARAMS_MAX_SIZE, DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_SIZE);
         this.additionalReqParamsMaxOverallSize = config.getInt(OIDCLoginProtocolFactory.CONFIG_OIDC_ADD_REQ_PARAMS_MAX_OVERALL_SIZE, DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_OVERALL_SIZE);
         this.additionalReqParamsFailFast = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_OIDC_ADD_REQ_PARAMS_FAIL_FAST, DEFAULT_ADDITIONAL_REQ_PARAMS_FAIL_FAST);
+        this.additionalReqTokenParamsFailFast = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_OIDC_ADD_REQ_TOKEN_PARAMS_FAIL_FAST, DEFAULT_ADDITIONAL_REQ_TOKEN_PARAMS_FAIL_FAST);
 
         this.allowMultipleAudiencesForJwtClientAuthentication = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION, DEFAULT_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION);
         this.allowTokenIntrospectionWithoutAudienceCheck = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, DEFAULT_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK);
@@ -109,8 +134,8 @@ public class OIDCProviderConfig {
         return additionalReqParamsMaxSize;
     }
 
-    public boolean isAdditionalReqParamsFailFast() {
-        return additionalReqParamsFailFast;
+    public boolean isAdditionalReqParamsFailFast(boolean isTokenParam) {
+        return isTokenParam ? additionalReqTokenParamsFailFast : additionalReqParamsFailFast;
     }
 
     public int getAdditionalReqParamsMaxOverallSize() {
@@ -131,10 +156,11 @@ public class OIDCProviderConfig {
 
     /**
      * @param paramName Parameter name. Expected to be one of the known OIDC parameters
+     * @param isTokenParam If this parameter represents token (like for example JWT)
      *
      * @return maximum length for the specified OIDC parameter
      */
-    public int getMaxLengthForTheParameter(String paramName) {
+    public int getMaxLengthForTheParameter(String paramName, boolean isTokenParam) {
         // Configured value for the particular OIDC parameter
         Integer paramMaxSize = config.getInt(OIDCLoginProtocolFactory.CONFIG_OIDC_REQ_PARAMS_MAX_SIZE_PREFIX + "--" + paramName);
 
@@ -145,7 +171,7 @@ public class OIDCProviderConfig {
 
         // Fallback to default for all standard OIDC parameters
         if (paramMaxSize == null) {
-            paramMaxSize = reqParamsDefaultMaxSize;
+            paramMaxSize = isTokenParam ? reqTokenParamsDefaultMaxSize : reqParamsDefaultMaxSize;
         }
 
         return paramMaxSize;

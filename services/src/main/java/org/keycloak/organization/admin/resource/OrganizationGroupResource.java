@@ -39,6 +39,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -91,6 +92,11 @@ public class OrganizationGroupResource {
         this.auth = auth;
     }
 
+    /**
+     * Precondition: caller must have passed through {@link OrganizationsResource#get(String)}
+     * which enforces {@code auth.orgs().requireView(organization)}, and then through
+     * {@link OrganizationGroupsResource#getGroupById(String)} which enforces the same check.
+     */
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
@@ -185,6 +191,11 @@ public class OrganizationGroupResource {
         }
     }
 
+    /**
+     * Precondition: caller must have passed through {@link OrganizationsResource#get(String)}
+     * which enforces {@code auth.orgs().requireView(organization)}, and then through
+     * {@link OrganizationGroupsResource#getGroupById(String)} which enforces the same check.
+     */
     @GET
     @Path("children")
     @NoCache
@@ -287,6 +298,12 @@ public class OrganizationGroupResource {
         }
     }
 
+    /**
+     * Precondition: caller must have passed through {@link OrganizationsResource#get(String)}
+     * which enforces {@code auth.orgs().requireView(organization)}, and then through
+     * {@link OrganizationGroupsResource#getGroupById(String)} which enforces the same check.
+     * This method additionally requires {@code auth.users().requireQuery()}.
+     */
     @GET
     @NoCache
     @Path("members")
@@ -302,21 +319,26 @@ public class OrganizationGroupResource {
                                                    @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults,
                                                    @Parameter(description = "Only return basic information (only guaranteed to return id, username, created, first and last name, email, enabled state, email verification state, federation link, and access. Note that it means that namely user attributes, required actions, and not before are not returned.)")
                                                    @QueryParam("briefRepresentation") Boolean briefRepresentation) {
+        auth.users().requireQuery();
         RealmModel realm = session.getContext().getRealm();
+
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && !auth.users().canView()) {
+            return Stream.empty();
+        }
+
         return session.users().getGroupMembersStream(realm, group, firstResult, maxResults)
-                .map(user -> toMemberRepresentation(realm, user, briefRepresentation));
+                .map(user -> toMemberRepresentation(user, briefRepresentation));
     }
 
-    private MemberRepresentation toMemberRepresentation(RealmModel realm, UserModel user, Boolean briefRepresentation) {
-        UserRepresentation userRep = Boolean.TRUE.equals(briefRepresentation)
-                ? ModelToRepresentation.toBriefRepresentation(user)
-                : ModelToRepresentation.toRepresentation(session, realm, user);
-
+    private MemberRepresentation toMemberRepresentation(UserModel user, Boolean briefRepresentation) {
+        boolean briefRep = Boolean.TRUE.equals(briefRepresentation);
+        UserRepresentation userRep = ModelToRepresentation.toRepresentation(session, user, briefRep);
         MemberRepresentation memberRep = new MemberRepresentation(userRep);
+
         memberRep.setMembershipType(
-            organizationProvider.isManagedMember(organization, user)
-                ? MembershipType.MANAGED
-                : MembershipType.UNMANAGED
+                organizationProvider.isManagedMember(organization, user)
+                        ? MembershipType.MANAGED
+                        : MembershipType.UNMANAGED
         );
 
         return memberRep;

@@ -24,7 +24,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
+import org.keycloak.authentication.jpa.JpaAuthenticationSessionProviderFactory;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -63,6 +65,7 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+import org.keycloak.sessions.AuthenticationSessionProvider;
 
 import org.jboss.logging.Logger;
 
@@ -100,6 +103,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private PersisterLastSessionRefreshStore persisterLastSessionRefreshStore;
     private boolean useCaches;
     private int expirationPeriodSeconds;
+    private boolean pessimisticLockingAuthenticationSession;
 
     @Override
     public UserSessionProvider create(KeycloakSession session) {
@@ -137,7 +141,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             log.warn("The option spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override is deprecated and will be removed in a future release");
         }
         // Do not use caches for sessions if explicitly disabled or if embedded caches are not used
-        useCaches = config.getBoolean(CONFIG_USE_CACHES, DEFAULT_USE_CACHES) && InfinispanUtils.isEmbeddedInfinispan();
+        useCaches = config.getBoolean(CONFIG_USE_CACHES, !Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) && InfinispanUtils.isEmbeddedInfinispan();
         expirationPeriodSeconds = getExpirationPeriodSeconds(config);
     }
 
@@ -205,6 +209,15 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             expirationTask = ExpirationTaskFactory.create(session, expirationPeriodSeconds);
         }
         expirationTask.start();
+        if (factory.getProviderFactory(AuthenticationSessionProvider.class) instanceof JpaAuthenticationSessionProviderFactory) {
+            // Based on our internal knowledge on the JpaAuthenticationSessionProviderFactory, we can now assume that
+            // all actions on the authentication sessions are done with pessimistic locking in place. With this knowledge,
+            // we can later INSERT user session and client sessions and can be sure that there are no concurrent transactions
+            // running to do the same due pessimistic lock created earlier.
+            // TODO: In a future version, we might have a method in AuthenticationSessionProvider to query about that
+            // behavior to avoid reflection and internal knowledge.
+            pessimisticLockingAuthenticationSession = true;
+        }
     }
 
     public void initializePersisterLastSessionRefreshStore(final KeycloakSessionFactory sessionFactory) {
@@ -342,7 +355,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         builder.property()
                 .name(CONFIG_USE_CACHES)
                 .type("boolean")
-                .helpText("Enable or disable caches. Enabled by default unless the external feature to use only external remote caches is used")
+                .helpText("Enable or disable caches. Enabled by default unless the external feature to use only external remote caches is used or " + Profile.Feature.CACHELESS.getUnversionedKey() + " is enabled")
                 .add();
 
         builder.property()
@@ -356,7 +369,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
-        return Set.of(InfinispanConnectionProvider.class, InfinispanTransactionProvider.class);
+        return Set.of(InfinispanConnectionProvider.class, InfinispanTransactionProvider.class, AuthenticationSessionProvider.class);
+    }
+
+    public boolean useCaches() {
+        return useCaches;
     }
 
     public ExpirationTask getExpirationTask() {
@@ -397,12 +414,14 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private PersistentTransaction createPersistentTransaction(KeycloakSession session) {
         var sessionTx = new UserSessionPersistentChangelogBasedTransaction(session,
                 sessionCacheHolder,
-                offlineSessionCacheHolder);
+                offlineSessionCacheHolder,
+                pessimisticLockingAuthenticationSession);
 
         var clientSessionTx = new ClientSessionPersistentChangelogBasedTransaction(session,
                 clientSessionCacheHolder,
                 offlineClientSessionCacheHolder,
-                sessionTx);
+                sessionTx,
+                pessimisticLockingAuthenticationSession);
 
         var transactionProvider = session.getProvider(InfinispanTransactionProvider.class);
         transactionProvider.registerTransaction(sessionTx);

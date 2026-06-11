@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.keycloak.provider.Provider;
 
@@ -98,5 +99,10 @@ public interface ServerConfigStorageProvider extends Provider {
      * @return {@code true} if the value is replaced, and {@code false} otherwise.
      */
     boolean replace(String key, Predicate<String> replacePredicate, Supplier<String> valueGenerator);
+
+    /**
+     * @return a {@link Stream} of all keys currently stored.
+     */
+    Stream<String> keys();
 
 }

@@ -83,11 +83,9 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
@@ -480,13 +478,12 @@ public class TokenManager {
 
     // Will throw OAuthErrorException if validation fails
     public void validateTokenReuse(KeycloakSession session, RealmModel realm, AccessToken refreshToken, AuthenticatedClientSessionModel clientSession, boolean refreshFlag) throws OAuthErrorException {
-        int startupTime = session.getProvider(UserSessionProvider.class).getStartupTime(realm);
         String key = getReuseIdKey(refreshToken);
         String refreshTokenId = clientSession.getRefreshToken(key);
         int lastRefresh = clientSession.getRefreshTokenLastRefresh(key);
 
         //check if a more recent refresh token is already used on this tab, if yes the refresh token is invalid
-        if (refreshTokenId != null && !refreshToken.getId().equals(refreshTokenId) && refreshToken.getIat() < lastRefresh && startupTime <= lastRefresh) {
+        if (refreshTokenId != null && !refreshToken.getId().equals(refreshTokenId) && refreshToken.getIat() < lastRefresh) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
         }
 
@@ -626,7 +623,7 @@ public class TokenManager {
         String scopeParam = authSession.getClientNote(OAuth2Constants.SCOPE);
         Set<ClientScopeModel> clientScopes;
 
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
             clientScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, client, scopeParam)
                     .collect(Collectors.toSet());
         } else {
@@ -715,8 +712,8 @@ public class TokenManager {
             return clientScopes;
         }
 
-        // skip organization-related scopes that were explicitly requested using the dynamic scope format
-        // we don't want dynamic and default client scopes duplicated
+        // skip organization-related scopes that were explicitly requested using the parameterized scope format
+        // we don't want parameterized and default client scopes duplicated
         clientScopes = clientScopes.filter(scope -> {
             return scope.equals(client)
                     || !scopeParam.contains(scope.getName() + ClientScopeModel.VALUE_SEPARATOR)
@@ -732,6 +729,15 @@ public class TokenManager {
                             ClientScopeModel scope = allOptionalScopes.get(name);
 
                             if (scope != null) {
+                                // The "organization" scope is a default optional client scope, so it can be
+                                // resolved here bypassing the dynamic scope resolution in tryResolveOrganizationClientScope.
+                                // Skip it when organizations are disabled at the realm level.
+                                // The getProtocolMapperByType check identifies the organization scope by its mapper,
+                                // ensuring we only filter that scope and not unrelated ones like email or profile.
+                                if (!Organizations.isEnabled(session)
+                                        && !scope.getProtocolMapperByType(OrganizationMembershipMapper.PROVIDER_ID).isEmpty()) {
+                                    return null;
+                                }
                                 return scope;
                             }
 
@@ -768,11 +774,16 @@ public class TokenManager {
      * otherwise, the scope wasn't parsed correctly
      * <p>
      *
+     * @param session
      * @param scopes
-     * @param authorizationRequestContext authorizationRequestContext. It is not null just if dynamic scopes feature is enabled
+     * @param authorizationRequestContext authorizationRequestContext. It is not null just if parameterized scopes feature is enabled
      * @param client
      * @return
      */
+    public static boolean isValidScope(KeycloakSession session, String scopes, AuthorizationRequestContext authorizationRequestContext, ClientModel client) {
+        return isValidScope(session, scopes, client, null);
+    }
+
     public static boolean isValidScope(KeycloakSession session, String scopes, AuthorizationRequestContext authorizationRequestContext, ClientModel client, UserModel user) {
         if (scopes == null) {
             return true;
@@ -781,7 +792,7 @@ public class TokenManager {
         Collection<String> rawScopes = TokenManager.parseScopeParameter(scopes).collect(Collectors.toSet());
 
         // validate organization scopes - allow multiple specific organization scopes, but reject mixed types
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (Organizations.isEnabled(session)) {
             Set<OrganizationScope> orgScopeTypes = new HashSet<>();
             for (String scope : rawScopes) {
                 OrganizationScope orgScopeType = OrganizationScope.valueOfScope(session, scope);
@@ -843,8 +854,14 @@ public class TokenManager {
         }
 
         for (String requestedScope : rawScopes) {
-            // we also check dynamic scopes in case the client is from a provider that dynamically provides scopes to their clients
+            // we also check parameterized scopes in case the client is from a provider that dynamically provides scopes to their clients
             if (!clientScopes.contains(requestedScope) && client.getDynamicClientScope(requestedScope) == null) {
+                // when organizations are disabled at realm level, silently ignore organization scopes
+                // so that existing clients requesting them are not broken
+                if (!Organizations.isEnabled(session)
+                        && OrganizationScope.valueOfScope(session, requestedScope) != null) {
+                    continue;
+                }
                 return false;
             }
         }
@@ -852,8 +869,17 @@ public class TokenManager {
         return true;
     }
 
+    public static boolean isValidScope(KeycloakSession session, String scopes, ClientModel client) {
+        return isValidScope(session, scopes, client, null);
+    }
+
     public static boolean isValidScope(KeycloakSession session, String scopes, ClientModel client, UserModel user) {
-        return isValidScope(session, scopes, null, client, user);
+        if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
+            AuthorizationRequestContext authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, scopes);
+            return isValidScope(session, scopes, authorizationRequestContext, client, user);
+        } else {
+            return isValidScope(session, scopes, null, client, user);
+        }
     }
 
     public static Stream<String> parseScopeParameter(String scopeParam) {
@@ -868,12 +894,12 @@ public class TokenManager {
 
         UserConsentModel grantedConsent = UserConsentManager.getConsentByClient(session, client.getRealm(), user, client.getId());
 
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
             AuthorizationRequestContext ctx = AuthorizationContextUtil.getAuthorizationRequestContextFromScopesWithClient(
                     session, client, scopeParam);
             for (AuthorizationDetails authDetails : ctx.getAuthorizationDetailEntries()) {
                 ClientScopeModel requestedScope = authDetails.getClientScope();
-                String parameter = authDetails.getDynamicScopeParam();
+                String parameter = authDetails.getParameterizedScopeParam();
                 if (requestedScope.isDisplayOnConsentScreen() && (grantedConsent == null || !grantedConsent.isClientScopeGranted(requestedScope, parameter))) {
                     return false;
                 }
@@ -1227,6 +1253,10 @@ public class TokenManager {
 
         public IDToken getIdToken() {
             return idToken;
+        }
+
+        public ClientSessionContext getClientSessionCtx() {
+            return clientSessionCtx;
         }
 
         public AccessTokenResponseBuilder code(OAuth2Code code) {
@@ -1603,8 +1633,7 @@ public class TokenManager {
 
         @Override
         public boolean test(JsonWebToken token) {
-            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-            return !singleUseStore.contains(token.getId() + SingleUseObjectProvider.REVOKED_KEY);
+            return !session.revokedTokens().contains(token.getId());
         }
     }
 
@@ -1708,7 +1737,7 @@ public class TokenManager {
     }
 
     private void validateSelectedOrganization(KeycloakSession session, JsonWebToken token, UserModel user) {
-        if (token == null) {
+        if (token == null || !Organizations.isEnabled(session)) {
             return;
         }
 

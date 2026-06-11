@@ -1,7 +1,4 @@
-import {
-  ContinueCancelModal,
-  useEnvironment,
-} from "@keycloak/keycloak-ui-shared";
+import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   DataListAction,
@@ -11,6 +8,8 @@ import {
   DataListItemRow,
   Flex,
   FlexItem,
+  Modal,
+  ModalVariant,
 } from "@patternfly/react-core";
 import { ExternalLinkAltIcon } from "@patternfly/react-icons";
 import { useState } from "react";
@@ -21,10 +20,57 @@ import { UserVerifiableCredentialRepresentation } from "../api/representations";
 import { formatDate, FORMAT_DATE_ONLY } from "../utils/formatDate";
 import { useAccountAlerts } from "../utils/useAccountAlerts";
 import { UserAttributesDialog } from "./UserAttributesDialog";
+import { IssuedCredentialsModal } from "./IssuedCredentialsModal";
 
 type CredentialRowProps = {
   credential: UserVerifiableCredentialRepresentation;
   refresh: () => void;
+};
+
+type RevokeDialogProps = {
+  isOpen: boolean;
+  credentialName: string;
+  onClose: () => void;
+  onConfirm: () => Promise<void>;
+  t: (key: string, params?: any) => string;
+};
+
+const RevokeDialog = ({
+  isOpen,
+  credentialName,
+  onClose,
+  onConfirm,
+  t,
+}: RevokeDialogProps) => {
+  if (!isOpen) return null;
+
+  return (
+    <Modal
+      variant={ModalVariant.small}
+      title={t("Delete Credential")}
+      isOpen={true}
+      onClose={onClose}
+      actions={[
+        <Button
+          key="confirm"
+          variant="danger"
+          onClick={async () => {
+            await onConfirm();
+            onClose();
+          }}
+        >
+          {t("delete")}
+        </Button>,
+        <Button key="cancel" variant="link" onClick={onClose}>
+          {t("cancel")}
+        </Button>,
+      ]}
+    >
+      {t("Confirm Revoke Credential", {
+        credentialName,
+      })}
+    </Modal>
+  );
 };
 
 export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
@@ -32,6 +78,9 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
   const context = useEnvironment();
   const { addAlert, addError } = useAccountAlerts();
   const [showAttributesDialog, setShowAttributesDialog] = useState(false);
+  const [showIssuedCredentialsModal, setShowIssuedCredentialsModal] =
+    useState(false);
+  const [showRevokeDialog, setShowRevokeDialog] = useState(false);
 
   const hasUserAttributes =
     credential.userAttributes != null &&
@@ -63,7 +112,7 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
     try {
       // Construct the AIA action parameter
       const config = {
-        credential_configuration_id: credential.credentialScopeName,
+        credential_configuration_id: credential.credentialConfigurationId,
         pre_authorized: false,
       };
 
@@ -81,11 +130,25 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
 
   return (
     <>
+      <RevokeDialog
+        isOpen={showRevokeDialog}
+        credentialName={credential.credentialScopeName!}
+        onClose={() => setShowRevokeDialog(false)}
+        onConfirm={handleDelete}
+        t={t}
+      />
       {showAttributesDialog && hasUserAttributes && (
         <UserAttributesDialog
           credentialScopeName={credential.credentialScopeName!}
           userAttributes={credential.userAttributes!}
           onClose={() => setShowAttributesDialog(false)}
+        />
+      )}
+      {showIssuedCredentialsModal && (
+        <IssuedCredentialsModal
+          credentialScopeName={credential.credentialScopeName!}
+          parentRevision={credential.revision}
+          onClose={() => setShowIssuedCredentialsModal(false)}
         />
       )}
       <DataListItem
@@ -132,6 +195,15 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
             <Flex>
               <FlexItem>
                 <Button
+                  id={`credential-${credential.credentialScopeName}-view-issued`}
+                  variant="link"
+                  onClick={() => setShowIssuedCredentialsModal(true)}
+                >
+                  {t("View Issued Credentials")}
+                </Button>
+              </FlexItem>
+              <FlexItem>
+                <Button
                   id={`credential-${credential.credentialScopeName}-issue`}
                   variant="link"
                   onClick={handleIssueToWallet}
@@ -142,18 +214,12 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
               </FlexItem>
               {hasManageRole() && (
                 <FlexItem>
-                  <ContinueCancelModal
-                    buttonTitle={t("delete")}
-                    modalTitle={t("deleteCredential")}
-                    continueLabel={t("delete")}
-                    cancelLabel={t("cancel")}
-                    buttonVariant="link"
-                    onContinue={handleDelete}
+                  <Button
+                    variant="link"
+                    onClick={() => setShowRevokeDialog(true)}
                   >
-                    {t("deleteCredentialConfirm", {
-                      credentialName: credential.credentialScopeName,
-                    })}
-                  </ContinueCancelModal>
+                    {t("revoke")}
+                  </Button>
                 </FlexItem>
               )}
             </Flex>

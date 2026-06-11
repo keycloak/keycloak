@@ -10,6 +10,9 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.admin.ServerInfoTest;
 import org.keycloak.tests.admin.client.CredentialsTest;
+import org.keycloak.tests.client.MutualTLSClientTest;
+import org.keycloak.tests.forms.LoginSSLTest;
+import org.keycloak.tests.forms.LoginTest;
 import org.keycloak.tests.keys.JavaKeystoreKeyProviderTest;
 import org.keycloak.tests.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest;
 
@@ -23,7 +26,10 @@ import org.junit.platform.suite.api.Suite;
         CredentialsTest.class,
         JavaKeystoreKeyProviderTest.class,
         ServerInfoTest.class,
-        OID4VCSdJwtIssuingEndpointTest.class
+        OID4VCSdJwtIssuingEndpointTest.class,
+        MutualTLSClientTest.class,
+        LoginTest.class,
+        LoginSSLTest.class
 })
 public class FipsStrictTestSuite {
 
@@ -60,7 +66,11 @@ public class FipsStrictTestSuite {
 
         @Override
         public CertificatesConfigBuilder configure(CertificatesConfigBuilder config) {
-            return config.tlsEnabled(true).keystoreFormat(KeystoreUtil.KeystoreFormat.BCFKS);
+            return config
+                    .tlsEnabled(true)
+                    .mTlsEnabled(true)
+                    .keystoreFormat(KeystoreUtil.KeystoreFormat.BCFKS)
+                    .stores("keycloak.bcfks", "keycloak-truststore.bcfks", "client.bcfks", "keycloak-truststore.bcfks");
         }
     }
 }

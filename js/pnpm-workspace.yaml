@@ -27,14 +27,14 @@ ignoredOptionalDependencies:
   - patternfly-bootstrap-combobox
   - patternfly-bootstrap-treeview
 overrides:
-  picomatch@^2: ^2.3.2
-  flatted: ^3.4.2
-  minimatch@~3: ^3.1.4
-  minimatch@~9: ^9.0.7
-  '@isaacs/brace-expansion@^5': ^5.0.1
-  serialize-javascript: ^7.0.3
-  diff@^4: ^4.0.4
+  serialize-javascript: ^7.0.5
+  'brace-expansion@^1': ^1.1.13
+  'brace-expansion@^2': ^2.0.3
   diff@^7: ^8.0.3
+  '@microsoft/api-extractor': ^7.58.7
+  jquery@^3: ^3.7.1
+  lodash: ^4.17.23
+  mdast-util-to-hast: ^13.2.1
 allowBuilds:
   '@swc/core': true
   esbuild: true

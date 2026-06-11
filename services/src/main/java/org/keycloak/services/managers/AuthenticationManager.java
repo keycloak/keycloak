@@ -87,7 +87,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.SingleUseObjectKeyModel;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -601,7 +600,7 @@ public class AuthenticationManager {
         }
 
         try {
-            session.clientPolicy().triggerOnEvent(new LogoutRequestContext());
+            session.clientPolicy().triggerOnEvent(new LogoutRequestContext(client));
         } catch (ClientPolicyException cpe) {
             event.event(EventType.LOGOUT);
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
@@ -1087,8 +1086,8 @@ public class AuthenticationManager {
                     return handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
                 }
 
-                SingleUseObjectProvider singleUseObjectProvider = session.singleUseObjects();
-                if (!singleUseObjectProvider.putIfAbsent(actionTokenKeyToInvalidate + SingleUseObjectProvider.REVOKED_KEY, actionTokenKey.getExp() - Time.currentTime() + CLOCK_SKEW_SECONDS)) {
+                var revokedTokens = session.revokedTokens();
+                if (!revokedTokens.put(actionTokenKeyToInvalidate, actionTokenKey.getExp() - Time.currentTime() + CLOCK_SKEW_SECONDS)) {
                     return handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
                 }
             }
@@ -1240,16 +1239,16 @@ public class AuthenticationManager {
         // Client Scopes to be displayed on consent screen
         List<AuthorizationDetails> clientScopesToDisplay = new LinkedList<>();
 
-        // AuthorizationDetails are going to be returned regardless of the Dynamic Scope feature state
+        // AuthorizationDetails are going to be returned regardless of the Parameterized Scope feature state
         for (AuthorizationDetails authDetails : getClientScopeModelStream(session, client).toList()) {
             ClientScopeModel clientScope = authDetails.getClientScope();
             if (clientScope == null || !clientScope.isDisplayOnConsentScreen()) {
                 continue;
             }
 
-            // we need to add dynamic scopes with params to the scopes to consent every time for now
+            // we need to add parameterized scopes with params to the scopes to consent every time for now
             AuthorizationDetailsJSONRepresentation rep = authDetails.getAuthorizationDetails();
-            String parameter = rep != null ? rep.getDynamicScopeParamFromCustomData() : null;
+            String parameter = rep != null ? rep.getParameterizedScopeParamFromCustomData() : null;
             if (grantedConsent == null || !grantedConsent.isClientScopeGranted(clientScope, parameter)) {
                 clientScopesToDisplay.add(authDetails);
             }
@@ -1262,26 +1261,26 @@ public class AuthenticationManager {
         return clientScopesToDisplay;
     }
 
-    private static boolean isDynamicScopeWithParam(AuthorizationDetails authorizationDetails) {
-        boolean dynamicScopeWithParam = authorizationDetails.getClientScope().isDynamicScope()
+    private static boolean isParameterizedScopeWithParam(AuthorizationDetails authorizationDetails) {
+        boolean parameterizedScopeWithParam = authorizationDetails.getClientScope().isParameterizedScope()
                 && authorizationDetails.getAuthorizationDetails() != null;
-        if (dynamicScopeWithParam) {
-            logger.debugf("Scope %1s is a dynamic scope with param: %2s",
+        if (parameterizedScopeWithParam) {
+            logger.debugf("Scope %1s is a parameterized scope with param: %2s",
                     authorizationDetails.getAuthorizationDetails().getScopeNameFromCustomData(),
-                    authorizationDetails.getDynamicScopeParam());
+                    authorizationDetails.getParameterizedScopeParam());
         }
-        return dynamicScopeWithParam;
+        return parameterizedScopeWithParam;
     }
 
 
     public static Stream<AuthorizationDetails> getClientScopeModelStream(KeycloakSession session, ClientModel client) {
         AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
-        //if Dynamic Scopes are enabled, get the scopes from the AuthorizationRequestContext, passing the session and scopes as parameters
+        //if Parameterized Scopes are enabled, get the scopes from the AuthorizationRequestContext, passing the session and scopes as parameters
         // then concat a Stream with the ClientModel, as it's discarded in the getAuthorizationRequestContext method
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
             return AuthorizationContextUtil.getAuthorizationRequestsStreamFromScopesWithClient(session, client, authSession.getClientNote(OAuth2Constants.SCOPE));
         }
-        // if dynamic scopes are not enabled, we retain the old behaviour, but the ClientScopes will be wrapped in
+        // if parameterized scopes are not enabled, we retain the old behaviour, but the ClientScopes will be wrapped in
         // AuthorizationRequest objects to standardize the code handling these.
         return authSession.getClientScopes().stream()
                 .map(scopeId -> KeycloakModelUtils.findClientScopeById(authSession.getRealm(), authSession.getClient(), scopeId))

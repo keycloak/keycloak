@@ -1230,7 +1230,7 @@ public final class KeycloakModelUtils {
         ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
 
         if (clientScope == null) {
-            // as fallback we try to resolve dynamic scopes
+            // as fallback we try to resolve parameterized scopes
             clientScope = client.getDynamicClientScope(clientScopeId);
         }
 

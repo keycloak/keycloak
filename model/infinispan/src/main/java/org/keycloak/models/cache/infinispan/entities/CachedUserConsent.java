@@ -41,7 +41,7 @@ public class CachedUserConsent {
         this.clientDbId = consentModel.getClient().getId();
         for (ClientScopeModel clientScope : consentModel.getGrantedClientScopes()) {
             this.clientScopeIds.add(clientScope.getId());
-            if (ClientScopeModel.isDynamicScope(clientScope)) {
+            if (ClientScopeModel.isParameterizedScope(clientScope)) {
                 this.parameters.addAll(clientScope.getId(), consentModel.getParameters(clientScope));
             }
         }

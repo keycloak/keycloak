@@ -423,7 +423,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         return String.valueOf(DurationConverter.parseDuration(value).toSeconds());
     }
 
-    private static String getDatabaseUrl(String name, String value, ConfigSourceInterceptorContext c) {        
+    private static String getDatabaseUrl(String name, String value, ConfigSourceInterceptorContext c) {
         return Database.getDefaultUrl(option -> getDatasourceOptionValue(option, name).orElse(null), name, value).orElse(null);
     }
 

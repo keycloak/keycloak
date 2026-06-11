@@ -3605,7 +3605,7 @@
       "editMode" : "READ_ONLY",
       "uuidLDAPAttribute" : "nsuniqueid",
       "allowKerberosAuthentication" : "true",
-      "connectionUrl" : "http://localhost",
+      "connectionUrl" : "ldap://localhost",
       "syncRegistrations" : "true",
       "authType" : "none",
       "batchSizeForSync" : "1001"

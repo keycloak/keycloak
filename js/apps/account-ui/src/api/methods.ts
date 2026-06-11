@@ -10,6 +10,7 @@ import {
   CredentialContainer,
   DeviceRepresentation,
   Group,
+  IssuedUserVerifiableCredentialRepresentation,
   LinkedAccountRepresentation,
   Permission,
   UserRepresentation,
@@ -90,7 +91,9 @@ export async function deleteConsent(
   context: KeycloakContext<BaseEnvironment>,
   id: string,
 ) {
-  return request(`/applications/${id}/consent`, context, { method: "DELETE" });
+  return request(`/applications/${encodeURIComponent(id)}/consent`, context, {
+    method: "DELETE",
+  });
 }
 
 export async function deleteSession(
@@ -177,5 +180,31 @@ export async function deleteVerifiableCredential(
   if (!response.ok) {
     const error = await parseResponse(response);
     throw error;
+  }
+}
+
+export async function getIssuedVerifiableCredentials({
+  signal,
+  context,
+}: CallOptions): Promise<IssuedUserVerifiableCredentialRepresentation[]> {
+  const response = await request("/issued-verifiable-credentials", context, {
+    signal,
+  });
+  return parseResponse<IssuedUserVerifiableCredentialRepresentation[]>(
+    response,
+  );
+}
+
+export async function revokeIssuedVerifiableCredential(
+  context: KeycloakContext<BaseEnvironment>,
+  issuedVerifiableCredentialId: string,
+): Promise<void> {
+  const response = await request(
+    `/issued-verifiable-credentials/${issuedVerifiableCredentialId}`,
+    context,
+    { method: "DELETE" },
+  );
+  if (!response.ok) {
+    throw await parseResponse(response);
   }
 }

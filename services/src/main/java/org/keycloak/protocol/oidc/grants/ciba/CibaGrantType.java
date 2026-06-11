@@ -18,7 +18,9 @@
 
 package org.keycloak.protocol.oidc.grants.ciba;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
@@ -270,7 +272,7 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
 
         for (AuthorizationDetails authDetails : AuthenticationManager.getClientScopeModelStream(session, client).toList()) {
             ClientScopeModel clientScope = authDetails.getClientScope();
-            String parameter = authDetails.getDynamicScopeParam();
+            String parameter = authDetails.getParameterizedScopeParam();
             if (clientScope != null && !grantedConsent.isClientScopeGranted(clientScope, parameter) && clientScope.isDisplayOnConsentScreen()) {
                 grantedConsent.addGrantedClientScope(clientScope, parameter);
                 updateConsentRequired = true;
@@ -300,6 +302,11 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
     @Override
     public EventType getEventType() {
         return EventType.AUTHREQID_TO_TOKEN;
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Collections.emptySet();
     }
 
 }

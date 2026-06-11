@@ -89,6 +89,15 @@ public class AccountRestServiceRolesTest {
     }
 
     @Test
+    public void issuedVerifiableCredentialsEndpointAccess() throws IOException {
+        assertEndpointStatus("manage-account-user", "issued-verifiable-credentials", 200);
+        addAccountConsoleScopeMapping(AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
+        assertEndpointStatus("view-verifiable-credentials-user", "issued-verifiable-credentials", 200);
+        assertEndpointStatus("manage-verifiable-credentials-user", "issued-verifiable-credentials", 200);
+        assertEndpointStatus("no-access-user", "issued-verifiable-credentials", 403);
+    }
+
+    @Test
     public void accountConsoleFeaturesForManageAccountUser() throws IOException {
         assertAccountConsoleFeatures("manage-account-user", true, true);
         JsonNode features = getAccountConsoleFeatures("manage-account-user");

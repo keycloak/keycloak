@@ -29,7 +29,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -287,13 +286,7 @@ public class AuthorizationEndpointChecker {
     }
 
     public void checkValidScope() throws AuthorizationCheckException {
-        boolean validScopes;
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            validScopes = TokenManager.isValidScope(session, request.getScope(), request.getAuthorizationRequestContext(), client, null);
-        } else {
-            validScopes = TokenManager.isValidScope(session, request.getScope(), client, null);
-        }
-        if (!validScopes) {
+        if (!TokenManager.isValidScope(session, request.getScope(), request.getAuthorizationRequestContext(), client)) {
             ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.SCOPE_PARAM);
             String errorMessage = "Invalid scopes: " + request.getScope();
             event.detail(Details.REASON, errorMessage);

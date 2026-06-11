@@ -11,6 +11,25 @@ public class IssuedVerifiableCredentialRepresentation {
     private Long expiresAt;
     // This represents UUID of the client, which acts as OID4VCI wallet
     private String clientId;
+    private String clientName;
+    private String clientBaseUrl;
+
+    public String getClientName() {
+        return clientName;
+    }
+
+    public void setClientName(String clientName) {
+        this.clientName = clientName;
+    }
+
+    public String getClientBaseUrl() {
+        return clientBaseUrl;
+    }
+
+    public void setClientBaseUrl(String clientBaseUrl) {
+        this.clientBaseUrl = clientBaseUrl;
+    }
+
     private String revision;
 
     public String getId() {

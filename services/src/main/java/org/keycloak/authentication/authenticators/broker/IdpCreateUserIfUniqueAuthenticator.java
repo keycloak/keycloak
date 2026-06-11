@@ -113,7 +113,7 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
         } else if (duplication != null) {
             UserModel user = session.users().getUserById(realm, duplication.getExistingUserId());
 
-            if (runIfUserVerified(session, user, broker,
+            if (runIfUserVerified(session, user, broker, brokerContext.getBrokerUserId(),
                     () -> {
                         context.setUser(user);
                         context.success();

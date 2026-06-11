@@ -19,8 +19,10 @@ package org.keycloak.protocol.oidc.grants;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 
@@ -160,6 +162,13 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                     errorMessage, Response.Status.BAD_REQUEST);
         }
 
+        if (!clientModel.isEnabled()) {
+            var errorMessage = "Client '" + clientModel.getClientId() + "' disabled";
+            event.detail(REASON, errorMessage).error(Errors.CLIENT_DISABLED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+
         UserSessionModel userSession = session.sessions().createUserSession(null, realm, targetUserModel, targetUserModel.getUsername(),
                 null, "pre-authorized-code", false, null,
                 null, UserSessionModel.SessionPersistenceState.TRANSIENT);
@@ -254,6 +263,11 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
     @Override
     public EventType getEventType() {
         return EventType.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT;
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Collections.emptySet();
     }
 
     /**

@@ -1977,15 +1977,15 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
-    public void executeTokenMappersOnDynamicScopes() {
+    @EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
+    public void executeTokenMappersOnParameterizedScopes() {
         ClientResource clientResource = findClientResourceByClientId(adminClient.realm("test"), "test-app");
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("dyn-scope-with-mapper");
         scopeRep.setProtocol("openid-connect");
         scopeRep.setAttributes(new HashMap<String, String>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dyn-scope-with-mapper:*");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
         // create the attribute mapper
         ProtocolMapperRepresentation protocolMapperRepresentation = createHardcodedClaim("dynamic-scope-hardcoded-mapper", "hardcoded-foo", "hardcoded-bar", "String", true, true, true);
@@ -2015,12 +2015,12 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testStaticScopeUsingDynamicScopeFormatWithDedicatedMappers() {
+    public void testStaticScopeUsingParameterizedScopeFormatWithDedicatedMappers() {
         RealmResource realm = adminClient.realm("test");
         ClientResource clientResource = findClientResourceByClientId(realm, "test-app");
         ClientRepresentation client = clientResource.toRepresentation();
 
-        // make sure the name of the client maps to the prefix of the dynamic scope name
+        // make sure the name of the client maps to the prefix of the parameterized scope name
         client.setName("test");
         clientResource.update(client);
 
@@ -2057,16 +2057,16 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testStaticScopeUsingDynamicScopeFormatPrefixedWithScopeAsDefaultScope() {
+    public void testStaticScopeUsingParameterizedScopeFormatPrefixedWithScopeAsDefaultScope() {
         RealmResource realm = adminClient.realm("test");
         ClientResource clientResource = findClientResourceByClientId(realm, "test-app");
         ClientRepresentation client = clientResource.toRepresentation();
 
-        // make sure the name of the client maps to the prefix of the dynamic scope name
+        // make sure the name of the client maps to the prefix of the parameterized scope name
         client.setName("test");
         clientResource.update(client);
 
-        // creates a client scope using the dynamic scope format and add it to the client as default scope
+        // creates a client scope using the parameterized scope format and add it to the client as default scope
         createClientScope(realm, clientResource, "test", "from-scope-mapper", "value", true);
         createClientScope(realm, clientResource, "test:create", "from-dynamic-scope", "value", true);
 
@@ -2084,16 +2084,16 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testStaticScopeUsingDynamicScopeFormatPrefixedWithScopeAsOptionalScope() {
+    public void testStaticScopeUsingParameterizedScopeFormatPrefixedWithScopeAsOptionalScope() {
         RealmResource realm = adminClient.realm("test");
         ClientResource clientResource = findClientResourceByClientId(realm, "test-app");
         ClientRepresentation client = clientResource.toRepresentation();
 
-        // make sure the name of the client maps to the prefix of the dynamic scope name
+        // make sure the name of the client maps to the prefix of the parameterized scope name
         client.setName("test");
         clientResource.update(client);
 
-        // creates a client scope using the dynamic scope format and add it to the client as optional scope
+        // creates a client scope using the parameterized scope format and add it to the client as optional scope
         createClientScope(realm, clientResource, "test", "from-scope-mapper", "value", false);
         createClientScope(realm, clientResource, "test:create", "from-dynamic-scope", "value", false);
 

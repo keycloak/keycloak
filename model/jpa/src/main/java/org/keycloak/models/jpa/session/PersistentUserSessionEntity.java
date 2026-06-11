@@ -51,6 +51,7 @@ import org.hibernate.annotations.DynamicUpdate;
         @NamedQuery(name="findUserSessionsOrderedById", query="select sess from PersistentUserSessionEntity sess, RealmEntity realm where realm.id = sess.realmId AND sess.offline = :offline" +
                 " AND sess.userSessionId > :lastSessionId" +
                 " order by sess.userSessionId"),
+        // The query "findUserSession" is deprecated (since 26.7) and may be removed in the future.
         @NamedQuery(name="findUserSession", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
                 " AND sess.userSessionId = :userSessionId AND sess.realmId = :realmId AND sess.lastSessionRefresh >= :lastSessionRefresh"),
         @NamedQuery(name="findUserSessionsByUserId", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
@@ -110,7 +111,9 @@ import org.hibernate.annotations.DynamicUpdate;
                         " FROM PersistentUserSessionEntity sess INNER JOIN PersistentClientSessionEntity clientSess " +
                         " ON sess.userSessionId = clientSess.userSessionId AND clientSess.clientStorageProvider = :clientStorageProvider AND sess.offline = clientSess.offline AND clientSess.externalClientId = :externalClientId WHERE sess.offline = :offline " +
                         " AND sess.realmId = :realmId AND sess.lastSessionRefresh >= :lastSessionRefresh ORDER BY sess.userSessionId"),
-
+        @NamedQuery(name="findUserAndClientSessionsByUserId", query="SELECT sess.userSessionId, cs.clientId, cs.clientStorageProvider, cs.externalClientId FROM PersistentUserSessionEntity sess" +
+                " LEFT JOIN PersistentClientSessionEntity cs ON cs.userSessionId = sess.userSessionId AND cs.offline = sess.offline" +
+                " WHERE sess.offline = :offline AND sess.realmId = :realmId AND sess.userId = :userId"),
 })
 @Table(name="OFFLINE_USER_SESSION")
 @Entity
@@ -222,6 +225,10 @@ public class PersistentUserSessionEntity {
 
     public void setRememberMe(boolean rememberMe) {
         this.rememberMe = rememberMe;
+    }
+
+    public int getVersion() {
+        return version;
     }
 
     public static class Key implements Serializable {

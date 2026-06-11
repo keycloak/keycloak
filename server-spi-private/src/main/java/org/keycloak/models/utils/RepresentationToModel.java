@@ -584,12 +584,12 @@ public class RepresentationToModel {
     }
 
     private static String determineNewSecret(ClientModel client, ClientRepresentation rep) {
-        if (client.isPublicClient() || client.isBearerOnly()) {
+        if (client.isPublicClient()) {
             // Clear out the secret with null
             return null;
         }
 
-        // adding secret if the client isn't public nor bearer only
+        // adding secret if the client isn't public
         String currentSecret = client.getSecret();
         String newSecret = rep.getSecret();
 
@@ -980,8 +980,8 @@ public class RepresentationToModel {
                 ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(newRealm, scopeName);
                 if (clientScope != null) {
                     consentModel.addGrantedClientScope(clientScope);
-                } else if (Profile.isFeatureEnabled(Feature.DYNAMIC_SCOPES)) {
-                    // check for dynamic scopes
+                } else if (Profile.isFeatureEnabled(Feature.PARAMETERIZED_SCOPES)) {
+                    // check for parameterized scopes
                     AuthorizationRequestParserProvider clientScopeParser = session.getProvider(
                             AuthorizationRequestParserProvider.class, "client-scope");
                     if (clientScopeParser == null) {
@@ -990,13 +990,13 @@ public class RepresentationToModel {
 
                     AuthorizationRequestContext ctx = clientScopeParser.parseScopes(client, scopeName);
                     AuthorizationDetails authDetails = ctx.getAuthorizationDetailEntries().stream()
-                            .filter(a -> a.getAuthorizationDetails().getDynamicScopeParamFromCustomData() != null)
+                            .filter(a -> a.getAuthorizationDetails().getParameterizedScopeParamFromCustomData() != null)
                             .findAny().orElse(null);
                     if (authDetails == null) {
                         throw new RuntimeException("Unable to find client scope referenced in consent mappings of user. Client scope name: " + scopeName);
                     }
 
-                    consentModel.addGrantedClientScope(authDetails.getClientScope(), authDetails.getAuthorizationDetails().getDynamicScopeParamFromCustomData());
+                    consentModel.addGrantedClientScope(authDetails.getClientScope(), authDetails.getAuthorizationDetails().getParameterizedScopeParamFromCustomData());
                 } else {
                     throw new RuntimeException("Unable to find client scope referenced in consent mappings of user. Client scope name: " + scopeName);
                 }

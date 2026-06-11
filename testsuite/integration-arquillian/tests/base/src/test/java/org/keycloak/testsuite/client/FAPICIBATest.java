@@ -142,7 +142,11 @@ public class FAPICIBATest extends AbstractFAPITest {
         Assertions.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Try to register client with "client-x509" - should pass
-        clientUUID = createClientByAdmin("client-x509", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID));
+        clientUUID = createClientByAdmin("client-x509", (ClientRepresentation clientRep) -> {
+            clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
+            clientRep.getAttributes().put(X509ClientAuthenticator.ATTR_SUBJECT_DN, "CN=localhost");
+            clientRep.getAttributes().put(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, "CN=ca");
+        });
         client = getClientByAdmin(clientUUID);
         Assertions.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
@@ -318,6 +322,7 @@ public class FAPICIBATest extends AbstractFAPITest {
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
             clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
+            clientConfig.setTlsClientAuthCASubjectDn(MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN);
             clientConfig.setAllowRegexPatternComparison(false);
             setClientAuthMethodNeutralSettings(clientRep);
         });
@@ -362,6 +367,7 @@ public class FAPICIBATest extends AbstractFAPITest {
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
             clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
+            clientConfig.setTlsClientAuthCASubjectDn(MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN);
             clientConfig.setAllowRegexPatternComparison(false);
             setClientAuthMethodNeutralSettings(clientRep);
         });
@@ -392,6 +398,7 @@ public class FAPICIBATest extends AbstractFAPITest {
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
             clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
+            clientConfig.setTlsClientAuthCASubjectDn(MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN);
             clientConfig.setAllowRegexPatternComparison(false);
             setClientAuthMethodNeutralSettings(clientRep);
         });

@@ -1,12 +1,12 @@
 package org.keycloak.ssf.transmitter.subject;
 
-import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.metadata.DefaultSubjects;
 import org.keycloak.ssf.subject.ComplexSubjectId;
@@ -335,28 +335,20 @@ public class SubjectManagementService {
      * which org tipped the decision.
      */
     protected OrganizationModel firstOrgNotifying(UserModel user, String receiverClientId) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+        if (!Organizations.isEnabled(session)) {
             return null;
         }
-        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-        if (orgProvider == null) {
-            return null;
-        }
-        return orgProvider.getByMember(user)
+        return session.getProvider(OrganizationProvider.class).getByMember(user)
                 .filter(org -> SsfNotifyAttributes.isOrganizationNotified(org, receiverClientId))
                 .findFirst()
                 .orElse(null);
     }
 
     protected OrganizationModel firstOrgExcluding(UserModel user, String receiverClientId) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+        if (!Organizations.isEnabled(session)) {
             return null;
         }
-        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-        if (orgProvider == null) {
-            return null;
-        }
-        return orgProvider.getByMember(user)
+        return session.getProvider(OrganizationProvider.class).getByMember(user)
                 .filter(org -> SsfNotifyAttributes.isOrganizationExcluded(org, receiverClientId))
                 .findFirst()
                 .orElse(null);
@@ -403,14 +395,10 @@ public class SubjectManagementService {
             return user != null ? new SubjectResolution.User(user) : SubjectResolution.NOT_FOUND;
         }
         if ("org-alias".equals(type)) {
-            if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+            if (!Organizations.isEnabled(session)) {
                 return SubjectResolution.UNSUPPORTED_FORMAT;
             }
-            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            if (orgProvider == null) {
-                return SubjectResolution.UNSUPPORTED_FORMAT;
-            }
-            var org = orgProvider.getByAlias(value);
+            var org = session.getProvider(OrganizationProvider.class).getByAlias(value);
             return org != null ? new SubjectResolution.Organization(org) : SubjectResolution.NOT_FOUND;
         }
 
