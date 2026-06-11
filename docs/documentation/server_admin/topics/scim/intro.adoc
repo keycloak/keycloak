@@ -1,5 +1,10 @@
 [id="scim-introduction_{context}"]
 [role="_abstract"]
+
+:tech_feature_name: SCIM API
+:tech_feature_id: scim-api
+include::../../topics/templates/techpreview.adoc[]
+
 SCIM (System for Cross-domain Identity Management) is a standard protocol designed to simplify identity management across
 multiple systems and domains. Defined by https://datatracker.ietf.org/doc/html/rfc7643[RFC 7643] (Core Schema) and
 https://datatracker.ietf.org/doc/html/rfc7644[RFC 7644] (Protocol), SCIM provides a common set of REST APIs and schemas
@@ -19,7 +24,9 @@ In the current release, the SCIM implementation covers:
 *   **Schema extensions**: Support for the Enterprise User extension (RFC 7643, Section 4.3) and custom schema extensions through User Profile attribute mapping.
 *   **Schema discovery**: Endpoints for discovering supported schemas, resource types, and server capabilities.
 
-NOTE: The SCIM APIs feature is currently in tech preview. To learn more about feature statuses, see https://www.keycloak.org/docs/latest/server_admin/#features[Enabling and disabling features].
-
 Future releases are planned to extend SCIM support with additional capabilities, including federation of users from external
 SCIM service providers and push-based real-time event updates.
+
+The SCIM API is based on the same underlying user and group management functionality as the Admin REST API, ensuring
+consistency in behavior and permissions. However, the SCIM API provides a standardized interface that can be easily
+integrated with third-party tools and platforms that support SCIM.

@@ -62,35 +62,7 @@ attribute should be mapped to.
 .Configuring a SCIM attribute mapping in User Profile
 image:images/scim-user-profile-mapping.png[alt="Configuring a SCIM attribute mapping"]
 
-=== Using the Admin REST API
-
-You can also configure attribute mappings programmatically by updating the User Profile configuration. The SCIM
-mapping is stored internally as a `kc.scim.schema.attribute` annotation on the user profile attribute:
-
-[source,bash]
-----
-curl http://localhost:8080/admin/realms/myrealm/users/profile \
-  -H "Authorization: Bearer $ADMIN_TOKEN" \
-  -H "Content-Type: application/json" \
-  -X PUT \
-  -d '{
-    "attributes": [
-      ...existing attributes...,
-      {
-        "name": "middleName",
-        "annotations": {
-          "kc.scim.schema.attribute": "name.middleName"
-        },
-        "permissions": {
-          "view": ["admin"],
-          "edit": ["admin"]
-        }
-      }
-    ]
-  }'
-----
-
-== Example: mapping additional name attributes
+== Mapping additional name attributes
 
 To support the full SCIM name attributes, you can map:
 
@@ -130,7 +102,7 @@ curl -X POST http://localhost:8080/realms/myrealm/scim/v2/Users \
 
 The `name.formatted` attribute is automatically generated from the name components and is read-only.
 
-== Example: mapping the externalId attribute
+== Mapping the externalId attribute
 
 To support the SCIM `externalId` attribute, which allows external systems to store their own identifier for a user:
 

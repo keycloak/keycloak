@@ -4,14 +4,6 @@
 = Understanding the SCIM endpoints
 [role="_abstract"]
 
-The SCIM API in {project_name} is exposed under the following base URL:
-
-----
-{server}/realms/{realm}/scim/v2
-----
-
-where `{server}` is the base URL of your {project_name} instance and `{realm}` is the name of the realm.
-
 All SCIM endpoints use the `application/scim+json` content type for both requests and responses, as specified by RFC 7644.
 The `application/json` content type is also accepted for requests.
 

@@ -1,12 +1,13 @@
-[id="scim-authorizing-access_{context}"]
+[id="scim-accessing-endpoints_{context}"]
 
-[[_scim_authorizing_access_]]
-= Authorizing access to SCIM endpoints
+[[_scim_accessing_endpoints_]]
+= Accessing the SCIM endpoints
 [role="_abstract"]
 
-All SCIM endpoints require authentication using an OAuth 2.0 Bearer Token. Unauthenticated requests receive a
-`401 Unauthorized` response. Beyond authentication, the caller must also have the appropriate permissions to perform
-the requested operation.
+All SCIM endpoints require authorization using an OAuth 2.0 Bearer Token.
+
+Unauthorized requests receive a `401 Unauthorized` response. The bearer token must also have the appropriate permissions
+to perform the requested operation.
 
 == Setting up a service account client
 
@@ -30,9 +31,13 @@ SCIM resources. The required roles depend on the operations the client needs to 
 . Click *Assign role*, then filter by clients and select the `realm-management` client.
 . Assign the required roles based on the operations the client needs to perform.
 
-NOTE: The SCIM API uses the same realm management roles as the {project_name} Admin REST API. If a service account
-already has the roles needed to manage users and groups through the Admin API, no additional configuration is
+The SCIM API relies on the same <<_admin_permissions,permission model>> as the {project_name} Admin REST API. If a service account
+already has the admin roles needed to manage users and groups through the Admin API, no additional configuration is
 required to use the SCIM endpoints.
+
+If fine-grained admin permissions are enabled for the realm, access to SCIM resources can be further
+restricted on a per-resource basis. For example, a client could be granted permission to view only specific users
+or groups. For more details, see <<_fine_grained_permissions,Fine-grained admin permissions>>.
 
 The following table summarizes the permissions required for each type of SCIM operation:
 
@@ -69,13 +74,8 @@ The following table summarizes the permissions required for each type of SCIM op
 | Read access to `/ServiceProviderConfig`, `/ResourceTypes`, and `/Schemas`.
 |===
 
-TIP: The `manage-users` role implicitly grants `view-users`, `query-users`, and `query-groups` permissions.
-For full SCIM access (all CRUD operations plus discovery), the minimum set of roles is `manage-users` and
-`view-realm`.
-
-NOTE: If fine-grained admin permissions are enabled for the realm, access to SCIM resources can be further
-restricted on a per-resource basis. For example, a client could be granted permission to view only specific users
-or groups. For more details, see <<_fine_grained_permissions,Fine-grained admin permissions>>.
+The minimum set of roles required for full access to the SCIM API is `manage-users` for user and group management
+operations, and `view-realm` for access to discovery endpoints.
 
 == Obtaining an access token
 
@@ -99,18 +99,3 @@ curl http://localhost:8080/realms/myrealm/scim/v2/Users \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Accept: application/scim+json"
 ----
-
-== Error responses
-
-If the caller does not have the required permissions, the SCIM API returns a `403 Forbidden` response:
-
-[source,json]
-----
-{
-  "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
-  "status": "403",
-  "detail": "Forbidden"
-}
-----
-
-If no bearer token is provided, the API returns a `401 Unauthorized` response.

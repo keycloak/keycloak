@@ -1,35 +1,13 @@
 [id="enabling-scim_{context}"]
 
 [[_enabling_scim_]]
-= Enabling SCIM
+= Enabling SCIM for a realm
 [role="_abstract"]
-
-Enabling the SCIM APIs in {project_name} requires two steps: enabling the feature at the server level and then enabling it
-for each realm where you want to expose the SCIM endpoints.
-
-== Enabling the SCIM feature on the server
-
-The SCIM API is a tech preview feature and must be explicitly enabled when starting {project_name}. To enable it, start the server
-with the `scim-api` feature flag:
-
-[source,bash]
-----
-bin/kc.sh start --features=scim-api
-----
-
-For development mode:
-
-[source,bash]
-----
-bin/kc.sh start-dev --features=scim-api
-----
-
-== Enabling SCIM for a realm
 
 Once the feature is enabled on the server, you must also enable SCIM for each realm individually. This can be done through
 the Admin Console or the Admin REST API.
 
-=== Using the Admin Console
+== Using the Admin Console
 
 .Procedure
 . Click *Realm settings* in the menu.
@@ -40,67 +18,21 @@ the Admin Console or the Admin REST API.
 .Enabling SCIM API in realm settings
 image:images/scim-realm-settings.png[alt="Enabling SCIM API in realm settings"]
 
-=== Using the Admin REST API
+== Obtaining the SCIM API base URL
 
-You can also enable SCIM for a realm programmatically through the Admin REST API:
+The SCIM API in {project_name} is exposed under the following base URL:
 
-[source,bash]
 ----
-curl -X PUT http://localhost:8080/admin/realms/myrealm \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"scimApiEnabled": true}'
+http://<host>:<port>/realms/<realm-name>/scim/v2
 ----
 
-== Verifying the configuration
+This base URL is used to construct the full URLs for the available SCIM endpoints:
 
-Once the SCIM API is enabled at both the server and realm levels, you can verify that it is active by querying the
-Service Provider Configuration endpoint.
+* `/ServiceProviderConfig`
+* `/ResourceTypes`
+* `/Schemas`
+* `/Users`
+* `/Groups`
 
-NOTE: All SCIM endpoints require a bearer token. See <<_scim_authorizing_access_,Authorizing access to SCIM endpoints>>
+The SCIM API requires a bearer token with the appropriate permissions. See <<_scim_accessing_endpoints_,Authorizing access to SCIM endpoints>>
 for details on how to set up a client and obtain an access token.
-
-[source,bash]
-----
-curl http://localhost:8080/realms/myrealm/scim/v2/ServiceProviderConfig \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "Accept: application/scim+json"
-----
-
-A successful response returns the capabilities of the SCIM service provider, including supported operations such as
-`patch`, `filter`, and the authentication schemes:
-
-[source,json]
-----
-{
-  "schemas": ["urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig"],
-  "patch": {
-    "supported": true
-  },
-  "bulk": {
-    "supported": false,
-    "maxOperations": 0,
-    "maxPayloadSize": 0
-  },
-  "filter": {
-    "supported": true,
-    "maxResults": 100
-  },
-  "changePassword": {
-    "supported": false
-  },
-  "sort": {
-    "supported": false
-  },
-  "etag": {
-    "supported": false
-  },
-  "authenticationSchemes": [
-    {
-      "type": "oauthbearertoken",
-      "name": "OAuth Bearer Token",
-      "description": "Authentication scheme using the OAuth Bearer Token standard"
-    }
-  ]
-}
-----
