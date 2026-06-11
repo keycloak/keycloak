@@ -27,9 +27,9 @@ public class ListOptions {
     @QueryParam("limit")
     protected Integer limit;
 
-    @Parameter(description = "Index of the first result to return, counted from 0. Defaults to 0.")
+    @Parameter(description = "Index of the first result to return, counted from 1. Defaults to 1.")
     @QueryParam("offset")
-    protected Integer offset;
+    protected Integer offset = 1;
 
     public ListOptions fields(Set<String> fields) {
         this.setFields(fields);
