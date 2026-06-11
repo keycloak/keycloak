@@ -8,6 +8,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.EventType;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.condition.ClientIdUriSchemeCondition;
@@ -22,12 +23,15 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.CimdProvider;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -91,6 +95,9 @@ public class ClientIdMetadataDocumentTest {
 
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
+
+    @InjectEvents
+    Events events;
 
     @InjectPage
     ErrorPage errorPage;
@@ -821,6 +828,59 @@ public class ClientIdMetadataDocumentTest {
         oauth.redirectUri(REDIRECT_URI);
         cimd.getRepresentation().setLogoUri(null);
         assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_REQUIRED_PROPERTIES);
+    }
+
+    @Test
+    public void testCimdAuditEvents() throws Exception {
+        // register profiles
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        executorConfig.setAllowHttpScheme(true);
+        updatePolicy(conditionConfig, executorConfig);
+
+        events.skipAll();
+
+        // send an authorization request to create a CIMD client
+        String code = loginUserAndGetCode(true);
+
+        // get an access token
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(signedJwt).send();
+        oauth.verifyToken(tokenResponse.getAccessToken());
+
+        // verify CIMD_CLIENT_REGISTER event was fired
+        EventRepresentation event = events.poll();
+        Assertions.assertNotNull(event);
+        Assertions.assertEquals(EventType.CIMD_CLIENT_REGISTER.name(), event.getType());
+        Assertions.assertEquals(CLIENT_ID, event.getClientId());
+
+        // logout
+        logout(tokenResponse.getIdToken());
+
+        // move the time ahead so that the client metadata becomes ineffective
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        events.skipAll();
+
+        // do authorization code flow again to trigger update
+        code = loginUserAndGetCode(false);
+        signedJwt = createSignedRequestToken();
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(signedJwt).send();
+        oauth.verifyToken(tokenResponse.getAccessToken());
+
+        // verify CIMD_CLIENT_UPDATE event was fired
+        event = events.poll();
+        Assertions.assertNotNull(event);
+        Assertions.assertEquals(EventType.CIMD_CLIENT_UPDATE.name(), event.getType());
+        Assertions.assertEquals(CLIENT_ID, event.getClientId());
+
+        // cleanup
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+        timeOffSet.set(0);
     }
 
     private String loginUserAndGetCode(boolean isGrantRequred) {

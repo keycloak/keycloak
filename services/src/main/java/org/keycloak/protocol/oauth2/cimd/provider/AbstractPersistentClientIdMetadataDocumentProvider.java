@@ -150,7 +150,7 @@ public abstract class AbstractPersistentClientIdMetadataDocumentProvider<CONFIG 
             }
 
             EventBuilder event = new EventBuilder(realm, session, session.getContext().getConnection());
-            event.event(EventType.CLIENT_REGISTER);
+            event.event(EventType.CIMD_CLIENT_REGISTER);
 
             ClientModel clientModel = ClientManager.createClient(session, realm, clientRep);
 
@@ -223,7 +223,7 @@ public abstract class AbstractPersistentClientIdMetadataDocumentProvider<CONFIG 
             }
 
             EventBuilder event = new EventBuilder(realm, session, session.getContext().getConnection());
-            event.event(EventType.CLIENT_UPDATE).client(clientId);
+            event.event(EventType.CIMD_CLIENT_UPDATE).client(clientId);
 
             ClientModel clientModel = realm.getClientByClientId(clientId);
 
