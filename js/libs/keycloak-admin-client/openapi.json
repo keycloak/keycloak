@@ -291,11 +291,11 @@
           "in" : "query"
         }, {
           "description" : "Sort direction. Allowed values: asc (default), desc.",
+          "name" : "sortOrder",
+          "in" : "query",
           "schema" : {
             "$ref" : "#/components/schemas/SortOrder"
-          },
-          "name" : "sortOrder",
-          "in" : "query"
+          }
         } ],
         "responses" : {
           "200" : {

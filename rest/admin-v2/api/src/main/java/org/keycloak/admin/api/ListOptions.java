@@ -21,6 +21,7 @@ public class ListOptions {
     @QueryParam("fields")
     protected String fields;
 
+    // TODO: this name is a temporary solution until we have a fix from smallrye-openapi
     @Parameter(name = "sortBy",
                description = "Field(s) to sort by, comma-separated for multi-field sort (e.g. displayName,clientId). Allowed values: clientId, displayName, description, protocol, enabled, appUrl. Defaults to clientId when omitted.",
                style = ParameterStyle.FORM,
@@ -29,7 +30,7 @@ public class ListOptions {
     @QueryParam("sortBy")
     protected String sortBy;
 
-    @Parameter(description = "Sort direction. Allowed values: asc (default), desc.", schema = @Schema(implementation = SortOrder.class))
+    @Parameter(description = "Sort direction. Allowed values: asc (default), desc.")
     @QueryParam("sortOrder")
     protected SortOrder sortOrder;
 
