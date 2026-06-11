@@ -35,7 +35,7 @@ import {
   SyncAltIcon,
   TimesCircleIcon,
 } from "@patternfly/react-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -222,18 +222,6 @@ export const StreamTab = ({
   const [editEventsDeliveredOpen, setEditEventsDeliveredOpen] = useState(false);
   const [streamEditSubmitting, setStreamEditSubmitting] = useState(false);
 
-  // Re-seed edit state whenever the loaded stream changes.
-  useEffect(() => {
-    setEditStreamDescription(clientStream?.description ?? "");
-    setEditStreamEventsRequested(clientStream?.eventsRequested ?? []);
-    setEditStreamEventsDelivered(clientStream?.eventsDelivered ?? []);
-  }, [
-    clientStream?.streamId,
-    clientStream?.description,
-    clientStream?.eventsRequested,
-    clientStream?.eventsDelivered,
-  ]);
-
   // Description / events_requested / events_delivered are receiver-
   // owned for streams the receiver registered itself (via the
   // standard SSF /streams endpoint). We surface them as read-only on
@@ -254,6 +242,39 @@ export const StreamTab = ({
         clientStream.eventsDelivered ?? [],
         editStreamEventsDelivered,
       ));
+
+  // Tracks the streamId the edit fields were last seeded from, so we can
+  // tell "a different stream just loaded" (always re-seed) apart from "the
+  // admin is editing the stream that's already loaded" (don't clobber).
+  const seededStreamIdRef = useRef<string | undefined>(undefined);
+
+  // Re-seed edit state when the loaded stream changes — but never clobber
+  // unsaved admin edits to the stream that's already loaded.
+  //
+  // The dirty guard alone deadlocks on first load of a KEYCLOAK-managed
+  // stream: the edit fields start empty, so the moment the stream loads with
+  // a non-empty description / events the state looks "dirty" against that
+  // empty seed and the guard refuses to seed it — leaving the fields blank
+  // forever. Gating the guard on "same stream as last seeded" breaks the
+  // cycle: a freshly created / newly loaded stream has no local edits to
+  // protect, so it always seeds.
+  useEffect(() => {
+    const loadedStreamId = clientStream?.streamId;
+    const sameStream = seededStreamIdRef.current === loadedStreamId;
+    if (sameStream && streamEditDirty) {
+      return;
+    }
+    seededStreamIdRef.current = loadedStreamId;
+    setEditStreamDescription(clientStream?.description ?? "");
+    setEditStreamEventsRequested(clientStream?.eventsRequested ?? []);
+    setEditStreamEventsDelivered(clientStream?.eventsDelivered ?? []);
+  }, [
+    clientStream?.streamId,
+    clientStream?.description,
+    clientStream?.eventsRequested,
+    clientStream?.eventsDelivered,
+    streamEditDirty,
+  ]);
 
   const submitStreamEdit = async () => {
     if (!client.clientId || !clientStream || !streamEditDirty) {
