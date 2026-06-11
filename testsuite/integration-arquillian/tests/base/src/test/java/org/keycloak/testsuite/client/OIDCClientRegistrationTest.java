@@ -137,7 +137,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         OIDCClientRepresentation client = createRep();
         client.setRedirectUris(Arrays.asList("http://localhost/auth", "http://localhost/auth#fragment", "http://localhost/auth*"));
 
-        assertCreateFail(client, 400, "URI fragment");
+        assertCreateFail(client, 400, "URL fragment");
     }
 
     @Test

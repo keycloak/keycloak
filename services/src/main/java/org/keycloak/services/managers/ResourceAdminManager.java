@@ -68,7 +68,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
  */
 public class ResourceAdminManager {
     private static final Logger logger = Logger.getLogger(ResourceAdminManager.class);
-    private static final String CLIENT_SESSION_HOST_PROPERTY = "${application.session.host}";
+    public static final String CLIENT_SESSION_HOST_PROPERTY = "${application.session.host}";
 
     private KeycloakSession session;
 
