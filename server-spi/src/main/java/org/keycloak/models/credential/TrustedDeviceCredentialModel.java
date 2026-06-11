@@ -18,12 +18,19 @@
 package org.keycloak.models.credential;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Base64;
+import java.util.Objects;
 import java.util.UUID;
+
+import org.jboss.logging.Logger;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.credential.dto.TrustedDeviceCredentialData;
-import org.keycloak.models.credential.dto.TrustedDeviceSecretData;
 import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -35,30 +42,30 @@ import static org.keycloak.utils.StringUtil.isBlank;
  */
 public class TrustedDeviceCredentialModel extends CredentialModel {
     public static final String TYPE = "trusted-device";
+    private static final String SECRET_HASH_ALGORITHM = JavaAlgorithm.SHA512;
 
     private final TrustedDeviceCredentialData credentialData;
-    private final TrustedDeviceSecretData secretData;
 
-    private TrustedDeviceCredentialModel(TrustedDeviceCredentialData credentialData, TrustedDeviceSecretData secretData) {
+    private TrustedDeviceCredentialModel(TrustedDeviceCredentialData credentialData) {
         this.credentialData = credentialData;
-        this.secretData = secretData;
     }
 
     public static TrustedDeviceCredentialModel create(DeviceRepresentation device, String secret) {
-        TrustedDeviceCredentialData credentialData = new TrustedDeviceCredentialData(device);
-        TrustedDeviceSecretData secretData = new TrustedDeviceSecretData(secret);
+        TrustedDeviceCredentialData credentialData = new TrustedDeviceCredentialData(device, SECRET_HASH_ALGORITHM);
         // Generate a new ID manually to be able to use it for cookie creation and distinguish the credentials
         String id = UUID.randomUUID().toString();
         String userLabel = device.getOs() + ' ' + device.getOsVersion() + " / " + device.getBrowser() + " (" + id.substring(0, 8) + ")";
 
+        var hashedSecret = Base64.getEncoder().encodeToString(hashSecret(secret, SECRET_HASH_ALGORITHM));
+
         try {
-            TrustedDeviceCredentialModel tdCredentialModel = new TrustedDeviceCredentialModel(credentialData, secretData);
+            TrustedDeviceCredentialModel tdCredentialModel = new TrustedDeviceCredentialModel(credentialData);
 
             tdCredentialModel.setId(id);
             tdCredentialModel.setType(TYPE);
             tdCredentialModel.setUserLabel(userLabel);
             tdCredentialModel.setCreatedDate(Time.currentTimeMillis());
-            tdCredentialModel.setSecretData(JsonSerialization.writeValueAsString(secretData));
+            tdCredentialModel.setSecretData(hashedSecret);
             tdCredentialModel.setCredentialData(JsonSerialization.writeValueAsString(credentialData));
 
             return tdCredentialModel;
@@ -73,19 +80,15 @@ public class TrustedDeviceCredentialModel extends CredentialModel {
                     null :
                     JsonSerialization.readValue(credentialModel.getCredentialData(), TrustedDeviceCredentialData.class);
 
-            TrustedDeviceSecretData secretData = isBlank(credentialModel.getSecretData()) ?
-                    null :
-                    JsonSerialization.readValue(credentialModel.getSecretData(), TrustedDeviceSecretData.class);
-
-            return getTrustedDeviceCredentialModel(credentialModel, credentialData, secretData);
+            return getTrustedDeviceCredentialModel(credentialModel, credentialData);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static TrustedDeviceCredentialModel getTrustedDeviceCredentialModel(CredentialModel credentialModel, TrustedDeviceCredentialData credentialData, TrustedDeviceSecretData secretData) {
-        TrustedDeviceCredentialModel tdCredentialModel = new TrustedDeviceCredentialModel(credentialData, secretData);
+    private static TrustedDeviceCredentialModel getTrustedDeviceCredentialModel(CredentialModel credentialModel, TrustedDeviceCredentialData credentialData) {
+        TrustedDeviceCredentialModel tdCredentialModel = new TrustedDeviceCredentialModel(credentialData);
         tdCredentialModel.setId(credentialModel.getId());
         tdCredentialModel.setType(credentialModel.getType());
         tdCredentialModel.setUserLabel(credentialModel.getUserLabel());
@@ -95,11 +98,32 @@ public class TrustedDeviceCredentialModel extends CredentialModel {
         return tdCredentialModel;
     }
 
-    public TrustedDeviceCredentialData getTrustedDeviceCredentialData() {
-        return credentialData;
+    private static byte[] hashSecret(String rawSecret, String algorithm) {
+        Objects.requireNonNull(rawSecret, "rawSecret cannot be null");
+        return HashUtils.hash(algorithm, rawSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public TrustedDeviceSecretData getTrustedDeviceSecretData() {
-        return secretData;
+    public boolean verifySecret(String rawInputSecret) {
+        Logger logger = Logger.getLogger(TrustedDeviceCredentialModel.class);
+        String savedSecretHash = getSecretData();
+        if (savedSecretHash == null || savedSecretHash.isBlank()) {
+            logger.warn("No saved Trusted Device secret hash found");
+            return false;
+        }
+
+        String hashAlgorithm = credentialData.getSecretHashAlgorithm();
+        if(hashAlgorithm == null || hashAlgorithm.isBlank()) {
+            logger.warn("No saved Trusted Device secret hash algorithm found");
+            return false;
+        }
+
+        try {
+            byte[] hashedInputBackupCode = hashSecret(rawInputSecret, hashAlgorithm);
+            byte[] savedCode = Base64.getMimeDecoder().decode(savedSecretHash);
+            return MessageDigest.isEqual(hashedInputBackupCode, savedCode);
+        } catch (IllegalArgumentException iae) {
+            logger.warnf("Error when validating Trusted Device secret", iae);
+            return false;
+        }
     }
 }

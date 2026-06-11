@@ -17,10 +17,9 @@
 
 package org.keycloak.credential;
 
-import java.security.SecureRandom;
-
 import org.keycloak.authentication.authenticators.browser.TrustedDeviceConstants;
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
@@ -31,10 +30,8 @@ import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.TrustedDeviceCredentialInputModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.TrustedDeviceCredentialModel;
-import org.keycloak.models.credential.dto.TrustedDeviceSecretData;
 import org.keycloak.representations.account.DeviceRepresentation;
 
-import org.apache.commons.codec.binary.Hex;
 import org.jboss.logging.Logger;
 
 /**
@@ -79,7 +76,7 @@ public class TrustedDeviceCredentialProvider implements CredentialProvider<Trust
         deleteExpiredCredentials(realm, credentialManager);
 
         // Creating new credential
-        String secret = generateSecret();
+        String secret = SecretGenerator.getInstance().randomString();
         var credential = TrustedDeviceCredentialModel.create(device, secret);
         credentialManager.createStoredCredential(credential);
 
@@ -89,14 +86,14 @@ public class TrustedDeviceCredentialProvider implements CredentialProvider<Trust
         credentialManager.moveStoredCredentialTo(credential.getId(), null);
 
         // Set cookie
-        setTrustedDeviceCookie(user.getId(), credential, getExpirationSeconds(realm));
+        setTrustedDeviceCookie(user.getId(), credential.getId(), secret, getExpirationSeconds(realm));
 
     }
 
-    private void setTrustedDeviceCookie(String userId, TrustedDeviceCredentialModel credential, int expiration) {
+    private void setTrustedDeviceCookie(String userId, String credentialId, String secret, int expiration) {
         CookieProvider cookieProvider = session.getProvider(CookieProvider.class);
         CookieType cookieType = CookieType.getTrustedDeviceCookie(userId);
-        String cookie = credential.getId() + ':' + credential.getTrustedDeviceSecretData().getValue();
+        String cookie = credentialId + ':' + secret;
         cookieProvider.set(cookieType, cookie, expiration);
     }
 
@@ -161,14 +158,13 @@ public class TrustedDeviceCredentialProvider implements CredentialProvider<Trust
         if (getIsDisabled(realm))
             return false;
 
-        // Get user saved credential
+        // Get saved user credential
         CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialInput.getCredentialId());
 
         if (credential == null)
             return false;
 
         TrustedDeviceCredentialModel tdCredential = TrustedDeviceCredentialModel.createFromCredentialModel(credential);
-        TrustedDeviceSecretData secretData = tdCredential.getTrustedDeviceSecretData();
 
         long credentialExpiresAt = tdCredential.getCreatedDate() + getExpirationSeconds(realm);
 
@@ -178,7 +174,7 @@ public class TrustedDeviceCredentialProvider implements CredentialProvider<Trust
             return false;
         }
 
-        return challengeSecret.equals(secretData.getValue());
+        return tdCredential.verifySecret(challengeSecret);
     }
 
     private static boolean getIsDisabled(RealmModel realm){
@@ -192,10 +188,4 @@ public class TrustedDeviceCredentialProvider implements CredentialProvider<Trust
         );
     }
 
-    private String generateSecret() {
-        byte[] bytes = new byte[32];
-        SecureRandom secureRandom = new SecureRandom();
-        secureRandom.nextBytes(bytes);
-        return Hex.encodeHexString(bytes);
-    }
 }

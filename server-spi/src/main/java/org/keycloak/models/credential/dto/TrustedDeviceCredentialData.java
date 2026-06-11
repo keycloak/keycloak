@@ -31,19 +31,27 @@ public class TrustedDeviceCredentialData {
     private final String os;
     private final String osVersion;
     private final String browser;
+    private final String secretHashAlgorithm;
 
 
     @JsonCreator
-    public TrustedDeviceCredentialData(@JsonProperty("os") String os, @JsonProperty("osVersion") String osVersion, @JsonProperty("browser") String browser) {
+    public TrustedDeviceCredentialData(
+            @JsonProperty("os") String os,
+            @JsonProperty("osVersion") String osVersion,
+            @JsonProperty("browser") String browser,
+            @JsonProperty("secretHashAlgorithm") String secretHashAlgorithm
+    ) {
         this.os = os;
         this.osVersion = osVersion;
         this.browser = browser;
+        this.secretHashAlgorithm = secretHashAlgorithm;
     }
 
-    public TrustedDeviceCredentialData(DeviceRepresentation deviceRepresentation) {
+    public TrustedDeviceCredentialData(DeviceRepresentation deviceRepresentation, String secretHashAlgorithm) {
         this.os = deviceRepresentation.getOs();
         this.osVersion = deviceRepresentation.getOsVersion();
         this.browser = deviceRepresentation.getBrowser();
+        this.secretHashAlgorithm = secretHashAlgorithm;
     }
 
 
@@ -57,6 +65,10 @@ public class TrustedDeviceCredentialData {
 
     public String getBrowser() {
         return browser;
+    }
+
+    public String getSecretHashAlgorithm() {
+        return secretHashAlgorithm;
     }
 
 }
