@@ -2530,7 +2530,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         try {
             final String username = "nutzername-gelb";
 
-            clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), TEST_CLIENT_NAME);
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
 
             // Enable direct access grants for password grant to work
@@ -2543,7 +2543,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
 
             // Enable brute force protection on realm
-            realmRep = managedRealm.admin().toRepresentation();
+            realmRep = adminClient.realm(TEST_REALM_NAME).toRepresentation();
             backupRealm = new RealmRepresentation();
             backupRealm.setBruteForceProtected(realmRep.isBruteForceProtected());
             backupRealm.setFailureFactor(realmRep.getFailureFactor());
@@ -2552,9 +2552,9 @@ public class CIBATest extends AbstractClientPoliciesTest {
             realmRep.setBruteForceProtected(true);
             realmRep.setFailureFactor(2);
             realmRep.setMaxDeltaTimeSeconds(60);
-            managedRealm.admin().update(realmRep);
+            adminClient.realm(TEST_REALM_NAME).update(realmRep);
 
-            List<UserRepresentation> users = managedRealm.admin().users().search(username);
+            List<UserRepresentation> users = adminClient.realm(TEST_REALM_NAME).users().search(username);
             assertThat(users.size(), is(1));
             UserRepresentation user = users.get(0);
 
@@ -2565,7 +2565,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             }
 
             // Verify user is actually locked by checking brute force status
-            Map<String, Object> userAttackInfo = managedRealm.admin().attackDetection().bruteForceUserStatus(user.getId());
+            Map<String, Object> userAttackInfo = adminClient.realm(TEST_REALM_NAME).attackDetection().bruteForceUserStatus(user.getId());
             assertThat((Boolean) userAttackInfo.get("disabled"), is(true));
             // numFailures should be at least failureFactor (2), 3rd attempt after lock may not increment counter
             assertThat((Integer) userAttackInfo.get("numFailures"), is(equalTo(2)));
@@ -2578,7 +2578,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(response.getErrorDescription(), is("invalid_user"));
 
             // Clear brute force lockout
-            managedRealm.admin().attackDetection().clearBruteForceForUser(user.getId());
+            adminClient.realm(TEST_REALM_NAME).attackDetection().clearBruteForceForUser(user.getId());
 
             // Verify CIBA works after clearing lockout
             response = oauth.ciba().backchannelAuthenticationRequest(username).send();
@@ -2596,7 +2596,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 realmRep.setBruteForceProtected(backupRealm.isBruteForceProtected());
                 realmRep.setFailureFactor(backupRealm.getFailureFactor());
                 realmRep.setMaxDeltaTimeSeconds(backupRealm.getMaxDeltaTimeSeconds());
-                managedRealm.admin().update(realmRep);
+                adminClient.realm(TEST_REALM_NAME).update(realmRep);
             }
         }
     }
@@ -2611,7 +2611,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         try {
             final String username = "nutzername-schwarz";
 
-            clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), TEST_CLIENT_NAME);
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
 
             // Enable direct access grants for password grant to work
@@ -2623,7 +2623,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
             oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
 
-            realmRep = managedRealm.admin().toRepresentation();
+            realmRep = adminClient.realm(TEST_REALM_NAME).toRepresentation();
             backupRealm = new RealmRepresentation();
             backupRealm.setBruteForceProtected(realmRep.isBruteForceProtected());
             backupRealm.setFailureFactor(realmRep.getFailureFactor());
@@ -2637,9 +2637,9 @@ public class CIBATest extends AbstractClientPoliciesTest {
             realmRep.setPermanentLockout(true);
             // Enable permanent lockout brute force protection on realm
             realmRep.setMaxTemporaryLockouts(0);
-            managedRealm.admin().update(realmRep);
+            adminClient.realm(TEST_REALM_NAME).update(realmRep);
 
-            List<UserRepresentation> users = managedRealm.admin().users().search(username);
+            List<UserRepresentation> users = adminClient.realm(TEST_REALM_NAME).users().search(username);
             assertThat(users.size(), is(1));
             UserRepresentation user = users.get(0);
 
@@ -2650,7 +2650,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             }
 
             // Verify user is actually locked by checking brute force status
-            Map<String, Object> userAttackInfo = managedRealm.admin().attackDetection().bruteForceUserStatus(user.getId());
+            Map<String, Object> userAttackInfo = adminClient.realm(TEST_REALM_NAME).attackDetection().bruteForceUserStatus(user.getId());
             assertThat((Boolean) userAttackInfo.get("disabled"), is(true));
             // numFailures should be at least failureFactor (2), 3rd attempt after lock may not increment counter
             assertThat((Integer) userAttackInfo.get("numFailures"), is(equalTo(2)));
@@ -2662,9 +2662,9 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(response.getErrorDescription(), is("invalid_user"));
 
             // Clear brute force lockout and re-enable user (permanent lockout disables the account)
-            managedRealm.admin().attackDetection().clearBruteForceForUser(user.getId());
+            adminClient.realm(TEST_REALM_NAME).attackDetection().clearBruteForceForUser(user.getId());
             user.setEnabled(true);
-            managedRealm.admin().users().get(user.getId()).update(user);
+            adminClient.realm(TEST_REALM_NAME).users().get(user.getId()).update(user);
 
             // Verify CIBA works after clearing permanent lockout and re-enabling user
             response = oauth.ciba().backchannelAuthenticationRequest(username).send();
@@ -2678,11 +2678,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 clientResource.update(clientRep);
             }
             // Re-enable user if permanently locked (permanent lockout disables the account)
-            List<UserRepresentation> users = managedRealm.admin().users().search("nutzername-gelb");
+            List<UserRepresentation> users = adminClient.realm(TEST_REALM_NAME).users().search("nutzername-gelb");
             if (!users.isEmpty()) {
                 UserRepresentation userToRestore = users.get(0);
                 userToRestore.setEnabled(true);
-                managedRealm.admin().users().get(userToRestore.getId()).update(userToRestore);
+                adminClient.realm(TEST_REALM_NAME).users().get(userToRestore.getId()).update(userToRestore);
             }
             // Restore realm brute force settings
             if (realmRep != null && backupRealm != null) {
@@ -2691,7 +2691,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 realmRep.setMaxDeltaTimeSeconds(backupRealm.getMaxDeltaTimeSeconds());
                 realmRep.setPermanentLockout(backupRealm.isPermanentLockout());
                 realmRep.setMaxTemporaryLockouts(backupRealm.getMaxTemporaryLockouts());
-                managedRealm.admin().update(realmRep);
+                adminClient.realm(TEST_REALM_NAME).update(realmRep);
             }
         }
     }
