@@ -5,15 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  picomatch@^2: ^2.3.2
-  flatted: ^3.4.2
-  minimatch@~3: ^3.1.4
-  minimatch@~9: ^9.0.7
+  serialize-javascript: ^7.0.5
   brace-expansion@^1: ^1.1.13
   brace-expansion@^2: ^2.0.3
-  '@isaacs/brace-expansion@^5': ^5.0.1
-  serialize-javascript: ^7.0.5
-  diff@^4: ^4.0.4
   diff@^7: ^8.0.3
   '@microsoft/api-extractor': ^7.58.7
   jquery@^3: ^3.7.1
