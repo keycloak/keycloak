@@ -231,7 +231,7 @@
     "/admin/api/{realmName}/clients/v2" : {
       "get" : {
         "summary" : "Get all clients",
-        "description" : "Returns a list of clients in the realm, optionally filtered by a query expression. Results are paginated using offset (1-based, default 1) and limit (default 100).",
+        "description" : "Returns a list of clients in the realm, optionally filtered by a query expression. Results are paginated using offset (0-based, default 0) and limit (default 100).",
         "operationId" : "getClients",
         "tags" : [ "Clients (v2)" ],
         "parameters" : [ {
@@ -255,7 +255,7 @@
             "format" : "int32"
           }
         }, {
-          "description" : "Index of the first result to return, counted from 1. Defaults to 1.",
+          "description" : "Index of the first result to return, counted from 0. Defaults to 0.",
           "name" : "offset",
           "in" : "query",
           "schema" : {
