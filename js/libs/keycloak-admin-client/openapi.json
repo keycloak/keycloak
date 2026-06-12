@@ -278,11 +278,12 @@
             "type" : "string"
           }
         }, {
-          "description" : "Field(s) to sort by, comma-separated for multi-field sort (e.g. displayName,clientId). Allowed values: clientId, displayName, description, protocol, enabled, appUrl. Defaults to clientId when omitted.",
+          "description" : "Field(s) to sort by, comma-separated for multi-field sort (e.g. displayName,clientId).",
           "explode" : false,
           "name" : "sortBy",
           "schema" : {
             "type" : "array",
+            "default" : "clientId",
             "items" : {
               "$ref" : "#/components/schemas/ClientField"
             }
@@ -290,12 +291,12 @@
           "style" : "form",
           "in" : "query"
         }, {
-          "description" : "Sort direction. Allowed values: asc (default), desc.",
-          "name" : "sortOrder",
-          "in" : "query",
+          "description" : "Sort direction. Allowed values: asc, desc.",
           "schema" : {
-            "$ref" : "#/components/schemas/SortOrder"
-          }
+            "default" : "asc"
+          },
+          "name" : "sortOrder",
+          "in" : "query"
         } ],
         "responses" : {
           "200" : {

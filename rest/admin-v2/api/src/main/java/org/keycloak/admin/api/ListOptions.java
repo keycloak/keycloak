@@ -23,14 +23,15 @@ public class ListOptions {
 
     // TODO: this name is a temporary solution until we have a fix from smallrye-openapi
     @Parameter(name = "sortBy",
-               description = "Field(s) to sort by, comma-separated for multi-field sort (e.g. displayName,clientId). Allowed values: clientId, displayName, description, protocol, enabled, appUrl. Defaults to clientId when omitted.",
+               description = "Field(s) to sort by, comma-separated for multi-field sort (e.g. displayName,clientId).",
                style = ParameterStyle.FORM,
                explode = Explode.FALSE,
-               schema = @Schema(type = SchemaType.ARRAY, implementation = ClientField.class))
+               schema = @Schema(type = SchemaType.ARRAY, implementation = ClientField.class,
+               defaultValue = "clientId"))
     @QueryParam("sortBy")
     protected String sortBy;
 
-    @Parameter(description = "Sort direction. Allowed values: asc (default), desc.")
+    @Parameter(description = "Sort direction. Allowed values: asc, desc.", schema = @Schema(defaultValue = "asc"))
     @QueryParam("sortOrder")
     protected SortOrder sortOrder;
 
@@ -117,7 +118,7 @@ public class ListOptions {
     }
 
     public void setSortBy(List<ClientField> sortBy) {
-        this.sortBy = parseSortBy(sortBy);
+        this.sortBy = stringify(sortBy);
     }
 
     public SortOrder getSortOrder() {
@@ -128,7 +129,7 @@ public class ListOptions {
         this.sortOrder = sortOrder;
     }
 
-    private String parseSortBy(List<ClientField> list) {
+    private String stringify(List<ClientField> list) {
         return list == null || list.isEmpty() ? null :
                  list.stream().map(ClientField::toQueryValue).collect(Collectors.joining(","));
     }

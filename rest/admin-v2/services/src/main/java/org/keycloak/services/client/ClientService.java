@@ -71,7 +71,7 @@ public interface ClientService extends Service {
 
         private static ClientField parseSortField(String field) {
             return ClientField.fromApiName(field).orElseThrow(() -> {
-                throw new ServiceException(String.format("%s is not a sortable field"),  Response.Status.BAD_REQUEST);
+                return new ServiceException(String.format("%s is not a sortable field", field),  Response.Status.BAD_REQUEST);
             });
         }
 
@@ -85,8 +85,6 @@ public interface ClientService extends Service {
                     .reduce(Comparator::thenComparing)
                     .orElseThrow();
         }
-
-        // offset / limit — #48289
 
     record CreateOrUpdateResult(BaseClientRepresentation representation, boolean created) {}
 
