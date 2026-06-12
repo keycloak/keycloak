@@ -318,4 +318,19 @@ public class RedirectUtilsTest {
         Assert.assertEquals("custom3://custom", RedirectUtils.verifyRedirectUri(session, null, "custom3://custom", set, false));
         Assert.assertEquals("https://test.com/lala", RedirectUtils.verifyRedirectUri(session, null, "https://test.com/lala", set, false));
     }
+
+    @Test
+    public void testVerifyRedirectUriWithPollutedParameters() {
+        Set<String> set = Stream.of(
+                "https://example.com/callback/*"
+        ).collect(Collectors.toSet());
+
+        Assert.assertNull("Should reject URL-encoded 'code' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?c%6Fde=attack", set, false));
+        Assert.assertNull("Should reject mixed-case forbidden parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?CODE=attack", set, false));
+        Assert.assertNull("Should reject redirect URI containing pre-loaded 'code' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?code=attacker_code", set, false));
+        Assert.assertNull("Should reject redirect URI containing pre-loaded 'state' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?state=attacker_state", set, false));
+        Assert.assertNull("Should reject redirect URI containing pre-loaded 'iss' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?iss=attacker_issuer", set, false));
+        Assert.assertNull("Should reject redirect URI if any forbidden OIDC parameter is mixed into the query string", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?legit_param=123&code=malicious", set, false));
+        Assert.assertEquals("Should allow legitimate query parameters that do not conflict with OIDC protocol variables", "https://example.com/callback?legit_param=123", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?legit_param=123", set, false));
+    }
 }

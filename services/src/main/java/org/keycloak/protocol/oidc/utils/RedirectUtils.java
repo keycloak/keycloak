@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
@@ -45,6 +46,12 @@ import org.jboss.logging.Logger;
 public class RedirectUtils {
 
     public static final Set<String> LOOPBACK_INTERFACES = new HashSet<>(Arrays.asList("localhost", "127.0.0.1", "[::1]"));
+
+    private static final Set<String> FORBIDDEN_OIDC_PARAMS = Set.of(
+                                                                            "code", "id_token", "access_token", "token_type", "expires_in",
+                                                                            "state", "iss",
+                                                                            "error", "error_description"
+                                                                    );
 
     private static final Logger logger = Logger.getLogger(RedirectUtils.class);
 
@@ -95,6 +102,11 @@ public class RedirectUtils {
                 return null;
             }
 
+            // Check for HTTP Parameter Pollution - forbidden OIDC response parameters in redirect URI
+            if (containsForbiddenOidcParameters(redirectUri, originalRedirect)){
+                return null;
+            }
+
             // check if the passed URI allows wildcards
             boolean allowWildcards = areWildcardsAllowed(originalRedirect);
 
@@ -133,6 +145,28 @@ public class RedirectUtils {
         } else {
             return redirectUri;
         }
+    }
+
+    private static boolean containsForbiddenOidcParameters(String redirectUri, URI originalRedirect) {
+        String query = originalRedirect.getRawQuery();
+        if (query != null && !query.isEmpty()) {
+            String[] pairs = query.split("&");
+            for (String pair : pairs) {
+                int idx = pair.indexOf('=');
+                String key = idx > 0 ? pair.substring(0, idx) : pair;
+                String decodedKey;
+                try {
+                    decodedKey = java.net.URLDecoder.decode(key, java.nio.charset.StandardCharsets.UTF_8);
+                } catch (Exception e) {
+                    decodedKey = key;
+                }
+                if (FORBIDDEN_OIDC_PARAMS.contains(decodedKey.toLowerCase(Locale.ROOT))) {
+                    logger.warnf("Redirect URI rejected: contains forbidden OIDC parameter '%s' in query string: %s", decodedKey, redirectUri);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static URI toUri(String redirectUri) {
