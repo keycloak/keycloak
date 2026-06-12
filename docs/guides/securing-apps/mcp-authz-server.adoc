@@ -266,5 +266,13 @@ bin/kc.[sh|bat] start --features=cimd
 
 With this configuration, when VS Code desktop sends an authorization request, {project_name} recognizes the `client_id` as a URL on `vscode.dev`, fetches the Client ID Metadata Document, and uses a localhost callback to complete the OAuth flow.
 
+== Security considerations
+
+=== Rate limiting CIMD-triggering authorization requests
+
+When the OAuth Client ID Metadata Document feature is enabled, each authorization request whose `client_id` is a URL triggers {project_name} to fetch the Client ID Metadata Document from that URL. A high volume of such requests could lead to resource exhaustion on the {project_name} server.
+
+{project_name} does not implement its own rate limiting for these requests. To protect against abuse, you should enforce per-source rate limits on `/auth` requests that carry a URL-formatted `client_id` parameter using an external mechanism such as a Web Application Firewall (WAF), reverse proxy, or API gateway in front of {project_name}.
+
 
 </@tmpl.guide>
