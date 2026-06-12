@@ -300,6 +300,99 @@ public class ClientIdMetadataDocumentTest {
     }
 
     @Test
+    public void testClientIdMetadataDocumentExecutorForClientCredentialsGrant() throws Exception {
+        // register profiles
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        executorConfig.setAllowHttpScheme(true);
+        executorConfig.setOnlyAllowConfidentialClient(true);
+        updatePolicy(conditionConfig, executorConfig);
+
+        // set Client Metadata for a confidential client with client_credentials grant
+        cimd.getRepresentation().setGrantTypes(List.of("client_credentials"));
+
+        // send a client_credentials token request with private_key_jwt
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.clientCredentialsGrantRequest().client(CLIENT_ID).clientJwt(signedJwt).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+        Assertions.assertEquals(CLIENT_ID, accessToken.getIssuedFor());
+
+        // check the persisted client settings
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertFalse(clientRepresentation.isPublicClient());
+        Assertions.assertTrue(clientRepresentation.isServiceAccountsEnabled());
+        Assertions.assertEquals("client-jwt", clientRepresentation.getClientAuthenticatorType());
+
+        // delete the persisted client
+        deleteClientByAdmin(clientRepresentation.getId());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorModifiedMetadataOnTokenRequest() throws Exception {
+        // register profiles
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        executorConfig.setAllowHttpScheme(true);
+        executorConfig.setOnlyAllowConfidentialClient(true);
+        updatePolicy(conditionConfig, executorConfig);
+
+        // set Client Metadata with no-store Cache-Control directive and grant_types including client_credentials
+        cimd.getRepresentation().setGrantTypes(List.of("authorization_code", "refresh_token", "client_credentials"));
+        cimd.setCacheControlHeader("no-store");
+
+        // a client redirects a user to send an authorization request in CIMD with no-store directive
+        String code = loginUserAndGetCode(true);
+
+        // get an access token
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(signedJwt).send();
+        oauth.verifyToken(tokenResponse.getAccessToken());
+
+        // check the persisted client settings
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertFalse(clientRepresentation.isPublicClient());
+        Assertions.assertTrue(clientRepresentation.isServiceAccountsEnabled());
+        Assertions.assertEquals("client-jwt", clientRepresentation.getClientAuthenticatorType());
+        Assertions.assertEquals(LOGO_URI, clientRepresentation.getAttributes().get("logoUri"));
+
+        // logout
+        logout(tokenResponse.getIdToken());
+
+        // the client modifies its own client metadata
+        cimd.getRepresentation().setLogoUri("http://localhost:8500/logo2.png");
+        cimd.getRepresentation().setScope("profile");
+
+        // move the time ahead so that the cached client metadata (no-store = min cache time) expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // the client sends a token request to keycloak
+        // keycloak fetches the modified client metadata because the cache has expired
+        signedJwt = createSignedRequestToken();
+        tokenResponse = oauth.clientCredentialsGrantRequest().client(CLIENT_ID).clientJwt(signedJwt).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+        oauth.verifyToken(tokenResponse.getAccessToken());
+
+        // keycloak confirms that the client metadata is different from the one
+        // retrieved when keycloak received the first authorization request
+        clientRepresentation = findByClientIdByAdmin();
+        Map<String, String> m = clientRepresentation.getAttributes();
+        List<String> optionalScopeList = clientRepresentation.getOptionalClientScopes();
+        Assertions.assertEquals("http://localhost:8500/logo2.png", m.get("logoUri"));
+        Assertions.assertEquals(1, optionalScopeList.size());
+        Assertions.assertTrue(optionalScopeList.contains("profile"));
+
+        // delete the persisted client
+        deleteClientByAdmin(clientRepresentation.getId());
+    }
+
+    @Test
     public void testClientIdMetadataDocumentExecutorNotModifiedClientMetadata() throws Exception {
         // register profiles
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();

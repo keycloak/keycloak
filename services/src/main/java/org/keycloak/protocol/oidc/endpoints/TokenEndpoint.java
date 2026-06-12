@@ -63,6 +63,8 @@ import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.PreTokenRequestContext;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.utils.StringUtil;
@@ -142,6 +144,7 @@ public class TokenEndpoint {
         if (!grantType.equals(OAuth2Constants.UMA_GRANT_TYPE)
                 // pre-authorized grants are not necessarily used by known clients.
                 && !grantType.equals(PRE_AUTH_GRANT_TYPE)) {
+            triggerPreTokenRequestEvent();
             checkClient();
             checkParameterDuplicated();
         }
@@ -189,6 +192,22 @@ public class TokenEndpoint {
     private void checkRealm() {
         if (!realm.isEnabled()) {
             throw new CorsErrorResponseException(cors.allowAllOrigins(), "access_denied", "Realm not enabled", Response.Status.FORBIDDEN);
+        }
+    }
+
+    private void triggerPreTokenRequestEvent() {
+        String clientId = formParams.getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM);
+        if (clientId == null) {
+            return;
+        }
+        try {
+            session.clientPolicy().triggerOnEvent(new PreTokenRequestContext(clientId, formParams));
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
     }
 
