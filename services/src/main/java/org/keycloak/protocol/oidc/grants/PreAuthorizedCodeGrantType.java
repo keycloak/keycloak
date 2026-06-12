@@ -204,6 +204,9 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
+
+        afterAuthorizationDetailsProcessed(userSession, sessionContext, authorizationDetailsResponses);
+
         OID4VCAuthorizationDetail authDetails = (OID4VCAuthorizationDetail) authorizationDetailsResponses.get(0);
 
         AccessToken accessToken = tokenManager.createClientAccessToken(session,

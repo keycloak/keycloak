@@ -59,6 +59,17 @@ public class AuthorizationDetailsProcessorManager {
         return processAuthorizationDetailsInternal(authorizationDetailsParam, AuthorizationDetailsProcessor::validateAuthorizationDetail);
     }
 
+    @SuppressWarnings("unchecked")
+    public void afterAuthorizationDetailsProcessed(UserSessionModel userSession,
+                                                   ClientSessionContext clientSessionCtx,
+                                                   List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponse) throws InvalidAuthorizationDetailsException {
+        Map<String, AuthorizationDetailsProcessor<?>> processors = getAuthorizationDetailsProcessorMap();
+        for (AuthorizationDetailsJSONRepresentation authzDetailResponse : authorizationDetailsResponse) {
+            AuthorizationDetailsProcessor processor = findProcessorForAuthorizationDetails(processors, authzDetailResponse);
+            processor.afterAuthorizationDetailsProcessed(userSession, clientSessionCtx, authzDetailResponse.asSubtype(processor.getSupportedResponseJavaType()));
+        }
+    }
+
     // Private ---------------------------------------------------------------------------------------------------------
 
     private Map<String, AuthorizationDetailsProcessor<?>> getAuthorizationDetailsProcessorMap() {
@@ -79,16 +90,7 @@ public class AuthorizationDetailsProcessorManager {
 
         List<AuthorizationDetailsJSONRepresentation> authzResponses = new ArrayList<>();
         for (AuthorizationDetailsJSONRepresentation authzDetail : authzDetails) {
-            if (authzDetail.getType() == null) {
-                throw new InvalidAuthorizationDetailsException("Authorization_Details parameter provided without type: " + authorizationDetailsParam);
-            }
-            AuthorizationDetailsProcessor<?> processor = processors.get(authzDetail.getType());
-            if (processor == null) {
-                String errorDetails = String.format("Unsupported type '%s' of authorization_details parameter supplied in the request. Supported values: %s",
-                        authzDetail.getType(), processors.keySet());
-                logger.warn(errorDetails);
-                throw new InvalidAuthorizationDetailsException(errorDetails);
-            }
+            AuthorizationDetailsProcessor<?> processor = findProcessorForAuthorizationDetails(processors, authzDetail);
             AuthorizationDetailsJSONRepresentation response = function.apply(processor, authzDetail);
             if (response != null) {
                 authzResponses.add(response);
@@ -98,6 +100,20 @@ public class AuthorizationDetailsProcessorManager {
         }
 
         return authzResponses;
+    }
+
+    private AuthorizationDetailsProcessor<?> findProcessorForAuthorizationDetails(Map<String, AuthorizationDetailsProcessor<?>> processors, AuthorizationDetailsJSONRepresentation authzDetail) {
+        if (authzDetail.getType() == null) {
+            throw new InvalidAuthorizationDetailsException("Authorization_Details parameter provided without type: " + authzDetail);
+        }
+        AuthorizationDetailsProcessor<?> processor = processors.get(authzDetail.getType());
+        if (processor == null) {
+            String errorDetails = String.format("Unsupported type '%s' of authorization_details parameter supplied in the request. Supported values: %s",
+                    authzDetail.getType(), processors.keySet());
+            logger.warn(errorDetails);
+            throw new InvalidAuthorizationDetailsException(errorDetails);
+        }
+        return processor;
     }
 
     private List<AuthorizationDetailsJSONRepresentation> parseAuthorizationDetails(String authorizationDetailsParam) {

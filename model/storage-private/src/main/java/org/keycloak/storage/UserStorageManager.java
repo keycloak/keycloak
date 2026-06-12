@@ -969,9 +969,9 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public void addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc) {
+    public IssuedVerifiableCredentialModel addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc) {
         if (StorageId.isLocalStorage(issuedVc.getUserId())) {
-            localStorage().addIssuedVerifiableCredential(issuedVc);
+            return localStorage().addIssuedVerifiableCredential(issuedVc);
         } else {
             throw new UnsupportedOperationException("Issued verifiable credential operations not yet supported on federated users");
         }

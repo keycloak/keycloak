@@ -1133,7 +1133,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     }
 
     @Override
-    public void addIssuedVerifiableCredential(IssuedVerifiableCredentialModel model) {
+    public IssuedVerifiableCredentialModel addIssuedVerifiableCredential(IssuedVerifiableCredentialModel model) {
 
         String revision;
         if (model.getRevision() != null) {
@@ -1149,7 +1149,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         IssuedVerifiableCredentialEntity issuedVerifiableCredentialEntity = new IssuedVerifiableCredentialEntity();
 
-        issuedVerifiableCredentialEntity.setId(KeycloakModelUtils.generateId());
+        issuedVerifiableCredentialEntity.setId(SecretGenerator.getInstance().generateSecureID());
         issuedVerifiableCredentialEntity.setUser(em.getReference(UserEntity.class, model.getUserId()));
         issuedVerifiableCredentialEntity.setCredentialType(model.getCredentialType());
         issuedVerifiableCredentialEntity.setClientId(model.getClientId());
@@ -1162,6 +1162,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         em.persist(issuedVerifiableCredentialEntity);
         em.flush();
+
+        return toIssuedVcModel(issuedVerifiableCredentialEntity);
     }
 
     @Override
