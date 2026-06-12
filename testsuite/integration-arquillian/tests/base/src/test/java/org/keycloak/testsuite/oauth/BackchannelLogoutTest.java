@@ -837,8 +837,38 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
     private String getClientId(String realm, String clientId) {
         return adminClient.realm(realm).clients().findByClientId(clientId).stream()
-         .findAny()
-         .map(ClientRepresentation::getId)
-         .orElse(null);
-   }
+                .findAny()
+                .map(ClientRepresentation::getId)
+                .orElse(null);
+    }
+
+    @Test
+    public void postBackchannelLogoutMultipleConcurrentSessionsSignOutOtherDevices() throws Exception {
+        String brokerClientIdProviderRealm = getClientId(nbc.providerRealmName(), BROKER_CLIENT_ID);
+
+        logInAsUserInIDP(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID);
+        String userIdConsumerRealm = getUserIdConsumerRealm();
+        String sessionId1ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
+        String sessionId1ConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm, sessionId1ConsumerRealm);
+
+        loginWithSecondBrowser(nbc.getIDPAlias());
+        String sessionId2ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
+        String sessionId2ConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm, sessionId2ConsumerRealm);
+
+        String logoutToken1 = getLogoutTokenEncodedAndSigned(userIdProviderRealm, sessionId1ProviderRealm);
+        oauth.realm(nbc.consumerRealmName());
+        assertTrue(oauth.doBackchannelLogout(logoutToken1).isSuccess());
+
+        String logoutToken2 = getLogoutTokenEncodedAndSigned(userIdProviderRealm, sessionId2ProviderRealm);
+        assertTrue(oauth.doBackchannelLogout(logoutToken2).isSuccess());
+        
+        assertConsumerLogoutEvent(sessionId1ConsumerRealm, userIdConsumerRealm);
+        assertConsumerLogoutEvent(sessionId2ConsumerRealm, userIdConsumerRealm);
+        assertNoSessionsInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm, sessionId1ConsumerRealm);
+        assertNoSessionsInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm, sessionId2ConsumerRealm);
+        assertActiveSessionInClient(nbc.providerRealmName(), brokerClientIdProviderRealm, userIdProviderRealm, sessionId1ProviderRealm);
+        assertActiveSessionInClient(nbc.providerRealmName(), brokerClientIdProviderRealm, userIdProviderRealm, sessionId2ProviderRealm);
+    }
 }
