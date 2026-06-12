@@ -6,9 +6,9 @@ import java.security.NoSuchAlgorithmException;
 
 import jakarta.annotation.Nullable;
 
-import org.apache.commons.codec.binary.Hex;
-
 import org.keycloak.crypto.JavaAlgorithm;
+
+import org.apache.commons.codec.binary.Hex;
 
 public final class CookieType {
 

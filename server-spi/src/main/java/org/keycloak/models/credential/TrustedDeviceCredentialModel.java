@@ -24,8 +24,6 @@ import java.util.Base64;
 import java.util.Objects;
 import java.util.UUID;
 
-import org.jboss.logging.Logger;
-
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.crypto.JavaAlgorithm;
@@ -33,6 +31,8 @@ import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.credential.dto.TrustedDeviceCredentialData;
 import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.StringUtil.isBlank;
 
