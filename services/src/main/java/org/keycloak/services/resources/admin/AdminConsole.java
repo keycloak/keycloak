@@ -41,6 +41,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.forms.login.freemarker.model.NonceBean;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
@@ -57,6 +58,7 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.ViteManifest;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.ThemeResourcesParser;
@@ -322,7 +324,6 @@ public class AdminConsole {
      * Main page of this realm's admin console.
      */
     @GET
-    @NoCache
     public Response getMainPage() throws IOException, FreeMarkerException {
         final var baseUriInfo = session.getContext().getUri(UrlType.FRONTEND);
         final var adminUriInfo = session.getContext().getUri(UrlType.ADMIN);
@@ -344,6 +345,7 @@ public class AdminConsole {
             final var isSecureContext = SecureContextResolver.isSecureContext(session);
 
             map.put("isSecureContext", isSecureContext);
+            map.put("nonce", new NonceBean());
             map.put("serverBaseUrl", serverBaseUrl);
             map.put("adminBaseUrl", adminBaseUrl);
             // TODO: Some variables are deprecated and only exist to provide backwards compatibility for older themes, they should be removed in a future version.
@@ -384,7 +386,8 @@ public class AdminConsole {
 
             final var freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
             final var result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
-            final var builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result);
+            final var builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result)
+                    .cacheControl(CacheControlUtil.noCache());
 
             // Allow iframes to be embedded from the server if the admin console is running on a different URL.
             if (!adminBaseUri.equals(serverBaseUri)) {

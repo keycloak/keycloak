@@ -28,6 +28,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.forms.login.freemarker.model.NonceBean;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -60,6 +61,7 @@ public class LoginStatusIframeEndpoint {
         final var isSecureContext = SecureContextResolver.isSecureContext(session);
         final var serverBaseUri = session.getContext().getUri(UrlType.FRONTEND).getBaseUri();
         map.put("isSecureContext", isSecureContext);
+        map.put("nonce", new NonceBean());
         map.put("resourceCommonUrl", Urls.themeRoot(serverBaseUri).getPath() + "/common/keycloak");
 
         return IframeUtil.returnIframe(version, session, () -> {

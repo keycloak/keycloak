@@ -28,6 +28,7 @@ import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.WelcomePage;
 import org.keycloak.testframework.ui.webdriver.BrowserType;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.tests.utils.InlineScriptNonceUtil;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -92,6 +93,24 @@ public class WelcomePageTest {
 
     @Test
     @Order(2)
+    public void welcomePageInlineScriptsContainUniqueNonce() {
+        driver.open(keycloakUrls.getBaseUrl());
+        String pageSource = driver.page().getPageSource();
+
+        var inlineScriptsWithoutNonce = InlineScriptNonceUtil.getInlineScriptTagsWithoutNonce(pageSource);
+        Assertions.assertTrue(inlineScriptsWithoutNonce.isEmpty(),
+                () -> String.format("Page contains %d scripts without nonce: %s", inlineScriptsWithoutNonce.size(), inlineScriptsWithoutNonce));
+
+        var nonces = InlineScriptNonceUtil.getScriptNonceValues(pageSource);
+        Assertions.assertFalse(nonces.isEmpty(), "Welcome page should contain at least one inline script with a nonce");
+
+        driver.open(keycloakUrls.getBaseUrl());
+        Assertions.assertNotEquals(nonces, InlineScriptNonceUtil.getScriptNonceValues(driver.page().getPageSource()),
+                "Nonces should be unique per page invocation");
+    }
+
+    @Test
+    @Order(3)
     public void remoteAccessNoAdmin() throws Exception {
         driver.open(getPublicServerUrl());
 
@@ -101,7 +120,7 @@ public class WelcomePageTest {
     }
 
     @Test
-    @Order(3)
+    @Order(4)
     public void createAdminUser() {
         driver.open(keycloakUrls.getBaseUrl());
         welcomePage.fillRegistration(Config.getAdminUsername(), "Sebastian", "BestAdminInTheWorld", "admin@localhost", Config.getAdminPassword());
@@ -125,21 +144,21 @@ public class WelcomePageTest {
     }
 
     @Test
-    @Order(4)
+    @Order(5)
     public void localAccessWithAdmin() {
         driver.open(keycloakUrls.getBaseUrl());
         adminPage.assertCurrent();
     }
 
     @Test
-    @Order(5)
+    @Order(6)
     public void remoteAccessWithAdmin() throws Exception {
         driver.open(getPublicServerUrl().toString());
         adminPage.assertCurrent();
     }
 
     @Test
-    @Order(6)
+    @Order(7)
     public void accessCreatedAdminAccount() throws MalformedURLException {
         driver.open(keycloakUrls.getBaseUrl());
 

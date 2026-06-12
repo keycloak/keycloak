@@ -41,6 +41,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.forms.login.freemarker.model.NonceBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.quarkus.runtime.Environment;
@@ -48,6 +49,7 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.mappers.HostnameV2PropertyMappers;
 import org.keycloak.services.Urls;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
@@ -82,7 +84,7 @@ public class DebugHostnameSettingsResource {
     @GET
     @Path("/{realmName}/" + DEFAULT_PATH_SUFFIX)
     @Produces(MediaType.TEXT_HTML)
-    public String debug(final @PathParam("realmName") String realmName) throws IOException, FreeMarkerException {
+    public Response debug(final @PathParam("realmName") String realmName) throws IOException, FreeMarkerException {
         RealmModel realmModel = keycloakSession.realms().getRealmByName(realmName);
 
         if (realmModel == null) {
@@ -104,6 +106,7 @@ public class DebugHostnameSettingsResource {
 
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("configWarnings", configWarnings);
+        attributes.put("nonce", new NonceBean());
         attributes.put("frontendUrl", frontendUri.toString());
         attributes.put("backendUrl", backendUri.toString());
         attributes.put("adminUrl", adminUri.toString());
@@ -121,11 +124,13 @@ public class DebugHostnameSettingsResource {
         attributes.put("config", this.allConfigPropertiesMap);
         attributes.put("headers", getHeaders());
 
-        return freeMarkerProvider.processTemplate(
+        String template = freeMarkerProvider.processTemplate(
                 attributes,
                 "debug-hostname-settings.ftl",
                 keycloakSession.theme().getTheme("base", Theme.Type.LOGIN)
         );
+
+        return Response.ok(template).type(MediaType.TEXT_HTML).cacheControl(CacheControlUtil.noCache()).build();
     }
 
     @GET
