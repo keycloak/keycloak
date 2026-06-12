@@ -70,12 +70,12 @@ The following table summarizes the permissions required for each type of SCIM op
 | Ability to list and filter group resources.
 
 | Access discovery endpoints
-| `view-realm`
-| Read access to `/ServiceProviderConfig`, `/ResourceTypes`, and `/Schemas`.
+| `query-users` or `query-groups`
+| Read access to `/ServiceProviderConfig`, `/ResourceTypes`, and `/Schemas`. Any role that implies `query-users` or `query-groups` (such as `view-users` or `manage-users`) also grants access.
 |===
 
-The minimum set of roles required for full access to the SCIM API is `manage-users` for user and group management
-operations, and `view-realm` for access to discovery endpoints.
+The minimum set of roles required for full access to the SCIM API is `manage-users`, which covers all user and group
+management operations as well as access to discovery endpoints.
 
 == Obtaining an access token
 
