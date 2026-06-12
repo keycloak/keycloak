@@ -56,14 +56,18 @@ public class DefaultKeycloakContextTest {
         factory.factoriesMap.put(HostnameProvider.class, map);
 
         // the following can be inferred from the full hostname, so an exception is not expected
-        KeycloakContext context = factory.create().getContext();
-        assertNotNull(context.getUri());
-        assertEquals("https://full.host.name/path/", context.getAuthServerUrl().toString());
-        assertEquals("/path/", context.getContextPath());
+        try (KeycloakSession keycloakSession = factory.create()) {
+            KeycloakContext context = keycloakSession.getContext();
+            assertNotNull(context.getUri());
+            assertEquals("https://full.host.name/path/", context.getAuthServerUrl().toString());
+            assertEquals("/path/", context.getContextPath());
 
-        assertEquals(0, context.getConnection().getLocalPort());
+            assertEquals(0, context.getConnection().getLocalPort());
 
-        assertThrows(ContextNotActiveException.class, () -> context.getHttpRequest());
+            assertThrows(ContextNotActiveException.class, () -> context.getHttpRequest());
+        } finally {
+            factory.close();
+        }
     }
 
 }

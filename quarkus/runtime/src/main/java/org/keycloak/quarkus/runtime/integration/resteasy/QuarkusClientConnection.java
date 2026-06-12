@@ -17,6 +17,7 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import org.keycloak.common.ClientConnection;
@@ -29,7 +30,7 @@ public final class QuarkusClientConnection implements ClientConnection {
     private final HttpServerRequest request;
 
     public QuarkusClientConnection(HttpServerRequest request) {
-        this.request = request;
+        this.request = Objects.requireNonNull(request);
     }
 
     @Override

@@ -45,19 +45,19 @@ public interface KeycloakContext {
      * @throws {@link ContextNotActiveException} if no request is active and a non-full URL hostname is configured
      */
     String getContextPath();
-    
+
      /**
      * @deprecated Use {@link #getHttpRequest()} to obtain the request headers.
      * @throws {@link ContextNotActiveException} when a request is active
      */
     @Deprecated
     HttpHeaders getRequestHeaders();
-    
+
 
     /**
      * Returns the URI assuming it is a frontend request. To resolve URI for a backend request use {@link #getUri(UrlType)}
      *
-     * @throws {@link ContextNotActiveException} if no request is active and a non-full URL hostname is configured
+     * method calls on the returned {@link KeycloakUriInfo} will throw a {@link ContextNotActiveException} if no request is active and a non-full URL hostname is configured
      */
     KeycloakUriInfo getUri();
 
@@ -69,7 +69,7 @@ public interface KeycloakContext {
      *
      * @param type the type of the request
      *
-     * @throws {@link ContextNotActiveException} if no request is active and a non-full URL hostname is configured
+     * method calls on the returned {@link KeycloakUriInfo} will throw a {@link ContextNotActiveException} if no request is active and any information needs resolved from a request URI.
      */
     KeycloakUriInfo getUri(UrlType type);
 
