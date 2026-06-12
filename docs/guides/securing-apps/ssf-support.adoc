@@ -26,7 +26,8 @@ https://www.rfc-editor.org/rfc/rfc8935[RFC 8935] (PUSH) and https://www.rfc-edit
 The {project_name} SSF Transmitter exposes four moving parts that an administrator works with:
 
 * *Realm-level transmitter capability* a per-realm switch that turns SSF on for a single realm. Discovery metadata
-  is published at `/realms/{realm}/.well-known/ssf-configuration`.
+  is published at `/.well-known/ssf-configuration/realms/{realm}` (and the alternative
+  `/realms/{realm}/.well-known/ssf-configuration`).
 * *SSF Receivers* regular OAuth/OIDC clients marked as SSF receivers. Each receiver describes how it wants
   events delivered (PUSH or POLL), which event types it supports, and which subjects it is interested in.
 * *Streams* one stream per receiver, representing the active subscription. The stream carries the delivery
@@ -99,15 +100,22 @@ With the feature flag on, individual realms must enable the transmitter via the 
 are produced, even though SSF is on at the server level.
 
 The setting is surfaced in the {project_name} admin console under *Realm settings* -> *SSF*. After enabling the
-transmitter, the realm's discovery metadata becomes available at:
+transmitter, the realm's discovery metadata becomes available at the host-rooted location defined by SSF 1.0 §7.2,
+formed by inserting `/.well-known/ssf-configuration` between the host and path components of the issuer:
+
+[source,bash]
+----
+GET /.well-known/ssf-configuration/realms/{realm}
+----
+
+This primary form requires {project_name} to be deployed at the web root (i.e. `KC_HTTP_RELATIVE_PATH` is empty),
+because the host-rooted `/.well-known` path must be served from the root of the host. The same document is also
+published at the OIDC-discovery-style alternative location, which works regardless of the deployment path:
 
 [source,bash]
 ----
 GET /realms/{realm}/.well-known/ssf-configuration
 ----
-
-The same document is also published at the RFC 8615 host-rooted form (`/.well-known/ssf-configuration/realms/{realm}`)
-when {project_name} is deployed at the web root (i.e. `KC_HTTP_RELATIVE_PATH` is empty).
 
 The realm-level SSF page also exposes transmitter-wide defaults that override the SPI defaults for this realm:
 signature algorithm, default user-subject format, `default_subjects` policy, minimum verification interval, and
