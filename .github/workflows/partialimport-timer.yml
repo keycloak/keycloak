@@ -1,0 +1,59 @@
+name: Time PartialImport DB Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      database:
+        description: 'Database profile to run against (e.g., postgres, mariadb, mysql)'
+        required: true
+        default: 'postgres'
+        type: choice
+        options:
+          - h2
+          - postgres
+          - mariadb
+          - mysql
+
+jobs:
+  time-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Keycloak
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21 (Required for modern Keycloak)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21' 
+          cache: 'maven'
+
+      - name: Fast Build Keycloak Core (No Tests)
+        # We must build the project first so the test module has the latest dependencies
+        run: ./mvnw clean install -DskipTests -DskipTestsuite -T 1C
+
+      - name: Run and Time partialimport Package
+        run: |
+          echo "Starting DB tests for org.keycloak.tests.admin.partialimport against ${{ github.event.inputs.database }}..."
+          
+          # 1. Start the clock
+          START_TIME=$(date +%s)
+          
+          # 2. Run the targeted Maven command
+          # -pl tests/base: targets the new test framework module mentioned in the issue
+          # -Dtest=...: restricts the run to ONLY the partialimport package
+          # -P<db>: activates Keycloak's specific database testing profile
+          ./mvnw test -pl tests/base -Dtest="org.keycloak.tests.admin.partialimport.**" -P${{ github.event.inputs.database }}
+          
+          # 3. Stop the clock
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          
+          # Convert to Minutes and Seconds for easier reading
+          MINUTES=$((DURATION / 60))
+          SECONDS=$((DURATION % 60))
+          
+          echo "=========================================================="
+          echo "TARGETED DB TESTS COMPLETED"
+          echo "Total time for 'partialimport' tests: $MINUTES minutes and $SECONDS seconds."
+          echo "=========================================================="
