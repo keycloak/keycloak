@@ -202,6 +202,19 @@ To configure the condition, create a client policy in the {project_name} Admin C
 
 With this configuration, when an MCP client sends an authorization request with a `client_id` value that is an `https` URL matching a trusted domain, {project_name} fetches the Client ID Metadata Document from that URL and uses the metadata to process the request.
 
+===== Client ID URL validation
+
+In accordance with the https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-01[OAuth Client ID Metadata Document] specification, {project_name} validates the `client_id` URL and rejects the authorization request if it does not meet the following requirements:
+
+* The URL MUST have an `https` scheme (unless *Allow http scheme* is enabled in the executor configuration).
+* The URL MUST contain a path component (e.g., `+https://example.com/mcp+` is valid, `+https://example.com+` without a path is not).
+* The URL MUST NOT contain single-dot or double-dot path segments (path traversal).
+* The URL MUST NOT contain a fragment component.
+* The URL MUST NOT contain a username or password.
+* The URL MUST NOT include a query string component.
+
+NOTE: The specification states that the `client_id` URL SHOULD NOT include a query string component. {project_name} enforces this as a hard requirement and rejects any `client_id` URL that contains a query string.
+
 ===== System-wide settings for the Client ID Metadata Document executor
 
 The `client-id-metadata-document` executor has the following system-wide settings that control caching and metadata size limits. These settings cannot be configured through the Admin Console. Instead, they are configured as SPI options when starting {project_name}.
