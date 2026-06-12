@@ -148,7 +148,35 @@ public abstract class SdJwtVerificationTest {
         assertEquals("GB", nationalities.get(3).asText());
         assertEquals("JP", nationalities.get(4).asText());
 
-        // Verify no {"...":"<digest>"} placeholder nodes remain (regression for index-shift bug)
+    }
+
+    @Test
+    public void testSdJwtVerification_NonContiguousDecoyArrayElementsAreFullyRemoved() throws Exception {
+        SdJwt sdJwt = exampleSdJwtWithNonContiguousDecoyArrayElements();
+
+        final JsonNode[] captured = new JsonNode[1];
+        sdJwt.getSdJwtVerificationContext().verifyIssuance(
+            defaultIssuerVerifyingKeys(),
+            optionalTimeClaimVerificationOpts().build(),
+            disclosedPayload -> captured[0] = disclosedPayload
+        );
+
+        JsonNode nationalities = captured[0].get("nationalities");
+        assertNotNull(nationalities);
+        assertTrue(nationalities.isArray());
+
+        // The original array has 5 elements: "US", "DE", "FR", "GB", "JP".
+        // Elements at indices 1 ("DE") and 4 ("JP") are selectively disclosable.
+        // Decoys are inserted at positions 1, 3, and 6, producing non-contiguous
+        // removal indices [1, 3, 6] in the JWT payload array.
+        // After verification: "DE" and "JP" are restored, all 3 decoys are removed.
+        assertEquals(5, nationalities.size());
+        assertEquals("US", nationalities.get(0).asText());
+        assertEquals("DE", nationalities.get(1).asText());
+        assertEquals("FR", nationalities.get(2).asText());
+        assertEquals("GB", nationalities.get(3).asText());
+        assertEquals("JP", nationalities.get(4).asText());
+
         for (int i = 0; i < nationalities.size(); i++) {
             JsonNode element = nationalities.get(i);
             if (element.isObject()) {
@@ -612,6 +640,36 @@ public abstract class SdJwtVerificationTest {
                 .withDecoyArrayElt("nationalities", 2, "Bx1RrdKdAa3q7BRm3q6Nsg")
                 .withDecoyArrayElt("nationalities", 3, "Hx9PVa5jMrcMrTQ0tOSKag")
                 .withDecoyArrayElt("nationalities", 4, "JnFa7K3MYgxSGN54xBVIpg")
+                .build();
+
+        return SdJwt.builder()
+                    .withIssuerSignedJwt(IssuerSignedJWT.builder()
+                                                        .withClaims(claimSet, disclosureSpec)
+                                                        .build())
+                    .withIssuerSigningContext(testSettings.issuerSigContext)
+                    .build();
+    }
+
+    private SdJwt exampleSdJwtWithNonContiguousDecoyArrayElements() throws JsonProcessingException {
+        ObjectNode claimSet = mapper.createObjectNode();
+        claimSet.put("sub", "6c5c0a49-b589-431d-bae7-219122a9ec2c");
+        claimSet.put("given_name", "John");
+        claimSet.put("family_name", "Doe");
+        claimSet.put("email", "john.doe@example.com");
+        claimSet.set("nationalities", mapper.readTree("[\"US\", \"DE\", \"FR\", \"GB\", \"JP\"]"));
+
+        // "DE" (index 1) and "JP" (index 4) are selectively disclosable.
+        // Decoys at positions 1, 3, and 6 produce non-contiguous removal indices
+        // in the resulting JWT payload array.
+        DisclosureSpec disclosureSpec = DisclosureSpec.builder()
+                .withUndisclosedClaim("given_name", "eluV5Og3gSNII8EYnsxA_A")
+                .withUndisclosedClaim("family_name", "6Ij7tM-a5iVPGboS5tmvVA")
+                .withUndisclosedClaim("email", "eI8ZWm9QnKPpNPeNenHdhQ")
+                .withUndisclosedArrayElt("nationalities", 1, "nPuoQnkRFq3BIeAm7AnXFA")
+                .withUndisclosedArrayElt("nationalities", 4, "Kx7fRvSOK3vMLSTkoeYDcg")
+                .withDecoyArrayElt("nationalities", 1, "Bx1RrdKdAa3q7BRm3q6Nsg")
+                .withDecoyArrayElt("nationalities", 3, "Hx9PVa5jMrcMrTQ0tOSKag")
+                .withDecoyArrayElt("nationalities", 6, "JnFa7K3MYgxSGN54xBVIpg")
                 .build();
 
         return SdJwt.builder()
