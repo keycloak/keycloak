@@ -33,6 +33,8 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
+import org.keycloak.connections.jpa.AsynchronousCommitAllowed;
+
 import org.hibernate.annotations.DynamicUpdate;
 
 @NamedQueries({
@@ -58,7 +60,7 @@ import org.hibernate.annotations.DynamicUpdate;
 @Entity
 @Table(name = "ROOT_AUTH_SESSION")
 @DynamicUpdate
-public class RootAuthenticationSessionEntity {
+public class RootAuthenticationSessionEntity implements AsynchronousCommitAllowed {
 
     @Id
     @Column(name = "ID", length = 36)
