@@ -1,6 +1,7 @@
 package org.keycloak.tests.oid4vc;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -8,6 +9,7 @@ import java.util.stream.Collectors;
 import org.keycloak.TokenVerifier;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.Proofs;
@@ -141,7 +143,10 @@ public class OID4VCINaturalPersonTest extends OID4VCIssuerTestBase {
                 assertEquals(issuer, vcJwt.getIssuer());
                 Object vc = vcJwt.getOtherClaims().get("vc");
                 VerifiableCredential credential = JsonSerialization.mapper.convertValue(vc, VerifiableCredential.class);
-                assertEquals(credScope.getSupportedCredentialTypes(), credential.getType());
+                List<String> expectedCredentialTypes = new ArrayList<>();
+                expectedCredentialTypes.add(CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE);
+                expectedCredentialTypes.addAll(credScope.getSupportedCredentialTypes());
+                assertEquals(expectedCredentialTypes, credential.getType());
                 assertEquals(URI.create(issuer), credential.getIssuer());
                 assertEquals(expUser + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
             }

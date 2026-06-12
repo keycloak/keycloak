@@ -13,11 +13,13 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.storage.UserStorageProvider;
 
 public class MigrateTo26_7_0 extends RealmMigration {
 
@@ -51,6 +53,8 @@ public class MigrateTo26_7_0 extends RealmMigration {
         updateAdminPermissionsSchema(session, realm);
         renameDynamicScopeAttributes(realm);
         migrateParameterizedScopeTypes(realm);
+        migrateLdapBinaryAttributeMappers(realm);
+        migrateLdapGroupAttributeMappers(realm);
     }
 
     private void migrateParameterizedScopeTypes(RealmModel realm) {
@@ -167,5 +171,30 @@ public class MigrateTo26_7_0 extends RealmMigration {
             clientScope.setAttribute(newName, value);
             clientScope.removeAttribute(oldName);
         }
+    }
+
+    private void migrateLdapBinaryAttributeMappers(RealmModel realm) {
+        realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName())
+                .filter(c -> LDAPConstants.LDAP_PROVIDER.equals(c.getProviderId()))
+                .flatMap(ldap -> realm.getComponentsStream(ldap.getId(), "org.keycloak.storage.ldap.mappers.LDAPStorageMapper"))
+                .filter(c -> "user-attribute-ldap-mapper".equals(c.getProviderId()))
+                .filter(c -> "true".equals(c.getConfig().getFirst("is.binary.attribute")))
+                .filter(c -> c.getConfig().getFirst("binary.attribute.decoder") == null)
+                .forEach(c -> {
+                    c.getConfig().putSingle("binary.attribute.decoder", "base64");
+                    realm.updateComponent(c);
+                });
+    }
+
+    private void migrateLdapGroupAttributeMappers(RealmModel realm) {
+        realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName())
+                .filter(c -> LDAPConstants.LDAP_PROVIDER.equals(c.getProviderId()))
+                .flatMap(ldap -> realm.getComponentsStream(ldap.getId(), "org.keycloak.storage.ldap.mappers.LDAPStorageMapper"))
+                .filter(c -> "group-ldap-mapper".equals(c.getProviderId()))
+                .filter(c -> c.getConfig().getFirst("decode.group.uuid.attribute") == null)
+                .forEach(c -> {
+                    c.getConfig().putSingle("decode.group.uuid.attribute", "false");
+                    realm.updateComponent(c);
+                });
     }
 }

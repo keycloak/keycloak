@@ -38,11 +38,12 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.AuthenticationSessionProviderFactory;
 
 import org.jboss.logging.Logger;
 
-public class JpaAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory<JpaAuthenticationSessionProvider>, EnvironmentDependentProviderFactory, ServerInfoAwareProviderFactory {
+public class JpaAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory<AuthenticationSessionProvider>, EnvironmentDependentProviderFactory, ServerInfoAwareProviderFactory {
 
     private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
     public static final String PROVIDER_ID = "jpa";

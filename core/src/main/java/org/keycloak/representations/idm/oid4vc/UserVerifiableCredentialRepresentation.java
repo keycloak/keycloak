@@ -8,9 +8,18 @@ import java.util.Objects;
 public class UserVerifiableCredentialRepresentation {
 
     private String credentialScopeName;
+    private String credentialConfigurationId;
     private String revision;
     private Long createdDate;
     private Map<String, List<String>> userAttributes;
+
+    public String getCredentialConfigurationId() {
+        return credentialConfigurationId;
+    }
+
+    public void setCredentialConfigurationId(String credentialConfigurationId) {
+        this.credentialConfigurationId = credentialConfigurationId;
+    }
 
     public String getCredentialScopeName() {
         return credentialScopeName;

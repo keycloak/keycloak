@@ -104,6 +104,8 @@ Grant Type::
 Identity Provider Alias::
     Condition that checks the Identity Provider that is involved in the client request. A list of IdP alias can be configured. The condition evaluates to true if one of them is associated to the request. It only applies to operations in which an IdP is involved (for example JWT Authorization grant).
 
+See the <<_client_policy_conditions_evaluation,dedicated section>> for the details on how are conditions evaluated.
+
 === Executor
 
 An executor specifies what action is executed on a client to which a policy is adopted. The executor executes one or several specified actions. For example,
@@ -181,6 +183,37 @@ The _Global Client Profiles_ are automatically available in each realm. However 
 configured by default. This means that the administrator is always required to create any client policy if they want for example the clients of his realm to be FAPI compliant. Global
 profiles cannot be updated, but the administrator can easily use them as a template and create their own profile if they want to do some slight changes in the global profile configurations.
 There is JSON Editor available in the Admin Console, which simplifies the creation of new profile based on some global profile.
+
+[[_client_policy_conditions_evaluation]]
+== Conditions evaluation
+
+Client policy is evaluated in a way that the configured conditions are evaluated during particular request. The evaluation of single condition can be finished in any of the following states:
+
+* **yes** - Condition was successfully evaluated. For example `client-scopes` condition is evaluated to `yes` when particular configured client scope is present in the particular request of particular client.
+
+* **no** - Condition was evaluated to false. For example `client-scopes` condition is evaluated to `no` when particular configured client scope is not present in the particular request of particular client.
+
+* **abstain** - Condition was not applicable to the particular request and hence evaluation of the condition was ignored (in the default mode). For example `identity-provider-condition`
+is evaluated just during requests when identity provider is involved (For example during link:{securing_apps_jwt_authorization_grant_link}[JWT Authorization grant requests]), but
+ignored in most of the other requests.
+
+In case that condition is configured with **Negative logic** switch enabled, the result is reversed. So when evaluation ended with `no`, it would be changed to `yes` or vice-versa.
+The condition evaluated to `abstain` is still considered as `abstain` when **Negative logic** is enabled.
+
+By default, the policy evaluation is satisfied when at least one condition evaluates to `yes` and none of the conditions evaluates to `no`. Conditions, which evaluate to
+`abstain` are ignored. However when you configure client policy with mode `STRICT`, then all conditions must evaluate to `yes` and none of the conditions can evaluate to `no` or `abstain`.
+When policy evaluation is satisfied, the client profiles attached to the particular client policy will be triggered. See the example in the
+link:{developerguide_link}#_identity-brokering-apis-client-policies[identity provider API section] on how the `STRICT` mode can be useful to enforce certain rules.
+
+WARNING: Some condition types are evaluated in all the request types, however some condition types are evaluated just during certain requests. For instance, some conditions
+might be evaluated just during registration or update of new client, when some other conditions are evaluated at runtime during specific requests. In some cases, it may
+not be obvious whether particular condition is evaluated or not. Once you setup client policies, it is highly recommended to test your scenarios to make sure that client policies
+enforcement rules work as expected.
+
+== Troubleshooting
+
+When checking evaluation of client policies, it is recommended to enable `TRACE` logging category `org.keycloak.services.clientpolicy` to have some more logging during
+evaluation of client policies. See the link:{loggingguide_link}[{loggingguide_name}] for the details on how to enable logging for the particular category.
 
 == Backward Compatibility
 

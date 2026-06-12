@@ -415,13 +415,26 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           stringify
         />
         {displayOnConsentScreen === "true" && (
-          <TextAreaControl
-            name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-              "attributes.consent.screen.text",
+          <>
+            {isParameterizedScopesEnabled && (
+              <DefaultSwitchControl
+                name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                  "attributes.always.display.consent",
+                )}
+                defaultValue="false"
+                label={t("alwaysDisplayConsent")}
+                labelIcon={t("alwaysDisplayConsentHelp")}
+                stringify
+              />
             )}
-            label={t("consentScreenText")}
-            labelIcon={t("consentScreenTextHelp")}
-          />
+            <TextAreaControl
+              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                "attributes.consent.screen.text",
+              )}
+              label={t("consentScreenText")}
+              labelIcon={t("consentScreenTextHelp")}
+            />
+          </>
         )}
         <DefaultSwitchControl
           name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
