@@ -333,8 +333,9 @@ POST /realms/{realm}/ssf/transmitter/subjects/add
 POST /realms/{realm}/ssf/transmitter/subjects/remove
 ----
 
-For privacy, both endpoints return `200 OK` even when the supplied subject does not resolve to an existing user, and
-they do not act as an existence oracle for the realm's user store.
+For privacy, both endpoints respond with their normal success status, `200 OK` for add and `204 No Content` for
+remove, even when the supplied subject does not resolve to an existing user, so they do not act as an existence
+oracle for the realm's user store.
 
 Administrators can manage subjects from the *Subjects* sub-tab in the admin console. The sub-tab also exposes
 an *ignore* operation that explicitly excludes a subject (distinct from removing them from the subscription
