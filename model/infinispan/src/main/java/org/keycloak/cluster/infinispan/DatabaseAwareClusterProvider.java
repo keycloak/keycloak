@@ -26,9 +26,11 @@ import java.util.concurrent.Future;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterEventStoreProvider;
 import org.keycloak.cluster.ClusterListener;
+import org.keycloak.cluster.ClusterLockStoreProvider;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.connections.infinispan.NodeInfo;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -47,11 +49,13 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
     private final KeycloakSessionFactory sessionFactory;
     private final NodeInfo nodeInfo;
     private final Marshaller marshaller;
+    private final KeycloakSession session;
 
-    public DatabaseAwareClusterProvider(ClusterProvider delegate, KeycloakSessionFactory sessionFactory,
+    public DatabaseAwareClusterProvider(ClusterProvider delegate, KeycloakSession session,
                                         NodeInfo nodeInfo, Marshaller marshaller) {
         this.delegate = delegate;
-        this.sessionFactory = sessionFactory;
+        this.sessionFactory = session.getKeycloakSessionFactory();
+        this.session = session;
         this.nodeInfo = nodeInfo;
         this.marshaller = marshaller;
     }
@@ -63,7 +67,18 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
 
     @Override
     public <T> ExecutionResult<T> executeIfNotExecuted(String taskKey, int taskTimeoutInSeconds, Callable<T> task) {
-        return delegate.executeIfNotExecuted(taskKey, taskTimeoutInSeconds, task);
+        ClusterLockStoreProvider lockStore = session.getProvider(ClusterLockStoreProvider.class);
+        if (lockStore != null && lockStore.tryLock(taskKey, taskTimeoutInSeconds)) {
+            try {
+                T result = task.call();
+                return ExecutionResult.executed(result);
+            } catch (RuntimeException re) {
+                throw re;
+            } catch (Exception e) {
+                throw new RuntimeException("Unexpected exception when executed task " + taskKey, e);
+            }
+        }
+        return ExecutionResult.notExecuted();
     }
 
     @Override

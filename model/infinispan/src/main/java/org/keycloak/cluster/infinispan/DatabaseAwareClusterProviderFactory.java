@@ -54,7 +54,7 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
 
     @Override
     public ClusterProvider create(KeycloakSession session) {
-        return new DatabaseAwareClusterProvider(super.create(session), session.getKeycloakSessionFactory(),
+        return new DatabaseAwareClusterProvider(super.create(session), session,
                 nodeInfo, protoStreamMarshaller);
     }
 

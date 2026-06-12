@@ -391,4 +391,15 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.7.0-cluster-lock">
+        <createTable tableName="CLUSTER_LOCK">
+            <column name="TASK_KEY" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_CLUSTER_LOCK"/>
+            </column>
+            <column name="EXPIRES_AT" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
 </databaseChangeLog>

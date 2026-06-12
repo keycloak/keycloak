@@ -76,6 +76,8 @@
 
         <!-- Cluster Events -->
         <class>org.keycloak.cluster.jpa.ClusterEventEntity</class>
+        <!-- Cluster Locks -->
+        <class>org.keycloak.cluster.jpa.ClusterLockEntity</class>
 
         <!-- Authorization -->
         <class>org.keycloak.authorization.jpa.entities.ResourceServerEntity</class>
