@@ -2,21 +2,13 @@ name: Time PartialImport DB Tests
 
 on:
   workflow_dispatch:
-    inputs:
-      database:
-        description: 'Database profile to run against (e.g., postgres, mariadb, mysql)'
-        required: true
-        default: 'postgres'
-        type: choice
-        options:
-          - h2
-          - postgres
-          - mariadb
-          - mysql
 
 jobs:
   time-package:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        database: [h2, postgres, mariadb, mysql]
     steps:
       - name: Checkout Keycloak
         uses: actions/checkout@v4
