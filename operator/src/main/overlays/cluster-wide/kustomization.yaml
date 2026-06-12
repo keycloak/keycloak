@@ -17,7 +17,7 @@ configMapGenerator:
         config.kubernetes.io/local-config: "true"
 
 replacements:
-    # - sourceValue: JOSDK_ALL_NAMESPACES - later versions of kustomize wukk support this
+    # - sourceValue: JOSDK_ALL_NAMESPACES - later versions of kustomize will support this so a ConfigMap won't be needed
   - source:
       kind: ConfigMap
       name: replacements-values
