@@ -1,4 +1,4 @@
-name: Time PartialImport DB Tests
+name: Time PartialImport DB Tests (All Databases)
 
 on:
   workflow_dispatch:
@@ -6,9 +6,6 @@ on:
 jobs:
   time-package:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        database: [h2, postgres, mariadb, mysql]
     steps:
       - name: Checkout Keycloak
         uses: actions/checkout@v4
@@ -17,35 +14,57 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '21' 
+          java-version: '21'
           cache: 'maven'
 
       - name: Fast Build Keycloak Core (No Tests)
         # We must build the project first so the test module has the latest dependencies
         run: ./mvnw clean install -DskipTests -DskipTestsuite -T 1C
 
-      - name: Run and Time partialimport Package
+      - name: Run and Time partialimport Package - All Databases Sequentially
         run: |
-          echo "Starting DB tests for org.keycloak.tests.admin.partialimport against ${{ github.event.inputs.database }}..."
-          
-          # 1. Start the clock
-          START_TIME=$(date +%s)
-          
-          # 2. Run the targeted Maven command
-          # -pl tests/base: targets the new test framework module mentioned in the issue
-          # -Dtest=...: restricts the run to ONLY the partialimport package
-          # -P<db>: activates Keycloak's specific database testing profile
-          ./mvnw test -pl tests/base -Dtest="org.keycloak.tests.admin.partialimport.**" -P${{ github.event.inputs.database }}
-          
-          # 3. Stop the clock
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          
-          # Convert to Minutes and Seconds for easier reading
-          MINUTES=$((DURATION / 60))
-          SECONDS=$((DURATION % 60))
-          
           echo "=========================================================="
-          echo "TARGETED DB TESTS COMPLETED"
-          echo "Total time for 'partialimport' tests: $MINUTES minutes and $SECONDS seconds."
+          echo "Running partialimport tests against all databases sequentially"
+          echo "=========================================================="
+          
+          # Array of databases to test
+          DATABASES=("h2" "postgres" "mariadb" "mysql")
+          
+          # Track overall start time
+          OVERALL_START=$(date +%s)
+          
+          # Run tests for each database sequentially
+          for DB in "${DATABASES[@]}"; do
+            echo ""
+            echo "=========================================================="
+            echo "Starting tests for database: $DB"
+            echo "=========================================================="
+            
+            # Start timing for this database
+            DB_START=$(date +%s)
+            
+            # Run the tests
+            ./mvnw test -pl tests/base -Dtest="org.keycloak.tests.admin.partialimport.**" -P$DB
+            
+            # Calculate duration for this database
+            DB_END=$(date +%s)
+            DB_DURATION=$((DB_END - DB_START))
+            DB_MINUTES=$((DB_DURATION / 60))
+            DB_SECONDS=$((DB_DURATION % 60))
+            
+            echo "=========================================================="
+            echo "COMPLETED: $DB - Time: $DB_MINUTES minutes and $DB_SECONDS seconds"
+            echo "=========================================================="
+          done
+          
+          # Calculate overall duration
+          OVERALL_END=$(date +%s)
+          OVERALL_DURATION=$((OVERALL_END - OVERALL_START))
+          OVERALL_MINUTES=$((OVERALL_DURATION / 60))
+          OVERALL_SECONDS=$((OVERALL_DURATION % 60))
+          
+          echo ""
+          echo "=========================================================="
+          echo "ALL DATABASE TESTS COMPLETED"
+          echo "Total time for all databases: $OVERALL_MINUTES minutes and $OVERALL_SECONDS seconds"
           echo "=========================================================="
