@@ -356,7 +356,7 @@ public class AbstractBaseTokenExchangeTest {
         oauth.fillLoginForm(user.getUsername(), password);
         consentPage.assertCurrent();
         consentPage.confirm();
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
         AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
         AccessToken token = verifyAccessToken(response.getAccessToken());

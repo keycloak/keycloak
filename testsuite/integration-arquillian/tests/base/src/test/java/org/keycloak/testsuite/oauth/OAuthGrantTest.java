@@ -106,7 +106,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
         grantPage.accept();
 
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
                 .clientId(THIRD_PARTY_APP)
@@ -458,7 +458,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
                 .clientId(THIRD_PARTY_APP)

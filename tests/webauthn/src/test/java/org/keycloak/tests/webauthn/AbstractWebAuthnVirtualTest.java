@@ -293,7 +293,7 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
         webAuthnLoginPage.clickAuthenticate();
 
         if (shouldSuccess) {
-            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+            Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
         } else {
             displayErrorMessageIfPresent();
         }

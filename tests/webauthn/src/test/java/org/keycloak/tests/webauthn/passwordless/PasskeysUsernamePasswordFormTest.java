@@ -86,7 +86,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
             // the user should be automatically logged in using the discoverable key
             oAuthClient.openLoginForm();
 
-            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+            Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
             EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)
@@ -143,7 +143,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
             // login OK now
             loginPage.fillLogin(USERNAME, PASSWORD);
             loginPage.submit();
-            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+            Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
             EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)
@@ -188,7 +188,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
             // force login using webauthn link
             webAuthnLoginPage.clickAuthenticate();
-            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+            Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
             EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)
@@ -215,7 +215,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
             // no modal was shown, force login using webauthn link
             webAuthnLoginPage.clickAuthenticate();
-            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+            Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
             EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)
@@ -262,7 +262,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
             // force login using webauthn link
             webAuthnLoginPage.clickAuthenticate();
-            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+            Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
             EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)
@@ -284,7 +284,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
             // force login using webauthn link
             webAuthnLoginPage.clickAuthenticate();
-            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+            Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
             EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)
@@ -316,7 +316,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
             // Login with password
             loginPage.fillLogin("test-user@localhost", PASSWORD);
             loginPage.submit();
-            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+            Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
             events.clear();
 
@@ -335,7 +335,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
             UserRepresentation testUser = AdminApiUtil.findUserByUsername(managedRealm.admin(), "test-user@localhost");
 
-            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+            Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
             EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)
@@ -380,7 +380,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
             // force login using webauthn link
             webAuthnLoginPage.clickAuthenticate();
-            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+            Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
             // Re-authentication now with prompt=login. Passkeys login should be possible.
             oAuthClient.loginForm()
@@ -403,7 +403,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
             // re-authenticate using passkey credential
             webAuthnLoginPage.clickAuthenticate();
-            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+            Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
             // Successful event - passkey login
             EventAssertion.assertSuccess(events.poll())
@@ -430,7 +430,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
             // re-authenticate using password now
             loginPage.fillPassword(PASSWORD);
             loginPage.submit();
-            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+            Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
             // Succesful event - password login
             EventAssertion.assertSuccess(events.poll())
@@ -476,7 +476,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
             // force login using webauthn link
             loginPage.rememberMe(true);
             webAuthnLoginPage.clickAuthenticate();
-            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+            Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
             EventAssertion loginEvent = EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)
@@ -498,7 +498,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
             // uncheck remember me and process normally
             loginPage.rememberMe(false);
             webAuthnLoginPage.clickAuthenticate();
-            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+            Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
             EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)

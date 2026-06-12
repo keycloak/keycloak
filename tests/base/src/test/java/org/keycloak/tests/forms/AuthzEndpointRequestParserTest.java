@@ -21,7 +21,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test for default configuration of OIDC login protocol factory
@@ -95,8 +94,7 @@ public class AuthzEndpointRequestParserTest {
         loginPage.fillLogin("test-user", "password");
         loginPage.submit();
 
-        assertTrue(driver.page().getPageSource().contains("Happy days"));
-        // String currentUrl = driver.getCurrentUrl();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         String state = oauth.parseLoginResponse().getState();
         Assertions.assertEquals(stateExpected, state);
 

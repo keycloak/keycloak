@@ -1,4 +1,3 @@
-AuthorizationCodeTest
 AuthorizationTest
 KcOidcBrokerTest
 LDAPUserLoginTest
