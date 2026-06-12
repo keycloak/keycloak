@@ -17,7 +17,6 @@ import jakarta.annotation.Nonnull;
 import jakarta.validation.groups.Default;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.admin.api.ListOptions;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -119,9 +118,9 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public Stream<BaseClientRepresentation> getClients(@Nonnull RealmModel realm,
-                                                       ClientProjectionOptions projectionOptions,
+                                                       @Nonnull ClientProjectionOptions projectionOptions,
                                                        ClientSearchOptions searchOptions,
-                                                       ClientSortAndSliceOptions sortAndSliceOptions) {
+                                                       @Nonnull ClientSortAndSliceOptions sortAndSliceOptions) {
         permissions.clients().requireList();
 
         // TODO: this check is weak
@@ -142,11 +141,8 @@ public class DefaultClientService implements ClientService {
         boolean useJpaPagination = canView && !hasQuery;
         int offset = sortAndSliceOptions.offset();
         int limit = sortAndSliceOptions.limit();
-        ClientSortAndSliceOptions sortOptions = sortAndSliceOptions != null
-                ? sortAndSliceOptions
-                : ClientSortAndSliceOptions.fromQuery(new ListOptions());
-        Comparator<BaseClientRepresentation> sortComparator = sortOptions.getSortComparator();
 
+        Comparator<BaseClientRepresentation> sortComparator = sortAndSliceOptions.getSortComparator();
         try {
             Stream<ClientModel> clientModels = useJpaPagination
                     ? realm.getClientsStream(offset, limit)
@@ -159,12 +155,11 @@ public class DefaultClientService implements ClientService {
                     .filter(Objects::nonNull);
 
             stream = applySearchFilter(stream, searchOptions);
-
+            return applyProjection(stream.sorted(sortComparator), projectionOptions);
             if (!useJpaPagination) {
                 stream = paginatedStream(stream, offset, limit);
             }
 
-            return applyProjection(stream, projectionOptions).sorted(sortComparator);
         } catch (ModelException e) {
             throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
         }

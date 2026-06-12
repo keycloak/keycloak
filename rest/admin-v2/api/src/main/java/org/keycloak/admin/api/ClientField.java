@@ -50,16 +50,6 @@ public enum ClientField {
         return Stream.of(values()).filter(field -> field.apiName.equals(apiName)).findFirst();
     }
 
-    public static Optional<String> validateApiName(String field) {
-        if (field == null) {
-            return Optional.empty();
-        }
-        if (fromApiName(field).isEmpty()) {
-            return Optional.of(String.format("%s is not a sortable field", field));
-        }
-        return Optional.empty();
-    }
-
     private static Comparator<BaseClientRepresentation> stringKey(Function<BaseClientRepresentation, String> getter) {
         return Comparator.comparing(getter, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
     }

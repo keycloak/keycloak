@@ -70,10 +70,9 @@ public interface ClientService extends Service {
         }
 
         private static ClientField parseSortField(String field) {
-            ClientField.validateApiName(field).ifPresent(msg -> {
-                throw new ServiceException(msg, Response.Status.BAD_REQUEST);
+            return ClientField.fromApiName(field).orElseThrow(() -> {
+                throw new ServiceException(String.format("%s is not a sortable field"),  Response.Status.BAD_REQUEST);
             });
-            return ClientField.fromApiName(field).orElseThrow();
         }
 
         private static boolean resolveSortOrder(SortOrder sortOrder) {
