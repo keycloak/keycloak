@@ -19,6 +19,7 @@ package org.keycloak.testsuite.model.parameters;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.keycloak.cluster.infinispan.DatabaseAwareClusterProviderFactory;
 import org.keycloak.cluster.infinispan.InfinispanClusterProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
@@ -94,6 +95,7 @@ public class Infinispan extends KeycloakModelParameters {
             .add(InfinispanCacheRealmProviderFactory.class)
             .add(InfinispanCacheStoreFactoryProviderFactory.class)
             .add(InfinispanClusterProviderFactory.class)
+            .add(DatabaseAwareClusterProviderFactory.class)
             .add(InfinispanConnectionProviderFactory.class)
             .add(InfinispanUserCacheProviderFactory.class)
             .add(InfinispanUserSessionProviderFactory.class)
