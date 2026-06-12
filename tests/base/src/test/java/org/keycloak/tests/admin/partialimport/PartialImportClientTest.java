@@ -120,6 +120,7 @@ public class PartialImportClientTest extends AbstractPartialImportTest {
     }
 
     @Test
+    @DatabaseTest
     public void testAddClientsOverwriteServiceAccountsWithNoServiceAccounts() {
         addClients(true);
         setOverwrite();
