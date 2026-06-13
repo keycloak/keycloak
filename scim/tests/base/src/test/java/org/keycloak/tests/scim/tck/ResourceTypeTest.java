@@ -11,8 +11,14 @@ import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.resourcetype.ResourceType;
 import org.keycloak.scim.resource.resourcetype.ResourceType.SchemaExtension;
 import org.keycloak.scim.resource.user.User;
+import org.keycloak.testframework.annotations.InjectHttpClient;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.server.KeycloakUrls;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.scim.resource.Scim.ENTERPRISE_USER_SCHEMA;
@@ -26,6 +32,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 @KeycloakIntegrationTest(config = ScimServerConfig.class)
 public class ResourceTypeTest extends AbstractScimTest {
 
+    @InjectHttpClient
+    HttpClient httpClient;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
+
     @Test
     public void testGet() {
         ListResponse<ResourceType> response = client.resourceTypes().getAll();
@@ -35,6 +47,16 @@ public class ResourceTypeTest extends AbstractScimTest {
 
         assertResourceType(response, User.class, "User Account", List.of(ENTERPRISE_USER_SCHEMA));
         assertResourceType(response, Group.class, "Group", List.of());
+    }
+
+    @Test
+    public void testUnauthenticatedRequest() throws Exception {
+        String url = keycloakUrls.getBaseUrl() + "/realms/" + realm.getName() + "/scim/v2/Users";
+        HttpGet request = new HttpGet(url);
+        request.setHeader("Accept", "application/scim+json");
+
+        HttpResponse response = httpClient.execute(request);
+        assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatusLine().getStatusCode());
     }
 
     @Test
