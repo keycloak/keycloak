@@ -22,12 +22,17 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -68,6 +73,8 @@ import io.fabric8.kubernetes.api.model.MicroTime;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionSpec;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.events.v1.Event;
@@ -84,6 +91,7 @@ import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.fabric8.kubernetes.client.dsl.Loggable;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.ResourceDefinitionContext;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.fabric8.openshift.api.model.monitoring.v1.ServiceMonitor;
 import io.javaoperatorsdk.operator.Operator;
@@ -173,7 +181,7 @@ public enum OperatorDeployment {local_apiserver,local,remote}
   private static List<HasMetadata> resources;
 
   @BeforeAll
-  public static void before(TestInfo testInfo) throws FileNotFoundException {
+  public static void before(TestInfo testInfo) throws IOException {
     configuration = CDI.current().select(QuarkusConfigurationService.class).get();
     operatorDeployment = ConfigProvider.getConfig().getOptionalValue(OPERATOR_DEPLOYMENT_PROP, OperatorDeployment.class).orElse(OperatorDeployment.local_apiserver);
     if (testInfo.getTestClass().map(m -> m.getAnnotation(DisabledIfApiServerTest.class)).isPresent()) {
@@ -285,17 +293,29 @@ public enum OperatorDeployment {local_apiserver,local,remote}
     }
   }
 
-  public static void createCRDs(KubernetesClient client) throws FileNotFoundException {
-    K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.k8s.keycloak.org-v1.yml"));
-    K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.k8s.keycloak.org-v1.yml"));
-    K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakoidcclients.k8s.keycloak.org-v1.yml"));
-    K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaksamlclients.k8s.keycloak.org-v1.yml"));
+  public static void createCRDs(KubernetesClient client) throws IOException {
+    Path folder = Paths.get(TARGET_KUBERNETES_GENERATED_YML_FOLDER);
+    List<ResourceDefinitionContext> rdcs = new ArrayList<>();
+    try (var files = Files.newDirectoryStream(folder, entry -> entry.getFileName().toString().endsWith("k8s.keycloak.org-v1.yml"))) {
+      for (Path file : files) {
+        K8sUtils.set(client, new FileInputStream(file.toFile()), obj -> {
+            if (obj instanceof CustomResourceDefinition crd) {
+                CustomResourceDefinitionSpec spec = crd.getSpec();
+                spec.getVersions().forEach(crdv -> {
+                    rdcs.add(new ResourceDefinitionContext.Builder().withGroup(spec.getGroup())
+                            .withKind(spec.getNames().getKind()).withNamespaced("Namespaced".equals(spec.getScope()))
+                            .withPlural(spec.getNames().getPlural()).withVersion(crdv.getName()).build());
+                });
+            }
+            return obj;
+        });
+      }
+    }
+
     K8sUtils.set(client, BaseOperatorTest.class.getResourceAsStream("/service-monitor-crds.yml"));
 
-    Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(Keycloak.class).list());
-    Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(KeycloakRealmImport.class).list());
-    Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(KeycloakOIDCClient.class).list());
-    Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(KeycloakSAMLClient.class).list());
+    rdcs.forEach(rdc -> Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS)
+            .untilAsserted(() -> client.genericKubernetesResources(rdc).list()));
     Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(ServiceMonitor.class).list());
   }
 

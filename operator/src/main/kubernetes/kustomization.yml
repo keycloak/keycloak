@@ -4,8 +4,7 @@ kind: Kustomization
 namespace: keycloak
 
 resources:
-  - keycloaks.k8s.keycloak.org-v1.yml
-  - keycloakrealmimports.k8s.keycloak.org-v1.yml
+  - ${crds}
   - kubernetes.yml
   
 transformers:
