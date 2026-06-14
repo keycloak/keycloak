@@ -61,7 +61,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenExchangeProvider;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
@@ -216,10 +215,10 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         return targetAudienceClients;
     }
 
-    protected abstract void validateAudience(AccessToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients);
+    protected abstract void validateAudience(JsonWebToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients);
 
     protected Response exchangeClientToClient(UserModel targetUser, UserSessionModel targetUserSession,
-            AccessToken token, boolean disallowOnHolderOfTokenMismatch) {
+            JsonWebToken token, boolean disallowOnHolderOfTokenMismatch) {
 
         String requestedTokenType = getRequestedTokenType();
         event.detail(Details.REQUESTED_TOKEN_TYPE, requestedTokenType);
@@ -241,7 +240,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
     }
 
-    protected void forbiddenIfClientIsNotWithinTokenAudience(AccessToken token) {
+    protected void forbiddenIfClientIsNotWithinTokenAudience(JsonWebToken token) {
         if (token != null && !token.hasAudience(client.getClientId())) {
             event.detail(Details.REASON, "client is not within the token audience");
             event.error(Errors.NOT_ALLOWED);
@@ -268,7 +267,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         return authSession;
     }
 
-    protected abstract String getRequestedScope(AccessToken token, List<ClientModel> targetAudienceClients);
+    protected abstract String getRequestedScope(JsonWebToken token, List<ClientModel> targetAudienceClients);
 
     protected void setClientToContext(List<ClientModel> targetAudienceClients) {
         // The client requesting exchange is set in the context
@@ -276,7 +275,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
     }
 
     protected abstract Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
-                                                  List<ClientModel> targetAudienceClients, String scope, AccessToken subjectToken);
+                                                  List<ClientModel> targetAudienceClients, String scope, JsonWebToken subjectToken);
 
     protected abstract Response exchangeClientToSAML2Client(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType, List<ClientModel> targetAudienceClients);
 
