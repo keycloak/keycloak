@@ -4,6 +4,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import static java.util.function.Predicate.not;
+
 /**
  * Compact descriptor for v2 CLI commands.
  * Produced at build time from OpenAPI spec, cached per-server at runtime.
@@ -123,7 +125,7 @@ public class KcAdmV2CommandDescriptor {
         }
 
         public boolean hasRequestBody() {
-            return (options != null && !options.isEmpty()) || hasVariants();
+            return (options != null && options.stream().anyMatch(not(OptionDescriptor::isQueryParam))) || hasVariants();
         }
 
         public boolean isHasResponseBody() {
@@ -215,6 +217,7 @@ public class KcAdmV2CommandDescriptor {
         private boolean array;
         private List<String> enumValues;
         private String parentFieldName;
+        private boolean queryParam;
 
         public String getName() {
             return name;
@@ -270,6 +273,14 @@ public class KcAdmV2CommandDescriptor {
 
         public void setParentFieldName(String parentFieldName) {
             this.parentFieldName = parentFieldName;
+        }
+
+        public boolean isQueryParam() {
+            return queryParam;
+        }
+
+        public void setQueryParam(boolean queryParam) {
+            this.queryParam = queryParam;
         }
     }
 }
