@@ -16,6 +16,7 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeR
     private String requestedTokenType;
     private String requestedSubject;
     private List<String> audience;
+    private String scope;
 
     TokenExchangeRequest(String subjectToken, String subjectTokenType, AbstractOAuthClient<?> client) {
         super(client);
@@ -53,6 +54,11 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeR
         return this;
     }
 
+    public TokenExchangeRequest scope(String scope) {
+        this.scope = scope;
+        return this;
+    }
+
     protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
 
@@ -71,7 +77,12 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeR
             audience.forEach(a -> parameter(OAuth2Constants.AUDIENCE, a));
         }
 
-        parameter(OAuth2Constants.SCOPE, client.config().getScope(false));
+        if (scope != null) {
+            parameter(OAuth2Constants.SCOPE, scope);
+        } else {
+            parameter(OAuth2Constants.SCOPE, client.config().getScope(false));
+        }
+        
     }
 
     @Override
