@@ -117,6 +117,7 @@ import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+import org.keycloak.representations.IDJAG;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.LogoutToken;
@@ -1197,6 +1198,7 @@ public class TokenManager {
         AccessToken accessToken;
         RefreshToken refreshToken;
         IDToken idToken;
+        IDJAG idjag;
         String responseTokenType;
 
         boolean generateAccessTokenHash = false;
@@ -1229,6 +1231,10 @@ public class TokenManager {
 
         public IDToken getIdToken() {
             return idToken;
+        }
+
+        public IDJAG getIdjag() {
+            return idjag;
         }
 
         public ClientSessionContext getClientSessionCtx() {
@@ -1342,6 +1348,41 @@ public class TokenManager {
                     refreshToken.setConfirmation(cnf);
                 }
             }
+        }
+
+        public AccessTokenResponseBuilder generateIDJag() {
+            UserModel user = userSession.getUser();
+            idjag = new IDJAG();
+            idjag.id(SecretGenerator.getInstance().generateSecureID());
+            idjag.type(TokenUtil.TOKEN_TYPE_IDJAG);
+            idjag.subject(user.getId());
+            idjag.issuedNow();
+            idjag.issuer(clientSessionCtx.getClientSession().getNote(OIDCLoginProtocol.ISSUER));
+            idjag.setNonce(clientSessionCtx.getAttribute(OIDCLoginProtocol.NONCE_PARAM, String.class));
+            idjag.setSessionId(userSession.getId());
+            idjag.exp(tokenManager.getTokenExpiration(realm, client, userSession, clientSessionCtx.getClientSession(), false));
+
+            // Protocol mapper is supposed to set this in case "step_up_authentication" feature enabled
+            if (!Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
+                String acr = AuthenticationManager.isSSOAuthentication(clientSessionCtx.getClientSession()) ? "0" : "1";
+                idjag.setAcr(acr);
+            }
+
+            idjag = transformIDJag(session, idjag, userSession, clientSessionCtx);
+
+            accessToken = (AccessToken)idjag;
+            responseTokenType = TokenUtil.TOKEN_TYPE_NA;
+            return this;
+        }
+
+        private IDJAG transformIDJag(KeycloakSession session, IDJAG token,
+                                    UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+            return ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof OIDCIDTokenMapper)
+                .collect(new TokenCollector<IDJAG>(token) {
+                    protected IDJAG applyMapper(IDJAG token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper) {
+                        return (IDJAG) ((OIDCIDTokenMapper) mapper.getValue()).transformIDToken(token, mapper.getKey(), session, userSession, clientSessionCtx);
+                    }
+                });
         }
 
         public void createOrUpdateOfflineSession() {

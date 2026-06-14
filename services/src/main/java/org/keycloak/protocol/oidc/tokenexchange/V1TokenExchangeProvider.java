@@ -53,6 +53,7 @@ import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.cors.Cors;
@@ -218,7 +219,7 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
     }
 
     @Override
-    protected void validateAudience(AccessToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients) {
+    protected void validateAudience(JsonWebToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients) {
         ClientModel tokenHolder = token == null ? null : realm.getClientByClientId(token.getIssuedFor());
         for (ClientModel targetClient : targetAudienceClients) {
             if (targetClient.isConsentRequired()) {
@@ -247,11 +248,21 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
                     // public clients can not exchange tokens from other client
                     forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
                 }
-                if (!AdminPermissions.management(session, realm).clients().canExchangeTo(client, targetClient, token)) {
-                    event.detail(Details.REASON, "client not allowed to exchange to audience");
-                    event.detail(Details.AUDIENCE, targetClient.getClientId());
-                    event.error(Errors.NOT_ALLOWED);
-                    throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
+
+                if (token == null || token instanceof AccessToken) {
+                    if (!AdminPermissions.management(session, realm).clients().canExchangeTo(client, targetClient, (AccessToken)token)) {
+                        event.detail(Details.REASON, "client not allowed to exchange to audience");
+                        event.detail(Details.AUDIENCE, targetClient.getClientId());
+                        event.error(Errors.NOT_ALLOWED);
+                        throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
+                    }
+                } else {
+                    throw new CorsErrorResponseException(
+                        cors,
+                        OAuthErrorException.INVALID_GRANT, 
+                        "Invalid token type. An Access Token is required.", 
+                        Response.Status.BAD_REQUEST
+                    );
                 }
             }
         }
@@ -263,7 +274,7 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
     }
 
     @Override
-    protected String getRequestedScope(AccessToken token, List<ClientModel> targetAudienceClients) {
+    protected String getRequestedScope(JsonWebToken token, List<ClientModel> targetAudienceClients) {
         ClientModel targetClient = targetAudienceClients.get(0);
         // TODO Remove once more audiences are properly supported
         if (targetAudienceClients.size() > 1) {
@@ -271,16 +282,16 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
         }
 
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
-        if (token != null && token.getScope() != null && scope == null) {
-            scope = token.getScope();
+        if (token != null && token instanceof AccessToken && ((AccessToken)token).getScope() != null && scope == null) {
+            scope = ((AccessToken)token).getScope();
 
             Set<String> targetClientScopes = new HashSet<String>();
             targetClientScopes.addAll(targetClient.getClientScopes(true).keySet());
             targetClientScopes.addAll(targetClient.getClientScopes(false).keySet());
             //from return scope remove scopes that are not default or optional scopes for targetClient
             scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
-        } else if (token != null && token.getScope() != null) {
-            String subjectTokenScopes = token.getScope();
+        } else if (token != null && token instanceof AccessToken && ((AccessToken)token).getScope() != null) {
+            String subjectTokenScopes = ((AccessToken)token).getScope();
             if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
                 Set<String> subjectTokenScopesSet = Arrays.stream(subjectTokenScopes.split(" ")).map(s -> s.split(":")[0]).collect(Collectors.toSet());
                 scope = Arrays.stream(scope.split(" ")).filter(sc -> subjectTokenScopesSet.contains(sc.split(":")[0])).collect(Collectors.joining(" "));
@@ -311,7 +322,7 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
 
     @Override
     protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
-                                                  List<ClientModel> targetAudienceClients, String scope, AccessToken subjectToken) {
+                                                  List<ClientModel> targetAudienceClients, String scope, JsonWebToken subjectToken) {
         ClientModel targetClient = getTargetClient(targetAudienceClients);
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
         AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, targetClient, scope);
