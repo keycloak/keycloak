@@ -61,6 +61,8 @@ public class TokenUtil {
     public static final String TOKEN_TYPE_OFFLINE = "Offline";
 
     public static final String TOKEN_TYPE_LOGOUT = "Logout";
+    
+    public static final String TOKEN_TYPE_IDJAG = "IDJAG";
 
     public static final String TOKEN_BACKCHANNEL_LOGOUT_EVENT = "http://schemas.openid.net/event/backchannel-logout";
     
