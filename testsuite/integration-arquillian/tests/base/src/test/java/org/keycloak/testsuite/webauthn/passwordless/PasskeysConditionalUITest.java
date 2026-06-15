@@ -68,10 +68,10 @@ public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
-    public void successLoginWithDiscoverableKey() throws IOException {
+    public void successLoginWithDiscoverableCredential() throws IOException {
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
-        // set passwordless policy for discoverable keys
+        // set passwordless policy for discoverable credentials
         try (Closeable c = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicyRpEntityName("localhost")
                 .setWebAuthnPolicyRequireResidentKey(Constants.WEBAUTHN_POLICY_OPTION_YES)
@@ -89,7 +89,7 @@ public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
 
             events.clear();
 
-            // the user should be automatically logged in using the discoverable key
+            // the user should be automatically logged in using the discoverable credential
             oauth.openLoginForm();
             WaitUtils.waitForPageToLoad();
             appPage.assertCurrent();
@@ -102,7 +102,7 @@ public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
-    public void failureWithNonDiscoverableKey() throws IOException {
+    public void failureWithNonDiscoverableCredential() throws IOException {
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
         // set passwordless policy not specified, key will not be discoverable

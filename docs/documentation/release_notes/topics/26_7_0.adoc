@@ -43,9 +43,9 @@ When a user wants to authenticate with Passkeys, {project_name} shows the authen
 As part of this change, the passkey authentication page in the login theme and the signing-in page in the account console were updated.
 If you use a custom theme that overrides these pages, verify that your customizations work as expected with this release.
 
-== New `Discoverable key` option in the WebAuthn policies
+== New `Discoverable credential` option in the WebAuthn policies
 
-The WebAuthn Policy and WebAuthn Passwordless Policy provide a new `Discoverable key` option that follows the current WebAuthn specification.
+The WebAuthn Policy and WebAuthn Passwordless Policy provide a new `Discoverable credential` option that follows the current WebAuthn specification.
 In addition to requiring or discouraging discoverable credentials (passkeys), it supports the `preferred` value, which was not possible with the previous Yes/No option.
 The new option is sent to the browser as `authenticatorSelection.residentKey` when registering WebAuthn credentials, which improves compatibility with passkey providers.
 The previous `Require Discoverable Credential` option is now deprecated, and it is planned to be removed in future.
