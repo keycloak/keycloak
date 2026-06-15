@@ -41,6 +41,8 @@ import static org.keycloak.utils.StringUtil.isBlank;
  * @version $Revision: 1 $
  */
 public class TrustedDeviceCredentialModel extends CredentialModel {
+    private static final Logger logger = Logger.getLogger(TrustedDeviceCredentialModel.class);
+
     public static final String TYPE = "trusted-device";
     private static final String SECRET_HASH_ALGORITHM = JavaAlgorithm.SHA512;
 
@@ -104,7 +106,6 @@ public class TrustedDeviceCredentialModel extends CredentialModel {
     }
 
     public boolean verifySecret(String rawInputSecret) {
-        Logger logger = Logger.getLogger(TrustedDeviceCredentialModel.class);
         String savedSecretHash = getSecretData();
         if (savedSecretHash == null || savedSecretHash.isBlank()) {
             logger.warn("No saved Trusted Device secret hash found");
