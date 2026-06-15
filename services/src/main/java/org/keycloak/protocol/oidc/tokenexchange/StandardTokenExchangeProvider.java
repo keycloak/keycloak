@@ -211,7 +211,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
     }
 
     protected void validateConsents(UserModel targetUser, String scope) {
-        if (!TokenManager.verifyConsentStillAvailable(session, targetUser, client, scope)) {
+        if (!TokenManager.verifyConsentStillAvailable(session, targetUser, client, null, scope)) {
             event.detail(Details.REASON, "Missing consents for Token Exchange in client " + client.getClientId());
             event.error(Errors.CONSENT_DENIED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE,

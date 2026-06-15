@@ -29,6 +29,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
+import org.keycloak.connections.jpa.AsynchronousCommitAllowed;
 import org.keycloak.storage.jpa.KeyUtils;
 
 import org.hibernate.annotations.DynamicUpdate;
@@ -119,7 +120,14 @@ import org.hibernate.annotations.DynamicUpdate;
 @Entity
 @DynamicUpdate
 @IdClass(PersistentUserSessionEntity.Key.class)
-public class PersistentUserSessionEntity {
+public class PersistentUserSessionEntity implements AsynchronousCommitAllowed {
+
+    @Override
+    public boolean isAsyncCommitAllowed(EntityOperationType operationType) {
+        // If a session is removed via a user logout,
+        // this needs to be durable to prevent a security relevant timing attack
+        return operationType != EntityOperationType.DELETE;
+    }
 
     @Id
     @Column(name="USER_SESSION_ID", length = 36)

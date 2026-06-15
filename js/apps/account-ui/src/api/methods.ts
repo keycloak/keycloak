@@ -91,7 +91,9 @@ export async function deleteConsent(
   context: KeycloakContext<BaseEnvironment>,
   id: string,
 ) {
-  return request(`/applications/${id}/consent`, context, { method: "DELETE" });
+  return request(`/applications/${encodeURIComponent(id)}/consent`, context, {
+    method: "DELETE",
+  });
 }
 
 export async function deleteSession(

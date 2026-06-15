@@ -3,6 +3,7 @@ package org.keycloak.models.workflow;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -86,7 +87,19 @@ public final class WorkflowScheduleEventListener implements ClusterListener, Pro
         if (clusterProvider != null) {
             WorkflowScheduleClusterEvent event = WorkflowScheduleClusterEvent.create(
                     realmId, workflowId, removed, intervalSecs, lastScheduleRun);
-            clusterProvider.notify(WORKFLOW_SCHEDULE_TASK_KEY, event, true);
+            // Only run the notification after the transaction is complete to ensure that we'll load the latest data on each node,
+            // and not get into a deadlock if the database is using a serializable transaction isolation level.
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    clusterProvider.notify(WORKFLOW_SCHEDULE_TASK_KEY, event, true);
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    // NOOP
+                }
+            });
         }
     }
 }

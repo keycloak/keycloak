@@ -1,0 +1,145 @@
+[id="understanding-scim-endpoints_{context}"]
+
+[[_understanding_scim_endpoints_]]
+= Understanding the SCIM endpoints
+[role="_abstract"]
+
+All SCIM endpoints use the `application/scim+json` content type for both requests and responses, as specified by RFC 7644.
+The `application/json` content type is also accepted for requests.
+
+== Available endpoints
+
+The following table summarizes all available SCIM endpoints:
+
+[cols="2,1,3",options="header"]
+|===
+| Endpoint | Methods | Description
+
+| `/Users`
+| GET, POST
+| List all users or create a new user.
+
+| `/Users/{id}`
+| GET, PUT, PATCH, DELETE
+| Retrieve, replace, partially update, or delete a specific user.
+
+| `/Users/.search`
+| POST
+| Search users using a request body (useful for complex or long filter expressions).
+
+| `/Groups`
+| GET, POST
+| List all groups or create a new group.
+
+| `/Groups/{id}`
+| GET, PUT, PATCH, DELETE
+| Retrieve, replace, partially update, or delete a specific group.
+
+| `/Groups/.search`
+| POST
+| Search groups using a request body.
+
+| `/ServiceProviderConfig`
+| GET
+| Retrieve the SCIM capabilities supported by the server.
+
+| `/ResourceTypes`
+| GET
+| List the resource types (User, Group) available on the server.
+
+| `/Schemas`
+| GET
+| List all SCIM schemas supported by the server, including extensions.
+|===
+
+== HTTP methods
+
+The SCIM API supports the following HTTP methods for resource management:
+
+[cols="1,1,2",options="header"]
+|===
+| Method | Status Code | Description
+
+| POST
+| 201 Created
+| Create a new resource.
+
+| GET
+| 200 OK
+| Retrieve a single resource by ID, or list/search resources.
+
+| PUT
+| 200 OK
+| Replace an existing resource entirely.
+
+| PATCH
+| 200 OK
+| Partially modify a resource using add, replace, or remove operations.
+
+| DELETE
+| 204 No Content
+| Delete a resource.
+|===
+
+== Query parameters
+
+The following query parameters can be used with GET requests to control the response. The same parameters
+are also accepted in the body of `POST /.search` requests.
+
+[cols="1,1,3",options="header"]
+|===
+| Parameter | Type | Description
+
+| `filter`
+| String
+| A SCIM filter expression to search for resources. See <<_scim_filtering_resources_,Filtering resources>>.
+
+| `startIndex`
+| Integer
+| The 1-based index of the first result to return. Defaults to 1.
+
+| `count`
+| Integer
+| The maximum number of results to return per page.
+
+| `attributes`
+| String
+| A comma-separated list of attribute names to include in the response. When specified, only the listed attributes (plus `id` and `schemas`, which are always returned) are included.
+
+| `excludedAttributes`
+| String
+| A comma-separated list of attribute names to exclude from the response. Applied after the `attributes` filter. The `id` attribute cannot be excluded.
+
+| `sortBy`
+| String
+| The attribute name to sort results by. See note below.
+
+| `sortOrder`
+| String
+| The sort order: `ascending` (default) or `descending`. See note below.
+|===
+
+NOTE: While the `sortBy` and `sortOrder` parameters are accepted by the API, custom sorting is not currently
+supported. Resources are returned in the default order used by the underlying store, consistent with the
+behavior of the {project_name} Admin REST API.
+
+== Resource metadata
+
+Every SCIM resource returned by the API includes a `meta` object with the following attributes:
+
+[cols="1,3",options="header"]
+|===
+| Attribute | Description
+
+| `resourceType`
+| The type of the resource (for example, `User` or `Group`).
+
+| `created`
+| The timestamp when the resource was created, in ISO 8601 format.
+
+| `lastModified`
+| The timestamp when the resource was last modified, in ISO 8601 format.
+
+| `location`
+| The full URI of the resource (for example, `\http://localhost:8080/realms/myrealm/scim/v2/Users/{id}`).
+|===

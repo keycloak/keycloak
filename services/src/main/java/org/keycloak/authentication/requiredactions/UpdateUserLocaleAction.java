@@ -4,11 +4,16 @@ import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.locale.LocaleUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserModel;
+import org.keycloak.storage.UserStorageProvider;
 
 public class UpdateUserLocaleAction implements RequiredActionProvider, RequiredActionFactory {
 
@@ -30,10 +35,30 @@ public class UpdateUserLocaleAction implements RequiredActionProvider, RequiredA
                 LocaleUpdaterProvider updater = context.getSession().getProvider(LocaleUpdaterProvider.class);
                 updater.updateLocaleCookie(userLocale);
             } else {
-                LocaleUpdaterProvider updater = context.getSession().getProvider(LocaleUpdaterProvider.class);
-                updater.expireLocaleCookie();
+                CookieProvider cookies = context.getSession().getProvider(CookieProvider.class);
+                String cookieLocale = cookies.get(CookieType.LOCALE);
+                if (cookieLocale != null && !cookieLocale.isEmpty() && isReadOnlyFederatedUser(context)) {
+                    context.getSession().getProvider(LocaleUpdaterProvider.class).updateLocaleCookie(cookieLocale);
+                } else {
+                    context.getSession().getProvider(LocaleUpdaterProvider.class).expireLocaleCookie();
+                }
             }
         }
+    }
+
+    private boolean isReadOnlyFederatedUser(RequiredActionContext context) {
+        String federationLink = context.getUser().getFederationLink();
+        if (federationLink == null) {
+            return false;
+        }
+
+        ComponentModel component = context.getRealm().getComponent(federationLink);
+        if (component == null) {
+            return false;
+        }
+
+        String editMode = component.getConfig().getFirst(LDAPConstants.EDIT_MODE);
+        return UserStorageProvider.EditMode.READ_ONLY.toString().equals(editMode);
     }
 
     @Override

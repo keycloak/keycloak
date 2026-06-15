@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
 import org.keycloak.scim.protocol.ForbiddenException;
@@ -18,6 +17,8 @@ import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.schema.Schema;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProviderFactory;
+
+import static org.keycloak.scim.resource.Scim.hasDiscoveryEndpointPermission;
 
 public class ResourceTypeProvider implements ScimResourceTypeProvider<ResourceType> {
 
@@ -54,13 +55,13 @@ public class ResourceTypeProvider implements ScimResourceTypeProvider<ResourceTy
 
     @Override
     public Stream<ResourceType> getAll(SearchRequest searchRequest) {
-        if (!session.getContext().getPermissions().hasPermission(AdminPermissionsSchema.REALMS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW)) {
-            throw new ForbiddenException();
+        if (hasDiscoveryEndpointPermission(session)) {
+            return session.getKeycloakSessionFactory().getProviderFactoriesStream(ScimResourceTypeProvider.class)
+                    .map(ScimResourceTypeProviderFactory.class::cast)
+                    .map(this::toRepresentation)
+                    .filter(Objects::nonNull);
         }
-        return session.getKeycloakSessionFactory().getProviderFactoriesStream(ScimResourceTypeProvider.class)
-                .map(ScimResourceTypeProviderFactory.class::cast)
-                .map(this::toRepresentation)
-                .filter(Objects::nonNull);
+        throw new ForbiddenException();
     }
 
     @Override

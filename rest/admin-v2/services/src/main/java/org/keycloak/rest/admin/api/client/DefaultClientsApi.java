@@ -6,9 +6,12 @@ import jakarta.annotation.Nonnull;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.api.ListOptions;
@@ -39,6 +42,8 @@ public class DefaultClientsApi implements ClientsApi {
         this.clientService = new DefaultClientService(session, realm, permissions);
     }
     
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
     @Override
     public Stream<BaseClientRepresentation> getClients(ListOptions params) {
         try {

@@ -291,6 +291,7 @@ public class RoleContainerResource extends RoleResource {
             throw ErrorResponse.error(roleName + " is default role of the realm and cannot be removed.",
                     Response.Status.BAD_REQUEST);
         }
+        auth.roles().requireManage(role);
         RoleRepresentation roleRepresentation = new RoleRepresentation();
         roleRepresentation.setId(role.getId());
         roleRepresentation.setName(role.getName());
@@ -332,6 +333,7 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
+        auth.roles().requireManage(role);
         try {
             updateRole(rep, role, realm, session);
 
