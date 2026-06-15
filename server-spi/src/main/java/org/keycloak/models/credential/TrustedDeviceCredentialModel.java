@@ -119,7 +119,7 @@ public class TrustedDeviceCredentialModel extends CredentialModel {
 
         try {
             byte[] hashedInputBackupCode = hashSecret(rawInputSecret, hashAlgorithm);
-            byte[] savedCode = Base64.getMimeDecoder().decode(savedSecretHash);
+            byte[] savedCode = Base64.getDecoder().decode(savedSecretHash);
             return MessageDigest.isEqual(hashedInputBackupCode, savedCode);
         } catch (IllegalArgumentException iae) {
             logger.warnf("Error when validating Trusted Device secret", iae);
