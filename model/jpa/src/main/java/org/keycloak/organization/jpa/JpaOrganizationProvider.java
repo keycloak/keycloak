@@ -968,16 +968,10 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
     @Override
     public boolean hasOrganizations() {
-        TypedQuery<OrganizationEntity> query;
-        query = em.createNamedQuery("getByRealm", OrganizationEntity.class);
+        TypedQuery<String> query = em.createNamedQuery("existsByRealm", String.class);
         query.setParameter("realmId", getRealm().getId());
         query.setMaxResults(1);
 
-        try {
-            OrganizationEntity singleResult = query.getSingleResult();
-            return singleResult != null;
-        } catch (NoResultException nre) {
-            return false;
-        }
+       return !query.getResultList().isEmpty();
     }
 }
