@@ -150,6 +150,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         String attestationConveyancePreference = policy.getAttestationConveyancePreference();
         String authenticatorAttachment = policy.getAuthenticatorAttachment();
         String requireResidentKey = policy.getRequireResidentKey();
+        String residentKey = policy.getResidentKey();
         String userVerificationRequirement = policy.getUserVerificationRequirement();
         long createTimeout = policy.getCreateTimeout();
         boolean avoidSameAuthenticatorRegister = policy.isAvoidSameAuthenticatorRegister();
@@ -179,6 +180,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 .setAttribute(WebAuthnConstants.ATTESTATION_CONVEYANCE_PREFERENCE, attestationConveyancePreference)
                 .setAttribute(WebAuthnConstants.AUTHENTICATOR_ATTACHMENT, authenticatorAttachment)
                 .setAttribute(WebAuthnConstants.REQUIRE_RESIDENT_KEY, requireResidentKey)
+                .setAttribute(WebAuthnConstants.RESIDENT_KEY, residentKey)
                 .setAttribute(WebAuthnConstants.USER_VERIFICATION_REQUIREMENT, userVerificationRequirement)
                 .setAttribute(WebAuthnConstants.CREATE_TIMEOUT, createTimeout)
                 .setAttribute(WebAuthnConstants.EXCLUDE_CREDENTIAL_IDS, excludeCredentialIds)
