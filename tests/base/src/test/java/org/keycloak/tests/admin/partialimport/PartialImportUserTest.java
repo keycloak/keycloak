@@ -188,7 +188,6 @@ public class PartialImportUserTest extends AbstractPartialImportTest {
     }
 
     @Test
-    @DatabaseTest
     public void testAddUsersOverwrite() {
         addUsers();
         testOverwrite();

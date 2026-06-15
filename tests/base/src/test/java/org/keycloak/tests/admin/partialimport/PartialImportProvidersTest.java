@@ -88,7 +88,6 @@ public class PartialImportProvidersTest extends AbstractPartialImportTest {
     }
 
     @Test
-    @DatabaseTest
     public void testAddProvidersOverwrite() {
         addProviders();
         testOverwrite();

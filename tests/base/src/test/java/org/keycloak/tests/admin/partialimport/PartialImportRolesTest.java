@@ -79,14 +79,12 @@ public class PartialImportRolesTest extends AbstractPartialImportTest {
     }
 
     @Test
-    @DatabaseTest
     public void testAddRealmRolesOverwrite() {
         addRealmRoles();
         testOverwrite();
     }
 
     @Test
-    @DatabaseTest
     public void testAddClientRolesOverwrite() {
         addClientRoles();
         testOverwrite();
