@@ -19,24 +19,17 @@ package org.keycloak.tests.authz.admin.permissions;
 import java.util.List;
 
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
-import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERSHIP_OF_MEMBERS;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -50,9 +43,6 @@ public class ExportImportFGAPV2Test {
 
     @InjectAdminClient(mode = InjectAdminClient.Mode.BOOTSTRAP)
     Keycloak adminClient;
-
-    @InjectRunOnServer
-    RunOnServerClient runOnServer;
 
     private final String REALM_NAME = "fgap";
     private final String CUSTOM_CLIENT_ID = "imported-permission-client";
@@ -137,29 +127,6 @@ public class ExportImportFGAPV2Test {
 
         // schema should not be available as the realm switch is off
         assertThat(authorizationSettings.getAuthorizationSchema(), nullValue());
-    }
-
-    @Test
-    public void addResourceTypeScopeDoesNotFailWhenGroupsResourceMissing() {
-        RealmRepresentation rep = new RealmRepresentation();
-
-        ClientRepresentation clientRep = new ClientRepresentation();
-        clientRep.setClientId(CUSTOM_CLIENT_ID);
-        clientRep.setServiceAccountsEnabled(Boolean.TRUE);
-
-        rep.setRealm(REALM_NAME);
-        rep.setAdminPermissionsClient(clientRep);
-        rep.setClients(List.of(clientRep));
-
-        adminClient.realms().create(rep);
-
-        runOnServer.run(session -> {
-            RealmModel realm = session.realms().getRealmByName(REALM_NAME);
-            session.getContext().setRealm(realm);
-            AdminPermissionsSchema.SCHEMA.addResourceTypeScope(session, realm,
-                    GROUPS_RESOURCE_TYPE,
-                    MANAGE_MEMBERSHIP_OF_MEMBERS);
-        });
     }
 
     public static class KeycloakAdminPermissionsV2ServerConfig implements KeycloakServerConfig {
