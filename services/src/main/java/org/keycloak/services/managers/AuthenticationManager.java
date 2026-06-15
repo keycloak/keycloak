@@ -401,8 +401,13 @@ public class AuthenticationManager {
             authSessionId = rootLogoutSession.getId();
             browserCookiePresent = true;
         } else if (userSession != null) {
-            authSessionId = KeycloakModelUtils.generateId();
-            rootLogoutSession = null;
+            if ((!(logoutSession == null)) && (!userSession.getId().equals(logoutSession.getParentSession().getId()))) {
+                authSessionId = KeycloakModelUtils.generateId();
+                rootLogoutSession = null;
+            } else {
+                authSessionId = userSession.getId();
+                rootLogoutSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
+            }
         } else {
             authSessionId = KeycloakModelUtils.generateId();
         }
