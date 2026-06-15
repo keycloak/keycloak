@@ -171,6 +171,15 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
                     )
                   : "—"}
               </DataListCell>,
+              <DataListCell key="updated" width={2}>
+                {credential.updatedDate
+                  ? formatDate(
+                      new Date(credential.updatedDate),
+                      undefined,
+                      FORMAT_DATE_ONLY,
+                    )
+                  : "—"}
+              </DataListCell>,
             ]}
           />
           <DataListAction

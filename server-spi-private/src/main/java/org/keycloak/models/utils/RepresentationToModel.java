@@ -1021,6 +1021,7 @@ public class RepresentationToModel {
         UserVerifiableCredentialModel verifCredentialModel = new UserVerifiableCredentialModel(rep.getCredentialScopeName());
         verifCredentialModel.setRevision(rep.getRevision());
         verifCredentialModel.setCreatedDate(rep.getCreatedDate());
+        verifCredentialModel.setUpdatedDate(rep.getUpdatedDate());
         verifCredentialModel.setUserAttributes(rep.getUserAttributes());
         return verifCredentialModel;
     }

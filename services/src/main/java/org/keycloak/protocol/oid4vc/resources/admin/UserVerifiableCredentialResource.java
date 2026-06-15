@@ -179,6 +179,11 @@ public class UserVerifiableCredentialResource {
             return updatedRep;
 
         } catch (ModelException e) {
+            if(e.getMessage() != null && e.getMessage().contains("concurrently modified")) {
+                logger.warn(String.format("Concurrent update detected for verifiable credential '%s' for user '%s' in realm '%s'.",
+                        credentialScopeName, user.getUsername(), realm.getName()));
+                throw ErrorResponse.error("The verifiable credential was modified by another request. Please retry.", Response.Status.CONFLICT);
+            }
             logger.warn(String.format("Verifiable credential '%s' not found for user '%s' in the realm '%s'.",
                     credentialScopeName, user.getUsername(), realm.getName()));
             throw new NotFoundException("Verifiable credential not found");

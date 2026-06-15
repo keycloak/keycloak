@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -407,6 +408,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         long createdDate = verifCredentialModel.getCreatedDate() == null ? Time.currentTimeMillis() : verifCredentialModel.getCreatedDate();
         vcEntity.setCreatedDate(createdDate);
 
+        long updatedDate = verifCredentialModel.getUpdatedDate() == null ? createdDate : verifCredentialModel.getUpdatedDate();
+        vcEntity.setUpdatedDate(updatedDate);
+
         vcEntity.setCredentialScopeName(verifCredentialModel.getCredentialScopeName());
 
         Map<String, List<String>> userAttributes;
@@ -488,10 +492,14 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         String newRevision = SecretGenerator.getInstance().generateSecureID();
         entity.setRevision(newRevision);
-        UserVerifiableCredentialEntity mergedEntity = em.merge(entity);
-        em.flush();
-
-        return toVerifiableCredentialModel(mergedEntity);
+        entity.setUpdatedDate(Time.currentTimeMillis());
+        try {
+            UserVerifiableCredentialEntity mergedEntity = em.merge(entity);
+            em.flush();
+            return toVerifiableCredentialModel(mergedEntity);
+        } catch (OptimisticLockException e) {
+            throw new ModelException( "Verifiable credential was concurrently modified. Please retry the operation.", e);
+        }
     }
 
     private Stream<UserVerifiableCredentialEntity> getVerifiableCredentialsEntitiesByUser(String userId) {
@@ -504,6 +512,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         UserVerifiableCredentialModel model = new UserVerifiableCredentialModel(entity.getCredentialScopeName());
         model.setRevision(entity.getRevision());
         model.setCreatedDate(entity.getCreatedDate());
+        model.setUpdatedDate(entity.getUpdatedDate());
 
         if (entity.getUserAttributes() != null) {
             try {
