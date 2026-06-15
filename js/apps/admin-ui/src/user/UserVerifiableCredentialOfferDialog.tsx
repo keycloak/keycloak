@@ -44,7 +44,7 @@ export const UserVerifiableCredentialOfferDialog = ({
           id: userId,
           lifespan,
         },
-        { credential_configuration_id: credential.credentialConfigurationId },
+        { credentialConfigurationId: credential.credentialConfigurationId },
       );
       addAlert(t("credentialOfferEmailSuccess"), AlertVariant.success);
       onClose();
