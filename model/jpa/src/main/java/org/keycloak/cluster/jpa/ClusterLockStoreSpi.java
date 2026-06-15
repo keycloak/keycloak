@@ -15,9 +15,31 @@
  * limitations under the License.
  */
 
-package org.keycloak.cluster;
+package org.keycloak.cluster.jpa;
 
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
-public interface ClusterLockStoreProviderFactory extends ProviderFactory<ClusterLockStoreProvider> {
+public class ClusterLockStoreSpi implements Spi {
+
+    @Override
+    public boolean isInternal() {
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return "cluster-lock-store";
+    }
+
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return ClusterLockStoreProvider.class;
+    }
+
+    @Override
+    public Class<? extends ProviderFactory<?>> getProviderFactoryClass() {
+        return ClusterLockStoreProviderFactory.class;
+    }
 }

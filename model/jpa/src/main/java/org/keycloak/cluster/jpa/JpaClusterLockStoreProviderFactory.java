@@ -25,8 +25,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 
 import org.keycloak.Config;
-import org.keycloak.cluster.ClusterLockStoreProvider;
-import org.keycloak.cluster.ClusterLockStoreProviderFactory;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
