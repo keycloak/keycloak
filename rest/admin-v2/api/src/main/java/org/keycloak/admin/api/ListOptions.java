@@ -21,7 +21,7 @@ public class ListOptions {
     @QueryParam("fields")
     protected String fields;
 
-    // TODO: this name is a temporary solution until we have a fix from smallrye-openapi
+    // TODO: this name is a temporary solution until we have a fix from smallrye-openapi https://github.com/smallrye/smallrye-open-api/issues/2585
     @Parameter(name = "sortBy",
                description = "Field(s) to sort by, comma-separated for multi-field sort (e.g. displayName,clientId).",
                style = ParameterStyle.FORM,
