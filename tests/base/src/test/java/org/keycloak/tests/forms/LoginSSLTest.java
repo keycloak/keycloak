@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
 public class LoginSSLTest {
@@ -77,7 +78,7 @@ public class LoginSSLTest {
         loginPage.fillLogin("login-test", "test");
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)

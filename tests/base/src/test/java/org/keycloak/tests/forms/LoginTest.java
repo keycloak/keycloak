@@ -276,7 +276,7 @@ public class LoginTest {
         loginPage.fillLogin("login-test", getPassword("login-test"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
@@ -394,7 +394,7 @@ public class LoginTest {
         loginPage.fillLogin("test-user@localhost", getPassword("test-user@localhost"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
         managedRealm.updateUserWithCleanup("test-user@localhost", user -> user.enabled(false));
 
         oauth.openLoginForm();
@@ -433,7 +433,7 @@ public class LoginTest {
         loginPage.fillLogin("login-test", getPassword("login-test"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
@@ -466,7 +466,7 @@ public class LoginTest {
         loginPage.fillLogin("login@test.com", getPassword("login-test"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
@@ -480,7 +480,7 @@ public class LoginTest {
         loginPage.fillLogin("login-test", getPassword("login-test"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
@@ -494,7 +494,7 @@ public class LoginTest {
         loginPage.fillLogin(" login-test \t ", getPassword("login-test"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
@@ -508,7 +508,7 @@ public class LoginTest {
         loginPage.fillLogin("    login@test.com    ", getPassword("login-test"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
@@ -538,7 +538,7 @@ public class LoginTest {
 
         events.poll(); // UPDATE_CREDENTIAL (or might be null)
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Assert LOGIN event if available
         EventRepresentation loginEvent = events.poll();
@@ -563,7 +563,7 @@ public class LoginTest {
          loginPage.fillLogin("login-test", getPassword("login-test"));
          loginPage.submit();
 
-         assertNotNull(oauth.parseLoginResponse().getCode());
+         assertTrue(oauth.parseLoginResponse().isSuccess());
 
          EventAssertion.assertSuccess(events.poll())
                  .type(EventType.LOGIN)
@@ -595,7 +595,7 @@ public class LoginTest {
         loginPage.fillPassword(getPassword("login-test"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
@@ -609,7 +609,7 @@ public class LoginTest {
         loginPage.fillLogin("login@test.com", getPassword("login-test"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
@@ -628,7 +628,7 @@ public class LoginTest {
         loginPage.fillLogin("login-test", getPassword("login-test"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
         String sessionId = EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
                 .userId(userId)
@@ -665,7 +665,7 @@ public class LoginTest {
         loginPage.fillLogin("login-test", getPassword("login-test"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
         EventRepresentation loginEvent = events.poll();
         EventAssertion.assertSuccess(loginEvent)
                 .type(EventType.LOGIN)
@@ -688,7 +688,7 @@ public class LoginTest {
         loginPage.fillLogin("login-test", getPassword("login-test"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
         String sessionId = EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
                 .userId(userId)
@@ -736,7 +736,7 @@ public class LoginTest {
         loginPage.fillLogin("login@test.com", getPassword("login-test"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
         String sessionId = EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
                 .userId(userId)
@@ -769,7 +769,7 @@ public class LoginTest {
         loginPage.fillLogin("login@test.com", getPassword("login-test"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
                 .userId(userId)
@@ -935,7 +935,7 @@ public class LoginTest {
         loginPage.fillLogin("test-user@localhost", getPassword("test-user@localhost"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
@@ -956,7 +956,7 @@ public class LoginTest {
         loginPage.fillLogin("test-user@localhost", getPassword("test-user@localhost"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
@@ -976,7 +976,7 @@ public class LoginTest {
         loginPage.fillLogin("test-user@localhost", getPassword("test-user@localhost"));
         loginPage.submit();
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // authentication session should still exists with remaining browser tab
         assertEquals(1, getAuthenticationSessionTabsCount(authSessionId));
@@ -1010,7 +1010,7 @@ public class LoginTest {
                 .type(EventType.LOGIN)
                 .details(Details.USERNAME, "test-user@localhost");
 
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // expire idle timeout using the timeout window.
         timeOffSet.set(2 + IDLE_TIMEOUT_WINDOW_SECONDS);
@@ -1043,7 +1043,7 @@ public class LoginTest {
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
                 .details(Details.USERNAME, "test-user@localhost");
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // expire the max lifespan.
         timeOffSet.set(2);
@@ -1088,7 +1088,7 @@ public class LoginTest {
         oauth.openLoginForm();
         loginPage.fillLogin("test-user@localhost", getPassword("test-user@localhost"));
         loginPage.submit();
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN);
     }
@@ -1099,7 +1099,7 @@ public class LoginTest {
         oauth.openLoginForm();
         loginPage.fillLogin("test-user@localhost", getPassword("test-user@localhost"));
         loginPage.submit();
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN);
 
         managedRealm.updateUserWithCleanup("test-user@localhost", user1 -> user1.requiredActions(RequiredAction.CONFIGURE_TOTP.name()));

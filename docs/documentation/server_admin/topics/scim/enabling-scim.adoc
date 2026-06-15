@@ -1,0 +1,38 @@
+[id="enabling-scim_{context}"]
+
+[[_enabling_scim_]]
+= Enabling SCIM for a realm
+[role="_abstract"]
+
+Once the feature is enabled on the server, you must also enable SCIM for each realm individually. This can be done through
+the Admin Console or the Admin REST API.
+
+== Using the Admin Console
+
+.Procedure
+. Click *Realm settings* in the menu.
+. On the *General* tab, locate the *SCIM API* toggle.
+. Set the toggle to *On*.
+. Click *Save*.
+
+.Enabling SCIM API in realm settings
+image:images/scim-realm-settings.png[alt="Enabling SCIM API in realm settings"]
+
+== Obtaining the SCIM API base URL
+
+The SCIM API in {project_name} is exposed under the following base URL:
+
+----
+http://<host>:<port>/realms/<realm-name>/scim/v2
+----
+
+This base URL is used to construct the full URLs for the available SCIM endpoints:
+
+* `/ServiceProviderConfig`
+* `/ResourceTypes`
+* `/Schemas`
+* `/Users`
+* `/Groups`
+
+The SCIM API requires a bearer token with the appropriate permissions. See <<_scim_accessing_endpoints_,Authorizing access to SCIM endpoints>>
+for details on how to set up a client and obtain an access token.

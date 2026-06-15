@@ -1,0 +1,231 @@
+[id="scim-managing-groups_{context}"]
+
+[[_scim_managing_groups_]]
+= Managing groups
+[role="_abstract"]
+
+The SCIM `/Groups` endpoint allows you to create, read, update, and delete group resources in {project_name}. Group resources
+conform to the `urn:ietf:params:scim:schemas:core:2.0:Group` schema as defined in RFC 7643.
+
+== Group attributes
+
+[cols="1,1,2",options="header"]
+|===
+| SCIM Attribute | {project_name} Attribute | Description
+
+| `displayName`
+| `name`
+| The name of the group. Required.
+
+| `externalId`
+| (custom attribute)
+| An identifier from an external system.
+
+| `members`
+| (group membership)
+| List of users that belong to this group. Read-only on GET; managed via PATCH.
+|===
+
+== Creating a group
+
+To create a group, send a `POST` request to the `/Groups` endpoint:
+
+[source,bash]
+----
+curl -X POST http://localhost:8080/realms/myrealm/scim/v2/Groups \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
+    "displayName": "Engineering Team",
+    "externalId": "eng-team-001"
+  }'
+----
+
+A successful response returns the created group with a `201 Created` status.
+
+IMPORTANT: Group members cannot be specified during group creation. Attempting to include members in the `POST`
+request results in a `400 Bad Request` error. Use the `PATCH` method to add members after creating the group.
+
+If a group with the same `displayName` already exists, the API returns a `409 Conflict` response with
+`scimType: "uniqueness"`.
+
+== Retrieving a group
+
+To retrieve a group by ID:
+
+[source,bash]
+----
+curl http://localhost:8080/realms/myrealm/scim/v2/Groups/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+== Listing groups
+
+To list all groups in the realm:
+
+[source,bash]
+----
+curl http://localhost:8080/realms/myrealm/scim/v2/Groups \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+For filtering and pagination of results, see <<_scim_filtering_resources_,Filtering resources>>.
+
+== Updating a group
+
+To replace a group's attributes, send a `PUT` request:
+
+[source,bash]
+----
+curl -X PUT http://localhost:8080/realms/myrealm/scim/v2/Groups/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
+    "id": "{id}",
+    "displayName": "Platform Engineering",
+    "externalId": "eng-team-002"
+  }'
+----
+
+IMPORTANT: Group members cannot be modified through `PUT` requests. Attempting to include members in the `PUT`
+request results in a `400 Bad Request` error. Use the `PATCH` method to manage group members.
+
+== Partially updating a group
+
+To modify specific group attributes, use a `PATCH` request:
+
+[source,bash]
+----
+curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Groups/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "replace",
+        "path": "displayName",
+        "value": "Platform Engineering"
+      }
+    ]
+  }'
+----
+
+== Managing group members
+
+Group membership is managed exclusively through `PATCH` operations on the group resource. Group membership can also
+be managed from the user side through the `/Users` endpoint. See <<_scim_managing_users_,Managing users>> for details.
+
+=== Adding members
+
+To add users to a group:
+
+[source,bash]
+----
+curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Groups/{groupId} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "add",
+        "path": "members",
+        "value": "{userId1}"
+      },
+      {
+        "op": "add",
+        "path": "members",
+        "value": "{userId2}"
+      }
+    ]
+  }'
+----
+
+=== Removing members
+
+To remove specific members from a group, use a value path filter:
+
+[source,bash]
+----
+curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Groups/{groupId} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "remove",
+        "path": "members[value eq \"{userId}\"]"
+      }
+    ]
+  }'
+----
+
+You can remove multiple members in a single operation using the `or` operator:
+
+[source,bash]
+----
+curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Groups/{groupId} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "remove",
+        "path": "members[value eq \"{userId1}\" or value eq \"{userId2}\"]"
+      }
+    ]
+  }'
+----
+
+=== Querying members
+
+To retrieve a group's members, include `members` in the `attributes` parameter:
+
+[source,bash]
+----
+curl "http://localhost:8080/realms/myrealm/scim/v2/Groups/{groupId}?attributes=members" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+Each member entry includes:
+
+*   `value`: The user ID.
+*   `display`: The user's username.
+*   `type`: Always `User`.
+
+=== Bidirectional membership
+
+Group membership is bidirectional. When a user is added to a group, the user's `groups` attribute also reflects
+the membership. Similarly, when a user is assigned to a group through the User resource, the group's `members`
+list is updated accordingly.
+
+You can also find groups by member:
+
+[source,bash]
+----
+curl "http://localhost:8080/realms/myrealm/scim/v2/Groups?filter=members.value+eq+\"{userId}\"" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+NOTE: Organization-related groups cannot have their members managed through the SCIM API. Attempting to add or
+remove members from an organization group returns a `400 Bad Request` error. Use the Organization API to manage
+organization group memberships.
+
+== Deleting a group
+
+[source,bash]
+----
+curl -X DELETE http://localhost:8080/realms/myrealm/scim/v2/Groups/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+----
+
+A successful deletion returns a `204 No Content` response.

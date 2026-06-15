@@ -1,0 +1,314 @@
+[id="scim-managing-schema-extensions_{context}"]
+
+[[_scim_managing_schema_extensions_]]
+= Managing schema extensions
+[role="_abstract"]
+
+In addition to the core SCIM user and group schemas, {project_name} supports schema extensions that allow you to expose
+additional attributes through the SCIM API. Extension schemas are configured using the same User Profile SCIM attribute
+mapping described in <<_scim_mapping_attributes_,Mapping user attributes to SCIM schemas>>, but with URN-prefixed
+values that identify which extension schema the attribute belongs to. All configured extension schemas are automatically discoverable through the `/Schemas` endpoint.
+
+== Enterprise User extension
+
+The Enterprise User extension (`urn:ietf:params:scim:schemas:extension:enterprise:2.0:User`) is defined in
+https://datatracker.ietf.org/doc/html/rfc7643#section-4.3[RFC 7643, Section 4.3] and provides attributes commonly
+used in enterprise environments.
+
+=== Available attributes
+
+[cols="1,2",options="header"]
+|===
+| Attribute | Description
+
+| `employeeNumber`
+| The employee's number or identifier.
+
+| `costCenter`
+| The cost center to which the user belongs.
+
+| `organization`
+| The name of the organization.
+
+| `division`
+| The name of the division.
+
+| `department`
+| The name of the department.
+
+| `manager`
+| The user's manager, with sub-attributes `value` (manager identifier) and `displayName`.
+|===
+
+=== Enabling the enterprise extension
+
+To use the Enterprise User extension, you must configure user profile attributes for each enterprise attribute
+you want to expose. Each attribute must have a SCIM attribute mapping pointing to the enterprise schema attribute.
+
+In the Admin Console, when creating or editing a user profile attribute, the *SCIM* section provides the Enterprise
+User schema attributes as selectable options. Alternatively, you can type the full URN-prefixed value manually.
+
+For example, to enable the `employeeNumber` and `department` attributes, create two user profile attributes:
+
+[cols="1,1",options="header"]
+|===
+| User Profile Attribute Name | SCIM Attribute Value
+
+| `employeeNumber`
+| `urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:employeeNumber`
+
+| `department`
+| `urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:department`
+|===
+
+For complex attributes like `manager`, you map individual sub-attributes:
+
+[cols="1,1",options="header"]
+|===
+| User Profile Attribute Name | SCIM Attribute Value
+
+| `manager`
+| `urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager.value`
+
+| `managerName`
+| `urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager.displayName`
+|===
+
+=== Creating an enterprise user
+
+Once the user profile attributes are configured, you can create users with enterprise extension data:
+
+[source,bash]
+----
+curl -X POST http://localhost:8080/realms/myrealm/scim/v2/Users \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": [
+      "urn:ietf:params:scim:schemas:core:2.0:User",
+      "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+    ],
+    "userName": "jdoe",
+    "name": {
+      "givenName": "John",
+      "familyName": "Doe"
+    },
+    "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+      "employeeNumber": "E12345",
+      "department": "Engineering",
+      "division": "R&D",
+      "organization": "ACME Corp",
+      "costCenter": "AMER-4015",
+      "manager": {
+        "value": "manager-user-id",
+        "displayName": "Jane Smith"
+      }
+    }
+  }'
+----
+
+=== Patching enterprise attributes
+
+You can update enterprise extension attributes using PATCH operations. There are several ways to reference
+extension attributes in the path:
+
+Using the full URN with colon separator:
+
+[source,bash]
+----
+curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "replace",
+        "path": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:employeeNumber",
+        "value": "E54321"
+      }
+    ]
+  }'
+----
+
+Using the URN as the path with a JSON object as the value:
+
+[source,bash]
+----
+curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "replace",
+        "path": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+        "value": {"employeeNumber": "E54321", "department": "QE"}
+      }
+    ]
+  }'
+----
+
+Or without a path, including the full URN in the value object:
+
+[source,bash]
+----
+curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "replace",
+        "value": {
+          "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+            "employeeNumber": "E54321"
+          }
+        }
+      }
+    ]
+  }'
+----
+
+=== Filtering by enterprise attributes
+
+You can search users by enterprise extension attributes using the full URN prefix in the filter:
+
+[source,bash]
+----
+curl "http://localhost:8080/realms/myrealm/scim/v2/Users?filter=urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:department+eq+\"Engineering\"" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+== Custom schema extensions
+
+Beyond the standard Enterprise User extension, {project_name} allows you to define custom schema extensions using
+any URN-based schema identifier. This is useful for exposing organization-specific attributes through SCIM.
+
+=== Defining a custom extension
+
+To create a custom extension schema, configure user profile attributes with a SCIM attribute mapping
+pointing to your custom schema URN:
+
+[cols="1,1",options="header"]
+|===
+| User Profile Attribute Name | SCIM Attribute Value
+
+| `keycloak.team`
+| `urn:my:params:scim:schemas:extension:custom:1.0:User:memberOf`
+
+| `keycloak.area`
+| `urn:my:params:scim:schemas:extension:custom:1.0:User:area`
+|===
+
+NOTE: The user profile attribute name does not need to match the SCIM attribute name. The SCIM attribute value
+defines the schema mapping. You can use any valid attribute name in the user profile.
+
+=== Using custom extensions
+
+Once configured, the custom extension attributes can be used in SCIM operations just like the enterprise extension:
+
+[source,bash]
+----
+curl -X POST http://localhost:8080/realms/myrealm/scim/v2/Users \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": [
+      "urn:ietf:params:scim:schemas:core:2.0:User",
+      "urn:my:params:scim:schemas:extension:custom:1.0:User"
+    ],
+    "userName": "jdoe",
+    "urn:my:params:scim:schemas:extension:custom:1.0:User": {
+      "memberOf": "core-iam",
+      "area": "identity"
+    }
+  }'
+----
+
+Custom extension attributes can also be patched and filtered:
+
+[source,bash]
+----
+curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "replace",
+        "path": "urn:my:params:scim:schemas:extension:custom:1.0:User:memberOf",
+        "value": "platform-engineering"
+      }
+    ]
+  }'
+----
+
+[source,bash]
+----
+curl "http://localhost:8080/realms/myrealm/scim/v2/Users?filter=urn:my:params:scim:schemas:extension:custom:1.0:User:memberOf+eq+\"core-iam\"" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+=== Multiple custom extensions
+
+You can define multiple custom schema extensions simultaneously. Each extension is identified by its unique URN
+and can contain different attributes. Users can have data from multiple extension schemas at the same time, and
+each schema is listed in the user's `schemas` array when the extension has data.
+
+== Keycloak realm extension
+
+{project_name} includes a built-in extension schema (`urn:keycloak:params:scim:schemas:extension:realm:1.0:User`)
+that can be used as a convenience schema for realm-specific custom attributes. It works the same way as any other
+custom schema extension, but does not require you to define your own URN. If you need to expose attributes to
+multiple external systems that each expect their own schema URN, use custom extensions with distinct URNs instead.
+
+== Schema discovery
+
+All configured extension schemas are automatically advertised through the SCIM schema discovery endpoints.
+
+To view all available schemas, including extensions:
+
+[source,bash]
+----
+curl http://localhost:8080/realms/myrealm/scim/v2/Schemas \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+To view the resource types and their associated schemas:
+
+[source,bash]
+----
+curl http://localhost:8080/realms/myrealm/scim/v2/ResourceTypes \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+The resource types endpoint lists the schema extensions for each resource type, indicating which extensions are
+available and whether they are required.
+
+=== Requesting extension attributes
+
+You can request only extension attributes by including the schema URN in the `attributes` parameter:
+
+[source,bash]
+----
+curl "http://localhost:8080/realms/myrealm/scim/v2/Users/{id}?attributes=urn:ietf:params:scim:schemas:extension:enterprise:2.0:User" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+Similarly, you can exclude extension attributes:
+
+[source,bash]
+----
+curl "http://localhost:8080/realms/myrealm/scim/v2/Users/{id}?excludedAttributes=urn:ietf:params:scim:schemas:extension:enterprise:2.0:User" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----

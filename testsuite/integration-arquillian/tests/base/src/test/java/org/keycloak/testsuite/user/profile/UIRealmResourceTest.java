@@ -237,7 +237,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         registerPage.registerWithEmailAsUsername("Tom", "Brady", "tbrady@email.com", "password", "password");
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId()).details(Details.USERNAME, "tbrady@email.com").details(Details.EMAIL, "tbrady@email.com").getEvent().getUserId();
         UserRepresentation user = managedRealm.admin().users().get(userId).toRepresentation();
@@ -268,7 +268,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         registerPage.register("Alice", "Wood",  null, "awood", "password", "password");
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId()).details(Details.USERNAME, "awood").details(Details.EMAIL, null).getEvent().getUserId();
         UserRepresentation user = managedRealm.admin().users().get(userId).toRepresentation();
