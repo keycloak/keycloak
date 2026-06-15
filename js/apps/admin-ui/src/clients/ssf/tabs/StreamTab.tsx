@@ -419,16 +419,21 @@ export const StreamTab = ({
     <>
       <DeleteStreamConfirm />
       <Card isFlat className="pf-v5-u-mt-md">
-        <CardHeader>
-          <CardTitle>{t("ssfStream")}</CardTitle>
-        </CardHeader>
+        {clientStream && (
+          <>
+            <CardHeader>
+              <CardTitle>{t("ssfStream")}</CardTitle>
+            </CardHeader>
+
+            <CardBody>
+              <TextContent>
+                <Text>{t("ssfStreamHelp")}</Text>
+              </TextContent>
+            </CardBody>
+          </>
+        )}
         <CardBody>
-          <TextContent>
-            <Text>{t("ssfStreamHelp")}</Text>
-          </TextContent>
-        </CardBody>
-        <CardBody>
-          {!createStreamFormOpen && (
+          {clientStream && (
             <ActionGroup className="pf-v5-u-pb-md">
               <Button variant="link" onClick={refresh} data-testid="ssfRefresh">
                 <SyncAltIcon /> {t("refresh")}

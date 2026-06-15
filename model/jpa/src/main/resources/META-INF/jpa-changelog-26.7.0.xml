@@ -60,9 +60,11 @@
                 <constraints nullable="false"/>
             </column>
             <column name="CREATED_DATE" type="BIGINT"/>
+            <column name="UPDATED_DATE" type="BIGINT"/>
             <column name="USER_ATTRIBUTES" type="TEXT">
                 <constraints nullable="true"/>
             </column>
+            <column name="VERSION" type="INT"/>
         </createTable>
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_VCRED_PM" tableName="USER_VER_CREDENTIAL"/>
         <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="USER_VER_CREDENTIAL" constraintName="FK_VCRED_USER" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
@@ -292,10 +294,10 @@
             </not>
         </preConditions>
         <createTable tableName="AUTH_SESSION">
-            <column name="TAB_ID" type="VARCHAR(36)">
-                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_AUTH_SESSION"/>
-            </column>
             <column name="ROOT_AUTH_SESSION_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TAB_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
             <column name="CLIENT_UUID" type="VARCHAR(255)"/>
@@ -313,23 +315,14 @@
             <column name="USER_SESSION_NOTES" type="TEXT"/>
         </createTable>
 
+        <addPrimaryKey tableName="AUTH_SESSION" columnNames="ROOT_AUTH_SESSION_ID, TAB_ID" constraintName="PK_AUTH_SESSION" />
+
         <addForeignKeyConstraint baseColumnNames="ROOT_AUTH_SESSION_ID"
                                  baseTableName="AUTH_SESSION"
                                  constraintName="FK_AUTH_SESSION_ROOT"
                                  referencedColumnNames="ID"
                                  referencedTableName="ROOT_AUTH_SESSION"
                                  onDelete="CASCADE"/>
-    </changeSet>
-
-    <changeSet author="keycloak" id="26.7.0-persistent-auth-session-index">
-        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
-            <not>
-                <indexExists indexName="IDX_AUTH_SESSION_ROOT"/>
-            </not>
-        </preConditions>
-        <createIndex tableName="AUTH_SESSION" indexName="IDX_AUTH_SESSION_ROOT">
-            <column name="ROOT_AUTH_SESSION_ID"/>
-        </createIndex>
     </changeSet>
 
     <changeSet author="keycloak" id="26.7.0-single-use-object-table">
@@ -373,6 +366,30 @@
     <changeSet author="keycloak" id="26.7.0-login-failure-index">
         <createIndex tableName="LOGIN_FAILURE" indexName="IDX_LOGIN_FAILURE_EXPIRE">
             <column name="LAST_FAILURE"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-cluster-event">
+        <createTable tableName="CLUSTER_EVENT">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_CLUSTER_EVENT"/>
+            </column>
+            <column name="TARGET_CLUSTER" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SENDER_CLUSTER" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="EVENT_DATA" type="BLOB">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREATED_AT" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="CLUSTER_EVENT" indexName="IDX_CLUSTER_EVENT_TARGET">
+            <column name="TARGET_CLUSTER"/>
+            <column name="CREATED_AT"/>
         </createIndex>
     </changeSet>
 

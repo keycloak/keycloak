@@ -1,0 +1,287 @@
+[id="scim-filtering-resources_{context}"]
+
+[[_scim_filtering_resources_]]
+= Filtering resources
+[role="_abstract"]
+
+The SCIM API in {project_name} supports the full filter syntax defined in https://datatracker.ietf.org/doc/html/rfc7644#section-3.4.2.2[RFC 7644, Section 3.4.2.2],
+allowing you to search for resources using a rich expression language.
+
+== Using filters
+
+Filters are specified using the `filter` query parameter on `GET` requests:
+
+[source,bash]
+----
+curl "http://localhost:8080/realms/myrealm/scim/v2/Users?filter=userName+eq+\"jdoe\"" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+NOTE: Filter values must be URL-encoded when used in query parameters. Spaces in the filter expression should be
+encoded as `+` or `%20`. The examples in this section show the raw filter syntax for readability.
+
+== Comparison operators
+
+The following comparison operators are supported:
+
+[cols="1,2,3",options="header"]
+|===
+| Operator | Description | Example
+
+| `eq`
+| Equal
+| `userName eq "jdoe"`
+
+| `ne`
+| Not equal
+| `active ne false`
+
+| `co`
+| Contains
+| `emails co "example.com"`
+
+| `sw`
+| Starts with
+| `userName sw "j"`
+
+| `ew`
+| Ends with
+| `userName ew "doe"`
+
+| `gt`
+| Greater than
+| `meta.created gt "2025-01-01T00:00:00Z"`
+
+| `ge`
+| Greater than or equal
+| `meta.created ge "2025-01-01T00:00:00Z"`
+
+| `lt`
+| Less than
+| `meta.lastModified lt "2025-06-01T00:00:00Z"`
+
+| `le`
+| Less than or equal
+| `meta.lastModified le "2025-06-01T00:00:00Z"`
+
+| `pr`
+| Present (attribute has a value)
+| `emails.value pr`
+|===
+
+NOTE: The `gt`, `ge`, `lt`, and `le` operators are supported on date/time attributes such as `meta.created` and
+`meta.lastModified`. The `sw`, `ew`, and `co` operators are supported on string attributes but not on date/time
+or boolean attributes. Invalid operator/type combinations return a `400 Bad Request` response with
+`scimType: "invalidFilter"`.
+
+== Logical operators
+
+Filters can be combined using logical operators:
+
+[cols="1,3",options="header"]
+|===
+| Operator | Description
+
+| `and`
+| Both conditions must be true.
+
+| `or`
+| At least one condition must be true.
+
+| `not`
+| Negates the following condition (must be enclosed in parentheses).
+|===
+
+=== Examples
+
+Filter users by family name and active status:
+
+----
+name.familyName eq "Smith" and active eq true
+----
+
+Filter users matching either condition:
+
+----
+userName eq "jdoe" or userName eq "asmith"
+----
+
+Negate a condition:
+
+----
+not (active eq false)
+----
+
+Use parentheses to group conditions:
+
+----
+(userName sw "j" or userName sw "a") and active eq true
+----
+
+== Filtering by sub-attributes
+
+You can filter by sub-attributes of complex attributes using dot notation:
+
+----
+name.givenName eq "John"
+name.familyName sw "Sm"
+----
+
+For multi-valued attributes like `emails`:
+
+----
+emails eq "jdoe@example.com"
+emails.value eq "jdoe@example.com"
+emails co "example.com"
+----
+
+== Value path filters
+
+SCIM also supports value path filtering, where you filter on sub-attributes within a complex attribute using
+bracket notation:
+
+----
+name[familyName eq "Smith"]
+name[givenName eq "John" and familyName eq "Doe"]
+name[givenName eq "John" or givenName eq "Jane"]
+----
+
+Value path filters can be combined with regular filters:
+
+----
+name[familyName eq "Smith"] and active eq true
+----
+
+== Filtering by group membership
+
+You can filter users by their group membership using the `groups.value` attribute:
+
+[source,bash]
+----
+curl "http://localhost:8080/realms/myrealm/scim/v2/Users?filter=groups.value+eq+\"{groupId}\"" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+Combine group membership filters with logical operators:
+
+----
+(groups.value eq "{groupIdA}") and (groups.value eq "{groupIdB}")
+(groups.value eq "{groupIdA}") or (groups.value eq "{groupIdB}")
+groups.value ne "{groupId}"
+----
+
+Similarly, you can filter groups by member:
+
+[source,bash]
+----
+curl "http://localhost:8080/realms/myrealm/scim/v2/Groups?filter=members.value+eq+\"{userId}\"" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+NOTE: When an LDAP user federation provider is configured with a group mapper in `LDAP_ONLY` mode, group
+membership filters (`groups.value` and `members.value`) may return empty results. This happens because
+`LDAP_ONLY` mode stores group memberships exclusively in LDAP, while the SCIM filter queries the local
+database directly. Retrieving a user's groups via `?attributes=groups` or a group's members via
+`?attributes=members` is not affected, as those requests go through the federation layer and read from LDAP.
+If you need membership-based filtering with LDAP federation, consider switching the group mapper to `IMPORT`
+mode so that memberships are also stored locally.
+
+== Filtering by extension attributes
+
+Filters can reference attributes from schema extensions by using the full schema URI as a prefix:
+
+----
+urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:department eq "Engineering"
+urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager.displayName ew "Manager"
+----
+
+For custom schema extensions:
+
+----
+urn:my:params:scim:schemas:extension:custom:1.0:User:myattribute eq "myvalue"
+----
+
+See <<_scim_managing_schema_extensions_,Managing schema extensions>> for more details on configuring extension attributes.
+
+== Using POST-based search
+
+For complex queries that might exceed URL length limitations, use the `POST /.search` endpoint:
+
+[source,bash]
+----
+curl -X POST http://localhost:8080/realms/myrealm/scim/v2/Users/.search \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:SearchRequest"],
+    "filter": "(userName sw \"j\" or userName sw \"a\") and active eq true",
+    "startIndex": 1,
+    "count": 10,
+    "attributes": ["userName", "emails"]
+  }'
+----
+
+The search request body supports the same parameters available as query parameters: `filter`, `startIndex`,
+`count`, `attributes`, `excludedAttributes`, `sortBy`, and `sortOrder`.
+
+== Pagination
+
+When listing or searching resources, you can control the page of results returned using the `startIndex` and
+`count` parameters:
+
+[source,bash]
+----
+curl "http://localhost:8080/realms/myrealm/scim/v2/Users?startIndex=1&count=10" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+The response includes pagination metadata:
+
+[source,json]
+----
+{
+  "schemas": ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
+  "totalResults": 45,
+  "itemsPerPage": 10,
+  "startIndex": 1,
+  "Resources": [...]
+}
+----
+
+*   `totalResults`: The total number of resources matching the query.
+*   `itemsPerPage`: The number of resources in the current page.
+*   `startIndex`: The 1-based index of the first resource in the current page.
+
+To retrieve the next page, increment `startIndex` by `count`:
+
+[source,bash]
+----
+curl "http://localhost:8080/realms/myrealm/scim/v2/Users?startIndex=11&count=10" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+== Error responses
+
+Invalid filter expressions return a `400 Bad Request` response with `scimType: "invalidFilter"`:
+
+[source,json]
+----
+{
+  "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+  "scimType": "invalidFilter",
+  "detail": "Invalid filter expression",
+  "status": "400"
+}
+----
+
+Common causes of filter errors:
+
+*   Mismatched parentheses.
+*   Unknown filter operators.
+*   Using an operator on an incompatible attribute type (for example, `gt` on a boolean).
+*   Using string operators (`sw`, `ew`, `co`) on date/time attributes.

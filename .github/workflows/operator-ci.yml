@@ -38,7 +38,7 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - id: conditional
         uses: ./.github/actions/conditional
@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: conditional
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
@@ -85,7 +85,7 @@ jobs:
           matrix:
             suite: [slow, fast]
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Set version
         id: vars
@@ -133,7 +133,6 @@ jobs:
               -Dkc.operator.keycloak.image=keycloak:${{ env.version_remote }} \
               -Dquarkus.kubernetes.env.vars.kc-operator-keycloak-image-pull-policy=Never \
               -Dtest.operator.custom.image=custom-keycloak:${{ env.version_remote }} \
-              -Dtest.operator.client-controllers=true \
               --no-transfer-progress -Dtest.operator.deployment=remote ${PARAMS["${{ matrix.suite }}"]}
 
   test-olm:
@@ -141,7 +140,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
@@ -195,6 +194,8 @@ jobs:
           ./check-crd-installed.sh keycloakrealmimports.v2alpha1.k8s.keycloak.org
           ./check-crd-installed.sh keycloaks.v2beta1.k8s.keycloak.org
           ./check-crd-installed.sh keycloakrealmimports.v2beta1.k8s.keycloak.org
+          ./check-crd-installed.sh keycloakoidcclients.v2alpha1.k8s.keycloak.org
+          ./check-crd-installed.sh keycloaksamlclients.v2alpha1.k8s.keycloak.org
           ./deploy-examples.sh
           
       - name: Single namespace cleanup
@@ -255,7 +256,7 @@ jobs:
       - test-olm
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: ./.github/actions/status-check
         with:
           jobs: ${{ toJSON(needs) }}

@@ -4,7 +4,9 @@ package org.keycloak.tests.broker;
 import java.util.List;
 
 import org.keycloak.common.Profile;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyMode;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.IdentityProviderConditionFactory;
@@ -104,6 +106,13 @@ public class IdentityProviderStoreTokenV2Test implements InterfaceIdentityProvid
         UserInfoResponse userInfoResponse = getOauthClientExternal().userInfoRequest(externalTokens.getAccessToken()).send();
         Assertions.assertEquals(200, userInfoResponse.getStatusCode());
         Assertions.assertNotNull(userInfoResponse.getUserInfo().getPreferredUsername());
+    }
+
+    @Test
+    public void testBrokerClientNotCreatedWhenV1Disabled() {
+        List<ClientRepresentation> brokerClients = realm.admin().clients()
+                .findByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
+        Assertions.assertTrue(brokerClients.isEmpty(), "Broker client should not exist when identity-broker-api:v1 is disabled");
     }
 
     @Test

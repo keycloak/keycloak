@@ -584,12 +584,12 @@ public class RepresentationToModel {
     }
 
     private static String determineNewSecret(ClientModel client, ClientRepresentation rep) {
-        if (client.isPublicClient() || client.isBearerOnly()) {
+        if (client.isPublicClient()) {
             // Clear out the secret with null
             return null;
         }
 
-        // adding secret if the client isn't public nor bearer only
+        // adding secret if the client isn't public
         String currentSecret = client.getSecret();
         String newSecret = rep.getSecret();
 
@@ -1021,6 +1021,7 @@ public class RepresentationToModel {
         UserVerifiableCredentialModel verifCredentialModel = new UserVerifiableCredentialModel(rep.getCredentialScopeName());
         verifCredentialModel.setRevision(rep.getRevision());
         verifCredentialModel.setCreatedDate(rep.getCreatedDate());
+        verifCredentialModel.setUpdatedDate(rep.getUpdatedDate());
         verifCredentialModel.setUserAttributes(rep.getUserAttributes());
         return verifCredentialModel;
     }

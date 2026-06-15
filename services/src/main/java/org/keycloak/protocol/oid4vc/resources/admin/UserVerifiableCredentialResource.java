@@ -103,22 +103,14 @@ public class UserVerifiableCredentialResource {
             throw ErrorResponse.error("Revision not expected to be specified", Response.Status.BAD_REQUEST);
         }
 
-        ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(realm, representation.getCredentialScopeName());
-        if (clientScope == null) {
-            logger.warn(String.format("Client scope '%s' does not exists in the realm realm '%s'.", representation.getCredentialScopeName(),realm.getName()));
-            throw ErrorResponse.error("Client scope does not exists", Response.Status.BAD_REQUEST);
-        }
-        if (!OID4VCIConstants.OID4VC_PROTOCOL.equals(clientScope.getProtocol())) {
-            logger.warn(String.format("Client scope '%s' in the realm realm '%s' does not have protocol '%s'.",
-                    representation.getCredentialScopeName(),realm.getName(), OID4VCIConstants.OID4VC_PROTOCOL));
-            throw ErrorResponse.error("Client scope has incorrect protocol", Response.Status.BAD_REQUEST);
-        }
+        CredentialScopeModel credentialScope = checkCredentialScope(representation.getCredentialScopeName());
 
         try {
             UserVerifiableCredentialModel modelToCreate = RepresentationToModel.toModel(representation);
             UserVerifiableCredentialModel createdModel = session.users().addVerifiableCredential(user.getId(), modelToCreate);
 
             UserVerifiableCredentialRepresentation createdRep = ModelToRepresentation.toRepresentation(createdModel);
+            createdRep.setCredentialConfigurationId(credentialScope.getCredentialConfigurationId());
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(createdRep).success();
             return createdRep;
         } catch (ModelDuplicateException mde) {
@@ -139,6 +131,7 @@ public class UserVerifiableCredentialResource {
     @Operation(summary = "Get verifiable credentials granted to the user")
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "OK"),
+            @APIResponse(responseCode = "400", description = "Bad request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
             @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public List<UserVerifiableCredentialRepresentation> getCredentials() {
@@ -147,6 +140,10 @@ public class UserVerifiableCredentialResource {
 
         return session.users().getVerifiableCredentialsByUser(user.getId())
                 .map(ModelToRepresentation::toRepresentation)
+                .peek(userVerifiableCredential -> {
+                    CredentialScopeModel credentialScope = checkCredentialScope(userVerifiableCredential.getCredentialScopeName());
+                    userVerifiableCredential.setCredentialConfigurationId(credentialScope.getCredentialConfigurationId());
+                })
                 .toList();
     }
 
@@ -171,6 +168,9 @@ public class UserVerifiableCredentialResource {
 
             UserVerifiableCredentialRepresentation updatedRep = ModelToRepresentation.toRepresentation(updatedModel);
 
+            CredentialScopeModel credentialScope = checkCredentialScope(updatedRep.getCredentialScopeName());
+            updatedRep.setCredentialConfigurationId(credentialScope.getCredentialConfigurationId());
+
             adminEvent.operation(OperationType.UPDATE)
                     .resourcePath(session.getContext().getUri(), credentialScopeName)
                     .representation(updatedRep)
@@ -179,6 +179,11 @@ public class UserVerifiableCredentialResource {
             return updatedRep;
 
         } catch (ModelException e) {
+            if(e.getMessage() != null && e.getMessage().contains("concurrently modified")) {
+                logger.warn(String.format("Concurrent update detected for verifiable credential '%s' for user '%s' in realm '%s'.",
+                        credentialScopeName, user.getUsername(), realm.getName()));
+                throw ErrorResponse.error("The verifiable credential was modified by another request. Please retry.", Response.Status.CONFLICT);
+            }
             logger.warn(String.format("Verifiable credential '%s' not found for user '%s' in the realm '%s'.",
                     credentialScopeName, user.getUsername(), realm.getName()));
             throw new NotFoundException("Verifiable credential not found");
@@ -256,7 +261,8 @@ public class UserVerifiableCredentialResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Send credential offer of specified credential to this user")
+    @Operation(summary = "Send credential offer of specified verifiable credential to this user by email. An email contains a link the user can click " +
+                         "to see the page with credential offer, from which he can obtain verifiable credential to his wallet.")
     @APIResponses(value = {
             @APIResponse(responseCode = "204", description = "No Content"),
             @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
@@ -326,6 +332,20 @@ public class UserVerifiableCredentialResource {
         if (!realm.isVerifiableCredentialsEnabled()) {
             throw ErrorResponse.error("Verifiable credentials not enabled for the realm", Response.Status.BAD_REQUEST);
         }
+    }
+
+    private CredentialScopeModel checkCredentialScope(String credentialScopeName) {
+        ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(realm, credentialScopeName);
+        if (clientScope == null) {
+            logger.warn(String.format("Client scope '%s' does not exists in the realm realm '%s'.", credentialScopeName,realm.getName()));
+            throw ErrorResponse.error("Client scope does not exists", Response.Status.BAD_REQUEST);
+        }
+        if (!OID4VCIConstants.OID4VC_PROTOCOL.equals(clientScope.getProtocol())) {
+            logger.warn(String.format("Client scope '%s' in the realm realm '%s' does not have protocol '%s'.",
+                    credentialScopeName,realm.getName(), OID4VCIConstants.OID4VC_PROTOCOL));
+            throw ErrorResponse.error("Client scope has incorrect protocol", Response.Status.BAD_REQUEST);
+        }
+        return new CredentialScopeModel(clientScope);
     }
 
 }

@@ -153,7 +153,7 @@ public class ConsentsTest {
         consentPage.assertCurrent();
         consentPage.confirm();
 
-        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        Assertions.assertTrue(consumerRealmOAuth.parseLoginResponse().isSuccess());
 
         UsersResource consumerUsers = consumerRealm.admin().users();
         Assertions.assertTrue(consumerUsers.count() > 0, "There must be at least one user");
@@ -277,17 +277,17 @@ public class ConsentsTest {
         consentPage.cancel();
 
         // check an error page after cancelling the consent
-        assertTrue(driver.page().getPageSource().contains("Happy days"));
+        Assertions.assertTrue(providerRealmOAuth.parseLoginResponse().isError());
         assertTrue(driver.getCurrentUrl().contains("error=access_denied"));
 
         providerRealmOAuth.openLoginForm();
         loginPage.fillLogin(userFromProviderRealm.getUsername(), userFromProviderRealm.getPassword());
         loginPage.submit();
+        consentPage.assertCurrent();
         consentPage.confirm();
 
         // successful login
-        assertFalse(driver.getCurrentUrl().contains("error"));
-        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        Assertions.assertTrue(providerRealmOAuth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -295,8 +295,7 @@ public class ConsentsTest {
         AuthorizationEndpointResponse response = userRealmOAuth.doLogin(userFromUserRealm.getUsername(), userFromUserRealm.getPassword());
         AccessTokenResponse accessTokenResponse = userRealmOAuth.doAccessTokenRequest(response.getCode());
 
-        Assertions.assertNotNull(userRealmOAuth.parseLoginResponse().getCode());
-        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        Assertions.assertTrue(userRealmOAuth.parseLoginResponse().isSuccess());
 
         EventRepresentation loginEvent = userRealmEvents.poll();
         EventAssertion.assertSuccess(loginEvent).type(EventType.LOGIN)
@@ -363,7 +362,7 @@ public class ConsentsTest {
         consentPage.confirm();
 
         // successful login
-        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        Assertions.assertTrue(providerRealmOAuth.parseLoginResponse().isSuccess());
         AccountHelper.logout(providerRealm.admin(), userFromProviderRealm.getUsername());
     }
 

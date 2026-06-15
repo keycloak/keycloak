@@ -251,6 +251,7 @@
                             <preserveDirectories>true</preserveDirectories>
                         </configuration>
                     </execution>
+
                 </executions>
             </plugin>
             <plugin>

@@ -211,7 +211,7 @@ public class LoginPageTest {
         // Update password
         changePasswordPage.changePassword("password", "password");
 
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -233,7 +233,7 @@ public class LoginPageTest {
         // Confirm grant
         grantPage.accept();
 
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Revert client
         oauth.client("test-app", "password");
@@ -252,7 +252,7 @@ public class LoginPageTest {
         loginPage.fillLogin("basic-user", "password");
         loginPage.submit();
 
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_PROFILE).userId(user.getId()).details(Details.PREF_UPDATED + UserModel.LOCALE, "de");
         EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).userId(user.getId());

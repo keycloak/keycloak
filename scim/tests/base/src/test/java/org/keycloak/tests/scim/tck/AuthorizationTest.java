@@ -185,11 +185,14 @@ public class AuthorizationTest extends AbstractScimTest {
     }
 
     @Test
-    public void testDiscoveryEndpointsAccessIfViewRealmRoleGranted() {
-        grantAdminRole(AdminRoles.VIEW_REALM);
-        assertNotNull(noAccessClient.config().get());
-        assertNotNull(noAccessClient.schemas().getAll());
-        assertNotNull(noAccessClient.resourceTypes().getAll());
+    public void testDiscoveryEndpointsAccessIfGrantedAnySupportedAdminRole() {
+        for (String role : List.of(AdminRoles.QUERY_USERS, AdminRoles.VIEW_USERS, AdminRoles.MANAGE_USERS, AdminRoles.QUERY_GROUPS)) {
+            grantAdminRole(role);
+            assertNotNull(noAccessClient.config().get());
+            assertNotNull(noAccessClient.schemas().getAll());
+            assertNotNull(noAccessClient.resourceTypes().getAll());
+            revokeAdminRole(role);
+        }
     }
 
     @Test

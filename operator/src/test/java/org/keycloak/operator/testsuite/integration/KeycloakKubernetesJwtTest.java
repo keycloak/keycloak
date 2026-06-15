@@ -121,8 +121,8 @@ public class KeycloakKubernetesJwtTest extends BaseOperatorTest {
             IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
             idp.setAlias("kubernetes");
             idp.setProviderId("kubernetes");
-            String oicdConfig = k8sclient.raw("/.well-known/openid-configuration");
-            String issuer = (String) Serialization.unmarshal(oicdConfig, Map.class).get("issuer");
+            String oidcConfig = k8sclient.raw("/.well-known/openid-configuration");
+            String issuer = (String) Serialization.unmarshal(oidcConfig, Map.class).get("issuer");
             idp.getConfig().put("issuer", issuer);
             keycloak.realm("test").identityProviders().create(idp).close();
 
@@ -149,7 +149,6 @@ public class KeycloakKubernetesJwtTest extends BaseOperatorTest {
                     url,
                     "-H", "Content-Type: application/x-www-form-urlencoded",
                     "--data-urlencode", "grant_type=client_credentials",
-                    "--data-urlencode", "client_id=kubernetes-client", // the token may not contain the client
                     "--data-urlencode", "client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
                     "--data-urlencode", "client_assertion=" + token
             };

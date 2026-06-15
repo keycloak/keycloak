@@ -58,7 +58,7 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
     }
         
     public BaseClientModelMapper() {
-        this.addMapping("protocol", BaseClientRepresentation::getProtocol, null, ClientModel::getProtocol, ClientModel::setProtocol);
+        this.addMapping("protocol", BaseClientRepresentation::getProtocol, BaseClientRepresentation::setProtocol, ClientModel::getProtocol, ClientModel::setProtocol);
         this.addMapping("uuid", BaseClientRepresentation::getUuid, BaseClientRepresentation::setUuid, ClientModel::getId, null);
         this.addMapping("enabled", BaseClientRepresentation::getEnabled, BaseClientRepresentation::setEnabled, ClientModel::isEnabled, (model, enabled) -> model.setEnabled(Boolean.TRUE.equals(enabled)));
         this.addMapping("clientId", BaseClientRepresentation::getClientId, BaseClientRepresentation::setClientId, ClientModel::getClientId, ClientModel::setClientId);

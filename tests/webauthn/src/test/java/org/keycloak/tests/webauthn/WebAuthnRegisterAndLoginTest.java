@@ -98,7 +98,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         webAuthnRegisterPage.clickRegister();
         webAuthnRegisterPage.registerWebAuthnCredential(authenticatorLabel);
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
         // confirm that registration is successfully completed
         userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), username).getId();
@@ -163,7 +163,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnLoginPage.clickAuthenticate();
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
         // confirm login event
         EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().userId(userId).hasCodeId()
@@ -236,7 +236,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         webAuthnRegisterPage.clickRegister();
         webAuthnRegisterPage.registerWebAuthnCredential(PASSWORDLESS_LABEL);
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
         EventAssertion.assertSuccess(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
@@ -276,7 +276,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnLoginPage.clickAuthenticate();
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
         logout();
 
         // Only passwordless login
@@ -298,7 +298,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnLoginPage.clickAuthenticate();
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
         logout();
     }
 
@@ -363,7 +363,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         webAuthnRegisterPage.clickRegister();
         webAuthnRegisterPage.registerWebAuthnCredential(PASSWORDLESS_LABEL);
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
         logout();
 
@@ -384,7 +384,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnLoginPage.clickAuthenticate();
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
         logout();
 
         // Only passwordless login

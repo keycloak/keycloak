@@ -210,6 +210,13 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
                         "Leave this empty if no additional group attributes are required to be mapped in Keycloak. ")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
+                .property().name(GroupMapperConfig.DECODE_GROUP_UUID_ATTRIBUTE)
+                .label("Decode UUID Attribute to UUID Format")
+                .helpText("If on, the UUID LDAP attribute (e.g. objectGUID in Active Directory) listed in 'Mapped Group Attributes' " +
+                        "is decoded to UUID string format. If off, the attribute is kept as a base64-encoded string.")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("true")
+                .add()
                 .property().name(GroupMapperConfig.DROP_NON_EXISTING_GROUPS_DURING_SYNC)
                 .label("Drop non-existing groups during sync")
                 .helpText("If this flag is true, then during sync of groups from LDAP to Keycloak, we will keep just those Keycloak groups, which still exists in LDAP. Rest will be deleted")

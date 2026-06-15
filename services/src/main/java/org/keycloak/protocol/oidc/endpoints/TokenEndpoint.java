@@ -65,6 +65,7 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.DPoPUtil;
+import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
@@ -125,6 +126,7 @@ public class TokenEndpoint {
         }
 
         formParams = formParameters;
+        sanitizeFormParameters();
         grantType = formParams.getFirst(OIDCLoginProtocol.GRANT_TYPE_PARAM);
 
         // https://tools.ietf.org/html/rfc6749#section-5.1
@@ -232,6 +234,17 @@ public class TokenEndpoint {
             }
         }
     }
+
+    private void sanitizeFormParameters() {
+        MultivaluedMap<String, String> sanitized = new MultivaluedHashMap<>();
+        for (Map.Entry<String, List<String>> entry : formParams.entrySet()) {
+            for (String value : entry.getValue()) {
+                sanitized.add(entry.getKey(), StringUtil.removeControlCharacters(value));
+            }
+        }
+        formParams = sanitized;
+    }
+
 
     protected void checkParameters() {
         OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);

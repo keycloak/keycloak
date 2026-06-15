@@ -1,0 +1,388 @@
+[id="scim-managing-users_{context}"]
+
+[[_scim_managing_users_]]
+= Managing users
+[role="_abstract"]
+
+The SCIM `/Users` endpoint allows you to create, read, update, and delete user resources in {project_name}. User resources
+conform to the `urn:ietf:params:scim:schemas:core:2.0:User` schema as defined in RFC 7643.
+
+== Core user attributes
+
+The following table shows the core SCIM user attributes and how they map to {project_name} user attributes:
+
+[cols="1,1,2",options="header"]
+|===
+| SCIM Attribute | {project_name} Attribute | Description
+
+| `userName`
+| `username`
+| Unique identifier for the user. Required.
+
+| `name.givenName`
+| `firstName`
+| Given name (first name).
+
+| `name.familyName`
+| `lastName`
+| Family name (last name).
+
+| `emails`
+| `email`
+| User email addresses. Even though the attribute is multi-valued, {project_name} does not support mutiple emails for a
+given user account. When multiple email values are submitted, only the first value is persisted. In SCIM responses, the stored address is returned as a single `work` email entry that is marked as `primary`.
+
+| `active`
+| `enabled`
+| Whether the user account is enabled.
+
+| `locale`
+| `locale`
+| User locale. Only available when internationalization is enabled on the realm.
+
+| `externalId`
+| (custom attribute)
+| An identifier from an external system. Requires user profile configuration. See <<_scim_mapping_attributes_,Mapping attributes>>.
+|===
+
+Additional name sub-attributes (`name.middleName`, `name.honorificPrefix`, `name.honorificSuffix`) can be mapped
+by configuring user profile attributes. See <<_scim_mapping_attributes_,Mapping attributes>> for details.
+
+== Creating a user
+
+To create a user, send a `POST` request to the `/Users` endpoint. At minimum, you must provide a `userName`:
+
+[source,bash]
+----
+curl -X POST http://localhost:8080/realms/myrealm/scim/v2/Users \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+    "userName": "jdoe",
+    "name": {
+      "givenName": "John",
+      "familyName": "Doe"
+    },
+    "emails": [
+      {
+        "value": "jdoe@example.com",
+        "type": "work",
+        "primary": true
+      }
+    ],
+    "active": true
+  }'
+----
+
+A successful response returns the created user with a `201 Created` status:
+
+[source,json]
+----
+{
+  "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "userName": "jdoe",
+  "name": {
+    "givenName": "John",
+    "familyName": "Doe",
+    "formatted": "John Doe"
+  },
+  "emails": [
+    {
+      "value": "jdoe@example.com",
+      "type": "work",
+      "primary": true
+    }
+  ],
+  "active": true,
+  "meta": {
+    "resourceType": "User",
+    "created": "2025-01-15T10:30:00Z",
+    "lastModified": "2025-01-15T10:30:00Z",
+    "location": "http://localhost:8080/realms/myrealm/scim/v2/Users/a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  }
+}
+----
+
+NOTE: User profile validation rules are enforced when creating users through the SCIM API. If a required attribute
+is missing or a value does not match the expected format, the API returns a `400 Bad Request` response with a
+description of the validation error.
+
+If a user with the same `userName` already exists, the API returns a `409 Conflict` response with
+`scimType: "uniqueness"`.
+
+== Retrieving a user
+
+To retrieve a user by ID:
+
+[source,bash]
+----
+curl http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+== Listing users
+
+To list all users in the realm:
+
+[source,bash]
+----
+curl http://localhost:8080/realms/myrealm/scim/v2/Users \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+The response uses the SCIM list format:
+
+[source,json]
+----
+{
+  "schemas": ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
+  "totalResults": 2,
+  "itemsPerPage": 2,
+  "startIndex": 1,
+  "Resources": [...]
+}
+----
+
+For filtering and pagination of results, see <<_scim_filtering_resources_,Filtering resources>>.
+
+== Selecting attributes
+
+You can control which attributes are included in the response for both single-resource and list requests
+by using the `attributes` query parameter:
+
+[source,bash]
+----
+curl "http://localhost:8080/realms/myrealm/scim/v2/Users/{id}?attributes=userName,emails" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+Or exclude certain attributes from the response:
+
+[source,bash]
+----
+curl "http://localhost:8080/realms/myrealm/scim/v2/Users/{id}?excludedAttributes=name" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+When requesting a parent attribute (for example, `name`), all its sub-attributes are returned. When requesting
+a sub-attribute (for example, `name.familyName`), only that specific sub-attribute is included.
+
+NOTE: Attribute names in query parameters are case-insensitive, as specified by RFC 7644. The `id` and `schemas`
+attributes are always included and cannot be excluded.
+
+== Updating a user
+
+To fully replace a user resource, send a `PUT` request:
+
+[source,bash]
+----
+curl -X PUT http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+    "id": "{id}",
+    "userName": "jdoe",
+    "name": {
+      "givenName": "John",
+      "familyName": "Smith"
+    },
+    "emails": [
+      {
+        "value": "john.smith@example.com",
+        "type": "work",
+        "primary": true
+      }
+    ],
+    "active": true
+  }'
+----
+
+The `id` in the request body must match the `id` in the URL path, otherwise the API returns a `400 Bad Request` error.
+
+== Partially updating a user
+
+The `PATCH` method allows you to modify specific attributes without replacing the entire resource. A patch request
+contains one or more operations, each specifying an action (`add`, `replace`, or `remove`), an optional path to
+the attribute, and a value.
+
+=== Adding or replacing attributes
+
+[source,bash]
+----
+curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "replace",
+        "path": "name.givenName",
+        "value": "Jane"
+      },
+      {
+        "op": "replace",
+        "path": "active",
+        "value": false
+      },
+      {
+        "op": "add",
+        "path": "emails",
+        "value": {
+          "value": "jane@example.com",
+          "type": "work",
+          "primary": true
+        }
+      }
+    ]
+  }'
+----
+
+You can also provide multiple attributes in a single operation without specifying a path. In this case, the paths
+are derived from the JSON structure:
+
+[source,bash]
+----
+curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "replace",
+        "value": {
+          "name": {"givenName": "Jane"},
+          "active": false
+        }
+      }
+    ]
+  }'
+----
+
+=== Removing attributes
+
+[source,bash]
+----
+curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "remove",
+        "path": "name.honorificPrefix"
+      }
+    ]
+  }'
+----
+
+For multi-valued attributes, you can use a filter in the path to remove specific values:
+
+[source,bash]
+----
+curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "remove",
+        "path": "emails[type eq \"work\"]"
+      }
+    ]
+  }'
+----
+
+== Managing group membership
+
+You can manage a user's group memberships directly through the user resource. Group membership can also be managed
+from the group side using the `/Groups` endpoint. See <<_scim_managing_groups_,Managing groups>> for details.
+
+=== Adding a user to groups on creation
+
+When creating a user, you can specify the groups the user should belong to:
+
+[source,bash]
+----
+curl -X POST http://localhost:8080/realms/myrealm/scim/v2/Users \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+    "userName": "jdoe",
+    "groups": [
+      {"value": "{groupId}"}
+    ]
+  }'
+----
+
+=== Modifying group membership via PATCH
+
+[source,bash]
+----
+curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "add",
+        "path": "groups",
+        "value": "{groupId}"
+      }
+    ]
+  }'
+----
+
+To remove a user from a group:
+
+[source,bash]
+----
+curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "remove",
+        "path": "groups[value eq \"{groupId}\"]"
+      }
+    ]
+  }'
+----
+
+=== Querying group membership
+
+To retrieve a user's groups, include `groups` in the `attributes` parameter:
+
+[source,bash]
+----
+curl "http://localhost:8080/realms/myrealm/scim/v2/Users/{id}?attributes=groups" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+Each group membership includes the group `value` (ID), `display` (name), and `type` (`direct` or `indirect` for
+inherited memberships from parent groups).
+
+== Deleting a user
+
+[source,bash]
+----
+curl -X DELETE http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+----
+
+A successful deletion returns a `204 No Content` response with no body.

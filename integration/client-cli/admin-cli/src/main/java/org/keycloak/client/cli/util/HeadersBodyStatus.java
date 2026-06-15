@@ -75,7 +75,7 @@ public class HeadersBodyStatus extends HeadersBody {
                 }
 
                 if (message == null) {
-                    message = msg != null ? msg : err != null ? (description + " [" + error.get("error") + "]") : null;
+                    message = msg != null ? msg : err != null ? (description != null ? description + " [" + err + "]" : err) : null;
                 }
             }
             throw new HttpResponseException(getStatusCodeAndReason(), message, new RuntimeException(content));
