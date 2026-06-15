@@ -54,7 +54,7 @@ public interface ClientService extends Service {
             List<ClientField> fields = listOptions.getSortBy() == null || listOptions.getSortBy().isEmpty()
                     ? List.of(ClientField.defaultField())
                     : parseSortBy(listOptions.getSortBy());
-            return new ClientSortAndSliceOptions(fields, resolveSortOrder(listOptions.getSortOrder()));
+            return new ClientSortAndSliceOptions(fields, isSortOrderAscending(listOptions.getSortOrder()));
         }
 
         private static List<ClientField> parseSortBy(String sortBy) {
@@ -75,7 +75,7 @@ public interface ClientService extends Service {
             });
         }
 
-        private static boolean resolveSortOrder(SortOrder sortOrder) {
+        private static boolean isSortOrderAscending(SortOrder sortOrder) {
             return sortOrder == null ? true : sortOrder.isAscending();
         }
 
