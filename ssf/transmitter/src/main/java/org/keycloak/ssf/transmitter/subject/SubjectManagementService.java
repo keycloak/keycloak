@@ -12,6 +12,7 @@ import org.keycloak.ssf.metadata.DefaultSubjects;
 import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
+import org.keycloak.ssf.subject.SubjectNotFoundException;
 import org.keycloak.ssf.subject.SubjectResolution;
 import org.keycloak.ssf.subject.SubjectResolver;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
@@ -439,8 +440,7 @@ public class SubjectManagementService {
             return complex;
         }
         if (resolution instanceof SubjectResolution.NotFound) {
-            throw new SsfException("Subject not found for type=" + subjectType
-                    + " value=" + subjectValue);
+            throw new SubjectNotFoundException(subjectType, subjectValue);
         }
         // UNSUPPORTED_FORMAT (unknown type or organization feature disabled).
         throw new SsfException("Unsupported subjectType: " + subjectType);
