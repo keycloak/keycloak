@@ -1,14 +1,6 @@
 package org.keycloak.cookie;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
 import jakarta.annotation.Nullable;
-
-import org.keycloak.crypto.JavaAlgorithm;
-
-import org.apache.commons.codec.binary.Hex;
 
 public final class CookieType {
 
@@ -61,20 +53,12 @@ public final class CookieType {
             .build();
 
     public static CookieType getTrustedDeviceCookie(String postfix) {
-        // Generate SHA256 hash of the postfix
-        String algorithm = JavaAlgorithm.SHA256;
-        try {
-            MessageDigest md = MessageDigest.getInstance(algorithm);
-            md.update(postfix.getBytes(StandardCharsets.UTF_8));
-            String postFixDigest = Hex.encodeHexString(md.digest()).toUpperCase();
-
-            return CookieType.create("KEYCLOAK_TRUSTED_DEVICE_" + postFixDigest)
-                    .scope(CookieScope.INTERNAL)
-                    .defaultMaxAge(CookieMaxAge.WEEK)
-                    .build();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("JVM does not support required cryptography algorithms: " + algorithm, e);
-        }
+        // Replace dash with N to avoid negative numbers in cookie name
+        String name = "KEYCLOAK_TRUSTED_DEVICE_" + postfix.hashCode();
+        return CookieType.create(name.replace('-', 'N'))
+                .scope(CookieScope.INTERNAL)
+                .defaultMaxAge(CookieMaxAge.WEEK)
+                .build();
     }
 
     private final String name;
