@@ -24,6 +24,7 @@ import java.util.Base64;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.crypto.JavaAlgorithm;
@@ -58,7 +59,7 @@ public class TrustedDeviceCredentialModel extends CredentialModel {
         String id = UUID.randomUUID().toString();
         String userLabel = device.getOs() + ' ' + device.getOsVersion() + " / " + device.getBrowser() + " (" + id.substring(0, 8) + ")";
 
-        var hashedSecret = Base64.getEncoder().encodeToString(hashSecret(secret, SECRET_HASH_ALGORITHM));
+        var hashedSecret = hashSecretText(secret, credentialData.getSecretHashAlgorithm());
 
         try {
             TrustedDeviceCredentialModel tdCredentialModel = new TrustedDeviceCredentialModel(credentialData);
@@ -74,6 +75,17 @@ public class TrustedDeviceCredentialModel extends CredentialModel {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public String rotateSecret() {
+        // Generate new secret
+        String secret = generateSecret();
+
+        // Hash the secret and store it
+        String hashedSecret = hashSecretText(secret, credentialData.getSecretHashAlgorithm());
+        setSecretData(hashedSecret);
+
+        return secret;
     }
 
     public static TrustedDeviceCredentialModel createFromCredentialModel(CredentialModel credentialModel) {
@@ -100,6 +112,11 @@ public class TrustedDeviceCredentialModel extends CredentialModel {
         return tdCredentialModel;
     }
 
+    private static String hashSecretText(String secret, String algorithm) {
+        byte[] hashedSecret = hashSecret(secret, algorithm);
+        return Base64.getEncoder().encodeToString(hashedSecret);
+    }
+
     private static byte[] hashSecret(String rawSecret, String algorithm) {
         Objects.requireNonNull(rawSecret, "rawSecret cannot be null");
         return HashUtils.hash(algorithm, rawSecret.getBytes(StandardCharsets.UTF_8));
@@ -113,7 +130,7 @@ public class TrustedDeviceCredentialModel extends CredentialModel {
         }
 
         String hashAlgorithm = credentialData.getSecretHashAlgorithm();
-        if(hashAlgorithm == null || hashAlgorithm.isBlank()) {
+        if (hashAlgorithm == null || hashAlgorithm.isBlank()) {
             logger.warn("No saved Trusted Device secret hash algorithm found");
             return false;
         }
@@ -126,5 +143,9 @@ public class TrustedDeviceCredentialModel extends CredentialModel {
             logger.warnf("Error when validating Trusted Device secret", iae);
             return false;
         }
+    }
+
+    public static String generateSecret() {
+        return SecretGenerator.getInstance().randomString();
     }
 }

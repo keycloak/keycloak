@@ -17,9 +17,10 @@
 
 package org.keycloak.credential;
 
+import java.util.concurrent.TimeUnit;
+
 import org.keycloak.authentication.authenticators.browser.TrustedDeviceConstants;
 import org.keycloak.common.util.ObjectUtil;
-import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
@@ -76,7 +77,7 @@ public class TrustedDeviceCredentialProvider implements CredentialProvider<Trust
         deleteExpiredCredentials(realm, credentialManager);
 
         // Creating new credential
-        String secret = SecretGenerator.getInstance().randomString();
+        String secret = TrustedDeviceCredentialModel.generateSecret();
         var credential = TrustedDeviceCredentialModel.create(device, secret);
         credentialManager.createStoredCredential(credential);
 
@@ -86,15 +87,32 @@ public class TrustedDeviceCredentialProvider implements CredentialProvider<Trust
         credentialManager.moveStoredCredentialTo(credential.getId(), null);
 
         // Set cookie
-        setTrustedDeviceCookie(user.getId(), credential.getId(), secret, getExpirationSeconds(realm));
-
+        setTrustedDeviceCookie(realm, user, credential, secret);
     }
 
-    private void setTrustedDeviceCookie(String userId, String credentialId, String secret, int expiration) {
+    public void rotateSecret(RealmModel realm, TrustedDeviceCredentialModel credential, UserModel user) {
+        SubjectCredentialManager credentialManager = user.credentialManager();
+
+        // Generate new secret and update the credential
+        String newSecret = credential.rotateSecret();
+        credentialManager.updateStoredCredential(credential);
+
+        // Keep Cookie's expiration the same
+        setTrustedDeviceCookie(realm, user, credential, newSecret);
+    }
+
+    private void setTrustedDeviceCookie(RealmModel realm, UserModel user, CredentialModel credential, String secret) {
         CookieProvider cookieProvider = session.getProvider(CookieProvider.class);
-        CookieType cookieType = CookieType.getTrustedDeviceCookie(userId);
-        String cookie = credentialId + ':' + secret;
-        cookieProvider.set(cookieType, cookie, expiration);
+        CookieType cookieType = CookieType.getTrustedDeviceCookie(user.getId());
+
+        // Calculate cookie expiration
+        long expiresAtMillis = credential.getCreatedDate() + getExpirationMillis(realm);
+        long cookieLifetimeMillis = expiresAtMillis - Time.currentTimeMillis();
+        int cookieExpirationSeconds = Math.toIntExact(TimeUnit.MILLISECONDS.toSeconds(cookieLifetimeMillis));
+
+        String content = credential.getId() + ':' + secret;
+
+        cookieProvider.set(cookieType, content, cookieExpirationSeconds);
     }
 
     @Override
@@ -103,7 +121,7 @@ public class TrustedDeviceCredentialProvider implements CredentialProvider<Trust
     }
 
     public void deleteExpiredCredentials(RealmModel realm, SubjectCredentialManager credentialManager) {
-        long expirationLimit = Time.currentTimeMillis() - getExpirationSeconds(realm);
+        long expirationLimit = Time.currentTimeMillis() - getExpirationMillis(realm);
 
         credentialManager.getStoredCredentialsByTypeStream(TrustedDeviceCredentialModel.TYPE)
                 .filter(c -> c.getCreatedDate() <= expirationLimit)
@@ -166,7 +184,7 @@ public class TrustedDeviceCredentialProvider implements CredentialProvider<Trust
 
         TrustedDeviceCredentialModel tdCredential = TrustedDeviceCredentialModel.createFromCredentialModel(credential);
 
-        long credentialExpiresAt = tdCredential.getCreatedDate() + getExpirationSeconds(realm);
+        long credentialExpiresAt = tdCredential.getCreatedDate() + getExpirationMillis(realm);
 
         if (credentialExpiresAt <= Time.currentTimeMillis()) {
             // Remove the credential if expired
@@ -174,18 +192,27 @@ public class TrustedDeviceCredentialProvider implements CredentialProvider<Trust
             return false;
         }
 
-        return tdCredential.verifySecret(challengeSecret);
+        if (!tdCredential.verifySecret(challengeSecret)) {
+            // Remove invalid credential
+            deleteCredential(realm, user, credentialInput.getCredentialId());
+            return false;
+        }
+
+        // Rotate the secret
+        rotateSecret(realm, tdCredential, user);
+        return true;
     }
 
-    private static boolean getIsDisabled(RealmModel realm){
+    private static boolean getIsDisabled(RealmModel realm) {
         return !realm.getAttribute(TrustedDeviceConstants.REALM_IS_ENABLED_ATTR, false);
     }
 
-    private static int getExpirationSeconds(RealmModel realm) {
-        return realm.getAttribute(
+    private static long getExpirationMillis(RealmModel realm) {
+        int expirationSeconds = realm.getAttribute(
                 TrustedDeviceConstants.REALM_EXPIRATION_ATTR,
                 TrustedDeviceConstants.DEFAULT_EXPIRATION
         );
+        return TimeUnit.SECONDS.toMillis(expirationSeconds);
     }
 
 }
