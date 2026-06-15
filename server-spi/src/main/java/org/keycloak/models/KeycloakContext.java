@@ -48,7 +48,7 @@ public interface KeycloakContext {
 
      /**
      * @deprecated Use {@link #getHttpRequest()} to obtain the request headers.
-     * @throws {@link ContextNotActiveException} when a request is active
+     * @throws {@link ContextNotActiveException} when no request is active
      */
     @Deprecated
     HttpHeaders getRequestHeaders();
