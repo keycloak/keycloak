@@ -25,7 +25,7 @@ import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.representations.idm.oid4vc.CredentialOfferActionConfig;
+import org.keycloak.representations.idm.oid4vc.VerifiableCredentialOfferActionConfig;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -149,7 +149,7 @@ public class CredentialOfferActionTokenHandler extends AbstractActionTokenHandle
                         logger.warn("Verifiable credentials not enabled for the realm");
                         return false;
                     }
-                    CredentialOfferActionConfig credentialOfferConfig = t.getActionConfig();
+                    VerifiableCredentialOfferActionConfig credentialOfferConfig = t.getActionConfig();
                     if (credentialOfferConfig == null) {
                         logger.warn("Credential configuration missing.");
                         return false;

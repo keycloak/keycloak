@@ -15,7 +15,7 @@ import type UserRepresentation from "../defs/userRepresentation.js";
 import type UserSessionRepresentation from "../defs/userSessionRepresentation.js";
 import type UserVerifiableCredentialRepresentation from "../defs/userVerifiableCredentialRepresentation.js";
 import type IssuedUserVerifiableCredentialRepresentation from "../defs/issuedUserVerifiableCredentialRepresentation.js";
-import type CredentialOfferActionConfigRepresentation from "../defs/credentialOfferActionConfigRepresentation.js";
+import type VerifiableCredentialOfferActionConfigRepresentation from "../defs/verifiableCredentialOfferActionConfigRepresentation.js";
 import Resource from "./resource.js";
 
 export interface SearchQuery {
@@ -558,7 +558,7 @@ export class Users extends Resource<{ realm?: string }> {
       lifespan?: number;
       redirectUri?: string;
     },
-    CredentialOfferActionConfigRepresentation,
+    VerifiableCredentialOfferActionConfigRepresentation,
     void
   >({
     method: "PUT",
