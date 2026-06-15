@@ -1,6 +1,6 @@
 [id="scim-filtering-resources_{context}"]
 
-[[_scim_filtering_resources_]]
+[[_scim_filtering_resources]]
 = Filtering resources
 [role="_abstract"]
 
