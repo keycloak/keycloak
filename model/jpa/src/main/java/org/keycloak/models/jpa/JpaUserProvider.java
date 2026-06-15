@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -492,10 +493,13 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         String newRevision = SecretGenerator.getInstance().generateSecureID();
         entity.setRevision(newRevision);
         entity.setUpdatedDate(Time.currentTimeMillis());
-        UserVerifiableCredentialEntity mergedEntity = em.merge(entity);
-        em.flush();
-
-        return toVerifiableCredentialModel(mergedEntity);
+        try {
+            UserVerifiableCredentialEntity mergedEntity = em.merge(entity);
+            em.flush();
+            return toVerifiableCredentialModel(mergedEntity);
+        } catch (OptimisticLockException e) {
+            throw new ModelException( "Verifiable credential was concurrently modified. Please retry the operation.", e);
+        }
     }
 
     private Stream<UserVerifiableCredentialEntity> getVerifiableCredentialsEntitiesByUser(String userId) {
