@@ -28,7 +28,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -48,10 +50,20 @@ public class RedirectUtils {
     public static final Set<String> LOOPBACK_INTERFACES = new HashSet<>(Arrays.asList("localhost", "127.0.0.1", "[::1]"));
 
     private static final Set<String> FORBIDDEN_OIDC_PARAMS = Set.of(
-                                                                            "code", "id_token", "access_token", "token_type", "expires_in",
-                                                                            "state", "iss",
-                                                                            "error", "error_description"
-                                                                    );
+                                                                     OAuth2Constants.CODE,
+                                                                     OAuth2Constants.ID_TOKEN,
+                                                                     OAuth2Constants.ACCESS_TOKEN,
+                                                                     OAuth2Constants.TOKEN_TYPE,
+                                                                     OAuth2Constants.EXPIRES_IN,
+                                                                     OAuth2Constants.STATE,
+                                                                     OAuth2Constants.ISSUER,
+                                                                     OAuth2Constants.ERROR,
+                                                                     OAuth2Constants.ERROR_DESCRIPTION,
+                                                                     OAuth2Constants.SESSION_STATE,
+                                                                     OAuth2Constants.RESPONSE,
+                                                                     Constants.KC_ACTION,
+                                                                     Constants.KC_ACTION_STATUS
+                                                                   );
 
     private static final Logger logger = Logger.getLogger(RedirectUtils.class);
 
@@ -150,18 +162,10 @@ public class RedirectUtils {
     private static boolean containsForbiddenOidcParameters(String redirectUri, URI originalRedirect) {
         String query = originalRedirect.getRawQuery();
         if (query != null && !query.isEmpty()) {
-            String[] pairs = query.split("&");
-            for (String pair : pairs) {
-                int idx = pair.indexOf('=');
-                String key = idx > 0 ? pair.substring(0, idx) : pair;
-                String decodedKey;
-                try {
-                    decodedKey = java.net.URLDecoder.decode(key, java.nio.charset.StandardCharsets.UTF_8);
-                } catch (Exception e) {
-                    decodedKey = key;
-                }
-                if (FORBIDDEN_OIDC_PARAMS.contains(decodedKey.toLowerCase(Locale.ROOT))) {
-                    logger.warnf("Redirect URI rejected: contains forbidden OIDC parameter '%s' in query string: %s", decodedKey, redirectUri);
+            MultivaluedHashMap<String, String> params =UriUtils.decodeQueryString(query);
+            for (String paramName : params.keySet()) {
+                if (FORBIDDEN_OIDC_PARAMS.contains(paramName.toLowerCase(Locale.ROOT))) {
+                    logger.warnf("Redirect URI rejected: contains forbidden OIDC parameter '%s' in query string: %s", paramName, redirectUri);
                     return true;
                 }
             }

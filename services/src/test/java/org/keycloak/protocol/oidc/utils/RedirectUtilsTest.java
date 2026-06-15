@@ -331,6 +331,12 @@ public class RedirectUtilsTest {
         Assert.assertNull("Should reject redirect URI containing pre-loaded 'state' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?state=attacker_state", set, false));
         Assert.assertNull("Should reject redirect URI containing pre-loaded 'iss' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?iss=attacker_issuer", set, false));
         Assert.assertNull("Should reject redirect URI if any forbidden OIDC parameter is mixed into the query string", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?legit_param=123&code=malicious", set, false));
+        Assert.assertNull("Should reject redirect URI containing 'session_state' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?session_state=attacker_session", set, false));
+        Assert.assertNull("Should reject redirect URI containing 'response' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?response=attacker_jwt", set, false));
+        Assert.assertNull("Should reject redirect URI containing 'kc_action' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?kc_action=evil_action", set, false));
+        Assert.assertNull("Should reject redirect URI containing 'kc_action_status' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?kc_action_status=evil_status", set, false));
+        Assert.assertNull("Should reject URL-encoded 'session_state' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?session%5Fstate=attack", set, false));
+        Assert.assertNull("Should reject mixed-case 'RESPONSE' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?RESPONSE=attack", set, false));
         Assert.assertEquals("Should allow legitimate query parameters that do not conflict with OIDC protocol variables", "https://example.com/callback?legit_param=123", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?legit_param=123", set, false));
     }
 }
