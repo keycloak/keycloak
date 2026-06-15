@@ -171,6 +171,7 @@ public class DatabaseOptions {
     public static final Option<Boolean> DB_HEALTH_EXCLUDE = new OptionBuilder<>("db-health-exclude-<datasource>", Boolean.class)
             .category(OptionCategory.DATABASE)
             .description("If you have enabled heatlth endpoints, but want the given datasource excluded from the health check.")
+            .buildTime(true)
             .build();
 
     public static class Datasources {
