@@ -146,6 +146,7 @@ import static org.keycloak.models.utils.ModelToRepresentation.stripRealmAttribut
 import static org.keycloak.models.utils.RepresentationToModel.createCredentials;
 import static org.keycloak.models.utils.RepresentationToModel.createFederatedIdentities;
 import static org.keycloak.models.utils.RepresentationToModel.createGroups;
+import static org.keycloak.models.utils.RepresentationToModel.createIssuedVerifiableCredentials;
 import static org.keycloak.models.utils.RepresentationToModel.createRoleMappings;
 import static org.keycloak.models.utils.RepresentationToModel.createVerifiableCredentials;
 import static org.keycloak.models.utils.RepresentationToModel.importGroup;
@@ -1026,6 +1027,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         }
 
         createVerifiableCredentials(userRep, session, user);
+        createIssuedVerifiableCredentials(userRep, session, user);
 
         if (userRep.getServiceAccountClientId() != null) {
             String clientId = userRep.getServiceAccountClientId();
