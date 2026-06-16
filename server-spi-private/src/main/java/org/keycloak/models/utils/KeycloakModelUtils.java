@@ -32,6 +32,7 @@ import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.models.AccountRoles;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -55,6 +56,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -78,6 +80,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -983,6 +986,38 @@ public final class KeycloakModelUtils {
         }
 
         return clientId + CLIENT_ROLE_SEPARATOR + roleName;
+    }
+
+    public static RoleModel getRoleByName(RealmModel realm, String clientId, String name) {
+        if (clientId == null) {
+            return realm.getRole(name);
+        } else {
+            ClientModel client = realm.getClientByClientId(clientId);
+
+            if (client == null) {
+                return null;
+            }
+
+            return client.getRole(name);
+        }
+    }
+
+    public static void removeTransientAdminRoles(RealmModel realm, String clientId, UserModel user, AccessToken.Access access) {
+        if (access == null || access.getRoles() == null) {
+            return;
+        }
+
+        Set<String> roles = access.getRoles();
+        Iterator<String> roleIterator = roles.iterator();
+
+        while (roleIterator.hasNext()) {
+            String role = roleIterator.next();
+            RoleModel adminRole = getRoleByName(realm, clientId, role);
+
+            if (AdminRoles.containsAdminRole(adminRole) && !user.hasRole(adminRole)) {
+                roleIterator.remove();
+            }
+        }
     }
 
     /**

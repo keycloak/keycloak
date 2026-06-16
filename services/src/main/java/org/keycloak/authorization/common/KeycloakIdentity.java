@@ -32,6 +32,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AccessToken.Access;
 import org.keycloak.representations.IDToken;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.services.ErrorResponseException;
@@ -46,6 +47,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import static org.keycloak.models.utils.KeycloakModelUtils.removeTransientAdminRoles;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -148,18 +151,6 @@ public class KeycloakIdentity implements Identity {
             this.accessToken = new TokenManager().createClientAccessToken(keycloakSession, realm, client, userSession.getUser(), userSession, clientSessionCtx, clientSessionCtx.isOfflineTokenRequested());
         }
 
-        AccessToken.Access realmAccess = this.accessToken.getRealmAccess();
-
-        if (realmAccess != null) {
-            attributes.put("kc.realm.roles", realmAccess.getRoles());
-        }
-
-        Map<String, AccessToken.Access> resourceAccess = this.accessToken.getResourceAccess();
-
-        if (resourceAccess != null) {
-            resourceAccess.forEach((clientId, access) -> attributes.put("kc.client." + clientId + ".roles", access.getRoles()));
-        }
-
         ClientModel clientModel = getTargetClient();
         UserModel clientUser = null;
 
@@ -167,14 +158,16 @@ public class KeycloakIdentity implements Identity {
             clientUser = this.keycloakSession.users().getServiceAccount(clientModel);
         }
 
-        UserModel userSession = getUserFromToken();
+        UserModel user = getUserFromToken();
 
-        this.resourceServer = clientUser != null && userSession.getId().equals(clientUser.getId());
+        addRolesAsAttributes(this.accessToken, realm, user, attributes);
+
+        this.resourceServer = clientUser != null && user.getId().equals(clientUser.getId());
 
         if (resourceServer) {
             this.id = clientModel.getId();
         } else {
-            this.id = userSession.getId();
+            this.id = user.getId();
         }
 
         this.attributes = Attributes.from(attributes);
@@ -232,18 +225,6 @@ public class KeycloakIdentity implements Identity {
                 }
             }
 
-            AccessToken.Access realmAccess = accessToken.getRealmAccess();
-
-            if (realmAccess != null) {
-                attributes.put("kc.realm.roles", realmAccess.getRoles());
-            }
-
-            Map<String, AccessToken.Access> resourceAccess = accessToken.getResourceAccess();
-
-            if (resourceAccess != null) {
-                resourceAccess.forEach((clientId, access) -> attributes.put("kc.client." + clientId + ".roles", access.getRoles()));
-            }
-
             ClientModel clientModel = getTargetClient();
             UserModel clientUser = null;
 
@@ -251,17 +232,19 @@ public class KeycloakIdentity implements Identity {
                 clientUser = this.keycloakSession.users().getServiceAccount(clientModel);
             }
 
-            UserModel userSession = getUserFromToken();
-            if (userSession == null) {
+            UserModel user = getUserFromToken();
+            if (user == null) {
                 throw new IllegalArgumentException("User from token not found");
             }
 
-            this.resourceServer = clientUser != null && userSession.getId().equals(clientUser.getId());
+            addRolesAsAttributes(accessToken, realm, user, attributes);
+
+            this.resourceServer = clientUser != null && user.getId().equals(clientUser.getId());
 
             if (resourceServer) {
                 this.id = clientModel.getId();
             } else {
-                this.id = userSession.getId();
+                this.id = user.getId();
             }
         } catch (Exception e) {
             throw new RuntimeException("Error while reading attributes from security token.", e);
@@ -322,5 +305,23 @@ public class KeycloakIdentity implements Identity {
             return null;
         }
         return userSession.getUser();
+    }
+
+    private void addRolesAsAttributes(AccessToken accessToken, RealmModel realm, UserModel user, Map<String, Collection<String>> attributes) {
+        Access realmAccess = accessToken.getRealmAccess();
+
+        if (realmAccess != null) {
+            removeTransientAdminRoles(realm, null, user, realmAccess);
+            attributes.put("kc.realm.roles", realmAccess.getRoles());
+        }
+
+        Map<String, Access> resourceAccess = accessToken.getResourceAccess();
+
+        if (resourceAccess != null) {
+            resourceAccess.forEach((clientId, access) -> {
+                removeTransientAdminRoles(realm, clientId, user, access);
+                attributes.put("kc.client." + clientId + ".roles", access.getRoles());
+            });
+        }
     }
 }

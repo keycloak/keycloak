@@ -11,6 +11,24 @@ The listing endpoints for default and optional client scopes now return an empty
 
 If you have delegated administrators that assign client scopes using Fine-Grained Admin Permissions, ensure they also have the `manage-clients` realm admin role or a type-level `manage` permission on the Clients resource type.
 
+=== Stricter checks in the Admin API for admin roles granted via protocol mappers
+
+In this release, access to the Admin API is only granted to users with admin roles that are directly assigned to them,
+either through direct role assignments or group memberships. Admin roles granted via protocol mappers will no longer grant
+Admin API access.
+
+This change was made to enhance security in realm administration delegation scenarios. Developers with limited realm
+administration permissions who have access to manage client protocol mappers or client scopes could previously map admin
+roles into tokens and gain unintended access to the Admin API. This is no longer possible.
+
+If your existing deployment was relying on admin roles granted via protocol mappers to access the Admin API, you should
+update your configuration to directly assign admin roles to users or groups instead.
+
+To verify if your deployment is affected, review any client protocol mappers that map admin roles to tokens. For each mapper
+found, ensure the affected users and service accounts have the required admin roles directly assigned either through direct role assignments or
+through group memberships. You can verify this in the Keycloak Admin Console by checking the user's role assignments and
+group memberships in the target realm.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
