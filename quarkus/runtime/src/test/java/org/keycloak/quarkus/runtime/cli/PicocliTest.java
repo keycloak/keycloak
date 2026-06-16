@@ -525,7 +525,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-max-length=wrong");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString(
-                "Invalid value for option '--log-syslog-max-length': value wrong not in correct format (regular expression): [0-9]+[BbKkMmGgTtPpEeZzYy]?"));
+                "Invalid value for option '--log-syslog-max-length': No digits in memory size string"));
     }
 
     @Test
