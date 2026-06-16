@@ -223,7 +223,7 @@ The following table describes the available OID4VCI realm attributes:
 | Default
 | Description
 
-| Nonce Lifetime
+| OID4VCI Nonce Lifetime
 | `vc.c-nonce-lifetime-seconds`
 | `60` seconds
 | Lifetime of the `c_nonce` value returned by the nonce endpoint. Wallets must include this nonce when presenting proofs at the credential endpoint. Minimum: 30 seconds.
@@ -311,6 +311,15 @@ For step-by-step instructions on creating a user, refer to the {project_name} do
 
 Ensure that the user has a valid username, email, and password. If the password should not be reset upon first login, disable the "Temporary" toggle during password configuration.
 
+The next step is to create verifiable credential for the user to indicate which verifiable credentials the particular user can request. You may switch to the tab **Verifiable credentials**
+of the user, request creating verifiable credential and create some verifiable credential for the user, which you want this user to be able to obtain. For now, you can
+choose some of the pre-defined OID4VCI credential scopes or some credential scope you created based on <<_oid4vci_client_scope, the instructions from the credential scope section>>.
+
+Once verifiable credential is created, administrator can send credential offer to the user by email by click **Send credential offer** in the table of available verifiable credentials.
+This link is available in case user has email. It is also needed that SMTP is properly configured for the realm as described in the <<_email,dedicated section>>. The email will also
+inform user that he has some verifiable credential available. User can also visit <<_account-service,Account console>> and request issuance of some available verifiable credential by himself.
+
+[[_oid4vci_client_scope]]
 === Create Client Scopes with Mappers
 
 Client scopes define **which user attributes** are included in Verifiable Credentials (VCs) and therefore represent the Verifiable Credential configuration itself. Each credential type is configured as a dedicated client scope using the **OpenID for Verifiable Credentials** protocol.
@@ -324,7 +333,7 @@ Many OID4VCI client scope attributes can be configured directly through the {pro
 . Navigate to *Client Scopes* and click *Create client scope*.
 . Configure the basic settings:
    * **Name** – A unique identifier for this credential type (e.g., `membership-credential`).
-   * **Type** – Select *Optional* (recommended for credential scopes).
+   * **Type** – Select *None* (recommended for credential scopes).
    * **Protocol** – Select **OpenID for Verifiable Credentials**.
 . Ensure **Include in token scope** is toggled **On** — this is required for the scope to appear in the access token's `scope` claim.
 . Ensure **Include in OpenID Provider Metadata** is toggled **On** — when enabled, this client scope is included in the OpenID Provider Metadata and the credential configuration will be advertised in the Issuer Metadata Endpoint response.
