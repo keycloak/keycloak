@@ -250,7 +250,7 @@ public class SdJwt {
             this.useDefaultDecoys = useDefaultDecoys;
             return this;
         }
-        
+
         public SdJwt build() {
             List<DecoyClaim> decoyClaims = Optional.ofNullable(issuerSignedJwt.getDecoyClaims())
                     .filter(list -> !list.isEmpty())

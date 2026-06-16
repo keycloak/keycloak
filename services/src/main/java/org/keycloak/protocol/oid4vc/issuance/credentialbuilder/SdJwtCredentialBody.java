@@ -42,7 +42,7 @@ public class SdJwtCredentialBody implements CredentialBody {
         this.sdJwtBuilder = sdJwtBuilder;
         this.issuerSignedJWT = issuerSignedJWT;
     }
-    
+
     public void addKeyBinding(JWK jwk) throws CredentialBuilderException {
         ObjectNode jwkNode = JsonSerialization.mapper.convertValue(jwk, ObjectNode.class);
         ObjectNode keyBindingNode = JsonSerialization.mapper.createObjectNode();
