@@ -252,7 +252,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         assertThat(created.getCreatedTimestamp(), notNullValue());
         assertThat(created.getUpdatedTimestamp(), notNullValue());
-        assertThat(created.getCreatedTimestamp(), is(created.getUpdatedTimestamp()));
+        // During initial create the entity can be persisted and then updated again (e.g. for filling
+        // additional fields), which may bump updatedTimestamp slightly above createdTimestamp.
+        assertThat(created.getUpdatedTimestamp() >= created.getCreatedTimestamp(), is(true));
         assertThat(created.getCreatedTimestamp() >= beforeCreate, is(true));
         assertThat(created.getCreatedTimestamp() <= afterCreate, is(true));
 
