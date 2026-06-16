@@ -255,7 +255,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         assertThat(created.getCreatedTimestamp() >= beforeCreate, is(true));
         assertThat(created.getCreatedTimestamp() <= afterCreate, is(true));
 
-        Thread.sleep(5);
+        while (org.keycloak.common.util.Time.currentTimeMillis() <= created.getUpdatedTimestamp()) Thread.onSpinWait();
 
         OIDCClientRepresentation patch = new OIDCClientRepresentation();
         patch.setDescription("Updated description");
