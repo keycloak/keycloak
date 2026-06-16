@@ -162,14 +162,18 @@ public class ClientPaginationTest extends AbstractClientApiV2Test {
 
     @Test
     public void pagination() throws IOException {
-        List<BaseClientRepresentation> page = queryClients(null, 0, 2);
-        assertThat(page, hasSize(2));
+        try (var stream1 = getClientsApi().getClients(new ListOptions().offset(0).limit(2))) {
+            var page = stream1.toList();
+            try (var stream2 = getClientsApi().getClients(new ListOptions().offset(2).limit(2))) {
+                List<BaseClientRepresentation> nextPage = stream2.toList();
+                assertThat(page, hasSize(2));
 
-        List<BaseClientRepresentation> nextPage = queryClients(null, 2, 2);
-        assertThat(nextPage, hasSize(2));
-        assertThat(page.get(0).getClientId(), is(not(nextPage.get(0).getClientId())));
-        // test that the last client of the first page is not the first client on the next page
-        assertThat(page.get(1).getClientId(), is(not(nextPage.get(0).getClientId())));
+                assertThat(nextPage, hasSize(2));
+                assertThat(page.get(0).getClientId(), is(not(nextPage.get(0).getClientId())));
+                // test that the last client of the first page is not the first client on the next page
+                assertThat(page.get(1).getClientId(), is(not(nextPage.get(0).getClientId())));
+            }
+        }
     }
 
     @Test
@@ -181,8 +185,8 @@ public class ClientPaginationTest extends AbstractClientApiV2Test {
 
     private List<BaseClientRepresentation> queryClients(String query, int offset, int limit) throws IOException {
         String url = getClientsApiUrl()
-                + (query == null ? "?" : "?q=" + URLEncoder.encode(query, StandardCharsets.UTF_8) + "&")
-                + "offset=" + offset
+                + "?q=" + URLEncoder.encode(query, StandardCharsets.UTF_8)
+                + "&offset=" + offset
                 + "&limit=" + limit;
         HttpGet request = new HttpGet(url);
         setAuthHeader(request);
