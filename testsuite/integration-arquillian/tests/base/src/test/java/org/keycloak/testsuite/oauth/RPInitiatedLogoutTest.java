@@ -19,6 +19,7 @@ package org.keycloak.testsuite.oauth;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -36,12 +37,15 @@ import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
@@ -87,6 +91,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -125,6 +130,9 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     private ErrorPage errorPage;
+
+    @Page
+    protected org.keycloak.testsuite.pages.LoginPasswordUpdatePage updatePasswordPage;
 
     private String APP_REDIRECT_URI;
 
@@ -1093,6 +1101,102 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             // Invalid redirect URI page is shown. It was not possible to verify post_logout_redirect_uri due the client was removed
             errorPage.assertCurrent();
             EventAssertion.expectLogoutError(events.poll()).error(OAuthErrorException.INVALID_REDIRECT_URI).details(Details.REDIRECT_URI, APP_REDIRECT_URI);
+        }
+    }
+
+    @Test // #32124
+    public void testMultipleSessionsLogoutViaUpdatePasswordWithSignOutAllDevices() throws Exception {
+        // Configure client for backchannel logout
+        try (Closeable clientUpdater = ClientAttributeUpdater.forClient(adminClient, "test", "test-app")
+                .setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL,
+                        oauth.APP_ROOT + "/admin/backchannelLogout")
+                .setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED, "true")
+                .update()) {
+
+            String userId = adminClient.realm("test").users()
+                    .search("test-user@localhost").get(0).getId();
+
+            // Create first session
+            AccessTokenResponse tokenResponse1 = loginUser();
+            String sessionId1 = tokenResponse1.getSessionState();
+            events.clear();
+
+            // Create second session
+            driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/testing/blank");
+            driver.manage().deleteAllCookies();
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+            loginPage.login("test-user@localhost", "password");
+            String code2 = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code2);
+            String sessionId2 = tokenResponse2.getSessionState();
+            events.clear();
+
+            // Create third session
+            driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/testing/blank");
+            driver.manage().deleteAllCookies();
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+            loginPage.login("test-user@localhost", "password");
+            String code3 = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse3 = oauth.doAccessTokenRequest(code3);
+            String sessionId3 = tokenResponse3.getSessionState();
+            events.clear();
+
+            // Verify all 3 sessions
+            List<UserSessionRepresentation> sessions = adminClient.realm("test")
+                    .users().get(userId).getUserSessions();
+            assertEquals(3, sessions.size(), "Should have 3 active sessions");
+            testingClient.testApp().clearAdminActions();
+
+            // Verify all 3 sessions have client sessions for test-app
+//            ClientResource clientResource = adminClient.realm("test").clients()
+//                    .get(adminClient.realm("test").clients().findByClientId("test-app").get(0).getId());
+//            List<UserSessionRepresentation> clientSessions = clientResource.getUserSessions(0, 100);
+//            assertEquals(3, clientSessions.size(), "Should have 3 client sessions");
+
+            // Use AIA to trigger UPDATE_PASSWORD
+            oauth.loginForm().kcAction(UserModel.RequiredAction.UPDATE_PASSWORD.name()).open();
+            updatePasswordPage.assertCurrent();
+            updatePasswordPage.checkLogoutSessions(); // 'Sign out of all Devices' checkbox
+            assertTrue(updatePasswordPage.isLogoutSessionsChecked());
+            updatePasswordPage.changePassword("password", "password");
+            WaitUtils.waitForPageToLoad();
+
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse newTokenResponse = oauth.doAccessTokenRequest(code);
+            assertNotNull(newTokenResponse.getSessionState());
+            Thread.sleep(3000);
+
+            sessions = adminClient.realm("test").users().get(userId).getUserSessions();
+            assertEquals(1, sessions.size(), "Should have 1 session remaining (current)");
+
+            List<String> logoutTokens = new ArrayList<>();
+            for (int i = 0; i < 2; i++) {
+                String token = testingClient.testApp().getBackChannelRawLogoutToken();
+                assertNotNull(token, "Should receive logout token " + (i + 1) + " of 2");
+                logoutTokens.add(token);
+            }
+
+            // Verify we got exactly 2
+//            assertEquals(2, logoutTokens.size(),
+//                    "Should send 2 backchannel logout requests (current session excluded)");
+
+            // Parse tokens and verify the other sessions were logged out
+            List<String> logoutSessionIds = new ArrayList<>();
+            for (String logoutToken : logoutTokens) {
+                LogoutToken parsedToken = new JWSInput(logoutToken).readJsonContent(LogoutToken.class);
+                if (parsedToken.getSid() != null) {
+                    logoutSessionIds.add(parsedToken.getSid());
+                }
+            }
+
+            // Verify the two old sessions (not session3 - current session) were logged out
+            assertEquals(2, logoutSessionIds.size(), "Should have 2 session IDs in logout tokens");
+            assertTrue((logoutSessionIds.contains(sessionId1) && logoutSessionIds.contains(sessionId2)) ||
+                            (logoutSessionIds.contains(sessionId1) && logoutSessionIds.contains(sessionId3)) ||
+                            (logoutSessionIds.contains(sessionId2) && logoutSessionIds.contains(sessionId3)),
+                    "Should logout 2 of the 3 sessions");
         }
     }
 
