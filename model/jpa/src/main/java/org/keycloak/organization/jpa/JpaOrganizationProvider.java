@@ -965,4 +965,13 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         }
         return realm;
     }
+
+    @Override
+    public boolean hasOrganizations() {
+        TypedQuery<String> query = em.createNamedQuery("existsByRealm", String.class);
+        query.setParameter("realmId", getRealm().getId());
+        query.setMaxResults(1);
+
+       return !query.getResultList().isEmpty();
+    }
 }
