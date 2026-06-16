@@ -256,7 +256,7 @@ public class TokenManager {
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, oldTokenScope, session);
 
         // Check user didn't revoke granted consent
-        if (!verifyConsentStillAvailable(session, user, client, oldTokenScope)) {
+        if (!verifyConsentStillAvailable(session, user, client, clientSession, oldTokenScope)) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user");
         }
 
@@ -814,7 +814,7 @@ public class TokenManager {
             return true;
         }
 
-        Set<String> clientScopes;
+        Map<String, ClientScopeModel> clientScopes;
 
         if (authorizationRequestContext == null) {
             AtomicBoolean anyInvalid = new AtomicBoolean(false);
@@ -828,24 +828,22 @@ public class TokenManager {
                             anyInvalid.set(true);
                         }
                     })
-                    .map(ClientScopeModel::getName)
-                    .collect(Collectors.toSet());
+                    .collect(Collectors.toMap(ClientScopeModel::getName, Function.identity()));
 
             if (anyInvalid.get()) {
                 return false;
             }
         } else {
             List<AuthorizationDetails> details = Optional.ofNullable(authorizationRequestContext.getAuthorizationDetailEntries()).orElse(List.of());
-
-            clientScopes = details
-                    .stream()
-                    .map(AuthorizationDetails::getAuthorizationDetails)
-                    .map(AuthorizationDetailsJSONRepresentation::getScopeNameFromCustomData)
-                    .collect(Collectors.toSet());
+            clientScopes = details.stream()
+                    .collect(Collectors.toMap(
+                            d -> d.getAuthorizationDetails().getScopeNameFromCustomData(),
+                            d -> d.getClientScope()
+                    ));
         }
 
         if (logger.isTraceEnabled()) {
-            logger.tracef("Scopes to validate requested scopes against: %1s", String.join(" ", clientScopes));
+            logger.tracef("Scopes to validate requested scopes against: %1s", String.join(" ", clientScopes.keySet()));
             logger.tracef("Requested scopes: %1s", String.join(" ", rawScopes));
         }
 
@@ -853,15 +851,28 @@ public class TokenManager {
             return false;
         }
 
+        if (!client.isConsentRequired()) {
+            Optional<ClientScopeModel> clientScope = clientScopes.values().stream().filter(ClientScopeModel::isAlwaysConsent).findAny();
+            if (clientScope.isPresent()) {
+                logger.warnf("Requesting always consent scope '%s' in a non consent client '%s'", clientScope.get().getName(), client.getClientId());
+                return false;
+            }
+        }
+
         for (String requestedScope : rawScopes) {
             // we also check parameterized scopes in case the client is from a provider that dynamically provides scopes to their clients
-            if (!clientScopes.contains(requestedScope) && client.getDynamicClientScope(requestedScope) == null) {
+            ClientScopeModel clientScope = clientScopes.get(requestedScope);
+            if (clientScope == null) {
+                clientScope = client.getDynamicClientScope(requestedScope);
+            }
+            if (clientScope == null) {
                 // when organizations are disabled at realm level, silently ignore organization scopes
                 // so that existing clients requesting them are not broken
-                if (!Organizations.isEnabled(session)
-                        && OrganizationScope.valueOfScope(session, requestedScope) != null) {
-                    continue;
+                if (Organizations.isEnabled(session) || OrganizationScope.valueOfScope(session, requestedScope) == null) {
+                    return false;
                 }
+            } else if (!client.isConsentRequired() && clientScope.isAlwaysConsent()) {
+                logger.warnf("Requesting always consent scope '%s' in a non consent client '%s'", clientScope.getName(), client.getClientId());
                 return false;
             }
         }
@@ -886,36 +897,57 @@ public class TokenManager {
         return Arrays.stream(scopeParam.split(" ")).distinct();
     }
 
+    private static Set<String> retrieveSessionConsents(AuthenticatedClientSessionModel clientSession) {
+        if (clientSession != null) {
+            String consentNote = clientSession.getNote(OIDCLoginProtocol.CONSENT_NOTE);
+            if (consentNote != null) {
+                return parseScopeParameter(consentNote).collect(Collectors.toSet());
+            }
+        }
+        return Set.of();
+    }
+
+    private static boolean isGrantedConsent(ClientModel client, UserModel user, UserConsentModel grantedConsent,
+            ClientScopeModel requestedScope, String parameter, Set<String> alwaysConsent) {
+        String scope = parameter != null
+                ? requestedScope.getName() + ClientScopeModel.VALUE_SEPARATOR + parameter
+                : requestedScope.getName();
+        if (requestedScope.isAlwaysConsent()) {
+            if (!alwaysConsent.contains(scope)) {
+                logger.tracef("Client '%s' no longer has requested always consent from user '%s' for client scope '%s'",
+                        requestedScope, user.getUsername(), client.getClientId());
+                return false;
+            }
+        } else {
+            if (client.isConsentRequired() && requestedScope.isDisplayOnConsentScreen()
+                    && (grantedConsent == null || !grantedConsent.isClientScopeGranted(requestedScope, parameter))) {
+                logger.tracef("Client '%s' no longer has requested consent from user '%s' for client scope '%s'",
+                        client.getClientId(), user.getUsername(), requestedScope.getName());
+                return false;
+            }
+        }
+        return true;
+    }
+
     // Check if user still has granted consents to all requested client scopes
-    public static boolean verifyConsentStillAvailable(KeycloakSession session, UserModel user, ClientModel client, String scopeParam) {
-        if (!client.isConsentRequired()) {
+    public static boolean verifyConsentStillAvailable(KeycloakSession session, UserModel user, ClientModel client, AuthenticatedClientSessionModel clientSession, String scopeParam) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES) && !client.isConsentRequired()) {
             return true;
         }
+
+        Set<String> alwaysConsent = retrieveSessionConsents(clientSession);
 
         UserConsentModel grantedConsent = UserConsentManager.getConsentByClient(session, client.getRealm(), user, client.getId());
 
         if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
             AuthorizationRequestContext ctx = AuthorizationContextUtil.getAuthorizationRequestContextFromScopesWithClient(
                     session, client, scopeParam);
-            for (AuthorizationDetails authDetails : ctx.getAuthorizationDetailEntries()) {
-                ClientScopeModel requestedScope = authDetails.getClientScope();
-                String parameter = authDetails.getParameterizedScopeParam();
-                if (requestedScope.isDisplayOnConsentScreen() && (grantedConsent == null || !grantedConsent.isClientScopeGranted(requestedScope, parameter))) {
-                    return false;
-                }
-            }
-            return true;
+            return ctx.getAuthorizationDetailEntries().stream()
+                    .noneMatch(authDetails -> !isGrantedConsent(client, user, grantedConsent, authDetails.getClientScope(),
+                    authDetails.getParameterizedScopeParam(), alwaysConsent));
         } else {
             return getRequestedClientScopes(session, scopeParam, client, user)
-                    .filter(ClientScopeModel::isDisplayOnConsentScreen)
-                    .noneMatch(requestedScope -> {
-                        if (grantedConsent == null || !grantedConsent.isClientScopeGranted(requestedScope)) {
-                            logger.debugf("Client '%s' no longer has requested consent from user '%s' for client scope '%s'",
-                                    client.getClientId(), user.getUsername(), requestedScope.getName());
-                            return true;
-                        }
-                        return false;
-                    });
+                    .noneMatch(requestedScope -> !isGrantedConsent(client, user, grantedConsent, requestedScope, null, alwaysConsent));
         }
     }
 

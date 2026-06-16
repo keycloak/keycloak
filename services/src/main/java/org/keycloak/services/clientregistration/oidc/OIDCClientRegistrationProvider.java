@@ -36,6 +36,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakContext;
@@ -85,6 +86,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createOIDC(OIDCClientRepresentation clientOIDC) {
+        event.event(EventType.CLIENT_REGISTER);
         Cors cors = cors();
         if (clientOIDC.getClientId() != null) {
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier included", Response.Status.BAD_REQUEST);
@@ -116,6 +118,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @Path("{clientId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getOIDC(@PathParam("clientId") String clientId) {
+        event.event(EventType.CLIENT_INFO);
         Cors cors = cors();
         ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
 
@@ -130,6 +133,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateOIDC(@PathParam("clientId") String clientId, OIDCClientRepresentation clientOIDC) {
+        event.event(EventType.CLIENT_UPDATE);
         Cors cors = cors();
         try {
             ClientRepresentation client = DescriptionConverter.toInternal(session, clientOIDC);
@@ -165,6 +169,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @DELETE
     @Path("{clientId}")
     public Response deleteOIDC(@PathParam("clientId") String clientId) {
+        event.event(EventType.CLIENT_DELETE);
         Cors cors = cors();
         delete(clientId);
         return cors.add(Response.noContent());

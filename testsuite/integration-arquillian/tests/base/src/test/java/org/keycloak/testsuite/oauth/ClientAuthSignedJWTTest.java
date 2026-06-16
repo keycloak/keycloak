@@ -77,7 +77,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     @Test
     public void testServiceAccountAndLogoutSuccess() throws Exception {
         String client1Jwt = getClient1SignedJWT();
-        JsonWebToken client1JsonWebToken = new JWSInput(client1Jwt).readJsonContent(JsonWebToken.class);
+        JWSInput client1JwsInput = new JWSInput(client1Jwt);
+        JsonWebToken client1JsonWebToken = client1JwsInput.readJsonContent(JsonWebToken.class);
         AccessTokenResponse response = doClientCredentialsGrantRequest(client1Jwt);
 
         assertEquals(200, response.getStatusCode());
@@ -96,7 +97,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
                 .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
                 .details(Details.CLIENT_ASSERTION_ID, client1JsonWebToken.getId())
                 .details(Details.CLIENT_ASSERTION_ISSUER, "client1")
-                .details(Details.CLIENT_ASSERTION_SUB, "client1");
+                .details(Details.CLIENT_ASSERTION_SUB, "client1")
+                .details(Details.CLIENT_JWT_KID, client1JwsInput.getHeader().getKeyId());
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
 

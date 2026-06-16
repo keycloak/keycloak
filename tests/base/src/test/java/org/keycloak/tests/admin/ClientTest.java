@@ -29,9 +29,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
@@ -94,6 +97,7 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
 
+import static org.keycloak.models.Constants.REALM_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.models.Constants.defaultClients;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -171,12 +175,15 @@ public class ClientTest {
         return rep;
     }
 
-    private ClientRepresentation createClientNonPublic() {
+    private ClientRepresentation createClientNonPublic(Consumer<ClientRepresentation> additionalStep) {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setClientId("my-app");
         rep.setDescription("my-app description");
         rep.setEnabled(true);
         rep.setPublicClient(false);
+
+        additionalStep.accept(rep);
+
         Response response = managedRealm.admin().clients().create(rep);
         String id = ApiUtil.getCreatedId(response);
         managedRealm.cleanup().add(r -> r.clients().get(id).remove());
@@ -192,7 +199,19 @@ public class ClientTest {
 
     @Test
     public void createClientVerifyWithSecret() {
-        String id = createClientNonPublic().getId();
+        String id = createClientNonPublic((rep) -> {}).getId();
+
+        ClientResource client = managedRealm.admin().clients().get(id);
+        assertNotNull(client);
+        assertNotNull(client.toRepresentation().getSecret());
+        Assert.assertNames(managedRealm.admin().clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", "my-app", "test-app", Constants.ADMIN_CLI_CLIENT_ID);
+    }
+
+    // Issue 48868
+    @Test
+    public void createBearerOnlyClientVerifyWithSecret() {
+        String id = createClientNonPublic((rep) -> { rep.setBearerOnly(true); })
+                .getId();
 
         ClientResource client = managedRealm.admin().clients().get(id);
         assertNotNull(client);
@@ -434,19 +453,30 @@ public class ClientTest {
 
     @Test
     public void removeInternalClientExpectingBadRequestException() {
-        final String testRealmClientId = AdminApiUtil.findClientByClientId(managedMasterRealm.admin(), managedRealm.getName() + "-realm")
-                .toRepresentation().getId();
-
-        assertThrows(BadRequestException.class,
-                () -> managedMasterRealm.admin().clients().get(testRealmClientId).remove());
-
-        defaultClients.forEach(defaultClient -> {
+        defaultClients.stream().filter(Predicate.not(REALM_MANAGEMENT_CLIENT_ID::equals)).forEach(defaultClient -> {
             final String defaultClientId = AdminApiUtil.findClientByClientId(managedRealm.admin(), defaultClient)
                     .toRepresentation().getId();
 
             assertThrows(BadRequestException.class,
                     () -> managedRealm.admin().clients().get(defaultClientId).remove());
         });
+    }
+
+    @Test
+    public void removeRealmManagementClientForbiddenException() {
+        assertThrows(ForbiddenException.class,
+                () -> {
+                    String testRealmClientId = AdminApiUtil.findClientByClientId(managedMasterRealm.admin(), managedRealm.getName() + "-realm")
+                            .toRepresentation().getId();
+                    managedMasterRealm.admin().clients().get(testRealmClientId).remove();
+                });
+
+        assertThrows(ForbiddenException.class,
+                () -> {
+                    String testRealmClientId = AdminApiUtil.findClientByClientId(managedRealm.admin(), REALM_MANAGEMENT_CLIENT_ID)
+                            .toRepresentation().getId();
+                    managedRealm.admin().clients().get(testRealmClientId).remove();
+                });
     }
 
     @Test

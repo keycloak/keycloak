@@ -44,6 +44,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.ECDSAAlgorithm;
 import org.keycloak.crypto.JavaAlgorithm;
@@ -59,6 +60,7 @@ import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.keys.GeneratedEddsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -113,6 +115,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -201,7 +205,39 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void accessTokenRequest() throws Exception {
+        // Avoid existing authentication session to interfere with Hibernate statistics count
+        oauth.openLoginForm();
+        driver.manage().deleteAllCookies();
+        driver.get("about:blank");
+
+        runOnServerMaster.run(session -> {
+            Statistics stats = statistics(session);
+            stats.setStatisticsEnabled(true);
+            stats.clear();
+        });
+
         oauth.doLogin("test-user@localhost", "password");
+
+        runOnServerMaster.run(session -> {
+            Statistics stats = statistics(session);
+            if (!Profile.isFeatureEnabled(Profile.Feature.CACHELESS) && Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                assertEquals(1, stats.getEntityStatistics("org.keycloak.models.jpa.session.PersistentUserSessionEntity").getInsertCount());
+                assertEquals(4, stats.getSuccessfulTransactionCount());
+            } else if (Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
+                // user session
+                assertEquals(0, stats.getEntityStatistics("org.keycloak.models.jpa.session.PersistentUserSessionEntity").getUpdateCount());
+                assertEquals(1, stats.getEntityStatistics("org.keycloak.models.jpa.session.PersistentUserSessionEntity").getInsertCount());
+                assertEquals(0, stats.getEntityStatistics("org.keycloak.models.jpa.session.PersistentUserSessionEntity").getFetchCount());
+                // authentication session
+                assertEquals(1, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getLoadCount());
+                assertEquals(0, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getUpdateCount());
+                assertEquals(1, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getInsertCount());
+                assertEquals(1, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getDeleteCount());
+                assertEquals(0, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getFetchCount());
+                // Total transactions: Open login page, submit password, perform code-to-token exchange = 3 transactions
+                assertEquals(3, stats.getSuccessfulTransactionCount());
+            }
+        });
 
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
@@ -276,6 +312,13 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
 
+    }
+
+    private static Statistics statistics(KeycloakSession session) {
+        return session.getProvider(JpaConnectionProvider.class).getEntityManager()
+                .getEntityManagerFactory()
+                .unwrap(SessionFactory.class)
+                .getStatistics();
     }
 
     @Test
@@ -690,8 +733,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            // 401 because the client is now a bearer without a secret
-            assertEquals(401, response.getStatus());
+            // 400 for a bearer-only client as it should not be allowed to do a resource-owner-password grant
+            assertEquals(400, response.getStatus());
             response.close();
 
             {

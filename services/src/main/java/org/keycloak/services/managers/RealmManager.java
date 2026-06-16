@@ -553,6 +553,10 @@ public class RealmManager {
     }
 
     public void setupBrokerService(RealmModel realm) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.IDENTITY_BROKERING_API_V1)) {
+            return;
+        }
+
         ClientModel client = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
         if (client == null) {
             client = KeycloakModelUtils.createManagementClient(realm, Constants.BROKER_SERVICE_CLIENT_ID);

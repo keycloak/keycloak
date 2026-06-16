@@ -12,6 +12,7 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
 @Entity
 @Table(name="USER_VER_CREDENTIAL", uniqueConstraints = {
@@ -45,6 +46,13 @@ public class UserVerifiableCredentialEntity {
 
     @Column(name = "CREATED_DATE")
     private Long createdDate;
+
+    @Column(name = "UPDATED_DATE")
+    private Long updatedDate;
+
+    @Version
+    @Column(name = "VERSION")
+    private int version;
 
     public String getId() {
         return id;
@@ -89,6 +97,14 @@ public class UserVerifiableCredentialEntity {
     public String getUserAttributes() { return userAttributes; }
 
     public void setUserAttributes(String userAttributes) { this.userAttributes = userAttributes; }
+
+    public Long getUpdatedDate() { return updatedDate; }
+
+    public void setUpdatedDate(Long updatedDate) { this.updatedDate = updatedDate; }
+
+    public int getVersion() { return version; }
+
+    public void setVersion(int version) { this.version = version; }
 
     @Override
     public boolean equals(Object o) {

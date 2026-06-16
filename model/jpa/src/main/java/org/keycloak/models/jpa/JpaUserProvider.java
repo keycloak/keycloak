@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -82,6 +83,9 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.jpa.JpaHashUtils;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
@@ -404,6 +408,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         long createdDate = verifCredentialModel.getCreatedDate() == null ? Time.currentTimeMillis() : verifCredentialModel.getCreatedDate();
         vcEntity.setCreatedDate(createdDate);
 
+        long updatedDate = verifCredentialModel.getUpdatedDate() == null ? createdDate : verifCredentialModel.getUpdatedDate();
+        vcEntity.setUpdatedDate(updatedDate);
+
         vcEntity.setCredentialScopeName(verifCredentialModel.getCredentialScopeName());
 
         Map<String, List<String>> userAttributes;
@@ -411,7 +418,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
             userAttributes = verifCredentialModel.getUserAttributes();
         } else {
             UserModel user = getUserById(session.getContext().getRealm(), userId);
-            userAttributes = user.getAttributes();
+            // Filter attributes using UserProfile with admin context to include only admin-visible attributes
+            UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+            UserProfile profile = profileProvider.create(UserProfileContext.USER_API, user);
+            userAttributes = profile.getAttributes().getReadable();
         }
 
         try {
@@ -468,7 +478,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                         "Verifiable credential not found: " + credentialScopeName));
 
 
-        Map<String, List<String>> userAttributes = user.getAttributes();
+        // Filter attributes using UserProfile with admin context to include only admin-visible attributes
+        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = profileProvider.create(UserProfileContext.USER_API, user);
+        Map<String, List<String>> userAttributes = profile.getAttributes().getReadable();
+
         try {
             String attributesJson = JsonSerialization.writeValueAsString(userAttributes);
             entity.setUserAttributes(attributesJson);
@@ -478,10 +492,14 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         String newRevision = SecretGenerator.getInstance().generateSecureID();
         entity.setRevision(newRevision);
-        UserVerifiableCredentialEntity mergedEntity = em.merge(entity);
-        em.flush();
-
-        return toVerifiableCredentialModel(mergedEntity);
+        entity.setUpdatedDate(Time.currentTimeMillis());
+        try {
+            UserVerifiableCredentialEntity mergedEntity = em.merge(entity);
+            em.flush();
+            return toVerifiableCredentialModel(mergedEntity);
+        } catch (OptimisticLockException e) {
+            throw new ModelException( "Verifiable credential was concurrently modified. Please retry the operation.", e);
+        }
     }
 
     private Stream<UserVerifiableCredentialEntity> getVerifiableCredentialsEntitiesByUser(String userId) {
@@ -494,6 +512,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         UserVerifiableCredentialModel model = new UserVerifiableCredentialModel(entity.getCredentialScopeName());
         model.setRevision(entity.getRevision());
         model.setCreatedDate(entity.getCreatedDate());
+        model.setUpdatedDate(entity.getUpdatedDate());
 
         if (entity.getUserAttributes() != null) {
             try {
@@ -1114,7 +1133,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     }
 
     @Override
-    public void addIssuedVerifiableCredential(IssuedVerifiableCredentialModel model) {
+    public IssuedVerifiableCredentialModel addIssuedVerifiableCredential(IssuedVerifiableCredentialModel model) {
 
         String revision;
         if (model.getRevision() != null) {
@@ -1130,7 +1149,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         IssuedVerifiableCredentialEntity issuedVerifiableCredentialEntity = new IssuedVerifiableCredentialEntity();
 
-        issuedVerifiableCredentialEntity.setId(KeycloakModelUtils.generateId());
+        issuedVerifiableCredentialEntity.setId(SecretGenerator.getInstance().generateSecureID());
         issuedVerifiableCredentialEntity.setUser(em.getReference(UserEntity.class, model.getUserId()));
         issuedVerifiableCredentialEntity.setCredentialType(model.getCredentialType());
         issuedVerifiableCredentialEntity.setClientId(model.getClientId());
@@ -1143,6 +1162,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         em.persist(issuedVerifiableCredentialEntity);
         em.flush();
+
+        return toIssuedVcModel(issuedVerifiableCredentialEntity);
     }
 
     @Override

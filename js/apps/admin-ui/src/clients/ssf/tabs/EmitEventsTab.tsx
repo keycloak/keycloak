@@ -1,4 +1,4 @@
-import { fetchWithError } from "@keycloak/keycloak-admin-client";
+import { NetworkError, fetchWithError } from "@keycloak/keycloak-admin-client";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import {
   HelpItem,
@@ -60,6 +60,23 @@ type EmitEventsFormValues = {
  */
 const substitutePayloadPlaceholders = (raw: string): string =>
   raw.replace(/__now__/g, String(Math.floor(Date.now() / 1000)));
+
+type EmitErrorBody = {
+  error?: string;
+  error_description?: string;
+  params?: Record<string, string>;
+};
+
+const parseEmitErrorBody = (error: unknown): EmitErrorBody | null => {
+  if (!(error instanceof NetworkError)) {
+    return null;
+  }
+  const body = error.responseData;
+  if (!body || typeof body !== "object") {
+    return null;
+  }
+  return body as EmitErrorBody;
+};
 
 export type EmitEventsTabProps = {
   client: ClientRepresentation;
@@ -192,10 +209,45 @@ export const EmitEventsTab = ({
       const result = (await response.json()) as SsfEmitResult;
       setEmitResult(result);
     } catch (error) {
-      setEmitError(error instanceof Error ? error.message : String(error));
+      setEmitError(translateEmitError(error, values));
       setEmitResult(null);
     }
   };
+
+  /**
+   * Builds a translated, user-facing message from the failure response.
+   * Switches on the server's machine-readable {@code error} code so the
+   * "subject not found" case can render with the form's own
+   * {@code subjectType}/{@code subjectValue} (avoiding a re-parse of
+   * the server's English description). Unknown codes and non-NetworkError
+   * exceptions fall through to {@code error_description} or the raw
+   * thrown message.
+   */
+  function translateEmitError(
+    error: unknown,
+    values: EmitEventsFormValues,
+  ): string {
+    const body = parseEmitErrorBody(error);
+    const detail =
+      body?.error_description ??
+      (error instanceof Error ? error.message : String(error));
+    switch (body?.error) {
+      case "subject_not_found":
+        // Prefer server-supplied params so the message reflects the
+        // values that actually failed validation, not whatever the user
+        // may have typed into the form while the request was in flight.
+        return t("ssfEmitErrorSubjectNotFound", {
+          type: body.params?.subjectType ?? values.emitSubjectType,
+          value: body.params?.subjectValue ?? values.emitSubjectValue.trim(),
+        });
+      case "invalid_request":
+        return t("ssfEmitErrorInvalidRequest", { detail });
+      case "no_delivery_config":
+        return t("ssfEmitErrorNoDeliveryConfig");
+      default:
+        return t("ssfEmitErrorUnknown", { detail });
+    }
+  }
 
   const eventSearchPath = (jti: string) => {
     // The route's :clientId path param is the client's internal UUID

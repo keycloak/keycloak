@@ -580,7 +580,7 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
 
         // SSO login to "requester-client". Will create client session for "requester-client"
         oauth.client("requester-client", "secret").openLoginForm();
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
         response = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
         String requesterClientToken = response.getAccessToken();

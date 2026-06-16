@@ -1,9 +1,7 @@
-AuthorizationCodeTest
 DeployedScriptAuthenticatorTest
 KcOidcBrokerTest
 KerberosLdapTest
 LDAPUserLoginTest
-LoginTest
 SamlClientTest
 X509BrowserLoginTest
 ThemeResourceProviderTest

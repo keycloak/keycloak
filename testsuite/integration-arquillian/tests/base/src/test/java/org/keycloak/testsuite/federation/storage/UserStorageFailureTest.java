@@ -246,7 +246,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         System.out.println(driver.getPageSource());
         Assertions.assertTrue(appPage.isCurrent());
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         oauth.openLogoutForm();
     }
 

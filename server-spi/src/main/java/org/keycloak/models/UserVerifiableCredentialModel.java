@@ -8,6 +8,7 @@ public class UserVerifiableCredentialModel {
     private final String credentialScopeName;
     private String revision;
     private Long createdDate;
+    private Long updatedDate;
     private Map<String, List<String>> userAttributes;
 
     public UserVerifiableCredentialModel(String credentialScopeName) {
@@ -37,4 +38,8 @@ public class UserVerifiableCredentialModel {
     public Map<String, List<String>> getUserAttributes() { return userAttributes; }
 
     public void setUserAttributes(Map<String, List<String>> userAttributes) { this.userAttributes = userAttributes; }
+
+    public Long getUpdatedDate() { return updatedDate; }
+
+    public void setUpdatedDate(Long updatedDate) { this.updatedDate = updatedDate; }
 }
