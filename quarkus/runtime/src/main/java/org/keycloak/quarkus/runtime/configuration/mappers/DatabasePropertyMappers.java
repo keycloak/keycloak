@@ -258,7 +258,6 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .build(),
                 fromOption(DatabaseOptions.DB_HEALTH_EXCLUDE)
                         .to("quarkus.datasource.\"<datasource>\".health-exclude")
-                        .paramLabel("exclude")
                         .build(),
                 fromOption(DatabaseOptions.DB_POOL_MAX_LIFETIME)
                         .to("quarkus.datasource.jdbc.max-lifetime")

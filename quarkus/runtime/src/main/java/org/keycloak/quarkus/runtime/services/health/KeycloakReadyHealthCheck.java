@@ -26,7 +26,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import io.quarkus.agroal.runtime.health.DataSourceHealthCheck;
-import io.quarkus.smallrye.health.runtime.QuarkusAsyncHealthCheckFactory;
 import io.smallrye.context.api.ManagedExecutorConfig;
 import io.smallrye.health.api.AsyncHealthCheck;
 import io.smallrye.mutiny.Uni;
@@ -55,9 +54,6 @@ public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
      * by the probe with the logs.
      */
     static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS").withZone(ZoneId.systemDefault());
-
-    @Inject
-    QuarkusAsyncHealthCheckFactory healthCheckFactory;
 
     @Inject
     DataSourceHealthCheck dataSourceHealthCheck;
