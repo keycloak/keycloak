@@ -1123,6 +1123,10 @@ public class SsfAdminResource {
                 // (e.g. on a stream that was deleted between check and emit).
                 return invalidRequest(emitErrorCode, emitMessage,
                         "No SSF stream registered for client");
+            case RECEIVER_DISABLED:
+                // Receiver is configured but its client is disabled
+                return invalidRequest(emitErrorCode, emitMessage,
+                        "Receiver client is disabled");
             case NO_DELIVERY_CONFIG:
                 // Stream exists but is not deliverable
                 return invalidRequest(emitErrorCode, emitMessage,
