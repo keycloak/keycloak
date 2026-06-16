@@ -29,14 +29,18 @@ export async function assertSelectValue(field: Locator, value: string) {
 
 export async function switchOn(page: Page, id: string | Locator) {
   const switchElement = typeof id === "string" ? page.locator(id) : id;
-  await switchElement.click({ force: true });
+  if (!(await switchElement.isChecked())) {
+    await switchElement.click({ force: true });
+  }
   await expect(switchElement).toBeChecked();
 }
 
 export async function switchOff(page: Page, id: string | Locator) {
   const switchElement = typeof id === "string" ? page.locator(id) : id;
-  await expect(switchElement).toBeChecked();
-  await switchElement.click({ force: true });
+  if (await switchElement.isChecked()) {
+    await switchElement.click({ force: true });
+  }
+  await expect(switchElement).not.toBeChecked();
 }
 
 export async function switchToggle(page: Page, id: string | Locator) {

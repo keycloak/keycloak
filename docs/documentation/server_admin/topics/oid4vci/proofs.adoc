@@ -30,9 +30,9 @@ When a credential requires cryptographic holder binding, the client must provide
 
 ==== Configuring Trusted Attestation Keys
 
-Keycloak supports JWT proofs that can optionally include key attestations. To validate attested keys, configure trusted keys at the realm level.
+Keycloak supports JWT proofs that can optionally include key attestations. To validate attested keys, configure trusted keys via trust-material identity providers at the client level.
 
-===== Realm Attributes for Trusted Keys
+===== Client Attribute for Trusted Keys
 
 [cols="1,1,2", options="header"]
 |===
@@ -40,44 +40,23 @@ Keycloak supports JWT proofs that can optionally include key attestations. To va
 | Default
 | Description
 
-| `oid4vc.attestation.trusted_key_ids`
+| `oid4vci.attester_trust_idps`
 | none
-| Comma-separated list of key IDs from the realm's key providers to use for attestation proof validation. Keys are looked up by their `kid` regardless of enabled status.
+| Comma-separated aliases of trust-material identity providers containing trusted attester public keys for key attestation validation.
 
-| `oid4vc.attestation.trusted_keys`
-| none
-| JSON array of JWK (JSON Web Key) objects for additional trusted keys beyond realm keys. Each JWK must include a `kid` (key ID) field.
 |===
 
-[NOTE]
-====
-The `oid4vc.attestation.trusted_key_ids` attribute takes precedence over `oid4vc.attestation.trusted_keys` when both are set. Keys are merged with `trusted_key_ids` taking highest priority.
-====
-
-===== Configuring Trusted Keys via Admin REST API
+===== Configuring Trusted Attester Identity Providers via Admin REST API
 
 [source,bash]
 ----
-# Configure trusted key IDs (comma-separated list of key IDs from realm keys)
-curl -X PUT "https://localhost:8443/admin/realms/{realm}" \
+# Configure trusted attester identity providers (comma-separated list of aliases)
+curl -X PUT "https://localhost:8443/admin/realms/{realm}/clients/{client-id}" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
         "attributes": {
-          "oid4vc.attestation.trusted_key_ids": "key-id-1,key-id-2,key-id-3"
-        }
-      }'
-----
-
-[source,bash]
-----
-# Configure trusted keys (JSON array of JWK objects)
-curl -X PUT "https://localhost:8443/admin/realms/{realm}" \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-        "attributes": {
-          "oid4vc.attestation.trusted_keys": "[{ \"kid\":\"custom-key-1\", \"kty\":\"EC\", \"crv\":\"P-256\", \"x\":\"...\", \"y\":\"...\" }, { \"kid\":\"custom-key-2\", \"kty\":\"RSA\", \"n\":\"...\", \"e\":\"...\" }]"
+          "oid4vci.attester_trust_idps": "alias-1,alias-2"
         }
       }'
 ----

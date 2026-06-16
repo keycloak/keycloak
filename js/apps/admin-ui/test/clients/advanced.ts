@@ -107,7 +107,6 @@ const oAuthMutualSwitch =
   "#attributes\\.tls🍺client🍺certificate🍺bound🍺access🍺tokens";
 const pushedAuthorizationRequestRequiredSwitch =
   "#attributes\\.require🍺pushed🍺authorization🍺requests";
-const oid4vciEnabledSwitch = "#attributes\\.oid4vci🍺enabled";
 
 export async function clickAdvancedSwitches(page: Page, toggle = true) {
   if (toggle) {
@@ -166,6 +165,10 @@ export async function revertAuthFlowOverride(page: Page) {
   await page.getByTestId("OIDCAuthFlowOverrideRevert").click();
 }
 
+const oid4vciEnabledSwitch = "#attributes\\.oid4vci🍺enabled";
+const oid4vciAttesterTrustIdpsSelect =
+  "#attributes\\.oid4vci🍺attester_trust_idps";
+
 export async function switchOid4vciEnabled(page: Page, enable: boolean) {
   if (enable) {
     await switchOn(page, oid4vciEnabledSwitch);
@@ -179,6 +182,34 @@ export async function assertOid4vciEnabled(page: Page, enabled: boolean) {
     await expect(page.locator(oid4vciEnabledSwitch)).toBeChecked();
   } else {
     await expect(page.locator(oid4vciEnabledSwitch)).not.toBeChecked();
+  }
+}
+
+export function getOid4vciAttesterTrustIdpsSelect(page: Page) {
+  return page.locator(oid4vciAttesterTrustIdpsSelect);
+}
+
+export async function focusOid4vciAttesterTrustIdpsSelect(page: Page) {
+  await page.keyboard.press("Escape");
+  await getOid4vciAttesterTrustIdpsSelect(page).click();
+}
+
+export async function getOid4vciAttesterTrustIdpsValues(
+  page: Page,
+): Promise<string[]> {
+  await focusOid4vciAttesterTrustIdpsSelect(page);
+  const options = page.getByRole("option");
+  await options.first().waitFor({ state: "visible" });
+  return await options.allTextContents();
+}
+
+export async function selectOid4vciAttesterTrustIdps(
+  page: Page,
+  aliases: string[],
+) {
+  for (const alias of aliases) {
+    await focusOid4vciAttesterTrustIdpsSelect(page);
+    await page.getByRole("option", { name: alias, exact: true }).click();
   }
 }
 

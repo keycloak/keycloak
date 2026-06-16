@@ -8,6 +8,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -24,6 +26,7 @@ import org.keycloak.protocol.oid4vc.issuance.keybinding.AttestationValidatorUtil
 import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtProofValidator;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.Proofs;
+import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.representations.AccessToken;
 
 import org.bouncycastle.asn1.x500.X500Name;
@@ -215,5 +218,16 @@ public final class OID4VCProofTestUtils {
         } catch (NoSuchAlgorithmException | OperatorCreationException | CertificateException | NoSuchProviderException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static JSONWebKeySet toJwks(KeyWrapper... keys) {
+        List<JWK> jwkList = Arrays.stream(keys)
+                .map(JWKSServerUtils::toJwk)
+                .toList();
+
+        JSONWebKeySet jwks = new JSONWebKeySet();
+        jwks.setKeys(jwkList.toArray(new JWK[0]));
+
+        return jwks;
     }
 }

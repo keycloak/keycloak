@@ -223,16 +223,15 @@ public class OID4VCBasicWallet {
         return attestationPoPJwt;
     }
 
-    public Proofs generateAttestationProof(OID4VCTestContext ctx, Consumer<KeyWrapper> attestationKeyConsumer) {
-        KeyWrapper attestationKey = getECKeyPair(ctx, "attestationKey");
+    public Proofs generateAttestationProof(OID4VCTestContext ctx, KeyWrapper attestationKey) {
         KeyWrapper proofKey = getECKeyPair(ctx, "proofKey");
-
         JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
         proofJwk.setKeyId(proofKey.getKid());
         proofJwk.setAlgorithm(proofKey.getAlgorithm());
 
         String nonce = oauth.oid4vc().doNonceRequest().getNonce();
-        Proofs proofs = Proofs.create(ProofType.ATTESTATION, OID4VCProofTestUtils.generateAttestationProof(
+
+        return Proofs.create(ProofType.ATTESTATION, OID4VCProofTestUtils.generateAttestationProof(
                 attestationKey,
                 nonce,
                 List.of(proofJwk),
@@ -240,8 +239,6 @@ public class OID4VCBasicWallet {
                 List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH),
                 null
         ));
-        attestationKeyConsumer.accept(attestationKey);
-        return proofs;
     }
 
     public Proofs generateJwtProof(OID4VCTestContext ctx) {
