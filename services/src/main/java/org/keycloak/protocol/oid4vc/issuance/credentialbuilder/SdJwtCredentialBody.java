@@ -49,7 +49,7 @@ public class SdJwtCredentialBody implements CredentialBody {
         keyBindingNode.set(CLAIM_NAME_JWK, jwkNode);
 
         issuerSignedJWT.getDisclosureClaims().add(
-                new VisibleSdJwtClaim(new SdJwtClaimName(CLAIM_NAME_CNF), keyBindingNode));
+                new VisibleSdJwtClaim(SdJwtClaimName.of(CLAIM_NAME_CNF), keyBindingNode));
     }
 
     public IssuerSignedJWT getIssuerSignedJWT() {
