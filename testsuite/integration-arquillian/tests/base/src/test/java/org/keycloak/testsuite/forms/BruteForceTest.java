@@ -1096,6 +1096,36 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         }
     }
 
+    // https://github.com/keycloak/keycloak/issues/49960
+    @Test
+    public void testCookieSsoReauthenticationDoesNotResetLockout() {
+        String totpSecret = totp.generateTOTP("totpSecret");
+
+        oauth.openLoginForm();
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+        loginTotpPage.assertCurrent();
+        loginTotpPage.login(totpSecret);
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        String sessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
+
+        getTestToken("wrongpass", totpSecret);
+        getTestToken("wrongpass", totpSecret);
+
+        AccessTokenResponse shouldBeLocked = getTestToken(getPassword("test-user@localhost"), totpSecret);
+        Assertions.assertNull(shouldBeLocked.getAccessToken());
+        events.clear();
+
+        oauth.openLoginForm();
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType(), "Expected SSO cookie re-authentication to skip the login form");
+        EventRepresentation ssoLogin = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
+        Assertions.assertEquals(sessionId, ssoLogin.getSessionId(), "SSO re-auth must reuse the existing user session");
+
+        AccessTokenResponse shouldStillBeLocked = getTestToken(getPassword("test-user@localhost"), totpSecret);
+        Assertions.assertNull(shouldStillBeLocked.getAccessToken(), "User should still be locked after cookie-based SSO re-authentication");
+
+        events.clear();
+    }
+
     @Test
     public void testRaceAttackPermanentLockout() throws Exception {
         RealmRepresentation realm = managedRealm.admin().toRepresentation();
