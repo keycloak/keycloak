@@ -239,19 +239,19 @@ public class AuthorizationEndpointChecker {
             throw new AuthorizationCheckException(Response.Status.UNAUTHORIZED, OAuthErrorException.UNAUTHORIZED_CLIENT, errorMessage);
         }
 
-        if (parsedResponseType.isImplicitOrHybridFlow() && !client.isImplicitFlowEnabled()) {
-            ServicesLogger.LOGGER.flowNotAllowed("Implicit");
-            String errorMessage = "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.";
+        // DPoP is not supported for implicit nor hybrid flows
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        if (clientConfig.isUseDPoP() && parsedResponseType.isImplicitOrHybridFlow()) {
+            ServicesLogger.LOGGER.flowNotAllowed("Implicit/Hybrid with DPoP");
+            String errorMessage = "DPoP is not supported for implicit nor hybrid flows. Client requires DPoP bound access tokens.";
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
             throw new AuthorizationCheckException(Response.Status.UNAUTHORIZED, OAuthErrorException.UNAUTHORIZED_CLIENT, errorMessage);
         }
 
-        // DPoP is not supported for implicit and hybrid flows
-        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
-        if (clientConfig.isUseDPoP() && parsedResponseType.isImplicitOrHybridFlow()) {
-            ServicesLogger.LOGGER.flowNotAllowed("Implicit/Hybrid with DPoP");
-            String errorMessage = "DPoP is not supported for implicit and hybrid flows. Client requires DPoP bound access tokens.";
+        if (parsedResponseType.isImplicitOrHybridFlow() && !client.isImplicitFlowEnabled()) {
+            ServicesLogger.LOGGER.flowNotAllowed("Implicit");
+            String errorMessage = "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.";
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
             throw new AuthorizationCheckException(Response.Status.UNAUTHORIZED, OAuthErrorException.UNAUTHORIZED_CLIENT, errorMessage);
