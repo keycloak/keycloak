@@ -70,18 +70,22 @@ public class ClientAttributesCondition extends AbstractClientPolicyConditionProv
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
-        if (context.getEvent() == PRE_AUTHORIZATION_REQUEST) {
-            PreAuthorizationRequestContext paContext = (PreAuthorizationRequestContext) context;
-            ClientModel client = session.getContext().getRealm().getClientByClientId(paContext.getClientId());
-            if (isAttributesMatched(client)) return ClientPolicyVote.YES;
-            return ClientPolicyVote.NO;
-        } else if (context instanceof ClientModelContext) {
-            ClientModel client = ((ClientModelContext) context).getClient();
-            if (isAttributesMatched(client)) return ClientPolicyVote.YES;
-            return ClientPolicyVote.NO;
-        } else {
-            return ClientPolicyVote.ABSTAIN;
+        switch (context.getEvent()) {
+            case PRE_AUTHORIZATION_REQUEST -> {
+                PreAuthorizationRequestContext paContext = (PreAuthorizationRequestContext) context;
+                ClientModel client = session.getContext().getRealm().getClientByClientId(paContext.getClientId());
+                return isAttributesMatched(client) ? ClientPolicyVote.YES : ClientPolicyVote.NO;
+            }
+            case CREDENTIAL_OFFER_CREATE -> {
+                ClientModel client = session.getContext().getClient();
+                return isAttributesMatched(client) ? ClientPolicyVote.YES : ClientPolicyVote.NO;
+            }
         }
+        if (context instanceof ClientModelContext) {
+            ClientModel client = ((ClientModelContext) context).getClient();
+            return isAttributesMatched(client) ? ClientPolicyVote.YES : ClientPolicyVote.NO;
+        }
+        return ClientPolicyVote.ABSTAIN;
     }
 
     private boolean isAttributesMatched(ClientModel client) {

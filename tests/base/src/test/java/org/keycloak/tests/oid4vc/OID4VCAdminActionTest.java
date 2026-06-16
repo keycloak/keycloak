@@ -296,7 +296,7 @@ public class OID4VCAdminActionTest extends OID4VCIssuerTestBase {
                 .credentialIdentifier(credentialIdentifier)
                 .send().getCredentialResponse();
 
-        verifyVCActionCredentialResponse(credResponse);
+        verifyVCActionCredentialResponse(ctx, credResponse);
     }
 
 

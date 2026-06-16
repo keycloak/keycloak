@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.function.Function;
 
 import org.keycloak.TokenVerifier;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.protocol.oid4vc.clientpolicy.PredicateCredentialClientPolicy;
 import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
@@ -14,15 +13,17 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.ClientProfileRepresentation;
+import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.tests.oid4vc.OID4VCBasicWallet.AuthorizationEndpointRequest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.Test;
-import org.opentest4j.AssertionFailedError;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
@@ -35,16 +36,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithRestCredentialOfferEnabled.class)
 public class OID4VCredentialByScopeTest extends OID4VCIssuerTestBase {
 
-    @TestSetup
-    public void configure() {
-        RealmResource realmResource = testRealm.admin();
-        realmResource.clientPoliciesPoliciesResource().getPolicies().getPolicies().stream()
-                .filter(cpr -> "oid4vci-offer-required".equals(cpr.getName()))
-                .findFirst().orElseThrow(() -> new AssertionFailedError("Client policy not installed"));
+    @Test
+    public void testRealmSetup() {
+        String expProfile = "oid4vci-offer-required-profile";
+        ClientProfilesRepresentation clientProfiles = testRealm.admin().clientPoliciesProfilesResource().getProfiles(true);
+        List<String> profileNames = clientProfiles.getProfiles().stream().map(ClientProfileRepresentation::getName).toList();
+        assertTrue(profileNames.contains(expProfile), "Expected profile not in: " + profileNames);
+
+        String expPolicy = "oid4vci-offer-required";
+        ClientPoliciesRepresentation clientPolicies = testRealm.admin().clientPoliciesPoliciesResource().getPolicies();
+        List<String> policyNames = clientPolicies.getPolicies().stream().map(ClientPolicyRepresentation::getName).toList();
+        assertTrue(policyNames.contains(expPolicy), "Expected policy not in: " + policyNames);
     }
 
     @Test
-    public void testNoOffer_Scope() throws Exception {
+    public void testCredentialByScope() throws Exception {
 
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
 
@@ -55,7 +61,7 @@ public class OID4VCredentialByScopeTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testNoOffer_Scope_AuthDetails() throws Exception {
+    public void testCredentialByScope_AuthDetails() throws Exception {
 
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
 
@@ -96,7 +102,7 @@ public class OID4VCredentialByScopeTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testNoOffer_Scope_RequireOfferPolicy() {
+    public void testCredentialByScope_ClientPolicy() {
 
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
 
