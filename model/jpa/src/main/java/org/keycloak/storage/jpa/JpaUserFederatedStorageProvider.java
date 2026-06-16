@@ -1112,7 +1112,7 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public Stream<UserVerifiableCredentialModel> getVerifiableCredential(String userId) {
+    public Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId) {
         return getFederatedVerifiableCredentialEntitiesByUser(userId)
                 .map(this::toModel)
                 .sorted(Comparator.comparing(UserVerifiableCredentialModel::getCredentialScopeName));

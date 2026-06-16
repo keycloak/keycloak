@@ -14,7 +14,7 @@ import jakarta.persistence.Version;
 
 @Entity
 @Table(name="FED_USER_VER_CREDENTIAL", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"USER_ID", "CREDENTIAL_SCOPE_ID"})
+        @UniqueConstraint(columnNames = {"USER_ID", "CREDENTIAL_SCOPE_NAME"})
 })
 @NamedQueries({
         @NamedQuery(name="federatedVerifiableCredentialsByUser", query="select vc from FederatedUserVerifiableCredentialEntity vc where vc.userId = :userId"),
@@ -45,7 +45,7 @@ public class FederatedUserVerifiableCredentialEntity {
     @Column(name="REVISION")
     protected String revision;
 
-    @Column(name="USER_ATTRIBUTES", length = 4000)
+    @Column(name="USER_ATTRIBUTES")
     protected String userAttributes;
 
     @Column(name="CREATED_DATE")

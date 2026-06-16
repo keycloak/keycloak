@@ -55,6 +55,6 @@ public interface UserVerifiableCredentialFederatedStorage {
      * @param userId the federated user ID
      * @return stream of verifiable credentials
      */
-    Stream<UserVerifiableCredentialModel> getVerifiableCredential(String userId);
+    Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId);
 
 }

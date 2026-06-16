@@ -964,7 +964,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (StorageId.isLocalStorage(userId)) {
             return localStorage().getVerifiableCredentialsByUser(userId);
         } else {
-            return getFederatedStorage().getVerifiableCredential(userId);
+            return getFederatedStorage().getVerifiableCredentialsByUser(userId);
         }
     }
 
