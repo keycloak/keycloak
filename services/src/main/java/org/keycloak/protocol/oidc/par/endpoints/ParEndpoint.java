@@ -114,6 +114,16 @@ public class ParEndpoint extends AbstractParEndpoint {
             throw errorResponseException(OAuthErrorException.INVALID_REQUEST_OBJECT, e.getMessage(), Response.Status.BAD_REQUEST);
         }
 
+        try {
+            session.clientPolicy().triggerOnEvent(new PushedAuthorizationRequestContext(client, authorizationRequest, decodedFormParameters));
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw errorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+
         AuthorizationEndpointChecker checker = new AuthorizationEndpointChecker()
                 .event(event)
                 .client(client)
@@ -152,16 +162,6 @@ public class ParEndpoint extends AbstractParEndpoint {
             checker.checkParDPoPParams();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
             checker.throwAsCorsErrorResponseException(cors, ex);
-        }
-
-        try {
-            session.clientPolicy().triggerOnEvent(new PushedAuthorizationRequestContext(client, authorizationRequest, decodedFormParameters));
-        } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
-            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
-            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
-            event.error(cpe.getError());
-            throw errorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
         Map<String, String> params = new HashMap<>();

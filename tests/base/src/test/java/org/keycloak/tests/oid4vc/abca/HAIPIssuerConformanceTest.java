@@ -255,6 +255,49 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
         }
     }
 
+    /**
+     * fapi2-security-profile-final-ensure-response-type-code-idtoken-fails
+     *
+     * This test uses response_type=code+id_token in the authorization request, which is not permitted in FAPI2 Security Profile
+     * as it would return an id_token via the browser where it may be leaked. The authorization server should show an error message
+     * that the response type is unsupported or the request is invalid.
+     */
+    @Test
+    public void testRequestObjectWithHybridResponseTypeFails() {
+
+        var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);
+        ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
+
+        var pkce = PkceGenerator.s256();
+
+        // Generate ABCA Headers
+        //
+        KeyWrapper rsaKey = wallet.getRSAKeyPair(ctx);
+        String attestationJwt = wallet.buildClientAttestationJWT(ctx, rsaKey);
+        String attestationPoPJwt = wallet.buildClientAttestationPoPJWT(ctx, rsaKey);
+
+        String responseType = oauth.config().getResponseType();
+        try {
+            oauth.config().responseType("code id_token");
+
+            // Send PAR Request (without redirect_uri)
+            //
+            ParResponse parResponse = oauth.pushedAuthorizationRequest()
+                    .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
+                    .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                    .scopeParam(ctx.getScope())
+                    .codeChallenge(pkce)
+                    .send();
+            assertFalse(parResponse.isSuccess());
+            assertNull(parResponse.getRequestUri(), "Expected no request_uri");
+            assertEquals("invalid_request", parResponse.getError());
+            String errorDescription = parResponse.getErrorDescription();
+            assertEquals("Implicit/Hybrid flow is prohibited.", errorDescription);
+        } finally {
+            oauth.config().responseType(responseType);
+        }
+    }
+
     // Private ---------------------------------------------------------------------------------------------------------
 
     private void verifyCredentialResponse(OID4VCTestContext ctx, CredentialResponse credResponse) throws Exception {
