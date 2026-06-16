@@ -37,8 +37,11 @@ import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+
+import org.keycloak.common.util.Time;
 
 import org.hibernate.annotations.Nationalized;
 
@@ -189,6 +192,11 @@ public class ClientEntity {
 
     public void setLastModifiedTimestamp(Long lastModifiedTimestamp) {
         this.lastModifiedTimestamp = lastModifiedTimestamp;
+    }
+
+    @PreUpdate
+    public void updateLastModifiedTimestamp() {
+        lastModifiedTimestamp = Time.currentTimeMillis();
     }
 
     public String getId() {

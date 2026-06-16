@@ -37,6 +37,7 @@ import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthen
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Time;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
@@ -234,20 +235,20 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
-    public void clientTimestamps() throws InterruptedException, JsonProcessingException {
+    public void clientTimestamps() throws JsonProcessingException {
         var clientId = "timestamp-client";
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setEnabled(true);
         rep.setClientId(clientId);
         rep.setDescription("Timestamp test client");
 
-        long beforeCreate = System.currentTimeMillis();
+        long beforeCreate = Time.currentTimeMillis();
         OIDCClientRepresentation created;
         try (var response = getClientsApi().createClient(rep)) {
             assertThat(response.getStatus(), is(201));
             created = response.readEntity(OIDCClientRepresentation.class);
         }
-        long afterCreate = System.currentTimeMillis();
+        long afterCreate = Time.currentTimeMillis();
 
         assertThat(created.getCreatedTimestamp(), notNullValue());
         assertThat(created.getUpdatedTimestamp(), notNullValue());
