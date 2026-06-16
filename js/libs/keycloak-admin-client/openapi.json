@@ -293,6 +293,8 @@
         }, {
           "description" : "Sort direction. Allowed values: asc, desc.",
           "schema" : {
+            "type" : "string",
+            "enum" : [ "asc", "desc" ],
             "default" : "asc"
           },
           "name" : "sortOrder",

@@ -31,7 +31,7 @@ public class ListOptions {
     @QueryParam("sortBy")
     protected String sortBy;
 
-    @Parameter(description = "Sort direction. Allowed values: asc, desc.", schema = @Schema(defaultValue = "asc"))
+    @Parameter(description = "Sort direction. Allowed values: asc, desc.", schema = @Schema(implementation = SortOrder.class, defaultValue = "asc"))
     @QueryParam("sortOrder")
     protected SortOrder sortOrder;
 
