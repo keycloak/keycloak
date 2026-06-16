@@ -2,11 +2,11 @@ import type UserVerifiableCredentialRepresentation from "@keycloak/keycloak-admi
 import { AlertVariant, Form, ModalVariant } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useAdminClient } from "../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
-import { ConfirmDialogModal } from "../components/confirm-dialog/ConfirmDialog";
-import { TimeSelectorControl } from "../components/time-selector/TimeSelectorControl";
-import { useRealm } from "../context/realm-context/RealmContext";
+import { ConfirmDialogModal } from "../../components/confirm-dialog/ConfirmDialog";
+import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 type UserVerifiableCredentialOfferDialogProps = {
   userId: string;
