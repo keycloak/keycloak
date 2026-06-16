@@ -937,7 +937,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (StorageId.isLocalStorage(userId)) {
             return localStorage().addVerifiableCredential(userId, credentialModel);
         } else {
-            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+            return getFederatedStorage().addVerifiableCredential(userId, credentialModel);
         }
     }
 
@@ -946,7 +946,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (StorageId.isLocalStorage(userId)) {
             return localStorage().updateVerifiableCredential(userId, clientScopeId);
         } else {
-            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+            return getFederatedStorage().updateVerifiableCredential(userId, credentialScopeName);
         }
     }
 
@@ -955,7 +955,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (StorageId.isLocalStorage(userId)) {
             return localStorage().removeVerifiableCredential(userId, clientScopeId);
         } else {
-            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+            return getFederatedStorage().removeVerifiableCredential(userId, credentialScopeName);
         }
     }
 
@@ -964,7 +964,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (StorageId.isLocalStorage(userId)) {
             return localStorage().getVerifiableCredentialsByUser(userId);
         } else {
-            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+            return getFederatedStorage().getVerifiableCredential(userId);
         }
     }
 

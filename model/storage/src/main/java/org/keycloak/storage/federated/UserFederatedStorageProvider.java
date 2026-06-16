@@ -41,7 +41,8 @@ public interface UserFederatedStorageProvider extends Provider,
         UserGroupMembershipFederatedStorage,
         UserRequiredActionsFederatedStorage,
         UserRoleMappingsFederatedStorage,
-        UserFederatedUserCredentialStore {
+        UserFederatedUserCredentialStore,
+        UserVerifiableCredentialFederatedStorage{
 
     /**
      * Obtains the ids of all federated users in the realm.
