@@ -531,7 +531,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         return userCache.isInvalid(cacheKey);
     }
 
-        @Override
+    @Override
     public boolean hasOrganizations() {
         if (realmCache == null) {
             return getDelegate().hasOrganizations();
