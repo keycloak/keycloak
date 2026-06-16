@@ -21,6 +21,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.keycloak.Config;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -70,5 +72,45 @@ public class AdminRoles {
         ALL_ROLES.add(CREATE_REALM);
         ALL_ROLES.add(REALM_ADMIN);
         ALL_ROLES.add(VIEW_SYSTEM);
+    }
+
+    public static boolean isAdminRole(RoleModel role) {
+        if (role == null) {
+            return false;
+        }
+
+        if (!ALL_ROLES.contains(role.getName())) {
+            return false;
+        }
+
+        RoleContainerModel container = role.getContainer();
+
+        if (container instanceof RealmModel r) {
+            return r.getName().equals(Config.getAdminRealm());
+        }
+
+        if (container instanceof ClientModel c) {
+            if (c.getClientId().equals(Constants.REALM_MANAGEMENT_CLIENT_ID)) {
+                return true;
+            }
+            return c.getRealm().getName().equals(Config.getAdminRealm())
+                    && c.getClientId().endsWith(APP_SUFFIX);
+        }
+
+        return false;
+    }
+
+    public static boolean containsAdminRole(RoleModel role) {
+        return containsAdminRole(role, new HashSet<>());
+    }
+
+    private static boolean containsAdminRole(RoleModel role, Set<String> visited) {
+        if (isAdminRole(role)) {
+            return true;
+        }
+        if (role == null || !role.isComposite() || !visited.add(role.getId())) {
+            return false;
+        }
+        return role.getCompositesStream().anyMatch(r -> containsAdminRole(r, visited));
     }
 }
