@@ -40,7 +40,7 @@ When creating a parameterized scope, you must select a parameter type that deter
 | Accepts any string value. No validation is performed on the parameter.
 
 | `integer`
-| Accepts whole numbers only. The parameter value must be parsable as a number.
+| Accepts integer numbers only. The parameter value must be parsable as an integer number.
 
 | `boolean`
 | Accepts only `true` or `false` (case-insensitive).
