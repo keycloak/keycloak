@@ -37,6 +37,7 @@ import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -192,6 +193,13 @@ public class ClientEntity {
 
     public void setLastModifiedTimestamp(Long lastModifiedTimestamp) {
         this.lastModifiedTimestamp = lastModifiedTimestamp;
+    }
+
+    @PrePersist
+    public void updateTimestampsOnCreate() {
+        long now = Time.currentTimeMillis();
+        createdTimestamp = now;
+        lastModifiedTimestamp = now;
     }
 
     @PreUpdate
