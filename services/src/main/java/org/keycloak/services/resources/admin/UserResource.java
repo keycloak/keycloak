@@ -1061,6 +1061,7 @@ public class UserResource {
             this.session.getProvider(EmailTemplateProvider.class)
                     .setAttribute(Constants.TEMPLATE_ATTR_REQUIRED_ACTIONS, token.getRequiredActions())
                     .setAttribute(Constants.IGNORE_ACCEPT_LANGUAGE_HEADER, true)
+                    .setAttribute(Constants.CLIENT_ID, result.clientId)
                     .setRealm(realm)
                     .setUser(user)
                     .sendExecuteActions(link, TimeUnit.SECONDS.toMinutes(result.lifespan));
@@ -1121,6 +1122,7 @@ public class UserResource {
         try {
             session
                     .getProvider(EmailTemplateProvider.class)
+                    .setAttribute(Constants.CLIENT_ID, result.clientId)
                     .setRealm(realm)
                     .setUser(user)
                     .sendVerifyEmail(link, TimeUnit.SECONDS.toMinutes(result.lifespan));
