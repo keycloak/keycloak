@@ -4,7 +4,7 @@
 
 ## Repository at a glance
 - Monorepo with a Maven multi-module Java codebase plus JavaScript/TypeScript UIs.
-- Main server/runtime work is centered around `quarkus/`, `services/`, `server-spi*`, `model/`, and `testsuite/`.
+- Main server/runtime work is centered around `quarkus/`, `services/`, `server-spi*`, `model/`, and `tests/`.
 - Frontend code lives in `js/` (PNPM workspace with apps/libs).
 
 ## Required toolchain
@@ -45,22 +45,13 @@
 - Start with tests closest to changed modules.
 - Use root CI helper for unit-test module selection when needed:
   - `.github/scripts/find-modules-with-unit-tests.sh`
-- `testsuite/integration-arquillian` tests are much heavier and deprecated; do not add to these tests.
+- See `docs/tests-development.md` and `docs/tests.md` for running `testsuite/integration-arquillian` tests. Note `testsuite/DEPRECATED.md` - do not create new tests under `testsuite`.
 - If integration tests are needed, they belong under `tests`; see `tests/docs/README.md`
 
 ## Repository-specific expectations
 - Every PR should map to a GitHub issue and keep a focused scope (`CONTRIBUTING.md`).
 - Include docs/tests when behavior changes.
 - Do not introduce new test frameworks or broad formatting/refactoring unrelated to the task.
-
-## Errors encountered during onboarding (and workaround)
-- Error encountered:
-  - `Could not find the selected project in the reactor: distribution/maven-plugins/licenses-processor`
-- Cause:
-  - The module is part of the `distribution` profile and is not in the active reactor by default.
-- Workaround used:
-  - Re-run with the profile enabled:
-  - `./mvnw install -Pdistribution -DskipTests -DskipExamples -DskipTestsuite -DskipAdapters -DskipDocs -pl distribution/maven-plugins/licenses-processor -am`
 
 <!-- Review instructions from https://docs.github.com/en/copilot/tutorials/customize-code-review
      and https://dev.to/techgirl1908/how-i-taught-github-copilot-code-review-to-think-like-a-maintainer-3l2c
@@ -74,6 +65,7 @@
 
 * Only comment when you have HIGH CONFIDENCE (>85%) that an issue exists
 * Be concise: one or two sentences per comment when possible
+* The code should follow the Testing strategy guidance and other relevant parts of the preceding Copilot Cloud Agent Instructions
 * Focus on actionable feedback, not observations
 * When reviewing text, only comment on clarity issues if the text is genuinely confusing or could lead to errors.
 
