@@ -44,6 +44,7 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.EventType;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
@@ -913,7 +914,7 @@ public abstract class OID4VCIssuerTestBase {
                     .password(TEST_PASSWORD)
                     .attribute("address_street_address", "221B Baker Street")
                     .attribute("address_locality", "London")
-                    .realmRoles("account", "manage-account", "view-profile")
+                    .realmRoles(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + TEST_REALM_NAME)
                     .verifiableCredential(jwtTypeCredentialScopeName)
                     .verifiableCredential(sdJwtTypeCredentialScopeName)
                     .verifiableCredential(minimalJwtTypeCredentialScopeName)
