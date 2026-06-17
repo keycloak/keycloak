@@ -67,7 +67,7 @@ The `gt`, `ge`, `lt`, and `le` operators supported by the SCIM API are not avail
 === Queryable fields
 
 Only registered fields can be used in filter expressions.
-Using an unknown field returns HTTP 400.
+Using an unknown field returns HTTP 400, unlike the SCIM API which silently ignores unrecognized attributes.
 
 ==== Common fields (all client types)
 
@@ -115,14 +115,15 @@ Using an unknown field returns HTTP 400.
 ==== OIDC-specific fields
 
 These fields are available only for `openid-connect` clients.
-They return `null` for SAML clients (no error, no match).
+They resolve to `null` for SAML clients, so value-based comparisons like `eq`, `co`, or `sw` will not match.
+However, `eq null` and `not ... pr` will match because the field is genuinely absent.
 
 [cols="1,1,3",options="header"]
 |===
 |Field |Type |Description
 
 |`loginFlows`
-|Set<Enum>
+|Set<String>
 |Enabled login flows (`STANDARD`, `IMPLICIT`, `DIRECT_GRANT`, `SERVICE_ACCOUNT`, `TOKEN_EXCHANGE`, `DEVICE`, `CIBA`)
 
 |`auth.method`
@@ -141,7 +142,8 @@ They return `null` for SAML clients (no error, no match).
 ==== SAML-specific fields
 
 These fields are available only for `saml` clients.
-They return `null` for OIDC clients (no error, no match).
+They resolve to `null` for OIDC clients, so value-based comparisons like `eq`, `co`, or `sw` will not match.
+However, `eq null` and `not ... pr` will match because the field is genuinely absent.
 
 [cols="1,1,3",options="header"]
 |===
@@ -198,11 +200,14 @@ They return `null` for OIDC clients (no error, no match).
 
 === Collection field matching
 
-For fields that hold a collection of values (`redirectUris`, `roles`, `loginFlows`, `webOrigins`, `serviceAccountRoles`), the comparison operators match if *any* element in the collection satisfies the condition:
+For fields that hold a collection of values (`redirectUris`, `roles`, `loginFlows`, `webOrigins`, `serviceAccountRoles`), the `eq`, `co`, `sw`, and `ew` operators match if *any* element in the collection satisfies the condition:
 
 * `roles eq "admin"` - matches clients that have a role named `admin`
 * `redirectUris co "example.com"` - matches clients with any redirect URI containing `example.com`
 * `loginFlows eq "SERVICE_ACCOUNT"` - matches OIDC clients with the service account flow enabled
+
+The `ne` operator is the logical negation of `eq`: it matches if *no* element in the collection equals the value.
+For example, `roles ne "admin"` matches clients that do not have a role named `admin`.
 
 To match clients that have multiple values, combine conditions with `and`:
 
