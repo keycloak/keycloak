@@ -498,6 +498,15 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testRedirectUriWithForbiddenSessionStateParameter() {
+        oauth.redirectUri(APP_ROOT + "/auth?session_state=attacker_state");
+        oauth.openLoginForm();
+
+        Assertions.assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
     public void testRedirectUriWithForbiddenIssParameter() {
         oauth.redirectUri(APP_ROOT + "/auth?iss=https://evil.com");
         oauth.openLoginForm();

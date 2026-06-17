@@ -115,7 +115,7 @@ public class RedirectUtils {
             }
 
             // Check for HTTP Parameter Pollution - forbidden OIDC response parameters in redirect URI
-            if (containsForbiddenOidcParameters(redirectUri, originalRedirect)){
+            if (containsForbiddenOidcParameters(originalRedirect)){
                 return null;
             }
 
@@ -159,13 +159,17 @@ public class RedirectUtils {
         }
     }
 
-    private static boolean containsForbiddenOidcParameters(String redirectUri, URI originalRedirect) {
+    private static boolean containsForbiddenOidcParameters(URI originalRedirect) {
         String query = originalRedirect.getRawQuery();
         if (query != null && !query.isEmpty()) {
             MultivaluedHashMap<String, String> params =UriUtils.decodeQueryString(query);
             for (String paramName : params.keySet()) {
                 if (FORBIDDEN_OIDC_PARAMS.contains(paramName.toLowerCase(Locale.ROOT))) {
-                    logger.warnf("Redirect URI rejected: contains forbidden OIDC parameter '%s' in query string: %s", paramName, redirectUri);
+                    logger.warnf("Redirect URI rejected: contains forbidden OIDC parameter '%s' in query string: scheme=%s, host=%s, path=%s",
+                            paramName,
+                            originalRedirect.getScheme(),
+                            originalRedirect.getHost(),
+                            originalRedirect.getPath());
                     return true;
                 }
             }
