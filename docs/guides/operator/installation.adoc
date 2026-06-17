@@ -179,7 +179,6 @@ Multi-namespace and cluster-wide installation is supported for common scenarios,
 
 * Limitations apply; see <<multi_namespace_limitations>>.
 * For non-OLM installations, cluster-wide setup requires additional RBAC configuration.
-* OLM currently ships a ClusterServiceVersion (CSV) that only declares `OwnNamespace` and `SingleNamespace` as supported install modes. To use `MultiNamespace` or `AllNamespaces`, patch the CSV as described below.
 ====
 
 [[multi_namespace_limitations]]
@@ -193,7 +192,7 @@ When the Operator watches more than one namespace:
 
 ==== Installing with OLM
 
-The CSV published with the Operator currently enables only `OwnNamespace` and `SingleNamespace`. To install in `MultiNamespace` or `AllNamespaces` mode, create the OperatorGroup with the desired namespace selection, subscribe to the Operator, patch the CSV install modes, and then approve the install plan.
+To install in `MultiNamespace` or `AllNamespaces` mode, create an OperatorGroup with the desired namespace selection, subscribe to the Operator, and approve the install plan.
 
 ===== Watching multiple selected namespaces
 
@@ -212,14 +211,6 @@ spec:
     - tenant-b
 ----
 
-Patch the installed CSV to enable the `MultiNamespace` install mode. Replace `<csv-name>` with the CSV created for your Operator version, for example `keycloak-operator.v26.2.0`:
-
-[source,bash]
-----
-kubectl patch csv <csv-name> -n <operator-namespace> --type merge --patch \
-  '{"spec":{"installModes":[{"type":"OwnNamespace","supported":true},{"type":"SingleNamespace","supported":true},{"type":"MultiNamespace","supported":true},{"type":"AllNamespaces","supported":false}]}}'
-----
-
 Approve the install plan if you are using manual approval, then verify that the Operator pod is running.
 
 ===== Watching all namespaces (cluster-wide)
@@ -236,15 +227,9 @@ metadata:
 spec: {}
 ----
 
-Patch the CSV to enable the `AllNamespaces` install mode:
+Approve the install plan if you are using manual approval, then verify that the Operator pod is running.
 
-[source,bash]
-----
-kubectl patch csv <csv-name> -n <operator-namespace> --type merge --patch \
-  '{"spec":{"installModes":[{"type":"OwnNamespace","supported":true},{"type":"SingleNamespace","supported":true},{"type":"MultiNamespace","supported":false},{"type":"AllNamespaces","supported":true}]}}'
-----
-
-If the Operator is already installed in single-namespace mode, you can switch to cluster-wide mode by patching the CSV and removing `spec.targetNamespaces` from the OperatorGroup:
+If the Operator is already installed in single-namespace mode, you can switch to cluster-wide mode by removing `spec.targetNamespaces` from the OperatorGroup:
 
 [source,bash]
 ----

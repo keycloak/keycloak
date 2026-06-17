@@ -64,11 +64,11 @@ import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
         ),
         @CSVMetadata.InstallMode(
             type = "MultiNamespace",
-            supported = false
+            supported = true
         ),
         @CSVMetadata.InstallMode(
             type = "AllNamespaces",
-            supported = false
+            supported = true
         )
     },
     annotations = @CSVMetadata.Annotations(
