@@ -1,0 +1,119 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Troubleshooting performance issues using JVM thread dumps"
+summary="Capture JVM thread dumps of a {project_name} server to diagnose performance issues"
+includedOptions="">
+
+== What is a thread dump?
+
+JVM thread dump is a snapshot of the execution state of active threads within a Java Virtual Machine at a specific point in time.
+
+Thread dumps are useful for diagnosing issues such as thread contention, deadlocks, CPU spikes, or stuck IO operations.
+
+== How to capture a JVM thread dump
+
+There are several ways how to capture a thread dump.
+
+=== Using the `jcmd` command
+
+The `jcmd` tool sends diagnostic commands to a running JVM. There are two commands relevant for capturing thread dumps: `Thread.print` and `Thread.dump_to_file`.
+
+* `jcmd <PID> Thread.print -l` Prints all threads with stack traces to the standard output. The `-l` option enables printing additional information about locks.
+* `jcmd <PID> Thread.dump_to_file threaddump.txt` Writes thread stack traces to a file in a plain text format.
+* `jcmd <PID> Thread.dump_to_file -format=json threaddump.json` Writes thread stack traces to a file in a JSON format.
+
+There are some differences between the information collected using `Thread.print` and `Thread.dump_to_file` which are important when investigating issues related to virtual threads. There are also differences in the output of `Thread.dump_to_file` between JDK 21 and JDK 25.
+
+[%autowidth]
+|===
+|Aspect | `Thread.print` | `Thread.dump_to_file` on JDK 21 | `Thread.dump_to_file` on JDK 25
+
+| Output target
+| Standard output
+| File
+| File
+
+| Output format
+| Plain text
+| Plain text or JSON
+| Plain text or JSON
+
+| Locks/monitors
+| Detailed
+| *Omitted* due to performance issues
+| Detailed (restored)
+
+| Virtual thread visibility
+| *Only if mounted*
+| Comprehensive
+| Comprehensive
+
+| Performance overhead
+| High. Forces JVM into global safepoint. Not recommended under heavy load.
+| Lower. Designed to work with high number of virtual threads and to avoid global safepoint.
+| Lower. Designed to work with high number of virtual threads and to avoid global safepoint.
+
+|===
+
+Depending on the information needed and the JDK version used, it might be necessary to use both `Thread.print` and `Thread.dump_to_file` to create a comprehensive picture.
+
+=== Alternatives
+
+* `jstack -l <PID> > threaddump.txt` The `jstack` command is a standard JDK utility used for printing stack traces. The `-l` option enables printing of additional information about locks.
+* `kill -3 <PID>` Sending a `SIGQUIT` signal to the JVM process will make it print out a thread dump to the standard output.
+
+=== Finding PID of the {project_name} process
+
+There are several ways to find a PID of the {project_name} server process on the system.
+
+Running either `jps` or `jcmd` commands without any parameters will list out Java processes on the system and their PIDs.
+
+Example output with `jps`:
+[source]
+----
+242551 QuarkusEntryPoint
+268141 Jps
+----
+
+Example output with `jcmd`:
+[source]
+----
+242551 io.quarkus.bootstrap.runner.QuarkusEntryPoint start ...
+268778 jdk.jcmd/sun.tools.jcmd.JCmd
+----
+
+Example output with `jcmd` running inside a {project_name} Docker container:
+[source]
+----
+$ docker exec -it keycloak jcmd
+1 io.quarkus.bootstrap.runner.QuarkusEntryPoint start
+389 jdk.jcmd/sun.tools.jcmd.JCmd
+----
+
+Alternatively it is possible to use standard OS tools like `ps` and `grep` to list and filter out processes.
+
+Example:
+[source]
+----
+$ ps -ef | grep QuarkusEntryPoint | grep -v grep
+<username> 242551  242461  1 13:08 pts/0    00:00:57 java -Dkc.script.pid=242461 -Djava.util.concurrent.ForkJoinPool.common.threadFactory=io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m ... keycloak-999.0.0-SNAPSHOT/bin/../lib/quarkus-run.jar io.quarkus.bootstrap.runner.QuarkusEntryPoint start ...
+----
+
+=== Collecting multiple samples
+
+Because a thread dump is a snapshot of the JVM state at a particular point in time, it is recommended to capture multiple thread dumps, for example 3-5 samples spaced 5-10 seconds apart.
+
+== Analysis
+
+=== Thread states
+// todo
+
+=== Virtual threads and thread pinning
+// todo
+
+
+</@tmpl.guide>
