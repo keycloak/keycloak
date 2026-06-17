@@ -9,7 +9,7 @@
 
 ## Required toolchain
 - Use Maven Wrapper, not system Maven: `./mvnw`.
-- JDK: 17, 21, or 25 (CI uses 25 by default; the Maven compiler release is 17).
+- JDK: 17, 21, or 25 (CI uses 25 for most jobs, with some workflows pinned to 21; the Maven compiler release is 17).
 - Node.js: 24+ for UI work (`js/apps/admin-ui/CONTRIBUTING.md`).
 - PNPM workspace is managed from `js/`.
 
@@ -23,7 +23,7 @@
 
 ### Formatting / lint checks
 - `./mvnw -Pdocs,distribution,operator spotless:check`
-- `./mvnw spotless:apply` (only when you intentionally want automatic formatting changes)
+- `./mvnw -Pdocs,distribution,operator spotless:apply` (only when you intentionally want automatic formatting changes)
 
 ### Fast focused Maven build/test pattern
 - Build a focused module with required profile(s):
@@ -38,8 +38,8 @@
 
 ### UI workflow (when changing `js/`)
 - From `js/`: `pnpm install`
-- Lint: `pnpm lint` (in the relevant app/workspace)
-- Build workspace: `pnpm build`
+- Lint a specific package (example Admin UI): `pnpm -C apps/admin-ui lint`
+- Build the full workspace: `pnpm build`
 
 ## Testing strategy guidance
 - Start with tests closest to changed modules.
