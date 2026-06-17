@@ -996,6 +996,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
+    public void removeExpiredIssuedVerifiableCredentials() {
+        localStorage().removeExpiredIssuedVerifiableCredentials();
+    }
+
+    @Override
     public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
         if (StorageId.isLocalStorage(user.getId())) {
             localStorage().setNotBeforeForUser(realm, user, notBefore);

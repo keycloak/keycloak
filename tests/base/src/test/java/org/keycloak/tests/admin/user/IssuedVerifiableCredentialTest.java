@@ -19,6 +19,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.suites.DatabaseTest;
@@ -47,6 +49,10 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
 
     @InjectRealm(config = IssuedVcTestRealmConfig.class)
     protected ManagedRealm testRealm;
+
+    @InjectTimeOffSet
+    protected TimeOffSet timeOffSet;
+
 
     @Test
     @DatabaseTest
@@ -300,6 +306,56 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
 
         // Verify IssuedVC deleted
         assertThat(userResource.verifiableCredentials().getIssuedCredentials(), empty());
+    }
+
+    @Test
+    @DatabaseTest
+    public void testRemoveExpiredIssuedVerifiableCredentials() {
+        String userId = createUser();
+        String clientId = createTestClient("wallet-client");
+
+        long now = Time.currentTimeMillis();
+        long oneHourInMs = 3600000L;
+        // Create two credentials, both expiring in 1 hour
+        runOnServer.run(session -> {
+            UserVerifiableCredentialModel vcModel1 = new UserVerifiableCredentialModel(CREDENTIAL_TYPE_1);
+            vcModel1.setRevision("rev-001");
+            session.users().addVerifiableCredential(userId, vcModel1);
+
+        });
+        runOnServer.run(session -> {
+            IssuedVerifiableCredentialModel model1 = new IssuedVerifiableCredentialModel(userId, CREDENTIAL_TYPE_1, clientId);
+            model1.setRevision("rev-001");
+            model1.setIssuedAt(now);
+            model1.setExpiresAt(now + oneHourInMs); // Expires in 1 hour
+            session.users().addIssuedVerifiableCredential(model1);
+
+            IssuedVerifiableCredentialModel model2 = new IssuedVerifiableCredentialModel(userId, CREDENTIAL_TYPE_1, clientId);
+            model2.setRevision("rev-002");
+            model2.setIssuedAt(now);
+            model2.setExpiresAt(now + oneHourInMs * 2); // Expires in 2 hour
+            session.users().addIssuedVerifiableCredential(model2);
+        });
+
+        UserResource userResource = managedRealm.admin().users().get(userId);
+        assertThat(userResource.verifiableCredentials().getIssuedCredentials(), hasSize(2));
+
+        // no expirations
+        runOnServer.run(session -> session.users().removeExpiredIssuedVerifiableCredentials());
+        List<IssuedVerifiableCredentialRepresentation> issuedCredentials = userResource.verifiableCredentials().getIssuedCredentials();
+        assertThat(issuedCredentials, hasSize(2));
+
+        //first expires
+        timeOffSet.set((int) (oneHourInMs / 1000));
+        runOnServer.run(session -> session.users().removeExpiredIssuedVerifiableCredentials());
+        issuedCredentials = userResource.verifiableCredentials().getIssuedCredentials();
+        assertThat(issuedCredentials, hasSize(1));
+
+        //all expired
+        timeOffSet.set((int) (2 * oneHourInMs / 1000));
+        runOnServer.run(session -> session.users().removeExpiredIssuedVerifiableCredentials());
+        issuedCredentials = userResource.verifiableCredentials().getIssuedCredentials();
+        assertThat(issuedCredentials, hasSize(0));
     }
 
     // Helper methods
