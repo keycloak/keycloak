@@ -548,10 +548,10 @@ public class DescriptionConverter {
         if (oidcClient.isUseRefreshToken()) {
             grantTypes.add(OAuth2Constants.REFRESH_TOKEN);
         }
-        if (!client.isPublicClient() && oidcClient.isStandardTokenExchangeEnabled()) {
+        if (Boolean.FALSE.equals(client.isPublicClient()) && oidcClient.isStandardTokenExchangeEnabled()) {
             grantTypes.add(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
         }
-        if (!client.isPublicClient() && oidcClient.getJWTAuthorizationGrantEnabled()) {
+        if (Boolean.FALSE.equals(client.isPublicClient()) && oidcClient.getJWTAuthorizationGrantEnabled()) {
             grantTypes.add(OAuth2Constants.JWT_AUTHORIZATION_GRANT);
         }
         return grantTypes;
