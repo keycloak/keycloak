@@ -24,7 +24,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -32,6 +31,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -43,7 +43,6 @@ import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
@@ -61,6 +60,7 @@ import org.keycloak.testframework.ui.page.ConsentPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.suites.DatabaseTest;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -85,10 +85,10 @@ public class ConsentsTest {
     @InjectRealm(ref = "user")
     ManagedRealm userRealm;
 
-    @InjectRealm(ref = "consumer", config = ConsumerRealmConf.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(ref = "consumer", config = ConsumerRealmConf.class)
     ManagedRealm consumerRealm;
 
-    @InjectRealm(ref = "provider", lifecycle = LifeCycle.METHOD)
+    @InjectRealm(ref = "provider")
     ManagedRealm providerRealm;
 
     @InjectUser(ref = "user", realmRef = "user", config = UserRealmUserConf.class)
@@ -154,28 +154,19 @@ public class ConsentsTest {
         consentPage.confirm();
 
         Assertions.assertTrue(consumerRealmOAuth.parseLoginResponse().isSuccess());
+        providerRealm.cleanup().add(r -> AccountHelper.logout(r, userFromProviderRealm.getUsername()));
 
-        UsersResource consumerUsers = consumerRealm.admin().users();
-        Assertions.assertTrue(consumerUsers.count() > 0, "There must be at least one user");
-
-        List<UserRepresentation> users = consumerUsers.search("", 0, 5);
-
-        UserRepresentation foundUser = null;
-        for (UserRepresentation userRep : users) {
-            if (userRep.getUsername().equals(userFromProviderRealm.getUsername()) && userRep.getEmail().equals(userFromProviderRealm.admin().toRepresentation().getEmail())) {
-                foundUser = userRep;
-                break;
-            }
-        }
+        UserRepresentation foundUser = AdminApiUtil.findUserByUsername(consumerRealm.admin(), userFromProviderRealm.getUsername());
+        consumerRealm.cleanup().add(r -> r.users().get(foundUser.getId()).remove());
 
         Assertions.assertNotNull(foundUser, "There must be user " + userFromProviderRealm.getUsername() + " in realm " + consumerRealm.getName());
+        List<FederatedIdentityRepresentation> federatedIdentities = consumerRealm.admin().users().get(foundUser.getId()).getFederatedIdentity();
+        Assertions.assertEquals(1, federatedIdentities.size(), "The user is not federated");
+        Assertions.assertEquals(IDP_OIDC_ALIAS, federatedIdentities.get(0).getIdentityProvider());
+        Assertions.assertEquals(userFromProviderRealm.getUsername(), federatedIdentities.get(0).getUserName());
 
         // get user with the same username from provider realm
-        users = providerRealm.admin().users().search(null, foundUser.getFirstName(), foundUser.getLastName(), null, 0, 1);
-        Assertions.assertEquals(1, users.size(), "Same user should be in provider realm");
-
-        String userId = users.get(0).getId();
-        UserResource userResource = providerRealm.admin().users().get(userId);
+        UserResource userResource = userFromProviderRealm.admin();
 
         // list consents
         List<Map<String, Object>> consents = userResource.getConsents();
@@ -200,8 +191,6 @@ public class ConsentsTest {
         sessions = userResource.getUserSessions();
         Assertions.assertEquals(1, sessions.size(), "There should be one active session");
         Assertions.assertEquals(0, sessions.get(0).getClients().size(), "There should be no client in user session");
-
-        AccountHelper.logout(providerRealm.admin(), userFromProviderRealm.getUsername());
     }
 
     /**
@@ -240,6 +229,11 @@ public class ConsentsTest {
         consentPage.assertCurrent();
         consentPage.confirm();
 
+        providerRealm.cleanup().add(r -> {
+            AccountHelper.logout(r, userFromProviderRealm.getUsername());
+            r.users().get(userFromProviderRealm.getId()).revokeConsent("test-app-provider");
+        });
+
         // disable consent required again to enable direct grant token retrieval.
         providerAccountRep.setConsentRequired(false);
         providerRealm.admin().clients().get(providerAccountRep.getId()).update(providerAccountRep);
@@ -255,8 +249,6 @@ public class ConsentsTest {
         assertFalse(consents.isEmpty(), "Consents should not be empty");
 
         assertTrue(consents.toString().contains("Offline Token"));
-
-        AccountHelper.logout(providerRealm.admin(), userFromProviderRealm.getUsername());
     }
 
     @Test
@@ -267,6 +259,11 @@ public class ConsentsTest {
         ClientRepresentation clientRepresentation = accountClient.toRepresentation();
         clientRepresentation.setConsentRequired(true);
         accountClient.update(clientRepresentation);
+
+        providerRealm.cleanup().add(r -> {
+            clientRepresentation.setConsentRequired(false);
+            r.clients().get(clientRepresentation.getId()).update(clientRepresentation);
+        });
 
         // navigate to account console and login
         providerRealmOAuth.openLoginForm();
@@ -288,6 +285,11 @@ public class ConsentsTest {
 
         // successful login
         Assertions.assertTrue(providerRealmOAuth.parseLoginResponse().isSuccess());
+
+        providerRealm.cleanup().add(r -> {
+            AccountHelper.logout(r, userFromProviderRealm.getUsername());
+            r.users().get(userFromProviderRealm.getId()).revokeConsent("test-app-provider");
+        });
     }
 
     @Test
@@ -309,31 +311,30 @@ public class ConsentsTest {
         String sessionId = loginEvent.getSessionId();
 
         ClientRepresentation clientRepresentation = userRealm.admin().clients().findByClientId("test-app-user").get(0);
-        try {
-            clientRepresentation.setConsentRequired(true);
-            userRealm.admin().clients().get(clientRepresentation.getId()).update(clientRepresentation);
-
-            userRealmEvents.clear();
-
-            // try to refresh the token
-            // this fails as client no longer has requested consent from user
-            AccessTokenResponse refreshTokenResponse = userRealmOAuth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
-            Assertions.assertEquals(OAuthErrorException.INVALID_SCOPE, refreshTokenResponse.getError());
-            Assertions.assertEquals("Client no longer has requested consent from user", refreshTokenResponse.getErrorDescription());
-
-            Assertions.assertNull(refreshTokenResponse.getRefreshToken());
-
-            EventRepresentation refreshEvent = userRealmEvents.poll();
-            EventAssertion.assertError(refreshEvent).type(EventType.REFRESH_TOKEN_ERROR)
-                    .userId(null)
-                    .sessionId(sessionId)
-                    .error(Errors.INVALID_TOKEN);
-        } finally {
+        userRealm.cleanup().add(r -> {
             clientRepresentation.setConsentRequired(false);
-            userRealm.admin().clients().get(clientRepresentation.getId()).update(clientRepresentation);
-        }
+            r.clients().get(clientRepresentation.getId()).update(clientRepresentation);
+            AccountHelper.logout(r, userFromUserRealm.getUsername());
+        });
 
-        AccountHelper.logout(userRealm.admin(), userFromUserRealm.getUsername());
+        clientRepresentation.setConsentRequired(true);
+        userRealm.admin().clients().get(clientRepresentation.getId()).update(clientRepresentation);
+
+        userRealmEvents.clear();
+
+        // try to refresh the token
+        // this fails as client no longer has requested consent from user
+        AccessTokenResponse refreshTokenResponse = userRealmOAuth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
+        Assertions.assertEquals(OAuthErrorException.INVALID_SCOPE, refreshTokenResponse.getError());
+        Assertions.assertEquals("Client no longer has requested consent from user", refreshTokenResponse.getErrorDescription());
+
+        Assertions.assertNull(refreshTokenResponse.getRefreshToken());
+
+        EventRepresentation refreshEvent = userRealmEvents.poll();
+        EventAssertion.assertError(refreshEvent).type(EventType.REFRESH_TOKEN_ERROR)
+                .userId(null)
+                .sessionId(sessionId)
+                .error(Errors.INVALID_TOKEN);
     }
 
     @Test
@@ -347,6 +348,14 @@ public class ConsentsTest {
         clientRepresentation.getAttributes().put(ClientModel.POLICY_URI,"https://www.keycloak.org/policy");
         clientRepresentation.getAttributes().put(ClientModel.TOS_URI,"https://www.keycloak.org/tos");
         accountClient.update(clientRepresentation);
+
+        providerRealm.cleanup().add(r -> {
+            clientRepresentation.setConsentRequired(false);
+            clientRepresentation.getAttributes().put(ClientModel.LOGO_URI,"");
+            clientRepresentation.getAttributes().put(ClientModel.POLICY_URI,"");
+            clientRepresentation.getAttributes().put(ClientModel.TOS_URI,"");
+            r.clients().get(clientRepresentation.getId()).update(clientRepresentation);
+        });
 
         // navigate to account console and login
         providerRealmOAuth.openLoginForm();
@@ -363,7 +372,7 @@ public class ConsentsTest {
 
         // successful login
         Assertions.assertTrue(providerRealmOAuth.parseLoginResponse().isSuccess());
-        AccountHelper.logout(providerRealm.admin(), userFromProviderRealm.getUsername());
+        providerRealm.cleanup().add(r -> AccountHelper.logout(r, userFromProviderRealm.getUsername()));
     }
 
     private static IdentityProviderRepresentation setUpIdentityProvider() {
