@@ -9,7 +9,7 @@
 
 ## Required toolchain
 - Use Maven Wrapper, not system Maven: `./mvnw`.
-- JDK: 17, 21, or 25 (17 is commonly used in CI/local checks).
+- JDK: 17, 21, or 25 (CI uses 25 by default; the Maven compiler release is 17).
 - Node.js: 24+ for UI work (`js/apps/admin-ui/CONTRIBUTING.md`).
 - PNPM workspace is managed from `js/`.
 
@@ -62,10 +62,10 @@
   - Re-run with the profile enabled:
   - `./mvnw install -Pdistribution -DskipTests -DskipExamples -DskipTestsuite -DskipAdapters -DskipDocs -pl distribution/maven-plugins/licenses-processor -am`
 
-<!-- Review instructions from https://docs.github.com/en/copilot/tutorials/customize-code-review 
+<!-- Review instructions from https://docs.github.com/en/copilot/tutorials/customize-code-review
      and https://dev.to/techgirl1908/how-i-taught-github-copilot-code-review-to-think-like-a-maintainer-3l2c
      It seems like the initial complaint is that it's overly verbose and hallucinates, rather than
-     misses problems, so the intructions are to keep it consice and confident, rather than calling
+     misses problems, so the instructions are to keep it concise and confident, rather than calling
      out specific things to check -->
 
 # General Code Review Standards
@@ -73,7 +73,7 @@
 ## Review Philosophy
 
 * Only comment when you have HIGH CONFIDENCE (>85%) that an issue exists
-* Be concise: one or two sentence per comment when possible
+* Be concise: one or two sentences per comment when possible
 * Focus on actionable feedback, not observations
 * When reviewing text, only comment on clarity issues if the text is genuinely confusing or could lead to errors.
 
