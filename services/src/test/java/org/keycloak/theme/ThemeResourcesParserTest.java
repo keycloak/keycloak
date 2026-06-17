@@ -174,4 +174,36 @@ public class ThemeResourcesParserTest {
 
         assertTrue(resources.getStyles().isEmpty());
     }
+
+    @Test
+    public void parseSkipsBlankDotNotationValues() {
+        Properties properties = new Properties();
+        properties.setProperty("styles.blank", "   ");
+        properties.setProperty("styles.main", "css/main.css");
+
+        ThemeResources resources = ThemeResourcesParser.parse(properties);
+
+        assertEquals(1, resources.getStyles().size());
+        assertEquals("css/main.css", resources.getStyles().get(0).getPath());
+    }
+
+    @Test
+    public void parseNormalizesFaviconLeadingSlash() {
+        Properties properties = new Properties();
+        properties.setProperty("favicons.svg", "/favicon/favicon.svg");
+
+        ThemeResourceDescriptor favicon = ThemeResourcesParser.parse(properties).getFavicons().get(0);
+
+        assertEquals("favicon/favicon.svg", favicon.getPath());
+    }
+
+    @Test
+    public void parseIgnoresResourceIdOrder() {
+        Properties properties = new Properties();
+        properties.setProperty("styles.order", "css/order.css");
+
+        ThemeResources resources = ThemeResourcesParser.parse(properties);
+
+        assertTrue(resources.getStyles().isEmpty());
+    }
 }

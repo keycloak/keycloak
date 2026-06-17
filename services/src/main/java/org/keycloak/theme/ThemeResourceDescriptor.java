@@ -94,11 +94,11 @@ public class ThemeResourceDescriptor {
     }
 
     public boolean hasDefer() {
-        return defer != null && isTruthy(defer);
+        return defer != null && isTruthy(defer, "defer");
     }
 
     public boolean hasAsync() {
-        return async != null && isTruthy(async);
+        return async != null && isTruthy(async, "async");
     }
 
     public boolean hasType() {
@@ -113,8 +113,8 @@ public class ThemeResourceDescriptor {
         return rel != null && !rel.isEmpty();
     }
 
-    private static boolean isTruthy(String value) {
-        return "true".equalsIgnoreCase(value) || "defer".equalsIgnoreCase(value) || "async".equalsIgnoreCase(value);
+    private static boolean isTruthy(String value, String keyword) {
+        return "true".equalsIgnoreCase(value) || keyword.equalsIgnoreCase(value);
     }
 
     static String inferFaviconType(String path) {

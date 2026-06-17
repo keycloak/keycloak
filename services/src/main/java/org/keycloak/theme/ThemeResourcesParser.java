@@ -79,7 +79,14 @@ public final class ThemeResourcesParser {
             if ("order".equals(id)) {
                 continue;
             }
-            builders.put(id, ThemeResourceDescriptor.builder(properties.getProperty(key)));
+            String path = properties.getProperty(key);
+            if (path == null || path.isBlank()) {
+                continue;
+            }
+            if (favicon && path.startsWith("/")) {
+                path = path.substring(1);
+            }
+            builders.put(id, ThemeResourceDescriptor.builder(path));
         }
 
         for (String key : properties.stringPropertyNames()) {

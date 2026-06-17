@@ -110,12 +110,20 @@
     </#if>
     <#if themeResources?? && themeResources.styles?has_content>
       <@themeResourceTags.renderStyles themeResources.styles resourceUrl />
+    <#elseif properties.styles?has_content>
+      <#list properties.styles?split(' ') as style>
+        <link rel="stylesheet" href="${resourceUrl}/${style}">
+      </#list>
     </#if>
     <#if entryScript?has_content>
       <script type="module" src="${resourceUrl}/${entryScript}"></script>
     </#if>
     <#if themeResources?? && themeResources.scripts?has_content>
       <@themeResourceTags.renderScripts themeResources.scripts resourceUrl "module" />
+    <#elseif properties.scripts?has_content>
+      <#list properties.scripts?split(' ') as script>
+        <script src="${resourceUrl}/${script}" type="module"></script>
+      </#list>
     </#if>
     <#if entryImports?has_content>
       <#list entryImports as import>
