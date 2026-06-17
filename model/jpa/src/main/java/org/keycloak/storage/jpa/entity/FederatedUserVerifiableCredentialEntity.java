@@ -14,12 +14,12 @@ import jakarta.persistence.Version;
 
 @Entity
 @Table(name="FED_USER_VER_CREDENTIAL", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"USER_ID", "CREDENTIAL_SCOPE_NAME"})
+        @UniqueConstraint(columnNames = {"USER_ID", "REALM_ID", "CREDENTIAL_SCOPE_NAME"})
 })
 @NamedQueries({
         @NamedQuery(name="federatedVerifiableCredentialsByUser", query="select vc from FederatedUserVerifiableCredentialEntity vc where vc.userId = :userId"),
         @NamedQuery(name="deleteFederatedVerifiableCredentialsByRealm", query="delete from FederatedUserVerifiableCredentialEntity vc where vc.realmId = :realmId"),
-        @NamedQuery(name="deleteFederatedVerifiableCredentialsByClientScope", query="delete from FederatedUserVerifiableCredentialEntity vc where vc.credentialScopeName = :scopeName"),
+        @NamedQuery(name="deleteFederatedVerifiableCredentialsByClientScope", query="delete from FederatedUserVerifiableCredentialEntity vc where vc.realmId = :realmId and vc.credentialScopeName = :scopeName"),
         @NamedQuery(name="deleteFederatedVerifiableCredentialsByUser", query="delete from FederatedUserVerifiableCredentialEntity vc where vc.userId = :userId and vc.realmId = :realmId"),
         @NamedQuery(name="deleteFederatedVerifiableCredentialsByStorageProvider", query="delete from FederatedUserVerifiableCredentialEntity vc where vc.storageProviderId = :storageProviderId"),
 })
@@ -36,7 +36,7 @@ public class FederatedUserVerifiableCredentialEntity {
     @Column(name="REALM_ID")
     protected String realmId;
 
-    @Column(name="STORAGE_PROVIDER_ID")
+    @Column(name="STORAGE_PROVIDER_ID", length = 36)
     protected String storageProviderId;
 
     @Column(name="CREDENTIAL_SCOPE_NAME")

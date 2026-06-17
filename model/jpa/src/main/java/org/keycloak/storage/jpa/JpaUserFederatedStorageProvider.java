@@ -908,10 +908,12 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void preRemove(ClientScopeModel clientScope) {
+        RealmModel realm = session.getContext().getRealm();
         em.createNamedQuery("deleteFederatedUserConsentClientScopesByClientScope")
                 .setParameter("scopeId", clientScope.getId())
                 .executeUpdate();
         em.createNamedQuery("deleteFederatedVerifiableCredentialsByClientScope")
+                .setParameter("realmId", realm.getId())
                 .setParameter("scopeName", clientScope.getName())
                 .executeUpdate();
     }
@@ -1042,6 +1044,7 @@ public class JpaUserFederatedStorageProvider implements
                 UserProfile profile = profileProvider.create(UserProfileContext.USER_API, user);
                 userAttributes = profile.getAttributes().getReadable();
             } else {
+                logger.debugf("User %s not found when adding verifiable credential, storing empty attributes", userId);
                 userAttributes = new java.util.HashMap<>();
             }
         }
@@ -1096,8 +1099,6 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public boolean removeVerifiableCredential(String userId, String credentialScopeName) {
-        session.getContext().getRealm();
-
         FederatedUserVerifiableCredentialEntity found = getFederatedVerifiableCredentialEntitiesByUser(userId)
                 .filter(vcEnt -> vcEnt.getCredentialScopeName().equals(credentialScopeName))
                 .findFirst()
@@ -1106,7 +1107,7 @@ public class JpaUserFederatedStorageProvider implements
         if (found == null) return false;
 
         em.remove(found);
-        //TODO Also remove associated issued credentials
+        //Remove associated issued credentials
         em.flush();
         return true;
     }

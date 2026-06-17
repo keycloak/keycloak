@@ -98,7 +98,7 @@
         </createTable>
 
         <addUniqueConstraint tableName="FED_USER_VER_CREDENTIAL"
-                             columnNames="USER_ID, CREDENTIAL_SCOPE_NAME"
+                             columnNames="REALM_ID, USER_ID, CREDENTIAL_SCOPE_NAME"
                              constraintName="UK_FED_USER_VC"/>
 
         <createIndex tableName="FED_USER_VER_CREDENTIAL" indexName="IDX_FED_USER_VC_USER">
