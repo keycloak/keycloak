@@ -173,9 +173,9 @@ The Operator supports the standard OLM install modes:
 
 [WARNING]
 ====
-*Experimental support*
+*Preview support*
 
-Multi-namespace and cluster-wide installation is supported for common scenarios, but it is still considered experimental.
+Multi-namespace and cluster-wide installation is supported for common scenarios, but it is still considered in preview.
 
 * Limitations apply; see <<multi_namespace_limitations>>.
 * For non-OLM installations, cluster-wide setup requires additional RBAC configuration.
@@ -244,7 +244,7 @@ kubectl rollout restart deployment/keycloak-operator -n <operator-namespace>
 
 [WARNING]
 ====
-This installation path is experimental and applies only to non-OLM installations.
+This installation path is in preview and applies only to non-OLM installations.
 
 The published `kubernetes.yml` manifest installs namespace-scoped RBAC and configures the Operator to watch its own namespace only. Cluster-wide installation requires cluster-scoped RBAC and an environment variable that enables watching all namespaces.
 ====
