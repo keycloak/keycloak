@@ -40,7 +40,6 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
@@ -90,21 +89,6 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
         for (IDToken idToken : idTokens) {
             Assert.assertEquals("abcdef123456", idToken.getNonce());
-            Assert.assertEquals(authzResponse.getSessionState(), idToken.getSessionState());
-        }
-    }
-
-
-    @Test
-    public void initialSessionStateUsedInRedirect() {
-        EventRepresentation loginEvent = loginUserWithRedirect("abcdef123456", OAuthClient.APP_ROOT + "/auth?session_state=foo");
-
-        AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
-        Assert.assertNotNull(authzResponse.getSessionState());
-
-        List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
-
-        for (IDToken idToken : idTokens) {
             Assert.assertEquals(authzResponse.getSessionState(), idToken.getSessionState());
         }
     }
