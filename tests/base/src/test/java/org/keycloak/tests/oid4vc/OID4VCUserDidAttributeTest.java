@@ -47,7 +47,7 @@ public class OID4VCUserDidAttributeTest extends OID4VCIssuerTestBase {
 
         // Update the Holder's DID attribute
         holderRep = testRealm.admin().users().search("alice").get(0);
-        holderRep.getAttributes().put(UserModel.DID, List.of(appUserDid));
+        holderRep.singleAttribute(UserModel.DID, appUserDid);
         testRealm.admin().users().get(holderRep.getId()).update(holderRep);
     }
 
@@ -69,7 +69,7 @@ public class OID4VCUserDidAttributeTest extends OID4VCIssuerTestBase {
         UserRepresentation john = testRealm.admin().users().search("john").get(0);
 
         // Try to set alice's DID on john
-        john.getAttributes().put(UserModel.DID, List.of(aliceDid));
+        john.singleAttribute(UserModel.DID, aliceDid);
 
         WebApplicationException exception = assertThrows(WebApplicationException.class,
                 () -> testRealm.admin().users().get(john.getId()).update(john));
