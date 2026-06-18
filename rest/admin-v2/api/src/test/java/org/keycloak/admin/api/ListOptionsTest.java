@@ -21,7 +21,7 @@ public class ListOptionsTest {
     void testGetFields() {
         ListOptions options = new ListOptions();
         options.fields = "a,b";
-        assertTrue(options.getFields().equals(Set.of("a", "b")));
+        assertEquals(Set.of("a", "b"), options.getFields());
     }
 
 }

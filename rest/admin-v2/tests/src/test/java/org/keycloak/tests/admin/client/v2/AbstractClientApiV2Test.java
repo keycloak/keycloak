@@ -39,7 +39,10 @@ public abstract class AbstractClientApiV2Test {
     
     @BeforeEach
     public void before() {
-        adminClient.getWebTarget().register(filter);
+        var target = adminClient.getWebTarget();
+        if (!target.getConfiguration().isRegistered(filter)) {
+            target.register(filter);
+        }
     }
     
     @AfterEach
