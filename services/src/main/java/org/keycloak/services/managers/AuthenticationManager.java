@@ -375,7 +375,7 @@ public class AuthenticationManager {
             final AuthenticationSessionManager asm, UserSessionModel userSession, boolean browserCookie, boolean initiateLogout) {
         AuthenticationSessionModel logoutSession = session.getContext().getAuthenticationSession();
         if (logoutSession != null && AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(logoutSession.getAction())) {
-            // Don't reuse for concurrent logouts of different user sessions
+            // Don't reuse logout session if it belongs to a different user session
             if (userSession != null && !userSession.getId().equals(logoutSession.getParentSession().getId())) {
                 logoutSession = null;
             } else {
@@ -401,7 +401,7 @@ public class AuthenticationManager {
             authSessionId = rootLogoutSession.getId();
             browserCookiePresent = true;
         } else if (userSession != null) {
-            if ((!(logoutSession == null)) && (!userSession.getId().equals(logoutSession.getParentSession().getId()))) {
+            if (logoutSession != null && !userSession.getId().equals(logoutSession.getParentSession().getId())) {
                 authSessionId = KeycloakModelUtils.generateId();
                 rootLogoutSession = null;
             } else {
