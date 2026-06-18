@@ -257,6 +257,12 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.7.0-issued-ver-credential-expires-at-index">
+        <createIndex tableName="ISSUED_VER_CREDENTIAL" indexName="IDX_ISSUED_VER_CREDENTIAL_EXPIRES_AT">
+            <column name="EXPIRES_AT"/>
+        </createIndex>
+    </changeSet>
+
     <changeSet author="keycloak" id="26.7.0-persistent-auth-session-root-table">
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <not>
