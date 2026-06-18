@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.keycloak.common.util.BouncyIntegration;
@@ -190,6 +191,7 @@ public final class OID4VCProofTestUtils {
     public static JSONWebKeySet toJwks(KeyWrapper... keys) {
         List<JWK> jwkList = Arrays.stream(keys)
                 .map(JWKSServerUtils::toJwk)
+                .filter(Objects::nonNull)
                 .toList();
 
         JSONWebKeySet jwks = new JSONWebKeySet();

@@ -51,7 +51,7 @@ Keycloak supports JWT proofs that can optionally include key attestations. To va
 [source,bash]
 ----
 # Configure trusted attester identity providers (comma-separated list of aliases)
-curl -X PUT "https://localhost:8443/admin/realms/{realm}/clients/{client-id}" \
+curl -X PUT "https://localhost:8443/admin/realms/{realm}/clients/{client-uuid}" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
