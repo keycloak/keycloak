@@ -139,7 +139,7 @@ public class ThemeUploadResource {
         } catch (BadRequestException e) {
             throw e;
         } catch (IOException e) {
-            throw new BadRequestException("Failed to process theme archive: " + e.getMessage());
+            throw new BadRequestException("Failed to process theme archive.");
         }
 
         session.theme().clearCache();
