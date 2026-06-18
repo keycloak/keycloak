@@ -60,9 +60,11 @@
                 <constraints nullable="false"/>
             </column>
             <column name="CREATED_DATE" type="BIGINT"/>
+            <column name="UPDATED_DATE" type="BIGINT"/>
             <column name="USER_ATTRIBUTES" type="TEXT">
                 <constraints nullable="true"/>
             </column>
+            <column name="VERSION" type="INT"/>
         </createTable>
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_VCRED_PM" tableName="USER_VER_CREDENTIAL"/>
         <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="USER_VER_CREDENTIAL" constraintName="FK_VCRED_USER" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
@@ -252,6 +254,12 @@
         <createIndex tableName="ISSUED_VER_CREDENTIAL" indexName="IDX_ISSUED_VER_CREDENTIAL_USER">
             <column name="USER_ID"/>
             <column name="ISSUED_AT"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-issued-ver-credential-expires-at-index">
+        <createIndex tableName="ISSUED_VER_CREDENTIAL" indexName="IDX_ISSUED_VER_CREDENTIAL_EXPIRES_AT">
+            <column name="EXPIRES_AT"/>
         </createIndex>
     </changeSet>
 

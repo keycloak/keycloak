@@ -406,7 +406,7 @@ export default function EditUser() {
                   }
                   {...verifiableCredentialsTab}
                 >
-                  <UserVerifiableCredentials userId={user.id!} />
+                  <UserVerifiableCredentials user={user} />
                 </Tab>
               )}
               <Tab

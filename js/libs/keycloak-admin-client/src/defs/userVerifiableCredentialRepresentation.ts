@@ -6,5 +6,6 @@ export default interface UserVerifiableCredentialRepresentation {
   credentialConfigurationId?: string;
   revision?: string;
   createdDate?: number;
+  updatedDate?: number;
   userAttributes?: Record<string, string[]>;
 }

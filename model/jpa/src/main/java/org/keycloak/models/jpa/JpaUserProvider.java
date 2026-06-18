@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -407,6 +408,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         long createdDate = verifCredentialModel.getCreatedDate() == null ? Time.currentTimeMillis() : verifCredentialModel.getCreatedDate();
         vcEntity.setCreatedDate(createdDate);
 
+        long updatedDate = verifCredentialModel.getUpdatedDate() == null ? createdDate : verifCredentialModel.getUpdatedDate();
+        vcEntity.setUpdatedDate(updatedDate);
+
         vcEntity.setCredentialScopeName(verifCredentialModel.getCredentialScopeName());
 
         Map<String, List<String>> userAttributes;
@@ -488,10 +492,14 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         String newRevision = SecretGenerator.getInstance().generateSecureID();
         entity.setRevision(newRevision);
-        UserVerifiableCredentialEntity mergedEntity = em.merge(entity);
-        em.flush();
-
-        return toVerifiableCredentialModel(mergedEntity);
+        entity.setUpdatedDate(Time.currentTimeMillis());
+        try {
+            UserVerifiableCredentialEntity mergedEntity = em.merge(entity);
+            em.flush();
+            return toVerifiableCredentialModel(mergedEntity);
+        } catch (OptimisticLockException e) {
+            throw new ModelException( "Verifiable credential was concurrently modified. Please retry the operation.", e);
+        }
     }
 
     private Stream<UserVerifiableCredentialEntity> getVerifiableCredentialsEntitiesByUser(String userId) {
@@ -504,6 +512,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         UserVerifiableCredentialModel model = new UserVerifiableCredentialModel(entity.getCredentialScopeName());
         model.setRevision(entity.getRevision());
         model.setCreatedDate(entity.getCreatedDate());
+        model.setUpdatedDate(entity.getUpdatedDate());
 
         if (entity.getUserAttributes() != null) {
             try {
@@ -1124,7 +1133,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     }
 
     @Override
-    public void addIssuedVerifiableCredential(IssuedVerifiableCredentialModel model) {
+    public IssuedVerifiableCredentialModel addIssuedVerifiableCredential(IssuedVerifiableCredentialModel model) {
 
         String revision;
         if (model.getRevision() != null) {
@@ -1140,7 +1149,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         IssuedVerifiableCredentialEntity issuedVerifiableCredentialEntity = new IssuedVerifiableCredentialEntity();
 
-        issuedVerifiableCredentialEntity.setId(KeycloakModelUtils.generateId());
+        issuedVerifiableCredentialEntity.setId(SecretGenerator.getInstance().generateSecureID());
         issuedVerifiableCredentialEntity.setUser(em.getReference(UserEntity.class, model.getUserId()));
         issuedVerifiableCredentialEntity.setCredentialType(model.getCredentialType());
         issuedVerifiableCredentialEntity.setClientId(model.getClientId());
@@ -1153,6 +1162,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         em.persist(issuedVerifiableCredentialEntity);
         em.flush();
+
+        return toIssuedVcModel(issuedVerifiableCredentialEntity);
     }
 
     @Override
@@ -1352,6 +1363,14 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         // Therefore, we use a standard count where possible.
         return query.select(from.getJoins().isEmpty() ? builder.count(from) : builder.countDistinct(from))
                 .where(predicates);
+    }
+
+    @Override
+    public void removeExpiredIssuedVerifiableCredentials() {
+        long currentTimeMillis = Time.currentTimeMillis();
+        em.createNamedQuery("deleteExpiredIssuedVcs")
+            .setParameter("currentTime", currentTimeMillis)
+            .executeUpdate();
     }
 
     private IssuedVerifiableCredentialModel toIssuedVcModel(IssuedVerifiableCredentialEntity entity) {

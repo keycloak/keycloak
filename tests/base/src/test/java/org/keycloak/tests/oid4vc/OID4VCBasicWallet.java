@@ -51,6 +51,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.LoginUrlBuilder;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
+import org.keycloak.testsuite.util.oauth.RefreshRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriRequest;
@@ -322,6 +323,21 @@ public class OID4VCBasicWallet {
 
     public AccessTokenRequest accessTokenRequest(OID4VCTestContext ctx, String authCode) {
         AccessTokenRequest request = new AccessTokenRequest(oauth, authCode) {
+            public AccessTokenResponse send() {
+                AccessTokenResponse response = super.send();
+                ctx.putAttachment(ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY, response);
+                return response;
+            }
+        };
+        return request;
+    }
+
+    public RefreshRequest refreshRequest(OID4VCTestContext ctx) {
+        String refreshToken = ctx.getAccessTokenResponse().getRefreshToken();
+        if (refreshToken == null) {
+            fail("Refresh token not available");
+        }
+        RefreshRequest request = new RefreshRequest(refreshToken, oauth) {
             public AccessTokenResponse send() {
                 AccessTokenResponse response = super.send();
                 ctx.putAttachment(ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY, response);

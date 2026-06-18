@@ -112,8 +112,8 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
     try {
       // Construct the AIA action parameter
       const config = {
-        credential_configuration_id: credential.credentialConfigurationId,
-        pre_authorized: false,
+        credentialConfigurationId: credential.credentialConfigurationId,
+        preAuthorized: false,
       };
 
       // Base64 encode the config
@@ -166,6 +166,15 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
                 {credential.createdDate
                   ? formatDate(
                       new Date(credential.createdDate),
+                      undefined,
+                      FORMAT_DATE_ONLY,
+                    )
+                  : "—"}
+              </DataListCell>,
+              <DataListCell key="updated" width={2}>
+                {credential.updatedDate
+                  ? formatDate(
+                      new Date(credential.updatedDate),
                       undefined,
                       FORMAT_DATE_ONLY,
                     )

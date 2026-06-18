@@ -122,7 +122,7 @@ public class AccountIssuedVerifiableCredentialResource {
             return rep;
         }
 
-        ClientModel client = realm.getClientByClientId(rep.getClientId());
+        ClientModel client = realm.getClientById(rep.getClientId());
         if (client == null) {
             return rep;
         }

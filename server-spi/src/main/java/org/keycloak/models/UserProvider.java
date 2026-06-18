@@ -344,9 +344,9 @@ public interface UserProvider extends Provider,
      * Record that a verifiable credential was issued to a user.
      *
      * @param issuedVc model with userId, clientId, credentialType set
-     *
+     * @return issuedVerifiableCredentialModel with all the fields set (including ID)
      */
-    void addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc);
+    IssuedVerifiableCredentialModel addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc);
 
     /**
      * Get all issued verifiable credentials for a specific user.
@@ -363,5 +363,11 @@ public interface UserProvider extends Provider,
      * @return {@code true} if the credential was removed, {@code false} if it was not found
      */
     boolean removeIssuedVerifiableCredential(String credentialId);
+
+    /**
+     * Remove all expired issued verifiable credentials across all realms.
+     * This is called periodically by the scheduled cleanup task.
+     */
+    void removeExpiredIssuedVerifiableCredentials();
 
 }

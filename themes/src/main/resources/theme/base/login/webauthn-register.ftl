@@ -37,6 +37,7 @@
                     attestationConveyancePreference : ${attestationConveyancePreference?c},
                     authenticatorAttachment : ${authenticatorAttachment?c},
                     requireResidentKey : ${requireResidentKey?c},
+                    residentKey : ${residentKey?c},
                     userVerificationRequirement : ${userVerificationRequirement?c},
                     createTimeout : ${createTimeout?c},
                     excludeCredentialIds : ${excludeCredentialIds?c},
