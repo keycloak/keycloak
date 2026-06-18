@@ -63,30 +63,6 @@ const arraysEqualUnordered = (a: string[], b: string[]): boolean => {
   return true;
 };
 
-/**
- * Builds a human-readable message from a failed SSF endpoint response.
- * The transmitter returns OAuth2-style error bodies
- * ({ error, error_description }), so surface error_description
- * rather than the raw JSON. Falls back to the raw body, then to the HTTP status line.
- */
-const ssfErrorMessage = async (response: Response): Promise<string> => {
-  const text = await response.text();
-  if (text) {
-    try {
-      const body = JSON.parse(text) as {
-        error_description?: string;
-        error?: string;
-      };
-      const message = body.error_description || body.error;
-      if (message) return message;
-    } catch {
-      // Body wasn't JSON — fall through to the raw text.
-    }
-    return text;
-  }
-  return `${response.status} ${response.statusText || "Request failed"}`;
-};
-
 type SsfClientStreamDelivery = {
   method?: string;
   endpoint_url?: string;
@@ -255,22 +231,11 @@ export const StreamTab = ({
         body.events_delivered = editStreamEventsDelivered;
       }
 
-      const response = await fetch(
-        `${addTrailingSlash(
-          adminClient.baseUrl,
-        )}admin/realms/${realm}/ssf/clients/${client.clientId}/stream`,
-        {
-          method: "PATCH",
-          headers: {
-            ...getAuthorizationHeaders(await adminClient.getAccessToken()),
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(body),
-        },
-      );
-      if (!response.ok) {
-        throw new Error(await ssfErrorMessage(response));
-      }
+      await adminClient.ssf.updateClientStream({
+        clientId: client.clientId!,
+        body,
+      });
+
       addAlert(t("ssfStreamUpdateSuccess"), AlertVariant.success);
       refresh();
     } catch (error) {

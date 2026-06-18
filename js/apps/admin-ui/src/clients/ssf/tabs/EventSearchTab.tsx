@@ -84,17 +84,16 @@ export const EventSearchTab = ({ client }: EventSearchTabProps) => {
       // We update them in place once the new fetch resolves.
       setPendingActionLoading(true);
       try {
-      const result = await adminClient.ssf.findPendingEvent({
-        clientId: client.clientId!,
-        jti: encodeURIComponent(lookupJti),
-      });
-      if (result === null) {
-            ),
+        const result = await adminClient.ssf.findPendingEvent({
+          clientId: client.clientId!,
+          jti: encodeURIComponent(lookupJti),
+        });
+        if (result === null) {
           setPendingLookupError(t("ssfPendingLookupNotFound"));
           setPendingLookupResult(null);
           return;
         }
-      setPendingLookupResult(result as SsfPendingEvent);
+        setPendingLookupResult(result as SsfPendingEvent);
         setPendingLookupError(null);
       } catch (error) {
         setPendingLookupError(String(error));
@@ -103,7 +102,7 @@ export const EventSearchTab = ({ client }: EventSearchTabProps) => {
         setPendingActionLoading(false);
       }
     },
-    [client.id, client.clientId, adminClient, realm, t],
+    [client.id, client.clientId, adminClient, t],
   );
 
   // Auto-run the lookup once on mount when the URL carries ?jti=... —

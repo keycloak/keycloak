@@ -82,6 +82,16 @@ export class Ssf extends Resource<{ realm?: string }> {
     urlParamKeys: ["clientId"],
   });
 
+  public updateClientStream = this.makeUpdateRequest<
+    SsfClientQuery,
+    SsfStreamConfigInputRepresentation,
+    SsfClientStreamRepresentation
+  >({
+    method: "PATCH",
+    path: "/clients/{clientId}/stream",
+    urlParamKeys: ["clientId"],
+  });
+
   public deleteClientStream = this.makeRequest<SsfClientQuery, void>({
     method: "DELETE",
     path: "/clients/{clientId}/stream",
