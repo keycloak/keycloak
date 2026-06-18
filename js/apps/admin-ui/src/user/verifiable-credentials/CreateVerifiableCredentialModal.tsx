@@ -9,7 +9,7 @@ import {
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useAdminClient } from "../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { SelectControl } from "@keycloak/keycloak-ui-shared";
 import { useFetch } from "@keycloak/keycloak-ui-shared";

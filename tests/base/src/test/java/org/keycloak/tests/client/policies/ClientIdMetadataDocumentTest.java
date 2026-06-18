@@ -18,6 +18,7 @@ import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataD
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactoryProviderConfig;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
@@ -821,6 +822,13 @@ public class ClientIdMetadataDocumentTest {
         oauth.redirectUri(REDIRECT_URI);
         cimd.getRepresentation().setLogoUri(null);
         assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_REQUIRED_PROPERTIES);
+    }
+
+    @Test
+    public void testWellKnownNoneInTokenEndpointAuthMethods() {
+        OIDCConfigurationRepresentation oidcConfig = oauth.doWellKnownRequest();
+        Assertions.assertTrue(oidcConfig.getClientIdMetadataDocumentSupported());
+        Assertions.assertTrue(oidcConfig.getTokenEndpointAuthMethodsSupported().contains("none"));
     }
 
     private String loginUserAndGetCode(boolean isGrantRequred) {

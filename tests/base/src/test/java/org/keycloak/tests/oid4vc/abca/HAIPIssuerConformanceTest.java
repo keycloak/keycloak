@@ -1,4 +1,4 @@
-package org.keycloak.tests.oid4vc.haip;
+package org.keycloak.tests.oid4vc.abca;
 
 
 import java.util.Map;
@@ -24,9 +24,8 @@ import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
-import org.keycloak.tests.oid4vc.abca.OIDCClientAttester;
-import org.keycloak.tests.oid4vc.abca.OIDCMockClientAttester;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -42,7 +41,9 @@ import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createRsaKeyPair;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CLIENT_ATTESTER_ATTACHMENT_KEY;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Replicates various tests in oid4vci-1_0-issuer-haip-test-plan
@@ -168,11 +169,9 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
      * Uses a request object that does not contain state, but state is passed in the url parameters to the authorization endpoint
      * (hence state should be ignored, as FAPI says only parameters inside the request object should be used).
      * The expected result is a successful authentication that returns neither state nor s_hash.
-     *
-     * It is also permissible to return an error message: invalid_request, invalid_request_object or access_denied.
      */
     @Test
-    public void testOnlyParametersInsideRequestObjectAreUsed() throws Exception {
+    public void testOnlyParametersInsideRequestObjectAreUsed() {
 
         var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);
         ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
@@ -197,16 +196,15 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
 
         // Send Authorization Request
         //
-        var success = wallet.authorizationRequest()
+        wallet.authorizationRequest()
                 .requestUri(requestUri)
                 .codeChallenge(pkce)
                 .state("123456")
                 .openLoginForm();
-
         errorPage.assertCurrent();
         assertEquals("PAR request did not include query parameter", errorPage.getError());
 
-        // When error on redirect_uri is configured, we'd need to assert the json response
+        // When error on redirect_uri is configured, we'd need to assert the JSON response
         //
         // assertFalse(authRequest.openLoginForm(), "Error expected");
         // AuthorizationEndpointResponse authResponse = authRequest.parseLoginResponse();
@@ -214,6 +212,90 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
         // assertNull(authResponse.getCode(), "Expected no auth code");
         // assertEquals("invalid_request", authResponse.getError());
         // assertEquals("PAR request did not include query parameter", authResponse.getErrorDescription());
+    }
+
+    /**
+     * fapi2-security-profile-final-ensure-request-object-without-redirect-uri-fails
+     *
+     * This test should end with the authorization server showing an error message that the request object is invalid
+     * due to the missing redirect uri.
+     */
+    @Test
+    public void testRequestObjectWithoutRedirectUriFails() {
+
+        var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);
+        ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
+
+        var pkce = PkceGenerator.s256();
+
+        // Generate ABCA Headers
+        //
+        KeyWrapper rsaKey = wallet.getRSAKeyPair(ctx);
+        String attestationJwt = wallet.buildClientAttestationJWT(ctx, rsaKey);
+        String attestationPoPJwt = wallet.buildClientAttestationPoPJWT(ctx, rsaKey);
+
+        String redirectUri = oauth.config().getRedirectUri();
+        try {
+            oauth.config().redirectUri(null);
+
+            // Send PAR Request (without redirect_uri)
+            //
+            ParResponse parResponse = oauth.pushedAuthorizationRequest()
+                    .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
+                    .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                    .scopeParam(ctx.getScope())
+                    .codeChallenge(pkce)
+                    .send();
+            assertFalse(parResponse.isSuccess());
+            assertNull(parResponse.getRequestUri(), "Expected no request_uri");
+            assertEquals("invalid_request", parResponse.getError());
+            assertEquals("PAR is required to have a 'redirect_uri' parameter", parResponse.getErrorDescription());
+        } finally {
+            oauth.config().redirectUri(redirectUri);
+        }
+    }
+
+    /**
+     * fapi2-security-profile-final-ensure-response-type-code-idtoken-fails
+     *
+     * This test uses response_type=code+id_token in the authorization request, which is not permitted in FAPI2 Security Profile
+     * as it would return an id_token via the browser where it may be leaked. The authorization server should show an error message
+     * that the response type is unsupported or the request is invalid.
+     */
+    @Test
+    public void testRequestObjectWithHybridResponseTypeFails() {
+
+        var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);
+        ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
+
+        var pkce = PkceGenerator.s256();
+
+        // Generate ABCA Headers
+        //
+        KeyWrapper rsaKey = wallet.getRSAKeyPair(ctx);
+        String attestationJwt = wallet.buildClientAttestationJWT(ctx, rsaKey);
+        String attestationPoPJwt = wallet.buildClientAttestationPoPJWT(ctx, rsaKey);
+
+        String responseType = oauth.config().getResponseType();
+        try {
+            oauth.config().responseType("code id_token");
+
+            // Send PAR Request (without redirect_uri)
+            //
+            ParResponse parResponse = oauth.pushedAuthorizationRequest()
+                    .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
+                    .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                    .scopeParam(ctx.getScope())
+                    .codeChallenge(pkce)
+                    .send();
+            assertFalse(parResponse.isSuccess());
+            assertNull(parResponse.getRequestUri(), "Expected no request_uri");
+            assertEquals("invalid_request", parResponse.getError());
+            String errorDescription = parResponse.getErrorDescription();
+            assertEquals("Implicit/Hybrid flow is prohibited.", errorDescription);
+        } finally {
+            oauth.config().responseType(responseType);
+        }
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
