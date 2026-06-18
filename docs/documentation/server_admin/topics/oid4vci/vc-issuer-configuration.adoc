@@ -575,12 +575,12 @@ curl -X POST "https://localhost:8443/admin/realms/oid4vc-vci/client-scopes" \
 Set up a client to handle Verifiable Credential (VC) requests and assign the necessary scopes.
 The client does not differ from regular OpenID Connect clients — with one exception: it must have the appropriate **optional ClientScopes** assigned that define the Verifiable Credentials it is allowed to issue.
 
-. Create a JSON file (e.g., `oid4vc-rest-api-client.json`) with the following content:
+. Create a JSON file (e.g., `my-wallet-client.json`) with the following content:
 +
 [source,json]
 ----
 {
-  "clientId": "oid4vc-rest-api",
+  "clientId": "my-wallet-client",
   "enabled": true,
   "protocol": "openid-connect",
   "publicClient": false,
@@ -609,7 +609,7 @@ The client does not differ from regular OpenID Connect clients — with one exce
 curl -k -X POST "https://localhost:8443/admin/realms/oid4vc-vci/clients" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
-  -d @oid4vc-rest-api-client.json
+  -d @my-wallet-client.json
 ----
 
 === Verifying the Configuration
