@@ -105,7 +105,7 @@ public class AuthorizationEndpointRequestParserProcessor {
             }
 
             if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
-                request.authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, request.getScope());
+                request.authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, null, request.getScope());
             }
 
             return request;

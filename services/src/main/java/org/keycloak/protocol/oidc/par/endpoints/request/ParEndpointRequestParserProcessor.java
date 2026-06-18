@@ -71,7 +71,7 @@ public class ParEndpointRequestParserProcessor {
             }
 
             if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
-                request.setAuthorizationRequestContext(AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, request.getScope()));
+                request.setAuthorizationRequestContext(AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, null, request.getScope()));
             }
 
             return request;

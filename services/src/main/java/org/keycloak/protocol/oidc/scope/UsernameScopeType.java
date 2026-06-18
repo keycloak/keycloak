@@ -50,7 +50,7 @@ public class UsernameScopeType implements ParameterizedScopeTypeProvider {
         }
     }
 
-    private UserModel resolveUser(ClientScopeModel scope, String parameter) throws InvalidScopeParameterException {
+    protected UserModel resolveUser(ClientScopeModel scope, String parameter) throws InvalidScopeParameterException {
         UserModel targetUser = users.getUserByUsername(scope.getRealm(), parameter);
         if (targetUser == null) {
             throw new InvalidScopeParameterException(String.format("User '%s' not found in realm '%s'", parameter, scope.getRealm().getName()));

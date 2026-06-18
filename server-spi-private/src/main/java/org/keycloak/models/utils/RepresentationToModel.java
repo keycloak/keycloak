@@ -1009,7 +1009,7 @@ public class RepresentationToModel {
                         throw new RuntimeException("No provider found for authorization requests parser client-scope");
                     }
 
-                    AuthorizationRequestContext ctx = clientScopeParser.parseScopes(client, scopeName);
+                    AuthorizationRequestContext ctx = clientScopeParser.parseScopes(client, null, scopeName);
                     AuthorizationDetails authDetails = ctx.getAuthorizationDetailEntries().stream()
                             .filter(a -> a.getAuthorizationDetails().getParameterizedScopeParamFromCustomData() != null)
                             .findAny().orElse(null);

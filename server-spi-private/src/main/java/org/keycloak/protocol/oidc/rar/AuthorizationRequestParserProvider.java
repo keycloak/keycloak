@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oidc.rar;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.rar.AuthorizationRequestContext;
 
@@ -25,6 +26,6 @@ import org.keycloak.rar.AuthorizationRequestContext;
  */
 public interface AuthorizationRequestParserProvider extends Provider {
 
-    AuthorizationRequestContext parseScopes(ClientModel client, String scopeParam);
+    AuthorizationRequestContext parseScopes(ClientModel client, UserModel user, String scopeParam);
 
 }

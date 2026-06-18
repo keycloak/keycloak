@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
 import org.keycloak.protocol.oidc.rar.model.IntermediaryScopeRepresentation;
@@ -63,11 +64,13 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
      * <p>
      * Parameterized scopes will also be parsed with the extracted parameter, so it can be used later
      *
+     * @param client The client requesting the parsing
+     * @param user The user in the login (can be null, for example in the authorization endpoint)
      * @param scopeParam the OAuth scope param for the current request
      * @return see description
      */
     @Override
-    public AuthorizationRequestContext parseScopes(ClientModel client, String scopeParam) {
+    public AuthorizationRequestContext parseScopes(ClientModel client, UserModel user, String scopeParam) {
         // Process all the default ClientScopeModels for the current client, and maps them to the IntermediaryScopeRepresentation to make use of a HashSet
         Set<IntermediaryScopeRepresentation> clientScopeModelSet = client.getClientScopes(true).values().stream()
                 .filter(clientScopeModel -> !clientScopeModel.isParameterizedScope()) // not strictly needed as Parameterized Scopes are going to be Optional scopes for now
@@ -78,7 +81,7 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
         if (scopeParam != null) {
             // Go through the parsed requested scopes and attempt to match them against the optional scopes list
             intermediaryScopeRepresentations = TokenManager.parseScopeParameter(scopeParam).collect(Collectors.toSet()).stream()
-                    .map((String requestScope) -> getMatchingClientScope(requestScope, client.getClientScopes(false).values()))
+                    .map((String requestScope) -> getMatchingClientScope(user, requestScope, client.getClientScopes(false).values()))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .collect(Collectors.toSet());
@@ -124,7 +127,7 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
      * @param requestScope one of the requested OAuth scopes
      * @return see description
      */
-    private Optional<IntermediaryScopeRepresentation> getMatchingClientScope(String requestScope, Collection<ClientScopeModel> optionalScopes) {
+    private Optional<IntermediaryScopeRepresentation> getMatchingClientScope(UserModel user, String requestScope, Collection<ClientScopeModel> optionalScopes) {
         for (ClientScopeModel clientScopeModel : optionalScopes) {
             if (clientScopeModel.isParameterizedScope()) {
                 String paramValue = clientScopeModel.getParameterFromScope(requestScope).orElse(null);
@@ -132,7 +135,11 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
                     continue;
                 }
                 try {
-                    resolveType(clientScopeModel).validateParameter(clientScopeModel, paramValue);
+                    if (user != null) {
+                        resolveType(clientScopeModel).validateParameterWithUser(user, clientScopeModel, paramValue);
+                    } else {
+                        resolveType(clientScopeModel).validateParameter(clientScopeModel, paramValue);
+                    }
                 } catch (InvalidScopeParameterException e) {
                     logger.warnf("Invalid scope parameter for '%s': %s", requestScope, e.getMessage());
                     return Optional.empty();

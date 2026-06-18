@@ -886,7 +886,7 @@ public class TokenManager {
 
     public static boolean isValidScope(KeycloakSession session, String scopes, ClientModel client, UserModel user) {
         if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
-            AuthorizationRequestContext authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, scopes);
+            AuthorizationRequestContext authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, user, scopes);
             return isValidScope(session, scopes, authorizationRequestContext, client, user);
         } else {
             return isValidScope(session, scopes, null, client, user);
