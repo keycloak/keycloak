@@ -17,7 +17,7 @@ import jakarta.ws.rs.core.MediaType;
 import org.keycloak.admin.ui.rest.model.Authentication;
 import org.keycloak.admin.ui.rest.model.AuthenticationMapper;
 import org.keycloak.admin.ui.rest.model.ConfigurableRequiredActionProviderRepresentation;
-import org.keycloak.admin.ui.rest.model.UsedByClientRef;
+import org.keycloak.admin.ui.rest.model.UsedByReference;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -90,12 +90,12 @@ public class AuthenticationManagementResource extends RoleMappingResource {
             description = "",
             content = {@Content(
                     schema = @Schema(
-                            implementation = UsedByClientRef.class,
+                            implementation = UsedByReference.class,
                             type = SchemaType.ARRAY
                     )
             )}
     )
-    public final List<UsedByClientRef> listUsed(@PathParam("id") String id, @PathParam("type") String type, @QueryParam("first") @DefaultValue("0") int first,
+    public final List<UsedByReference> listUsed(@PathParam("id") String id, @PathParam("type") String type, @QueryParam("first") @DefaultValue("0") int first,
             @QueryParam("max") @DefaultValue("10") int max, @QueryParam("search") @DefaultValue("") String search) {
         auth.realm().requireViewAuthenticationFlows();
 
@@ -107,13 +107,13 @@ public class AuthenticationManagementResource extends RoleMappingResource {
                             c -> c.getAuthenticationFlowBindingOverrides().get("browser") != null && c.getAuthenticationFlowBindingOverrides()
                                     .get("browser").equals(flow.getId()) || c.getAuthenticationFlowBindingOverrides()
                                     .get("direct_grant") != null && c.getAuthenticationFlowBindingOverrides().get("direct_grant").equals(flow.getId()))
-                    .map(c -> new UsedByClientRef(c.getId(), c.getClientId())).filter(ref -> ref.getClientId().contains(search))
-                    .skip("".equals(search) ? first : 0).limit(max).collect(Collectors.toList());
+                    .map(c -> new UsedByReference(c.getId(), c.getClientId())).filter(ref -> ref.getLabel().contains(search))
+                    .skip(first).limit(max).collect(Collectors.toList());
         }
 
         if ("idp".equals(type)) {
             return session.identityProviders().getByFlow(flow.getId(), search, first, max)
-                    .map(alias -> new UsedByClientRef(null, alias)).collect(Collectors.toList());
+                    .map(alias -> new UsedByReference(null, alias)).collect(Collectors.toList());
         }
 
         throw new IllegalArgumentException("Invalid type");
