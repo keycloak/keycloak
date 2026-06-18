@@ -10,6 +10,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
@@ -41,7 +42,7 @@ public class OID4VCUtil {
      */
     public static boolean hasVerifiableCredential(KeycloakSession session, UserModel user, CredentialScopeModel credentialScope) {
         return session.users().getVerifiableCredentialsByUser(user.getId())
-                .anyMatch(credential -> credential.getCredentialScopeName().equals(credentialScope.getName()));
+                .anyMatch(credential -> credential.getClientScopeId().equals(credentialScope.getId()));
     }
 
     /**
@@ -69,7 +70,14 @@ public class OID4VCUtil {
         if (!expectedClient.getId().equals(issuedCred.get().getClientId())) {
             throw new IllegalStateException("Different client sent credential request than client from issued-credential");
         }
-        if (!expectedCredentialScope.getName().equals(issuedCred.get().getCredentialType())) {
+
+        // Resolve verifiableCredentialId to check against expected scope
+        UserVerifiableCredentialModel verifiableCredential = session.users()
+                .getVerifiableCredentialById(issuedCred.get().getVerifiableCredentialId());
+        if (verifiableCredential == null) {
+            throw new IllegalStateException("User verifiable credential not found for issued credential");
+        }
+        if (!expectedCredentialScope.getId().equals(verifiableCredential.getClientScopeId())) {
             throw new IllegalStateException("Different client scope than client scope from issued-credential");
         }
     }
