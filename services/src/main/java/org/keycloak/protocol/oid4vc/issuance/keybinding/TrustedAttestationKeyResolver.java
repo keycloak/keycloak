@@ -3,6 +3,7 @@ package org.keycloak.protocol.oid4vc.issuance.keybinding;
 import java.util.Map;
 import java.util.Optional;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.provider.TrustMaterialRequest;
 import org.keycloak.broker.provider.TrustMaterialResolver;
 import org.keycloak.constants.OID4VCIConstants;
@@ -37,8 +38,7 @@ public class TrustedAttestationKeyResolver implements AttestationKeyResolver {
     public JWK resolveKey(String kid, Map<String, Object> header, Map<String, Object> payload) {
         ClientModel client = session.getContext().getClient();
         if (client == null) {
-            logger.warnf("Cannot load trust-material IdP aliases because client is null");
-            return null;
+            throw new IllegalStateException("Cannot load trust-material IdP aliases because client is null");
         }
 
         String trustIdpsConfig = client.getAttribute(OID4VCIConstants.OID4VCI_ATTESTER_TRUST_IDPS_ATTR);
@@ -47,8 +47,13 @@ public class TrustedAttestationKeyResolver implements AttestationKeyResolver {
             return null;
         }
 
+        String algorithm = header != null ? (String) header.get(JWK.ALGORITHM) : null;
+        String issuer = payload != null ? (String) payload.get(OAuth2Constants.ISSUER) : null;
+
         TrustMaterialRequest request = TrustMaterialRequest.builder()
                 .kid(kid)
+                .algorithm(algorithm)
+                .issuer(issuer)
                 .build();
 
         Optional<JWK> jwk = new TrustMaterialResolver().resolveKey(session, trustIdpsConfig, request);

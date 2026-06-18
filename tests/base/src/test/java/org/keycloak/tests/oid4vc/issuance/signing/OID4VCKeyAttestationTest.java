@@ -10,6 +10,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels;
 import org.keycloak.VCFormat;
@@ -63,6 +64,8 @@ import org.keycloak.util.JsonSerialization;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.keycloak.protocol.oid4vc.model.ProofType.ATTESTATION;
 import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
@@ -247,11 +250,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         String cNonce = getCNonce();
         runOnServer.run(session -> {
             setupSessionContext(session);
-            try {
-                runInvalidAttestationSignatureTest(session, cNonce);
-            } catch (Exception e) {
-                fail("Unexpected exception: " + e.getMessage());
-            }
+            runInvalidAttestationSignatureTest(session, cNonce);
         });
     }
 
@@ -322,15 +321,23 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         });
     }
 
-    @Test
-    public void testAttestationProofWithIdPConfiguredTrustedKeys() {
+    @ParameterizedTest
+    @ValueSource(strings = {
+            AttestationValidatorUtil.ATTESTATION_JWT_TYP,
+            AttestationValidatorUtil.LEGACY_ATTESTATION_JWT_TYP
+    })
+    public void testAttestationProofWithIdPConfiguredTrustedKeys(String typ) {
         String cNonce = getCNonce();
 
         runOnServer.run(session -> {
                 setupSessionContext(session);
 
+                // Configure trusted attestation keys
                 KeyWrapper attestationKey = getECKey("attestationKey");
-                String attestationJwks = JsonSerialization.valueAsString(toJwks(attestationKey));
+                KeyWrapper attestationKeyAlt1 = getECKey("attestationKeyAlt1");
+                KeyWrapper attestationKeyAlt2 = getRSAKey("attestationKeyAlt2");
+                String attestationJwks = JsonSerialization.valueAsString(
+                        toJwks(attestationKey, attestationKeyAlt1, attestationKeyAlt2));
 
                 RealmModel realm = session.getContext().getRealm();
                 configureTrustIdentityProvider(realm, OID4VCI_ATTESTER_DEFAULT_TRUST_IDP_ALIAS,
@@ -338,7 +345,8 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                         Map.of(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS, attestationJwks));
 
                 KeyWrapper proofKey = getECKey("proofKey");
-                String attestationJwt = createValidAttestationJwt(attestationKey, toJwk(proofKey), cNonce);
+                JWK proofKeyJwk = Objects.requireNonNull(toJwk(proofKey));
+                String attestationJwt = createValidAttestationJwt(attestationKey, List.of(proofKeyJwk), cNonce, typ);
                 List<JWK> attestedKeys = runAttestationProofValidationWithDefaultKeyResolver(session, attestationJwt);
 
                 assertEquals(1, attestedKeys.size());
@@ -448,6 +456,10 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
     private static KeyWrapper getECKey(String keyId) {
         return OID4VCProofTestUtils.createEcKeyPair(keyId);
+    }
+
+    private static KeyWrapper getRSAKey(String keyId) {
+        return OID4VCProofTestUtils.createRsaKeyPair(keyId);
     }
 
     private static VCIssuanceContext createVCIssuanceContext(KeycloakSession session) {
@@ -620,19 +632,6 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
             JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
             proofJwk.setKeyId(proofKey.getKid());
             proofJwk.setAlgorithm(proofKey.getAlgorithm());
-
-            KeyAttestationJwtBody payload = new KeyAttestationJwtBody();
-            payload.setIat((long) TIME_PROVIDER.currentTimeSeconds());
-            payload.setNonce(cNonce);
-            payload.setAttestedKeys(List.of(proofJwk));
-            payload.setKeyStorage(List.of(
-                    KeyAttestationResistanceLevels.HIGH,
-                    KeyAttestationResistanceLevels.MODERATE
-            ));
-            payload.setUserAuthentication(List.of(
-                    KeyAttestationResistanceLevels.ENHANCED_BASIC,
-                    KeyAttestationResistanceLevels.BASIC
-            ));
 
             String attestationJwt = OID4VCProofTestUtils.generateAttestationProof(
                     attestationKey,

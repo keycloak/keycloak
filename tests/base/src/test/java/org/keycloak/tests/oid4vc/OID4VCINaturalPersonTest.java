@@ -21,6 +21,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.annotations.TestCleanup;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -61,6 +62,11 @@ public class OID4VCINaturalPersonTest extends OID4VCIssuerTestBase {
         try (var response = testRealm.admin().identityProviders().create(trustIdp)) {
             assertEquals(HttpStatus.SC_CREATED, response.getStatus());
         }
+    }
+
+    @TestCleanup
+    public void cleanup() {
+        testRealm.admin().identityProviders().get(OID4VCI_ATTESTER_DEFAULT_TRUST_IDP_ALIAS).remove();
     }
 
     @BeforeEach

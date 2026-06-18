@@ -96,35 +96,6 @@ public final class OID4VCProofTestUtils {
                 .sign(new ECDSASignatureSignerContext(keyWrapper));
     }
 
-    public static String generateJwtProofWithKidNoAttestation(String audience, String nonce) {
-        KeyWrapper keyWrapper = createEcKeyPair();
-
-        AccessToken token = new AccessToken();
-        token.addAudience(audience);
-        token.setNonce(nonce);
-        token.issuedNow();
-
-        return new JWSBuilder()
-                .type(JwtProofValidator.PROOF_JWT_TYP)
-                .kid(keyWrapper.getKid())
-                .jsonContent(token)
-                .sign(new ECDSASignatureSignerContext(keyWrapper));
-    }
-
-    public static Proofs attestationProofs(String nonce, List<JWK> attestedKeys, List<String> keyStorage, List<String> userAuthentication) {
-        return new Proofs().setAttestation(List.of(generateAttestationProof(nonce, attestedKeys, keyStorage, userAuthentication)));
-    }
-
-    public static String generateAttestationProof(
-            String nonce,
-            List<JWK> attestedKeys,
-            List<String> keyStorage,
-            List<String> userAuthentication
-    ) {
-        KeyWrapper attestationKey = createEcKeyPair("attestation-key");
-        return generateAttestationProof(attestationKey, nonce, attestedKeys, keyStorage, userAuthentication, null);
-    }
-
     public static String generateAttestationProof(
             KeyWrapper attestationKey,
             String nonce,
@@ -153,10 +124,6 @@ public final class OID4VCProofTestUtils {
 
     public static KeyWrapper createEcKeyPair() {
         return createEcKeyPair("proof-key");
-    }
-
-    public static KeyWrapper newEcSigningKey(String keyId) {
-        return createEcKeyPair(keyId);
     }
 
     public static KeyWrapper createEcKeyPair(String keyId) {
