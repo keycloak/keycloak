@@ -17,21 +17,19 @@
 
 package org.keycloak.cluster.infinispan;
 
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.keycloak.Config;
-import org.keycloak.cluster.ClusterEventStoreProvider;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.cluster.jpa.PostgresClusterEventListener;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.NodeInfo;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -41,7 +39,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.timer.TimerProvider;
-import org.keycloak.tracing.TracingProvider;
 
 import org.infinispan.commons.marshall.Marshaller;
 import org.jboss.logging.Logger;
@@ -56,33 +53,35 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
     protected static final Logger logger = Logger.getLogger(DatabaseAwareClusterProviderFactory.class);
 
     private static final long DEFAULT_POLL_INTERVAL_MS = 100;
-    private static final long FALLBACK_POLL_INTERVAL_MS = 30_000;
 
     private volatile NodeInfo nodeInfo;
     private volatile Marshaller protoStreamMarshaller;
+    private Timer timer;
 
     private Long pollIntervalMs;
-    private boolean useListenNotify = true;
-    private org.keycloak.cluster.jpa.PostgresClusterEventListener pgListener;
+    private Duration awaitTimeout;
+
+    public DatabaseAwareClusterProviderFactory() {
+    }
 
     @Override
     public ClusterProvider create(KeycloakSession session) {
         return new DatabaseAwareClusterProvider(super.create(session), session.getKeycloakSessionFactory(),
-                nodeInfo, protoStreamMarshaller);
+                nodeInfo, protoStreamMarshaller, awaitTimeout);
     }
 
     @Override
     public void init(Config.Scope config) {
-        pollIntervalMs = config.getLong("pollInterval");
-        if (pollIntervalMs != null) {
-            if (pollIntervalMs <= 0) {
-                throw new IllegalArgumentException("pollInterval must be a positive number");
-            }
-            if (pollIntervalMs > 60000) {
-                logger.warnf("Polling interval is %d milliseconds. This is longer than 60 seconds, which seems to be too high for a production setting. Please verify.", pollIntervalMs);
-            }
+        pollIntervalMs = config.getLong("pollInterval", DEFAULT_POLL_INTERVAL_MS);
+        if (pollIntervalMs <= 0) {
+            throw new IllegalArgumentException("pollInterval must be a positive number");
         }
-        useListenNotify = config.getBoolean("useListenNotify", true);
+        if (pollIntervalMs > 1000) {
+            logger.warnf("Polling interval is %d milliseconds. This is longer than 1 seconds, which seems to be too high for a production setting. Please verify.", pollIntervalMs);
+        }
+        awaitTimeout = Duration.of(pollIntervalMs * 5, ChronoUnit.MILLIS);
+        // We run our own timer so that we're not delayed by other tasks
+        timer = new Timer(true);
     }
 
     @Override
@@ -91,16 +90,8 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
                 .property()
                     .name("pollInterval")
                     .type("long")
-                    .helpText("Interval in milliseconds between polling the database for new cluster events. "
-                            + "When PostgreSQL LISTEN/NOTIFY is active, this becomes the fallback poll interval of " + FALLBACK_POLL_INTERVAL_MS + ".")
+                    .helpText("Interval in milliseconds between polling the database for new cluster events. In a multi-cluster setup, a publishing node will pause for up to 5 times the duration for the event to be consumed to ensure the information is received by all nodes before returning to the caller.")
                     .defaultValue(DEFAULT_POLL_INTERVAL_MS)
-                    .add()
-                .property()
-                    .name("useListenNotify")
-                    .type("boolean")
-                    .helpText("When enabled and the database is PostgreSQL, use LISTEN/NOTIFY for near-instant cluster event delivery "
-                            + "instead of relying solely on polling. Set to false to disable and use polling only.")
-                    .defaultValue(true)
                     .add()
                 .build();
     }
@@ -112,71 +103,24 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
             nodeInfo = ispnConnections.getNodeInfo();
             this.protoStreamMarshaller = ispnConnections.getMarshaller();
 
-            boolean listenerStarted = false;
-
-            if (useListenNotify) {
-                listenerStarted = tryStartListenNotify(factory);
-            }
-
             var pollerTask = new DatabaseClusterEventPollerTask(nodeInfo.clusterName(), protoStreamMarshaller);
             var runner = new ScheduledTaskRunner(factory, pollerTask);
-            TimerProvider timer = session.getProvider(TimerProvider.class);
-            long interval = pollIntervalMs != null ? pollIntervalMs : listenerStarted ? FALLBACK_POLL_INTERVAL_MS : DEFAULT_POLL_INTERVAL_MS;
-            timer.schedule(runner, interval, interval, "cluster-event-poller");
-
-            if (listenerStarted) {
-                logger.infof("Using PostgreSQL LISTEN/NOTIFY for cluster events (cluster '%s'), fallback poll interval %d ms",
-                        nodeInfo.clusterName(), FALLBACK_POLL_INTERVAL_MS);
-            } else {
-                logger.infof("Scheduled cluster event poller with interval %d ms for cluster '%s'",
-                        interval, nodeInfo.clusterName());
-            }
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    runner.run();
+                }
+            }, pollIntervalMs, pollIntervalMs);
+            logger.infof("Scheduled cluster event poller with interval %d ms for cluster '%s'",
+                    pollIntervalMs, nodeInfo.clusterName());
         });
-    }
-
-    private boolean tryStartListenNotify(KeycloakSessionFactory factory) {
-        JpaConnectionProviderFactory jpaFactory = (JpaConnectionProviderFactory)
-                factory.getProviderFactory(JpaConnectionProvider.class);
-        if (jpaFactory == null) {
-            return false;
-        }
-
-        try (Connection testConn = jpaFactory.getConnection()) {
-            if (!PostgresClusterEventListener.isSupported(testConn)) {
-                return false;
-            }
-        } catch (SQLException e) {
-            logger.warn("Failed to check PostgreSQL support for LISTEN/NOTIFY", e);
-            return false;
-        }
-
-        pgListener = new PostgresClusterEventListener(jpaFactory::getConnection, () -> processEvents(factory));
-        pgListener.start();
-        return true;
-    }
-
-    private void processEvents(KeycloakSessionFactory factory) {
-        TracingProvider tracing = factory.getProviderFactory(TracingProvider.class).create(null);
-        try {
-            tracing.trace(DatabaseAwareClusterProviderFactory.class, "notified", span -> {
-                KeycloakModelUtils.runJobInTransaction(factory, s -> {
-                    ClusterEventStoreProvider store = s.getProvider(ClusterEventStoreProvider.class);
-                    if (store != null) {
-                        DatabaseClusterEventPollerTask.processEvents(s, store, nodeInfo.clusterName(), protoStreamMarshaller);
-                    }
-                });
-            });
-        } finally {
-            tracing.close();
-        }
     }
 
     @Override
     public void close() {
         super.close();
-        if (pgListener != null) {
-            pgListener.close();
-            pgListener = null;
+        if (timer != null) {
+            timer.cancel();
         }
     }
 

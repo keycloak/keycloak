@@ -19,17 +19,16 @@ package org.keycloak.cluster.infinispan;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import org.keycloak.cluster.ClusterEvent;
-import org.keycloak.cluster.ClusterEventStoreProvider;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ExecutionResult;
+import org.keycloak.cluster.jpa.JpaClusterEventStoreProvider;
 import org.keycloak.common.util.Retry;
 import org.keycloak.connections.infinispan.NodeInfo;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -50,25 +49,19 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
 
     private static final Logger logger = Logger.getLogger(DatabaseAwareClusterProvider.class);
 
-    /**
-     * When LISTEN/NOTIFY is enabled on PostgreSQL, this should complete in ~20-50 milliseconds.
-     * When polling used on other database, the polling interval is 100 milliseconds, so this should complete
-     * within 200-300 milliseconds. See DatabaseAwareClusterProviderFactory DEFAULT_POLL_INTERVAL_MS for the setting.
-     * This is not configurable yet.
-     */
-    private static final Duration AWAIT_TIMEOUT = Duration.of(1, ChronoUnit.SECONDS);
-
     private final ClusterProvider delegate;
     private final KeycloakSessionFactory sessionFactory;
     private final NodeInfo nodeInfo;
     private final Marshaller marshaller;
+    private final Duration awaitTimeout;
 
     public DatabaseAwareClusterProvider(ClusterProvider delegate, KeycloakSessionFactory sessionFactory,
-                                        NodeInfo nodeInfo, Marshaller marshaller) {
+                                        NodeInfo nodeInfo, Marshaller marshaller, Duration awaitTimeout) {
         this.delegate = delegate;
         this.sessionFactory = sessionFactory;
         this.nodeInfo = nodeInfo;
         this.marshaller = marshaller;
+        this.awaitTimeout = awaitTimeout;
     }
 
     @Override
@@ -141,14 +134,8 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
     }
 
     private @Nullable String storeEvent(byte[] data) {
-        return KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, session -> {
-            ClusterEventStoreProvider store = session.getProvider(ClusterEventStoreProvider.class);
-            if (store != null) {
-                return store.persist(nodeInfo.clusterName(), data);
-            } else {
-                return null;
-            }
-        });
+        return KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory,
+                s -> new JpaClusterEventStoreProvider(s).persist(nodeInfo.clusterName(), data));
     }
 
     private static class RetryException extends RuntimeException {}
@@ -161,14 +148,14 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
         long time = System.nanoTime();
         try {
             Retry.executeWithBackoff(iteration -> {
-                boolean exists = KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, session -> {
-                    ClusterEventStoreProvider store = session.getProvider(ClusterEventStoreProvider.class);
-                    return store != null && store.eventExists(eventId);
+                boolean exists = KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, s -> {
+                    JpaClusterEventStoreProvider store = new JpaClusterEventStoreProvider(s);
+                    return store.eventExists(eventId);
                 });
                 if (exists) {
                     throw new RetryException();
                 }
-            }, AWAIT_TIMEOUT, 10);
+            }, awaitTimeout, 10);
         } catch (RetryException e) {
             logger.warnf("Timeout after %f seconds for cluster event %s to be processed", (System.nanoTime() - time) / 1000000000.0, eventId);
         }

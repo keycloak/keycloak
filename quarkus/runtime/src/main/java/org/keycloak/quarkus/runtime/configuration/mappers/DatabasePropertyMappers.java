@@ -251,16 +251,6 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .transformer(DatabasePropertyMappers::toDatabaseKind)
                         .paramLabel("vendor")
                         .build(),
-                fromOption(SYNTHETIC_RUNTIME_DB_OPTION)
-                        .mapFrom(DB)
-                        .transformer(DatabasePropertyMappers::computeNotifySupported)
-                        .to("kc.spi-cluster--infinispan-db--use-listen-notify")
-                        .build(),
-                fromOption(SYNTHETIC_RUNTIME_DB_OPTION)
-                        .mapFrom(DB)
-                        .transformer(DatabasePropertyMappers::computeNotifySupported)
-                        .to("kc.spi-cluster-event-store--jpa--use-listen-notify")
-                        .build(),
                 fromOption(DB_KIND)
                         .to("quarkus.datasource.\"<datasource>\".db-kind")
                         .transformer(DatabasePropertyMappers::toDatabaseKind)
@@ -630,10 +620,6 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         }
         // if the user set the truststore file, we don't need to set the sslfactory property.
         return findTlsTrustStoreFile(datasource).isEmpty() ? value : null;
-    }
-
-    private static String computeNotifySupported(String datasource, String db, ConfigSourceInterceptorContext configSourceInterceptorContext) {
-        return Boolean.toString(db != null && Database.getVendor(db).filter(v -> v == Database.Vendor.POSTGRES).isPresent());
     }
 
     public static Optional<String> getDatasourceOptionValue(Option<?> opt, String datasource) {

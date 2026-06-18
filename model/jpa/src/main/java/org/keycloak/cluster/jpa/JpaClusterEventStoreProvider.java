@@ -23,7 +23,6 @@ import java.util.List;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 
-import org.keycloak.cluster.ClusterEventStoreProvider;
 import org.keycloak.cluster.StoredClusterEvent;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
@@ -33,9 +32,7 @@ import org.keycloak.models.KeycloakSession;
 
 import org.jboss.logging.Logger;
 
-public class JpaClusterEventStoreProvider implements ClusterEventStoreProvider {
-
-    static final String NOTIFICATION_CHANNEL = "keycloak_cluster_event";
+public class JpaClusterEventStoreProvider {
 
     private static final Logger logger = Logger.getLogger(JpaClusterEventStoreProvider.class);
 
@@ -46,14 +43,11 @@ public class JpaClusterEventStoreProvider implements ClusterEventStoreProvider {
     private static final int STALENESS_CUTOFF_SECONDS = 60;
 
     private final KeycloakSession session;
-    private final boolean pgNotifyEnabled;
 
-    public JpaClusterEventStoreProvider(KeycloakSession session, boolean pgNotifyEnabled) {
+    public JpaClusterEventStoreProvider(KeycloakSession session) {
         this.session = session;
-        this.pgNotifyEnabled = pgNotifyEnabled;
     }
 
-    @Override
     public String persist(String senderCluster, byte[] eventData) {
         EntityManager em = getEntityManager();
         String tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
@@ -81,14 +75,6 @@ public class JpaClusterEventStoreProvider implements ClusterEventStoreProvider {
             em.persist(entity);
         }
 
-        if (pgNotifyEnabled) {
-            for (String target : targetClusters) {
-                em.createNativeQuery("SELECT pg_notify('" + NOTIFICATION_CHANNEL + "', ?1)")
-                        .setParameter(1, target)
-                        .getSingleResult();
-            }
-        }
-
         if (logger.isTraceEnabled()) {
             logger.tracef("Persisted cluster event for %d target cluster(s): %s", targetClusters.size(), targetClusters);
         }
@@ -96,7 +82,6 @@ public class JpaClusterEventStoreProvider implements ClusterEventStoreProvider {
         return id;
     }
 
-    @Override
     public List<StoredClusterEvent> readEvents(String targetCluster, int maxResults) {
         return getEntityManager().createNamedQuery("clusterEvent.readByTargetCluster", StoredClusterEvent.class)
                 .setParameter("target", targetCluster)
@@ -105,7 +90,6 @@ public class JpaClusterEventStoreProvider implements ClusterEventStoreProvider {
                 .getResultList();
     }
 
-    @Override
     public void deleteEvents(String targetCluster, Collection<String> ids) {
         if (ids.isEmpty()) {
             return;
@@ -116,7 +100,6 @@ public class JpaClusterEventStoreProvider implements ClusterEventStoreProvider {
                 .executeUpdate();
     }
 
-    @Override
     public void deleteEventsOlderThan(long timestampMillis) {
         int deleted = getEntityManager().createNamedQuery("clusterEvent.deleteOlderThan")
                 .setParameter("timestamp", timestampMillis)
@@ -126,7 +109,6 @@ public class JpaClusterEventStoreProvider implements ClusterEventStoreProvider {
         }
     }
 
-    @Override
     public boolean eventExists(String id) {
         return !getEntityManager().createNamedQuery("clusterEvent.eventWithIdExists", Integer.class)
                 .setParameter("id", id)
@@ -134,7 +116,6 @@ public class JpaClusterEventStoreProvider implements ClusterEventStoreProvider {
                 .getResultList().isEmpty();
     }
 
-    @Override
     public void close() {
     }
 

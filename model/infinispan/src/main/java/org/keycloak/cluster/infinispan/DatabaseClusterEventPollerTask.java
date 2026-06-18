@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import org.keycloak.cluster.ClusterEventStoreProvider;
 import org.keycloak.cluster.StoredClusterEvent;
+import org.keycloak.cluster.jpa.JpaClusterEventStoreProvider;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -62,16 +62,12 @@ public class DatabaseClusterEventPollerTask implements ScheduledTask {
 
     @Override
     public void run(KeycloakSession session) {
-        ClusterEventStoreProvider store = session.getProvider(ClusterEventStoreProvider.class);
-        if (store == null) {
-            return;
-        }
-
+        JpaClusterEventStoreProvider store = new JpaClusterEventStoreProvider(session);
         processEvents(session, store, clusterName, marshaller);
         cleanupStaleEvents(session, store);
     }
 
-    static void processEvents(KeycloakSession session, ClusterEventStoreProvider store, String clusterName, Marshaller marshaller) {
+    static void processEvents(KeycloakSession session, JpaClusterEventStoreProvider store, String clusterName, Marshaller marshaller) {
         if (!shouldProcessEvents(session)) return;
 
         List<StoredClusterEvent> events = store.readEvents(clusterName, BATCH_SIZE);
@@ -112,7 +108,7 @@ public class DatabaseClusterEventPollerTask implements ScheduledTask {
         }
     }
 
-    private void cleanupStaleEvents(KeycloakSession session, ClusterEventStoreProvider store) {
+    private void cleanupStaleEvents(KeycloakSession session, JpaClusterEventStoreProvider store) {
         if (staleEventHorizon < Time.currentTimeMillis()) {
             if (!shouldProcessEvents(session)) return;
             store.deleteEventsOlderThan(Time.currentTimeMillis() - STALE_EVENT_RETENTION_MS);
