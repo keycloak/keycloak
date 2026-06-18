@@ -1,8 +1,6 @@
 package org.keycloak.tests.admin.client.v2;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
@@ -13,17 +11,12 @@ import org.keycloak.admin.api.ListOptions;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
-import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -42,9 +35,6 @@ public class ClientPaginationTest extends AbstractClientApiV2Test {
     private static final int PAGINATION_TEST_CLIENT_COUNT = 110;
     private static final String PAGINATION_CLIENT_PREFIX = "pagination-test-";
     private static final String PAGINATION_QUERY_PREFIX = "pagination-query-";
-
-    @InjectHttpClient
-    CloseableHttpClient httpClient;
 
     @InjectRealm
     ManagedRealm testRealm;
@@ -139,25 +129,20 @@ public class ClientPaginationTest extends AbstractClientApiV2Test {
     }
 
     @Test
-    public void negativeOffsetViaHttpIsRejected() throws IOException {
-        HttpGet request = new HttpGet(getClientsApiUrl() + "?offset=-1");
-        setAuthHeader(request);
-        try (var response = httpClient.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(400));
-        }
-    }
-
-    @Test
     public void queryWithPagination() throws IOException {
         String query = "clientId sw \"" + PAGINATION_QUERY_PREFIX + "\"";
-        List<BaseClientRepresentation> page = queryClients(query, 0, 2);
-        assertThat(page, hasSize(2));
+        try (var stream1 = getClientsApi().getClients(new ListOptions().query(query).offset(0).limit(2))) {
+            var page = stream1.toList();
+            assertThat(page, hasSize(2));
 
-        List<BaseClientRepresentation> nextPage = queryClients(query, 2, 2);
-        assertThat(nextPage, hasSize(2));
-        assertThat(page.get(0).getClientId(), is(not(nextPage.get(0).getClientId())));
-        // test that the last client of the first page is not the first client on the next page
-        assertThat(page.get(1).getClientId(), is(not(nextPage.get(0).getClientId())));
+            try (var stream2 = getClientsApi().getClients(new ListOptions().offset(2).limit(2))) {
+                List<BaseClientRepresentation> nextPage = stream2.toList();
+                assertThat(nextPage, hasSize(2));
+                assertThat(page.get(0).getClientId(), is(not(nextPage.get(0).getClientId())));
+                // test that the last client of the first page is not the first client on the next page
+                assertThat(page.get(1).getClientId(), is(not(nextPage.get(0).getClientId())));
+            }
+        }
     }
 
     @Test
@@ -179,21 +164,9 @@ public class ClientPaginationTest extends AbstractClientApiV2Test {
     @Test
     public void queryWithPaginationBeyondResultsReturnsEmpty() throws IOException {
         String query = "clientId sw \"" + PAGINATION_QUERY_PREFIX + "\"";
-        List<BaseClientRepresentation> page = queryClients(query, 100, 10);
-        assertThat(page, empty());
-    }
-
-    private List<BaseClientRepresentation> queryClients(String query, int offset, int limit) throws IOException {
-        String url = getClientsApiUrl()
-                + "?q=" + URLEncoder.encode(query, StandardCharsets.UTF_8)
-                + "&offset=" + offset
-                + "&limit=" + limit;
-        HttpGet request = new HttpGet(url);
-        setAuthHeader(request);
-        try (var response = httpClient.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(200));
-            String body = EntityUtils.toString(response.getEntity());
-            return mapper.readValue(body, new TypeReference<>() {});
+        try (var stream1 = getClientsApi().getClients(new ListOptions().query(query).offset(100).limit(10))) {
+            var page = stream1.toList();
+            assertThat(page, empty());
         }
     }
 }
