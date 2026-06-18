@@ -118,13 +118,19 @@ public class SsfUtil {
     /**
      * Live-delivery receiver check: the client is both a configured SSF
      * Receiver ({@link #isReceiverClient}) <em>and</em> an enabled Keycloak
-     * client. Disabling the client (the standard client on/off toggle)
-     * takes its streams out of every lookup the dispatcher, event listener,
-     * and emit endpoint consult, so no further SSF events are delivered
-     * while it is off — the per-client counterpart to the realm-level
-     * transmitter disable ({@link org.keycloak.ssf.Ssf#isTransmitterEnabled}).
-     * The stream configuration itself survives, so re-enabling the client
-     * resumes delivery. See keycloak/keycloak#50050.
+     * client. Disabling the client (the standard client on/off toggle) takes
+     * its streams out of the lookups that drive <em>new</em> delivery
+     * decisions — stream enumeration ({@code findStreamsForSsfReceiverClients}),
+     * synthetic emit, and the receiver auth gate — so no new SSF events are
+     * queued or pushed while it is off. This is the per-client counterpart
+     * to the realm-level transmitter disable
+     * ({@link org.keycloak.ssf.Ssf#isTransmitterEnabled}).
+     *
+     * <p>It does <em>not</em> cancel events already queued in the outbox
+     * before the client was disabled: the drainer resolves those rows via
+     * {@code getStreamForClient} and may still push them. The stream
+     * configuration itself survives, so re-enabling the client resumes
+     * delivery. See keycloak/keycloak#50050.
      */
     public static boolean isReceiverEnabled(ClientModel client) {
         return isReceiverClient(client) && client.isEnabled();
