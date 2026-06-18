@@ -15,7 +15,8 @@ import { Link } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import {
   fetchUsedBy,
-  type UsedByClientRef as FlowUsedByRow,
+  type UsedByClientRef,
+  type UsedByReference as FlowUsedByRow,
 } from "../../components/role-mapping/resource";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toClient } from "../../clients/routes/Client";
@@ -123,14 +124,14 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
                 cellRenderer: (row: FlowUsedByRow) => (
                   <ClientUsedByLink
                     id={row.id ?? undefined}
-                    clientId={row.clientId}
+                    clientId={row.label}
                   />
                 ),
               }
             : {
                 name: "name",
                 cellRenderer: (row: FlowUsedByRow) => (
-                  <strong>{row.clientId}</strong>
+                  <strong>{row.label}</strong>
                 ),
               },
         ]}
@@ -145,7 +146,7 @@ export const UsedBy = ({ authType: { id, usedBy } }: UsedByProps) => {
   const [open, toggle] = useToggle();
 
   const clientRefs = usedBy?.clientRefs;
-  const clientsOrFallback: FlowUsedByRow[] = useMemo(() => {
+  const clientsOrFallback: UsedByClientRef[] = useMemo(() => {
     if (!usedBy || usedBy.type !== "SPECIFIC_CLIENTS") {
       return [];
     }

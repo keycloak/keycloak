@@ -154,10 +154,15 @@ export type UsedByClientRef = {
   clientId: string;
 };
 
+export type UsedByReference = {
+  id?: string | null;
+  label: string;
+};
+
 export const fetchUsedBy = (
   adminClient: KeycloakAdminClient,
   query: PaginatingQuery,
-): Promise<UsedByClientRef[]> =>
+): Promise<UsedByReference[]> =>
   fetchEndpoint(adminClient, {
     ...query,
     endpoint: "authentication-management",
