@@ -300,7 +300,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                     toggleId="scopeParameter"
                     variant={SelectVariant.typeaheadMulti}
                     typeAheadAriaLabel={t("scopeParameter")}
-                    onToggle={() => setIsScopeOpen(!isScopeOpen)}
+                    onToggle={(isOpen) => setIsScopeOpen(isOpen)}
                     isOpen={isScopeOpen}
                     selections={selected}
                     onSelect={(value) => {
