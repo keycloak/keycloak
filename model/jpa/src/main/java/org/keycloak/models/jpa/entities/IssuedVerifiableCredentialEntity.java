@@ -21,6 +21,7 @@ import jakarta.persistence.Table;
         @NamedQuery(name="deleteIssuedVcsByClientScope", query="delete from IssuedVerifiableCredentialEntity vc where vc.credentialType = :scopeName"),
         @NamedQuery(name="deleteIssuedVcsByClient", query="delete from IssuedVerifiableCredentialEntity vc where vc.clientId = :clientId"),
         @NamedQuery(name="deleteIssuedVcsByUserAndType", query="delete from IssuedVerifiableCredentialEntity vc where vc.user.id = :userId and vc.credentialType = :credentialType"),
+        @NamedQuery(name="deleteExpiredIssuedVcs", query="delete from IssuedVerifiableCredentialEntity vc where vc.expiresAt IS NOT NULL and vc.expiresAt < :currentTime"),
 })
 public class IssuedVerifiableCredentialEntity {
 

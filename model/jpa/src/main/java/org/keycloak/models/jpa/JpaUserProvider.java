@@ -1365,6 +1365,14 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                 .where(predicates);
     }
 
+    @Override
+    public void removeExpiredIssuedVerifiableCredentials() {
+        long currentTimeMillis = Time.currentTimeMillis();
+        em.createNamedQuery("deleteExpiredIssuedVcs")
+            .setParameter("currentTime", currentTimeMillis)
+            .executeUpdate();
+    }
+
     private IssuedVerifiableCredentialModel toIssuedVcModel(IssuedVerifiableCredentialEntity entity) {
         IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel();
         model.setId(entity.getId());
