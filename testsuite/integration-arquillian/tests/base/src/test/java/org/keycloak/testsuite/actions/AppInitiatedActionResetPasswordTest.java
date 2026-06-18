@@ -17,11 +17,8 @@
 package org.keycloak.testsuite.actions;
 
 import java.net.HttpCookie;
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,14 +33,12 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.events.email.EmailEventListenerProviderFactory;
-import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.LogoutToken;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -58,17 +53,16 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.SecondBrowser;
-import org.keycloak.testsuite.util.ThirdBrowser;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-import com.sun.net.httpserver.HttpServer;
 import org.apache.http.Header;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -126,10 +120,6 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     @Drone
     @SecondBrowser
     private WebDriver driver2;
-
-    @Drone
-    @ThirdBrowser
-    private WebDriver driver3;
 
     @After
     public void after() {
@@ -472,86 +462,44 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         assertEquals(firstSessionId, sessions.get(0).getId(), "Old session is still valid");
     }
 
-    @Test // #32124
+    @Test
     public void checkLogoutSessionsBackchannelLogout() throws Exception {
-        final String testAppClientId = "test-app";
-        List<String> capturedLogoutTokens = Collections.synchronizedList(new ArrayList<>());
-
-        HttpServer httpServer = HttpServer.create(new InetSocketAddress(0), 0);
-        httpServer.start(); // for capturing backchannel logout requests
-        int serverPort = httpServer.getAddress().getPort();
-        String backchannelLogoutUrl = "http://localhost:" + serverPort + "/backchannel-logout";
-
-        httpServer.createContext("/backchannel-logout", exchange -> {
-            if ("POST".equals(exchange.getRequestMethod())) {
-                String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-                for (String param : body.split("&")) {
-                    String[] kv = param.split("=", 2);
-                    if (kv.length == 2 && kv[0].equals("logout_token")) {
-                        capturedLogoutTokens.add(java.net.URLDecoder.decode(kv[1], StandardCharsets.UTF_8));
-                    }
-                }
-                exchange.sendResponseHeaders(200, 0);
-                exchange.close();
-            }
-        });
-        try {
-            ClientRepresentation clientRep = managedRealm.admin().clients().findByClientId(testAppClientId).get(0);
-            clientRep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, backchannelLogoutUrl);
-            clientRep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED, "true");
-            managedRealm.admin().clients().get(clientRep.getId()).update(clientRep);
+        try (ClientAttributeUpdater updater = ClientAttributeUpdater.forClient(adminClient, oauth.getRealm(), oauth.getClientId())
+                .setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, OAuthClient.APP_ROOT + "/admin/backchannelLogout")
+                .setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED, "true")
+                .update()) {
 
             oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
-            EventAssertion.expectLoginSuccess(events.poll());
-            UserResource testUser = managedRealm.admin().users()
-                    .get(findUser("test-user@localhost").getId());
-            List<UserSessionRepresentation> sessions = testUser.getUserSessions();
-            assertEquals(1, sessions.size());
-            String firstSessionId = sessions.get(0).getId();
+            String firstSessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
 
-            OAuthClient oauth2 = oauth.newConfig().driver(driver2);
-            oauth2.doLogin("test-user@localhost", "password");
-            EventAssertion.expectLoginSuccess(events.poll());
+            // remove cookies to login again
+            oauth.getDriver().navigate().to(oauth.getEndpoints().getJwks());
+            oauth.getDriver().manage().deleteAllCookies();
 
-            OAuthClient oauth3 = oauth.newConfig().driver(driver3);
-            oauth3.doLogin("test-user@localhost", "password");
-            EventAssertion.expectLoginSuccess(events.poll());
+            oauth.openLoginForm();
+            oauth.doLogin("test-user@localhost", "password");
+            String secondSessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
 
-            sessions = testUser.getUserSessions();
-            assertEquals(3, sessions.size(), "Should have 3 sessions before password update");
-            List<String> sessionsToLogout = sessions.stream()
-                    .map(UserSessionRepresentation::getId)
-                    .filter(id -> !id.equals(firstSessionId))
-                    .collect(Collectors.toList());
-            assertEquals(2, sessionsToLogout.size(), "Should have 2 sessions to logout");
+            // remove cookies to login again
+            oauth.getDriver().navigate().to(oauth.getEndpoints().getJwks());
+            oauth.getDriver().manage().deleteAllCookies();
+
+            oauth.openLoginForm();
+            oauth.doLogin("test-user@localhost", "password");
+            EventAssertion.expectLoginSuccess(events.poll());
 
             doAIA(); // Trigger password update with logout checkbox
             changePasswordPage.assertCurrent();
             changePasswordPage.checkLogoutSessions();
             changePasswordPage.changePassword("new-password", "new-password");
 
-            org.awaitility.Awaitility.await()
-                    .atMost(5, java.util.concurrent.TimeUnit.SECONDS)
-                    .until(() -> capturedLogoutTokens.size() >= 2);
-            assertEquals(2, capturedLogoutTokens.size(),"Should receive 2 backchannel logout requests");
+            List<LogoutToken> capturedLogoutTokens = List.of(
+                    testingClient.testApp().getBackChannelLogoutToken(),
+                    testingClient.testApp().getBackChannelLogoutToken());
 
-            Set<String> loggedOutSids = new HashSet<>();
-            for (String rawToken : capturedLogoutTokens) {
-                JWSInput jwsInput = new JWSInput(rawToken);
-                LogoutToken logoutToken = jwsInput.readJsonContent(LogoutToken.class);
-                assertNotNull(logoutToken.getSid(), "Logout token should contain session ID");
-                loggedOutSids.add(logoutToken.getSid());
-            }
-            assertEquals(2, loggedOutSids.size(), "Should have 2 unique session IDs in logout tokens");
-            assertFalse(loggedOutSids.contains(firstSessionId),"Session 1 should NOT be logged out (it's the current session)");
-            assertTrue(loggedOutSids.containsAll(sessionsToLogout),"Sessions 2 and 3 should both be logged out");
-        } finally {
-            httpServer.stop(0);
-            ClientRepresentation rep = managedRealm.admin().clients().findByClientId(testAppClientId).get(0);
-            rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
-            rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED, "false");
-            managedRealm.admin().clients().get(rep.getId()).update(rep);
+            Set<String> loggedOutSids = capturedLogoutTokens.stream().map(LogoutToken::getSid).collect(Collectors.toSet());
+            MatcherAssert.assertThat(loggedOutSids, Matchers.containsInAnyOrder(firstSessionId, secondSessionId));
         }
     }
 
