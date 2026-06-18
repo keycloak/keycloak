@@ -48,12 +48,17 @@ public class DuplicateDidValidator implements SimpleValidator {
         RealmModel realm = session.getContext().getRealm();
         UserModel user = UserProfileAttributeValidationContext.from(context).getAttributeContext().getUser();
 
+        // Skip validation if the DID value hasn't changed for an existing user
+        if (user != null && Objects.equals(user.getFirstAttribute(UserModel.DID), value)) {
+            return context;
+        }
+
         // Search for existing users with the same DID attribute value
         session.users().searchForUserByUserAttributeStream(realm, UserModel.DID, value)
                 .filter(existing -> user == null || !Objects.equals(existing.getId(), user.getId()))
                 .findFirst()
                 .ifPresent(existing -> {
-                    context.addError(new ValidationError(ID, inputHint, Messages.USERNAME_EXISTS)
+                    context.addError(new ValidationError(ID, inputHint, Messages.DID_EXISTS)
                             .setStatusCode(Response.Status.CONFLICT));
                 });
 

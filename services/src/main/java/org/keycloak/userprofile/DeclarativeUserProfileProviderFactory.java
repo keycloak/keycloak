@@ -631,7 +631,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         Predicate<AttributeContext> required = AttributeMetadata.ALWAYS_FALSE;
         Predicate<AttributeContext> selector = DeclarativeUserProfileProviderFactory::isVerifiableCredentialsEnabled;
         Predicate<AttributeContext> readAllowed = DeclarativeUserProfileProviderFactory::isVerifiableCredentialsEnabled;
-        Predicate<AttributeContext> writeAllowed = c -> isVerifiableCredentialsEnabled(c) && !ACCOUNT.equals(c.getContext());
+        Predicate<AttributeContext> writeAllowed = c -> isVerifiableCredentialsEnabled(c) && USER_API.equals(c.getContext());
         AttributeValidatorMetadata patternValidator = new AttributeValidatorMetadata(PatternValidator.ID, new ValidatorConfig(Map.of(
                 "pattern", "^did:[a-z0-9]+:.+$",
                 "error-message", "Value must start with 'did:scheme:'",
