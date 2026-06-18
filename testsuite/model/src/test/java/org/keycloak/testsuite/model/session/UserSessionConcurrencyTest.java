@@ -21,6 +21,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -82,6 +83,21 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
 
         // Create/Update client session's notes concurrently
         CountDownLatch cdl = new CountDownLatch(20 * CLIENTS_COUNT);
+        if (Profile.Feature.CACHELESS.isAvailable()) {
+            // In cachless mode, the authentication sessions are pessimistically locked,
+            // therefore there can be no concurrency with the when creating client sessions.
+            IntStream.range(0, CLIENTS_COUNT)
+                    .forEach(i -> inComittedTransaction(i, (session, n) -> {
+                        RealmModel realm = session.realms().getRealm(realmId);
+                        session.getContext().setRealm(realm);
+                        ClientModel client = realm.getClientByClientId("client" + n);
+
+                        UserSessionModel uSession = session.sessions().getUserSession(realm, uId);
+                        session.sessions().createClientSession(realm, client, uSession);
+
+                        return null;
+                    }));
+        }
         IntStream.range(0, 20 * CLIENTS_COUNT).parallel()
                 .forEach(i -> inComittedTransaction(i, (session, n) -> { try {
                     RealmModel realm = session.realms().getRealm(realmId);

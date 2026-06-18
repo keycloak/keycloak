@@ -32,20 +32,20 @@ export const allClientScopeTypes = Object.keys({
   ...ClientScope,
 }) as AllClientScopeType[];
 
-export const isDynamicScope = (scope: ClientScopeRepresentation) =>
-  scope.attributes?.["is.dynamic.scope"] === "true";
+export const isParameterizedScope = (scope: ClientScopeRepresentation) =>
+  scope.attributes?.["is.parameterized.scope"] === "true";
 
-export const DynamicScopeLabel = () => (
+export const ParameterizedScopeLabel = () => (
   <Label color="gold" isCompact>
-    dynamic
+    parameterized
   </Label>
 );
 
-const filterDefaultForDynamic = (
+const filterDefaultForParameterized = (
   types: string[],
   scopes: ClientScopeRepresentation[],
 ) =>
-  scopes.some(isDynamicScope)
+  scopes.some(isParameterizedScope)
     ? types.filter((t) => t !== ClientScope.default)
     : types;
 
@@ -54,7 +54,7 @@ export const clientScopeTypesSelectOptions = (
   scopeTypes: string[] | undefined = clientScopeTypes,
   scopes: ClientScopeRepresentation[] = [],
 ) =>
-  filterDefaultForDynamic(scopeTypes, scopes).map((type) => (
+  filterDefaultForParameterized(scopeTypes, scopes).map((type) => (
     <SelectOption key={type} value={type}>
       {t(`clientScopeType.${type}`)}
     </SelectOption>
@@ -65,7 +65,7 @@ export const clientScopeTypesDropdown = (
   onClick: (scope: ClientScopeType) => void,
   scopes: ClientScopeRepresentation[] = [],
 ) =>
-  filterDefaultForDynamic(clientScopeTypes, scopes).map((type) => (
+  filterDefaultForParameterized(clientScopeTypes, scopes).map((type) => (
     <DropdownItem key={type} onClick={() => onClick(type as ClientScopeType)}>
       {t(`clientScopeType.${type}`)}
     </DropdownItem>
@@ -91,7 +91,7 @@ export const CellDropdown = ({
   const [open, setOpen] = useState(false);
 
   const types = all ? allClientScopeTypes : clientScopeTypes;
-  const filteredTypes = filterDefaultForDynamic(types, [clientScope]);
+  const filteredTypes = filterDefaultForParameterized(types, [clientScope]);
 
   return (
     <Select

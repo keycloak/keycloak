@@ -41,6 +41,72 @@ public class FilterUtils {
             throw new ScimFilterException("Invalid filter syntax: " + errors);
         }
 
+        validateNullCompValues(context);
         return context;
+    }
+
+    /**
+     * Extracts the comparison value from a parsed {@code compValue} node as a string.
+     *
+     * @param ctx the comparison value context from the parse tree
+     * @return the extracted value, or {@code null} for NULL literals
+     */
+    public static String extractCompValue(ScimFilterParser.CompValueContext ctx) {
+        if (ctx.STRING() != null) {
+            String raw = ctx.STRING().getText();
+            return unescapeJsonString(raw.substring(1, raw.length() - 1));
+        }
+        if (ctx.TRUE() != null) return "true";
+        if (ctx.FALSE() != null) return "false";
+        if (ctx.NULL() != null) return null;
+        if (ctx.NUMBER() != null) return ctx.NUMBER().getText();
+        return null;
+    }
+
+    private static void validateNullCompValues(ScimFilterParser.FilterContext filterCtx) {
+        new ScimFilterParserBaseVisitor<Void>() {
+            @Override
+            public Void visitComparisonExpression(ScimFilterParser.ComparisonExpressionContext ctx) {
+                if (ctx.compValue().NULL() != null) {
+                    String operator = ctx.compareOp().getText().toLowerCase();
+                    if (!operator.equals("eq") && !operator.equals("ne")) {
+                        throw new ScimFilterException(
+                                "Operator '%s' does not accept null values".formatted(operator));
+                    }
+                }
+                return null;
+            }
+        }.visit(filterCtx);
+    }
+
+    /**
+     * Unescapes a JSON string value (without surrounding quotes) per RFC 8259.
+     * Unicode escape sequences are handled by the ANTLR lexer.
+     */
+    public static String unescapeJsonString(String s) {
+        if (s.indexOf('\\') == -1) {
+            return s;
+        }
+        StringBuilder sb = new StringBuilder(s.length());
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '\\' && i + 1 < s.length()) {
+                char next = s.charAt(++i);
+                switch (next) {
+                    case '"'  -> sb.append('"');
+                    case '\\' -> sb.append('\\');
+                    case '/'  -> sb.append('/');
+                    case 'b'  -> sb.append('\b');
+                    case 'f'  -> sb.append('\f');
+                    case 'n'  -> sb.append('\n');
+                    case 'r'  -> sb.append('\r');
+                    case 't'  -> sb.append('\t');
+                    default   -> sb.append('\\').append(next);
+                }
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 }

@@ -94,8 +94,7 @@ public class OrganizationIdentityProvidersResource {
     })
     public Response addIdentityProvider(String id) {
         auth.orgs().requireManage(organization);
-        // todo: do we want to enforce that admins has to have manage-identity-providers admin role to be able to assign IDP to the org?
-//        auth.realm().requireManageIdentityProviders();
+        auth.realm().requireManageIdentityProviders();
         id = id.trim().replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
 
         try {
@@ -126,8 +125,7 @@ public class OrganizationIdentityProvidersResource {
     })
     public Stream<IdentityProviderRepresentation> getIdentityProviders() {
         auth.orgs().requireView(organization);
-        // todo: do we want to enforce that admins has to have view-identity-providers admin role to be able to get the IDPs linked to the org?
-//        auth.realm().requireViewIdentityProviders();
+        auth.realm().requireViewIdentityProviders();
         return organization.getIdentityProviders().map(this::toRepresentation);
     }
 
@@ -146,8 +144,7 @@ public class OrganizationIdentityProvidersResource {
     })
     public IdentityProviderRepresentation getIdentityProvider(@PathParam("alias") String alias) {
         auth.orgs().requireView(organization);
-        // todo: do we want to enforce that admins has to have view-identity-providers admin role to be able to get the IDP linked to the org?
-//        auth.realm().requireViewIdentityProviders();
+        auth.realm().requireViewIdentityProviders();
         IdentityProviderModel broker = session.identityProviders().getByAlias(alias);
 
         if (!isOrganizationBroker(broker)) {
@@ -218,8 +215,7 @@ public class OrganizationIdentityProvidersResource {
     })
     public Response delete(@PathParam("alias") String alias) {
         auth.orgs().requireManage(organization);
-        // todo: do we want to enforce that admins has to have manage-identity-providers admin role to be able to unassign IDP to the org?
-//        auth.realm().requireManageIdentityProviders();
+        auth.realm().requireManageIdentityProviders();
         IdentityProviderModel broker = session.identityProviders().getByAlias(alias);
 
         if (!isOrganizationBroker(broker)) {

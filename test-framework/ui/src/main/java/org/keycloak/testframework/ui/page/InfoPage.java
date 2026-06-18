@@ -30,6 +30,9 @@ public class InfoPage extends AbstractLoginPage {
     @FindBy(className = "instruction")
     private WebElement infoMessage;
 
+    @FindBy(linkText = "« Back to Application")
+    private WebElement backToApplicationLink;
+
     public InfoPage(ManagedWebDriver driver) {
         super(driver);
     }
@@ -41,5 +44,9 @@ public class InfoPage extends AbstractLoginPage {
     @Override
     public String getExpectedPageId() {
         return "login-info";
+    }
+
+    public void clickBackToApplicationLink() {
+        backToApplicationLink.click();
     }
 }

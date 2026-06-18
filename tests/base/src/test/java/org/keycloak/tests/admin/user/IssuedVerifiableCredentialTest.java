@@ -4,17 +4,22 @@ import java.util.List;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.UserVerifiableCredentialModel;
+import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.suites.DatabaseTest;
 
@@ -30,6 +35,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.oneOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 
 
@@ -198,6 +204,104 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
         assertThat(afterRevoke, empty());
     }
 
+    @Test
+    @DatabaseTest
+    public void testIssuedVCDeletedWhenUserVCDeleted() {
+        String userId = createUser();
+        String clientId = createTestClient("wallet-client");
+
+        // Create UserVC and IssuedVC
+        createIssuedVcViaModelLayer(userId, CREDENTIAL_TYPE_1, clientId, "rev-001");
+
+        // Verify IssuedVC exists
+        UserResource userResource = managedRealm.admin().users().get(userId);
+        List<IssuedVerifiableCredentialRepresentation> issuedCreds = userResource.verifiableCredentials().getIssuedCredentials();
+        assertThat(issuedCreds, hasSize(1));
+        assertEquals(CREDENTIAL_TYPE_1, issuedCreds.get(0).getCredentialType());
+
+        // Delete UserVerifiableCredential
+        userResource.verifiableCredentials().revokeCredential(CREDENTIAL_TYPE_1);
+
+        // Verify IssuedVC is also deleted
+        List<IssuedVerifiableCredentialRepresentation> afterDelete = userResource.verifiableCredentials().getIssuedCredentials();
+        assertThat(afterDelete, empty());
+    }
+
+    @Test
+    @DatabaseTest
+    public void testIssuedVCDeletedWhenClientDeleted() {
+        String userId = createUser();
+        String walletClientId = createTestClient("test-wallet");
+
+        // Issue 2 credentials from this wallet
+        createIssuedVcViaModelLayer(userId, CREDENTIAL_TYPE_1, walletClientId, "rev-001");
+        createIssuedVcViaModelLayer(userId, CREDENTIAL_TYPE_2, walletClientId, "rev-002");
+
+        // Verify issuedVCs exist
+        UserResource userResource = managedRealm.admin().users().get(userId);
+        assertThat(userResource.verifiableCredentials().getIssuedCredentials(), hasSize(2));
+
+        // Delete the wallet client via REST API
+        managedRealm.admin().clients().get(walletClientId).remove();
+
+        // Verify all IssuedVCs from this wallet are deleted
+        List<IssuedVerifiableCredentialRepresentation> afterDelete = userResource.verifiableCredentials().getIssuedCredentials();
+        assertThat(afterDelete, empty());
+    }
+
+    @Test
+    @DatabaseTest
+    public void testIssuedVCDeletedWhenUserDeleted() {
+        String userId = createUser();
+        String clientId = createTestClient("wallet-client");
+
+        // Create 2 VCs
+        createIssuedVcViaModelLayer(userId, CREDENTIAL_TYPE_1, clientId, "rev-001");
+        createIssuedVcViaModelLayer(userId, CREDENTIAL_TYPE_2, clientId, "rev-002");
+
+        // Verify both exist
+        UserResource userResource = managedRealm.admin().users().get(userId);
+        assertThat(userResource.verifiableCredentials().getIssuedCredentials(), hasSize(2));
+        assertThat(userResource.verifiableCredentials().getCredentials(), hasSize(2));
+
+        // Delete user
+        managedRealm.runCleanup();
+
+        // Verify user and all VCs are deleted
+        runOnServer.run(session -> {
+            assertNull(session.users().getUserById(session.getContext().getRealm(), userId));
+            assertEquals(0,  session.users().getIssuedVerifiableCredentialsStreamByUser(userId).count());
+        });
+    }
+
+    @Test
+    @DatabaseTest
+    public void testIssuedVCDeletedWhenClientScopeDeleted() {
+        String userId = createUser();
+        String clientId = createTestClient("wallet-client");
+
+        // Create client scope
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("test-scope");
+        scopeRep.setProtocol("oid4vc");
+        Response resp = managedRealm.admin().clientScopes().create(scopeRep);
+        String scopeId = ApiUtil.getCreatedId(resp);
+        resp.close();
+        adminEvents.clear();
+
+        // Create IssuedVC
+        createIssuedVcViaModelLayer(userId, "test-scope", clientId, "rev-001");
+
+        UserResource userResource = managedRealm.admin().users().get(userId);
+        assertThat(userResource.verifiableCredentials().getIssuedCredentials(), hasSize(1));
+
+        // Delete client scope
+        managedRealm.admin().clientScopes().get(scopeId).remove();
+
+        // Verify IssuedVC deleted
+        assertThat(userResource.verifiableCredentials().getIssuedCredentials(), empty());
+    }
+
     // Helper methods
 
     protected void createIssuedVcViaModelLayer(String userId, String credentialType,
@@ -223,6 +327,18 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
         });
     }
 
+    private String createTestClient(String clientName) {
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId(clientName);
+        clientRep.setEnabled(true);
+
+        Response resp = managedRealm.admin().clients().create(clientRep);
+        String clientId = ApiUtil.getCreatedId(resp);
+        resp.close();
+        adminEvents.clear();
+        return clientId;
+    }
+
     public static class IssuedVcTestRealmConfig implements RealmConfig {
         public static final String TEST_REALM_NAME = "test";
 
@@ -232,7 +348,14 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
                     .name(TEST_REALM_NAME)
                     .eventsEnabled(true)
                     .eventsListeners("jboss-logging")
-                    .verifiableCredentialsEnabled(true);
+                    .verifiableCredentialsEnabled(true)
+                    .clientScopes(createCredentialScope(CREDENTIAL_TYPE_1), createCredentialScope(CREDENTIAL_TYPE_2));
         }
+    }
+
+    private static CredentialScopeRepresentation createCredentialScope(String scopeName) {
+        return new CredentialScopeRepresentation(scopeName)
+                .setIncludeInTokenScope(true)
+                .setCredentialConfigurationId(scopeName);
     }
 }

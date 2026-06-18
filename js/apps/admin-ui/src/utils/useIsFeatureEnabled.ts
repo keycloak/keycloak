@@ -7,7 +7,7 @@ export enum Feature {
   AdminFineGrainedAuthzV2 = "ADMIN_FINE_GRAINED_AUTHZ_V2",
   ClientPolicies = "CLIENT_POLICIES",
   Kerberos = "KERBEROS",
-  DynamicScopes = "DYNAMIC_SCOPES",
+  ParameterizedScopes = "PARAMETERIZED_SCOPES",
   DPoP = "DPOP",
   DeviceFlow = "DEVICE_FLOW",
   TransientUsers = "TRANSIENT_USERS",
@@ -24,6 +24,7 @@ export enum Feature {
   StepUpAuthenticationSaml = "STEP_UP_AUTHENTICATION_SAML",
   Ssf = "SSF",
   ScimApi = "SCIM_API",
+  IdentityBrokeringAPIV1 = "IDENTITY_BROKERING_API_V1",
   IdentityBrokeringAPIV2 = "IDENTITY_BROKERING_API_V2",
 }
 

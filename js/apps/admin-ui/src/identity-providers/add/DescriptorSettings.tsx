@@ -243,6 +243,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         <DefaultSwitchControl
           name="config.wantAssertionsSigned"
           label={t("wantAssertionsSigned")}
+          defaultValue="true"
           isDisabled={readOnly}
           stringify
         />
@@ -274,6 +275,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         <DefaultSwitchControl
           name="config.validateSignature"
           label={t("validateSignature")}
+          defaultValue="true"
           isDisabled={readOnly}
           stringify
         />

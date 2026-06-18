@@ -46,22 +46,13 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
 
     private final KeycloakSession session;
     private final ClientModel client;
-    private Map<String, String> requestParams;
-    private String invalidRequestMessage = null;
+    private final Map<String, String> requestParams;
 
     public AuthzEndpointParParser(KeycloakSession session, ClientModel client, String requestUri) {
         super(session);
         this.session = session;
         this.client = client;
-        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-        String key;
-        try {
-            key = requestUri.substring(ParEndpoint.REQUEST_URI_PREFIX_LENGTH);
-        } catch (RuntimeException re) {
-            logger.warnf(re,"Unable to parse request_uri: %s", requestUri);
-            throw new RuntimeException("Unable to parse request_uri");
-        }
-        Map<String, String> retrievedRequest = singleUseStore.remove(CACHE_KEY_PREFIX + key);
+        Map<String, String> retrievedRequest = removeRequestObject(session, requestUri);
         if (retrievedRequest == null) {
             throw new RuntimeException("PAR not found. not issued or used multiple times.");
         }
@@ -69,7 +60,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
         RealmModel realm = session.getContext().getRealm();
         int expiresIn = realm.getParPolicy().getRequestUriLifespan();
         long created = Long.parseLong(retrievedRequest.get(PAR_CREATED_TIME));
-        if (System.currentTimeMillis() - created < (expiresIn * 1000)) {
+        if (System.currentTimeMillis() - created < (expiresIn * 1000L)) {
             requestParams = retrievedRequest;
         } else {
             throw new RuntimeException("PAR expired.");
@@ -87,7 +78,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
 
         if (requestParam != null) {
             // parses the request object if PAR was registered using JAR
-            // parameters from requets object have precedence over those sent directly in the request
+            // parameters from the request object have precedence over those sent directly in the request
             new ParEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
         } else {
             super.parseRequest(request);
@@ -105,13 +96,34 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
         return paramVal == null ? null : Integer.valueOf(paramVal);
     }
 
-    public String getInvalidRequestMessage() {
-        return invalidRequestMessage;
-    }
-
     @Override
     protected Set<String> keySet() {
         return requestParams.keySet();
     }
+    
+    public static Map<String, String> getRequestObject(KeycloakSession session, String requestUri) {
+        String key = getRequestObjectKey(requestUri);
+        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
+        Map<String, String> retrievedRequest = singleUseStore.get(CACHE_KEY_PREFIX + key);
+        return retrievedRequest;
+    }
 
+    /**
+     * Authorization servers that enforce one-time use of request_uri values do so at the point of authorization,
+     * not at the point of visiting the authorization endpoint
+     * OpenID CT: fapi2-security-profile-final-par-ensure-reused-request-uri-prior-to-auth-completion-succeeds
+     */
+    public static Map<String, String> removeRequestObject(KeycloakSession session, String requestUri) {
+        String key = getRequestObjectKey(requestUri);
+        return session.singleUseObjects().remove(CACHE_KEY_PREFIX + key);
+    }
+
+    private static String getRequestObjectKey(String requestUri) {
+        try {
+            return requestUri.substring(ParEndpoint.REQUEST_URI_PREFIX_LENGTH);
+        } catch (RuntimeException re) {
+            logger.warnf(re,"Unable to parse request_uri: %s", requestUri);
+            throw new RuntimeException("Unable to parse request_uri");
+        }
+    }
 }

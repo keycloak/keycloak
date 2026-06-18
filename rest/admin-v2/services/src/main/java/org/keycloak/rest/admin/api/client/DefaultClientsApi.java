@@ -4,10 +4,14 @@ import java.util.stream.Stream;
 
 import jakarta.annotation.Nonnull;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.api.ListOptions;
@@ -19,6 +23,7 @@ import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.ClientService.ClientProjectionOptions;
 import org.keycloak.services.client.DefaultClientService;
+import org.keycloak.services.client.query.ClientQueryException;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 public class DefaultClientsApi implements ClientsApi {
@@ -37,9 +42,16 @@ public class DefaultClientsApi implements ClientsApi {
         this.clientService = new DefaultClientService(session, realm, permissions);
     }
     
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
     @Override
     public Stream<BaseClientRepresentation> getClients(ListOptions params) {
-        return clientService.getClients(realm, new ClientProjectionOptions(params.getFields()), null, null);
+        try {
+            var searchOptions = params.getQuery() != null ? new ClientService.ClientSearchOptions(params.getQuery()) : null;
+            return clientService.getClients(realm, new ClientProjectionOptions(params.getFields()), searchOptions, null);
+        } catch (ClientQueryException e) {
+            throw new BadRequestException(e.getMessage());
+        }
     }
 
     @POST

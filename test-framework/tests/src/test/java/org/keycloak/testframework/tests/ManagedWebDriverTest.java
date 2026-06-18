@@ -59,7 +59,7 @@ public class ManagedWebDriverTest {
         loginPage1.fillLogin(user.getUsername(), user.getPassword());
         loginPage1.submit();
 
-        Assertions.assertNotNull(oauth1.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth1.parseLoginResponse().isSuccess());
         EventAssertion.assertSuccess(events.poll()).userId(user.getId());
 
         oauth2.openLoginForm();
@@ -67,7 +67,7 @@ public class ManagedWebDriverTest {
         loginPage2.fillLogin(user.getUsername(), user.getPassword());
         loginPage2.submit();
 
-        Assertions.assertNotNull(oauth2.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth2.parseLoginResponse().isSuccess());
         EventAssertion.assertSuccess(events.poll()).userId(user.getId());
     }
 

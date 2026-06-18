@@ -101,6 +101,9 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
 
     @Override
     protected void runCommand() {
+        if (isServing() && Environment.isRunInContainer() && Environment.getScriptPid().filter(v -> !v.equals("1")).isPresent()) {
+            picocli.warn("Keycloak is running inside a container, but is not PID 1. Graceful shutdown may not work. Use 'exec' in your entrypoint script to ensure signals are forwarded correctly. See https://www.keycloak.org/server/containers for more details.");
+        }
         doBeforeRun();
         validateConfig();
 

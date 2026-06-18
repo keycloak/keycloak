@@ -25,6 +25,9 @@ public enum EmitEventStatus {
     /** Receiver has no SSF stream registered yet. */
     STREAM_NOT_FOUND("stream_not_found"),
 
+    /** The stream exists but has no delivery configuration. */
+    NO_DELIVERY_CONFIG("no_delivery_config"),
+
     /** Event type alias / URI is not registered with the transmitter. */
     UNKNOWN_EVENT_TYPE("unknown_event_type"),
 

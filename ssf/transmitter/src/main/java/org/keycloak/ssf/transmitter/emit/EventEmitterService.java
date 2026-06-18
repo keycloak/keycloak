@@ -3,13 +3,13 @@ package org.keycloak.ssf.transmitter.emit;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.event.SsfEvent;
 import org.keycloak.ssf.event.SsfEventRegistry;
@@ -144,6 +144,15 @@ public class EventEmitterService {
         if (stream == null) {
             return EmitEventResult.dropped(EmitEventStatus.STREAM_NOT_FOUND);
         }
+        // ... with a delivery configuration. Without one the dispatcher
+        // has nowhere to send the SET and would skip delivery before the
+        // outbox enqueue — the emitter would see a "dispatched" result
+        // (and a jti) for an event that never existed anywhere. Fail
+        // early with an explicit status instead.
+        if (stream.getDelivery() == null) {
+            return EmitEventResult.dropped(EmitEventStatus.NO_DELIVERY_CONFIG,
+                    "Stream has no delivery method configured — configure push or poll delivery for the stream first");
+        }
 
         // 4. Event type must be in the receiver's events_requested
         //    set. Receivers that pass null opt into everything.
@@ -248,16 +257,13 @@ public class EventEmitterService {
     }
 
     protected OrganizationModel resolveOrganization(SubjectId tenantFacet) {
-        if (tenantFacet == null || !Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+        if (tenantFacet == null || !Organizations.isEnabled(session)) {
             return null;
         }
         if (!(tenantFacet instanceof OpaqueSubjectId opaque) || opaque.getId() == null) {
             return null;
         }
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-        if (orgProvider == null) {
-            return null;
-        }
         // Prefer alias (matches the admin shorthand 'org-alias' convention),
         // then fall back to UUID for emitters that prefer stable identifiers.
         OrganizationModel org = orgProvider.getByAlias(opaque.getId());

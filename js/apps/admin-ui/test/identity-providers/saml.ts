@@ -48,9 +48,8 @@ export async function editSAMLSettings(page: Page, samlProviderName: string) {
     "config.loginHint",
     "config.loginQueryHint",
     "config.allowCreate",
-    "config.forceAuthn",
-    "config.wantAssertionsSigned",
     "config.wantAssertionsEncrypted",
+    "config.forceAuthn",
   ];
   for (const switchId of switches) {
     await switchOn(page, `[data-testid="${switchId}"]`);

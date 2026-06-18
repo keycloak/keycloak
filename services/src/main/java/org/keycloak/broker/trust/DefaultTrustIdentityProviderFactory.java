@@ -17,7 +17,6 @@
 
 package org.keycloak.broker.trust;
 
-import java.util.List;
 import java.util.Map;
 
 import org.keycloak.Config;
@@ -26,7 +25,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
-import org.keycloak.provider.ProviderConfigProperty;
 
 public class DefaultTrustIdentityProviderFactory extends AbstractIdentityProviderFactory<DefaultTrustIdentityProvider> implements EnvironmentDependentProviderFactory {
 
@@ -50,23 +48,6 @@ public class DefaultTrustIdentityProviderFactory extends AbstractIdentityProvide
     @Override
     public IdentityProviderModel createConfig() {
         return new DefaultTrustIdentityProviderConfig();
-    }
-
-    @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        ProviderConfigProperty trustedJwksUrl = new ProviderConfigProperty();
-        trustedJwksUrl.setName(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS_URL);
-        trustedJwksUrl.setLabel("Trusted JWKS URL");
-        trustedJwksUrl.setHelpText("External JWKS URL containing trusted signing keys.");
-        trustedJwksUrl.setType(ProviderConfigProperty.STRING_TYPE);
-
-        ProviderConfigProperty trustedJwks = new ProviderConfigProperty();
-        trustedJwks.setName(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS);
-        trustedJwks.setLabel("Trusted JWKS");
-        trustedJwks.setHelpText("Hardcoded JWKS containing trusted signing keys.");
-        trustedJwks.setType(ProviderConfigProperty.TEXT_TYPE);
-
-        return List.of(trustedJwksUrl, trustedJwks);
     }
 
     @Override

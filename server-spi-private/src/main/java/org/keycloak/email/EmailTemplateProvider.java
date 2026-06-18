@@ -76,6 +76,8 @@ public interface EmailTemplateProvider extends Provider {
      */
     void sendExecuteActions(String link, long expirationInMinutes) throws EmailException;
 
+    void sendVerifiableCredentialOffer(String link, long expirationInMinutes) throws EmailException;
+
     void sendVerifyEmail(String link, long expirationInMinutes) throws EmailException;
 
     void sendOrgInviteEmail(OrganizationModel organization, String link, long expirationInMinutes) throws EmailException;

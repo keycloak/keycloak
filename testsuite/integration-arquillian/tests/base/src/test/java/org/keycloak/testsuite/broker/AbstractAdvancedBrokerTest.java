@@ -29,6 +29,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.TestAppHelper;
+import org.keycloak.testsuite.util.WaitUtils;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -177,6 +178,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         logoutFromConsumerRealm();
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+        driver.manage().deleteAllCookies();
 
         oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
@@ -200,6 +202,8 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         }
 
         assertEquals("Invalid username or password.", loginPage.getInputError());
+
+        WaitUtils.waitForBruteForceExecutors(testingClient);
 
         loginPage.clickSocial(bc.getIDPAlias());
 

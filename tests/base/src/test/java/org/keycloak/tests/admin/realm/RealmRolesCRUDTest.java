@@ -18,16 +18,16 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
-import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -44,10 +44,14 @@ import static org.junit.jupiter.api.Assertions.fail;
 @KeycloakIntegrationTest
 @DatabaseTest
 public class RealmRolesCRUDTest extends AbstractRealmRolesTest {
-
-    @InjectClient(ref = "client-a", attachTo = "client-a")
-    ManagedClient clientA;
-
+    
+    private String clientAId;
+    
+    @BeforeEach
+    public void setUp() {
+        clientAId = AdminApiUtil.findClientByClientId(managedRealm.admin(), "client-a").toRepresentation().getId();
+    }
+    
     @Test
     public void getRole() {
         RoleRepresentation role = managedRealm.admin().roles().get("role-a").toRepresentation();
@@ -124,7 +128,7 @@ public class RealmRolesCRUDTest extends AbstractRealmRolesTest {
 
         List<RoleRepresentation> l = new LinkedList<>();
         l.add(RoleBuilder.create().id(managedRealm.admin().roles().get("role-b").toRepresentation().getId()).build());
-        l.add(RoleBuilder.create().id(managedRealm.admin().clients().get(clientA.getId()).roles().get("role-c").toRepresentation().getId()).build());
+        l.add(RoleBuilder.create().id(managedRealm.admin().clients().get(clientAId).roles().get("role-c").toRepresentation().getId()).build());
         managedRealm.admin().roles().get("role-a").addComposites(l);
 
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath("role-a"), l, ResourceType.REALM_ROLE);
@@ -137,7 +141,7 @@ public class RealmRolesCRUDTest extends AbstractRealmRolesTest {
         Set<RoleRepresentation> realmComposites = managedRealm.admin().roles().get("role-a").getRealmRoleComposites();
         Assert.assertNames(realmComposites, "role-b");
 
-        Set<RoleRepresentation> clientComposites = managedRealm.admin().roles().get("role-a").getClientRoleComposites(clientA.getId());
+        Set<RoleRepresentation> clientComposites = managedRealm.admin().roles().get("role-a").getClientRoleComposites(clientAId);
         Assert.assertNames(clientComposites, "role-c");
 
         managedRealm.admin().roles().get("role-a").deleteComposites(l);
@@ -152,7 +156,7 @@ public class RealmRolesCRUDTest extends AbstractRealmRolesTest {
         managedRealm.admin().roles().deleteRole("role-z");
         // show that the roles still exist
         assertNotNull(managedRealm.admin().roles().get("role-b").toRepresentation().getId());
-        assertNotNull(managedRealm.admin().clients().get(clientA.getId()).roles().get("role-c").toRepresentation().getId());
+        assertNotNull(managedRealm.admin().clients().get(clientAId).roles().get("role-c").toRepresentation().getId());
     }
 
     @Test
@@ -183,15 +187,15 @@ public class RealmRolesCRUDTest extends AbstractRealmRolesTest {
                 hasItem("role-a")
         ));
 
-        assertThat(userResource.roles().clientLevel(clientA.getId()).listAll(), empty());
-        assertThat(userResource.roles().clientLevel(clientA.getId()).listEffective(), empty());
+        assertThat(userResource.roles().clientLevel(clientAId).listAll(), empty());
+        assertThat(userResource.roles().clientLevel(clientAId).listEffective(), empty());
 
-        defaultRole.addComposites(Collections.singletonList(managedRealm.admin().clients().get(clientA.getId()).roles().get("role-c").toRepresentation()));
+        defaultRole.addComposites(Collections.singletonList(managedRealm.admin().clients().get(clientAId).roles().get("role-c").toRepresentation()));
 
         userResource = managedRealm.admin().users().get(user.getId());
 
-        assertThat(userResource.roles().clientLevel(clientA.getId()).listAll(), empty());
-        assertThat(convertRolesToNames(userResource.roles().clientLevel(clientA.getId()).listEffective()),
+        assertThat(userResource.roles().clientLevel(clientAId).listAll(), empty());
+        assertThat(convertRolesToNames(userResource.roles().clientLevel(clientAId).listEffective()),
                 hasItem("role-c")
         );
     }

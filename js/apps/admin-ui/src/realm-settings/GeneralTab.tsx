@@ -418,16 +418,6 @@ function RealmSettingsGeneralTabForm({
                   />
                 </StackItem>
               )}
-              {isScimApiEnabled && realm.scimApiEnabled && (
-                <StackItem>
-                  <FormattedLink
-                    href={`${addTrailingSlash(
-                      serverBaseUrl,
-                    )}realms/${realmName}/scim/v2`}
-                    title={t("SCIM Endpoint")}
-                  />
-                </StackItem>
-              )}
               {isSsfEnabled && ssfTransmitterEnabled?.toString() === "true" && (
                 <StackItem>
                   <FormattedLink

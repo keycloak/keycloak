@@ -88,6 +88,7 @@ import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFac
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.TlsClientAuthCASubjectDNExecutorFactory;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
@@ -508,7 +509,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
     @Test
     public void testSecureRequestObjectExecutor() throws Exception {
         Integer availablePeriod = SecureRequestObjectExecutor.DEFAULT_AVAILABLE_PERIOD + 400;
-        Integer allowedClockSkew = SecureRequestObjectExecutor.DEAULT_ALLOWED_CLOCK_SKEW + 15; // 30 sec
+        Integer allowedClockSkew = SecureRequestObjectExecutor.DEFAULT_ALLOWED_CLOCK_SKEW + 15; // 30 sec
 
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
@@ -1701,12 +1702,12 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.client(clientBetaId);
         oauth.loginForm().state("randomstatesomething").requestUri(requestUri).open();
         assertTrue(errorPage.isCurrent());
-        assertEquals("PAR request did not include necessary parameters", errorPage.getError());
+        assertEquals("PAR request did not include query parameter", errorPage.getError());
         EventAssertion.assertError(events.poll())
-                .type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
                 .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
-                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
-                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "PAR request did not include necessary parameters").clientId(null)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "PAR request did not include query parameter").clientId(null)
                 .userId(null);
 
         oauth.client(clientBetaId, "secretBeta");
@@ -1752,12 +1753,12 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         // only query parameters include state parameter
         oauth.loginForm().requestUri(requestUri).state("mystate2").open();
         assertTrue(errorPage.isCurrent());
-        assertEquals("PAR request did not include necessary parameters", errorPage.getError());
+        assertEquals("PAR request did not include query parameter", errorPage.getError());
         EventAssertion.assertError(events.poll())
-                .type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
                 .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
-                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
-                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "PAR request did not include necessary parameters").clientId(null)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "PAR request did not include query parameter").clientId(null)
                 .userId(null);
 
         // Pushed Authorization Request with state parameter
@@ -2055,5 +2056,48 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         } catch (Exception e) {
             fail();
         }
+    }
+
+    @Test
+    public void testTlsClientAuthCASubjectDNExecutor() throws Exception {
+        // register profiles
+        ClientPolicyExecutorConfigurationRepresentation config = new ClientPolicyExecutorConfigurationRepresentation();
+        config.setConfigAsMap(TlsClientAuthCASubjectDNExecutorFactory.CA_SUBJECT_DN, "CN=CA");
+        config.setConfigAsMap(TlsClientAuthCASubjectDNExecutorFactory.ENFORCED, Boolean.TRUE.toString());
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Ensimmainen Profiili")
+                        .addExecutor(TlsClientAuthCASubjectDNExecutorFactory.PROVIDER_ID, config)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Ensimmainen Politiikka", Boolean.TRUE)
+                        .addCondition(ClientUpdaterContextConditionFactory.PROVIDER_ID,
+                                createClientUpdateContextConditionConfig(Arrays.asList(
+                                        ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER,
+                                        ClientUpdaterContextConditionFactory.BY_INITIAL_ACCESS_TOKEN,
+                                        ClientUpdaterContextConditionFactory.BY_REGISTRATION_ACCESS_TOKEN)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // create should add the default CA name
+        String clientId = createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+            clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.TLS_CLIENT_AUTH);
+            clientRep.setTlsClientAuthSubjectDn("CN=client");
+        });
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_REGISTER).clientId(clientId).userId(null);
+        OIDCClientRepresentation createdRep = getClientDynamically(clientId);
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_INFO).clientId(clientId).userId(null);
+        assertEquals(OIDCLoginProtocol.TLS_CLIENT_AUTH, createdRep.getTokenEndpointAuthMethod());
+        assertEquals("CN=client", createdRep.getTlsClientAuthSubjectDn());
+        ClientRepresentation client = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId).toRepresentation();
+        assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        assertEquals("CN=client", client.getAttributes().get(X509ClientAuthenticator.ATTR_SUBJECT_DN));
+        assertEquals("CN=CA", client.getAttributes().get(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN));
+        assertEquals("false", client.getAttributes().get(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON));
     }
 }

@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
@@ -57,7 +58,6 @@ import static org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectP
 import static org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectProviderFactory.LOADED;
 import static org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanSingleUseObjectProvider.REVOKED_TOKEN_VALUE;
 import static org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanSingleUseObjectProvider.RevokeTokenConsumer;
-import static org.keycloak.storage.datastore.DefaultDatastoreProviderFactory.setupClearExpiredRevokedTokensScheduledTask;
 
 public class RemoteInfinispanSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory<RemoteInfinispanSingleUseObjectProvider>, EnvironmentDependentProviderFactory, ProviderEventListener, ServerInfoAwareProviderFactory {
 
@@ -105,7 +105,7 @@ public class RemoteInfinispanSingleUseObjectProviderFactory implements SingleUse
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return InfinispanUtils.isRemoteInfinispan();
+        return !Profile.isFeatureEnabled(Profile.Feature.CACHELESS) && InfinispanUtils.isRemoteInfinispan();
     }
 
     @Override
@@ -140,7 +140,6 @@ public class RemoteInfinispanSingleUseObjectProviderFactory implements SingleUse
 
         // preload revoked tokens from the database and register cleanup expired tokens task
         KeycloakSessionFactory sessionFactory = pme.getFactory();
-        setupClearExpiredRevokedTokensScheduledTask(sessionFactory);
         try (var session = sessionFactory.create()) {
             preloadRevokedTokens(session);
         }
