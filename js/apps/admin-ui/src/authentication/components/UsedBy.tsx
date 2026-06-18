@@ -121,7 +121,10 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
                 name: "name",
                 displayKey: "name",
                 cellRenderer: (row: FlowUsedByRow) => (
-                  <ClientUsedByLink id={row.id ?? undefined} clientId={row.clientId} />
+                  <ClientUsedByLink
+                    id={row.id ?? undefined}
+                    clientId={row.clientId}
+                  />
                 ),
               }
             : {
@@ -182,7 +185,10 @@ export const UsedBy = ({ authType: { id, usedBy } }: UsedByProps) => {
                 {usedBy.type === "SPECIFIC_CLIENTS"
                   ? clientsOrFallback.map((ref, index) => (
                       <Fragment key={`${id}-used-${ref.clientId}-${index}`}>
-                        <ClientUsedByLink id={ref.id ?? undefined} clientId={ref.clientId} />
+                        <ClientUsedByLink
+                          id={ref.id ?? undefined}
+                          clientId={ref.clientId}
+                        />
                         {index < clientsOrFallback.length - 1 ? ", " : ""}
                       </Fragment>
                     ))
