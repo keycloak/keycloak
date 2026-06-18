@@ -5,7 +5,7 @@ REF="$2"
 
 CHANGE_ID=$(echo $REF | cut -f 3 -d '/')
 
-if [ $GITHUB_EVENT_NAME == "pull_request" ]; then
+if [[ "$GITHUB_EVENT_NAME" == "pull_request" && "$GITHUB_REPOSITORY" == "keycloak/keycloak" && "$GITHUB_BASE_REF" == "main" ]]; then
   echo "========================================================================================"
   echo "Checking testsuite module additions/changes."
   echo "----------------------------------------------------------------------------------------"
