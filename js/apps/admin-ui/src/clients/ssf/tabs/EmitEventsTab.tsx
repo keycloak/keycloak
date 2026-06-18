@@ -31,7 +31,7 @@ import { FormAccess } from "../../../components/form/FormAccess";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { toSsfClientTab } from "../../routes/ClientSsfTab";
 import type { SsfClientStream } from "./StreamTab";
-import { NetworkError } from "libs/keycloak-admin-client/lib";
+import { NetworkError } from "@keycloak/keycloak-admin-client";
 
 type SsfEmitResult = {
   status: string;
