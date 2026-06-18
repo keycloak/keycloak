@@ -205,11 +205,12 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
         if (profileConfig.getAttribute(UserModel.DID) == null) {
             UPAttribute attr = new UPAttribute(UserModel.DID);
             attr.setDisplayName("${did}");
-            attr.setPermissions(new UPAttributePermissions(Set.of(ROLE_ADMIN, ROLE_USER), Set.of(ROLE_ADMIN, ROLE_USER)));
+            attr.setPermissions(new UPAttributePermissions(Set.of(ROLE_ADMIN, ROLE_USER), Set.of(ROLE_ADMIN)));
             attr.setValidations(Map.of(
                     PatternValidator.ID, Map.of(
                             "pattern", "^did:.+:.+$",
-                            "error-message", "Value must start with 'did:scheme:'"
+                            "error-message", "Value must start with 'did:scheme:'",
+                            "ignore.empty.value", "true"
                     )
             ));
             profileConfig.addOrReplaceAttribute(attr);

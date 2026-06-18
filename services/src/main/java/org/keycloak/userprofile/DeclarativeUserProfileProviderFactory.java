@@ -59,6 +59,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.userprofile.validator.BlankAttributeValidator;
 import org.keycloak.userprofile.validator.BrokeringFederatedUsernameHasValueValidator;
+import org.keycloak.userprofile.validator.DuplicateDidValidator;
 import org.keycloak.userprofile.validator.DuplicateEmailValidator;
 import org.keycloak.userprofile.validator.DuplicateUsernameValidator;
 import org.keycloak.userprofile.validator.EmailExistsAsUsernameValidator;
@@ -629,10 +630,13 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     private void addAttributeUserDid(UserProfileMetadata metadata) {
         Predicate<AttributeContext> required = AttributeMetadata.ALWAYS_FALSE;
         Predicate<AttributeContext> selector = DeclarativeUserProfileProviderFactory::isVerifiableCredentialsEnabled;
-        Predicate<AttributeContext> readWriteAllowed = DeclarativeUserProfileProviderFactory::isVerifiableCredentialsEnabled;
-        AttributeValidatorMetadata validatorMetadata = new AttributeValidatorMetadata(PatternValidator.ID, new ValidatorConfig(Map.of(
-                "pattern", "^(did:[a-z0-9]+:.+)?$", // simplified pattern
-                "error-message", "Value must start with 'did:scheme:'")));
-        metadata.addAttribute(UserModel.DID, 10, List.of(validatorMetadata), selector, readWriteAllowed, required, readWriteAllowed).setAttributeDisplayName("${did}");
+        Predicate<AttributeContext> readAllowed = DeclarativeUserProfileProviderFactory::isVerifiableCredentialsEnabled;
+        Predicate<AttributeContext> writeAllowed = c -> isVerifiableCredentialsEnabled(c) && !ACCOUNT.equals(c.getContext());
+        AttributeValidatorMetadata patternValidator = new AttributeValidatorMetadata(PatternValidator.ID, new ValidatorConfig(Map.of(
+                "pattern", "^did:[a-z0-9]+:.+$",
+                "error-message", "Value must start with 'did:scheme:'",
+                "ignore.empty.value", "true")));
+        AttributeValidatorMetadata duplicateValidator = new AttributeValidatorMetadata(DuplicateDidValidator.ID);
+        metadata.addAttribute(UserModel.DID, 10, List.of(patternValidator, duplicateValidator), selector, writeAllowed, required, readAllowed).setAttributeDisplayName("${did}");
     }
 }

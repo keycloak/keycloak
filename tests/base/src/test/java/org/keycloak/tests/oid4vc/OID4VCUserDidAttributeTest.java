@@ -5,6 +5,9 @@ import java.security.interfaces.ECPublicKey;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -19,6 +22,7 @@ import static org.keycloak.util.DIDUtils.decodeDidKey;
 import static org.keycloak.util.DIDUtils.encodeDidKey;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests the User DID Attribute.
@@ -54,5 +58,21 @@ public class OID4VCUserDidAttributeTest extends OID4VCIssuerTestBase {
         var appUserDid = holderAttributes.get(UserModel.DID).get(0);
         ECPublicKey publicKey = decodeDidKey(appUserDid);
         assertEquals(subjectKeyPair.getPublic(), publicKey);
+    }
+
+    @Test
+    public void testDuplicateDidRejected() {
+        // Get alice's current DID
+        String aliceDid = holderRep.getAttributes().get(UserModel.DID).get(0);
+
+        // Get john, who has a different DID
+        UserRepresentation john = testRealm.admin().users().search("john").get(0);
+
+        // Try to set alice's DID on john
+        john.getAttributes().put(UserModel.DID, List.of(aliceDid));
+
+        WebApplicationException exception = assertThrows(WebApplicationException.class,
+                () -> testRealm.admin().users().get(john.getId()).update(john));
+        assertEquals(Response.Status.CONFLICT.getStatusCode(), exception.getResponse().getStatus());
     }
 }
