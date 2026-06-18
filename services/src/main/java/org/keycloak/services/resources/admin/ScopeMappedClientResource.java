@@ -47,8 +47,8 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.context.ClientScopeMappingRegisterContext;
-import org.keycloak.services.clientpolicy.context.ClientScopeMappingRemoveContext;
+import org.keycloak.services.clientpolicy.context.admin.ClientScopeMappingRegisterContext;
+import org.keycloak.services.clientpolicy.context.admin.ClientScopeMappingRemoveContext;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 

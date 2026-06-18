@@ -14,45 +14,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.services.clientpolicy.context;
-
-import java.util.List;
+package org.keycloak.services.clientpolicy.context.admin;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 
 /**
- * Context fired by {@link org.keycloak.services.resources.admin.RoleMapperResource} and
- * {@link org.keycloak.services.resources.admin.ClientRoleMappingsResource} on role-assignment
- * add/remove operations through the admin REST API.
+ * Context fired by {@link org.keycloak.services.resources.admin.ClientAttributeCertificateResource}
+ * on certificate mutation operations through the admin REST API.
  *
- * <p>Dispatched as {@link org.keycloak.services.clientpolicy.ClientPolicyEvent#REGISTER_ROLE_MAPPING}
- * and {@link org.keycloak.services.clientpolicy.ClientPolicyEvent#UNREGISTER_ROLE_MAPPING}.
+ * <p>Dispatched as {@link org.keycloak.services.clientpolicy.ClientPolicyEvent#UPDATE_CLIENT_CERTIFICATE}.
  */
-public interface RoleMapperAssignmentContext extends ClientPolicyContext {
+public interface ClientCertificateContext extends ClientPolicyContext {
 
     /**
-     * @return the user or group receiving or losing the role mapping.
+     * @return the client whose signing material is being updated.
      */
-    default RoleMapperModel getRoleMapper() {
+    default ClientModel getTargetClient() {
         return null;
     }
 
     /**
-     * @return the client whose roles are being mapped; non-null for client-role grants, null for realm-role.
+     * @return the attribute prefix identifying which certificate slot is being updated.
      */
-    default ClientModel getRoleContainerClient() {
+    default String getAttributePrefix() {
         return null;
     }
 
     /**
-     * @return the roles being added or removed.
+     * @return a defensive copy of the proposed certificate representation before persistence.
+     *         The returned representation never exposes private-key material.
      */
-    default List<RoleRepresentation> getRoles() {
+    default CertificateRepresentation getProposedCertificate() {
         return null;
     }
 

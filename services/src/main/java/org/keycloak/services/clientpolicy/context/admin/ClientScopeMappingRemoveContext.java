@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.services.clientpolicy.context;
+package org.keycloak.services.clientpolicy.context.admin;
 
 import java.util.List;
 
@@ -25,22 +25,22 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.resources.admin.AdminAuth;
 
 /**
- * Fired when scope mappings are being added to a client or client scope through the admin REST API.
+ * Fired when scope mappings are being removed from a client or client scope through the admin REST API.
  *
- * @see ClientPolicyEvent#REGISTER_SCOPE_MAPPING
+ * @see ClientPolicyEvent#UNREGISTER_SCOPE_MAPPING
  */
-public class ClientScopeMappingRegisterContext extends AbstractClientScopeMappingContext {
+public class ClientScopeMappingRemoveContext extends AbstractClientScopeMappingContext {
 
-    public ClientScopeMappingRegisterContext(ScopeContainerModel scopeContainer,
-                                             ClientModel roleContainerClient,
-                                             List<RoleRepresentation> roles,
-                                             AdminAuth adminAuth) {
+    public ClientScopeMappingRemoveContext(ScopeContainerModel scopeContainer,
+                                           ClientModel roleContainerClient,
+                                           List<RoleRepresentation> roles,
+                                           AdminAuth adminAuth) {
         super(scopeContainer, roleContainerClient, roles, adminAuth);
     }
 
-    /** @return {@link ClientPolicyEvent#REGISTER_SCOPE_MAPPING} */
+    /** @return {@link ClientPolicyEvent#UNREGISTER_SCOPE_MAPPING} */
     @Override
     public ClientPolicyEvent getEvent() {
-        return ClientPolicyEvent.REGISTER_SCOPE_MAPPING;
+        return ClientPolicyEvent.UNREGISTER_SCOPE_MAPPING;
     }
 }

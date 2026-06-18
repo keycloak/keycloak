@@ -14,36 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.services.clientpolicy.context;
+package org.keycloak.services.clientpolicy.context.admin;
 
 import java.util.List;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ScopeContainerModel;
+import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 
 /**
- * Context fired by {@link org.keycloak.services.resources.admin.ScopeMappedResource} and
- * {@link org.keycloak.services.resources.admin.ScopeMappedClientResource} on scope-mapping
+ * Context fired by {@link org.keycloak.services.resources.admin.RoleMapperResource} and
+ * {@link org.keycloak.services.resources.admin.ClientRoleMappingsResource} on role-assignment
  * add/remove operations through the admin REST API.
  *
- * <p>Dispatched as {@link org.keycloak.services.clientpolicy.ClientPolicyEvent#REGISTER_SCOPE_MAPPING}
- * and {@link org.keycloak.services.clientpolicy.ClientPolicyEvent#UNREGISTER_SCOPE_MAPPING}.
+ * <p>Dispatched as {@link org.keycloak.services.clientpolicy.ClientPolicyEvent#REGISTER_ROLE_MAPPING}
+ * and {@link org.keycloak.services.clientpolicy.ClientPolicyEvent#UNREGISTER_ROLE_MAPPING}.
  */
-public interface ClientScopeMappingContext extends ClientPolicyContext {
+public interface RoleMapperAssignmentContext extends ClientPolicyContext {
 
     /**
-     * @return the scope container (client or client scope) receiving or losing the mapping.
+     * @return the user or group receiving or losing the role mapping.
      */
-    default ScopeContainerModel getScopeContainer() {
+    default RoleMapperModel getRoleMapper() {
         return null;
     }
 
     /**
-     * @return the client whose roles are being mapped; non-null for client-role mappings, null for realm-role.
+     * @return the client whose roles are being mapped; non-null for client-role grants, null for realm-role.
      */
     default ClientModel getRoleContainerClient() {
         return null;

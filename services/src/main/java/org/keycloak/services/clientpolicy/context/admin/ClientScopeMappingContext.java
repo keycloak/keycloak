@@ -14,41 +14,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.services.clientpolicy.context;
+package org.keycloak.services.clientpolicy.context.admin;
+
+import java.util.List;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.CertificateRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 
 /**
- * Context fired by {@link org.keycloak.services.resources.admin.ClientAttributeCertificateResource}
- * on certificate mutation operations through the admin REST API.
+ * Context fired by {@link org.keycloak.services.resources.admin.ScopeMappedResource} and
+ * {@link org.keycloak.services.resources.admin.ScopeMappedClientResource} on scope-mapping
+ * add/remove operations through the admin REST API.
  *
- * <p>Dispatched as {@link org.keycloak.services.clientpolicy.ClientPolicyEvent#UPDATE_CLIENT_CERTIFICATE}.
+ * <p>Dispatched as {@link org.keycloak.services.clientpolicy.ClientPolicyEvent#REGISTER_SCOPE_MAPPING}
+ * and {@link org.keycloak.services.clientpolicy.ClientPolicyEvent#UNREGISTER_SCOPE_MAPPING}.
  */
-public interface ClientCertificateContext extends ClientPolicyContext {
+public interface ClientScopeMappingContext extends ClientPolicyContext {
 
     /**
-     * @return the client whose signing material is being updated.
+     * @return the scope container (client or client scope) receiving or losing the mapping.
      */
-    default ClientModel getTargetClient() {
+    default ScopeContainerModel getScopeContainer() {
         return null;
     }
 
     /**
-     * @return the attribute prefix identifying which certificate slot is being updated.
+     * @return the client whose roles are being mapped; non-null for client-role mappings, null for realm-role.
      */
-    default String getAttributePrefix() {
+    default ClientModel getRoleContainerClient() {
         return null;
     }
 
     /**
-     * @return a defensive copy of the proposed certificate representation before persistence.
-     *         The returned representation never exposes private-key material.
+     * @return the roles being added or removed.
      */
-    default CertificateRepresentation getProposedCertificate() {
+    default List<RoleRepresentation> getRoles() {
         return null;
     }
 

@@ -14,44 +14,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.services.clientpolicy.context;
+package org.keycloak.services.clientpolicy.context.admin;
 
 import java.util.List;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ScopeContainerModel;
+import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.resources.admin.AdminAuth;
 
 /**
- * Internal scaffolding for AdminAuth wiring shared by all scope-mapping context classes.
+ * Internal scaffolding for AdminAuth wiring shared by all role-mapping context classes.
  *
- * @see ClientScopeMappingContext
- * @see ClientScopeMappingRegisterContext
- * @see ClientScopeMappingRemoveContext
+ * @see RoleMapperAssignmentContext
+ * @see RoleMapperAssignmentRegisterContext
+ * @see RoleMapperAssignmentRemoveContext
  */
-abstract class AbstractClientScopeMappingContext implements ClientScopeMappingContext {
+abstract class AbstractRoleMapperAssignmentContext implements RoleMapperAssignmentContext {
 
-    protected final ScopeContainerModel scopeContainer;
+    protected final RoleMapperModel roleMapper;
     protected final ClientModel roleContainerClient;
     protected final List<RoleRepresentation> roles;
     protected final AdminAuth adminAuth;
 
-    AbstractClientScopeMappingContext(ScopeContainerModel scopeContainer,
-                                      ClientModel roleContainerClient,
-                                      List<RoleRepresentation> roles,
-                                      AdminAuth adminAuth) {
-        this.scopeContainer = scopeContainer;
+    AbstractRoleMapperAssignmentContext(RoleMapperModel roleMapper,
+                                        ClientModel roleContainerClient,
+                                        List<RoleRepresentation> roles,
+                                        AdminAuth adminAuth) {
+        this.roleMapper = roleMapper;
         this.roleContainerClient = roleContainerClient;
         this.roles = roles == null ? null : List.copyOf(roles);
         this.adminAuth = adminAuth;
     }
 
     @Override
-    public ScopeContainerModel getScopeContainer() {
-        return scopeContainer;
+    public RoleMapperModel getRoleMapper() {
+        return roleMapper;
     }
 
     @Override

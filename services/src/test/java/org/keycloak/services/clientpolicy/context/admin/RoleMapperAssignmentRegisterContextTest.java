@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.services.clientpolicy.context;
+package org.keycloak.services.clientpolicy.context.admin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,43 +29,43 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 
-public class ClientScopeMappingRegisterContextTest {
+public class RoleMapperAssignmentRegisterContextTest {
 
     @Test
-    public void getEventReturnsRegisterScopeMapping() {
-        ClientScopeMappingRegisterContext ctx = new ClientScopeMappingRegisterContext(
-                ContextTestStubs.stubScopeContainer(), null, List.of(), ContextTestStubs.stubAdminAuth());
-        assertEquals(ClientPolicyEvent.REGISTER_SCOPE_MAPPING, ctx.getEvent());
+    public void getEventReturnsRegisterRoleMapping() {
+        RoleMapperAssignmentRegisterContext ctx = new RoleMapperAssignmentRegisterContext(
+                ContextTestStubs.stubRoleMapper(), null, List.of(), ContextTestStubs.stubAdminAuth());
+        assertEquals(ClientPolicyEvent.REGISTER_ROLE_MAPPING, ctx.getEvent());
     }
 
     @Test
-    public void getScopeContainerReturnsConstructorArg() {
-        var container = ContextTestStubs.stubScopeContainer();
-        ClientScopeMappingRegisterContext ctx = new ClientScopeMappingRegisterContext(
-                container, null, List.of(), ContextTestStubs.stubAdminAuth());
-        assertSame(container, ctx.getScopeContainer());
+    public void getRoleMapperReturnsConstructorArg() {
+        var roleMapper = ContextTestStubs.stubRoleMapper();
+        RoleMapperAssignmentRegisterContext ctx = new RoleMapperAssignmentRegisterContext(
+                roleMapper, null, List.of(), ContextTestStubs.stubAdminAuth());
+        assertSame(roleMapper, ctx.getRoleMapper());
     }
 
     @Test
     public void getRoleContainerClientReturnsConstructorArg() {
         var client = ContextTestStubs.stubClient();
-        ClientScopeMappingRegisterContext ctx = new ClientScopeMappingRegisterContext(
-                ContextTestStubs.stubScopeContainer(), client, List.of(), ContextTestStubs.stubAdminAuth());
+        RoleMapperAssignmentRegisterContext ctx = new RoleMapperAssignmentRegisterContext(
+                ContextTestStubs.stubRoleMapper(), client, List.of(), ContextTestStubs.stubAdminAuth());
         assertSame(client, ctx.getRoleContainerClient());
     }
 
     @Test
     public void getRoleContainerClientIsNullForRealmRole() {
-        ClientScopeMappingRegisterContext ctx = new ClientScopeMappingRegisterContext(
-                ContextTestStubs.stubScopeContainer(), null, List.of(), ContextTestStubs.stubAdminAuth());
+        RoleMapperAssignmentRegisterContext ctx = new RoleMapperAssignmentRegisterContext(
+                ContextTestStubs.stubRoleMapper(), null, List.of(), ContextTestStubs.stubAdminAuth());
         assertNull(ctx.getRoleContainerClient());
     }
 
     @Test
     public void getRolesReturnsImmutableSnapshot() {
         List<RoleRepresentation> roles = new ArrayList<>(List.of(new RoleRepresentation()));
-        ClientScopeMappingRegisterContext ctx = new ClientScopeMappingRegisterContext(
-                ContextTestStubs.stubScopeContainer(), null, roles, ContextTestStubs.stubAdminAuth());
+        RoleMapperAssignmentRegisterContext ctx = new RoleMapperAssignmentRegisterContext(
+                ContextTestStubs.stubRoleMapper(), null, roles, ContextTestStubs.stubAdminAuth());
 
         roles.add(new RoleRepresentation());
 
@@ -76,8 +76,8 @@ public class ClientScopeMappingRegisterContextTest {
     @Test
     public void authenticatedUserDelegatesToAdminAuth() {
         var auth = ContextTestStubs.stubAdminAuth();
-        ClientScopeMappingRegisterContext ctx = new ClientScopeMappingRegisterContext(
-                ContextTestStubs.stubScopeContainer(), null, List.of(), auth);
+        RoleMapperAssignmentRegisterContext ctx = new RoleMapperAssignmentRegisterContext(
+                ContextTestStubs.stubRoleMapper(), null, List.of(), auth);
         assertSame(auth.getUser(), ctx.getAuthenticatedUser());
     }
 }
