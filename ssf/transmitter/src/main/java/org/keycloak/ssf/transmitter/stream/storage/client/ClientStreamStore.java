@@ -312,7 +312,10 @@ public class ClientStreamStore implements SsfStreamStore {
         if (streamConfig == null || !streamId.equals(streamConfig.getStreamId())) {
             return null;
         }
-        if (!SsfUtil.isReceiverEnabled(client)) {
+        // Config-only gate: admin flows (read, delete + outbox cascade) must
+        // still resolve a disabled client's stream — the delivery gate lives
+        // on findStreamsForSsfReceiverClients, not this shared lookup.
+        if (!SsfUtil.isReceiverClient(client)) {
             return null;
         }
         return streamConfig;
@@ -331,7 +334,9 @@ public class ClientStreamStore implements SsfStreamStore {
             return List.of();
         }
 
-        if (!SsfUtil.isReceiverEnabled(receiverClient)) {
+        // Config-only gate — see getStream; this lookup also backs management
+        // flows (e.g. the one-stream-per-receiver check at create time).
+        if (!SsfUtil.isReceiverClient(receiverClient)) {
             return List.of();
         }
 

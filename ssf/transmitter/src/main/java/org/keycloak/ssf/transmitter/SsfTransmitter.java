@@ -42,16 +42,12 @@ public final class SsfTransmitter {
             throw new SsfException("No client with clientId '" + clientClientId + "' in realm '"
                     + realm.getName() + "'");
         }
-        // Distinguish "disabled" from "not a receiver" so the emit caller
-        // gets an actionable message instead of being told to set an
-        // attribute that may already be present (see keycloak/keycloak#50050).
-        if (!client.isEnabled()) {
-            throw new SsfException("Client '" + clientClientId
-                    + "' is disabled — enable the client to resume SSF event delivery");
-        }
+        // Confirm the client is a receiver before checking its on/off state
         if (!SsfUtil.isReceiverClient(client)) {
-            throw new SsfException("Client '" + clientClientId
-                    + "' is not an SSF Receiver — set the ssf.enabled=true client attribute first");
+            throw new SsfException("Client '" + clientClientId + "' is not an SSF Receiver");
+        }
+        if (!client.isEnabled()) {
+            throw new SsfException("Client '" + clientClientId + "' is disabled");
         }
         return client;
     }
