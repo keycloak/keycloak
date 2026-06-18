@@ -198,7 +198,7 @@ public class DefaultAuthenticationFlows {
         conditionalOTP.setTopLevel(false);
         conditionalOTP.setBuiltIn(true);
         conditionalOTP.setAlias("Reset - Conditional OTP");
-        conditionalOTP.setDescription("Flow to determine if the OTP should be reset or not. Set to REQUIRED to force.");
+        conditionalOTP.setDescription("Flow to validate the user's existing OTP before completing the credential reset. Set to REQUIRED to force.");
         conditionalOTP.setProviderId("basic-flow");
         conditionalOTP = realm.addAuthenticationFlow(conditionalOTP);
         execution = new AuthenticationExecutionModel();
@@ -217,10 +217,20 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
+        // For users with an OTP credential, require possession of the existing OTP
+        // before allowing the password reset to complete. This prevents an attacker
+        // who can read the password-reset email from rotating the OTP under their
+        // control (see https://github.com/keycloak/keycloak/issues/12759).
+        // The previous "reset-otp" authenticator (which always queues CONFIGURE_TOTP
+        // as a required action, and additionally removes one or all of the user's
+        // existing OTP credentials depending on the authenticator's "Action on OTP
+        // reset" configuration property, key "action_on_otp_reset_flag") can still
+        // be added by realm administrators who explicitly prefer that recovery
+        // model; existing realms keep their persisted flow unchanged.
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(conditionalOTP.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator("reset-otp");
+        execution.setAuthenticator("auth-otp-form");
         execution.setPriority(20);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
