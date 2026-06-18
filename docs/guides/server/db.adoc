@@ -298,6 +298,13 @@ Default: `10s`.
 
 == Preparing for PostgreSQL
 
+=== Asynchronous commits
+
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use PostgreSQL's async commit feature.
+Logouts will still force a synchronous commit.
+
+You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
+
 === Writer and reader instances
 
 When running PostgreSQL reader and writer instances, {project_name} needs to always connect to the writer instance to do its work.
@@ -337,6 +344,8 @@ Secure the connection by adding the options:
 
 [[preparing-keycloak-for-amazon-aurora-postgresql]]
 == Preparing for Amazon Aurora PostgreSQL
+
+Asynchronous commits, an optimization for PostgreSQL databases, are disabled when logical replication is enabled as they might conflict with Debezium change data capture.
 
 When using Amazon Aurora PostgreSQL, the https://github.com/awslabs/aws-advanced-jdbc-wrapper[Amazon Web Services JDBC Driver] offers additional features like transfer of database connections when a writer instance changes in a Multi-AZ setup.
 This driver is not part of the distribution and needs to be installed before it can be used.

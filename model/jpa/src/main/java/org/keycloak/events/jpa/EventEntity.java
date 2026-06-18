@@ -22,12 +22,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import org.keycloak.connections.jpa.AsynchronousCommitAllowed;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @Entity
 @Table(name="EVENT_ENTITY")
-public class EventEntity {
+public class EventEntity implements AsynchronousCommitAllowed {
 
     @Id
     @Column(name="ID", length = 36)

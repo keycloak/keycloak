@@ -74,6 +74,9 @@
         <class>org.keycloak.events.jpa.EventEntity</class>
         <class>org.keycloak.events.jpa.AdminEventEntity</class>
 
+        <!-- Cluster Events -->
+        <class>org.keycloak.cluster.jpa.ClusterEventEntity</class>
+
         <!-- Authorization -->
         <class>org.keycloak.authorization.jpa.entities.ResourceServerEntity</class>
         <class>org.keycloak.authorization.jpa.entities.ResourceEntity</class>

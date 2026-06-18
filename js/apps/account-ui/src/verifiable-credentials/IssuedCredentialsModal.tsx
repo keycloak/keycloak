@@ -5,7 +5,7 @@ import {
   label,
 } from "@keycloak/keycloak-ui-shared";
 import type { Action } from "@keycloak/keycloak-ui-shared";
-import { Button, Label, Modal, ModalVariant } from "@patternfly/react-core";
+import { Button, Modal, ModalVariant } from "@patternfly/react-core";
 import {
   ExclamationTriangleIcon,
   ExternalLinkAltIcon,
@@ -46,7 +46,7 @@ const RevokeDialog = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("Revoke Issued Credential")}
+      title={t("revokeIssuedCredentialTitle")}
       isOpen={true}
       onClose={onClose}
       actions={[
@@ -58,21 +58,20 @@ const RevokeDialog = ({
             onClose();
           }}
         >
-          {t("revoke")}
+          {t("doRevoke")}
         </Button>,
         <Button key="cancel" variant="link" onClick={onClose}>
-          {t("cancel")}
+          {t("doCancel")}
         </Button>,
       ]}
     >
-      {t("Confirm Revoke Issued Credential")}
+      {t("deleteIssuedCredentialConfirm")}
     </Modal>
   );
 };
 
 export const IssuedCredentialsModal = ({
   credentialScopeName,
-  parentRevision,
   onClose,
 }: IssuedCredentialsModalProps) => {
   const { t } = useTranslation();
@@ -130,10 +129,10 @@ export const IssuedCredentialsModal = ({
   const handleRevoke = async (credentialId: string) => {
     try {
       await revokeIssuedVerifiableCredential(context, credentialId);
-      addAlert(t("Revoke Issued Credential Success"));
+      addAlert(t("issuedCredentialRevokeSuccess"));
       refresh();
     } catch (error) {
-      addError("Revoke Issued Credential Error", error);
+      addError(t("issuedCredentialRevokeError"), error);
     }
   };
 
@@ -148,7 +147,7 @@ export const IssuedCredentialsModal = ({
       />
       <Modal
         variant={ModalVariant.large}
-        title={`${t("Issued Credentials")}: ${credentialScopeName}`}
+        title={`${t("issuedCredentials")}: ${credentialScopeName}`}
         isOpen={true}
         onClose={onClose}
         width="90%"
@@ -162,14 +161,14 @@ export const IssuedCredentialsModal = ({
             columns={[
               {
                 name: "issuedAt",
-                displayKey: "Issued At",
+                displayKey: t("issuedCredentialsIssuedAt"),
                 cellRenderer: ({ issuedAt }) =>
                   issuedAt ? new Date(issuedAt).toLocaleString("en-US") : "—",
                 transforms: [cellWidth(25)],
               },
               {
                 name: "expiresAt",
-                displayKey: "Expires At",
+                displayKey: t("issuedCredentialsExpiresAt"),
                 cellRenderer: ({ expiresAt }) => {
                   if (!expiresAt) return "—";
                   const expirationDate = new Date(expiresAt);
@@ -195,7 +194,7 @@ export const IssuedCredentialsModal = ({
               },
               {
                 name: "clientId",
-                displayKey: "Wallet Client",
+                displayKey: t("issuedCredentialsWalletClient"),
                 cellRenderer: (
                   credential: IssuedUserVerifiableCredentialRepresentation,
                 ) => {
@@ -223,35 +222,12 @@ export const IssuedCredentialsModal = ({
                 },
                 transforms: [cellWidth(35)],
               },
-              {
-                name: "revision",
-                displayKey: "Revision",
-                cellRenderer: ({ revision }) => (
-                  <>
-                    {revision || "—"}
-                    {parentRevision &&
-                      revision &&
-                      revision !== parentRevision && (
-                        <>
-                          {" "}
-                          <Label
-                            color="orange"
-                            icon={<ExclamationTriangleIcon />}
-                          >
-                            {t("outdated")}
-                          </Label>
-                        </>
-                      )}
-                  </>
-                ),
-                transforms: [cellWidth(15)],
-              },
             ]}
             actions={
               hasManageRole()
                 ? [
                     {
-                      title: t("revoke"),
+                      title: t("doRevoke"),
                       onRowClick: (credential) => {
                         setSelectedCredential(credential);
                         toggleRevokeDialog();
@@ -263,7 +239,7 @@ export const IssuedCredentialsModal = ({
             emptyState={
               <div className="pf-v5-u-text-align-center pf-v5-u-py-md">
                 <span className="pf-v5-u-color-200">
-                  {t("No Issued Credentials")}
+                  {t("noIssuedCredentials")}
                 </span>
               </div>
             }

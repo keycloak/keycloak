@@ -22,6 +22,7 @@ import org.keycloak.scim.resource.schema.Schema;
 import org.keycloak.scim.resource.schema.Schema.Attribute;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 
+import static org.keycloak.scim.resource.Scim.hasDiscoveryEndpointPermission;
 
 /**
  * Provider for SCIM Schema resources. This provider exposes the supported SCIM schemas
@@ -210,13 +211,14 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
 
     @Override
     public Stream<Schema> getAll(SearchRequest searchRequest) {
-        if (!session.getContext().getPermissions().hasPermission(AdminPermissionsSchema.REALMS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW)) {
-            throw new ForbiddenException();
+        if (hasDiscoveryEndpointPermission(session)) {
+            // Per RFC 7644 Section 4, /Schemas is a discovery endpoint that SHALL return all schemas.
+            // Filtering, sorting, and pagination are not supported for discovery endpoints.
+            // The searchRequest parameter is ignored.
+            return schemas.values().stream();
         }
-        // Per RFC 7644 Section 4, /Schemas is a discovery endpoint that SHALL return all schemas.
-        // Filtering, sorting, and pagination are not supported for discovery endpoints.
-        // The searchRequest parameter is ignored.
-        return schemas.values().stream();
+
+        throw new ForbiddenException();
     }
 
     @Override

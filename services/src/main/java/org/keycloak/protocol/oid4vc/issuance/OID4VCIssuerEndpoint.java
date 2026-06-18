@@ -53,7 +53,6 @@ import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.Details;
@@ -70,7 +69,6 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -740,6 +738,21 @@ public class OID4VCIssuerEndpoint {
         }
     }
 
+    private void checkUserHasIssuedVerifiableCredential(UserModel user, CredentialScopeModel requestedCredential, String issuedCredentialId, ClientModel client, EventBuilder event) {
+        try {
+            OID4VCUtil.checkIssuedVerifiableCredential(session, user, issuedCredentialId, requestedCredential, client);
+        } catch (IllegalStateException ise) {
+            String errorMessage = String.format("User '%s' does not have valid requested issued verifiable credential with ID '%s'. Details: %s",
+                    user.getUsername(), issuedCredentialId, ise.getMessage());
+            LOGGER.debugf(errorMessage);
+            event.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+            throw new CorsErrorResponseException(cors,
+                    ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(),
+                    errorMessage,
+                    Response.Status.BAD_REQUEST);
+        }
+    }
+
     /**
      * Returns a verifiable credential
      */
@@ -977,6 +990,7 @@ public class OID4VCIssuerEndpoint {
 
         checkScope(authorizedCredentialScope);
         checkUserHasVerifiableCredential(userModel, authorizedCredentialScope, eventBuilder);
+        checkUserHasIssuedVerifiableCredential(userModel, authorizedCredentialScope, tokenAuthDetail.getIssuedCredentialId(), clientModel, eventBuilder);
 
         SupportedCredentialConfiguration supportedCredential =
                 OID4VCIssuerWellKnownProvider.toSupportedCredentialConfiguration(session, authorizedCredentialScope);
@@ -1030,8 +1044,6 @@ public class OID4VCIssuerEndpoint {
                 .detail(Details.VERIFIABLE_CREDENTIAL_FORMAT, supportedCredential.getFormat())
                 .detail(Details.VERIFIABLE_CREDENTIALS_ISSUED, String.valueOf(responseVO.getCredentials().size()));
 
-        recordIssuedVerifiableCredentials(userModel, clientModel, authorizedCredentialScope, responseVO.getCredentials().size());
-
         eventBuilder.success();
 
         // Clean up offer state after successful credential issuance
@@ -1042,24 +1054,6 @@ public class OID4VCIssuerEndpoint {
         }
 
         return response;
-    }
-
-    private void recordIssuedVerifiableCredentials(UserModel userModel, ClientModel clientModel, CredentialScopeModel credentialScope, int count) {
-        String credentialScopeName = credentialScope.getName();
-        try {
-            if (count > 0) {
-                IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(userModel.getId(), credentialScopeName, clientModel.getId());
-
-                long issuedAt = Time.currentTimeMillis();
-                model.setIssuedAt(issuedAt);
-                model.setExpiresAt(issuedAt + (credentialScope.getExpiryInSeconds() * 1000));
-
-                session.users().addIssuedVerifiableCredential(model);
-                LOGGER.debugf("Recorded VC issuance: user=%s, client=%s, type=%s, credentials=%d", userModel.getUsername(), clientModel.getClientId(), credentialScopeName, count);
-            }
-        } catch (Exception e) {
-            LOGGER.warnf(e, "Failed to record VC issuance for user=%s, client=%s, type=%s", userModel.getUsername(), clientModel.getClientId(), credentialScopeName);
-        }
     }
 
     private List<OID4VCAuthorizationDetail> getAuthorizationDetailsResponse(AccessToken accessToken) {

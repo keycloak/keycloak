@@ -13,12 +13,12 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -39,10 +39,12 @@ import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.ssf.subject.SubjectIds;
+import org.keycloak.ssf.subject.SubjectNotFoundException;
 import org.keycloak.ssf.subject.SubjectResolution;
 import org.keycloak.ssf.subject.SubjectResolver;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
+import org.keycloak.ssf.transmitter.admin.SsfAdminStreamUpdateRequest;
 import org.keycloak.ssf.transmitter.admin.SsfAdminSubjectRequest;
 import org.keycloak.ssf.transmitter.admin.SsfAdminSubjectResponse;
 import org.keycloak.ssf.transmitter.admin.SsfClientStreamRepresentation;
@@ -151,9 +153,37 @@ public class SsfAdminResource {
      * any service-supplied detail message.
      */
     protected Response invalidRequest(String errorCode, String message, String fallback) {
-        return Response.status(Response.Status.BAD_REQUEST)
-                .entity(new SsfErrorRepresentation(errorCode,
-                        message != null ? message : fallback))
+        return invalidRequest(errorCode, message, fallback, null);
+    }
+
+    /**
+     * Variant of {@link #invalidRequest(String, String, String)} that
+     * attaches a structured {@code params} map to the response so the
+     * admin UI can parameterize a translated message (e.g. inject the
+     * offending {@code subjectType}/{@code subjectValue}) without
+     * re-parsing the free-form {@code error_description}.
+     */
+    protected Response invalidRequest(String errorCode, String message, String fallback,
+                                      Map<String, String> params) {
+        return errorResponse(Response.Status.BAD_REQUEST, errorCode,
+                message != null ? message : fallback, params);
+    }
+
+    /**
+     * Builds an SSF error {@link Response} carrying an
+     * {@link SsfErrorRepresentation} JSON body. Sets the
+     * {@code APPLICATION_JSON} media type explicitly so the error body is
+     * never dropped — a response with no Content-Type is rejected by
+     * {@link org.keycloak.headers.DefaultSecurityHeadersProvider}
+     * ("MediaType not set ...") and surfaces as an opaque 500 instead of
+     * the actionable error. Returned by {@link #invalidRequest} and the
+     * stream create/update error paths.
+     */
+    protected Response errorResponse(Response.Status status, String errorCode, String message,
+                                          Map<String, String> params) {
+        return Response.status(status)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(new SsfErrorRepresentation(errorCode, message, params))
                 .build();
     }
 
@@ -341,14 +371,10 @@ public class SsfAdminResource {
                     .build();
         } catch (DuplicateStreamConfigException dsce) {
             log.debugf(dsce, "Admin stream create rejected for client %s: duplicate stream", clientId);
-            throw new WebApplicationException(Response.status(Response.Status.CONFLICT)
-                    .entity(new SsfErrorRepresentation("stream_error", dsce.getMessage()))
-                    .build());
+            return errorResponse(Response.Status.CONFLICT, "stream_error", dsce.getMessage(), null);
         } catch (SsfException e) {
             log.debugf(e, "Admin stream create rejected for client %s: %s", clientId, e.getMessage());
-            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new SsfErrorRepresentation("stream_error", e.getMessage()))
-                    .build());
+            return errorResponse(Response.Status.BAD_REQUEST, "stream_error", e.getMessage(), null);
         }
     }
 
@@ -374,6 +400,7 @@ public class SsfAdminResource {
         rep.setEventsDelivered(toEventAliases(transmitter, streamConfig.getEventsDelivered()));
         rep.setCreatedAt(streamConfig.getCreatedAt());
         rep.setUpdatedAt(streamConfig.getUpdatedAt());
+        rep.setManagedBy(streamConfig.getManagedBy());
         String lastVerifiedAtRaw = client.getAttribute(ClientStreamStore.SSF_LAST_VERIFIED_AT_KEY);
         if (lastVerifiedAtRaw != null && !lastVerifiedAtRaw.isBlank()) {
             try {
@@ -441,7 +468,7 @@ public class SsfAdminResource {
             throw new NotFoundException("No SSF stream registered for client");
         }
 
-        // The ssf.lastVerifiedAt stamp is written centrally inside
+        // The ssf.stream.lastVerifiedAt stamp is written centrally inside
         // StreamVerificationService.triggerVerification so every
         // verification entry point (receiver-initiated, admin-initiated,
         // transmitter-initiated post-create auto-fire) records a
@@ -457,7 +484,7 @@ public class SsfAdminResource {
      * SSF spec-mandated {@code stream-updated} SET dispatch and the
      * outbox HELD ↔ PENDING alignment fire here too. Without this,
      * an admin flipping status from the console would just persist
-     * the {@code ssf.status} client attribute and the receiver would
+     * the {@code ssf.stream.status} client attribute and the receiver would
      * silently observe paused / enabled state on next poll without
      * the spec's transition signal.
      *
@@ -530,12 +557,68 @@ public class SsfAdminResource {
     }
 
     /**
-     * Deletes the currently registered SSF stream for a receiver client so the
-     * receiver can re-register with a fresh configuration. Returns 204 on
-     * success, 404 if the client does not exist or has no registered stream.
+     * Admin-side partial update for the receiver client's stream.
+     * Applies the admin-editable subset of the configuration —
+     * {@code description}, {@code events_requested},
+     * {@code events_delivered} — and leaves everything else untouched.
+     * Different from the receiver-facing {@code PUT/PATCH /streams}
+     * endpoints because it skips receiver-vs-transmitter profile
+     * validation and only touches the admin-editable fields.
      *
-     * The endpoint is available via
-     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream}
+     * <p>Both {@code RECEIVER}- and {@code KEYCLOAK}-managed streams
+     * accept this PATCH; the {@code managedBy} marker is informational.
+     * An admin save on a {@code RECEIVER}-managed stream overwrites
+     * receiver-supplied state — the admin UI surfaces this via the
+     * "Managed by" badge and tooltip.
+     *
+     * <p>The endpoint is available via
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream}.
+     */
+    @PATCH
+    @Path("clients/{clientId}/stream")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "Update SSF stream for client",
+            description = "Admin-side partial update of the receiver client's SSF stream — accepts any subset of {description, events_requested, events_delivered}. Skips receiver-vs-transmitter profile validation and only touches admin-editable fields."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SsfClientStreamRepresentation.class))),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "404", description = "Client not found or no SSF stream registered")
+    })
+    public Response updateClientStream(
+            @Parameter(description = "OAuth client_id of the receiver")
+            @PathParam("clientId") String clientId,
+            SsfAdminStreamUpdateRequest update) {
+
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            throw new NotFoundException("Client not found");
+        }
+        auth.clients().requireManage(client);
+
+        try {
+            StreamConfig updated = transmitter.streamService().updateStreamAsAdmin(client, update);
+            if (updated == null) {
+                throw new NotFoundException("No SSF stream registered for client");
+            }
+            return Response.ok(toClientStreamRepresentation(updated, client)).build();
+        } catch (SsfException e) {
+            log.debugf(e, "Admin stream update rejected for client %s: %s", clientId, e.getMessage());
+            return errorResponse(Response.Status.BAD_REQUEST, "stream_error", e.getMessage(), null);
+        }
+    }
+
+    /**
+     * Deletes the currently registered SSF stream for a receiver client
+     * so the receiver can re-register with a fresh configuration.
+     * Returns 204 on success, 404 if the client does not exist or has
+     * no registered stream.
+     *
+     * <p>The endpoint is available via
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream}.
      */
     @DELETE
     @Path("clients/{clientId}/stream")
@@ -969,11 +1052,27 @@ public class SsfAdminResource {
             }
             try {
                 subjectId = subjectManagementService().resolveSubjectForEmit(stream, request.getSubjectType(), request.getSubjectValue());
+            } catch (SubjectNotFoundException e) {
+                // Wire code aligns with the sub_id path's
+                // EmitEventStatus.SUBJECT_NOT_FOUND so both routes report
+                // the same category to the caller. Only reachable on the
+                // adminCaller path (the shorthand branch above is gated on
+                // adminCaller), so the existence signal is bounded to
+                // admins who already have list-users access in the realm.
+                // params carries the offending (subjectType, subjectValue)
+                // as structured fields so the admin UI can parameterize a
+                // translated message without re-parsing error_description.
+                log.debugf(e, "Admin emit subject resolution: subject not found");
+                return invalidRequest(EmitEventStatus.SUBJECT_NOT_FOUND.wireValue(),
+                        e.getMessage(),
+                        "Subject referenced by the request does not exist",
+                        Map.of("subjectType", e.getSubjectType(),
+                                "subjectValue", e.getSubjectValue()));
             } catch (SsfException e) {
                 log.debugf(e, "Admin emit subject resolution failed");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new SsfErrorRepresentation("invalid_request", e.getMessage()))
-                        .build();
+                return invalidRequest(EmitEventStatus.INVALID_REQUEST.wireValue(),
+                        e.getMessage(),
+                        "Invalid request");
             }
         }
 
@@ -1024,6 +1123,10 @@ public class SsfAdminResource {
                 // (e.g. on a stream that was deleted between check and emit).
                 return invalidRequest(emitErrorCode, emitMessage,
                         "No SSF stream registered for client");
+            case NO_DELIVERY_CONFIG:
+                // Stream exists but is not deliverable
+                return invalidRequest(emitErrorCode, emitMessage,
+                        "Stream has no delivery configuration");
             case DISPATCHED:
             case DROPPED_UNSUBSCRIBED:
             case DROPPED_FILTERED:

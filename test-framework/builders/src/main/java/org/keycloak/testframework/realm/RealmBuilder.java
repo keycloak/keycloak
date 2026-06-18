@@ -479,8 +479,17 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
-    public RealmBuilder webAuthnPolicyRequireResidentKey(String residentKey) {
-        rep.setWebAuthnPolicyRequireResidentKey(residentKey);
+    /**
+     * @deprecated Use {@link #webAuthnPolicyResidentKey(String)} instead.
+     */
+    @Deprecated
+    public RealmBuilder webAuthnPolicyRequireResidentKey(String requireResidentKey) {
+        rep.setWebAuthnPolicyRequireResidentKey(requireResidentKey);
+        return this;
+    }
+
+    public RealmBuilder webAuthnPolicyResidentKey(String residentKey) {
+        rep.setWebAuthnPolicyResidentKey(residentKey);
         return this;
     }
 
@@ -524,8 +533,17 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
-    public RealmBuilder webAuthnPolicyPasswordlessRequireResidentKey(String residentKey) {
-        rep.setWebAuthnPolicyPasswordlessRequireResidentKey(residentKey);
+    /**
+     * @deprecated Use {@link #webAuthnPolicyPasswordlessResidentKey(String)} instead.
+     */
+    @Deprecated
+    public RealmBuilder webAuthnPolicyPasswordlessRequireResidentKey(String requireResidentKey) {
+        rep.setWebAuthnPolicyPasswordlessRequireResidentKey(requireResidentKey);
+        return this;
+    }
+
+    public RealmBuilder webAuthnPolicyPasswordlessResidentKey(String residentKey) {
+        rep.setWebAuthnPolicyPasswordlessResidentKey(residentKey);
         return this;
     }
 

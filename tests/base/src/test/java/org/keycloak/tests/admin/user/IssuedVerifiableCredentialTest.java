@@ -10,6 +10,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.UserVerifiableCredentialModel;
+import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
@@ -347,7 +348,14 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
                     .name(TEST_REALM_NAME)
                     .eventsEnabled(true)
                     .eventsListeners("jboss-logging")
-                    .verifiableCredentialsEnabled(true);
+                    .verifiableCredentialsEnabled(true)
+                    .clientScopes(createCredentialScope(CREDENTIAL_TYPE_1), createCredentialScope(CREDENTIAL_TYPE_2));
         }
+    }
+
+    private static CredentialScopeRepresentation createCredentialScope(String scopeName) {
+        return new CredentialScopeRepresentation(scopeName)
+                .setIncludeInTokenScope(true)
+                .setCredentialConfigurationId(scopeName);
     }
 }

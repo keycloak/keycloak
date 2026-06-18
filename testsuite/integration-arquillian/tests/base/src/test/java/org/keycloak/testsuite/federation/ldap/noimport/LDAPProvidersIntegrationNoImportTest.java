@@ -20,6 +20,7 @@ package org.keycloak.testsuite.federation.ldap.noimport;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.BadRequestException;
@@ -49,7 +50,9 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.federation.ldap.LDAPProvidersIntegrationTest;
 import org.keycloak.testsuite.federation.ldap.LDAPTestAsserts;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import org.junit.Before;
@@ -58,6 +61,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
+import org.openqa.selenium.Cookie;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -386,5 +390,54 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
     @Ignore
     @Override
     public void updateLDAPUsernameTest() {
+    }
+
+    @Test
+    public void testReadOnlyUserLocaleCookiePersistence() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.READ_ONLY.toString());
+            appRealm.updateComponent(ctx.getLdapModel());
+
+            appRealm.setInternationalizationEnabled(true);
+            appRealm.setSupportedLocales(Set.of("en", "de", "fr"));
+            appRealm.setDefaultLocale("en");
+        });
+
+        try {
+            oauth.openLoginForm();
+            loginPage.openLanguage("Deutsch");
+
+            Cookie localeCookie = driver.manage().getCookieNamed("KEYCLOAK_LOCALE");
+            Assertions.assertNotNull(localeCookie, "Locale cookie should be set after language selection");
+            Assertions.assertEquals("de", localeCookie.getValue());
+
+            loginPage.login("johnkeycloak", "Password1");
+            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+            events.clear();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+            oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
+
+            oauth.openLoginForm();
+            loginPage.login("johnkeycloak", "Password1");
+
+            driver.navigate().to(getAuthServerRoot() + "realms/test/account");
+
+            localeCookie = driver.manage().getCookieNamed("KEYCLOAK_LOCALE");
+            Assertions.assertNotNull(localeCookie, "Locale cookie should persist across logins");
+            Assertions.assertEquals("de", localeCookie.getValue());
+        } finally {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel appRealm = ctx.getRealm();
+
+                ctx.getLdapModel().getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.WRITABLE.toString());
+                appRealm.updateComponent(ctx.getLdapModel());
+                appRealm.setInternationalizationEnabled(false);
+            });
+        }
     }
 }

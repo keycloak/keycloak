@@ -1,5 +1,9 @@
 import { NetworkError } from "@keycloak/keycloak-admin-client";
-import { KeycloakDataTable, useAlerts } from "@keycloak/keycloak-ui-shared";
+import {
+  KeycloakDataTable,
+  useAlerts,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Badge,
@@ -24,6 +28,7 @@ import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useRecentRealms } from "../context/RecentRealms";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
+import type { Environment } from "../environment-types";
 import { resolveDisplayName } from "../util";
 import NewRealmForm from "./add/NewRealmForm";
 import { toRealm } from "./RealmRoutes";
@@ -120,6 +125,7 @@ export default function RealmSection() {
   const navigate = useNavigate();
   const { whoAmI } = useWhoAmI();
   const { realm } = useRealm();
+  const { environment } = useEnvironment<Environment>();
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
@@ -154,10 +160,12 @@ export default function RealmSection() {
     continueButtonLabel: "delete",
     onConfirm: async () => {
       try {
-        if (selected.filter(({ name }) => name === "master").length > 0) {
+        if (selected.some(({ name }) => name === environment.masterRealm)) {
           addAlert(t("cantDeleteMasterRealm"), AlertVariant.warning);
         }
-        const filtered = selected.filter(({ name }) => name !== "master");
+        const filtered = selected.filter(
+          ({ name }) => name !== environment.masterRealm,
+        );
         if (filtered.length === 0) return;
         await Promise.all(
           filtered.map(({ name: realmName }) =>
@@ -165,8 +173,8 @@ export default function RealmSection() {
           ),
         );
         addAlert(t("deletedSuccessRealmSetting"));
-        if (selected.filter(({ name }) => name === realm).length > 0) {
-          navigate(toRealm({ realm: "master" }));
+        if (selected.some(({ name }) => name === realm)) {
+          navigate(toRealm({ realm: environment.masterRealm }));
         }
         refresh();
         setSelected([]);

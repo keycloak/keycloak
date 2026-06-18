@@ -1,5 +1,6 @@
 package org.keycloak.scim.services;
 
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -11,6 +12,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
@@ -36,14 +38,20 @@ public class ScimRealmResourceFactory implements RealmResourceProviderFactory, E
 
                     if (authResult == null) {
                         logger.debug("SCIM request rejected: no valid bearer token provided");
-                        throw new ErrorResponseException(Response.status(Status.UNAUTHORIZED).build());
+                        throw new ErrorResponseException(Response.status(Status.UNAUTHORIZED)
+                                .type(MediaType.APPLICATION_JSON)
+                                .entity(new ErrorResponse("Bearer token required", Status.UNAUTHORIZED.getStatusCode()))
+                                .build());
                     }
 
                     Token bearerToken = session.getContext().getBearerToken();
 
                     if (bearerToken == null) {
                         logger.debug("SCIM request rejected: bearer token could not be resolved");
-                        throw new ErrorResponseException(Response.status(Status.UNAUTHORIZED).build());
+                        throw new ErrorResponseException(Response.status(Status.UNAUTHORIZED)
+                                .type(MediaType.APPLICATION_JSON)
+                                .entity(new ErrorResponse("Bearer token required", Status.UNAUTHORIZED.getStatusCode()))
+                                .build());
                     }
 
                     return new ScimRealmResource(session);

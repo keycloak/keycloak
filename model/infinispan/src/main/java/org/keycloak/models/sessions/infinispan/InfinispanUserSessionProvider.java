@@ -473,7 +473,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
     public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm) {
         var expiration = new SessionExpirationPredicates(realm, true, Time.currentTime());
         return session.getProvider(UserSessionPersisterProvider.class).readOnlyUserSessionStream(realm, true)
-                .filter(Predicate.not(expiration::isUserSessionExpired));
+                .filter(Predicate.not(expiration::isUserSessionExpired))
+                .filter(s -> s.getUser() != null);
     }
 
     @Override
@@ -486,7 +487,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         var expiration = new SessionExpirationPredicates(realm, true, Time.currentTime());
         return session.getProvider(UserSessionPersisterProvider.class)
                 .readOnlyUserSessionStream(realm, client, true, skip, maxResults)
-                .filter(Predicate.not(expiration::isUserSessionExpired));
+                .filter(Predicate.not(expiration::isUserSessionExpired))
+                .filter(s -> s.getUser() != null);
     }
 
     @Override

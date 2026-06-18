@@ -5,13 +5,13 @@ import { cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { useAdminClient } from "../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
-import useFormatDate from "../utils/useFormatDate";
-import { toClient } from "../clients/routes/Client";
-import { useRealm } from "../context/realm-context/RealmContext";
+import useFormatDate from "../../utils/useFormatDate";
+import { toClient } from "../../clients/routes/Client";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 type IssuedCredentialsDetailCellProps = {
   userId: string;

@@ -828,6 +828,14 @@ public class RepresentationToModel {
         }
     }
 
+    public static void createIssuedVerifiableCredentials(UserRepresentation userRep, KeycloakSession session, UserModel user) {
+        if (userRep.getIssuedVerifiableCredentials() != null) {
+            for (IssuedVerifiableCredentialRepresentation issuedCred : userRep.getIssuedVerifiableCredentials()) {
+                session.users().addIssuedVerifiableCredential(toModel(issuedCred));
+            }
+        }
+    }
+
     public static CredentialModel toModel(CredentialRepresentation cred) {
         CredentialModel model = new CredentialModel();
         model.setCreatedDate(cred.getCreatedDate());
@@ -1021,6 +1029,7 @@ public class RepresentationToModel {
         UserVerifiableCredentialModel verifCredentialModel = new UserVerifiableCredentialModel(rep.getCredentialScopeName());
         verifCredentialModel.setRevision(rep.getRevision());
         verifCredentialModel.setCreatedDate(rep.getCreatedDate());
+        verifCredentialModel.setUpdatedDate(rep.getUpdatedDate());
         verifCredentialModel.setUserAttributes(rep.getUserAttributes());
         return verifCredentialModel;
     }
