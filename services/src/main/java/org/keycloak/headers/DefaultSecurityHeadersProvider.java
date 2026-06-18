@@ -71,7 +71,7 @@ public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
             return;
         }
 
-        MediaType requestType = requestContext.getMediaType();
+        MediaType requestType = safeGetRequestMediaType(requestContext);
         MediaType responseType = responseContext.getMediaType();
         MultivaluedMap<String, Object> headers = responseContext.getHeaders();
 
@@ -86,6 +86,15 @@ public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
             addHtmlHeaders(headers);
         } else {
             addGenericHeaders(headers);
+        }
+    }
+
+    private MediaType safeGetRequestMediaType(ContainerRequestContext requestContext) {
+        try {
+            return requestContext.getMediaType();
+        } catch (IllegalArgumentException e) {
+            LOGGER.trace("Malformed Content-Type header");
+            return null;
         }
     }
 
