@@ -39,7 +39,6 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 
 import java.io.IOException;
@@ -92,22 +91,6 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
             Assert.assertEquals(authzResponse.getSessionState(), idToken.getSessionState());
         }
     }
-
-
-    @Test
-    public void initialSessionStateUsedInRedirect() {
-        EventRepresentation loginEvent = loginUserWithRedirect("abcdef123456", OAuthClient.APP_ROOT + "/auth?session_state=foo");
-
-        AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
-        Assert.assertNotNull(authzResponse.getSessionState());
-
-        List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
-
-        for (IDToken idToken : idTokens) {
-            Assert.assertEquals(authzResponse.getSessionState(), idToken.getSessionState());
-        }
-    }
-
 
     @Test
     public void authorizationRequestMissingResponseType() throws IOException {

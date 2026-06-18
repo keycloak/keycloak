@@ -54,6 +54,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.List;
+import java.util.Objects;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -474,6 +475,85 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
 
         Assert.assertEquals("Expected 400, but got something else", 400, tokenResponse.getStatusCode());
     }
+
+    @Test
+    public void testRedirectUriWithForbiddenCodeParameter() {
+        oauth.redirectUri(APP_ROOT + "/auth?code=attacker_injected");
+        oauth.openLoginForm();
+
+        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithForbiddenStateParameter() {
+        oauth.redirectUri(APP_ROOT + "/auth?state=attacker_state");
+        oauth.openLoginForm();
+
+        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithForbiddenSessionStateParameter() {
+        oauth.redirectUri(APP_ROOT + "/auth?session_state=attacker_state");
+        oauth.openLoginForm();
+
+        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithForbiddenIssParameter() {
+        oauth.redirectUri(APP_ROOT + "/auth?iss=https://evil.com");
+        oauth.openLoginForm();
+
+        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithMixedLegitimateAndForbiddenParameters() {
+        oauth.redirectUri(APP_ROOT + "/auth?custom=value&code=evil&other=data");
+        oauth.openLoginForm();
+
+        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithUrlEncodedForbiddenParameter() {
+        // c%6Fde = "code" URL-encoded
+        oauth.redirectUri(APP_ROOT + "/auth?c%6Fde=evil");
+        oauth.openLoginForm();
+
+        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithMixedCaseForbiddenParameter() {
+        oauth.redirectUri(APP_ROOT + "/auth?CODE=evil");
+        oauth.openLoginForm();
+
+        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithLegitimateCustomParameters() throws IOException {
+        oauth.redirectUri(APP_ROOT + "/auth?custom_param=value&return_to=/home");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+
+        Assert.assertNotNull(response.getCode());
+        URL url = new URL(Objects.requireNonNull(driver.getCurrentUrl()));
+        Assert.assertTrue(url.toString().startsWith(APP_ROOT));
+        Assert.assertTrue(url.getQuery().contains("custom_param=value"));
+        Assert.assertTrue(url.getQuery().contains("return_to=/home"));
+        Assert.assertTrue(url.getQuery().contains("code="));
+        Assert.assertTrue(url.getQuery().contains("state="));
+    }
+
 
     private void checkRedirectUri(String redirectUri, boolean expectValid) throws IOException {
         checkRedirectUri(redirectUri, expectValid, false);

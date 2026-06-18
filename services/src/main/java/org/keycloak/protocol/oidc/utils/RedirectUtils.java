@@ -18,7 +18,9 @@
 package org.keycloak.protocol.oidc.utils;
 
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -32,6 +34,7 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
@@ -42,6 +45,22 @@ import java.util.regex.Pattern;
 public class RedirectUtils {
 
     public static final Set<String> LOOPBACK_INTERFACES = new HashSet<>(Arrays.asList("localhost", "127.0.0.1", "[::1]"));
+
+    private static final Set<String> FORBIDDEN_OIDC_PARAMS = Set.of(
+                                                                     OAuth2Constants.CODE,
+                                                                     OAuth2Constants.ID_TOKEN,
+                                                                     OAuth2Constants.ACCESS_TOKEN,
+                                                                     OAuth2Constants.TOKEN_TYPE,
+                                                                     OAuth2Constants.EXPIRES_IN,
+                                                                     OAuth2Constants.STATE,
+                                                                     OAuth2Constants.ISSUER,
+                                                                     OAuth2Constants.ERROR,
+                                                                     OAuth2Constants.ERROR_DESCRIPTION,
+                                                                     OAuth2Constants.SESSION_STATE,
+                                                                     OAuth2Constants.RESPONSE,
+                                                                     Constants.KC_ACTION,
+                                                                     Constants.KC_ACTION_STATUS
+                                                                   );
 
     private static final Logger logger = Logger.getLogger(RedirectUtils.class);
 
@@ -92,6 +111,11 @@ public class RedirectUtils {
                 return null;
             }
 
+            // Check for HTTP Parameter Pollution - forbidden OIDC response parameters in redirect URI
+            if (containsForbiddenOidcParameters(originalRedirect)){
+                return null;
+            }
+
             // check if the passed URI allows wildcards
             boolean allowWildcards = areWildcardsAllowed(originalRedirect);
 
@@ -130,6 +154,24 @@ public class RedirectUtils {
         } else {
             return redirectUri;
         }
+    }
+
+    private static boolean containsForbiddenOidcParameters(URI originalRedirect) {
+        String query = originalRedirect.getRawQuery();
+        if (query != null && !query.isEmpty()) {
+            MultivaluedHashMap<String, String> params =UriUtils.decodeQueryString(query);
+            for (String paramName : params.keySet()) {
+                if (FORBIDDEN_OIDC_PARAMS.contains(paramName.toLowerCase(Locale.ROOT))) {
+                    logger.warnf("Redirect URI rejected: contains forbidden OIDC parameter '%s' in query string: scheme=%s, host=%s, path=%s",
+                            paramName,
+                            originalRedirect.getScheme(),
+                            originalRedirect.getHost(),
+                            originalRedirect.getPath());
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static URI toUri(String redirectUri) {
