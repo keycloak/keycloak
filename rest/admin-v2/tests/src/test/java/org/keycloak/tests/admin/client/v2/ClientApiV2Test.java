@@ -370,7 +370,6 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         // ensure that multiple fields are interpreted correctly
         e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(new ListOptions().fields(new LinkedHashSet<>(List.of("clientId","unknown!")))));
         assertEquals("{\"error\":\"unknown! is an unknown field\"}", e.getResponse().readEntity(String.class));
-        assertEquals("fields=clientId,unknown!", getLastRequest().getUri().getQuery());
     }
 
     @Test

@@ -225,13 +225,6 @@ public class Keycloak implements AutoCloseable {
     }
     
     /**
-     * @return the {@link WebTarget} used to create proxies relative to server URL
-     */
-    public WebTarget getWebTarget() {
-        return target;
-    }
-
-    /**
      * Closes the underlying client. After calling this method, this <code>Keycloak</code> instance cannot be reused.
      */
     @Override

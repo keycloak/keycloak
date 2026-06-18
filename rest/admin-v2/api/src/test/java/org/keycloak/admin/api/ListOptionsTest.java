@@ -5,7 +5,6 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ListOptionsTest {
 
@@ -14,7 +13,7 @@ public class ListOptionsTest {
         ListOptions options = new ListOptions();
         options.setFields(Set.of());
         assertEquals("", options.fields);
-        assertTrue(options.getFields().isEmpty());
+        assertEquals(Set.of(), options.getFields());
     }
     
     @Test
