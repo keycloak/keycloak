@@ -374,15 +374,12 @@ public class AuthenticationManager {
     public static AuthenticationSessionModel createOrJoinLogoutSession(KeycloakSession session, RealmModel realm,
             final AuthenticationSessionManager asm, UserSessionModel userSession, boolean browserCookie, boolean initiateLogout) {
         AuthenticationSessionModel logoutSession = session.getContext().getAuthenticationSession();
-        if (logoutSession != null && AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(logoutSession.getAction())) {
-            // Don't reuse logout session if it belongs to a different user session
-            if (userSession != null && !userSession.getId().equals(logoutSession.getParentSession().getId())) {
-                logoutSession = null;
-            } else {
-                return logoutSession;
-            }
+        // Don't reuse logout session if it belongs to a different user session
+        if (logoutSession != null && AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(logoutSession.getAction())
+                && (userSession == null || (logoutSession.getParentSession() != null
+                && userSession.getId().equals(logoutSession.getParentSession().getId())))) {
+            return logoutSession;
         }
-
         ClientModel client = session.getContext().getClient();
         if (client == null) {
             // Account management client is used as a placeholder
@@ -401,7 +398,7 @@ public class AuthenticationManager {
             authSessionId = rootLogoutSession.getId();
             browserCookiePresent = true;
         } else if (userSession != null) {
-            if (logoutSession != null && !userSession.getId().equals(logoutSession.getParentSession().getId())) {
+            if (logoutSession != null && logoutSession.getParentSession() != null && !userSession.getId().equals(logoutSession.getParentSession().getId())) {
                 authSessionId = KeycloakModelUtils.generateId();
                 rootLogoutSession = null;
             } else {

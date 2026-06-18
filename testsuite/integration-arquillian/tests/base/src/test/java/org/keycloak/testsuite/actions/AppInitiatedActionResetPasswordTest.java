@@ -475,7 +475,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     @Test // #32124
     public void checkLogoutSessionsBackchannelLogout() throws Exception {
         final String testAppClientId = "test-app";
-        List<String> capturedLogoutTokens = new ArrayList<>();
+        List<String> capturedLogoutTokens = Collections.synchronizedList(new ArrayList<>());
 
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(0), 0);
         httpServer.start(); // for capturing backchannel logout requests
@@ -533,7 +533,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
             org.awaitility.Awaitility.await()
                     .atMost(5, java.util.concurrent.TimeUnit.SECONDS)
-                    .until(() -> capturedLogoutTokens.size() == 2);
+                    .until(() -> capturedLogoutTokens.size() >= 2);
             assertEquals(2, capturedLogoutTokens.size(),"Should receive 2 backchannel logout requests");
 
             Set<String> loggedOutSids = new HashSet<>();
@@ -548,6 +548,10 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
             assertTrue(loggedOutSids.containsAll(sessionsToLogout),"Sessions 2 and 3 should both be logged out");
         } finally {
             httpServer.stop(0);
+            ClientRepresentation rep = managedRealm.admin().clients().findByClientId(testAppClientId).get(0);
+            rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
+            rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED, "false");
+            managedRealm.admin().clients().get(rep.getId()).update(rep);
         }
     }
 
