@@ -43,7 +43,6 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.HttpServerUtil;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -203,6 +202,38 @@ public class SsfTransmitterClientDisabledTests {
         }
         Assertions.assertNotNull(pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
                 "event should reach the mock receiver again after re-enable — the stream survived the disable");
+    }
+
+    @Test
+    public void disabledReceiver_adminCanStillDeleteStream() throws Exception {
+        // Regression guard: the disable gate must NOT leak into admin-side
+        // stream management. Disabling the client and then deleting its
+        // stream as an admin must actually remove the stream (and cascade
+        // the outbox purge), not silently no-op behind a 204. The gate
+        // belongs on the delivery paths, not on the management lookup
+        // getStream() relies on.
+        setReceiverEnabled(false);
+
+        String deleteUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + RECEIVER + "/stream";
+        try (SimpleHttpResponse res = http.doDelete(deleteUrl)
+                .auth(adminClient.tokenManager().getAccessTokenString())
+                .asResponse()) {
+            Assertions.assertEquals(204, res.getStatus(),
+                    "admin stream delete should succeed even when the receiver client is disabled");
+        }
+
+        // The stream must really be gone — admin GET reads the stream via
+        // the ungated getStreamForClient, so a 404 here proves the delete
+        // took effect rather than no-opping behind an idempotent 204.
+        String getUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + RECEIVER + "/stream";
+        try (SimpleHttpResponse res = http.doGet(getUrl)
+                .auth(adminClient.tokenManager().getAccessTokenString())
+                .asResponse()) {
+            Assertions.assertEquals(404, res.getStatus(),
+                    "stream must actually be deleted for a disabled client, not left behind");
+        }
     }
 
     // --- helpers ---------------------------------------------------------
