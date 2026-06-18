@@ -39,6 +39,7 @@ public interface InvitationManager {
      */
     default OrganizationInvitationModel getByEmail(OrganizationModel organization, String email) {
         return getAllStream(organization, Map.of(Filter.EMAIL, email), null, null)
+                .filter(inv -> inv.getEmail().equalsIgnoreCase(email))
                 .findFirst()
                 .orElse(null);
     }
