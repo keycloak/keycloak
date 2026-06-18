@@ -218,10 +218,17 @@ public class Keycloak implements AutoCloseable {
     }
     
     /**
-     * Create a secure proxy with endpoints targetting the server
+     * Create a secure proxy with endpoints targeting the server
      */
     public <T> T proxy(Class<T> proxyClass) {
         return CLIENT_PROVIDER.targetProxy(target, proxyClass);
+    }
+    
+    /**
+     * @return the {@link WebTarget} used to create proxies relative to server URL
+     */
+    public WebTarget getWebTarget() {
+        return target;
     }
 
     /**

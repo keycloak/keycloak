@@ -20,6 +20,7 @@ package org.keycloak.tests.admin.client.v2;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -365,6 +366,11 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     public void invalidFieldProjection() {
         BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(new ListOptions().fields(Set.of("unknown!"))));
         assertEquals("{\"error\":\"unknown! is an unknown field\"}", e.getResponse().readEntity(String.class));
+        
+        // ensure that multiple fields are interpreted correctly
+        e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(new ListOptions().fields(new LinkedHashSet<>(List.of("clientId","unknown!")))));
+        assertEquals("{\"error\":\"unknown! is an unknown field\"}", e.getResponse().readEntity(String.class));
+        assertEquals("fields=clientId,unknown!", getLastRequest().getUri().getQuery());
     }
 
     @Test

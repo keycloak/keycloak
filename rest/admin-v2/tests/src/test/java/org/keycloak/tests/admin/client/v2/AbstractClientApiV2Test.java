@@ -1,5 +1,9 @@
 package org.keycloak.tests.admin.client.v2;
 
+import java.io.IOException;
+
+import jakarta.ws.rs.client.ClientRequestContext;
+import jakarta.ws.rs.client.ClientRequestFilter;
 import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.admin.api.AdminRootV2;
@@ -10,10 +14,38 @@ import org.keycloak.testframework.annotations.InjectAdminClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpMessage;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 public abstract class AbstractClientApiV2Test {
+
+    public static class LastClientRequestFilter implements ClientRequestFilter {
+        
+        ClientRequestContext lastRequest;
+        
+        @Override
+        public void filter(ClientRequestContext requestContext) throws IOException {
+            this.lastRequest = requestContext;
+        }
+    }
+    
     protected static ObjectMapper mapper;
+    protected static LastClientRequestFilter filter = new LastClientRequestFilter();
+    
+    protected ClientRequestContext getLastRequest() {
+        return filter.lastRequest;
+    }
+    
+    @BeforeEach
+    public void before() {
+        adminClient.getWebTarget().register(filter);
+    }
+    
+    @AfterEach
+    public void after() {
+        filter.lastRequest = null;
+    }
 
     @InjectAdminClient
     protected Keycloak adminClient;
