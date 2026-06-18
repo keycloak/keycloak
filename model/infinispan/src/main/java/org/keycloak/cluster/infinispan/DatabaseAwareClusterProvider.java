@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
@@ -31,7 +32,7 @@ import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.cluster.jpa.JpaClusterEventStoreProvider;
 import org.keycloak.common.util.Retry;
 import org.keycloak.connections.infinispan.NodeInfo;
-import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import org.infinispan.commons.marshall.Marshaller;
@@ -50,15 +51,15 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
     private static final Logger logger = Logger.getLogger(DatabaseAwareClusterProvider.class);
 
     private final ClusterProvider delegate;
-    private final KeycloakSessionFactory sessionFactory;
+    private final KeycloakSession session;
     private final NodeInfo nodeInfo;
     private final Marshaller marshaller;
     private final Duration awaitTimeout;
 
-    public DatabaseAwareClusterProvider(ClusterProvider delegate, KeycloakSessionFactory sessionFactory,
+    public DatabaseAwareClusterProvider(ClusterProvider delegate, KeycloakSession session,
                                         NodeInfo nodeInfo, Marshaller marshaller, Duration awaitTimeout) {
         this.delegate = delegate;
-        this.sessionFactory = sessionFactory;
+        this.session = session;
         this.nodeInfo = nodeInfo;
         this.marshaller = marshaller;
         this.awaitTimeout = awaitTimeout;
@@ -71,7 +72,20 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
 
     @Override
     public <T> ExecutionResult<T> executeIfNotExecuted(String taskKey, int taskTimeoutInSeconds, Callable<T> task) {
+        if (!isPrimary()) {
+            return ExecutionResult.notExecuted();
+        }
         return delegate.executeIfNotExecuted(taskKey, taskTimeoutInSeconds, task);
+    }
+
+    @Override
+    public boolean isPrimary() {
+        return Objects.equals(new JpaClusterEventStoreProvider(session).getPrimaryClusterName(), nodeInfo.clusterName());
+    }
+
+    @Override
+    public boolean isPrimarySupported() {
+        return true;
     }
 
     @Override
@@ -134,7 +148,7 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
     }
 
     private @Nullable String storeEvent(byte[] data) {
-        return KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory,
+        return KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(),
                 s -> new JpaClusterEventStoreProvider(s).persist(nodeInfo.clusterName(), data));
     }
 
@@ -148,7 +162,7 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
         long time = System.nanoTime();
         try {
             Retry.executeWithBackoff(iteration -> {
-                boolean exists = KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, s -> {
+                boolean exists = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), s -> {
                     JpaClusterEventStoreProvider store = new JpaClusterEventStoreProvider(s);
                     return store.eventExists(eventId);
                 });

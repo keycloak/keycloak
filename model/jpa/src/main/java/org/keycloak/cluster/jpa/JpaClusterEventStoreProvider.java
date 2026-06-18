@@ -48,13 +48,23 @@ public class JpaClusterEventStoreProvider {
         this.session = session;
     }
 
+    public String getPrimaryClusterName() {
+        EntityManager em = getEntityManager();
+        String tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
+
+        return (String) em.createNativeQuery(
+                        "SELECT min(cluster_name) FROM " + tableName + " WHERE last_update > ?1", String.class)
+                .setParameter(1, Time.currentTime() - STALENESS_CUTOFF_SECONDS)
+                .getSingleResult();
+    }
+
     public String persist(String senderCluster, byte[] eventData) {
         EntityManager em = getEntityManager();
         String tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
 
         @SuppressWarnings("unchecked")
         List<String> targetClusters = em.createNativeQuery(
-                        "SELECT DISTINCT cluster_name FROM " + tableName + " WHERE cluster_name != ?1 AND last_update > ?2")
+                        "SELECT DISTINCT cluster_name FROM " + tableName + " WHERE cluster_name != ?1 AND last_update > ?2", String.class)
                 .setParameter(1, senderCluster)
                 .setParameter(2, Time.currentTime() - STALENESS_CUTOFF_SECONDS)
                 .getResultList();

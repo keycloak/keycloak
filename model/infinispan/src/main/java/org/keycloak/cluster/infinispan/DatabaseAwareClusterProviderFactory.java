@@ -66,7 +66,7 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
 
     @Override
     public ClusterProvider create(KeycloakSession session) {
-        return new DatabaseAwareClusterProvider(super.create(session), session.getKeycloakSessionFactory(),
+        return new DatabaseAwareClusterProvider(super.create(session), session,
                 nodeInfo, protoStreamMarshaller, awaitTimeout);
     }
 
@@ -77,7 +77,7 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
             throw new IllegalArgumentException("pollInterval must be a positive number");
         }
         if (pollIntervalMs > 1000) {
-            logger.warnf("Polling interval is %d milliseconds. This is longer than 1 seconds, which seems to be too high for a production setting. Please verify.", pollIntervalMs);
+            logger.warnf("Polling interval is %d milliseconds. This is longer than 1 second, which seems to be too high for a production setting. Please verify.", pollIntervalMs);
         }
         awaitTimeout = Duration.of(pollIntervalMs * 5, ChronoUnit.MILLIS);
         // We run our own timer so that we're not delayed by other tasks
