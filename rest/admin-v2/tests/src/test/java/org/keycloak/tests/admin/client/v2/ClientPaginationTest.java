@@ -135,7 +135,7 @@ public class ClientPaginationTest extends AbstractClientApiV2Test {
             var page = stream1.toList();
             assertThat(page, hasSize(2));
 
-            try (var stream2 = getClientsApi().getClients(new ListOptions().offset(2).limit(2))) {
+            try (var stream2 = getClientsApi().getClients(new ListOptions().query(query).offset(2).limit(2))) {
                 List<BaseClientRepresentation> nextPage = stream2.toList();
                 assertThat(nextPage, hasSize(2));
                 assertThat(page.get(0).getClientId(), is(not(nextPage.get(0).getClientId())));
