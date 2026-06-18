@@ -191,12 +191,44 @@ public class ThemeUploadResource {
     // -------------------------------------------------------------------------
 
     private void extractZip(ZipInputStream zipStream, Path destDir) throws IOException {
+        String themeFolderName = null;
         ZipEntry entry;
+
         while ((entry = zipStream.getNextEntry()) != null) {
-            Path entryPath = destDir.resolve(entry.getName()).normalize();
-            if (!entryPath.startsWith(destDir)) {
-                throw new BadRequestException("Invalid theme archive: path traversal detected");
+            String name = entry.getName();
+
+            // Silently skip OS-generated metadata (.DS_Store, __MACOSX/, Thumbs.db)
+            if (isMetadataEntry(name)) {
+                zipStream.closeEntry();
+                continue;
             }
+
+            // Every valid entry must live inside a top-level folder.
+            // No slash = stray top-level file. Slash at position 0 = absolute path.
+            // Both are rejected.
+            int slash = name.indexOf('/');
+            if (slash <= 0) {
+                throw new BadRequestException(
+                        "Invalid theme archive: '" + name + "' is a stray top-level file. "
+                                + "The ZIP must contain exactly one folder named after the theme.");
+            }
+
+            String topLevel = name.substring(0, slash);
+            if (themeFolderName == null) {
+                themeFolderName = topLevel;
+            } else if (!themeFolderName.equals(topLevel)) {
+                throw new BadRequestException(
+                        "Invalid theme archive: multiple top-level folders found ('"
+                                + themeFolderName + "' and '" + topLevel + "'). "
+                                + "The ZIP must contain exactly one folder named after the theme.");
+            }
+
+            // Zip-slip protection
+            Path entryPath = destDir.resolve(name).normalize();
+            if (!entryPath.startsWith(destDir)) {
+                throw new BadRequestException("Invalid theme archive: path traversal detected.");
+            }
+
             if (entry.isDirectory()) {
                 Files.createDirectories(entryPath);
             } else {
@@ -205,13 +237,27 @@ public class ThemeUploadResource {
             }
             zipStream.closeEntry();
         }
+
+        if (themeFolderName == null) {
+            throw new BadRequestException(
+                    "Invalid theme archive: no valid theme entries found after skipping metadata.");
+        }
+    }
+
+    private static boolean isMetadataEntry(String name) {
+        return name.startsWith("__MACOSX/")
+                || name.equals(".DS_Store")
+                || name.endsWith("/.DS_Store")
+                || name.equals("Thumbs.db")
+                || name.endsWith("/Thumbs.db");
     }
 
     private static void deleteDirectory(Path dir) throws IOException {
         try (var stream = Files.walk(dir)) {
-            stream.sorted(Comparator.reverseOrder())
-                  .map(Path::toFile)
-                  .forEach(File::delete);
+            List<Path> paths = stream.sorted(Comparator.reverseOrder()).toList();
+            for (Path path : paths) {
+                Files.delete(path);
+            }
         }
     }
 
