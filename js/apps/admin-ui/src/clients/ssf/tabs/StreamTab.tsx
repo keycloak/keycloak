@@ -231,11 +231,10 @@ export const StreamTab = ({
         body.events_delivered = editStreamEventsDelivered;
       }
 
-      await adminClient.ssf.updateClientStream({
-        clientId: client.clientId!,
-        body,
-      });
-
+      await adminClient.ssf.updateClientStream(
+        { clientId: client.clientId! },
+        body as any,
+      );
       addAlert(t("ssfStreamUpdateSuccess"), AlertVariant.success);
       refresh();
     } catch (error) {
