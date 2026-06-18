@@ -248,6 +248,7 @@ public class UserStorageProviderResource {
         ComponentModel mapperModel = realm.getComponent(mapperId);
         if (mapperModel == null) throw new NotFoundException("Mapper model not found");
 
+        session.getProvider(UserStorageProvider.class, parentModel);
         LDAPStorageMapper mapper = session.getProvider(LDAPStorageMapper.class, mapperModel);
 
         ServicesLogger.LOGGER.syncingDataForMapper(mapperModel.getName(), mapperModel.getProviderId(), direction);
