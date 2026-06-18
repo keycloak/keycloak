@@ -7,6 +7,7 @@ import org.junit.platform.suite.api.Suite;
 @SelectPackages({
         "org.keycloak.tests.model",
         "org.keycloak.tests.oauth",
+        "org.keycloak.tests.oidc",
         "org.keycloak.tests.organization",
         "org.keycloak.tests.oid4vc",
         "org.keycloak.tests.policy",
