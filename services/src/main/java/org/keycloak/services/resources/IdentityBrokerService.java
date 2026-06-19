@@ -899,10 +899,9 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
             // Add federated identity link here
             if (!(federatedUser instanceof LightweightUserAdapter)) {
-                checkOverrideLink(authSession, federatedUser, providerAlias);
-
                 FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
                         context.getUsername(), context.getToken());
+                checkOverrideLink(authSession, federatedUser, federatedIdentityModel);
                 try {
                     session.users().addFederatedIdentity(realmModel, federatedUser, federatedIdentityModel);
                 } catch (ModelDuplicateException de) {
@@ -948,23 +947,25 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         }
     }
 
-    private void checkOverrideLink(AuthenticationSessionModel authSession, UserModel federatedUser, String providerAlias) {
+    private void checkOverrideLink(AuthenticationSessionModel authSession, UserModel federatedUser, FederatedIdentityModel newIdentity) {
         String isOverride = authSession.getAuthNote(IdpConfirmOverrideLinkAuthenticator.OVERRIDE_LINK);
         if (!Boolean.parseBoolean(isOverride)) {
             return;
         }
 
         FederatedIdentityModel previous = session.users()
-                .getFederatedIdentity(realmModel, federatedUser, providerAlias);
+                .getFederatedIdentity(realmModel, federatedUser, newIdentity.getIdentityProvider());
         if (previous == null) {
             return;
         }
 
-        session.users().removeFederatedIdentity(realmModel, federatedUser, providerAlias);
+        session.users().removeFederatedIdentity(realmModel, federatedUser, newIdentity.getIdentityProvider());
 
         event.clone()
                 .event(EventType.FEDERATED_IDENTITY_OVERRIDE_LINK)
+                .detail(Details.IDENTITY_PROVIDER_USER_ID, newIdentity.getUserId())
                 .detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USERNAME, previous.getUserName())
+                .detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USER_ID, previous.getUserId())
                 .success();
     }
 
@@ -1185,7 +1186,8 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
             FederatedIdentityModel replacement = new FederatedIdentityModel(
                     existingLinkForCurrentUser.getIdentityProvider(), newModel.getUserId(), newModel.getUserName(), existingLinkForCurrentUser.getToken());
-            this.session.users().updateFederatedIdentity(this.realmModel, authenticatedUser, replacement);
+            this.session.users().removeFederatedIdentity(this.realmModel, authenticatedUser, providerAlias);
+            this.session.users().addFederatedIdentity(this.realmModel, authenticatedUser, replacement);
             federatedUser = authenticatedUser;
             replacedExistingLink = true;
 
