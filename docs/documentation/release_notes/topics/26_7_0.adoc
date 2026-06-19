@@ -125,6 +125,12 @@ Read more about it in the link:https://www.keycloak.org/server/db#multiple-datas
 
 = Configuring and Running
 
+== Cluster-wide install mode for the {project_name} Operator (preview)
+
+The {project_name} Operator now exposes `AllNamespaces` as a supported OLM install mode, allowing a single Operator instance to reconcile `Keycloak` custom resources across all namespaces in the cluster.
+
+Cluster-wide installation is in preview. For installation instructions and limitations, see the link:{operatorguide_link}[{operatorguide_name}].
+
 == Deprecation of SHA1 hashing functions in {project_name} 27
 
 NIST is going to fully https://www.nist.gov/news-events/news/2022/12/nist-retires-sha-1-cryptographic-algorithm[retire] SHA1 hashing function in 2030. {project_name} will remove all uses of SHA1 in version 27.

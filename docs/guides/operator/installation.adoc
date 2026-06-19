@@ -43,7 +43,7 @@ image::configure-operator.png["Configure {project_name} Operator"]
 
 You may select to either have the Operator watch the namespace where it is installed, or to watch a single namespace of your choosing.
 
-For cluster-wide or multi-namespace installation with OLM, see <<multi_namespace_installation>>.
+For cluster-wide installation with OLM, see <<cluster_wide_installation>>.
 
 ==== Configuring Manual Approval for OLM Upgrades
 
@@ -147,10 +147,10 @@ kubectl apply -k ./
 For cluster-wide installation without OLM, see <<installing_cluster_wide_with_kubectl>>.
 </@profile.ifCommunity>
 
-[[multi_namespace_installation]]
-=== Multi-namespace installation
+[[cluster_wide_installation]]
+=== Cluster-wide installation
 
-A single {project_name} Operator can reconcile custom resources in more than one namespace. This avoids running one Operator per namespace while still allowing {project_name} instances to be deployed in separate namespaces.
+A single {project_name} Operator can reconcile custom resources in all namespaces in the cluster. This avoids running one Operator per namespace while still allowing {project_name} instances to be deployed in separate namespaces.
 
 The Operator supports the standard OLM install modes:
 
@@ -164,9 +164,6 @@ The Operator supports the standard OLM install modes:
 | `SingleNamespace`
 | One namespace other than the Operator namespace
 
-| `MultiNamespace`
-| Multiple namespaces listed on the OperatorGroup
-
 | `AllNamespaces`
 | All namespaces in the cluster
 |===
@@ -175,45 +172,26 @@ The Operator supports the standard OLM install modes:
 ====
 *Preview support*
 
-Multi-namespace and cluster-wide installation is supported for common scenarios, but it is still considered in preview.
+Cluster-wide installation is supported for common scenarios, but it is still considered in preview.
 
-* Limitations apply; see <<multi_namespace_limitations>>.
+* Limitations apply; see <<cluster_wide_limitations>>.
 * For non-OLM installations, cluster-wide setup requires additional RBAC configuration.
 ====
 
-[[multi_namespace_limitations]]
+[[cluster_wide_limitations]]
 ==== Limitations
 
-When the Operator watches more than one namespace:
+When the Operator watches all namespaces:
 
 * `spec.podTemplate.spec.serviceAccountName` cannot be used on a `Keycloak` custom resource. The Operator ignores this field and reports a warning.
-* The Operator does not filter namespaces by labels, nor does it reconcile multiple {project_name} versions in one cluster.
+* The Operator does not reconcile multiple {project_name} versions in one cluster.
 * You need cluster-admin permissions, or equivalent permissions, to configure cluster-scoped RBAC for non-OLM installations.
 
 ==== Installing with OLM
 
-To install in `MultiNamespace` or `AllNamespaces` mode, create an OperatorGroup with the desired namespace selection, subscribe to the Operator, and approve the install plan.
+To install in `AllNamespaces` mode, create an OperatorGroup without `spec.targetNamespaces`, subscribe to the Operator, and approve the install plan.
 
-===== Watching multiple selected namespaces
-
-Create an OperatorGroup that lists every namespace the Operator should watch:
-
-[source,yaml]
-----
-apiVersion: operators.coreos.com/v1
-kind: OperatorGroup
-metadata:
-  name: keycloak-operator-group
-  namespace: <operator-namespace>
-spec:
-  targetNamespaces:
-    - tenant-a
-    - tenant-b
-----
-
-Approve the install plan if you are using manual approval, then verify that the Operator pod is running.
-
-===== Watching all namespaces (cluster-wide)
+We recommend only using manual approval for the install plan.
 
 Create a global OperatorGroup in the namespace where the Operator is installed by omitting `spec.targetNamespaces`:
 
@@ -227,16 +205,7 @@ metadata:
 spec: {}
 ----
 
-Approve the install plan if you are using manual approval, then verify that the Operator pod is running.
-
-If the Operator is already installed in single-namespace mode, you can switch to cluster-wide mode by removing `spec.targetNamespaces` from the OperatorGroup:
-
-[source,bash]
-----
-kubectl patch operatorgroup <operator-group-name> -n <operator-namespace> --type json \
-  --patch '[{"op":"remove","path":"/spec/targetNamespaces"}]'
-kubectl rollout restart deployment/keycloak-operator -n <operator-namespace>
-----
+Approve the install plan, then verify that the Operator pod is running.
 
 <@profile.ifCommunity>
 [[installing_cluster_wide_with_kubectl]]
@@ -289,13 +258,11 @@ kubectl rollout restart deployment/keycloak-operator -n $OPERATOR_NAMESPACE
 ----
 
 . Create `Keycloak` custom resources in any namespace. The Operator reconciles resources cluster-wide.
-
-To watch a specific set of namespaces instead of all namespaces, set `QUARKUS_OPERATOR_SDK_NAMESPACES` to a comma-separated list of namespace names.
 </@profile.ifCommunity>
 
 === Installing Multiple Operators
 
-In most cases, a single Operator installed in multi-namespace or cluster-wide mode is simpler than installing multiple Operators. Install multiple Operators only when you need separate Operator instances, for example to run different Operator versions in parallel.
+In most cases, a single Operator installed in cluster-wide mode is simpler than installing multiple Operators. Install multiple Operators only when you need separate Operator instances, for example to run different Operator versions in parallel.
 
 If you install multiple Operators, please be aware:
 
