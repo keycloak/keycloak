@@ -23,6 +23,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -34,6 +36,8 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.validation.ValidationUtil;
 
 import org.jboss.logging.Logger;
 
@@ -124,6 +128,10 @@ public class ClientsPartialImport extends AbstractPartialImport<ClientRepresenta
             OIDCAdvancedConfigWrapper.fromClientModel(client).setPostLogoutRedirectUris(Collections.singletonList("+"));
         }
         RepresentationToModel.importAuthorizationSettings(clientRep, client, session);
+
+        ValidationUtil.validateClient(session, client, true, r -> {
+            throw ErrorResponse.error(r.getAllErrorsAsString(), Response.Status.BAD_REQUEST);
+        });
     }
 
     public static boolean isInternalClient(String clientId) {

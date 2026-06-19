@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -31,6 +33,27 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = AbstractPartialImportTest.PartialImportServerConfig.class)
 public class PartialImportClientTest extends AbstractPartialImportTest {
+
+    @Test
+    public void testIllegalSchemeBaseUrlPartialImport() {
+        setFail();
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("evil-partial-import-test");
+        client.setEnabled(true);
+        client.setPublicClient(true);
+        client.setRedirectUris(List.of("http://localhost/*"));
+        client.setBaseUrl("javascript:confirm(document.domain)/*");
+        piRep.setClients(List.of(client));
+
+        try (Response response = managedRealm.admin().partialImport(piRep)) {
+            response.bufferEntity();
+            String body = response.readEntity(String.class);
+            assertEquals(400, response.getStatus(), body);
+            assertTrue(body.contains("Base URL uses an illegal scheme"), body);
+        }
+
+        assertTrue(managedRealm.admin().clients().findByClientId("evil-partial-import-test").isEmpty());
+    }
 
     @Test
     @DatabaseTest
