@@ -17,97 +17,37 @@
 
 package org.keycloak.provider;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
-
-import org.jboss.logging.Logger;
 
 /**
- * Reads {@code META-INF/keycloak/keycloak-providers.list} resources produced at build time
- * by the Quarkus deployment processor and resolves them to {@link ProviderFactory} classes.
+ * Holds the {@link ProviderFactory} classes discovered at build time via the
+ * {@link KeycloakProvider} annotation scan in the Quarkus deployment processor.
  *
- * Falls back gracefully when the resource is absent (non-Quarkus contexts, embedded usage,
- * tests). Results are cached per classloader since the same lookup is performed once per SPI.
+ * The registry is populated once via {@link #install(Set)} during Quarkus augmentation,
+ * before {@link DefaultProviderLoader} is consulted. Outside the Quarkus build path
+ * (embedded usage, tests that don't go through augmentation) the registry stays empty
+ * and discovery degrades to {@link java.util.ServiceLoader} alone.
  */
 public final class GeneratedProviderRegistry {
 
-    private static final Logger logger = Logger.getLogger(GeneratedProviderRegistry.class);
-
-    public static final String RESOURCE_PATH = "META-INF/keycloak/keycloak-providers.list";
-
-    private static final Map<ClassLoader, Set<Class<? extends ProviderFactory>>> CACHE = Collections.synchronizedMap(new WeakHashMap<>());
+    private static volatile Set<Class<? extends ProviderFactory>> factoryClasses = Set.of();
 
     private GeneratedProviderRegistry() {
     }
 
     /**
-     * Returns the {@link ProviderFactory} classes discovered at build time and visible to
-     * {@code classLoader}. Order is preserved from the source resource (sorted by FQN by the
-     * build step). Returns an empty set when no resource is available.
+     * Returns the {@link ProviderFactory} classes discovered at build time, or an empty set
+     * if the scan has not been installed (non-Quarkus contexts).
      */
-    public static Set<Class<? extends ProviderFactory>> getProviderFactoryClasses(ClassLoader classLoader) {
-        ClassLoader cl = classLoader != null ? classLoader : Thread.currentThread().getContextClassLoader();
-        Set<Class<? extends ProviderFactory>> cached = CACHE.get(cl);
-        if (cached != null) {
-            return cached;
-        }
-        Set<Class<? extends ProviderFactory>> loaded = Collections.unmodifiableSet(loadFromResources(cl));
-        CACHE.put(cl, loaded);
-        return loaded;
+    public static Set<Class<? extends ProviderFactory>> getProviderFactoryClasses() {
+        return factoryClasses;
     }
 
-    private static Set<Class<? extends ProviderFactory>> loadFromResources(ClassLoader classLoader) {
-        Set<Class<? extends ProviderFactory>> result = new LinkedHashSet<>();
-        Enumeration<URL> resources;
-        try {
-            resources = classLoader.getResources(RESOURCE_PATH);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to look up " + RESOURCE_PATH, e);
-        }
-
-        while (resources.hasMoreElements()) {
-            URL url = resources.nextElement();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String className = line.trim();
-                    if (className.isEmpty() || className.startsWith("#")) {
-                        continue;
-                    }
-                    Class<? extends ProviderFactory> factoryClass = resolveFactoryClass(className, classLoader, url);
-                    if (factoryClass != null) {
-                        result.add(factoryClass);
-                    }
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to read " + url, e);
-            }
-        }
-        return result;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Class<? extends ProviderFactory> resolveFactoryClass(String className, ClassLoader classLoader, URL source) {
-        Class<?> clazz;
-        try {
-            clazz = Class.forName(className, false, classLoader);
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Generated provider registry " + source
-                    + " lists '" + className + "' but the class is not on the classpath", e);
-        }
-        if (!ProviderFactory.class.isAssignableFrom(clazz)) {
-            throw new IllegalStateException("Class '" + className + "' from " + source
-                    + " is not a " + ProviderFactory.class.getName());
-        }
-        return (Class<? extends ProviderFactory>) clazz;
+    /**
+     * Install the result of the build-time scan. Called exactly once by the Quarkus
+     * deployment processor before any {@link DefaultProviderLoader#load(Spi)} call.
+     */
+    public static void install(Set<Class<? extends ProviderFactory>> classes) {
+        factoryClasses = Set.copyOf(classes);
     }
 }

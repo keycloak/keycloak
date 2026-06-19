@@ -1,3 +1,0 @@
-org.keycloak.provider.DefaultProviderLoaderTest$BothFactory
-org.keycloak.provider.DefaultProviderLoaderTest$RegistryOnlyFactory
-org.keycloak.provider.DefaultProviderLoaderTest$UnrelatedFactory

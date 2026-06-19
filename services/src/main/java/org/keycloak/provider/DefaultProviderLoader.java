@@ -66,7 +66,7 @@ public class DefaultProviderLoader implements ProviderLoader {
             // provider listed in both sources is instantiated only once.
             Set<Class<?>> seen = new HashSet<>();
             Class<? extends ProviderFactory> spiFactoryClass = spi.getProviderFactoryClass();
-            for (Class<? extends ProviderFactory> factoryClass : GeneratedProviderRegistry.getProviderFactoryClasses(classLoader)) {
+            for (Class<? extends ProviderFactory> factoryClass : GeneratedProviderRegistry.getProviderFactoryClasses()) {
                 if (!spiFactoryClass.isAssignableFrom(factoryClass)) {
                     continue;
                 }
