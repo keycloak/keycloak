@@ -46,7 +46,7 @@ public class SamlClientTest extends AbstractSamlTest {
         URI samlEndpoint = getAuthServerSamlEndpoint(REALM_NAME);
 
         HttpUriRequest post = SamlClient.Binding.POST.createSamlUnsignedRequest(samlEndpoint, null, samlRequest);
-        
+
         try (CloseableHttpResponse response = httpClient.execute(post)) {
             Assertions.assertEquals(400, response.getStatusLine().getStatusCode());
             String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
