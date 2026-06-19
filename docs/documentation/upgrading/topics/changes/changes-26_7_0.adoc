@@ -95,6 +95,16 @@ For the details, see the link:{adminguide_link}[{adminguide_name}].
 
 For all database connections, {project_name} now sets a socket read timeout matching the respective transaction timeout to prevent long hanging threads. For PostgreSQL databases, it additionally sets a query timeout.
 
+=== System truststore format is not automatically inferred
+
+The generated system truststore created from `conf/truststores`, `--truststore-paths`, and automatically discovered Kubernetes or OpenShift CA certificates now uses the generated truststore format preferred by the active crypto provider.
+
+For most deployments, no configuration change is needed. Non-FIPS and FIPS non-strict mode continue to generate a PKCS12 truststore when PKCS12 is supported.
+
+In strict FIPS mode, the generated system truststore now uses BCFKS instead of PKCS12. If you have automation that reads the generated truststore file directly from the `data` directory, update it to expect `keycloak-truststore.bcfks` with truststore type `BCFKS` instead of `keycloak-truststore.p12` with truststore type `PKCS12`.
+
+This change only affects the generated system truststore. Explicit truststore files configured with options such as `--https-trust-store-file` still use their configured type or the type detected from the file extension.
+
 === Configure TOTP and Update password required actions moved after Verify Email
 
 In relation to the previous point, the required actions *Configure OTP* and *Update password* are moved in the order of required actions after *Verify Email*
