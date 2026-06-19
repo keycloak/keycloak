@@ -318,22 +318,12 @@ public class ValidationAnnotationScanner {
     public Map<String, String> buildClassLevelDescriptions(ClassInfo classInfo) {
         Map<String, List<String>> collected = new HashMap<>();
 
-        for (AnnotationInstance annotation : classInfo.annotations()) {
-            if (annotation.target().kind() != AnnotationTarget.Kind.CLASS) {
-                continue;
-            }
-
-            if (!isConstraintAnnotation(annotation.name())) {
-                continue;
-            }
-
+        for (AnnotationInstance annotation : classLevelConstraintAnnotations(classInfo)) {
             String context = getGroupContext(annotation);
             String message = buildConstraintDescription(annotation);
 
-            AnnotationValue affectedField = annotation.value("affectedFieldNames");
-            String[] affectedFields = affectedField != null ? affectedField.asStringArray() : getDefault(annotation.name(), "affectedFieldNames").asStringArray();
-
-            if (affectedFields == null) {
+            String[] affectedFields = resolveAffectedFieldNames(annotation);
+            if (affectedFields == null || affectedFields.length == 0) {
                 throw new IllegalStateException("Missing affectedFieldNames value for " + annotation.name());
             }
 
@@ -349,6 +339,50 @@ public class ValidationAnnotationScanner {
             fieldDescriptions.put(entry.getKey(), String.join("; ", descriptions));
         }
         return fieldDescriptions;
+    }
+
+    private List<AnnotationInstance> classLevelConstraintAnnotations(ClassInfo classInfo) {
+        List<AnnotationInstance> constraints = new ArrayList<>();
+        for (AnnotationInstance annotation : classInfo.annotations()) {
+            if (annotation.target().kind() != AnnotationTarget.Kind.CLASS) {
+                continue;
+            }
+            if (isRepeatableContainer(annotation)) {
+                AnnotationValue value = annotation.value();
+                if (value != null) {
+                    for (AnnotationInstance nested : value.asNestedArray()) {
+                        if (isConstraintAnnotation(nested.name())) {
+                            constraints.add(nested);
+                        }
+                    }
+                }
+                continue;
+            }
+            if (isConstraintAnnotation(annotation.name())) {
+                constraints.add(annotation);
+            }
+        }
+        return constraints;
+    }
+
+    private static boolean isRepeatableContainer(AnnotationInstance annotation) {
+        return annotation.name().local().startsWith("List")
+                && annotation.name().toString().contains("$");
+    }
+
+    private String[] resolveAffectedFieldNames(AnnotationInstance annotation) {
+        AnnotationValue affectedField = annotation.value("affectedFieldNames");
+        String[] affectedFields = affectedField != null
+                ? affectedField.asStringArray()
+                : getDefault(annotation.name(), "affectedFieldNames").asStringArray();
+        if (affectedFields != null && affectedFields.length > 0) {
+            return affectedFields;
+        }
+        AnnotationValue field = annotation.value("field");
+        if (field != null) {
+            return new String[] { field.asString() };
+        }
+        return affectedFields;
     }
 
     /**

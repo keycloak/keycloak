@@ -41,7 +41,7 @@ import org.keycloak.representations.admin.v2.validation.ClientSecretNotBlank;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.PutClient;
-import org.keycloak.representations.admin.v2.validation.UuidUnmodified;
+import org.keycloak.representations.admin.v2.validation.ServerManagedFieldUnmodified;
 import org.keycloak.validation.jakarta.ValidationContext;
 
 import org.eclipse.microprofile.openapi.OASFactory;
@@ -109,7 +109,7 @@ public class ValidationAnnotationScannerTest {
                 Range.class,
                 URL.class,
                 ClientSecretNotBlank.class,
-                UuidUnmodified.class
+                ServerManagedFieldUnmodified.class
         );
         scanner = new ValidationAnnotationScanner(index);
     }
