@@ -40,6 +40,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.validation.ClientSecretNotBlank;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
+import org.keycloak.representations.admin.v2.validation.ProtocolUnmodified;
 import org.keycloak.representations.admin.v2.validation.PutClient;
 import org.keycloak.representations.admin.v2.validation.ServerManagedFieldUnmodified;
 import org.keycloak.validation.jakarta.ValidationContext;
@@ -89,6 +90,9 @@ public class ValidationAnnotationScannerTest {
                 TestWithClassLevelConstraint.class,
                 TestWithClassLevelConstraintAndGroups.class,
                 TestWithClassLevelConstraintAndMessage.class,
+                TestWithServerManagedFieldUnmodified.class,
+                TestWithRepeatableServerManagedFieldUnmodified.class,
+                TestWithProtocolUnmodifiedDefault.class,
                 ValidationContext.class,
                 KeycloakSession.class,
                 RealmModel.class,
@@ -109,7 +113,8 @@ public class ValidationAnnotationScannerTest {
                 Range.class,
                 URL.class,
                 ClientSecretNotBlank.class,
-                ServerManagedFieldUnmodified.class
+                ServerManagedFieldUnmodified.class,
+                ProtocolUnmodified.class
         );
         scanner = new ValidationAnnotationScanner(index);
     }
@@ -439,6 +444,44 @@ public class ValidationAnnotationScannerTest {
         assertTrue(descriptions.isEmpty());
     }
 
+    @Test
+    public void buildClassLevelDescriptions_serverManagedFieldUnmodifiedUsesAffectedFieldNames() {
+        ClassInfo classInfo = index.getClassByName(TestWithServerManagedFieldUnmodified.class);
+
+        Map<String, String> descriptions = scanner.buildClassLevelDescriptions(classInfo);
+
+        assertNotNull(descriptions);
+        assertEquals(2, descriptions.size());
+        assertTrue(descriptions.containsKey("uuid"));
+        assertTrue(descriptions.containsKey("protocol"));
+        assertEquals("Field is server-managed and must not be user-specified", descriptions.get("uuid"));
+        assertEquals("Field is server-managed and must not be user-specified", descriptions.get("protocol"));
+    }
+
+    @Test
+    public void buildClassLevelDescriptions_flattensRepeatableServerManagedFieldUnmodified() {
+        ClassInfo classInfo = index.getClassByName(TestWithRepeatableServerManagedFieldUnmodified.class);
+
+        Map<String, String> descriptions = scanner.buildClassLevelDescriptions(classInfo);
+
+        assertNotNull(descriptions);
+        assertEquals(2, descriptions.size());
+        assertEquals("UUID is server-managed and must not be user-specified", descriptions.get("uuid"));
+        assertEquals("protocol cannot be changed for an existing client", descriptions.get("protocol"));
+    }
+
+    @Test
+    public void buildClassLevelDescriptions_protocolUnmodifiedUsesDefaultAffectedFieldNames() {
+        ClassInfo classInfo = index.getClassByName(TestWithProtocolUnmodifiedDefault.class);
+
+        Map<String, String> descriptions = scanner.buildClassLevelDescriptions(classInfo);
+
+        assertNotNull(descriptions);
+        assertEquals(1, descriptions.size());
+        assertTrue(descriptions.containsKey("protocol"));
+        assertEquals("protocol cannot be changed for an existing client", descriptions.get("protocol"));
+    }
+
     private Index createIndex(Class<?>... classes) throws IOException {
         Indexer indexer = new Indexer();
         for (Class<?> clazz : classes) {
@@ -537,5 +580,30 @@ public class ValidationAnnotationScannerTest {
     @SuppressWarnings("unused")
     public static class TestWithClassLevelConstraintAndMessage {
         private String secret;
+    }
+
+    @ServerManagedFieldUnmodified(affectedFieldNames = {"uuid", "protocol"})
+    @SuppressWarnings("unused")
+    public static class TestWithServerManagedFieldUnmodified {
+        private String uuid;
+        private String protocol;
+    }
+
+    @ServerManagedFieldUnmodified(
+            affectedFieldNames = {"uuid"},
+            message = "UUID is server-managed and must not be user-specified")
+    @ServerManagedFieldUnmodified(
+            affectedFieldNames = {"protocol"},
+            message = "protocol cannot be changed for an existing client")
+    @SuppressWarnings("unused")
+    public static class TestWithRepeatableServerManagedFieldUnmodified {
+        private String uuid;
+        private String protocol;
+    }
+
+    @ProtocolUnmodified
+    @SuppressWarnings("unused")
+    public static class TestWithProtocolUnmodifiedDefault {
+        private String protocol;
     }
 }
