@@ -46,6 +46,8 @@ public class ClientScopesClientRegistrationPolicyFactory extends AbstractClientR
 
     public static final String ALLOW_DEFAULT_SCOPES = "allow-default-scopes";
 
+    public static final String ADD_DEFAULT_SCOPES = "add-default-scopes";
+
     @Override
     public ClientRegistrationPolicy create(KeycloakSession session, ComponentModel model) {
         return new ClientScopesClientRegistrationPolicy(session, model);
@@ -78,6 +80,14 @@ public class ClientScopesClientRegistrationPolicyFactory extends AbstractClientR
         property.setHelpText("allow-default-scopes.tooltip");
         property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         property.setDefaultValue(true);
+        configProps.add(property);
+
+        property = new ProviderConfigProperty();
+        property.setName(ADD_DEFAULT_SCOPES);
+        property.setLabel("add-default-scopes.label");
+        property.setHelpText("add-default-scopes.tooltip");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue(false);
         configProps.add(property);
 
         configProperties = configProps;
