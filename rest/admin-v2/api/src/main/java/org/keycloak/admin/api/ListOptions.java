@@ -1,5 +1,6 @@
 package org.keycloak.admin.api;
 
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -51,6 +52,11 @@ public class ListOptions {
         return this;
     }
 
+    public ListOptions sort(List<SortOption> sort) {
+        this.setSort(sort);
+        return this;
+    }
+
     public ListOptions offset(int offset) {
         this.setOffset(offset);
         return this;
@@ -94,16 +100,55 @@ public class ListOptions {
         this.offset = offset;
     }
 
-    public String getSort() {
-        return sort;
-    }
-
-    public void setSort(String sort) {
-        this.sort = sort;
+    public List<SortOption> getSort() {
+        if (sort == null) {
+            return null;
+        }
+        if (sort.isEmpty()) {
+            return List.of();
+        }
+        List<SortOption> options = Arrays.stream(sort.split(","))
+                .map(String::trim)
+                .filter(segment -> !segment.isEmpty())
+                .map(ListOptions::parseSortSegment)
+                .collect(Collectors.toList());
+        if (options.isEmpty()) {
+            throw new IllegalArgumentException("sort must specify at least one field");
+        }
+        return options;
     }
 
     public void setSort(List<SortOption> sort) {
-        this.sort = sort == null || sort.isEmpty() ? null :
-                sort.stream().map(SortOption::toQuerySegment).collect(Collectors.joining(","));
+        if (sort == null) {
+            this.sort = null;
+        } else if (sort.isEmpty()) {
+            this.sort = "";
+        } else {
+            this.sort = sort.stream().map(SortOption::toQuerySegment).collect(Collectors.joining(","));
+        }
+    }
+
+    private static SortOption parseSortSegment(String segment) {
+        String[] parts = segment.split("\\|", 2);
+        String fieldName = parts[0].trim();
+        if (fieldName.isEmpty()) {
+            throw new IllegalArgumentException("sort must specify at least one field");
+        }
+        ClientField field = ClientField.fromApiName(fieldName).orElseThrow(() ->
+                new IllegalArgumentException(String.format("%s is not a sortable field", fieldName)));
+        SortOrder order = parts.length == 1 ? SortOrder.ASC : parseSortOrder(parts[1].trim());
+        return SortOption.of(field, order);
+    }
+
+    private static SortOrder parseSortOrder(String value) {
+        if (value.isEmpty()) {
+            return SortOrder.ASC;
+        }
+        for (SortOrder order : SortOrder.values()) {
+            if (order.name().equalsIgnoreCase(value)) {
+                return order;
+            }
+        }
+        throw new IllegalArgumentException("sort direction must be asc or desc");
     }
 }

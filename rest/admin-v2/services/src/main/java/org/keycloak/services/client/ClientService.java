@@ -1,14 +1,12 @@
 package org.keycloak.services.client;
 
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
@@ -17,7 +15,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.admin.api.ClientField;
 import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.SortOption;
-import org.keycloak.admin.api.SortOrder;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.PatchType;
@@ -50,46 +47,15 @@ public interface ClientService extends Service {
         }
 
         public static ClientSortAndSliceOptions fromQuery(ListOptions listOptions) {
-            List<SortOption> options = listOptions.getSort() == null || listOptions.getSort().isEmpty()
-                    ? List.of(SortOption.of(ClientField.defaultField()))
-                    : parseSort(listOptions.getSort());
+            List<SortOption> options;
+            try {
+                options = listOptions.getSort() == null || listOptions.getSort().isEmpty()
+                        ? List.of(SortOption.of(ClientField.defaultField()))
+                        : listOptions.getSort();
+            } catch (IllegalArgumentException e) {
+                throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
+            }
             return new ClientSortAndSliceOptions(options);
-        }
-
-        private static List<SortOption> parseSort(String sort) {
-            List<SortOption> options = Arrays.stream(sort.split(","))
-                    .map(String::trim)
-                    .filter(segment -> !segment.isEmpty())
-                    .map(ClientSortAndSliceOptions::parseSortSegment)
-                    .collect(Collectors.toList());
-            if (options.isEmpty()) {
-                throw new ServiceException("sort must specify at least one field", Response.Status.BAD_REQUEST);
-            }
-            return options;
-        }
-
-        private static SortOption parseSortSegment(String segment) {
-            String[] parts = segment.split("\\|", 2);
-            String fieldName = parts[0].trim();
-            if (fieldName.isEmpty()) {
-                throw new ServiceException("sort must specify at least one field", Response.Status.BAD_REQUEST);
-            }
-            ClientField field = ClientField.fromApiName(fieldName).orElseThrow(() ->
-                    new ServiceException(String.format("%s is not a sortable field", fieldName), Response.Status.BAD_REQUEST));
-            SortOrder order = parts.length == 1 ? SortOrder.ASC : parseSortOrder(parts[1].trim());
-            return SortOption.of(field, order);
-        }
-
-        private static SortOrder parseSortOrder(String value) {
-            if (value.isEmpty()) {
-                return SortOrder.ASC;
-            }
-            for (SortOrder order : SortOrder.values()) {
-                if (order.name().equalsIgnoreCase(value)) {
-                    return order;
-                }
-            }
-            throw new ServiceException("sort direction must be asc or desc", Response.Status.BAD_REQUEST);
         }
 
         public Comparator<BaseClientRepresentation> getSortComparator() {

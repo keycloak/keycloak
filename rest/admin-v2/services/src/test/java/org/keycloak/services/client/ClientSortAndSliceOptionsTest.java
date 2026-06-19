@@ -1,5 +1,6 @@
 package org.keycloak.services.client;
 
+import java.lang.reflect.Field;
 import java.util.Comparator;
 import java.util.List;
 
@@ -32,7 +33,9 @@ class ClientSortAndSliceOptionsTest {
     @Test
     void parseSortWithPerFieldDirections() {
         ListOptions options = new ListOptions();
-        options.setSort("displayName|desc,clientId|asc");
+        options.setSort(List.of(
+                SortOption.of(ClientField.DISPLAY_NAME, SortOrder.DESC),
+                SortOption.of(ClientField.CLIENT_ID, SortOrder.ASC)));
 
         Comparator<BaseClientRepresentation> comparator = ClientSortAndSliceOptions.fromQuery(options).getSortComparator();
 
@@ -61,8 +64,7 @@ class ClientSortAndSliceOptionsTest {
 
     @Test
     void invalidSortFieldThrowsBadRequest() {
-        ListOptions options = new ListOptions();
-        options.setSort("unknown");
+        ListOptions options = withSortQuery("unknown");
 
         ServiceException exception = assertThrows(ServiceException.class, () -> ClientSortAndSliceOptions.fromQuery(options));
         assertEquals("unknown is not a sortable field", exception.getMessage());
@@ -81,11 +83,22 @@ class ClientSortAndSliceOptionsTest {
 
     @Test
     void invalidSortDirectionThrowsBadRequest() {
-        ListOptions options = new ListOptions();
-        options.setSort("clientId|what");
+        ListOptions options = withSortQuery("clientId|what");
 
         ServiceException exception = assertThrows(ServiceException.class, () -> ClientSortAndSliceOptions.fromQuery(options));
         assertEquals("sort direction must be asc or desc", exception.getMessage());
+    }
+
+    private static ListOptions withSortQuery(String sort) {
+        ListOptions options = new ListOptions();
+        try {
+            Field field = ListOptions.class.getDeclaredField("sort");
+            field.setAccessible(true);
+            field.set(options, sort);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+        return options;
     }
 
     private static BaseClientRepresentation client(String clientId) {

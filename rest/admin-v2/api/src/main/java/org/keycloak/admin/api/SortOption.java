@@ -38,4 +38,21 @@ public final class SortOption {
         }
         return field.toQueryValue() + "|" + order.name().toLowerCase();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof SortOption)) {
+            return false;
+        }
+        SortOption other = (SortOption) obj;
+        return field == other.field && order == other.order;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(field, order);
+    }
 }
