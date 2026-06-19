@@ -32,7 +32,7 @@ Trusted attester keys are configured per client because different wallets can re
 
 ===== Admin Console
 
-. Create or configure a trust-material identity provider, such as **Default Trust**, that exposes the trusted attester public keys. The identity provider must be configured with either a JWKS URL or validating public keys.
+. Create or configure a trust-material identity provider, such as **Default Trust**, that exposes the trusted attester public keys. The identity provider must be configured with either a JWKS URL or a validating public key.
 . Go to *Clients* and select the wallet client that requests credentials.
 . Open the *Advanced* tab.
 . In the *OpenID Verifiable Credentials* section, enable **Enable OID4VCI**.
