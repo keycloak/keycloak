@@ -387,6 +387,46 @@ public class SsfTransmitterStreamManagementTests {
     }
 
     @Test
+    public void testAdminStreamResponseRedactsPushAuthorizationHeader() throws IOException {
+
+        // Security regression (issue #50074): the push delivery
+        // authorization_header is a live credential for the receiver's
+        // delivery endpoint and must never be echoed back in an admin
+        // response — it is write-only (accepted on create/update, redacted
+        // on read), mirroring how client secrets are handled. We assert it
+        // is stripped from both the create (POST) response and the admin GET,
+        // while the non-secret delivery fields (method, endpoint_url) survive.
+        String adminToken = adminClient.tokenManager().getAccessTokenString();
+        String adminStreamUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + RECEIVER_RW + "/stream";
+
+        // buildPushStreamRequest sets delivery.authorization_header = DUMMY_PUSH_AUTH_HEADER.
+        StreamConfigUpdateRepresentation createBody = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+
+        try (SimpleHttpResponse response = http.doPost(adminStreamUrl)
+                .json(createBody)
+                .auth(adminToken)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(201, response.getStatus(), "admin stream create should succeed");
+            SsfClientStreamRepresentation created = response.asJson(SsfClientStreamRepresentation.class);
+            Assertions.assertNotNull(created.getDelivery());
+            Assertions.assertNull(created.getDelivery().getAuthorizationHeader(),
+                    "create response must not echo the push authorization_header");
+            Assertions.assertEquals(DUMMY_PUSH_ENDPOINT, created.getDelivery().getEndpointUrl(),
+                    "non-secret delivery fields must still be returned");
+        }
+
+        // Same on the read path — this is the endpoint the issue flagged.
+        SsfClientStreamRepresentation fetched = fetchAdminStreamRepresentation(RECEIVER_RW);
+        Assertions.assertNotNull(fetched.getDelivery());
+        Assertions.assertNull(fetched.getDelivery().getAuthorizationHeader(),
+                "admin GET must not return the push authorization_header");
+        Assertions.assertEquals(DUMMY_PUSH_ENDPOINT, fetched.getDelivery().getEndpointUrl(),
+                "non-secret delivery fields must still be returned on read");
+    }
+
+    @Test
     public void testAdminCreateStreamValidationErrorReturnsReadable400() throws IOException {
 
         // Regression: a validation failure on the admin create endpoint must

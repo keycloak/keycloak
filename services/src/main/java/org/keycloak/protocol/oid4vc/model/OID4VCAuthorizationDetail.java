@@ -41,7 +41,7 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
      * Access token (and refresh token) claim with reference to the issued-credential ID. Can be used to link issued-credential
      * with token to be able to check at credential-request (or refresh-token request) if particular issued-credential still exists
      */
-    public static final String ISSUED_CREDENTIAL_ID = "iss_cred_id";
+    public static final String ISSUED_CREDENTIAL_ID = "issued_credential_id";
 
     @JsonProperty(CREDENTIAL_CONFIGURATION_ID)
     private String credentialConfigurationId;
@@ -120,12 +120,14 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
         OID4VCAuthorizationDetail that = (OID4VCAuthorizationDetail) o;
         return Objects.equals(credentialConfigurationId, that.credentialConfigurationId)
                 && Objects.equals(credentialIdentifiers, that.credentialIdentifiers)
-                && Objects.equals(credentialsOfferId, that.credentialsOfferId);
+                && Objects.equals(credentialsOfferId, that.credentialsOfferId)
+                && Objects.equals(issuedCredentialId, that.issuedCredentialId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), credentialConfigurationId, credentialIdentifiers, credentialsOfferId);
+        return Objects.hash(super.hashCode(),
+                credentialConfigurationId, credentialIdentifiers, credentialsOfferId, issuedCredentialId);
     }
 
     @Override

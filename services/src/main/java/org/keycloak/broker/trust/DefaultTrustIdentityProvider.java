@@ -17,6 +17,7 @@
 
 package org.keycloak.broker.trust;
 
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.keycloak.broker.provider.TrustMaterialIdentityProvider;
@@ -54,7 +55,8 @@ public class DefaultTrustIdentityProvider implements TrustMaterialIdentityProvid
         String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), config.getInternalId());
         Stream<KeyWrapper> keys = Strings.isEmpty(request.getKid())
                 ? keyStorage.getKeys(modelKey, loader).stream()
-                : Stream.of(keyStorage.getPublicKey(modelKey, request.getKid(), request.getAlgorithm(), loader));
+                : Stream.of(keyStorage.getPublicKey(modelKey, request.getKid(), request.getAlgorithm(), loader))
+                  .filter(Objects::nonNull);
 
         return TrustKeyUtil.filterKeys(keys.map(JWKSServerUtils::toJwk), request);
     }

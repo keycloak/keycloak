@@ -58,6 +58,7 @@ import static org.keycloak.OAuth2Constants.ISSUER_STATE;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIALS_OFFER_ID_ATTR;
+import static org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail.ISSUED_CREDENTIAL_ID;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 import static org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils.findCredentialScopeModelByConfigurationId;
 import static org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils.findCredentialScopeModelByName;
@@ -139,7 +140,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
 
         // Issued credential ID not allowed
         if (requestAuthDetail.getIssuedCredentialId() != null) {
-            logger.warnf("Property '%s' not allowed in authorization_details", OID4VCAuthorizationDetail.ISSUED_CREDENTIAL_ID);
+            logger.warnf("Property '%s' not allowed in authorization_details", ISSUED_CREDENTIAL_ID);
             throw getInvalidRequestException("Issued credential ID not allowed in authorization details");
         }
 
@@ -156,6 +157,16 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         }
 
         return requestAuthDetail;
+    }
+
+    @Override
+    public OID4VCAuthorizationDetail sanitizeBeforeSendingTokenResponse(OID4VCAuthorizationDetail authzDetail) {
+        // Remove non-standard properties before sending authorization_details in the Token Response
+        // https://github.com/keycloak/keycloak/pull/49958
+        OID4VCAuthorizationDetail cloned = authzDetail.clone();
+        cloned.setIssuedCredentialId(null);
+        cloned.setCredentialsOfferId(null);
+        return cloned;
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
@@ -330,7 +341,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             throw new InvalidAuthorizationDetailsException("Cannot find credential scope for credential configuration ID: " + credentialConfigId);
         }
 
-        // Create issued-credential and set it's ID in authorization_details
+        // Create issued-credential and set its ID in authorization_details
         IssuedVerifiableCredentialModel issuedCredential = createIssuedVerifiableCredential(userSession.getUser(), clientSessionCtx.getClientSession().getClient(), credentialScope);
         oid4vcAuthzDetailResponse.setIssuedCredentialId(issuedCredential.getId());
     }
@@ -368,7 +379,6 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         return authDetail;
     }
 
-
     protected IssuedVerifiableCredentialModel createIssuedVerifiableCredential(UserModel userModel, ClientModel clientModel, CredentialScopeModel credentialScope) {
         String credentialScopeName = credentialScope.getName();
         try {
@@ -376,7 +386,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
 
             long issuedAt = Time.currentTimeMillis();
             model.setIssuedAt(issuedAt);
-            model.setExpiresAt(issuedAt + (credentialScope.getExpiryInSeconds() * 1000));
+            model.setExpiresAt(issuedAt + (credentialScope.getExpiryInSeconds() * 1000L));
 
             logger.debugf("Created VC issuance: user=%s, client=%s, type=%s", userModel.getUsername(), clientModel.getClientId(), credentialScopeName);
 

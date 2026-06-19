@@ -61,6 +61,7 @@ import org.keycloak.ssf.transmitter.outbox.SsfOutboxKinds;
 import org.keycloak.ssf.transmitter.stream.DuplicateStreamConfigException;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
+import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationRequest;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
@@ -303,12 +304,19 @@ public class SsfAdminResource {
             @Parameter(description = "OAuth client_id of the receiver")
             @PathParam("clientId") String clientId) {
 
-        auth.realm().requireViewRealm();
-
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
+
+        // Client-level view check rather than a realm-wide view-realm gate:
+        // the stream is scoped to this receiver client, so reading it must
+        // require authorization over that client — matching the other admin
+        // SSF endpoints (create/update use requireManage, checkSubject uses
+        // requireView). A realm-level check would let an admin without
+        // permission over this client read its stream, including the
+        // receiver's push delivery credential.
+        auth.clients().requireView(client);
 
         StreamConfig streamConfig = streamStore().getStreamForClient(client);
         if (streamConfig == null) {
@@ -394,7 +402,7 @@ public class SsfAdminResource {
         }
         rep.setStatusReason(streamConfig.getStatusReason());
         rep.setAudience(streamConfig.getAudience());
-        rep.setDelivery(streamConfig.getDelivery());
+        rep.setDelivery(redactDeliverySecret(streamConfig.getDelivery()));
         rep.setEventsSupported(toEventAliases(transmitter, streamConfig.getEventsSupported()));
         rep.setEventsRequested(toEventAliases(transmitter, streamConfig.getEventsRequested()));
         rep.setEventsDelivered(toEventAliases(transmitter, streamConfig.getEventsDelivered()));
@@ -411,6 +419,29 @@ public class SsfAdminResource {
             }
         }
         return rep;
+    }
+
+    /**
+     * Returns a copy of the delivery config with the push
+     * {@code authorization_header} stripped, so the receiver-supplied
+     * delivery credential is never echoed back in an admin response.
+     *
+     * <p>The header is a live credential for the receiver's delivery
+     * endpoint and may be a vault-resolved secret (the store resolves
+     * {@code ${vault.x}} references at read time, see
+     * {@link ClientStreamStore}). It is therefore write-only — accepted on
+     * create/update but redacted from every response — mirroring how client
+     * secrets are handled elsewhere. We copy rather than mutate so the
+     * stored {@link StreamConfig} instance keeps the value for actual
+     * delivery.
+     */
+    protected StreamDeliveryConfig redactDeliverySecret(StreamDeliveryConfig delivery) {
+        if (delivery == null) {
+            return null;
+        }
+        StreamDeliveryConfig redacted = new StreamDeliveryConfig(delivery);
+        redacted.setAuthorizationHeader(null);
+        return redacted;
     }
 
     /**

@@ -236,15 +236,16 @@
         "tags" : [ "Clients (v2)" ],
         "parameters" : [ {
           "description" : "Set of fields to include in the response. Must be top-level fields. If omitted or empty, all fields will be populated.",
-          "name" : "fields",
-          "in" : "query",
+          "explode" : false,
           "schema" : {
             "type" : "array",
             "uniqueItems" : true,
             "items" : {
               "type" : "string"
             }
-          }
+          },
+          "name" : "fields",
+          "in" : "query"
         }, {
           "description" : "Filter expression using SCIM-like syntax, e.g. clientId eq \"my-app\" and enabled eq true",
           "name" : "q",
