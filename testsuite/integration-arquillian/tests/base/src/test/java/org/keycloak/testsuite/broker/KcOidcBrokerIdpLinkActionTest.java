@@ -126,8 +126,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         loginToConsumer();
         addFederatedIdentity("user1", "previous-provider-user-id", "previous-provider-username", null);
 
-        String kcAction = getKcActionParamForLinkIdp(bc.getIDPAlias());
-        oauth.loginForm().kcAction(kcAction).open();
+        oauth.loginForm().kcAction(getKcActionParamForLinkIdp(bc.getIDPAlias())).open();
         confirmIdpLinking();
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
@@ -149,11 +148,9 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
     public void testAccountLinkingWithExistingLinkReplacedWhenEnabled() throws Exception {
         setAllowLinkingWithExistingFederatedIdentity(true);
         loginToConsumer();
-        String storedToken = "previous-token";
-        addFederatedIdentity("user1", "previous-provider-user-id", "previous-provider-username", storedToken);
+        addFederatedIdentity("user1", "previous-provider-user-id", "previous-provider-username", "previous-token");
 
-        String kcAction = getKcActionParamForLinkIdp(bc.getIDPAlias());
-        oauth.loginForm().kcAction(kcAction).open();
+        oauth.loginForm().kcAction(getKcActionParamForLinkIdp(bc.getIDPAlias())).open();
         confirmIdpLinking();
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
@@ -166,7 +163,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
         String providerUserId = adminClient.realm(bc.providerRealmName()).users().search(bc.getUserLogin()).iterator().next().getId();
         assertUserLinkedToIDP(true);
-        assertFederatedIdentity("user1", providerUserId, bc.getUserLogin(), storedToken);
+        assertFederatedIdentity("user1", providerUserId, bc.getUserLogin(), "previous-token");
 
         assertEvents((providerRealmId, providerUserIdFromEvent, consumerRealmId, consumerUserId, consumerUsername) -> {
             Assertions.assertEquals(providerUserId, providerUserIdFromEvent);
