@@ -24,6 +24,7 @@ import org.eclipse.microprofile.openapi.models.Operation;
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.media.MediaType;
 import org.eclipse.microprofile.openapi.models.media.Schema;
+import org.eclipse.microprofile.openapi.models.parameters.Parameter;
 import org.eclipse.microprofile.openapi.models.parameters.RequestBody;
 
 import static org.keycloak.client.cli.util.HttpUtil.APPLICATION_JSON;
@@ -39,11 +40,12 @@ public class KcAdmV2DescriptorBuilder {
 
 
     static final String CMD_NAME_GET = "get";
+    static final String CMD_NAME_CREATE = "create";
     static final String CMD_NAME_APPLY = "apply";
 
     private static final Map<PathItem.HttpMethod, String> HTTP_METHOD_TO_COMMAND = Map.of(
             PathItem.HttpMethod.GET, CMD_NAME_GET,
-            PathItem.HttpMethod.POST, "create",
+            PathItem.HttpMethod.POST, CMD_NAME_CREATE,
             PathItem.HttpMethod.PATCH, "patch",
             PathItem.HttpMethod.DELETE, "delete",
             PathItem.HttpMethod.PUT, CMD_NAME_APPLY
@@ -183,16 +185,20 @@ public class KcAdmV2DescriptorBuilder {
             schema = extractResponseSchema(operation, openApi);
         }
 
+        List<OptionDescriptor> queryParams = extractQueryParameters(operation, openApi);
+
         if (schema == null) {
-            cmd.setOptions(List.of());
+            cmd.setOptions(queryParams);
             return;
         }
 
         if (schema.getDiscriminator() != null && schema.getDiscriminator().getMapping() != null) {
-            cmd.setOptions(List.of());
+            cmd.setOptions(queryParams);
             cmd.setVariants(buildVariants(schema, openApi));
         } else {
-            cmd.setOptions(toOptionDescriptors(collectProperties(schema, openApi), openApi));
+            List<OptionDescriptor> options = toOptionDescriptors(collectProperties(schema, openApi), openApi);
+            options.addAll(queryParams);
+            cmd.setOptions(options);
         }
     }
 
@@ -271,13 +277,39 @@ public class KcAdmV2DescriptorBuilder {
         return opt;
     }
 
+    private static List<OptionDescriptor> extractQueryParameters(Operation operation, OpenAPI openApi) {
+        List<OptionDescriptor> options = new ArrayList<>();
+        if (operation.getParameters() == null) {
+            return options;
+        }
+        for (Parameter param : operation.getParameters()) {
+            if (param.getIn() != Parameter.In.QUERY || param.getSchema() == null) {
+                continue;
+            }
+            Schema paramSchema = param.getSchema();
+            if (paramSchema.getRef() != null) {
+                paramSchema = resolveSchema(paramSchema, openApi);
+            }
+            OptionDescriptor opt = new OptionDescriptor();
+            opt.setName(param.getName());
+            opt.setFieldName(param.getName());
+            opt.setDescription(param.getDescription());
+            opt.setQueryParam(true);
+            opt.setArray(isArrayType(paramSchema));
+            opt.setType(resolveType(paramSchema));
+            opt.setEnumValues(extractEnumValues(param.getSchema(), openApi));
+            options.add(opt);
+        }
+        return options;
+    }
+
     private static List<String> extractEnumValues(Schema schema, OpenAPI openApi) {
         Schema target = schema;
         if (isArrayType(schema) && schema.getItems() != null) {
             target = schema.getItems();
-            if (target.getRef() != null) {
-                target = resolveSchema(target, openApi);
-            }
+        }
+        if (target.getRef() != null) {
+            target = resolveSchema(target, openApi);
         }
         if (target != null && target.getEnumeration() != null && !target.getEnumeration().isEmpty()) {
             return target.getEnumeration().stream().map(Object::toString).toList();
