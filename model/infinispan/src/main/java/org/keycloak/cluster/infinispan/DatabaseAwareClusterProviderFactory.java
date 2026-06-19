@@ -90,7 +90,7 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
                 .property()
                     .name("pollInterval")
                     .type("string")
-                    .helpText("Interval in milliseconds between polling the database for new cluster events. In a multi-cluster setup, a publishing node will pause for up to 5 times the duration for the event to be consumed to ensure the information is received by all nodes before returning to the caller.")
+                    .helpText("Interval between polling the database for new cluster events (supports duration suffixes like ms, s, m, h). In a multi-cluster setup, a publishing node will pause for up to 5 times this duration for the event to be consumed to ensure the information is received by all nodes before returning to the caller.")
                     .defaultValue(DEFAULT_POLL_INTERVAL_MS)
                     .add()
                 .build();
@@ -111,8 +111,8 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
                     runner.run();
                 }
             }, pollInterval.toMillis(), pollInterval.toMillis());
-            logger.infof("Scheduled cluster event poller with interval %s ms for cluster '%s'",
-                    pollInterval.toString(), nodeInfo.clusterName());
+            logger.infof("Scheduled cluster event poller with interval %s for cluster '%s'",
+                    pollInterval, nodeInfo.clusterName());
         });
     }
 

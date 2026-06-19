@@ -72,7 +72,7 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
 
     @Override
     public <T> ExecutionResult<T> executeIfNotExecuted(String taskKey, int taskTimeoutInSeconds, Callable<T> task) {
-        if (!isPrimaryCluster()) {
+        if (isPrimaryClusterSupported() && !isPrimaryCluster()) {
             return ExecutionResult.notExecuted();
         }
         return delegate.executeIfNotExecuted(taskKey, taskTimeoutInSeconds, task);
