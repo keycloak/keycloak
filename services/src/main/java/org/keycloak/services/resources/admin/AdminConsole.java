@@ -278,6 +278,11 @@ public class AdminConsole {
         final RealmModel realm = session.realms().getRealmByName(currentRealm);
         if (realm != null) {
             getRealmAdminAccess(realm, realm.getMasterAdminClient(), user, realmAdminAccess);
+            RealmModel masterRealm = session.realms().getRealmByName(Config.getAdminRealm());
+            RoleModel adminRole = masterRealm.getRole(AdminRoles.ADMIN);
+            if (adminRole != null && user.hasRole(adminRole)) {
+                realmAdminAccess.get(currentRealm).add(AdminRoles.ADMIN);
+            }
         } else {
             throw new NotFoundException("Realm not found");
         }
