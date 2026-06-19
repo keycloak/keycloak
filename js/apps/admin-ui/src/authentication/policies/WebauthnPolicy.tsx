@@ -1,4 +1,5 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type { FieldValues } from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
@@ -11,8 +12,8 @@ import {
   TextContent,
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
-import { useEffect } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { ReactNode, useEffect } from "react";
+import { FormProvider, useForm, Validate } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
   HelpItem,
@@ -57,6 +58,13 @@ const AUTHENTICATOR_ATTACHMENT = [
 
 const RESIDENT_KEY_OPTIONS = ["not specified", "Yes", "No"] as const;
 
+const RESIDENT_KEY_REQUIREMENT = [
+  "not specified",
+  "required",
+  "preferred",
+  "discouraged",
+] as const;
+
 const USER_VERIFY = [
   "not specified",
   "required",
@@ -64,13 +72,22 @@ const USER_VERIFY = [
   "discouraged",
 ] as const;
 
+const MEDIATION_OPTIONS = [
+  "conditional",
+  "none",
+  "optional",
+  "required",
+  "silent",
+] as const;
+
 type WeauthnSelectProps = {
   name: string;
   label: string;
-  labelIcon?: string;
+  labelIcon?: string | ReactNode;
   options: readonly string[];
   labelPrefix?: string;
   isMultiSelect?: boolean;
+  validate?: Validate<any, FieldValues>;
 };
 
 const WebauthnSelect = ({
@@ -80,6 +97,7 @@ const WebauthnSelect = ({
   options,
   labelPrefix,
   isMultiSelect = false,
+  validate,
 }: WeauthnSelectProps) => {
   const { t } = useTranslation();
   return (
@@ -88,7 +106,7 @@ const WebauthnSelect = ({
       label={label}
       labelIcon={labelIcon}
       variant={isMultiSelect ? "typeaheadMulti" : "single"}
-      controller={{ defaultValue: options[0] }}
+      controller={{ defaultValue: options[0], rules: { validate: validate } }}
       options={options.map((option) => ({
         key: option,
         value: labelPrefix ? t(`${labelPrefix}.${option}`) : option,
@@ -118,6 +136,7 @@ export const WebauthnPolicy = ({
   const {
     setValue,
     handleSubmit,
+    watch,
     formState: { isDirty },
   } = form;
 
@@ -143,6 +162,11 @@ export const WebauthnPolicy = ({
   };
 
   const isFeatureEnabled = useIsFeatureEnabled();
+  const acceptableAAGUIDs = watch(`${namePrefix}AcceptableAaguids`, []);
+  const requireResidentKey = watch(
+    `${namePrefix}RequireResidentKey`,
+    "not specified",
+  );
 
   return (
     <PageSection variant="light">
@@ -187,6 +211,18 @@ export const WebauthnPolicy = ({
             labelIcon={t("webAuthnPolicyAttestationConveyancePreferenceHelp")}
             options={ATTESTATION_PREFERENCE}
             labelPrefix="attestationPreference"
+            validate={(value) => {
+              const hasValidAAGUIDs = acceptableAAGUIDs.some(
+                (guid: string) => guid.trim().length > 0,
+              );
+
+              if (
+                (value === "none" || value === "not specified") &&
+                hasValidAAGUIDs
+              ) {
+                return t("acceptableAAGUIDsRequiresAttestation");
+              }
+            }}
           />
           <WebauthnSelect
             name={`${namePrefix}AuthenticatorAttachment`}
@@ -196,9 +232,22 @@ export const WebauthnPolicy = ({
             labelPrefix="authenticatorAttachment"
           />
           <WebauthnSelect
+            name={`${namePrefix}ResidentKey`}
+            label={t("webAuthnPolicyResidentKey")}
+            labelIcon={t("webAuthnPolicyResidentKeyHelp")}
+            options={RESIDENT_KEY_REQUIREMENT}
+            labelPrefix="residentKeyRequirement"
+          />
+          <WebauthnSelect
             name={`${namePrefix}RequireResidentKey`}
             label={t("webAuthnPolicyRequireResidentKey")}
-            labelIcon={t("webAuthnPolicyRequireResidentKeyHelp")}
+            labelIcon={
+              <HelpItem
+                helpText={t("webAuthnPolicyRequireResidentKeyHelp")}
+                fieldLabelId={`${namePrefix}RequireResidentKey`}
+                isRecommendation={requireResidentKey !== "not specified"}
+              />
+            }
             options={RESIDENT_KEY_OPTIONS}
             labelPrefix="residentKey"
           />
@@ -265,13 +314,24 @@ export const WebauthnPolicy = ({
             />
           </FormGroup>
           {isPasswordLess && isFeatureEnabled(Feature.Passkeys) && (
-            <SwitchControl
-              name={`${namePrefix}PasskeysEnabled`}
-              label={t("webAuthnPolicyPasskeysEnabled")}
-              labelIcon={t("webAuthnPolicyPasskeysEnabledHelp")}
-              labelOn={t("on")}
-              labelOff={t("off")}
-            />
+            <>
+              <SwitchControl
+                name={`${namePrefix}PasskeysEnabled`}
+                label={t("webAuthnPolicyPasskeysEnabled")}
+                labelIcon={t("webAuthnPolicyPasskeysEnabledHelp")}
+                labelOn={t("on")}
+                labelOff={t("off")}
+              />
+              {watch(`${namePrefix}PasskeysEnabled`) && (
+                <WebauthnSelect
+                  name={`${namePrefix}Mediation`}
+                  label={t("webAuthnPolicyMediation")}
+                  labelIcon={t("webAuthnPolicyMediationHelp")}
+                  options={MEDIATION_OPTIONS}
+                  labelPrefix="mediation"
+                />
+              )}
+            </>
           )}
         </FormProvider>
 

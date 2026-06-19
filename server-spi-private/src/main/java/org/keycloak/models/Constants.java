@@ -53,6 +53,9 @@ public final class Constants {
     public static final String AUTHZ_UMA_AUTHORIZATION = "uma_authorization";
     public static final String[] AUTHZ_DEFAULT_AUTHORIZATION_ROLES = {AUTHZ_UMA_AUTHORIZATION};
 
+    // 5 minutes
+    public static final int DEFAULT_ACCESS_TOKEN_LIFESPAN = 300;
+
     // 15 minutes
     public static final int DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT = 900;
     // 30 days
@@ -65,6 +68,23 @@ public final class Constants {
 
     public static final int DEFAULT_SESSION_IDLE_TIMEOUT = 1800; // 30 minutes
     public static final int DEFAULT_SESSION_MAX_LIFESPAN = 36000; // 10 hours
+
+    /**
+     * Default "Login timeout" (in the admin console). 30 minutes
+     */
+    public static final int DEFAULT_ACCESS_CODE_LIFESPAN_LOGIN = 1800;
+
+    /**
+     * Default "Client Login Timeout" (in the admin console). 1 minute
+     */
+    public static final int DEFAULT_ACCESS_CODE_LIFESPAN = 60;
+
+    /**
+     * Default for both "Login action timeout" and "User-Initiated Action Lifespan" (in the admin console). 5 minutes
+     */
+    public static final int DEFAULT_ACCESS_CODE_LIFESPAN_USER_ACTION = 300;
+
+    public static final int DEFAULT_ACTION_TOKEN_GENERATED_BY_ADMIN_LIFESPAN = 12 * 60 * 60;
 
     public static final String DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS = Algorithm.ES256+","+Algorithm.RS256;
     public static final String DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME = "keycloak";
@@ -130,6 +150,10 @@ public final class Constants {
     public static final String GENERATE = "GENERATE";
 
     public static final int DEFAULT_MAX_RESULTS = 100;
+    /**
+    * Used by {@code DefaultValue} annotation for when a REST endpoints max size default is set by {@link #DEFAULT_MAX_RESULTS}.
+    */
+    public static final String DEFAULT_MAX_RESULTS_STR = "" + DEFAULT_MAX_RESULTS;
 
     // Delimiter to be used in the configuration of authenticators (and some other components) in case that we need to save
     // multiple values into single string

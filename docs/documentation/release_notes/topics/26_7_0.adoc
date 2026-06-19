@@ -1,0 +1,110 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+This release features new capabilities for users and administrators of {project_name}. The highlights of this release are:
+
+= Security and Standards
+
+== Identity Brokering API: V2 promoted to supported, V1 deprecated
+
+The Identity Brokering API, which allows applications to retrieve tokens from external identity providers, now has V2 *supported but disabled by default* and V1 *deprecated but still enabled by default* for backward compatibility.
+
+In a future release, V1 will be removed and V2 will become the default. Users are encouraged to migrate to V2 now.
+
+For more information, see the link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] chapter in the {developerguide_name}.
+
+== OID4VCI Improvements
+
+https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OID4VCI] still remains experimental feature. However there is big progress on this feature with lots of contributions from the {project_name} community members as well
+as from the {project_name} core team. Some highlights include:
+
+* Polishing of existing functionality and improving configuration. Everything configurable in admin UI now in addition to admin REST API
+* Lots of bugs fixed. Improved specification compliance
+* Conformance with the https://openid.net/specs/openid4vc-high-assurance-interoperability-profile-1_0.html[OpenID4VC High Assurance Interoperability Profile (HAIP)].
+This work involves introduction of the dedicated {project_name} experimental feature `client-auth-abca` for https://datatracker.ietf.org/doc/html/draft-ietf-oauth-attestation-based-client-auth-07[Attestation based client authentication (ABCA)]
+* Management of verifiable credentials for individual users. This involves ability for administrator to create verifiable credential for user
+to indicate that this user can retrieve verifiable credential as well as ability for users to start issuance of verifiable credential from the {project_name} account console
+* https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-pre-authorized-code-flow[Pre-authorized code grant] support is still experimental and was moved to the dedicated experimental feature `oid4vc-vci-preauth-code`
+* Documentation updated and improved
+
+ifeval::[{project_community}==true]
+Lots of community members was involved in the related development. Many thanks to https://github.com/Awambeng[Awambeng],
+https://github.com/Captain-P-Goldfish[Pascal Knüppel], https://github.com/dominikschlosser[Dominik Schlosser], https://github.com/forkimenjeckayang[forkimenjeckayang],
+https://github.com/IngridPuppet[Ingrid Kamga], https://github.com/keshavprashantdeshpande[Keshav Deshpande], https://github.com/namanONcode[Naman Jain],
+https://github.com/officialasishkumar[Asish Kumar], https://github.com/Ogenbertrand[Ogen Bertrand], https://github.com/Oluwatobi-Mustapha[Oluwatobi Mustapha],
+https://github.com/pulsastrix[Hugo Hakim Damer], https://github.com/rameshkumarkoyya[rameshkumarkoyya], https://github.com/tdiesler[Thomas Diesler] and
+https://github.com/Vitalisn4[Palpable] for the contributions!
+endif::[]
+
+= Administration
+
+== Delegated administration for organizations
+
+{project_name} now supports delegated organization administration without requiring the broad `manage-realm` role. This is achieved through new dedicated admin roles and Fine-Grained Admin Permissions support for organizations.
+
+New realm admin roles provide coarse-grained delegation:
+
+* `manage-organizations` — grants full read and write access to organizations, including creating, updating, and deleting organizations and their members.
+* `view-organizations` — grants read-only access to organizations and their members (also requires `view-users` or Fine-Grained Admin Permissions for user visibility).
+* `query-organizations` — grants the ability to search and list organizations without full view access, consistent with the `query-users` / `query-clients` / `query-groups` pattern.
+
+The `manage-realm` role continues to implicitly grant full organization management access for backward compatibility.
+
+For per-organization granularity, organizations are now a first-class resource type in Fine-Grained Admin Permissions. Administrators can create permissions to control which specific organizations a delegated administrator can view or manage — for example, granting access to manage one organization without giving access to all organizations in the realm. When Fine-Grained Admin Permissions is enabled, organization member queries also respect user-level permissions, returning only members the administrator is permitted to view.
+
+== Role mappings on organization groups
+
+Organization groups now support realm and client role assignments. Roles assigned to organization groups are automatically included in `realm_access` and `resource_access` token claims for group members. Additionally, the *Organization Group Membership* protocol mapper (OIDC and SAML) can optionally include these roles within the `organization` claim, organized per organization, by enabling the *Add group role mappings* configuration option.
+
+For more details, see the link:{adminguide_link}#pass:a[_managing_groups_][Managing organization groups] guide.
+
+== Passkey authenticator icons in login and account console
+
+The login page and account console now display vendor-specific icons for registered passkeys and security keys.
+When a user wants to authenticate with Passkeys, {project_name} shows the authenticator's icon alongside its label, making it easier to identify the correct device.
+
+As part of this change, the passkey authentication page in the login theme and the signing-in page in the account console were updated.
+If you use a custom theme that overrides these pages, verify that your customizations work as expected with this release.
+
+== New `Discoverable credential` option in the WebAuthn policies
+
+The WebAuthn Policy and WebAuthn Passwordless Policy provide a new `Discoverable credential` option that follows the current WebAuthn specification.
+In addition to requiring or discouraging discoverable credentials (passkeys), it supports the `preferred` value, which was not possible with the previous Yes/No option.
+The new option is sent to the browser as `authenticatorSelection.residentKey` when registering WebAuthn credentials, which improves compatibility with passkey providers.
+The previous `Require Discoverable Credential` option is now deprecated, and it is planned to be removed in future.
+
+== Unified button layout in login theme
+
+Action buttons across login theme pages now use a consistent horizontal layout. If you use a custom theme that overrides these pages, verify that your customizations work as expected with this release.
+
+== Realm search now matches by display name
+
+When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.
+
+As part of this change, the `displayName` attribute has been promoted from a realm attribute to a dedicated column on the realm entity.
+
+Before migrating, check the current value of the `displayName` attribute for your realms. If the current value of `displayName` attribute
+exceeds 255 characters, it will be truncated during migration.
+
+== Dynamic Scopes feature renamed to Parameterized Scopes
+
+The experimental feature previously known as `dynamic-scopes` has been renamed to `parameterized-scopes` to better describe its purpose.
+If you enabled this feature using `--features=dynamic-scopes`, update your configuration to use `--features=parameterized-scopes`.
+
+== Typed parameters for parameterized scopes
+
+Parameterized scopes can now define a parameter type that validates the captured value at request time. Built-in types include `string`, `integer`, `boolean`, `username`, and `custom` (validated against an admin-defined regex). The type is required when creating parameterized scopes with the feature enabled.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Configuring and Running
+
+== Deprecation of SHA1 hashing functions in {project_name} 27
+
+NIST is going to fully https://www.nist.gov/news-events/news/2022/12/nist-retires-sha-1-cryptographic-algorithm[retire] SHA1 hashing function in 2030. {project_name} will remove all uses of SHA1 in version 27.
+
+[NOTE]
+====
+Consider SHA1 hashing retired in all uses within {project_name}. Users should configure other secure hashing functions as soon as possible (for example SHA2, SHA3).
+====
+

@@ -425,6 +425,10 @@ export default function FlowDetails() {
                 }}
                 onDrop={(source, dest) => {
                   if (dest) {
+                    if (source.index === dest.index) {
+                      return false;
+                    }
+
                     const dragged = executionList.findExecution(source.index)!;
                     const order = executionList.order().map((ex) => ex.id!);
                     setLiveText(

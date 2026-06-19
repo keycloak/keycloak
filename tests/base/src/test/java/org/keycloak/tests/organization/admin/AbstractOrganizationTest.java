@@ -20,6 +20,7 @@ package org.keycloak.tests.organization.admin;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -40,12 +41,12 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.realm.CredentialBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.util.CredentialBuilder;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -104,13 +105,21 @@ public abstract class AbstractOrganizationTest {
         realmResource.identityProviders().create(broker).close();
 
         String brokerAlias = broker.getAlias();
-        realm.cleanup().add(r -> r.identityProviders().get(brokerAlias).remove());
+        realm.cleanup().add(r -> {
+            try {
+                r.identityProviders().get(brokerAlias).remove();
+            } catch (NotFoundException ignored) {}
+        });
 
         realmResource.organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
         org = realmResource.organizations().get(id).toRepresentation();
 
         String orgId = id;
-        realm.cleanup().add(r -> r.organizations().get(orgId).delete().close());
+        realm.cleanup().add(r -> {
+            try {
+                r.organizations().get(orgId).delete().close();
+            } catch (NotFoundException ignored) {}
+        });
 
         return org;
     }
@@ -161,7 +170,7 @@ public abstract class AbstractOrganizationTest {
 
         if (isSetCredentials) {
             realm.admin().users().get(expected.getId()).resetPassword(
-                    CredentialBuilder.create().password(memberPassword).build());
+                    CredentialBuilder.password(memberPassword).build());
         }
 
         String userId = expected.getId();
@@ -228,9 +237,9 @@ public abstract class AbstractOrganizationTest {
         return IdentityProviderBuilder.create()
                 .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                 .alias(orgName + "-identity-provider")
-                .setAttribute("clientId", "broker-app")
-                .setAttribute("clientSecret", "broker-secret")
-                .setAttribute(IdentityProviderModel.SYNC_MODE, "IMPORT")
+                .attribute("clientId", "broker-app")
+                .attribute("clientSecret", "broker-secret")
+                .attribute(IdentityProviderModel.SYNC_MODE, "IMPORT")
                 .hideOnLoginPage()
                 .build();
     }
@@ -240,7 +249,7 @@ public abstract class AbstractOrganizationTest {
      */
     public static class OrganizationRealmConfig implements RealmConfig {
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             return realm.organizationsEnabled(true);
         }
     }

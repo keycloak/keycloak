@@ -205,6 +205,31 @@ For these use case, the CLI options `cache-remote-tls-enabled` disables the encr
 The CLI options `cache-remote-username` and `cache-remote-password` are optional and, if not set, {project_name} will connect to the {jdgserver_name} server without presenting any credentials.
 If the {jdgserver_name} server has authentication enabled, {project_name} will fail to start.
 
+== Cluster identification
+
+The following options allow you to identify the cluster and its nodes:
+
+Cluster name (experimental)::
+Defines the name of the cluster.
+Only nodes with the same cluster name can discover each other and form a cluster.
+Because {project_name} uses the database for node discovery via `jdbc-ping` by default, clusters that share the same database but should remain separate will merge unless they have distinct cluster names.
+The default cluster name is `ISPN`.
++
+Use the SPI option `+spi-cache-embedded--default--cluster-name+` (or environment variable `+KC_SPI_CACHE_EMBEDDED__DEFAULT__CLUSTER_NAME+`).
++
+For example: `+--spi-cache-embedded--default--cluster-name=my-cluster+`
++
+WARNING: As invalidation of caches between clusters with distinct names will not work, this will lead to stale caches and incorrect behavior. Do not use in production environments. Use only together with the experimental `cacheless` feature.
+
+Node name::
+Sets a human-readable name for the current node, used in log messages and management tools.
+By default, a random name is generated on each start, which makes it difficult to correlate metrics and logs across restarts.
+Set this option to assign a stable name, which is especially useful for observability tools such as Grafana dashboards and log aggregation.
++
+Use the SPI option `+spi-cache-embedded--default--node-name+` (or environment variable `+KC_SPI_CACHE_EMBEDDED__DEFAULT__NODE_NAME+`).
++
+For example: `+--spi-cache-embedded--default--node-name=node-1+`
+
 [[cache-topology]]
 == Topology aware data distribution
 

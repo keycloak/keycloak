@@ -20,14 +20,17 @@ jobs:
     name: Delete Aurora DB
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Initialize AWS client
         run: |
-          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set aws_access_key_id "${AWS_ACCESS_KEY_ID}"
+          aws configure set aws_secret_access_key "${AWS_SECRET_ACCESS_KEY}"
           aws configure set region ${{ inputs.region }}
 
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - id: delete
         shell: bash
         run: ./aurora_delete.sh

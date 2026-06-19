@@ -29,8 +29,8 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  *
@@ -53,12 +53,12 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractChangeImportedUse
             oauth.logoutForm().idTokenHint(idTokenString)
                     .postLogoutRedirectUri(OAuthClient.APP_AUTH_ROOT).open();
             LogoutToken logoutToken = testingClient.testApp().getFrontChannelLogoutToken();
-            Assert.assertNotNull(logoutToken);
+            Assertions.assertNotNull(logoutToken);
 
             IDToken idToken = new JWSInput(idTokenString).readJsonContent(IDToken.class);
 
-            Assert.assertEquals(logoutToken.getIssuer(), idToken.getIssuer());
-            Assert.assertEquals(logoutToken.getSid(), idToken.getSessionId());
+            Assertions.assertEquals(logoutToken.getIssuer(), idToken.getIssuer());
+            Assertions.assertEquals(logoutToken.getSid(), idToken.getSessionId());
         } finally {
             rep.setFrontchannelLogout(false);
             rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, "");
@@ -82,10 +82,10 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractChangeImportedUse
             oauth.logoutForm().idTokenHint(idTokenString)
                     .postLogoutRedirectUri(OAuthClient.APP_AUTH_ROOT).open();
             LogoutToken logoutToken = testingClient.testApp().getFrontChannelLogoutToken();
-            Assert.assertNotNull(logoutToken);
+            Assertions.assertNotNull(logoutToken);
 
-            Assert.assertNull(logoutToken.getIssuer());
-            Assert.assertNull(logoutToken.getSid());
+            Assertions.assertNull(logoutToken.getIssuer());
+            Assertions.assertNull(logoutToken.getSid());
         } finally {
             rep.setFrontchannelLogout(false);
             rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, "");
@@ -109,17 +109,47 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractChangeImportedUse
             String idTokenString = tokenResponse.getIdToken();
             oauth.logoutForm().idTokenHint(idTokenString).open();
             LogoutToken logoutToken = testingClient.testApp().getFrontChannelLogoutToken();
-            org.keycloak.testsuite.Assert.assertNotNull(logoutToken);
+            Assertions.assertNotNull(logoutToken);
             IDToken idToken = new JWSInput(idTokenString).readJsonContent(IDToken.class);
-            org.keycloak.testsuite.Assert.assertEquals(logoutToken.getIssuer(), idToken.getIssuer());
-            org.keycloak.testsuite.Assert.assertEquals(logoutToken.getSid(), idToken.getSessionId());
-            Assert.assertTrue(driver.getTitle().equals("Logging out"));
-            Assert.assertTrue(driver.getPageSource().contains("You are logging out from following apps"));
-            Assert.assertTrue(driver.getPageSource().contains("My Testing App"));
+            Assertions.assertEquals(logoutToken.getIssuer(), idToken.getIssuer());
+            Assertions.assertEquals(logoutToken.getSid(), idToken.getSessionId());
+            Assertions.assertTrue(driver.getTitle().equals("Logging out"));
+            Assertions.assertTrue(driver.getPageSource().contains("You are logging out from following apps"));
+            Assertions.assertTrue(driver.getPageSource().contains("My Testing App"));
         } finally {
             rep.setFrontchannelLogout(false);
             rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, "");
             clients.get(rep.getId()).update(rep);
+        }
+    }
+
+    @Test
+    public void testFrontChannelLogoutRedirectUriIsEscapedInJs() throws Exception {
+        String specialCharsUri = OAuthClient.APP_ROOT + "/');alert(document.cookie);//";
+        try (ClientAttributeUpdater updater = ClientAttributeUpdater
+                .forClient(adminClient, oauth.getRealm(), oauth.getClientId())
+                .setFrontchannelLogout(true)
+                .setAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, OAuthClient.APP_ROOT + "/admin/frontchannelLogout")
+                .setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, OAuthClient.APP_ROOT + "/*")
+                .update()) {
+            oauth.doLogin("test-user@localhost", getPassword("test-user@localhost"));
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            String logoutUrl = oauth.logoutForm().idTokenHint(tokenResponse.getIdToken())
+                    .postLogoutRedirectUri(specialCharsUri).build();
+
+            // XHR to get raw HTML before the JS redirect in frontchannel-logout.ftl fires
+            driver.get(getAuthServerRoot().toString());
+            String pageSource = (String) ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+                    "var xhr = new XMLHttpRequest();" +
+                    "xhr.open('GET', arguments[0], false);" +
+                    "xhr.send();" +
+                    "return xhr.responseText;", logoutUrl);
+
+            Assertions.assertFalse(pageSource.contains("window.location.replace('"),
+                    "Redirect URI must not be rendered in a single-quoted JS string");
+            Assertions.assertTrue(pageSource.contains("window.location.replace(\"" + specialCharsUri + "\")"),
+                    "Redirect URI should be rendered as a double-quoted JS string via FreeMarker ?c outputformat escaping");
         }
     }
 
@@ -140,13 +170,13 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractChangeImportedUse
             String idTokenString = tokenResponse.getIdToken();
             oauth.logoutForm().idTokenHint(idTokenString).open();
             LogoutToken logoutToken = testingClient.testApp().getFrontChannelLogoutToken();
-            Assert.assertNotNull(logoutToken);
+            Assertions.assertNotNull(logoutToken);
             IDToken idToken = new JWSInput(idTokenString).readJsonContent(IDToken.class);
-            Assert.assertEquals(logoutToken.getIssuer(), idToken.getIssuer());
-            Assert.assertEquals(logoutToken.getSid(), idToken.getSessionId());
-            Assert.assertTrue(driver.getTitle().equals("Logging out"));
-            Assert.assertTrue(driver.getPageSource().contains("You are logging out from following apps"));
-            Assert.assertTrue(driver.getPageSource().contains("My Testing App"));
+            Assertions.assertEquals(logoutToken.getIssuer(), idToken.getIssuer());
+            Assertions.assertEquals(logoutToken.getSid(), idToken.getSessionId());
+            Assertions.assertTrue(driver.getTitle().equals("Logging out"));
+            Assertions.assertTrue(driver.getPageSource().contains("You are logging out from following apps"));
+            Assertions.assertTrue(driver.getPageSource().contains("My Testing App"));
         }
      }
 }

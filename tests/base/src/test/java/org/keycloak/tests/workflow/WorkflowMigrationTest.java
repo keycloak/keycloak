@@ -20,7 +20,7 @@ import org.keycloak.representations.workflows.StepExecutionStatus;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
@@ -67,7 +67,7 @@ public class WorkflowMigrationTest extends AbstractWorkflowTest {
 
         // create a few of users so that they are attached to the user workflow
         for (int i = 1; i <= 3; i++) {
-            try (var createUserResponse = managedRealm.admin().users().create(UserConfigBuilder.create().username("user-" + i).build())) {
+            try (var createUserResponse = managedRealm.admin().users().create(UserBuilder.create().username("user-" + i).build())) {
                 assertThat(createUserResponse.getStatus(), is(Response.Status.CREATED.getStatusCode()));
                 String userId = ApiUtil.getCreatedId(createUserResponse);
                 // check created user is attached to the first workflow
@@ -118,7 +118,7 @@ public class WorkflowMigrationTest extends AbstractWorkflowTest {
 
         // create a few of users so that they are attached to the first workflow
         for (int i = 1; i <= 3; i++) {
-            try (var createUserResponse = managedRealm.admin().users().create(UserConfigBuilder.create().username("user-" + i).build())) {
+            try (var createUserResponse = managedRealm.admin().users().create(UserBuilder.create().username("user-" + i).build())) {
                 assertThat(createUserResponse.getStatus(), is(Response.Status.CREATED.getStatusCode()));
                 String userId = ApiUtil.getCreatedId(createUserResponse);
                 // check created user is attached to the first workflow
@@ -172,7 +172,7 @@ public class WorkflowMigrationTest extends AbstractWorkflowTest {
         // create a few of users so that they are attached to the first workflow
         String[] userIds = new String[4];
         for (int i = 0; i <= 3; i++) {
-            try (var createUserResponse = managedRealm.admin().users().create(UserConfigBuilder.create().username("user-" + i).build())) {
+            try (var createUserResponse = managedRealm.admin().users().create(UserBuilder.create().username("user-" + i).build())) {
                 assertThat(createUserResponse.getStatus(), is(Response.Status.CREATED.getStatusCode()));
                 userIds[i] = ApiUtil.getCreatedId(createUserResponse);
                 // check created user is attached to the first workflow
@@ -237,7 +237,7 @@ public class WorkflowMigrationTest extends AbstractWorkflowTest {
         // create a few of users so that they are attached to the first workflow
         String[] userIds = new String[4];
         for (int i = 0; i <= 3; i++) {
-            try (var createUserResponse = managedRealm.admin().users().create(UserConfigBuilder.create().username("user-" + i).build())) {
+            try (var createUserResponse = managedRealm.admin().users().create(UserBuilder.create().username("user-" + i).build())) {
                 assertThat(createUserResponse.getStatus(), is(Response.Status.CREATED.getStatusCode()));
                 userIds[i] = ApiUtil.getCreatedId(createUserResponse);
                 // check created user is attached to the first workflow
@@ -297,7 +297,7 @@ public class WorkflowMigrationTest extends AbstractWorkflowTest {
         // create a few of users so that they are attached to the workflow
         String[] userIds = new String[4];
         for (int i = 0; i <= 3; i++) {
-            try (var createUserResponse = managedRealm.admin().users().create(UserConfigBuilder.create().username("user-" + i).build())) {
+            try (var createUserResponse = managedRealm.admin().users().create(UserBuilder.create().username("user-" + i).build())) {
                 assertThat(createUserResponse.getStatus(), is(Response.Status.CREATED.getStatusCode()));
                 userIds[i] = ApiUtil.getCreatedId(createUserResponse);
                 // check created user is attached to the first workflow

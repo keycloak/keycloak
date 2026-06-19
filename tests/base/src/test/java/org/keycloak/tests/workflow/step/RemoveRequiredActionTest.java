@@ -9,7 +9,7 @@ import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
@@ -37,7 +37,7 @@ public class RemoveRequiredActionTest extends AbstractWorkflowTest {
                                 .build()
                 ).build()).close();
 
-        managedRealm.admin().users().create(UserConfigBuilder.create()
+        managedRealm.admin().users().create(UserBuilder.create()
                 .username("testuser_remove")
                 .requiredActions(UserModel.RequiredAction.UPDATE_PASSWORD.name())
                 .build()).close();

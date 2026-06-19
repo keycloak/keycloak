@@ -16,8 +16,8 @@ import org.keycloak.testsuite.util.KeystoreUtils;
 import org.keycloak.testsuite.util.TempFileResource;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
 import static org.keycloak.client.cli.util.OsUtil.EOL;
@@ -36,7 +36,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
         KcAdmExec exe = execute("nonexistent");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 3);
-        Assert.assertEquals("stderr first line", "Unmatched argument at index 0: 'nonexistent'", exe.stderrLines().get(0));
+        Assertions.assertEquals("Unmatched argument at index 0: 'nonexistent'", exe.stderrLines().get(0), "stderr first line");
     }
 
 
@@ -50,10 +50,10 @@ public class KcAdmTest extends AbstractAdmCliTest {
         assertExitCodeAndStdErrSize(exe, 2, 0);
 
         List<String> lines = exe.stdoutLines();
-        Assert.assertTrue("stdout output not empty", lines.size() > 0);
-        Assert.assertEquals("stdout first line", "Keycloak Admin CLI", lines.get(0));
-        Assert.assertEquals("stdout one but last line", "Use '" + CMD + " help <command>' for more information about a given command.", lines.get(lines.size() - 2));
-        Assert.assertEquals("stdout last line", "", lines.get(lines.size() - 1));
+        Assertions.assertTrue(lines.size() > 0, "stdout output not empty");
+        Assertions.assertEquals("Keycloak Admin CLI", lines.get(0), "stdout first line");
+        Assertions.assertEquals("Use '" + CMD + " help <command>' for more information about a given command.", lines.get(lines.size() - 2), "stdout one but last line");
+        Assertions.assertEquals("", lines.get(lines.size() - 1), "stdout last line");
 
 
         /*
@@ -61,42 +61,42 @@ public class KcAdmTest extends AbstractAdmCliTest {
          */
         exe = KcAdmExec.execute("config");
         assertExitCodeAndStreamSizes(exe, 2, 8, 0);
-        Assert.assertEquals("error message",
-                "Usage: " + CMD + " config SUB_COMMAND [ARGUMENTS]",
-                exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " config SUB_COMMAND [ARGUMENTS]",
+                exe.stdoutLines().get(0),
+                "error message");
 
         exe = KcAdmExec.execute("config credentials");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "       " + CMD + " config credentials --server SERVER_URL --realm REALM --user USER [--password PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(1));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("       " + CMD + " config credentials --server SERVER_URL --realm REALM --user USER [--password PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(1), "help message");
 
         exe = KcAdmExec.execute("config truststore");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " config truststore [TRUSTSTORE | --delete] [--trustpass PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " config truststore [TRUSTSTORE | --delete] [--trustpass PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
 
         exe = KcAdmExec.execute("create");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " create ENDPOINT_URI [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " create ENDPOINT_URI [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
         //Assert.assertEquals("error message", "No file nor attribute values specified", exe.stderrLines().get(0));
 
         exe = KcAdmExec.execute("get");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " get ENDPOINT_URI [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " get ENDPOINT_URI [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
         //Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
 
         exe = KcAdmExec.execute("update");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " update ENDPOINT_URI [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " update ENDPOINT_URI [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
         //Assert.assertEquals("error message", "No file nor attribute values specified", exe.stderrLines().get(0));
 
         exe = KcAdmExec.execute("delete");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " delete ENDPOINT_URI [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " delete ENDPOINT_URI [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
         //Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
 
         //exe = KcAdmExec.execute("get-roles");
@@ -114,28 +114,28 @@ public class KcAdmTest extends AbstractAdmCliTest {
 
         exe = KcAdmExec.execute("add-roles");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " add-roles (--uusername USERNAME | --uid ID) [--cclientid CLIENT_ID | --cid ID] (--rolename NAME | --roleid ID)+ [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " add-roles (--uusername USERNAME | --uid ID) [--cclientid CLIENT_ID | --cid ID] (--rolename NAME | --roleid ID)+ [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
         //Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
 
         exe = KcAdmExec.execute("remove-roles");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " remove-roles (--uusername USERNAME | --uid ID) [--cclientid CLIENT_ID | --cid ID] (--rolename NAME | --roleid ID)+ [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " remove-roles (--uusername USERNAME | --uid ID) [--cclientid CLIENT_ID | --cid ID] (--rolename NAME | --roleid ID)+ [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
 
         exe = KcAdmExec.execute("set-password");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " set-password (--username USERNAME | --userid ID) [--new-password PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " set-password (--username USERNAME | --userid ID) [--new-password PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
         //Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
 
         exe = KcAdmExec.execute("help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
         lines = exe.stdoutLines();
-        Assert.assertTrue("stdout output not empty", lines.size() > 0);
-        Assert.assertEquals("stdout first line", "Keycloak Admin CLI", lines.get(0));
-        Assert.assertEquals("stdout one but last line", "Use '" + KcAdmExec.CMD + " help <command>' for more information about a given command.", lines.get(lines.size() - 2));
-        Assert.assertEquals("stdout last line", "", lines.get(lines.size() - 1));
+        Assertions.assertTrue(lines.size() > 0, "stdout output not empty");
+        Assertions.assertEquals("Keycloak Admin CLI", lines.get(0), "stdout first line");
+        Assertions.assertEquals("Use '" + KcAdmExec.CMD + " help <command>' for more information about a given command.", lines.get(lines.size() - 2), "stdout one but last line");
+        Assertions.assertEquals("", lines.get(lines.size() - 1), "stdout last line");
     }
 
     @Test
@@ -145,55 +145,55 @@ public class KcAdmTest extends AbstractAdmCliTest {
          */
         KcAdmExec exe = KcAdmExec.execute("--help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Keycloak Admin CLI", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Keycloak Admin CLI", exe.stdoutLines().get(0), "stdout first line");
 
         exe = KcAdmExec.execute("create --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " create ENDPOINT_URI [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " create ENDPOINT_URI [ARGUMENTS]", exe.stdoutLines().get(0), "stdout first line");
 
         exe = KcAdmExec.execute("get --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " get ENDPOINT_URI [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " get ENDPOINT_URI [ARGUMENTS]", exe.stdoutLines().get(0), "stdout first line");
 
         exe = KcAdmExec.execute("update --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " update ENDPOINT_URI [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " update ENDPOINT_URI [ARGUMENTS]", exe.stdoutLines().get(0), "stdout first line");
 
         exe = KcAdmExec.execute("delete --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " delete ENDPOINT_URI [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " delete ENDPOINT_URI [ARGUMENTS]", exe.stdoutLines().get(0), "stdout first line");
 
         exe = KcAdmExec.execute("get-roles --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " get-roles [--cclientid CLIENT_ID | --cid ID] [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " get-roles [--cclientid CLIENT_ID | --cid ID] [ARGUMENTS]", exe.stdoutLines().get(0), "stdout first line");
 
         exe = KcAdmExec.execute("add-roles --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " add-roles (--uusername USERNAME | --uid ID) [--cclientid CLIENT_ID | --cid ID] (--rolename NAME | --roleid ID)+ [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " add-roles (--uusername USERNAME | --uid ID) [--cclientid CLIENT_ID | --cid ID] (--rolename NAME | --roleid ID)+ [ARGUMENTS]", exe.stdoutLines().get(0), "stdout first line");
 
         exe = KcAdmExec.execute("remove-roles --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " remove-roles (--uusername USERNAME | --uid ID) [--cclientid CLIENT_ID | --cid ID] (--rolename NAME | --roleid ID)+ [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " remove-roles (--uusername USERNAME | --uid ID) [--cclientid CLIENT_ID | --cid ID] (--rolename NAME | --roleid ID)+ [ARGUMENTS]", exe.stdoutLines().get(0), "stdout first line");
 
         exe = KcAdmExec.execute("set-password --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " set-password (--username USERNAME | --userid ID) [--new-password PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " set-password (--username USERNAME | --userid ID) [--new-password PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0), "stdout first line");
 
         exe = KcAdmExec.execute("config --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " config SUB_COMMAND [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " config SUB_COMMAND [ARGUMENTS]", exe.stdoutLines().get(0), "stdout first line");
 
         exe = KcAdmExec.execute("config credentials --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout line",
-                "       " + CMD + " config credentials --server SERVER_URL --realm REALM --user USER [--password PASSWORD] [ARGUMENTS]",
-                exe.stdoutLines().get(1));
+        Assertions.assertEquals("       " + CMD + " config credentials --server SERVER_URL --realm REALM --user USER [--password PASSWORD] [ARGUMENTS]",
+                exe.stdoutLines().get(1),
+                "stdout line");
 
         exe = KcAdmExec.execute("config truststore --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line",
-                "Usage: " + CMD + " config truststore [TRUSTSTORE | --delete] [--trustpass PASSWORD] [ARGUMENTS]",
-                exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " config truststore [TRUSTSTORE | --delete] [--trustpass PASSWORD] [ARGUMENTS]",
+                exe.stdoutLines().get(0),
+                "stdout first line");
     }
 
     @Test
@@ -204,7 +204,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
         KcAdmExec exe = KcAdmExec.execute("--nonexistent");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);
-        Assert.assertEquals("stderr first line", "Unknown option: '--nonexistent'", exe.stderrLines().get(0));
+        Assertions.assertEquals("Unknown option: '--nonexistent'", exe.stderrLines().get(0), "stderr first line");
     }
 
     @Test
@@ -216,14 +216,14 @@ public class KcAdmTest extends AbstractAdmCliTest {
         KcAdmExec exe = KcAdmExec.execute("get users --nonexistent");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 3);
-        Assert.assertEquals("stderr first line", "Unknown option: '--nonexistent'", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + CMD + " get --help' for more information on the available options.", exe.stderrLines().get(2));
+        Assertions.assertEquals("Unknown option: '--nonexistent'", exe.stderrLines().get(0), "stderr first line");
+        Assertions.assertEquals("Try '" + CMD + " get --help' for more information on the available options.", exe.stderrLines().get(2), "try help");
 
         exe = KcAdmExec.execute("set-password --nonexistent");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 3);
-        Assert.assertEquals("stderr first line", "Unknown option: '--nonexistent'", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + CMD + " set-password --help' for more information on the available options.", exe.stderrLines().get(2));
+        Assertions.assertEquals("Unknown option: '--nonexistent'", exe.stderrLines().get(0), "stderr first line");
+        Assertions.assertEquals("Try '" + CMD + " set-password --help' for more information on the available options.", exe.stderrLines().get(2), "try help");
     }
 
     @Test
@@ -231,7 +231,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
         KcAdmExec exe = KcAdmExec.execute("config credentials --server http://localhost:8080 --realm master --username admin --password admin");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 3);
-        Assert.assertEquals("stderr first line", "Unknown options: '--username', 'admin'", exe.stderrLines().get(0));
+        Assertions.assertEquals("Unknown options: '--username', 'admin'", exe.stderrLines().get(0), "stderr first line");
     }
 
     @Test
@@ -252,8 +252,8 @@ public class KcAdmTest extends AbstractAdmCliTest {
         KcAdmExec exe = KcAdmExec.execute("config credentials --realm master --user admin --password admin");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);
-        Assert.assertEquals("stderr first line", "Required option not specified: --server", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + CMD + " config credentials --help' for more information on the available options.", exe.stderrLines().get(1));
+        Assertions.assertEquals("Required option not specified: --server", exe.stderrLines().get(0), "stderr first line");
+        Assertions.assertEquals("Try '" + CMD + " config credentials --help' for more information on the available options.", exe.stderrLines().get(1), "try help");
     }
 
     @Test
@@ -264,8 +264,8 @@ public class KcAdmTest extends AbstractAdmCliTest {
         KcAdmExec exe = KcAdmExec.execute("config credentials --server " + serverUrl + " --user admin --password admin");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);
-        Assert.assertEquals("stderr first line", "Required option not specified: --realm", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + CMD + " config credentials --help' for more information on the available options.", exe.stderrLines().get(1));
+        Assertions.assertEquals("Required option not specified: --realm", exe.stderrLines().get(0), "stderr first line");
+        Assertions.assertEquals("Try '" + CMD + " config credentials --help' for more information on the available options.", exe.stderrLines().get(1), "try help");
     }
 
     @Test
@@ -276,8 +276,8 @@ public class KcAdmTest extends AbstractAdmCliTest {
         KcAdmExec exe = KcAdmExec.execute("config credentials --no-config --server " + serverUrl + " --realm master --user admin --password admin");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);
-        Assert.assertEquals("stderr first line", "Unsupported option: --no-config", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + CMD + " config credentials --help' for more information on the available options.", exe.stderrLines().get(1));
+        Assertions.assertEquals("Unsupported option: --no-config", exe.stderrLines().get(0), "stderr first line");
+        Assertions.assertEquals("Try '" + CMD + " config credentials --help' for more information on the available options.", exe.stderrLines().get(1), "try help");
     }
 
     @Test
@@ -288,7 +288,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
         KcAdmExec exe = KcAdmExec.execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
 
         assertExitCodeAndStreamSizes(exe, 0, 0, 1);
-        Assert.assertEquals("stderr first line", "Logging into " + serverUrl + " as user admin of realm master", exe.stderrLines().get(0));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user admin of realm master", exe.stderrLines().get(0), "stderr first line");
     }
 
     @Test
@@ -296,7 +296,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
         KcAdmExec exe = KcAdmExec.execute("config credentials --server " + serverUrl + " --realm test --user 'special>>character' --password '<password>'");
 
         assertExitCodeAndStreamSizes(exe, 0, 0, 1);
-        Assert.assertEquals("stderr first line", "Logging into " + serverUrl + " as user special>>character of realm test", exe.stderrLines().get(0));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user special>>character of realm test", exe.stderrLines().get(0), "stderr first line");
     }
 
     @Test
@@ -319,7 +319,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
         exe.waitCompletion();
 
         assertExitCodeAndStreamSizes(exe, 0, 1, 1);
-        Assert.assertEquals("stderr first line", "Logging into " + serverUrl + " as user admin of realm master", exe.stderrLines().get(0));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user admin of realm master", exe.stderrLines().get(0), "stderr first line");
 
 
         /*
@@ -335,8 +335,8 @@ public class KcAdmTest extends AbstractAdmCliTest {
             exe = KcAdmExec.execute("config credentials --server " + serverUrl + " --realm master --user admin < '" + tmpFile.getName() + "'");
 
             assertExitCodeAndStreamSizes(exe, 0, 1, 1);
-            Assert.assertTrue("Enter password prompt", exe.stdoutLines().get(0).startsWith("Enter password: "));
-            Assert.assertEquals("stderr first line", "Logging into " + serverUrl + " as user admin of realm master", exe.stderrLines().get(0));
+            Assertions.assertTrue(exe.stdoutLines().get(0).startsWith("Enter password: "), "Enter password prompt");
+            Assertions.assertEquals("Logging into " + serverUrl + " as user admin of realm master", exe.stderrLines().get(0), "stderr first line");
 
         } finally {
             tmpFile.delete();
@@ -364,7 +364,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
         exe.waitCompletion();
 
         assertExitCodeAndStreamSizes(exe, 0, 1, 1);
-        Assert.assertEquals("stderr first line", "Logging into " + serverUrl + " as service-account-admin-cli-secret of realm test", exe.stderrLines().get(0));
+        Assertions.assertEquals("Logging into " + serverUrl + " as service-account-admin-cli-secret of realm test", exe.stderrLines().get(0), "stderr first line");
 
         /*
          *  Run the test one more time with stdin redirect
@@ -381,8 +381,8 @@ public class KcAdmTest extends AbstractAdmCliTest {
                     .execute();
 
             assertExitCodeAndStreamSizes(exe, 0, 1, 1);
-            Assert.assertTrue("Enter client secret prompt", exe.stdoutLines().get(0).startsWith("Enter client secret: "));
-            Assert.assertEquals("stderr first line", "Logging into " + serverUrl + " as service-account-admin-cli-secret of realm test", exe.stderrLines().get(0));
+            Assertions.assertTrue(exe.stdoutLines().get(0).startsWith("Enter client secret: "), "Enter client secret prompt");
+            Assertions.assertEquals("Logging into " + serverUrl + " as service-account-admin-cli-secret of realm test", exe.stderrLines().get(0), "stderr first line");
         } finally {
             tmpFile.delete();
         }
@@ -401,23 +401,23 @@ public class KcAdmTest extends AbstractAdmCliTest {
                     " --user admin --password admin --config '" + configFile.getName() + "'");
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 1);
-            Assert.assertEquals("stderr first line", "Logging into " + serverUrl + " as user admin of realm master", exe.stderrLines().get(0));
+            Assertions.assertEquals("Logging into " + serverUrl + " as user admin of realm master", exe.stderrLines().get(0), "stderr first line");
 
             // make sure the config file exists, and has the right content
             ConfigData config = handler.loadConfig();
-            Assert.assertEquals("serverUrl", serverUrl, config.getServerUrl());
-            Assert.assertEquals("realm", "master", config.getRealm());
+            Assertions.assertEquals(serverUrl, config.getServerUrl(), "serverUrl");
+            Assertions.assertEquals("master", config.getRealm(), "realm");
             RealmConfigData realmcfg = config.sessionRealmConfigData();
-            Assert.assertNotNull("realm config data no null", realmcfg);
-            Assert.assertEquals("realm cfg serverUrl", serverUrl, realmcfg.serverUrl());
-            Assert.assertEquals("realm cfg realm", "master", realmcfg.realm());
-            Assert.assertEquals("client id", "admin-cli", realmcfg.getClientId());
-            Assert.assertNotNull("token not null", realmcfg.getToken());
-            Assert.assertNotNull("refresh token not null", realmcfg.getRefreshToken());
-            Assert.assertNotNull("token expires not null", realmcfg.getExpiresAt());
-            Assert.assertNotNull("token expires in future", realmcfg.getExpiresAt() > System.currentTimeMillis());
-            Assert.assertNotNull("refresh token expires not null", realmcfg.getRefreshExpiresAt());
-            Assert.assertNotNull("refresh token expires in future", realmcfg.getRefreshExpiresAt() > System.currentTimeMillis());
+            Assertions.assertNotNull(realmcfg, "realm config data no null");
+            Assertions.assertEquals(serverUrl, realmcfg.serverUrl(), "realm cfg serverUrl");
+            Assertions.assertEquals("master", realmcfg.realm(), "realm cfg realm");
+            Assertions.assertEquals("admin-cli", realmcfg.getClientId(), "client id");
+            Assertions.assertNotNull(realmcfg.getToken(), "token not null");
+            Assertions.assertNotNull(realmcfg.getRefreshToken(), "refresh token not null");
+            Assertions.assertNotNull(realmcfg.getExpiresAt(), "token expires not null");
+            Assertions.assertNotNull(realmcfg.getExpiresAt() > System.currentTimeMillis(), "token expires in future");
+            Assertions.assertNotNull(realmcfg.getRefreshExpiresAt(), "refresh token expires not null");
+            Assertions.assertNotNull(realmcfg.getRefreshExpiresAt() > System.currentTimeMillis(), "refresh token expires in future");
 
         } finally {
             configFile.delete();
@@ -456,7 +456,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
 
 
             ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-            Assert.assertEquals("clientId", "test-client", client.getClientId());
+            Assertions.assertEquals("test-client", client.getClientId(), "clientId");
 
 
 
@@ -491,8 +491,8 @@ public class KcAdmTest extends AbstractAdmCliTest {
                 " --user user1 --password userpass --client admin-cli-secret --secret password");
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-        Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Client not allowed for direct access grants [unauthorized_client]", exe.stderrLines().get(exe.stderrLines().size() - 1));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0), "login message");
+        Assertions.assertEquals("Client not allowed for direct access grants [unauthorized_client]", exe.stderrLines().get(exe.stderrLines().size() - 1), "error message");
 
 
         // try wrong user password
@@ -500,8 +500,8 @@ public class KcAdmTest extends AbstractAdmCliTest {
                 " --user user1 --password wrong --client admin-cli-secret-direct --secret password");
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-        Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Invalid user credentials [invalid_grant]", exe.stderrLines().get(exe.stderrLines().size() - 1));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0), "login message");
+        Assertions.assertEquals("Invalid user credentials [invalid_grant]", exe.stderrLines().get(exe.stderrLines().size() - 1), "error message");
 
 
         // try wrong client secret
@@ -509,8 +509,8 @@ public class KcAdmTest extends AbstractAdmCliTest {
                 " --user user1 --password userpass --client admin-cli-secret-direct --secret wrong");
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-        Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Invalid client or Invalid client credentials [unauthorized_client]", exe.stderrLines().get(exe.stderrLines().size() - 1));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0), "login message");
+        Assertions.assertEquals("Invalid client or Invalid client credentials [unauthorized_client]", exe.stderrLines().get(exe.stderrLines().size() - 1), "error message");
 
 
         // try whole CRUD
@@ -536,7 +536,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
          *  Login is performed by each operation again, and again using username, password, and client JWT signature.
          */
         File keystore = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcadm/admin-cli-keystore." + keystoreFileExtension);
-        Assert.assertTrue("admin-cli-keystore." + keystoreFileExtension + " must exist, but it does not exists", keystore.isFile());
+        Assertions.assertTrue(keystore.isFile(), "admin-cli-keystore." + keystoreFileExtension + " must exist, but it does not exists");
 
         // try client without direct grants enabled
         KcAdmExec exe = KcAdmExec.execute("get clients --no-config --server " + serverUrl + " --realm test" +
@@ -544,8 +544,8 @@ public class KcAdmTest extends AbstractAdmCliTest {
                 " --storepass storepass --keypass keypass --alias admin-cli");
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-        Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Client not allowed for direct access grants [unauthorized_client]", exe.stderrLines().get(exe.stderrLines().size() - 1));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0), "login message");
+        Assertions.assertEquals("Client not allowed for direct access grants [unauthorized_client]", exe.stderrLines().get(exe.stderrLines().size() - 1), "error message");
 
 
         // try wrong user password
@@ -554,8 +554,8 @@ public class KcAdmTest extends AbstractAdmCliTest {
                 " --storepass storepass --keypass keypass --alias admin-cli");
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-        Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Invalid user credentials [invalid_grant]", exe.stderrLines().get(exe.stderrLines().size() - 1));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0), "login message");
+        Assertions.assertEquals("Invalid user credentials [invalid_grant]", exe.stderrLines().get(exe.stderrLines().size() - 1), "error message");
 
 
         // try wrong storepass
@@ -564,8 +564,8 @@ public class KcAdmTest extends AbstractAdmCliTest {
                 " --storepass wrong --keypass keypass --alias admin-cli");
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-        Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertTrue("error message", exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Failed to load private key:"));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0), "login message");
+        Assertions.assertTrue(exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Failed to load private key:"), "error message");
 
 
         // try whole CRUD
@@ -593,7 +593,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
          *  Login is performed by each operation again, and again using only client JWT signature - service account is used.
          */
         File keystore = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcadm/admin-cli-keystore.p12");
-        Assert.assertTrue("admin-cli-keystore.p12 exists", keystore.isFile());
+        Assertions.assertTrue(keystore.isFile(), "admin-cli-keystore.p12 exists");
 
         testCRUDWithOnTheFlyAuth(serverUrl,
                 "--client admin-cli-jwt --keystore '" + keystore.getAbsolutePath() + "' --storepass storepass --keypass keypass --alias admin-cli", "",
@@ -624,11 +624,11 @@ public class KcAdmTest extends AbstractAdmCliTest {
         KcAdmExec.execute("create users -r demorealm -s username=anothertestuser");
         KcAdmExec.execute("create users -r demorealm -s username=onemoretestuser");
         KcAdmExec exec = execute("add-roles --uusername=testuser --rolename offline_access --target-realm=demorealm");
-        Assert.assertEquals(0, exec.exitCode());
+        Assertions.assertEquals(0, exec.exitCode());
         exec = execute("add-roles --uusername=anothertestuser --rolename offline_access --target-realm=demorealm");
-        Assert.assertEquals(0, exec.exitCode());
+        Assertions.assertEquals(0, exec.exitCode());
         exec = execute("add-roles --uusername=onemoretestuser --rolename offline_access --target-realm=demorealm");
-        Assert.assertEquals(0, exec.exitCode());
+        Assertions.assertEquals(0, exec.exitCode());
     }
 
     @Test
@@ -640,13 +640,13 @@ public class KcAdmTest extends AbstractAdmCliTest {
         KcAdmExec.execute("create groups -r demorealm -s name=anothertest");
         KcAdmExec.execute("create groups -r demorealm -s name=onemoretest");
         KcAdmExec exec = execute("get-roles -r demorealm --gname test");
-        Assert.assertEquals(exec.stderrString(), 0, exec.exitCode());
+        Assertions.assertEquals(0, exec.exitCode(), exec.stderrString());
         exec = execute("get-roles -r demorealm --gname anothertest");
-        Assert.assertEquals(exec.stderrString(), 0, exec.exitCode());
+        Assertions.assertEquals(0, exec.exitCode(), exec.stderrString());
         exec = execute("get-roles -r demorealm --gname onemoretest");
-        Assert.assertEquals(exec.stderrString(), 0, exec.exitCode());
+        Assertions.assertEquals(0, exec.exitCode(), exec.stderrString());
         exec = execute("get-roles -r demorealm --gname not_there");
-        Assert.assertEquals(1, exec.exitCode());
+        Assertions.assertEquals(1, exec.exitCode());
     }
 
     @Test
@@ -654,7 +654,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
         execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
         KcAdmExec exec = execute("get realms/master --format csv");
         assertExitCodeAndStreamSizes(exec, 0, 1, 0);
-        Assert.assertTrue(exec.stdoutString().startsWith("\""));
+        Assertions.assertTrue(exec.stdoutString().startsWith("\""));
     }
 
     @Test
@@ -663,7 +663,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
         KcAdmExec exec = execute("get realms/master --format csv --fields foo");
         // nothing valid was selected, should be blank
         assertExitCodeAndStreamSizes(exec, 0, 1, 0);
-        Assert.assertTrue(exec.stdoutString().isBlank());
+        Assertions.assertTrue(exec.stdoutString().isBlank());
     }
 
     @Test
@@ -690,12 +690,12 @@ public class KcAdmTest extends AbstractAdmCliTest {
         execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
         KcAdmExec exec = execute("config credentials --status");
         assertExitCodeAndStreamSizes(exec, 0, 1, 0);
-        Assert.assertTrue(exec.stdoutString().startsWith("Logged in (server: " + serverUrl + ", realm: master, expired: false, timeToExpiry:"));
-        Assert.assertTrue(exec.stdoutString().endsWith("from now)\n"));
+        Assertions.assertTrue(exec.stdoutString().startsWith("Logged in (server: " + serverUrl + ", realm: master, expired: false, timeToExpiry:"));
+        Assertions.assertTrue(exec.stdoutString().endsWith("from now)\n"));
         exec = execute("config credentials --status --server " + serverUrl + " --realm master --user admin --password admin");
         assertExitCodeAndStreamSizes(exec, 0, 1, 0);
-        Assert.assertTrue(exec.stdoutString().startsWith("Logged in (server: " + serverUrl + ", realm: master, expired: false, timeToExpiry:"));
-        Assert.assertTrue(exec.stdoutString().endsWith("from now)\n"));
+        Assertions.assertTrue(exec.stdoutString().startsWith("Logged in (server: " + serverUrl + ", realm: master, expired: false, timeToExpiry:"));
+        Assertions.assertTrue(exec.stdoutString().endsWith("from now)\n"));
     }
 
 }

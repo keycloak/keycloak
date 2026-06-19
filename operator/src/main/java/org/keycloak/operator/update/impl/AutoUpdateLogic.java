@@ -18,6 +18,7 @@
 package org.keycloak.operator.update.impl;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -68,10 +69,9 @@ public class AutoUpdateLogic extends BaseUpdateLogic {
 
         var pod = findPodForJob(context.getClient(), existingJob.get());
         if (pod.isEmpty()) {
-            // TODO some cases the pod is removed. Do we start over or use recreate update?
-            Log.warn("Pod for Update Job not found.");
-            decideRecreateUpdate("The Pod running update-compatibility command not found.");
-            return Optional.empty();
+            Log.warn("Pod for completed Update Job not found, will restart the Job");
+            context.getClient().resource(existingJob.get()).lockResourceVersion().delete();
+            return Optional.of(UpdateControl.noUpdate());
         }
 
         checkUpdateType(pod.get());
@@ -81,17 +81,10 @@ public class AutoUpdateLogic extends BaseUpdateLogic {
     private boolean isJobRunning(Job job) {
         var status = job.getStatus();
         Log.debugf("Update Job Status:%n%s", CRDUtils.toJsonNode(status, context).toPrettyString());
-        var completed = Optional.ofNullable(status).stream()
-                .mapMultiToInt((jobStatus, downstream) -> {
-                    if (jobStatus.getSucceeded() != null) {
-                        downstream.accept(jobStatus.getSucceeded());
-                    }
-                    if (jobStatus.getFailed() != null) {
-                        downstream.accept(jobStatus.getFailed());
-                    }
-                }).sum();
-        // we only have a single pod, so completed will be zero if running or 1 if finished.
-        return completed == 0;
+        return Optional.ofNullable(status)
+                .map(s -> s.getConditions().stream().noneMatch(
+                        jc -> "True".equals(jc.getStatus()) && List.of("Complete", "Failed").contains(jc.getType())))
+                .orElse(true);
     }
 
     private void checkUpdateType(Pod pod) {

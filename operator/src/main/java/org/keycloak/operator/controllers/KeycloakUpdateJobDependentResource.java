@@ -49,11 +49,10 @@ import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.JobSpecFluent;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 
 @ApplicationScoped
-public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentResource<Job, Keycloak> {
+public class KeycloakUpdateJobDependentResource extends VersionTolerantCRUDKubernetesDependentResource<Job, Keycloak> {
 
     // shared volume configuration
     private static final String WORK_DIR_VOLUME_NAME = "keycloak-update-job-temporary-workdir"; // unlikely to conflict

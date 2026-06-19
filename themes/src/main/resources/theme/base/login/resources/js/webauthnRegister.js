@@ -31,10 +31,19 @@ export async function registerByWebAuthn(input) {
         isAuthenticatorSelectionSpecified = true;
     }
 
-    if (input.requireResidentKey !== 'not specified') {
+    if (input.residentKey && input.residentKey !== 'not specified') {
+        // residentKey is the current spec field and the source of truth. requireResidentKey is
+        // deprecated but still set for older clients: it is true iff residentKey is 'required'.
+        authenticatorSelection.residentKey = input.residentKey;
+        authenticatorSelection.requireResidentKey = input.residentKey === 'required';
+        isAuthenticatorSelectionSpecified = true;
+    } else if (input.requireResidentKey !== 'not specified') {
+        // fall back to the deprecated option when residentKey is not specified
         if (input.requireResidentKey === 'Yes') {
+            authenticatorSelection.residentKey = 'required';
             authenticatorSelection.requireResidentKey = true;
         } else {
+            authenticatorSelection.residentKey = 'discouraged';
             authenticatorSelection.requireResidentKey = false;
         }
         isAuthenticatorSelectionSpecified = true;
@@ -123,6 +132,10 @@ function returnSuccess(result, initLabel, initLabelPrompt) {
         }
     } else {
         console.log("Your browser is not able to recognize supported transport media for the authenticator.");
+    }
+
+    if (result.authenticatorAttachment) {
+        document.getElementById("authenticatorAttachment").value = result.authenticatorAttachment;
     }
 
     let labelResult = window.prompt(initLabelPrompt, initLabel);

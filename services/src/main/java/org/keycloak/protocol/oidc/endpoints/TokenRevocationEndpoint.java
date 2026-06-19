@@ -18,7 +18,6 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -44,7 +43,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -104,7 +102,7 @@ public class TokenRevocationEndpoint {
         checkParameterDuplicated(formParams);
 
         try {
-            session.clientPolicy().triggerOnEvent(new TokenRevokeContext(formParams));
+            session.clientPolicy().triggerOnEvent(new TokenRevokeContext(client, formParams));
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
@@ -131,7 +129,7 @@ public class TokenRevocationEndpoint {
         event.success();
 
         try {
-            session.clientPolicy().triggerOnEvent(new TokenRevokeResponseContext(formParams));
+            session.clientPolicy().triggerOnEvent(new TokenRevokeResponseContext(client, formParams));
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
@@ -170,7 +168,7 @@ public class TokenRevocationEndpoint {
 
         event.client(client);
 
-        cors.allowedOrigins(session, client);
+        cors.checkAllowedOrigins(session, client);
 
         if (client.isBearerOnly()) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed",
@@ -270,10 +268,9 @@ public class TokenRevocationEndpoint {
     }
 
     private void revokeAccessToken() {
-        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         int currentTime = Time.currentTime();
         long lifespanInSecs = Math.max(token.getExp() - currentTime + 1, 10);
-        singleUseStore.put(token.getId() + SingleUseObjectProvider.REVOKED_KEY, lifespanInSecs, Collections.emptyMap());
+        session.revokedTokens().put(token.getId(), lifespanInSecs);
         revokeTokenExchangeSession();
     }
 

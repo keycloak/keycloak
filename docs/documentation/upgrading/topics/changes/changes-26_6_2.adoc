@@ -1,0 +1,73 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Token introspection now validates audience claim
+
+The OAuth2 token introspection endpoint now validates that the authenticated client is present in the token's audience (`aud`) claim before allowing introspection.
+
+Previously, any authenticated client could introspect any valid token. Now, the introspection endpoint returns `{"active": false}` if the authenticated client is not in the token's audience.
+
+==== Migration
+
+To temporarily restore the previous behavior, enable the backwards compatibility option either server-wide or per-client.
+
+See link:https://www.keycloak.org/server/all-provider-config#_openid_connect[OpenID Connect provider configuration] to enable the server-wide configuration option `allow-token-introspection-without-audience-check`.
+
+For the per-client option, navigate to *Clients* → select the client that performs the introspection → *Advanced* → *OpenID Connect Compatibility Modes* → enable *Allow token introspection without audience check*.
+
+NOTE: The per-client option is configured on the client that *performs* the introspection (the authenticated client), not the client that issued the token.
+
+WARNING: Both server-wide and per-client options are deprecated and will be removed in a future release. They log warnings for each introspection request without audience validation.
+
+*Recommended migration path:*
+
+1. *After upgrade:* Enable server-wide option temporarily to restore previous behavior
+2. *Identify affected clients:* Monitor server logs for warnings about introspection without audience validation
+3. *Fix each client:* Either add audience protocol mapper to include introspecting client in token's `aud`, or enable per-client option
+4. *Test and disable:* Verify all introspection flows work, then disable server-wide option
+
+NOTE: For lightweight access tokens, the audience claim may only be present in the introspection response (not in the token itself). The audience check validates the transformed token returned by introspection, ensuring proper validation for both standard and lightweight tokens.
+
+=== UserInfo endpoint rejects lightweight access tokens
+
+The UserInfo endpoint now rejects lightweight access tokens by default. Lightweight access tokens contain minimal claims and are designed for token introspection.
+
+Previously, lightweight access tokens were accepted by the UserInfo endpoint. Now, the UserInfo endpoint returns a `401 Unauthorized` error when called with a lightweight access token.
+
+==== Migration
+
+To temporarily restore the previous behavior, enable the backwards compatibility option either server-wide or per-client.
+
+See link:https://www.keycloak.org/server/all-provider-config#_openid_connect[OpenID Connect provider configuration] to enable the server-wide configuration option `allow-userinfo-with-lightweight-access-token`.
+
+For the per-client option, navigate to *Clients* → select the client that issues tokens → *Advanced* → *OpenID Connect Compatibility Modes* → enable *Allow UserInfo with lightweight access token*.
+
+NOTE: The per-client option is configured on the client that *issues* the token (the `azp` claim).
+
+WARNING: Both server-wide and per-client options are deprecated and will be removed in a future release. They log warnings for each UserInfo request with a lightweight token.
+
+*Recommended alternatives to lightweight tokens for UserInfo:*
+
+1. *Use token introspection instead:* The token introspection endpoint is designed to work with lightweight tokens and will return the full claims
+2. *Exchange lightweight token for full access token:* Use token exchange to convert a lightweight token to a full access token, then call UserInfo with the full token
+
+
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== WebAuthn acceptable AAGUIDs option restricts authenticators strictly
+
+The WebAuthn policy presents the option **Acceptable AAGUIDs** to restrict the authenticators that are allowed to register new credentials. The AAGUID (Authenticator Attestation Global Unique Identifier) is an identifier for the authenticator's type (e.g., make and model). This option requires the **Attestation conveyance preference** to be configured too (normally `Direct`), in order to force the authenticator to include the attestation inside the registration data.
+
+Since this release, when this option is set up, the attestation is required to be present and signed with a valid certificate for the {project_name} trust-store. The `None` attestation format is explicitly not permitted. Previously, there were some corner cases in which a self attestation was accepted. The change is expected to be harmless, but maybe there are combinations of authenticators and WebAuthn policies that can present issues.
+
+See chapter link:{adminguide_link}#_webauthn-policy[Managing policy] in the {adminguide_name} for more information.
+
+=== Required actions are one-time actions by default
+
+Since this release, all _Required Actions_ are now one-time actions by default to ensure they cannot be reused once completed. This change impacts the email action tokens created by the `execute-actions-email` endpoint, which is executed via the **Credential reset** button in the Admin console. Any action token generated through this endpoint (with whatever reset actions) is now strictly one-time use, ensuring that once a user completes the required steps, the token is immediately invalidated.

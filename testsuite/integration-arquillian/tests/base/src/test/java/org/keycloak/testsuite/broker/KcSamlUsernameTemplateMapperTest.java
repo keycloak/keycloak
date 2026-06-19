@@ -9,11 +9,11 @@ import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.WaitUtils;
 
 import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.broker.saml.mappers.UsernameTemplateMapper.PROVIDER_ID;
 
@@ -72,19 +72,19 @@ public class KcSamlUsernameTemplateMapperTest extends AbstractUsernameTemplateMa
         logInAsUserInIDP();
 
         WaitUtils.waitForPageToLoad();
-        Assert.assertTrue("Should be on update profile page", updateAccountInformationPage.isCurrent());
+        Assertions.assertTrue(updateAccountInformationPage.isCurrent(), "Should be on update profile page");
         // try to update the account info with only the first and last name (no username provided here).
         updateAccountInformationPage.updateAccountInformation("John", "Doe");
 
         // we should still be in the update profile page, with an error asking to provide the username
-        Assert.assertTrue("Should still be on update profile page", updateAccountInformationPage.isCurrent());
-        Assert.assertTrue("Should show error about missing username", driver.getPageSource().contains("Please specify username"));
+        Assertions.assertTrue(updateAccountInformationPage.isCurrent(), "Should still be on update profile page");
+        Assertions.assertTrue(driver.getPageSource().contains("Please specify username"), "Should show error about missing username");
 
         // no user should be present in the realm with an empty or null username
         List<UserRepresentation> users = adminClient.realm(bc.consumerRealmName()).users().list();
         for (UserRepresentation user : users) {
-            Assert.assertNotNull("Username should not be null", user.getUsername());
-            Assert.assertFalse("Username should not be empty", user.getUsername().trim().isEmpty());
+            Assertions.assertNotNull(user.getUsername(), "Username should not be null");
+            Assertions.assertFalse(user.getUsername().trim().isEmpty(), "Username should not be empty");
         }
     }
 
@@ -113,19 +113,19 @@ public class KcSamlUsernameTemplateMapperTest extends AbstractUsernameTemplateMa
         logInAsUserInIDP();
 
         WaitUtils.waitForPageToLoad();
-        Assert.assertTrue("Should be on update profile page", updateAccountInformationPage.isCurrent());
+        Assertions.assertTrue(updateAccountInformationPage.isCurrent(), "Should be on update profile page");
 
         // try to update with only first and last name (no username) - should fail
         updateAccountInformationPage.updateAccountInformation("John", "Doe");
-        Assert.assertTrue("Should still be on update profile page", updateAccountInformationPage.isCurrent());
-        Assert.assertTrue("Should show error about missing username", driver.getPageSource().contains("Please specify username"));
+        Assertions.assertTrue(updateAccountInformationPage.isCurrent(), "Should still be on update profile page");
+        Assertions.assertTrue(driver.getPageSource().contains("Please specify username"), "Should show error about missing username");
 
         // now provide a username and verify the user is created
         updateAccountInformationPage.updateAccountInformation("valid-username", "user@example.com", "John", "Doe");
-        Assert.assertFalse("Should not be on update profile page", updateAccountInformationPage.isCurrent());
+        Assertions.assertFalse(updateAccountInformationPage.isCurrent(), "Should not be on update profile page");
 
         UserRepresentation user = adminClient.realm(bc.consumerRealmName()).users().search("valid-username").get(0);
-        Assert.assertNotNull(user);
-        Assert.assertEquals("valid-username", user.getUsername());
+        Assertions.assertNotNull(user);
+        Assertions.assertEquals("valid-username", user.getUsername());
     }
 }

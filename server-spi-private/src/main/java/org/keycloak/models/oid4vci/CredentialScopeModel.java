@@ -511,18 +511,18 @@ public class CredentialScopeModel implements ClientScopeModel {
     }
 
     @Override
-    public boolean isDynamicScope() {
-        return clientScope.isDynamicScope();
+    public boolean isParameterizedScope() {
+        return clientScope.isParameterizedScope();
     }
 
     @Override
-    public void setIsDynamicScope(boolean isDynamicScope) {
-        clientScope.setIsDynamicScope(isDynamicScope);
+    public void setIsParameterizedScope(boolean isParameterizedScope) {
+        clientScope.setIsParameterizedScope(isParameterizedScope);
     }
 
     @Override
-    public String getDynamicScopeRegexp() {
-        return clientScope.getDynamicScopeRegexp();
+    public String getParameterizedScopeRegexp() {
+        return clientScope.getParameterizedScopeRegexp();
     }
 
     public Stream<Oid4vcProtocolMapperModel> getOid4vcProtocolMappersStream() {

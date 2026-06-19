@@ -18,12 +18,10 @@
 package org.keycloak.models.jpa;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -154,8 +152,8 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         if (value == null) {
             removeAttribute(name);
         } else {
-            Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
-            Set<String> newEntries = Set.of(value);
+            List<String> oldEntries = getAttributeStream(name).sorted().collect(Collectors.toList());
+            List<String> newEntries = List.of(value);
             if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
                 return;
             }
@@ -205,13 +203,8 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
             return;
         }
 
-        Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
-        Set<String> newEntries;
-        if (values == null) {
-            newEntries = new HashSet<>();
-        } else {
-            newEntries = new HashSet<>(values);
-        }
+        List<String> oldEntries = getAttributeStream(name).sorted().collect(Collectors.toList());
+        List<String> newEntries = values == null ? List.of() : values.stream().sorted().toList();
         if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
             return;
         }

@@ -24,7 +24,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 
 /**
  *
@@ -46,7 +46,7 @@ public class ActionUtil {
 
     public static void addRequiredActionForUser(RealmRepresentation testRealm, String userName, String action) {
         UserRepresentation user = findUserInRealmRep(testRealm, userName);
-        UserBuilder.edit(user).requiredAction(action);
+        UserBuilder.update(user).requiredActions(action);
     }
 
     public static void addRequiredActionForRealm(RealmRepresentation testRealm, String providerId) {

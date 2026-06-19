@@ -37,6 +37,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.CekManagementProvider;
 import org.keycloak.crypto.ContentEncryptionProvider;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
@@ -50,7 +51,9 @@ import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -59,10 +62,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCProviderConfig;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.NotBeforeCheck;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -78,12 +85,15 @@ import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.OAuth2Error;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
 /**
  * @author pedroigor
  */
 public class UserInfoEndpoint {
+
+    private static final Logger logger = Logger.getLogger(UserInfoEndpoint.class);
 
     private final HttpRequest request;
 
@@ -150,7 +160,7 @@ public class UserInfoEndpoint {
                 MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
                 checkAccessTokenDuplicated(formParams);
                 String accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);
-                authHeader = accessToken == null ? null : new AppAuthManager.AuthHeader(AppAuthManager.BEARER, accessToken);
+                authHeader = accessToken == null ? null : new AppAuthManager.AuthHeader(TokenUtil.TOKEN_TYPE_BEARER, accessToken);
                 authorization(authHeader);
             }
         } catch (IllegalArgumentException e) {
@@ -167,16 +177,6 @@ public class UserInfoEndpoint {
                 .event(EventType.USER_INFO_REQUEST)
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
 
-        try {
-            session.clientPolicy().triggerOnEvent(new UserInfoRequestContext(tokenForUserInfo));
-        } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
-            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
-            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
-            event.error(cpe.getError());
-            throw error.error(cpe.getError()).errorDescription(cpe.getErrorDetail()).status(cpe.getErrorStatus()).build();
-        }
-
         if (tokenForUserInfo.getToken() == null) {
             event.detail(Details.REASON, "Missing token");
             event.error(Errors.INVALID_TOKEN);
@@ -191,7 +191,12 @@ public class UserInfoEndpoint {
 
             verifier = DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenForUserInfo.getToken()));
 
-            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+            JWSHeader header = verifier.getHeader();
+            Algorithm algorithm = header.getAlgorithm();
+            if (algorithm == null) {
+                throw new VerificationException("Missing token algorithm");
+            }
+            SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, algorithm.name()).verifier(header.getKeyId());
             verifier.verifierContext(verifierContext);
 
             token = verifier.verify().getToken();
@@ -209,10 +214,10 @@ public class UserInfoEndpoint {
                 throw error.invalidToken("Client not found");
             }
 
-            cors.allowedOrigins(session, clientModel);
+            cors.checkAllowedOrigins(session, clientModel);
 
             TokenVerifier.createWithoutSignature(token)
-                    .withChecks(NotBeforeCheck.forModel(clientModel), new TokenManager.TokenRevocationCheck(session))
+                    .withChecks(NotBeforeCheck.forModel(realm), NotBeforeCheck.forModel(clientModel), new TokenManager.TokenRevocationCheck(session))
                     .verify();
         } catch (VerificationException e) {
             if (clientModel == null) {
@@ -262,6 +267,11 @@ public class UserInfoEndpoint {
             throw error.invalidToken("User disabled");
         }
 
+        if (!TokenManager.validateUserNotBefore(session, realm, token, userModel)) {
+            event.error(Errors.INVALID_USER);
+            throw error.invalidToken("User not valid");
+        }
+
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
         if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseMtlsHokToken()) {
@@ -273,8 +283,44 @@ public class UserInfoEndpoint {
             }
         }
 
+        // Check for lightweight access token
+        TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
+        AccessTokenContext tokenContext = encoder.getTokenContextFromTokenId(token.getId());
+        boolean isAccessTokenLightweight = AccessTokenContext.TokenType.LIGHTWEIGHT.equals(tokenContext.getTokenType());
+
+        if (isAccessTokenLightweight) {
+            OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+            OIDCProviderConfig config = loginProtocol.getConfig();
+
+            if (!config.isAllowUserinfoWithLightweightAccessToken()) {
+                OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(clientModel);
+                if (!clientConfig.isAllowUserinfoWithLightweightAccessToken()) {
+                    String errorMessage = "Lightweight access token not allowed for userinfo endpoint";
+                    event.detail(Details.REASON, errorMessage);
+                    event.error(Errors.INVALID_TOKEN);
+                    throw error.invalidToken(errorMessage);
+                } else {
+                    logger.warnf("Client '%s' using lightweight access token for userinfo (per-client setting on '%s')",
+                            clientModel.getClientId(), clientModel.getClientId());
+                }
+            } else {
+                logger.warnf("Client '%s' using lightweight access token for userinfo (server-wide setting)",
+                        clientModel.getClientId());
+            }
+        }
+
         // Existence of authenticatedClientSession for our client already handled before
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientModel.getId());
+
+        try {
+            session.clientPolicy().triggerOnEvent(new UserInfoRequestContext(clientSession, tokenForUserInfo));
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw error.error(cpe.getError()).errorDescription(cpe.getErrorDetail()).status(cpe.getErrorStatus()).build();
+        }
 
         // Retrieve by access token scope parameter
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, token.getScope(), session);

@@ -44,7 +44,7 @@ export const removeEmptyOid4vcAttributes = (
 
   for (const fieldName of fieldNames) {
     const attrKey = fieldName.replace(/^attributes\./, "");
-    if (isEmptyValue(cleanedAttributes?.[attrKey])) {
+    if (isEmptyValue(cleanedAttributes[attrKey])) {
       delete cleanedAttributes[attrKey];
     }
   }

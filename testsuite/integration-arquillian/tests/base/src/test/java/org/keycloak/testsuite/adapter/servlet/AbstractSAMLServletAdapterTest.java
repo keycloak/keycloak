@@ -51,7 +51,7 @@ public abstract class AbstractSAMLServletAdapterTest extends AbstractServletsAda
     }
 
     protected void setAdapterAndServerTimeOffset(int timeOffset, String... servletUris) {
-        setTimeOffset(timeOffset);
+        timeOffSet.set(timeOffset);
 
         Arrays.stream(servletUris)
                 .map(url -> url += "unsecured")

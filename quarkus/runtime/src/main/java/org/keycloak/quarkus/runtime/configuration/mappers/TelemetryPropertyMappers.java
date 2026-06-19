@@ -3,6 +3,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +23,6 @@ import io.quarkus.runtime.configuration.DurationConverter;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import org.jboss.logging.Logger;
 
-import static org.keycloak.config.TelemetryOptions.TELEMETRY_ENABLED;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_ENDPOINT;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_HEADER;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_LOGS_ENABLED;
@@ -41,15 +41,13 @@ import static org.keycloak.config.TelemetryOptions.TELEMETRY_PROTOCOL;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_RESOURCE_ATTRIBUTES;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_SERVICE_NAME;
 import static org.keycloak.config.TracingOptions.TRACING_HEADER;
-import static org.keycloak.config.WildcardOptionsUtil.getWildcardPrefix;
-import static org.keycloak.config.WildcardOptionsUtil.getWildcardValue;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromFeature;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public class TelemetryPropertyMappers implements PropertyMapperGrouping{
     private static final Logger log = Logger.getLogger(TelemetryPropertyMappers.class);
 
-    private static final String OTEL_FEATURE_ENABLED_MSG = "'opentelemetry' feature is enabled";
     private static final String OTEL_COLLECTOR_ENABLED_MSG = "any of available OpenTelemetry components (Logs, Metrics, Traces) is turned on";
     private static final String OTEL_LOGS_FEATURE_ENABLED_MSG = "feature '%s' is enabled".formatted(Profile.Feature.OPENTELEMETRY_LOGS.getVersionedKey());
     private static final String OTEL_LOGS_ENABLED_MSG = "Telemetry Logs functionality ('%s') is enabled".formatted(TELEMETRY_LOGS_ENABLED.getKey());
@@ -60,8 +58,7 @@ public class TelemetryPropertyMappers implements PropertyMapperGrouping{
     public List<? extends PropertyMapper<?>> getPropertyMappers() {
         TELEMETRY_HEADERS_CACHE = null;
         return List.of(
-                fromOption(TELEMETRY_ENABLED)
-                        .isEnabled(TelemetryPropertyMappers::isOtelFeatureEnabled, OTEL_FEATURE_ENABLED_MSG)
+                fromFeature(Profile.Feature.OPENTELEMETRY)
                         .transformer(TelemetryPropertyMappers::checkIfDependantsAreEnabled)
                         .to("quarkus.otel.enabled")
                         .build(),
@@ -252,16 +249,20 @@ public class TelemetryPropertyMappers implements PropertyMapperGrouping{
         if (TELEMETRY_HEADERS_CACHE == null) {
             TELEMETRY_HEADERS_CACHE = new HashMap<>();
 
+            List<WildcardPropertyMapper<?>> wildcards = new ArrayList<>();
+            Stream.of(TELEMETRY_HEADER, TELEMETRY_LOGS_HEADER, TELEMETRY_METRICS_HEADER, TRACING_HEADER)
+                    .forEach(opt -> PropertyMappers.getWildcardPropertyMapper(opt).ifPresent(wildcards::add));
+
             Configuration.getPropertyNames().forEach(key -> {
                 if (key.startsWith(NS_KEYCLOAK_PREFIX)) {
-                    Stream.of(TELEMETRY_HEADER, TELEMETRY_LOGS_HEADER, TELEMETRY_METRICS_HEADER, TRACING_HEADER)
-                            .filter(option -> key.startsWith(NS_KEYCLOAK_PREFIX + getWildcardPrefix(option.getKey())))
-                            .forEach(option -> {
-                                String header = getWildcardValue(option, key);
-                                String headerValue = Configuration.getOptionalValue(key)
-                                        .orElseThrow(() -> new PropertyException("Wrong value for the property '%s'".formatted(key)));
-                                TELEMETRY_HEADERS_CACHE.computeIfAbsent(option, o -> new HashMap<>()).put(header, headerValue);
-                            });
+                    wildcards.forEach(wildcard -> {
+                        wildcard.extractWildcardValue(key).ifPresent(header -> {
+                            String headerValue = Configuration.getOptionalValue(key).orElseThrow(
+                                    () -> new PropertyException("Wrong value for the property '%s'".formatted(key)));
+                            TELEMETRY_HEADERS_CACHE.computeIfAbsent(wildcard.getOption(), o -> new HashMap<>())
+                                    .put(header, headerValue);
+                        });
+                    });
                 }
             });
         }

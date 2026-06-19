@@ -18,8 +18,11 @@
 package org.keycloak.quarkus.runtime;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ForkJoinPool;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -47,7 +50,7 @@ import picocli.CommandLine;
 
 import static org.keycloak.common.util.Environment.isNonServerMode;
 import static org.keycloak.quarkus.runtime.Environment.getKeycloakModeFromProfile;
-import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
+import static org.keycloak.quarkus.runtime.Environment.hasEarlyExitLaunchMode;
 
 /**
  * <p>The main entry point, responsible for initialize and run the CLI as well as start the server.
@@ -56,7 +59,10 @@ import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 @ApplicationScoped
 public class KeycloakMain implements QuarkusApplication {
 
+    public static final String KC_SERVER_PRINT_RUNNING = "kc.server.print_running";
+    public static final String RUNNING_MESSAGE = "The server is running";
     private static AbstractNonServerCommand COMMAND;
+    private static Consumer<Throwable> ERROR_HANDLER;
 
     static {
         InfinispanUtils.configureVirtualThreads();
@@ -66,11 +72,11 @@ public class KeycloakMain implements QuarkusApplication {
         ensureForkJoinPoolThreadFactoryHasBeenSetToQuarkus();
         InfinispanUtils.ensureVirtualThreadsParallelism();
 
-        System.setProperty("kc.version", Version.VERSION);
-
         Picocli picocli;
+        Properties clonedProps = null;
         if (!(Thread.currentThread().getContextClassLoader() instanceof RunnerClassLoader)) {
-            picocli = new Picocli() { // embedded launch case, avoid System.exit
+            clonedProps = (Properties) System.getProperties().clone();
+            picocli = new Picocli() { // non-script launch case, avoid System.exit
                 @Override
                 public void exit(int exitCode) {
                     Quarkus.asyncExit(exitCode);
@@ -79,7 +85,16 @@ public class KeycloakMain implements QuarkusApplication {
         } else {
             picocli = new Picocli();
         }
-        main(args, picocli);
+
+        System.setProperty("kc.version", Version.VERSION);
+
+        try {
+            main(args, picocli);
+        } finally {
+            if (clonedProps != null) {
+                reset(clonedProps);
+            }
+        }
     }
 
     public static void reset(Properties systemProperties) {
@@ -123,6 +138,9 @@ public class KeycloakMain implements QuarkusApplication {
 
     public static void start(Picocli picocli, AbstractNonServerCommand command, ExecutionExceptionHandler errorHandler) {
         COMMAND = command; // it would be nice to not do this statically - start quarkus with an instance of KeycloakMain, rather than a class for example
+        ERROR_HANDLER = cause -> errorHandler.error(picocli.getErrWriter(),
+                String.format("Failed to start server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
+                cause.getCause());
         try {
             Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
                 if (cause != null) {
@@ -136,6 +154,9 @@ public class KeycloakMain implements QuarkusApplication {
             errorHandler.error(picocli.getErrWriter(),
                     String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
                     cause.getCause());
+        } finally {
+            ERROR_HANDLER = null;
+            COMMAND = null;
         }
         picocli.exit(CommandLine.ExitCode.SOFTWARE);
     }
@@ -145,20 +166,34 @@ public class KeycloakMain implements QuarkusApplication {
      */
     @Override
     public int run(String... args) throws Exception {
+        QuarkusKeycloakApplication application = Arc.container().instance(QuarkusKeycloakApplication.class).get();
         if (COMMAND != null) {
-            QuarkusKeycloakApplication application = Arc.container().instance(QuarkusKeycloakApplication.class).get();
             QuarkusKeycloakSessionFactory sessionFactory = Arc.container().instance(QuarkusKeycloakSessionFactory.class).get();
             COMMAND.onStart(application, sessionFactory);
         }
-        if (isTestLaunchMode() || isNonServerMode()) {
+        if (hasEarlyExitLaunchMode() || isNonServerMode()) {
             // in test mode we exit immediately
             // we should be managing this behavior more dynamically depending on the tests requirements (short/long lived)
             Quarkus.asyncExit(ApplicationLifecycleManager.getExitCode());
         } else {
+            if (Boolean.getBoolean(KC_SERVER_PRINT_RUNNING)) {
+                BiConsumer<Void, Throwable> started = (v, t) -> {
+                    if (t == null) {
+                        System.out.println("\n" + RUNNING_MESSAGE);
+                    }
+                };
+                application.getBootstrapFuture().ifPresentOrElse(future -> future.whenComplete(started),
+                        () -> started.accept(null, null));
+            }
             Quarkus.waitForExit();
         }
 
         return ApplicationLifecycleManager.getExitCode();
     }
-
+    
+    public static void asyncExit(int exitCode, Throwable t) {
+        Optional.ofNullable(ERROR_HANDLER).ifPresent(h -> h.accept(t));
+        Quarkus.asyncExit(exitCode);
+    }
+    
 }

@@ -21,14 +21,14 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 //OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
 public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
@@ -228,7 +228,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
         log.info("receivedScopes = " + response.getScope());
     	Collection<String> expectedScopes = Arrays.asList(expectedScope.split(" "));
     	Collection<String> receivedScopes = Arrays.asList(response.getScope().split(" "));
-    	Assert.assertTrue(expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes));
+    	Assertions.assertTrue(expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes));
 
         oauth.doLogout(response.getRefreshToken());
     }

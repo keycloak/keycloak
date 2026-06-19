@@ -17,6 +17,9 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.Collections;
+import java.util.Set;
+
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -28,6 +31,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -60,7 +64,7 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
         String resourceParameter = formParams.getFirst(OAuth2Constants.RESOURCE);
 
         try {
-            session.clientPolicy().triggerOnEvent(new TokenRefreshContext(formParams, client));
+            session.clientPolicy().triggerOnEvent(new TokenRefreshContext(formParams, client, scopeParameter));
             refreshToken = formParams.getFirst(OAuth2Constants.REFRESH_TOKEN);
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
@@ -73,7 +77,9 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
         AccessTokenResponse res;
         try {
             // KEYCLOAK-6771 Certificate Bound Token
-            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.refreshAccessToken(session, session.getContext().getUri(), clientConnection, realm, client, refreshToken, event, headers, request, scopeParameter, resourceParameter);
+            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.refreshAccessToken(
+                    session, session.getContext().getUri(), clientConnection, realm, client, refreshToken,
+                    event, headers, request, scopeParameter, resourceParameter);
 
             checkAndBindMtlsHoKToken(responseBuilder, clientConfig.isUseRefreshToken());
 
@@ -107,6 +113,10 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
+        // Sanitize authorization details before they are sent as part of the Token Response
+        var authDetailsProcessor = new AuthorizationDetailsProcessorManager(session);
+        authDetailsProcessor.sanitizeBeforeSendingTokenResponse(res);
+
         event.success();
 
         return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
@@ -116,5 +126,9 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
     public EventType getEventType() {
         return EventType.REFRESH_TOKEN;
     }
-
+    
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Collections.emptySet();
+    }
 }

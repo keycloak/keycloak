@@ -33,8 +33,8 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -96,16 +96,16 @@ public class LoginEventsTest {
         List<EventRepresentation> events = events();
         Assertions.assertEquals(1, events.size());
         EventAssertion.assertError(events.get(0))
-                .type(EventType.LOGIN_ERROR).isCodeId()
+                .type(EventType.LOGIN_ERROR)
                 .error("user_not_found")
                 .userId(null)
                 .sessionId(null)
-                .isCodeId()
+                .hasCodeId()
                 .hasIpAddress()
                 .details(Details.AUTH_METHOD, "openid-connect")
                 .details(Details.AUTH_TYPE, "code")
                 .details(Details.USERNAME, "bad")
-                .details(Details.REDIRECT_URI, "http://127.0.0.1:8500/callback/oauth");
+                .details(Details.REDIRECT_URI, oAuthClient.getRedirectUri());
     }
 
     @Test
@@ -126,7 +126,7 @@ public class LoginEventsTest {
         badLogin();
         Assertions.assertEquals(0, events().size());
 
-        managedRealm.updateWithCleanup(r -> r.setEnabledEventTypes("LOGIN_ERROR"));
+        managedRealm.updateWithCleanup(r -> r.setEnabledEventTypes(List.of("LOGIN_ERROR")));
 
         badLogin();
         Assertions.assertEquals(1, events().size());
@@ -260,7 +260,7 @@ public class LoginEventsTest {
     private static class LoginEventsRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             return realm.eventsEnabled(true);
         }
     }

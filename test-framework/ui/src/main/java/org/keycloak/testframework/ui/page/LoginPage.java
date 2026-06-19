@@ -23,6 +23,9 @@ public class LoginPage extends AbstractLoginPage {
     @FindBy(id = "rememberMe")
     private WebElement rememberMe;
 
+    @FindBy(linkText = "Register")
+    private WebElement registerLink;
+
     @FindBy(linkText = "Forgot Password?")
     private WebElement resetPasswordLink;
 
@@ -65,6 +68,11 @@ public class LoginPage extends AbstractLoginPage {
         return driver.findElement(By.id(id));
     }
 
+    public boolean isSocialButtonPresent(String alias) {
+        String id = "social-" + alias;
+        return !driver.driver().findElements(By.id(id)).isEmpty();
+    }
+
     public void rememberMe(boolean value) {
         boolean selected = isRememberMe();
         if ((value && !selected) || !value && selected) {
@@ -74,6 +82,10 @@ public class LoginPage extends AbstractLoginPage {
 
     public boolean isRememberMe() {
         return rememberMe.isSelected();
+    }
+
+    public void clickRegister() {
+        registerLink.click();
     }
 
     public void resetPassword() {
@@ -114,6 +126,14 @@ public class LoginPage extends AbstractLoginPage {
             return Optional.of(passwordInputError.getText());
         } catch (NoSuchElementException e) {
             return Optional.empty();
+        }
+    }
+
+    public boolean isRememberMeCheckboxPresent() {
+        try {
+            return rememberMe.isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
         }
     }
 }

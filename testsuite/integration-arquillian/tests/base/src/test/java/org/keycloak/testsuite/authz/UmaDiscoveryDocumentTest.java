@@ -38,7 +38,7 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class UmaDiscoveryDocumentTest extends AbstractKeycloakTest {
 

@@ -62,7 +62,11 @@ export default function DetailOrganization() {
   };
 
   useFetch(
-    () => adminClient.organizations.findOne({ id }),
+    () =>
+      adminClient.organizations.findOne({ id }) as Promise<
+        | Awaited<ReturnType<typeof adminClient.organizations.findOne>>
+        | undefined
+      >,
     (org) => {
       if (!org) {
         throw new Error(t("notFound"));
@@ -179,7 +183,7 @@ export default function DetailOrganization() {
           >
             <IdentityProviders />
           </Tab>
-          {realmRepresentation?.adminEventsEnabled &&
+          {realmRepresentation.adminEventsEnabled &&
             hasAccess("view-events") && (
               <Tab
                 data-testid="admin-events-tab"

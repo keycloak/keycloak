@@ -23,6 +23,7 @@ import java.util.Map.Entry;
 import org.keycloak.models.Constants;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.NoSuchElementException;
@@ -61,8 +62,16 @@ public class RegisterPage extends AbstractLoginPage {
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
+    @FindBy(linkText = "« Back to Login")
+    private WebElement backToLoginLink;
+
     public RegisterPage(ManagedWebDriver driver) {
         super(driver);
+    }
+
+    // Register user with the registration-page expected to NOT have "password" and "password-confirmation" fields
+    public void registerWithoutPassword(String firstName, String lastName, String email, String username) {
+        register(firstName, lastName, email, username, null, null, null, null, null);
     }
 
     public void register(String firstName, String lastName, String email, String username, String password) {
@@ -96,14 +105,20 @@ public class RegisterPage extends AbstractLoginPage {
             usernameInput.sendKeys(username);
         }
 
-        passwordInput.clear();
-        if (password != null) {
-            passwordInput.sendKeys(password);
+        if (!isPasswordPresent() && password != null) {
+            Assertions.fail("Password expected to be filled, but password field not present on the registration page");
         }
 
-        passwordConfirmInput.clear();
-        if (passwordConfirm != null) {
-            passwordConfirmInput.sendKeys(passwordConfirm);
+        if (isPasswordPresent()) {
+            passwordInput.clear();
+            if (password != null) {
+                passwordInput.sendKeys(password);
+            }
+
+            passwordConfirmInput.clear();
+            if (passwordConfirm != null) {
+                passwordConfirmInput.sendKeys(passwordConfirm);
+            }
         }
 
 
@@ -163,8 +178,20 @@ public class RegisterPage extends AbstractLoginPage {
         }
     }
 
+    public boolean isPasswordPresent() {
+        try {
+            return driver.findElement(By.name("password")).isDisplayed();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
+    }
+
     @Override
     public String getExpectedPageId() {
         return "login-register";
+    }
+
+    public void clickBackToLogin() {
+        backToLoginLink.click();
     }
 }

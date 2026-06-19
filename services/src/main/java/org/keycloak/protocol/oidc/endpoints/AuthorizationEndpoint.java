@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.endpoints;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import jakarta.ws.rs.Consumes;
@@ -162,7 +163,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             checker.checkRedirectUri();
             this.redirectUri = checker.getRedirectUri();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
-            ex.throwAsErrorPageException(authenticationSession);
+            checker.throwAsErrorPageException(authenticationSession, ex);
         }
 
         try {
@@ -191,6 +192,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             checker.checkValidResource();
             checker.checkOIDCParams();
             checker.checkPKCEParams();
+            checker.checkProviderAddOns();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
             return redirectErrorToClient(parsedResponseMode, ex.getError(), ex.getErrorDescription());
         }
@@ -338,7 +340,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         authenticationSession.setRedirectUri(redirectUri);
         authenticationSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
         authenticationSession.setClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, request.getResponseType());
-        authenticationSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, request.getRedirectUriParam());
+        authenticationSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, request.getRedirectUri());
         authenticationSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
         performActionOnParameters(request, (paramName, paramValue) -> {if (paramValue != null) authenticationSession.setClientNote(paramName, paramValue);});
@@ -399,12 +401,17 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         this.event.event(EventType.LOGIN);
         authenticationSession.setAuthNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
 
-        // redirect if it is a PAR request because authentication can need a refresh (kerberos) and the single object is consumed now
-        final boolean redirectToAuthenticationIfParRequest = requestUriParam != null
-                && RequestUriType.PAR == AuthorizationEndpointRequestParserProcessor.getRequestUriType(requestUriParam);
+        RequestUriType requestUriType = Optional.ofNullable(requestUriParam)
+                .map(AuthorizationEndpointRequestParserProcessor::getRequestUriType)
+                .orElse(null);
 
-        return handleBrowserAuthenticationRequest(authenticationSession, new OIDCLoginProtocol(session, realm, session.getContext().getUri(), headers, event),
-                TokenUtil.hasPrompt(request.getPrompt(), OIDCLoginProtocol.PROMPT_VALUE_NONE), redirectToAuthenticationIfParRequest);
+        // Redirect if it is a PAR request because authentication may need a refresh (kerberos) and the single object is consumed now
+        boolean redirectToAuthFlow = requestUriType == RequestUriType.PAR;
+
+        OIDCLoginProtocol loginProtocol = new OIDCLoginProtocol(session, realm, session.getContext().getUri(), headers, event);
+        boolean isPassive = TokenUtil.hasPrompt(request.getPrompt(), OIDCLoginProtocol.PROMPT_VALUE_NONE);
+        Response response = handleBrowserAuthenticationRequest(authenticationSession, loginProtocol, isPassive, redirectToAuthFlow);
+        return response;
     }
 
     private Response buildRegister() {

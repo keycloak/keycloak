@@ -18,21 +18,46 @@
 
 package org.keycloak.services.x509;
 
+
+import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
  * @version $Revision: 1 $
  * @since 4/4/2017
  */
-
 public class HaProxySslClientCertificateLookupFactory extends AbstractClientCertificateFromHttpHeadersLookupFactory {
 
-    private final static String PROVIDER = "haproxy";
+    private static final Logger logger = Logger.getLogger(HaProxySslClientCertificateLookupFactory.class);
+    private static final String PROVIDER = "haproxy";
+    private static final String HTTP_HEADER_CERT_CHAIN = "sslCertChain";
+
+    private X509ClientCertificateLookup certLookup;
+
+    @Override
+    public void init(Config.Scope config) {
+        super.init(config);
+
+        if (sslChainHttpHeaderPrefix != null) {
+            logger.warnf("The '%s' option is deprecated and will be removed in a future release. Configure '%s' instead.",
+                    HTTP_HEADER_CERT_CHAIN_PREFIX, HTTP_HEADER_CERT_CHAIN);
+        }
+
+        String sslCertChainHttpHeader = config.get(HTTP_HEADER_CERT_CHAIN, null);
+        if (sslCertChainHttpHeader != null) {
+            logger.tracev("{0}:  ''{1}''", HTTP_HEADER_CERT_CHAIN, sslCertChainHttpHeader);
+        }
+
+        certLookup = new HaProxySslClientCertificateLookup(sslClientCertHttpHeader,
+                sslChainHttpHeaderPrefix, sslCertChainHttpHeader, certificateChainLength);
+    }
+
     @Override
     public X509ClientCertificateLookup create(KeycloakSession session) {
-        return new HaProxySslClientCertificateLookup(sslClientCertHttpHeader,
-                sslChainHttpHeaderPrefix, certificateChainLength);
+        return certLookup;
     }
 
     @Override

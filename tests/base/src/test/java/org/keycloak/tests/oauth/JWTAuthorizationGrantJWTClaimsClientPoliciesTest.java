@@ -12,7 +12,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientPolicyBuilder;
 import org.keycloak.testframework.realm.ClientProfileBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Test;
@@ -166,7 +166,7 @@ public class JWTAuthorizationGrantJWTClaimsClientPoliciesTest extends BaseAbstra
     public static class JWTAuthorizationGrantRealmConfig extends OIDCIdentityProviderJWTAuthorizationGrantTest.JWTAuthorizationGrantRealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             super.configure(realm);
             return realm;
         }

@@ -18,7 +18,7 @@
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Use OpenAPI 4.x compatible plugin version -->
-        <smallrye.openapi.generator.plugin.version>4.2.4</smallrye.openapi.generator.plugin.version>
+        <smallrye.openapi.generator.plugin.version>4.3.1</smallrye.openapi.generator.plugin.version>
     </properties>
 
     <dependencies>
@@ -61,12 +61,29 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-v2-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-scim-core</artifactId>
+        </dependency>
+
         <!-- used by OAS Filter during OpenAPI spec generation -->
         <dependency>
             <groupId>io.smallrye</groupId>
             <artifactId>jandex</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye</groupId>
+            <artifactId>smallrye-open-api-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -79,13 +96,33 @@
                     <compilerArgument>
                         -AgeneratedTranslationFilesPath=${project.build.directory}/generated-translation-files
                     </compilerArgument>
+                    <parameters>true</parameters>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-generated-test-sources</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-test-sources/openapi</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>io.smallrye</groupId>
                 <artifactId>smallrye-open-api-maven-plugin</artifactId>
                 <configuration>
-                    <scanPackages>org.keycloak.representations.admin.v2,org.keycloak.admin.api</scanPackages>
+                    <enableStandardStaticFiles>false</enableStandardStaticFiles>
+                    <scanPackages>org.keycloak.representations.admin.v2,org.keycloak.admin.api,jakarta.validation.constraints</scanPackages>
                     <filter>org.keycloak.admin.internal.openapi.OASModelFilter</filter>
                     <outputDirectory>${project.build.directory}</outputDirectory>
                     <outputFileTypeFilter>ALL</outputFileTypeFilter>
@@ -95,6 +132,7 @@
                         <mp.openapi.extensions.smallrye.auto-inheritance>PARENT_ONLY</mp.openapi.extensions.smallrye.auto-inheritance>
                         <mp.openapi.extensions.smallrye.operationIdStrategy>METHOD</mp.openapi.extensions.smallrye.operationIdStrategy>
                         <mp.openapi.extensions.smallrye.duplicateOperationIdBehavior>FAIL</mp.openapi.extensions.smallrye.duplicateOperationIdBehavior>
+                        <keycloak.classes.dir>${project.build.outputDirectory}</keycloak.classes.dir>
                     </systemPropertyVariables>
                 </configuration>
                 <executions>
@@ -141,7 +179,7 @@
                                 <resource>
                                     <directory>${project.build.directory}</directory>
                                     <includes>
-                                        <include>openapi.yaml</include>
+                                        <include>openapi.json</include>
                                     </includes>
                                     <filtering>false</filtering>
                                 </resource>

@@ -24,7 +24,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientPolicyBuilder;
 import org.keycloak.testframework.realm.ClientProfileBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 
 /**
  *
@@ -39,7 +39,7 @@ public class JWTNegativeIdentityProviderConditionDownscopeClientPoliciesTest ext
     public static class JWTAuthorizationGranthRealmConfig extends OIDCIdentityProviderJWTAuthorizationGrantTest.JWTAuthorizationGrantRealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             super.configure(realm);
 
             realm.clientProfile(ClientProfileBuilder.create()

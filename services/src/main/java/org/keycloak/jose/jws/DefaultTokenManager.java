@@ -120,7 +120,7 @@ public class DefaultTokenManager implements TokenManager {
     }
 
     @Override
-    public <T> T decodeClientJWT(String jwt, ClientModel client, BiConsumer<JOSE, ClientModel> jwtValidator, Class<T> clazz) {
+    public <T> T decodeClientJWT(String jwt, ClientModel client, BiConsumer<JOSE, ClientModel> jwtValidator, Class<T> clazz, boolean allowNoneAlgorithm) {
         if (jwt == null) {
             return null;
         }
@@ -157,7 +157,7 @@ public class DefaultTokenManager implements TokenManager {
 
                     if (jws instanceof JWSInput) {
                         jwtValidator.accept(jws, client);
-                        return verifyJWS(client, clazz, (JWSInput) jws);
+                        return verifyJWS(client, clazz, (JWSInput) jws, allowNoneAlgorithm);
                     }
                 } catch (Exception ignore) {
                     // try to decrypt content as is
@@ -171,16 +171,16 @@ public class DefaultTokenManager implements TokenManager {
             }
         }
 
-        return verifyJWS(client, clazz, (JWSInput) joseToken);
+        return verifyJWS(client, clazz, (JWSInput) joseToken, allowNoneAlgorithm);
     }
 
-    private <T> T verifyJWS(ClientModel client, Class<T> clazz, JWSInput jws) {
+    private <T> T verifyJWS(ClientModel client, Class<T> clazz, JWSInput jws, boolean allowNoneAlgorithm) {
         try {
             String signatureAlgorithm = jws.getHeader().getAlgorithm().name();
             ClientSignatureVerifierProvider signatureProvider = session.getProvider(ClientSignatureVerifierProvider.class, signatureAlgorithm);
 
             if (signatureProvider == null) {
-                if (jws.getHeader().getAlgorithm().equals(org.keycloak.jose.jws.Algorithm.none)) {
+                if (allowNoneAlgorithm && jws.getHeader().getAlgorithm().equals(org.keycloak.jose.jws.Algorithm.none)) {
                     return jws.readJsonContent(clazz);
                 }
                 return null;

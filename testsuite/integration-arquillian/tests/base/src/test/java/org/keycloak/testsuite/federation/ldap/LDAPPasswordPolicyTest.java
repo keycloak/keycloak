@@ -76,8 +76,8 @@ public class LDAPPasswordPolicyTest extends AbstractLDAPTest {
         passwordUpdatePage.changePassword("changedpassword", "changedpassword");
         appPage.assertCurrent();
 
-        UserRepresentation user = testRealm().users().search("mustchange").get(0);
-        testRealm().users().get(user.getId()).logout();
+        UserRepresentation user = managedRealm.admin().users().search("mustchange").get(0);
+        managedRealm.admin().users().get(user.getId()).logout();
         oauth.openLoginForm();
         loginPage.login("mustchange", "changedpassword");
         appPage.assertCurrent();

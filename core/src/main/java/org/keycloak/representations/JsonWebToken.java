@@ -152,6 +152,17 @@ public class JsonWebToken implements Serializable, Token {
         return this;
     }
 
+    /**
+     * Set issuedAt to the current time and expireAt = issuedAt + ttl
+     * Also set notBefore to issuedAt
+     */
+    @JsonIgnore
+    public JsonWebToken issuedNowWithTTL(int ttl) {
+        iat = nbf = (long) Time.currentTime();
+        exp = iat + ttl;
+        return this;
+    }
+
     public JsonWebToken iat(Long iat) {
         this.iat = iat;
         return this;

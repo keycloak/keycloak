@@ -1,0 +1,130 @@
+[id="scim-mapping-attributes_{context}"]
+
+[[_scim_mapping_attributes_]]
+= Mapping user attributes to SCIM schemas
+[role="_abstract"]
+
+{project_name} uses the User Profile configuration to define how user attributes are mapped to SCIM schema attributes.
+A set of core attributes are mapped by default, and additional attributes can be mapped by configuring user profile
+attributes with a SCIM schema attribute mapping.
+
+== Default attribute mappings
+
+The following attributes are automatically mapped to the SCIM core user schema (`urn:ietf:params:scim:schemas:core:2.0:User`)
+without any additional configuration:
+
+[cols="1,1",options="header"]
+|===
+| {project_name} Attribute | SCIM Attribute
+
+| `username`
+| `userName`
+
+| `email`
+| `emails`
+
+| `firstName`
+| `name.givenName`
+
+| `lastName`
+| `name.familyName`
+
+| `enabled`
+| `active`
+
+| `createdTimestamp`
+| `meta.created`
+
+| `locale`
+| `locale` (only when internationalization is enabled)
+|===
+
+== Adding custom attribute mappings
+
+To map additional user attributes to SCIM schema attributes, you need to create a user profile attribute and
+configure its SCIM schema attribute mapping, setting the value to the SCIM attribute path that the user profile
+attribute should be mapped to.
+
+=== Using the Admin Console
+
+.Procedure
+. Click *Realm settings* in the menu, then select the *User profile* tab.
+. Click *Create attribute*.
+. Enter the *Name* for the attribute (for example, `middleName`).
+. In the *SCIM* section, select or enter the *SCIM attribute* to map to (for example, `name.middleName`). Attributes
+  from the core User and Enterprise User schemas are available for selection. You can also enter custom values
+  for attributes from other schemas by typing the full URN-prefixed value (for example,
+  `urn:my:params:scim:schemas:extension:custom:1.0:User:memberOf`).
+  See <<_scim_managing_schema_extensions_,Managing schema extensions>> for more details on custom schemas.
+. Configure the attribute permissions as needed (at minimum, grant *admin* read and write access).
+. Click *Save*.
+
+.Configuring a SCIM attribute mapping in User Profile
+image:images/scim-user-profile-mapping.png[alt="Configuring a SCIM attribute mapping"]
+
+== Mapping additional name attributes
+
+To support the full SCIM name attributes, you can map:
+
+[cols="1,1",options="header"]
+|===
+| User Profile Attribute Name | SCIM Attribute Value
+
+| `middleName`
+| `name.middleName`
+
+| `honorificPrefix`
+| `name.honorificPrefix`
+
+| `honorificSuffix`
+| `name.honorificSuffix`
+|===
+
+Once configured, creating a user with these attributes via SCIM works as expected:
+
+[source,bash]
+----
+curl -X POST http://localhost:8080/realms/myrealm/scim/v2/Users \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+    "userName": "jdoe",
+    "name": {
+      "givenName": "John",
+      "middleName": "Michael",
+      "familyName": "Doe",
+      "honorificPrefix": "Mr.",
+      "honorificSuffix": "Jr."
+    }
+  }'
+----
+
+The `name.formatted` attribute is automatically generated from the name components and is read-only.
+
+== Mapping the externalId attribute
+
+To support the SCIM `externalId` attribute, which allows external systems to store their own identifier for a user:
+
+*   User Profile attribute name: `myExternalId` (or any name of your choice)
+*   SCIM attribute value: `externalId`
+
+Once configured, you can set the external ID when creating or updating users:
+
+[source,bash]
+----
+curl -X POST http://localhost:8080/realms/myrealm/scim/v2/Users \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+    "userName": "jdoe",
+    "externalId": "ext-12345"
+  }'
+----
+
+== Schema discovery
+
+Any attribute configured with a SCIM attribute mapping is automatically reflected in the schema
+discovery endpoints (`/Schemas` and `/ResourceTypes`). For more details on schema discovery, including how to
+use extension schemas beyond the core User schema, see <<_scim_managing_schema_extensions_,Managing schema extensions>>.

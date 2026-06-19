@@ -124,6 +124,11 @@
             <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Quarkus excludes byte-buddy from hibernate-core; model tests need it at runtime -->
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -219,6 +224,12 @@
             <id>jpa+infinispan+volatilesessions</id>
             <properties>
                 <keycloak.model.parameters>Infinispan,Jpa,VolatileUserSessions</keycloak.model.parameters>
+            </properties>
+        </profile>
+        <profile>
+            <id>jpa+infinispan+cacheless</id>
+            <properties>
+                <keycloak.model.parameters>Infinispan,Jpa,Cacheless</keycloak.model.parameters>
             </properties>
         </profile>
 

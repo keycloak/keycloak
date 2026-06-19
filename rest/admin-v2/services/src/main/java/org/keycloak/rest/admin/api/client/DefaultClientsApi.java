@@ -4,47 +4,54 @@ import java.util.stream.Stream;
 
 import jakarta.annotation.Nonnull;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.client.ClientApi;
 import org.keycloak.admin.api.client.ClientsApi;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.client.ClientService;
-import org.keycloak.services.client.ClientServiceHelper;
-import org.keycloak.services.resources.admin.RealmAdminResource;
+import org.keycloak.services.client.ClientService.ClientProjectionOptions;
+import org.keycloak.services.client.DefaultClientService;
+import org.keycloak.services.client.query.ClientQueryException;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 public class DefaultClientsApi implements ClientsApi {
+    
     private final KeycloakSession session;
     private final AdminPermissionEvaluator permissions;
     private final RealmModel realm;
     private final ClientService clientService;
 
-    // v1 resources
-    private final RealmAdminResource realmAdminResource;
-
     public DefaultClientsApi(@Nonnull KeycloakSession session,
                              @Nonnull RealmModel realm,
-                             @Nonnull AdminPermissionEvaluator permissions,
-                             // remove v1 resource once we are not attached to API v1
-                             @Nonnull RealmAdminResource realmAdminResource) {
+                             @Nonnull AdminPermissionEvaluator permissions) {
         this.session = session;
         this.realm = realm;
         this.permissions = permissions;
-        this.realmAdminResource = realmAdminResource;
-        this.clientService = ClientServiceHelper.getClientService(session, realm, permissions, realmAdminResource);
+        this.clientService = new DefaultClientService(session, realm, permissions);
     }
-
+    
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
     @Override
-    public Stream<BaseClientRepresentation> getClients() {
-        return clientService.getClients(realm);
+    public Stream<BaseClientRepresentation> getClients(ListOptions params) {
+        try {
+            var searchOptions = params.getQuery() != null ? new ClientService.ClientSearchOptions(params.getQuery()) : null;
+            return clientService.getClients(realm, new ClientProjectionOptions(params.getFields()), searchOptions, null);
+        } catch (ClientQueryException e) {
+            throw new BadRequestException(e.getMessage());
+        }
     }
 
     @POST
@@ -55,10 +62,21 @@ public class DefaultClientsApi implements ClientsApi {
                 .build();
     }
 
+    /**
+     * When the path {@code clientId} does not resolve, return 403 if the caller cannot list clients
+     * (anti client-ID phishing), matching {@code ClientsResource#getClient} for Admin API v1.
+     */
+    private void enforceAntiPhishingIfClientMissing(String clientId) {
+        if (realm.getClientByClientId(clientId) == null && !permissions.clients().canList()) {
+            throw new ForbiddenException();
+        }
+    }
+
     @Path("{id}")
     @Override
     public ClientApi client(@PathParam("id") String clientId) {
-        return new DefaultClientApi(session, realm, clientId, permissions, realmAdminResource);
+        enforceAntiPhishingIfClientMissing(clientId);
+        return new DefaultClientApi(session, realm, clientId, permissions);
     }
 
 }

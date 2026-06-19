@@ -64,7 +64,6 @@ public class ManagementOptions {
             .build();
 
     public static final Option<String> HTTP_MANAGEMENT_HOST = new OptionBuilder<>("http-management-host", String.class)
-            .hidden()
             .category(OptionCategory.MANAGEMENT)
             .description("Host of the management interface. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
             .build();
@@ -89,18 +88,14 @@ public class ManagementOptions {
             .build();
 
     public static final Option<String> HTTPS_MANAGEMENT_CIPHER_SUITES = new OptionBuilder<>("https-management-cipher-suites", String.class)
-            .hidden()
             .category(OptionCategory.MANAGEMENT)
             .description("The cipher suites to use for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
-            .hidden()
             .build();
 
     public static final Option<List<String>> HTTPS_MANAGEMENT_PROTOCOLS = OptionBuilder.listOptionBuilder("https-management-protocols", String.class)
-            .hidden()
             .category(OptionCategory.MANAGEMENT)
             .description("The list of protocols to explicitly enable for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
             .defaultValue(List.of("TLSv1.3,TLSv1.2"))
-            .hidden()
             .build();
 
     public static final Option<String> HTTPS_MANAGEMENT_CERTIFICATES_RELOAD_PERIOD = new OptionBuilder<>("https-management-certificates-reload-period", String.class)
@@ -134,8 +129,22 @@ public class ManagementOptions {
             .build();
 
     public static final Option<String> HTTPS_MANAGEMENT_KEY_STORE_TYPE = new OptionBuilder<>("https-management-key-store-type", String.class)
-            .hidden()
             .category(OptionCategory.MANAGEMENT)
             .description("The type of the key store file for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
+            .build();
+
+    public static final Option<File> HTTPS_MANAGEMENT_TRUST_STORE_FILE = new OptionBuilder<>("https-management-trust-store-file", File.class)
+            .category(OptionCategory.MANAGEMENT)
+            .description("The trust store which holds the certificate information of the certificates to trust for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
+            .build();
+
+    public static final Option<String> HTTPS_MANAGEMENT_TRUST_STORE_PASSWORD = new OptionBuilder<>("https-management-trust-store-password", String.class)
+            .category(OptionCategory.MANAGEMENT)
+            .description("The password of the trust store file for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
+            .build();
+
+    public static final Option<String> HTTPS_MANAGEMENT_TRUST_STORE_TYPE = new OptionBuilder<>("https-management-trust-store-type", String.class)
+            .category(OptionCategory.MANAGEMENT)
+            .description("The type of the trust store file for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
             .build();
 }

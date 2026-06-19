@@ -29,10 +29,10 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Test;
@@ -82,21 +82,21 @@ public class CompositeClientRoleMappingsTest {
         RealmResource realm = managedRealm.admin();
 
         // --- Create Client A ---
-        try (Response r = realm.clients().create(ClientConfigBuilder.create().clientId("CLIENT_A").build())) {
+        try (Response r = realm.clients().create(ClientBuilder.create().clientId("CLIENT_A").build())) {
             clientAId = ApiUtil.getCreatedId(r);
         }
 
         // --- Client A roles ---
-        realm.clients().get(clientAId).roles().create(RoleConfigBuilder.create().name("A_LEAF_1").build());
-        realm.clients().get(clientAId).roles().create(RoleConfigBuilder.create().name("A_LEAF_2").build());
-        realm.clients().get(clientAId).roles().create(RoleConfigBuilder.create().name("A_LEAF_3").build());
+        realm.clients().get(clientAId).roles().create(RoleBuilder.create().name("A_LEAF_1").build());
+        realm.clients().get(clientAId).roles().create(RoleBuilder.create().name("A_LEAF_2").build());
+        realm.clients().get(clientAId).roles().create(RoleBuilder.create().name("A_LEAF_3").build());
         realm.clients().get(clientAId).roles().create(
-                RoleConfigBuilder.create().name("A_LEAF_WITH_ATTRS")
+                RoleBuilder.create().name("A_LEAF_WITH_ATTRS")
                         .attributes(Map.of("env", List.of("production"), "tier", List.of("premium")))
                         .build());
 
         // A_COMPOSITE bundles A_LEAF_1 + A_LEAF_2 + A_LEAF_WITH_ATTRS
-        realm.clients().get(clientAId).roles().create(RoleConfigBuilder.create().name("A_COMPOSITE").build());
+        realm.clients().get(clientAId).roles().create(RoleBuilder.create().name("A_COMPOSITE").build());
         realm.clients().get(clientAId).roles().get("A_COMPOSITE").addComposites(List.of(
                 realm.clients().get(clientAId).roles().get("A_LEAF_1").toRepresentation(),
                 realm.clients().get(clientAId).roles().get("A_LEAF_2").toRepresentation(),
@@ -104,36 +104,36 @@ public class CompositeClientRoleMappingsTest {
         ));
 
         // A_NESTED_COMPOSITE contains A_COMPOSITE (depth 2) + A_LEAF_3
-        realm.clients().get(clientAId).roles().create(RoleConfigBuilder.create().name("A_NESTED_COMPOSITE").build());
+        realm.clients().get(clientAId).roles().create(RoleBuilder.create().name("A_NESTED_COMPOSITE").build());
         realm.clients().get(clientAId).roles().get("A_NESTED_COMPOSITE").addComposites(List.of(
                 realm.clients().get(clientAId).roles().get("A_COMPOSITE").toRepresentation(),
                 realm.clients().get(clientAId).roles().get("A_LEAF_3").toRepresentation()
         ));
 
         // --- Create Client B ---
-        try (Response r = realm.clients().create(ClientConfigBuilder.create().clientId("CLIENT_B").build())) {
+        try (Response r = realm.clients().create(ClientBuilder.create().clientId("CLIENT_B").build())) {
             clientBId = ApiUtil.getCreatedId(r);
         }
 
         // --- Client B roles ---
-        realm.clients().get(clientBId).roles().create(RoleConfigBuilder.create().name("B_LEAF_1").build());
-        realm.clients().get(clientBId).roles().create(RoleConfigBuilder.create().name("B_LEAF_2").build());
+        realm.clients().get(clientBId).roles().create(RoleBuilder.create().name("B_LEAF_1").build());
+        realm.clients().get(clientBId).roles().create(RoleBuilder.create().name("B_LEAF_2").build());
 
         // B_COMPOSITE bundles B_LEAF_1 + B_LEAF_2
-        realm.clients().get(clientBId).roles().create(RoleConfigBuilder.create().name("B_COMPOSITE").build());
+        realm.clients().get(clientBId).roles().create(RoleBuilder.create().name("B_COMPOSITE").build());
         realm.clients().get(clientBId).roles().get("B_COMPOSITE").addComposites(List.of(
                 realm.clients().get(clientBId).roles().get("B_LEAF_1").toRepresentation(),
                 realm.clients().get(clientBId).roles().get("B_LEAF_2").toRepresentation()
         ));
 
         // --- Create Users ---
-        try (Response r = realm.users().create(UserConfigBuilder.create().username("USER_1").build())) {
+        try (Response r = realm.users().create(UserBuilder.create().username("USER_1").build())) {
             user1Id = ApiUtil.getCreatedId(r);
         }
-        try (Response r = realm.users().create(UserConfigBuilder.create().username("USER_2").build())) {
+        try (Response r = realm.users().create(UserBuilder.create().username("USER_2").build())) {
             user2Id = ApiUtil.getCreatedId(r);
         }
-        try (Response r = realm.users().create(UserConfigBuilder.create().username("USER_3").build())) {
+        try (Response r = realm.users().create(UserBuilder.create().username("USER_3").build())) {
             user3Id = ApiUtil.getCreatedId(r);
         }
 

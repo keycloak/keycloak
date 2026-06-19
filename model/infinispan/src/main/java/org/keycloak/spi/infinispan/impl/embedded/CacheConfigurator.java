@@ -18,19 +18,26 @@
 package org.keycloak.spi.infinispan.impl.embedded;
 
 import java.lang.invoke.MethodHandles;
+import java.time.Duration;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.DurationConverter;
 import org.keycloak.config.CachingOptions;
+import org.keycloak.config.OptionsUtil;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.commons.util.TimeQuantity;
@@ -90,9 +97,12 @@ public final class CacheConfigurator {
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final String MAX_COUNT_SUFFIX = "MaxCount";
+    private static final String LIFESPAN_SUFFIX = "Lifespan";
     private static final String OWNER_SUFFIX = "Owners";
     private static final int STATE_TRANSFER_CHUNK_SIZE = 16;
     private static final int MIN_NUM_OWNERS_REMOTE_CACHE = 2;
+    private static final long DEFAULT_LIFESPAN = Duration.ofHours(1).toMillis();
+    private static final int DISABLED_LIFESPAN = -1;
 
     private CacheConfigurator() {
     }
@@ -388,6 +398,38 @@ public final class CacheConfigurator {
         };
     }
 
+    /**
+     * Configures the entry lifespan for the local caches (realm, user, and authorization).
+     * <p>
+     * When the {@link Profile.Feature#CACHELESS} feature is enabled, the default lifespan is set to
+     * {@link #DEFAULT_LIFESPAN} milliseconds; otherwise, entries are immortal by default.
+     *
+     * @param holder The {@link ConfigurationBuilderHolder} where the caches are configured.
+     * @param config The Keycloak configuration, which may provide per-cache lifespan overrides.
+     * @throws IllegalStateException if a cache is not defined in the {@code holder}.
+     */
+    public static void configureLocalCachesExpiration(ConfigurationBuilderHolder holder, Config.Scope config) {
+        var defaultLifespan = Profile.isFeatureEnabled(Profile.Feature.CACHELESS) ? DEFAULT_LIFESPAN : DISABLED_LIFESPAN;
+        Stream.of(AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME)
+                .forEach(name -> setExpiration(holder, config, name, defaultLifespan));
+    }
+
+    /**
+     * Adds the lifespan configuration properties for the local caches (realm, user, and authorization) to the given
+     * provider configuration builder.
+     *
+     * @param builder The {@link ProviderConfigurationBuilder} to add the properties to.
+     */
+    public static void addExpirationConfiguration(ProviderConfigurationBuilder builder) {
+        Stream.of(AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME)
+                .forEach(name -> builder.property()
+                        .name(CacheConfigurator.lifespanConfigKey(name))
+                        .helpText("Sets the lifespan of stored objects for cache %s. A zero or negative value makes the entries immortal, i.e., they never expire. %s".formatted(name, OptionsUtil.DURATION_DESCRIPTION))
+                        .label("lifespan")
+                        .type(ProviderConfigProperty.STRING_TYPE)
+                        .add());
+    }
+
     // private methods below
 
     private static void configureSessionExpirationReaper(ConfigurationBuilder builder) {
@@ -450,6 +492,16 @@ public final class CacheConfigurator {
 
     public static String maxCountConfigKey(String name) {
         return name + MAX_COUNT_SUFFIX;
+    }
+
+    /**
+     * Returns the SPI configuration key for the lifespan of the given cache.
+     *
+     * @param name The cache name.
+     * @return The configuration key, e.g. {@code "realmLifespan"}.
+     */
+    public static String lifespanConfigKey(String name) {
+        return name + LIFESPAN_SUFFIX;
     }
 
     public static String numOwnerConfigKey(String name) {
@@ -556,5 +608,17 @@ public final class CacheConfigurator {
 
     private static boolean isClustered(ConfigurationBuilderHolder holder) {
         return holder.getGlobalConfigurationBuilder().transport().getTransport() != null;
+    }
+
+    private static void setExpiration(ConfigurationBuilderHolder holder, Config.Scope config, String cacheName, long defaultLifespan) {
+        var builder = holder.getNamedConfigurationBuilders().get(cacheName);
+        if (builder == null) {
+            throw cacheNotFound(cacheName);
+        }
+        var lifespan = Optional.ofNullable(DurationConverter.parseDuration(config.get(lifespanConfigKey(cacheName))))
+                .map(Duration::toMillis)
+                .map(value -> value <= 0 ? DISABLED_LIFESPAN : value)
+                .orElse(defaultLifespan);
+        builder.expiration().lifespan(lifespan, TimeUnit.MILLISECONDS);
     }
 }

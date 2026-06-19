@@ -32,9 +32,7 @@ import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Expressions;
-import org.jboss.logging.Logger;
 
-import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider.isKeyStoreConfigSource;
 
@@ -43,7 +41,6 @@ public final class PropertyMappers {
     public static final String KC_SPI_PREFIX = "kc.spi";
     public static String VALUE_MASK = "*******";
     private static MappersConfig MAPPERS;
-    private static final Logger log = Logger.getLogger(PropertyMappers.class);
     private final static List<PropertyMapperGrouping> GROUPINGS;
     static {
         GROUPINGS = List.of(new CachingPropertyMappers(), new DatabasePropertyMappers(),
@@ -72,7 +69,7 @@ public final class PropertyMappers {
         GROUPINGS.forEach(g -> MAPPERS.addAll(g.getPropertyMappers()));
     }
 
-    public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
+    public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name, boolean augmenting) {
         PropertyMapper<?> mapper = getMapper(name);
 
         // During re-aug do not resolve server runtime properties and avoid including in the quarkus default value config source.
@@ -81,7 +78,7 @@ public final class PropertyMappers {
         // and we need to resolve them. That should be fine as they are generally not considered security sensitive.
         // If however expressions are not enabled that means quarkus is specifically looking for runtime defaults, and we should not provide a value
         // See https://github.com/quarkusio/quarkus/pull/42157
-        if ((isRebuild() || Boolean.getBoolean(Environment.KC_TEST_REBUILD)) && isKeycloakRuntime(name, mapper)
+        if (augmenting && isKeycloakRuntime(name, mapper)
                 && (NestedPropertyMappingInterceptor.getResolvingRoot().or(() -> Optional.of(name))
                         .filter(n -> n.startsWith("quarkus.log.") || n.startsWith("quarkus.console.")).isEmpty()
                         || !Expressions.isEnabled())) {
@@ -167,11 +164,16 @@ public final class PropertyMappers {
         return switch (mappers.size()) {
             case 0 -> null;
             case 1 -> mappers.get(0);
-            default -> {
-                log.tracef("Duplicated mappers for key '%s'. Used the first found.", property);
-                yield mappers.get(0);
-            }
+            default -> mappers.stream().filter(mapper -> !mapper.getOption().isSynthetic()).findFirst().orElse(mappers.get(0));
         };
+    }
+    
+    /**
+     * Get the first non-synthetic wildcard matching the given option.
+     */
+    public static Optional<WildcardPropertyMapper<?>> getWildcardPropertyMapper(Option<?> option) {
+        return MAPPERS.getWildcardMappers().stream()
+                .filter(mapper -> mapper.getOption().getKey().equals(option.getKey()) && !mapper.getOption().isSynthetic()).findFirst();
     }
 
     public static PropertyMapper<?> getMapper(String property) {
@@ -323,10 +325,31 @@ public final class PropertyMappers {
 
             sanitizeMappers(buildTimeMappers, disabledBuildTimeMappers, command);
             sanitizeMappers(runtimeTimeMappers, disabledRuntimeMappers, command);
-
-            entrySet().stream().filter(e -> e.getValue().size() > 1).findFirst().ifPresent(e -> {
-                throw new PropertyException(String.format("Duplicated mapper for key '%s'.", e.getKey()));
+            
+            // enforce single mappings - by dropping multiple mapping synthetics
+            entrySet().stream().forEach(e -> {
+                if (e.getValue().size() <= 1) {
+                    return;
+                }
+                if (e.getKey().startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
+                    PropertyMapper<?> canonicalMapper = null;
+                    for (PropertyMapper<?> mapper : e.getValue()) {
+                        if (canonicalMapper != null) {
+                            if (mapper.option.isSynthetic()) {
+                                continue;
+                            }
+                            if (!canonicalMapper.option.isSynthetic()) {
+                                throw new PropertyException(String.format("Duplicated mapper for key '%s'.", e.getKey()));                    
+                            }
+                        }
+                        canonicalMapper = mapper;
+                    }
+                    e.setValue(List.of(canonicalMapper));
+                } else {
+                    throw new PropertyException(String.format("Duplicated mapper for key '%s'.", e.getKey()));
+                }
             });
+
         }
 
         public Map<OptionCategory, List<PropertyMapper<?>>> getRuntimeMappers() {
@@ -359,10 +382,7 @@ public final class PropertyMappers {
         }
 
         private static void handleMapper(PropertyMapper<?> mapper, BiConsumer<String, PropertyMapper<?>> operation) {
-            // skip accounting for the from if it is a synthetic option
-            if (!mapper.getOption().isSynthetic()) {
-                operation.accept(mapper.getFrom(), mapper);
-            }
+            operation.accept(mapper.getFrom(), mapper);
             if (!mapper.getFrom().equals(mapper.getTo())) {
                 String to = mapper.getTo();
                 operation.accept(to, mapper);

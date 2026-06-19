@@ -10,6 +10,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
@@ -221,6 +222,22 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         assertFailure("Invalid signature", response, events.poll());
     }
 
+
+    @Test
+    public void testSignatureWithNoneAlgorithm() {
+        JsonWebToken token = createDefaultAuthorizationGrantToken();
+
+        String noneRequest = new JWSBuilder().jsonContent(token).none();
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(noneRequest).send();
+        assertFailure("Invalid signature", response, events.poll());
+
+        token = createDefaultAuthorizationGrantToken();
+        OAuthIdentityProvider.OAuthIdentityProviderKeys keys = getIdentityProvider().getKeys();
+        String noneRequestWithKid = new JWSBuilder().kid(keys.getKeyWrapper().getKid()).jsonContent(token).none();
+        response = oAuthClient.jwtAuthorizationGrantRequest(noneRequestWithKid).send();
+        assertFailure("Invalid signature", response, events.poll());
+    }
+
     @Test
     public void testValidateSignatureFixedKey() {
         realm.updateIdentityProvider(IDP_ALIAS, rep -> {
@@ -384,5 +401,30 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         jwt = getIdentityProvider().encodeToken(jwtToken);
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Multiple audiences not allowed", response, events.poll());
+    }
+
+    @Test
+    public void testInvalidSignatureDoesNotConsumeJti() {
+        String jti = "test-sig-jti-" + System.currentTimeMillis();
+        JsonWebToken token = createDefaultAuthorizationGrantToken();
+        token.id(jti);
+
+        // Create request with invalid signature
+        OAuthIdentityProvider.OAuthIdentityProviderKeys newKeys = getIdentityProvider().createKeys();
+        OAuthIdentityProvider.OAuthIdentityProviderKeys keys = getIdentityProvider().getKeys();
+        newKeys.getKeyWrapper().setKid(keys.getKeyWrapper().getKid());
+        String jwtInvalidSig = getIdentityProvider().encodeToken(token, newKeys);
+
+        // First request with invalid signature should fail
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwtInvalidSig).send();
+        assertFailure("Invalid signature", response, events.poll());
+
+        // Second request with valid signature and same jti
+        String jwtValidSig = getIdentityProvider().encodeToken(token);
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwtValidSig).send();
+        assertSuccess("test-app", response);
+
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwtValidSig).send();
+        assertFailure("Token reuse detected", response, events.poll());
     }
 }

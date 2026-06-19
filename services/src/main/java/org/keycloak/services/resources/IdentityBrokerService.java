@@ -509,7 +509,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         // authenticate client
         AuthorizeClientUtil.ClientAuthResult clientAuth = AuthorizeClientUtil.authorizeClient(session, event, cors);
         ClientModel client = clientAuth.getClient();
-        cors.allowedOrigins(session, client);
+        cors.checkAllowedOrigins(session, client);
         event.client(client);
         session.getContext().setClient(client);
         if (client.isPublicClient()) {
@@ -886,10 +886,15 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             if (Booleans.isTrue(context.getIdpConfig().isAddReadTokenRoleOnCreate())) {
                 ClientModel brokerClient = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
                 if (brokerClient == null) {
-                    throw new IdentityBrokerException("Client 'broker' not available. Maybe realm has not migrated to support the broker token exchange service");
+                    logger.warnf("Identity provider '%s' has 'Stored tokens readable' enabled, but the broker client does not exist. This option requires the broker client with read-token role, which is only created when identity-broker-api:v1 is enabled.", context.getIdpConfig().getAlias());
+                } else {
+                    RoleModel readTokenRole = brokerClient.getRole(Constants.READ_TOKEN_ROLE);
+                    if (readTokenRole == null) {
+                        logger.warnf("Identity provider '%s' has 'Stored tokens readable' enabled, but the read-token role does not exist in the broker client.", context.getIdpConfig().getAlias());
+                    } else {
+                        federatedUser.grantRole(readTokenRole);
+                    }
                 }
-                RoleModel readTokenRole = brokerClient.getRole(Constants.READ_TOKEN_ROLE);
-                federatedUser.grantRole(readTokenRole);
             }
 
             // Add federated identity link here
@@ -1577,7 +1582,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
     }
 
     private Response corsResponse(Response response, ClientModel clientModel) {
-        return Cors.builder().auth().allowedOrigins(session, clientModel).add(Response.fromResponse(response));
+        return Cors.builder().auth().checkAllowedOrigins(session, clientModel).add(Response.fromResponse(response));
     }
 
     private void fireErrorEvent(String message, Throwable throwable) {

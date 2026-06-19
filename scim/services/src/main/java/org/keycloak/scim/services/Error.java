@@ -18,7 +18,11 @@ import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.theme.Theme;
 
+import org.jboss.logging.Logger;
+
 class Error {
+
+    private static final Logger logger = Logger.getLogger(Error.class);
 
     static Response toResponse(KeycloakSession session, Exception e) {
         if (e instanceof ModelValidationException mve) {
@@ -35,11 +39,13 @@ class Error {
         } else if (e instanceof ScimFilterException) {
             return badRequest("invalidFilter", e.getMessage());
         } else if (e instanceof ForbiddenException) {
+            logger.debug("SCIM request denied: caller does not have the required permissions");
             return forbidden();
         } else if (e instanceof jakarta.ws.rs.ForbiddenException fe) {
             throw fe;
         }
 
+        logger.error("Unexpected error processing SCIM request", e);
         return errorResponse(Status.INTERNAL_SERVER_ERROR, "An unexpected error occurred when processing the request");
     }
 

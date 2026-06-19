@@ -17,6 +17,8 @@ import org.keycloak.scim.resource.schema.ModelSchema;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import static java.util.function.Predicate.not;
+
 import static org.keycloak.utils.StringUtil.isBlank;
 
 public abstract class AbstractScimResourceTypeProvider<M extends Model, R extends ResourceTypeRepresentation> implements ScimResourceTypeProvider<R> {
@@ -155,7 +157,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
     @Override
     public List<String> getSchemaExtensions() {
-        return schemaExtensions.stream().map(ModelSchema::getId).toList();
+        return schemaExtensions.stream().filter(not(ModelSchema::isInternal)).map(ModelSchema::getId).toList();
     }
 
     protected abstract R onCreate(R resource);
@@ -172,7 +174,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
     protected void populate(M model, R resource) {
         for (ModelSchema<M, R> schema : schemas) {
-            if (resource.hasSchema(schema.getId())) {
+            if (schema.supports(resource.getSchemas())) {
                 schema.populate(model, resource);
             }
         }
@@ -187,7 +189,8 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
     }
 
     private boolean canQuery() {
-        return session.getContext().getPermissions().hasPermission(getRealmResourceType(), AdminPermissionsSchema.QUERY);
+        return session.getContext().getPermissions().hasPermission(getRealmResourceType(), AdminPermissionsSchema.QUERY)
+                || session.getContext().getPermissions().hasPermission(getRealmResourceType(), AdminPermissionsSchema.VIEW);
     }
 
     private boolean hasPermission(String realmResourceType, String scope) {

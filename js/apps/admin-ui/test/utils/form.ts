@@ -29,6 +29,7 @@ export async function assertSelectValue(field: Locator, value: string) {
 
 export async function switchOn(page: Page, id: string | Locator) {
   const switchElement = typeof id === "string" ? page.locator(id) : id;
+  if (await switchElement.isChecked()) return;
   await switchElement.click({ force: true });
   await expect(switchElement).toBeChecked();
 }
@@ -78,7 +79,7 @@ async function clickOption(page: Page, option: string) {
 
 export async function changeTimeUnit(
   page: Page,
-  unit: "Minutes" | "Hours" | "Days",
+  unit: "Seconds" | "Minutes" | "Hours" | "Days",
   inputType: string,
 ) {
   await page.locator(inputType).click();

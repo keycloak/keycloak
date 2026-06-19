@@ -23,8 +23,9 @@ import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.util.AssertAdminEvents;
-import org.keycloak.testsuite.util.RealmBuilder;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -53,7 +54,7 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation testRealmRep = RealmBuilder.create().name(REALM_NAME).testEventListener().build();
+        RealmRepresentation testRealmRep = RealmBuilder.create().name(REALM_NAME).eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID).build();
         testRealmRep.setId(REALM_NAME);
         testRealms.add(testRealmRep);
     }

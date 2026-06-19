@@ -50,6 +50,8 @@ public class Profile {
     public enum Feature {
         AUTHORIZATION("Authorization Service", Type.DEFAULT),
 
+        AUTHZEN("OpenID AuthZen Authorization", Type.EXPERIMENTAL),
+
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
 
         ACCOUNT_V3("Account Console version 3", Type.DEFAULT, 3, Feature.ACCOUNT_API),
@@ -90,7 +92,7 @@ public class Profile {
 
         PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
 
-        DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.EXPERIMENTAL),
+        PARAMETERIZED_SCOPES("Parameterized OAuth 2.0 client scopes", Type.EXPERIMENTAL),
 
         CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
 
@@ -121,6 +123,8 @@ public class Profile {
 
         MULTI_SITE("Multi-site support", Type.DISABLED_BY_DEFAULT, FeatureUpdatePolicy.SHUTDOWN),
 
+        CACHELESS("Store authentication sessions, action tokens and login failure data in the database, removing the need for Infinispan caches.", Type.EXPERIMENTAL, FeatureUpdatePolicy.SHUTDOWN),
+
         CLUSTERLESS("Store all session data, work cache and login failure data in an external Infinispan cluster.", Type.EXPERIMENTAL, FeatureUpdatePolicy.SHUTDOWN),
 
         CLIENT_TYPES("Client Types", Type.EXPERIMENTAL),
@@ -131,6 +135,7 @@ public class Profile {
 
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
         OID4VC_VCI_PREAUTH_CODE("Support for credential offers with `pre-authorized_code` grant.", Type.EXPERIMENTAL, OID4VC_VCI),
+        OID4VC_VCI_REST_CREDENTIAL_OFFER("Support for the REST endpoint to create credential offers.", Type.EXPERIMENTAL, OID4VC_VCI),
 
         OPENTELEMETRY("OpenTelemetry support", Type.DEFAULT),
         OPENTELEMETRY_LOGS("OpenTelemetry Logs support", Type.PREVIEW, OPENTELEMETRY),
@@ -158,11 +163,15 @@ public class Profile {
 
         DB_TIDB("TiDB database type", Type.EXPERIMENTAL),
 
+        SSF("Shared Signals Framework", Type.EXPERIMENTAL),
+
         HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.PREVIEW),
 
         OPENAPI("OpenAPI specification served at runtime", Type.EXPERIMENTAL, CLIENT_ADMIN_API_V2),
 
         CIMD("OAuth Client ID Metadata Document", Type.EXPERIMENTAL),
+
+        IDENTITY_ASSERTION_JWT("Identity Assertion JWT", Type.EXPERIMENTAL),
 
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
@@ -174,8 +183,8 @@ public class Profile {
 
         RESOURCE_INDICATORS("Resource Indicators for OAuth 2.0", Type.EXPERIMENTAL),
 
-        IDENTITY_BROKERING_API_V1("Identity Brokering API V1", Type.DEFAULT, 1),
-        IDENTITY_BROKERING_API_V2("Identity Brokering API V2", Type.PREVIEW, 2);
+        IDENTITY_BROKERING_API_V1("Identity Brokering API V1", Type.DEFAULT, 1, true, null, null),
+        IDENTITY_BROKERING_API_V2("Identity Brokering API V2", Type.DISABLED_BY_DEFAULT, 2);
 
         private final Type type;
         private final String label;

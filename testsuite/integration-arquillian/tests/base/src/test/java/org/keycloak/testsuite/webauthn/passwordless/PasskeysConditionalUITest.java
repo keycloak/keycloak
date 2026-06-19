@@ -29,6 +29,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
@@ -67,10 +68,10 @@ public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
-    public void successLoginWithDiscoverableKey() throws IOException {
+    public void successLoginWithDiscoverableCredential() throws IOException {
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
-        // set passwordless policy for discoverable keys
+        // set passwordless policy for discoverable credentials
         try (Closeable c = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicyRpEntityName("localhost")
                 .setWebAuthnPolicyRequireResidentKey(Constants.WEBAUTHN_POLICY_OPTION_YES)
@@ -88,21 +89,20 @@ public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
 
             events.clear();
 
-            // the user should be automatically logged in using the discoverable key
+            // the user should be automatically logged in using the discoverable credential
             oauth.openLoginForm();
             WaitUtils.waitForPageToLoad();
             appPage.assertCurrent();
 
-            events.expectLogin()
-                    .user(user.getId())
-                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
-                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(user.getId())
+                    .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
         }
     }
 
     @Test
-    public void failureWithNonDiscoverableKey() throws IOException {
+    public void failureWithNonDiscoverableCredential() throws IOException {
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
         // set passwordless policy not specified, key will not be discoverable

@@ -5,12 +5,12 @@ import java.util.List;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AccountHelper;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.broker.KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME;
@@ -86,9 +86,9 @@ public abstract class AbstractUsernameTemplateMapperTest extends AbstractIdentit
 
         waitForPage(driver, "update account information", false);
 
-        Assert.assertTrue(updateAccountInformationPage.isCurrent());
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                "We must be on correct realm right now");
 
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(bc.getUserEmail(), "FirstName", "LastName");

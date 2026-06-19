@@ -34,6 +34,8 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -117,7 +119,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
                 if (!signatureProvider.isAsymmetricAlgorithm()) {
                     throw new RuntimeException("Algorithm is not asymmetric");
                 }
-            }, JsonWebToken.class);
+            }, JsonWebToken.class, false);
             signatureValid = jwt != null;
         } catch (RuntimeException e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
@@ -130,14 +132,21 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     }
 
     protected PublicKey getSignatureValidationKey(ClientModel client, ClientAuthenticationFlowContext context, JWSInput jws) {
-        PublicKey publicKey = PublicKeyStorageManager.getClientPublicKey(context.getSession(), client, jws);
-        if (publicKey == null) {
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), OAuthErrorException.INVALID_CLIENT, "Unable to load public key");
-            context.failure(AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED, challengeResponse);
-            return null;
-        } else {
-            return publicKey;
+        KeyWrapper keyWrapper = PublicKeyStorageManager.getClientPublicKeyWrapper(context.getSession(), client, jws);
+
+        if (keyWrapper != null) {
+            context.getEvent().detail(Details.CLIENT_JWT_KID, keyWrapper.getKid());
+
+            PublicKey publicKey = (PublicKey)keyWrapper.getPublicKey();
+
+            if (publicKey != null) {
+                return publicKey;
+            }
         }
+
+        Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), OAuthErrorException.INVALID_CLIENT, "Unable to load public key");
+        context.failure(AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED, challengeResponse);
+        return null;
     }
 
     @Override

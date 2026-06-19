@@ -9,9 +9,9 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.testsuite.runonserver.RunOnServer;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class UserSessionLimitsUtil {
     protected static final String ERROR_TO_DISPLAY = "This account has too many sessions";
@@ -35,17 +35,6 @@ public class UserSessionLimitsUtil {
         configModel = realm.addAuthenticatorConfig(configModel);
         execution.setAuthenticatorConfig(configModel.getId());
         realm.addAuthenticatorExecution(execution);
-    }
-
-    static RunOnServer assertClientSessionCount(String realmName, String username, String clientId, int count) {
-        return (session) -> {
-            RealmModel realm = session.realms().getRealmByName(realmName);
-            UserModel user = session.users().getUserByUsername(realm, username);
-            assertEquals(count, session.sessions()
-                    .readOnlyStreamUserSessions(realm, realm.getClientByClientId(clientId), -1, -1)
-                    .filter(userSessionModel -> userSessionModel.getUser().getId().equals(user.getId()))
-                    .count());
-        };
     }
 
     static RunOnServer assertSessionCount(String realmName, String username, int count) {

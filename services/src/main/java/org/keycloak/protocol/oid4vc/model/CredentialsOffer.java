@@ -91,10 +91,6 @@ public class CredentialsOffer {
         return this;
     }
 
-    public CredentialOfferGrant getGrant(String grantType) {
-        return grants.get(grantType);
-    }
-
     public CredentialsOffer addGrant(CredentialOfferGrant grant) {
         grants.put(grant.getGrantType(), grant);
         return this;
@@ -122,6 +118,11 @@ public class CredentialsOffer {
         return Optional.ofNullable(getPreAuthorizedGrant())
                 .map(PreAuthorizedCodeGrant::getPreAuthorizedCode)
                 .orElse(null);
+    }
+
+    @JsonIgnore
+    public boolean hasPreAuthorizedGrant() {
+        return grants.get(PRE_AUTH_GRANT_TYPE) != null;
     }
 
     @Override

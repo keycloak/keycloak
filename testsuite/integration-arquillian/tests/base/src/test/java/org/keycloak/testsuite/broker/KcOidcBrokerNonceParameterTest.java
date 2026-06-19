@@ -17,13 +17,13 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
@@ -63,18 +63,18 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
         oauth.realm(bc.consumerRealmName());
-        oauth.clientId("consumer-client");
+        oauth.client("consumer-client");
 
         AuthorizationEndpointResponse authzResponse = doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword(), "123456");
         String code = authzResponse.getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         IDToken idToken = toIdToken(response.getIdToken());
         
-        Assert.assertEquals("123456", idToken.getNonce());
+        Assertions.assertEquals("123456", idToken.getNonce());
         String federatedIdTokenString = (String) idToken.getOtherClaims().get(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
-        Assert.assertNotNull(federatedIdTokenString);
+        Assertions.assertNotNull(federatedIdTokenString);
         IDToken federatedIdToken = toIdToken(federatedIdTokenString);
-        Assert.assertNotNull(federatedIdToken.getNonce());
+        Assertions.assertNotNull(federatedIdToken.getNonce());
     }
     
     @Test
@@ -89,18 +89,18 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
         idpRes.update(idpRep);
 
         oauth.realm(bc.consumerRealmName());
-        oauth.clientId("consumer-client");
+        oauth.client("consumer-client");
 
         AuthorizationEndpointResponse authzResponse = doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword(), null);
         String code = authzResponse.getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         IDToken idToken = toIdToken(response.getIdToken());
 
-        Assert.assertNull(idToken.getNonce());
+        Assertions.assertNull(idToken.getNonce());
         String federatedIdTokenString = (String) idToken.getOtherClaims().get(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
-        Assert.assertNotNull(federatedIdTokenString);
+        Assertions.assertNotNull(federatedIdTokenString);
         IDToken federatedIdToken = toIdToken(federatedIdTokenString);
-        Assert.assertNull(federatedIdToken.getNonce());
+        Assertions.assertNull(federatedIdToken.getNonce());
     }
 
     protected IDToken toIdToken(String encoded) {

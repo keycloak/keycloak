@@ -24,7 +24,7 @@ import static org.keycloak.testsuite.util.UIUtils.isElementDisabled;
 import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
 import static org.keycloak.testsuite.util.UIUtils.isInputElementValid;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -33,18 +33,18 @@ public final class UIAssert {
     public static void assertInputElementValid(boolean expected, WebElement element) {
         String msg = String.format("Expected %s to be %b; actual %s",
                 ARIA_INVALID_ATTR_NAME, expected, element.getAttribute(ARIA_INVALID_ATTR_NAME));
-        assertEquals(msg, expected, isInputElementValid(element));
+        assertEquals(expected, isInputElementValid(element), msg);
     }
 
     public static void assertElementDisabled(boolean expected, WebElement element) {
         boolean actual = isElementDisabled(element);
         String msg = "Element should" + (!expected ? " not" : "") + " be disabled";
-        assertEquals(msg, expected, actual);
+        assertEquals(expected, actual, msg);
     }
 
     public static void assertElementVisible(boolean expected, WebElement element) {
         boolean actual = isElementVisible(element);
         String msg = "Element should" + (!expected ? " not" : "") + " be visible";
-        assertEquals(msg, expected, actual);
+        assertEquals(expected, actual, msg);
     }
 }

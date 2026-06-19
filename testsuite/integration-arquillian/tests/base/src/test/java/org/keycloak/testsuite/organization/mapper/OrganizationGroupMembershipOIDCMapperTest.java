@@ -34,11 +34,13 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -54,6 +56,7 @@ import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
@@ -65,16 +68,26 @@ public class OrganizationGroupMembershipOIDCMapperTest extends AbstractOrganizat
         // Reset to defaults
         setMapperConfig(ProtocolMapperUtils.MULTIVALUED, null);
         setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, null);
+        setMapperConfig(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, null);
         setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ATTRIBUTES, null);
         setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ID, null);
 
         // Add the organization group membership mapper to the organization scope
-        ClientScopeRepresentation orgScope = testRealm().clientScopes().findAll().stream()
+        ClientScopeRepresentation orgScope = managedRealm.admin().clientScopes().findAll().stream()
                 .filter(s -> OIDCLoginProtocolFactory.ORGANIZATION.equals(s.getName()))
                 .findAny()
                 .orElseThrow();
+        List<ProtocolMapperRepresentation> protocolMappers = orgScope.getProtocolMappers();
 
-        ClientScopeResource orgScopeResource = testRealm().clientScopes().get(orgScope.getId());
+        if (protocolMappers.stream().anyMatch(m -> "organization-groups".equals(m.getName()))) {
+            setGroupMapperConfig(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+            setGroupMapperConfig(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+            setGroupMapperConfig(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
+            setGroupMapperConfig(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, OAuth2Constants.ORGANIZATION);
+            return;
+        }
+
+        ClientScopeResource orgScopeResource = managedRealm.admin().clientScopes().get(orgScope.getId());
 
         ProtocolMapperRepresentation groupMapper = new ProtocolMapperRepresentation();
         groupMapper.setName("organization-groups");
@@ -85,9 +98,32 @@ public class OrganizationGroupMembershipOIDCMapperTest extends AbstractOrganizat
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
+        config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, OAuth2Constants.ORGANIZATION);
         groupMapper.setConfig(config);
 
         orgScopeResource.getProtocolMappers().createMapper(groupMapper).close();
+    }
+
+    private void setGroupMapperConfig(String key, String value) {
+        ClientScopeRepresentation orgScope = managedRealm.admin().clientScopes().findAll().stream()
+                .filter(s -> OIDCLoginProtocolFactory.ORGANIZATION.equals(s.getName()))
+                .findAny()
+                .orElseThrow();
+        ClientScopeResource orgScopeResource = managedRealm.admin().clientScopes().get(orgScope.getId());
+
+        ProtocolMapperRepresentation groupMapper = orgScopeResource.getProtocolMappers().getMappers().stream()
+                .filter(m -> "organization-groups".equals(m.getName()))
+                .findAny()
+                .orElseThrow();
+
+        Map<String, String> config = groupMapper.getConfig();
+        if (value == null) {
+            config.remove(key);
+        } else {
+            config.put(key, value);
+        }
+
+        orgScopeResource.getProtocolMappers().update(groupMapper.getId(), groupMapper);
     }
 
     @Test
@@ -95,7 +131,7 @@ public class OrganizationGroupMembershipOIDCMapperTest extends AbstractOrganizat
     public void testNestedGroupsWithRelativePaths() throws Exception {
         // Create organization
         OrganizationRepresentation orgRep = createOrganization("acme");
-        OrganizationResource org = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource org = managedRealm.admin().organizations().get(orgRep.getId());
 
         // Add member
         MemberRepresentation member = addMember(org);
@@ -148,7 +184,7 @@ public class OrganizationGroupMembershipOIDCMapperTest extends AbstractOrganizat
     public void testEmptyGroupsWhenUserHasNoGroups() throws Exception {
         // Create organization
         OrganizationRepresentation orgRep = createOrganization("acme");
-        OrganizationResource org = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource org = managedRealm.admin().organizations().get(orgRep.getId());
 
         // Add member (but don't add to any groups)
         addMember(org);
@@ -175,8 +211,8 @@ public class OrganizationGroupMembershipOIDCMapperTest extends AbstractOrganizat
         OrganizationRepresentation orgA = createOrganization("org-a");
         OrganizationRepresentation orgB = createOrganization("org-b");
 
-        OrganizationResource orgAResource = testRealm().organizations().get(orgA.getId());
-        OrganizationResource orgBResource = testRealm().organizations().get(orgB.getId());
+        OrganizationResource orgAResource = managedRealm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = managedRealm.admin().organizations().get(orgB.getId());
 
         // Add member to both orgs
         MemberRepresentation member = addMember(orgAResource);
@@ -239,9 +275,9 @@ public class OrganizationGroupMembershipOIDCMapperTest extends AbstractOrganizat
         OrganizationRepresentation orgB = createOrganization("org-b");
         OrganizationRepresentation orgC = createOrganization("org-c");
 
-        OrganizationResource orgAResource = testRealm().organizations().get(orgA.getId());
-        OrganizationResource orgBResource = testRealm().organizations().get(orgB.getId());
-        OrganizationResource orgCResource = testRealm().organizations().get(orgC.getId());
+        OrganizationResource orgAResource = managedRealm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = managedRealm.admin().organizations().get(orgB.getId());
+        OrganizationResource orgCResource = managedRealm.admin().organizations().get(orgC.getId());
 
         // Add member to all THREE orgs
         MemberRepresentation member = addMember(orgAResource);
@@ -290,5 +326,226 @@ public class OrganizationGroupMembershipOIDCMapperTest extends AbstractOrganizat
         assertThat(orgCData, hasKey("groups"));
         List<String> orgCGroups = (List<String>) orgCData.get("groups");
         assertThat(orgCGroups, empty());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testCustomClaimName() throws Exception {
+        OrganizationRepresentation orgRep = createOrganization("acme");
+        OrganizationResource org = managedRealm.admin().organizations().get(orgRep.getId());
+        MemberRepresentation member = addMember(org);
+
+        GroupRepresentation engineering = new GroupRepresentation();
+        engineering.setName("engineering");
+        String engineeringId;
+        try (Response response = org.groups().addTopLevelGroup(engineering)) {
+            engineeringId = ApiUtil.getCreatedId(response);
+        }
+        org.groups().group(engineeringId).addMember(member.getId());
+
+        setMapperConfig(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "my_orgs");
+
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid organization");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+
+        AccessToken token = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+
+        assertThat(token.getOtherClaims(), not(hasKey(OAuth2Constants.ORGANIZATION)));
+        assertThat(token.getOtherClaims(), hasKey("my_orgs"));
+
+        Map<String, Object> orgClaims = (Map<String, Object>) token.getOtherClaims().get("my_orgs");
+        Map<String, Object> acmeData = (Map<String, Object>) orgClaims.get("acme");
+        assertThat(acmeData, notNullValue());
+        List<String> groups = (List<String>) acmeData.get("groups");
+        assertThat(groups, hasSize(1));
+        assertThat(groups, hasItem("/engineering"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testDottedClaimName() throws Exception {
+        OrganizationRepresentation orgRep = createOrganization("acme");
+        OrganizationResource org = managedRealm.admin().organizations().get(orgRep.getId());
+        MemberRepresentation member = addMember(org);
+
+        GroupRepresentation engineering = new GroupRepresentation();
+        engineering.setName("engineering");
+        String engineeringId;
+        try (Response response = org.groups().addTopLevelGroup(engineering)) {
+            engineeringId = ApiUtil.getCreatedId(response);
+        }
+        org.groups().group(engineeringId).addMember(member.getId());
+
+        setMapperConfig(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "custom.org");
+
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid organization");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+
+        AccessToken token = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+
+        assertThat(token.getOtherClaims(), not(hasKey(OAuth2Constants.ORGANIZATION)));
+        assertThat(token.getOtherClaims(), not(hasKey("custom.org")));
+        assertThat(token.getOtherClaims(), hasKey("custom"));
+
+        Map<String, Object> customClaims = (Map<String, Object>) token.getOtherClaims().get("custom");
+        assertThat(customClaims, hasKey("org"));
+
+        Map<String, Object> orgClaims = (Map<String, Object>) customClaims.get("org");
+        Map<String, Object> acmeData = (Map<String, Object>) orgClaims.get("acme");
+        assertThat(acmeData, notNullValue());
+        List<String> groups = (List<String>) acmeData.get("groups");
+        assertThat(groups, hasSize(1));
+        assertThat(groups, hasItem("/engineering"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testNoNpeWhenOrganizationScopeNotRequested() throws Exception {
+        OrganizationRepresentation orgRep = createOrganization("acme");
+        OrganizationResource org = managedRealm.admin().organizations().get(orgRep.getId());
+        addMember(org);
+
+        // Authenticate WITHOUT organization scope - should not throw NPE
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid email profile");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+
+        // Token exchange must succeed (no HTTP 500 / NPE)
+        assertThat(response.getAccessToken(), notNullValue());
+
+        // Organization claims should not be present since org scope was not requested
+        AccessToken token = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(token.getOtherClaims(), not(hasKey(OAuth2Constants.ORGANIZATION)));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testGroupRoleMappingsInToken() throws Exception {
+        // Enable addGroupRoleMappings on the group membership mapper
+        enableGroupRoleMappings();
+
+        // Create organization
+        OrganizationRepresentation orgRep = createOrganization("acme");
+        OrganizationResource org = managedRealm.admin().organizations().get(orgRep.getId());
+
+        // Add member
+        MemberRepresentation member = addMember(org);
+
+        // Create org group
+        GroupRepresentation engineering = new GroupRepresentation();
+        engineering.setName("engineering");
+        String engineeringId;
+        try (Response response = org.groups().addTopLevelGroup(engineering)) {
+            engineeringId = ApiUtil.getCreatedId(response);
+        }
+
+        // Create a realm role and assign to the group
+        RoleRepresentation realmRole = new RoleRepresentation("org-token-test-role", "", false);
+        managedRealm.admin().roles().create(realmRole);
+        RoleRepresentation createdRealmRole = managedRealm.admin().roles().get("org-token-test-role").toRepresentation();
+        org.groups().group(engineeringId).roles().realmLevel().add(List.of(createdRealmRole));
+
+        // Create a client with a role and assign to the group
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId("org-token-test-client");
+        clientRep.setEnabled(true);
+        String clientUuid;
+        try (Response response = managedRealm.admin().clients().create(clientRep)) {
+            clientUuid = ApiUtil.getCreatedId(response);
+        }
+        RoleRepresentation clientRole = new RoleRepresentation("org-token-client-role", "", false);
+        managedRealm.admin().clients().get(clientUuid).roles().create(clientRole);
+        RoleRepresentation createdClientRole = managedRealm.admin().clients().get(clientUuid).roles().get("org-token-client-role").toRepresentation();
+        org.groups().group(engineeringId).roles().clientLevel(clientUuid).add(List.of(createdClientRole));
+
+        // Add member to group
+        org.groups().group(engineeringId).addMember(member.getId());
+
+        // Authenticate
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid organization");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+
+        AccessToken token = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        Map<String, Object> orgClaims = (Map<String, Object>) token.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        Map<String, Object> acmeData = (Map<String, Object>) orgClaims.get("acme");
+
+        // Verify groups
+        List<String> groups = (List<String>) acmeData.get("groups");
+        assertThat(groups, hasSize(1));
+        assertThat(groups, hasItem("/engineering"));
+
+        // Verify realm roles inside the organization claim
+        Map<String, Object> realmAccess = (Map<String, Object>) acmeData.get("realm_access");
+        assertThat(realmAccess, notNullValue());
+        List<String> roles = (List<String>) realmAccess.get("roles");
+        assertThat(roles, notNullValue());
+        assertThat(roles, hasItem("org-token-test-role"));
+
+        // Verify client roles inside the organization claim
+        Map<String, Object> resourceAccess = (Map<String, Object>) acmeData.get("resource_access");
+        assertThat(resourceAccess, notNullValue());
+        assertThat(resourceAccess, hasKey("org-token-test-client"));
+        Map<String, Object> clientAccess = (Map<String, Object>) resourceAccess.get("org-token-test-client");
+        List<String> clientRoles = (List<String>) clientAccess.get("roles");
+        assertThat(clientRoles, hasItem("org-token-client-role"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testGroupRoleMappingsNotIncludedByDefault() throws Exception {
+        // Don't enable addGroupRoleMappings — default is off
+
+        OrganizationRepresentation orgRep = createOrganization("acme");
+        OrganizationResource org = managedRealm.admin().organizations().get(orgRep.getId());
+        MemberRepresentation member = addMember(org);
+
+        GroupRepresentation engineering = new GroupRepresentation();
+        engineering.setName("engineering");
+        String engineeringId;
+        try (Response response = org.groups().addTopLevelGroup(engineering)) {
+            engineeringId = ApiUtil.getCreatedId(response);
+        }
+
+        // Create and assign a realm role
+        RoleRepresentation realmRole = new RoleRepresentation("default-off-role", "", false);
+        managedRealm.admin().roles().create(realmRole);
+        RoleRepresentation createdRole = managedRealm.admin().roles().get("default-off-role").toRepresentation();
+        org.groups().group(engineeringId).roles().realmLevel().add(List.of(createdRole));
+
+        org.groups().group(engineeringId).addMember(member.getId());
+
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid organization");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+
+        AccessToken token = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        Map<String, Object> orgClaims = (Map<String, Object>) token.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        Map<String, Object> acmeData = (Map<String, Object>) orgClaims.get("acme");
+
+        // Groups should be present
+        assertThat((List<String>) acmeData.get("groups"), hasSize(1));
+
+        // But realm_access and resource_access should NOT be present in the org claim
+        assertThat(acmeData.containsKey("realm_access"), is(false));
+        assertThat(acmeData.containsKey("resource_access"), is(false));
+    }
+
+    private void enableGroupRoleMappings() {
+        ClientScopeRepresentation orgScope = managedRealm.admin().clientScopes().findAll().stream()
+                .filter(s -> OIDCLoginProtocolFactory.ORGANIZATION.equals(s.getName()))
+                .findAny()
+                .orElseThrow();
+        ClientScopeResource orgScopeResource = managedRealm.admin().clientScopes().get(orgScope.getId());
+
+        ProtocolMapperRepresentation groupMapper = orgScopeResource.getProtocolMappers().getMappers().stream()
+                .filter(m -> OrganizationGroupMembershipMapper.PROVIDER_ID.equals(m.getProtocolMapper()))
+                .findAny()
+                .orElseThrow();
+
+        groupMapper.getConfig().put(OrganizationGroupMembershipMapper.ADD_GROUP_ROLE_MAPPINGS, Boolean.TRUE.toString());
+        orgScopeResource.getProtocolMappers().update(groupMapper.getId(), groupMapper);
     }
 }

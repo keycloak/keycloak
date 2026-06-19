@@ -114,7 +114,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
                 if (signatureProvider.isAsymmetricAlgorithm()) {
                     throw new RuntimeException("Algorithm is not symmetric");
                 }
-            }, JsonWebToken.class);
+            }, JsonWebToken.class, false);
             signatureValid = jwt != null;
             //try authenticate with client rotated secret
             if (!signatureValid && wrapper.hasRotatedSecret() && !wrapper.isClientRotatedSecretExpired()) {

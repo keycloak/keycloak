@@ -19,11 +19,64 @@ package org.keycloak.utils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
+
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class SearchQueryUtils {
+
+    public static final String SEARCH_ID_PREFIX = "id:";
+
+    public static final String SEARCH_USERNAME_PREFIX = "username:";
+
+    public static final String SEARCH_EMAIL_PREFIX = "email:";
+
+    private static final Pattern WHITESPACE = Pattern.compile("\\s+");
+
+    public enum UserSearchPrefix {
+        ID(SEARCH_ID_PREFIX, UserProvider::getUserById),
+        USERNAME(SEARCH_USERNAME_PREFIX, UserProvider::getUserByUsername),
+        EMAIL(SEARCH_EMAIL_PREFIX, UserProvider::getUserByEmail);
+
+        private final String prefix;
+        private final UserLookup lookup;
+
+        UserSearchPrefix(String prefix, UserLookup lookup) {
+            this.prefix = prefix;
+            this.lookup = lookup;
+        }
+
+        public String getPrefix() {
+            return prefix;
+        }
+
+        public UserModel lookup(UserProvider users, RealmModel realm, String term) {
+            return lookup.apply(users, realm, term);
+        }
+
+        public String[] splitTerms(String search) {
+            return WHITESPACE.split(search.substring(prefix.length()).trim());
+        }
+
+        public static UserSearchPrefix matching(String search) {
+            for (UserSearchPrefix p : values()) {
+                if (search.startsWith(p.prefix)) {
+                    return p;
+                }
+            }
+            return null;
+        }
+
+        @FunctionalInterface
+        private interface UserLookup {
+            UserModel apply(UserProvider users, RealmModel realm, String term);
+        }
+    }
 
     public static Map<String, String> getFields(final String query) {
         Map<String, String> ret = new HashMap<>();

@@ -37,8 +37,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
@@ -484,6 +484,52 @@ public class UserCreateTest extends AbstractUserTest {
     }
 
     @Test
+    public void createUserWithNotUsernameInvalidPassword() {
+        RealmRepresentation rep = managedRealm.admin().toRepresentation();
+        String passwordPolicy = rep.getPasswordPolicy();
+        rep.setPasswordPolicy("notUsername()");
+        managedRealm.admin().update(rep);
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("User8");
+        user.setEmail("User8@localhost");
+        CredentialRepresentation rawPassword = new CredentialRepresentation();
+        rawPassword.setValue("user8");
+        rawPassword.setType(CredentialRepresentation.PASSWORD);
+        user.setCredentials(Collections.singletonList(rawPassword));
+        managedRealm.admin().clearAdminEvents();
+
+        try (Response response = managedRealm.admin().users().create(user)) {
+            assertEquals(400, response.getStatus());
+            Assert.assertTrue(response.readEntity(String.class).contains("Invalid password: must not be equal to the username."));
+            rep.setPasswordPolicy(passwordPolicy);
+            managedRealm.admin().update(rep);
+        }
+    }
+    
+    @Test
+    public void createUserWithNotEmailInvalidPassword() {
+        RealmRepresentation rep = managedRealm.admin().toRepresentation();
+        String passwordPolicy = rep.getPasswordPolicy();
+        rep.setPasswordPolicy("notEmail()");
+        managedRealm.admin().update(rep);
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("User9");
+        user.setEmail("User9@localhost");
+        CredentialRepresentation rawPassword = new CredentialRepresentation();
+        rawPassword.setValue("user9@localhost");
+        rawPassword.setType(CredentialRepresentation.PASSWORD);
+        user.setCredentials(Collections.singletonList(rawPassword));
+        managedRealm.admin().clearAdminEvents();
+
+        try (Response response = managedRealm.admin().users().create(user)) {
+            assertEquals(400, response.getStatus());
+            Assert.assertTrue(response.readEntity(String.class).contains("Invalid password: must not be equal to the email."));
+            rep.setPasswordPolicy(passwordPolicy);
+            managedRealm.admin().update(rep);
+        }
+    }
+
+    @Test
     public void createUserWithInvalidPolicyPassword() {
         RealmRepresentation rep = managedRealm.admin().toRepresentation();
         String passwordPolicy = rep.getPasswordPolicy();
@@ -527,7 +573,7 @@ public class UserCreateTest extends AbstractUserTest {
 
     @Test
     public void failCreateUserUsingRegularUser() throws Exception {
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("regular-user").password("password").email("regular@local").name("Regular", "User").build());
+        managedRealm.admin().users().create(UserBuilder.create().username("regular-user").password("password").email("regular@local").name("Regular", "User").build());
 
         try (Keycloak localAdminClient = clientFactory.create()
                 .realm(managedRealm.getName()).username("regular-user").password("password")
@@ -547,10 +593,10 @@ public class UserCreateTest extends AbstractUserTest {
 
     @Test
     public void testCreateUserDoNotGrantRole() {
-        managedRealm.admin().roles().create(RoleConfigBuilder.create().name("realm-role").build());
+        managedRealm.admin().roles().create(RoleBuilder.create().name("realm-role").build());
 
         try {
-            UserRepresentation userRep = UserConfigBuilder.create().username("alice").password("password").roles("realm-role")
+            UserRepresentation userRep = UserBuilder.create().username("alice").password("password").realmRoles("realm-role")
                     .build();
             String userId = ApiUtil.getCreatedId(managedRealm.admin().users().create(userRep));
             UserResource user = managedRealm.admin().users().get(userId);
@@ -567,7 +613,7 @@ public class UserCreateTest extends AbstractUserTest {
         List<String> invalidNames = List.of("1user\\\\", "2user\\\\%", "3user\\\\*", "4user\\\\_");
 
         for (String invalidName : invalidNames) {
-            UserRepresentation invalidUser = UserConfigBuilder.create().username(invalidName).email("test@invalid.org").build();
+            UserRepresentation invalidUser = UserBuilder.create().username(invalidName).email("test@invalid.org").build();
             Response response = managedRealm.admin().users().create(invalidUser);
             Assert.assertEquals(400, response.getStatus());
             Assert.assertEquals("error-username-invalid-character", response.readEntity(ErrorRepresentation.class).getErrorMessage());

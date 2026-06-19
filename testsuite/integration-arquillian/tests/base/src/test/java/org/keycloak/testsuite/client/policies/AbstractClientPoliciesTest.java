@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -77,6 +78,8 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
@@ -91,6 +94,7 @@ import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.Urls;
@@ -122,8 +126,9 @@ import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFac
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.ClientScopeBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -139,7 +144,6 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
-import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.SignatureSignerUtil;
@@ -148,7 +152,9 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -168,6 +174,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientAccessTypeConditionConfig;
@@ -183,11 +190,11 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientA
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -354,7 +361,14 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         ClientProfilesRepresentation actualProfilesRep = getProfilesWithGlobals();
 
         // same profiles
-        assertExpectedProfiles(actualProfilesRep, Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME, FAPI_CIBA_PROFILE_NAME, FAPI2_SECURITY_PROFILE_NAME, FAPI2_MESSAGE_SIGNING_PROFILE_NAME, OAUTH2_1_CONFIDENTIAL_CLIENT_PROFILE_NAME, OAUTH2_1_PUBLIC_CLIENT_PROFILE_NAME, SAML_SECURITY_PROFILE_NAME, FAPI2_DPOP_SECURITY_PROFILE_NAME, FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME), Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"));
+        assertExpectedProfiles(actualProfilesRep,
+                Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME, FAPI_CIBA_PROFILE_NAME,
+                        FAPI2_SECURITY_PROFILE_NAME, FAPI2_MESSAGE_SIGNING_PROFILE_NAME,
+                        OAUTH2_1_CONFIDENTIAL_CLIENT_PROFILE_NAME, OAUTH2_1_PUBLIC_CLIENT_PROFILE_NAME,
+                        SAML_SECURITY_PROFILE_NAME,
+                        FAPI2_DPOP_SECURITY_PROFILE_NAME, FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME),
+                Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile")
+        );
 
         // each profile - fapi-1-baseline
         ClientProfileRepresentation actualProfileRep =  getProfileRepresentation(actualProfilesRep, FAPI1_BASELINE_PROFILE_NAME, true);
@@ -448,7 +462,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         clientResource.update(clientRepresentation);
 
         // set time offset, so that new keys are downloaded
-        setTimeOffset(20);
+        timeOffSet.set(20);
 
         return keyPair;
     }
@@ -488,8 +502,8 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
    // Signed JWT for client authentication utility
 
     protected void allowMultipleAudiencesForClientJWTOnServer(boolean allowMultipleAudiences) {
-        getTestingClient().testing().setSystemPropertyOnServer("oidc." + OIDCLoginProtocolFactory.CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION, String.valueOf(allowMultipleAudiences));
-        getTestingClient().testing().reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc.");
+        runOnServerMaster.run(RunHelpers.setSystemPropertyOnServer("oidc." + OIDCLoginProtocolFactory.CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION, String.valueOf(allowMultipleAudiences)));
+        runOnServerMaster.run(RunHelpers.reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc."));
     }
 
     protected String createSignedRequestToken(String clientId, PrivateKey privateKey, PublicKey publicKey, String algorithm) {
@@ -657,7 +671,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         assertEquals(clientId, rep.getClientId());
         assertEquals(clientId, rep.getIssuedFor());
         assertEquals(username, rep.getUserName());
-        events.expect(EventType.INTROSPECT_TOKEN).client(clientId).session(sessionId).user(AssertEvents.isUUID()).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.INTROSPECT_TOKEN).clientId(clientId).sessionId(sessionId).hasUserId();
     }
 
     protected void doTokenRevoke(String refreshToken, String clientId, String clientSecret, String userId, String sessionId, boolean isOfflineAccess) {
@@ -671,11 +685,10 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         if (isOfflineAccess) assertEquals("Offline user session not found", tokenRes.getErrorDescription());
         else assertEquals("Session not active", tokenRes.getErrorDescription());
 
-        events.expect(EventType.REVOKE_GRANT).clearDetails()
-                .client(clientId)
-                .user(userId)
-                .session(sessionId)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.REVOKE_GRANT)
+                .clientId(clientId)
+                .userId(userId)
+                .sessionId(sessionId);
     }
 
     // Client CRUD operation by Admin REST API primitives
@@ -715,6 +728,22 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         // registered components will be removed automatically when a test method finishes regardless of its success or failure.
         String cId = ApiUtil.getCreatedId(resp);
         testContext.getOrCreateCleanup(REALM_NAME).addClientUuid(cId);
+
+        // Add audience mapper so the client can introspect its own tokens
+        if (protocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+            ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
+            audienceMapper.setName("audience-mapper");
+            audienceMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            audienceMapper.setProtocolMapper(AudienceProtocolMapper.PROVIDER_ID);
+
+            Map<String, String> audienceConfig = new HashMap<>();
+            audienceConfig.put(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE, clientName);
+            audienceConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+            audienceMapper.setConfig(audienceConfig);
+
+            adminClient.realm(REALM_NAME).clients().get(cId).getProtocolMappers().createMapper(audienceMapper);
+        }
+
         return cId;
     }
 
@@ -807,6 +836,22 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         // registered components will be removed automatically when a test method finishes regardless of its success or failure.
         String clientId = response.getClientId();
         testContext.getOrCreateCleanup(REALM_NAME).addClientUuid(clientId);
+
+        // Add audience mapper so the client can introspect its own tokens
+        ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
+        audienceMapper.setName("audience-mapper");
+        audienceMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        audienceMapper.setProtocolMapper(AudienceProtocolMapper.PROVIDER_ID);
+
+        java.util.Map<String, String> audienceConfig = new java.util.HashMap<>();
+        audienceConfig.put(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE, clientId);
+        audienceConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        audienceMapper.setConfig(audienceConfig);
+
+        // Find client UUID from clientId
+        String cId = adminClient.realm(REALM_NAME).clients().findByClientId(clientId).get(0).getId();
+        adminClient.realm(REALM_NAME).clients().get(cId).getProtocolMappers().createMapper(audienceMapper);
+
         return clientId;
     }
 
@@ -1066,38 +1111,38 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     protected void assertExpectedClientAccessTypeCondition(List<String> type, ClientPolicyRepresentation policyRep) {
         ClientAccessTypeCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientAccessTypeConditionFactory.PROVIDER_ID, ClientAccessTypeCondition.Configuration.class);
-        Assert.assertEquals(cfg.getType(), type);
+        Assertions.assertEquals(cfg.getType(), type);
     }
 
     protected void assertExpectedClientRolesCondition(List<String> roles, ClientPolicyRepresentation policyRep) {
         ClientRolesCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientRolesConditionFactory.PROVIDER_ID,  ClientRolesCondition.Configuration.class);
-        Assert.assertEquals(cfg.getRoles(), roles);
+        Assertions.assertEquals(cfg.getRoles(), roles);
     }
 
     protected void assertExpectedClientScopesCondition(String type, List<String> scopes, ClientPolicyRepresentation policyRep) {
         ClientScopesCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientScopesConditionFactory.PROVIDER_ID,  ClientScopesCondition.Configuration.class);
-        Assert.assertEquals(cfg.getType(), type);
-        Assert.assertEquals(cfg.getScopes(), scopes);
+        Assertions.assertEquals(cfg.getType(), type);
+        Assertions.assertEquals(cfg.getScopes(), scopes);
     }
 
     protected void assertExpectedClientUpdateContextCondition(List<String> updateClientSources, ClientPolicyRepresentation policyRep) {
         ClientUpdaterContextCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdaterContextConditionFactory.PROVIDER_ID,  ClientUpdaterContextCondition.Configuration.class);
-        Assert.assertEquals(cfg.getUpdateClientSource(), updateClientSources);
+        Assertions.assertEquals(cfg.getUpdateClientSource(), updateClientSources);
     }
 
     protected void assertExpectedClientUpdateSourceGroupsCondition(List<String> groups, ClientPolicyRepresentation policyRep) {
         ClientUpdaterSourceGroupsCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdaterSourceGroupsConditionFactory.PROVIDER_ID,  ClientUpdaterSourceGroupsCondition.Configuration.class);
-        Assert.assertEquals(cfg.getGroups(), groups);
+        Assertions.assertEquals(cfg.getGroups(), groups);
     }
 
     protected void assertExpectedClientUpdateSourceHostsCondition(List<String> trustedHosts, ClientPolicyRepresentation policyRep) {
         ClientUpdaterSourceHostsCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdaterSourceHostsConditionFactory.PROVIDER_ID,  ClientUpdaterSourceHostsCondition.Configuration.class);
-        Assert.assertEquals(cfg.getTrustedHosts(), trustedHosts);
+        Assertions.assertEquals(cfg.getTrustedHosts(), trustedHosts);
     }
 
     protected void assertExpectedClientUpdateSourceRolesCondition(List<String> roles, ClientPolicyRepresentation policyRep) {
         ClientUpdaterSourceRolesCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdaterSourceRolesConditionFactory.PROVIDER_ID,  ClientUpdaterSourceRolesCondition.Configuration.class);
-        Assert.assertEquals(cfg.getRoles(), roles);
+        Assertions.assertEquals(cfg.getRoles(), roles);
     }
 
     private <CFG extends ClientPolicyConditionConfigurationRepresentation> CFG getConfigAsExpectedType(ClientPolicyRepresentation policyRep, String conditionProviderId, Class<CFG> configClass) {
@@ -1134,7 +1179,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     private void assertExpectedEmptyConfig(String executorProviderId, ClientProfileRepresentation profileRep) {
         JsonNode config = getConfigOfExecutor(executorProviderId, profileRep);
         assert config != null;
-        Assert.assertTrue("Expected empty configuration for provider " + executorProviderId, config.isEmpty());
+        Assertions.assertTrue(config.isEmpty(), "Expected empty configuration for provider " + executorProviderId);
     }
 
     protected String signRequestObject(AuthorizationEndpointRequestObject requestObject) throws IOException {
@@ -1168,7 +1213,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected void checkMtlsFlow() throws IOException {
         // Check login.
         AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-        Assert.assertNull(loginResponse.getError());
+        Assertions.assertNull(loginResponse.getError());
 
         String code = oauth.parseLoginResponse().getCode();
 
@@ -1206,9 +1251,9 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         } finally {
             oauth.httpClient().reset();
         }
-        Assert.assertNotNull(tokenResponse);
+        Assertions.assertNotNull(tokenResponse);
         TokenMetadataRepresentation tokenMetadataRepresentation = tokenResponse.asTokenMetadata();
-        Assert.assertTrue(tokenMetadataRepresentation.isActive());
+        Assertions.assertTrue(tokenMetadataRepresentation.isActive());
 
         // Check token revoke.
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
@@ -1234,7 +1279,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
         // Check login.
         loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-        Assert.assertNull(loginResponse.getError());
+        Assertions.assertNull(loginResponse.getError());
 
         code = oauth.parseLoginResponse().getCode();
 
@@ -1255,7 +1300,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         logoutConfirmPage.assertCurrent();
         logoutConfirmPage.confirmLogout();
         loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-        Assert.assertNull(loginResponse.getError());
+        Assertions.assertNull(loginResponse.getError());
 
         code = oauth.parseLoginResponse().getCode();
 
@@ -1373,7 +1418,8 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected void successfulLoginAndLogout(String clientId, String clientSecret, String nonce, String state) {
         AccessTokenResponse res = successfulLogin(clientId, clientSecret, nonce, state);
         oauth.doLogout(res.getRefreshToken());
-        events.expectLogout(res.getSessionState()).client(clientId).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(res.getSessionState()).clientId(clientId).withoutDetails(Details.REDIRECT_URI);
     }
 
     protected AccessTokenResponse successfulLogin(String clientId, String clientSecret) {
@@ -1384,13 +1430,19 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         oauth.client(clientId, clientSecret);
         oauth.loginForm().nonce(nonce).state(state).request(request).requestUri(requestUri).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).clientId(clientId);
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
-        events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(clientId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         return res;
     }
@@ -1402,14 +1454,20 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
         oauth.loginForm().nonce("bjapewiziIE083d").codeChallenge(pkceGenerator).doLogin(userName, userPassword);
 
-        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).clientId(clientId);
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse res = oauth.accessTokenRequest(code).codeVerifier(pkceGenerator).send();
         assertEquals(200, res.getStatusCode());
-        events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(clientId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         AccessToken token = oauth.verifyToken(res.getAccessToken());
         String userId = findUserByUsername(adminClient.realm(REALM_NAME), userName).getId();
@@ -1426,7 +1484,12 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
         AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(refreshTokenString);
         assertEquals(200, refreshResponse.getStatusCode());
-        events.expectRefresh(refreshToken.getId(), sessionId).client(clientId).assertEvent();
+        EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(clientId)
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         AccessToken refreshedToken = oauth.verifyToken(refreshResponse.getAccessToken());
         RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshResponse.getRefreshToken());
@@ -1445,10 +1508,11 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         assertEquals("Missing parameter: code_challenge_method", response.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                "Missing parameter: code_challenge_method").client(clientId).user((String) null)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Missing parameter: code_challenge_method")
+                .clientId(clientId).userId(null);
     }
 
     protected void failLoginByNotFollowingPKCEWithoutClientPolicyValidation(String clientId) {
@@ -1457,9 +1521,9 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         assertEquals("Missing parameter: code_challenge_method", response.getErrorDescription());
-        events.expect(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
-                .detail(Details.REASON, "Missing parameter: code_challenge_method").client(clientId)
-                .user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, "Missing parameter: code_challenge_method").clientId(clientId)
+                .userId(null);
     }
 
     protected void failLoginWithoutSecureSessionParameter(String clientId, String errorDescription) {
@@ -1468,9 +1532,14 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         assertEquals(errorDescription, response.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST, errorDescription).client(clientId)
-                .user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, errorDescription)
+                .clientId(clientId)
+                .userId(null);
     }
 
     protected void failLoginWithoutNonce(String clientId) {

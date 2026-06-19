@@ -42,11 +42,11 @@ import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -113,25 +113,25 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         // Another weak password
         passwordUpdatePage.assertCurrent();
         passwordUpdatePage.changePassword("pass", "pass");
-        Assert.assertEquals("Invalid password: new password doesn't match password policies.", passwordUpdatePage.getError());
+        Assertions.assertEquals("Invalid password: new password doesn't match password policies.", passwordUpdatePage.getError());
 
         // Strong password. Successfully update password and being redirected to the app
         passwordUpdatePage.changePassword("Password1", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
             UserModel user = session.users().getUserByUsername(appRealm, "registerUserSuccess2");
-            Assert.assertNotNull(user);
-            Assert.assertNotNull(user.getFederationLink());
-            Assert.assertEquals(user.getFederationLink(), ctx.getLdapModel().getId());
-            Assert.assertEquals("registerusersuccess2", user.getUsername());
-            Assert.assertEquals("firstName", user.getFirstName());
-            Assert.assertEquals("lastName", user.getLastName());
-            Assert.assertTrue(user.isEnabled());
-            Assert.assertEquals(0, user.getRequiredActionsStream().count());
+            Assertions.assertNotNull(user);
+            Assertions.assertNotNull(user.getFederationLink());
+            Assertions.assertEquals(user.getFederationLink(), ctx.getLdapModel().getId());
+            Assertions.assertEquals("registerusersuccess2", user.getUsername());
+            Assertions.assertEquals("firstName", user.getFirstName());
+            Assertions.assertEquals("lastName", user.getLastName());
+            Assertions.assertTrue(user.isEnabled());
+            Assertions.assertEquals(0, user.getRequiredActionsStream().count());
         });
     }
 
@@ -145,7 +145,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         john.update(johnRep);
 
         // Check in LDAP, that johnkeycloak has pwdLastSet set to 0 in LDAP
-        Assert.assertEquals(0, getPwdLastSetOfJohn());
+        Assertions.assertEquals(0, getPwdLastSetOfJohn());
 
         // Login as johnkeycloak and update password after login
         oauth.openLoginForm();
@@ -153,20 +153,20 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
 
         passwordUpdatePage.assertCurrent();
         passwordUpdatePage.changePassword("Password1", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Check in LDAP, that johnkeycloak does not have pwdLastSet set to 0
         assertThat(getPwdLastSetOfJohn(), Matchers.greaterThan(0L));
 
         // Check in admin REST API, that johnkeycloak does not have required action on him
         johnRep = john.toRepresentation();
-        Assert.assertTrue(johnRep.getRequiredActions().isEmpty());
+        Assertions.assertTrue(johnRep.getRequiredActions().isEmpty());
 
         // Logout and login again. There should not be a need to update required action anymore
         john.logout();
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
 
@@ -180,7 +180,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         john.update(johnRep);
 
         // Check in LDAP, that johnkeycloak has pwdLastSet set to 0 in LDAP
-        Assert.assertEquals(0, getPwdLastSetOfJohn());
+        Assertions.assertEquals(0, getPwdLastSetOfJohn());
 
         // Update password directly in MSAD
         testingClient.server().run(session -> {
@@ -196,13 +196,13 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
 
         // Check in admin REST API, that johnkeycloak does not have required action on him
         johnRep = john.toRepresentation();
-        Assert.assertTrue(johnRep.getRequiredActions().isEmpty());
+        Assertions.assertTrue(johnRep.getRequiredActions().isEmpty());
 
         // Logout and login again. There should not be a need to update required action anymore
         john.logout();
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
 
@@ -221,12 +221,12 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         });
 
         // Check in LDAP, that johnkeycloak has pwdLastSet set to 0 in LDAP
-        Assert.assertEquals(0, getPwdLastSetOfJohn());
+        Assertions.assertEquals(0, getPwdLastSetOfJohn());
 
         // Check Admin REST API contains UPDATE_PASSWORD required action
         UserResource john = AdminApiUtil.findUserByUsernameId(adminClient.realm("test"), "johnkeycloak");
         UserRepresentation johnRep = john.toRepresentation();
-        Assert.assertEquals(UserModel.RequiredAction.UPDATE_PASSWORD.name(), johnRep.getRequiredActions().get(0));
+        Assertions.assertEquals(UserModel.RequiredAction.UPDATE_PASSWORD.name(), johnRep.getRequiredActions().get(0));
 
         // Login as johnkeycloak and update password after login
         oauth.openLoginForm();
@@ -234,20 +234,20 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
 
         passwordUpdatePage.assertCurrent();
         passwordUpdatePage.changePassword("Password1", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Check in LDAP, that johnkeycloak does not have pwdLastSet set to 0
         assertThat(getPwdLastSetOfJohn(), Matchers.greaterThan(0L));
 
         // Check in admin REST API, that johnkeycloak does not have required action on him
         johnRep = john.toRepresentation();
-        Assert.assertTrue(johnRep.getRequiredActions().isEmpty());
+        Assertions.assertTrue(johnRep.getRequiredActions().isEmpty());
 
         // Logout and login again. There should not be a need to update required action anymore
         john.logout();
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
 
@@ -278,20 +278,20 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
 
         passwordUpdatePage.assertCurrent();
         passwordUpdatePage.changePassword("Password1", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Check in LDAP, that pwdLastSet attribute of MSAD user johnkeycloak did not change in MSAD
-        Assert.assertEquals(pwdLastSetFromLDAP, getPwdLastSetOfJohn());
+        Assertions.assertEquals(pwdLastSetFromLDAP, getPwdLastSetOfJohn());
 
         // Check in admin REST API, that johnkeycloak does not have required action on him
         johnRep = john.toRepresentation();
-        Assert.assertTrue(johnRep.getRequiredActions().isEmpty());
+        Assertions.assertTrue(johnRep.getRequiredActions().isEmpty());
 
         // Logout and login again. There should not be a need to update required action anymore
         john.logout();
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Switch edit mode back to WRITABLE
         testingClient.server().run(session -> {
@@ -312,7 +312,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
 
         // Register user
         registerPage.register("firstName", "lastName", "email3@check.cz", "registeruser3", "Password1", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Check user enabled in MSAD
         testingClient.server().run(session -> {
@@ -321,17 +321,17 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
             LDAPObject ldapJohn = ctx.getLdapProvider().loadLDAPUserByUsername(appRealm, "johnkeycloak");
 
             String pwdLastSet = ldapJohn.getAttributeAsString(LDAPConstants.PWD_LAST_SET);
-            Assert.assertTrue(Long.parseLong(pwdLastSet) > 0);
+            Assertions.assertTrue(Long.parseLong(pwdLastSet) > 0);
 
             String userAccountControl = ldapJohn.getAttributeAsString(LDAPConstants.USER_ACCOUNT_CONTROL);
-            Assert.assertFalse(UserAccountControl.of(userAccountControl).has(UserAccountControl.ACCOUNTDISABLE));
+            Assertions.assertFalse(UserAccountControl.of(userAccountControl).has(UserAccountControl.ACCOUNTDISABLE));
         });
 
         // Logout and login again. Success
         AdminApiUtil.findUserByUsernameId(adminClient.realm("test"), "registeruser3").logout();
         oauth.openLoginForm();
         loginPage.login("registeruser3", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
 
@@ -355,27 +355,27 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         // Check user disabled in both admin REST API and MSAD
         UserResource john = AdminApiUtil.findUserByUsernameId(adminClient.realm("test"), "johnkeycloak");
         UserRepresentation johnRep = john.toRepresentation();
-        Assert.assertFalse(johnRep.isEnabled());
+        Assertions.assertFalse(johnRep.isEnabled());
 
-        Assert.assertFalse(isJohnEnabledInMSAD());
+        Assertions.assertFalse(isJohnEnabledInMSAD());
 
         // Login as johnkeycloak, but user disabled
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assert.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
+        Assertions.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
 
         // Enable user in admin REST API
         johnRep.setEnabled(true);
         john.update(johnRep);
 
         // Assert user enabled also in MSAD
-        Assert.assertTrue(isJohnEnabledInMSAD());
+        Assertions.assertTrue(isJohnEnabledInMSAD());
 
         // Logout and login again. There should not be a need to update required action anymore
         john.logout();
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
 
@@ -406,12 +406,12 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         john.update(johnRep);
 
         // Check in LDAP, that johnkeycloak is still enabled in MSAD
-        Assert.assertTrue(isJohnEnabledInMSAD());
+        Assertions.assertTrue(isJohnEnabledInMSAD());
 
         // Login as johnkeycloak and see the user is disabled
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assert.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
+        Assertions.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
 
         // Enable johnkeycloak in admin REST API
         johnRep = john.toRepresentation();
@@ -419,12 +419,12 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         john.update(johnRep);
 
         // Check in LDAP, that johnkeycloak is still enabled in MSAD
-        Assert.assertTrue(isJohnEnabledInMSAD());
+        Assertions.assertTrue(isJohnEnabledInMSAD());
 
         // Login again. User should be enabled
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Switch edit mode back to WRITABLE
         testingClient.server().run(session -> {
@@ -459,8 +459,8 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         // check user is enabled both locally and on MSAD.
         UserResource john = AdminApiUtil.findUserByUsernameId(adminClient.realm("test"), "johnkeycloak");
         UserRepresentation johnRep = john.toRepresentation();
-        Assert.assertTrue(johnRep.isEnabled());
-        Assert.assertTrue(isJohnEnabledInMSAD());
+        Assertions.assertTrue(johnRep.isEnabled());
+        Assertions.assertTrue(isJohnEnabledInMSAD());
 
         // disable user johnkeycloak - it should disable both locally and on MSAD.
         johnRep.setEnabled(false);
@@ -469,12 +469,12 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         // Login as johnkeycloak and see the user is disabled.
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assert.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
+        Assertions.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
 
         // check user is disabled in all places.
         johnRep = john.toRepresentation();
-        Assert.assertFalse(johnRep.isEnabled());
-        Assert.assertFalse(isJohnEnabledInMSAD());
+        Assertions.assertFalse(johnRep.isEnabled());
+        Assertions.assertFalse(isJohnEnabledInMSAD());
 
         // restore john to enabled state.
         johnRep.setEnabled(true);
@@ -483,7 +483,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         // Login again. User should be enabled.
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         testingClient.server().run(session -> {
             // restore import enabled mode in the storage provider.
@@ -502,12 +502,12 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         johnRep.setEnabled(false);
         john.update(johnRep);
 
-        Assert.assertFalse(isJohnEnabledInMSAD());
+        Assertions.assertFalse(isJohnEnabledInMSAD());
 
         // Login as johnkeycloak and see the user is disabled.
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assert.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
+        Assertions.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
 
         // enable user johnkeycloak in MSAD only
         testingClient.server().run(session -> {
@@ -522,12 +522,12 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
             ctx.getLdapProvider().getLdapIdentityStore().update(ldapJohn);
         });
 
-        Assert.assertTrue(isJohnEnabledInMSAD());
+        Assertions.assertTrue(isJohnEnabledInMSAD());
 
         // Login again. User should be enabled.
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
     private long getPwdLastSetOfJohn() {
@@ -541,7 +541,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         });
 
         if (pwdLastSett == null) {
-            Assert.fail("LDAP user johnkeycloak does not have pwdLastSet on him");
+            Assertions.fail("LDAP user johnkeycloak does not have pwdLastSet on him");
         }
 
         // Need to remove double quotes TODO: Ideally fix fetchString method and all the tests, which uses it as it is dummy to need to remove quotes in each test individually...
@@ -560,7 +560,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         });
 
         if (userAccountControls == null) {
-            Assert.fail("LDAP user johnkeycloak does not have userAccountControl attribute on him");
+            Assertions.fail("LDAP user johnkeycloak does not have userAccountControl attribute on him");
         }
 
         // Need to remove double quotes TODO: Ideally fix fetchString method and all the tests, which uses it as it is dummy to need to remove quotes in each test individually...

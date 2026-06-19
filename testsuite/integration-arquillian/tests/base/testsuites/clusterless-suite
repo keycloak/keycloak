@@ -8,7 +8,6 @@ SessionNotOnOrAfterTest
 KcOidcUserSessionLimitsBrokerTest
 KcSamlUserSessionLimitsBrokerTest
 AbstractUserSessionLimitsBrokerTest
-UserSessionLimitsTest
 AccessTokenTest
 LogoutTest
 ClientStorageTest

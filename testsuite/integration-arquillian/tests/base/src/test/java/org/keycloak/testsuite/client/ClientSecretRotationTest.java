@@ -21,6 +21,7 @@ import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthen
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -37,6 +38,8 @@ import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition.Co
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutor;
 import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.account.AbstractRestServiceTest;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -46,10 +49,10 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -70,8 +73,8 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
@@ -115,7 +118,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         } catch (ClientPolicyException e) {
             throw new RuntimeException(e);
         }
-        resetTimeOffset();
+        timeOffSet.set(0);
     }
 
     @Override
@@ -127,7 +130,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         UserRepresentation user = UserBuilder.create().enabled(Boolean.TRUE)
                 .username(ADMIN_USER_NAME)
-                .password(USER_PASSWORD).addRoles(new String[]{AdminRoles.MANAGE_CLIENTS}).build();
+                .password(USER_PASSWORD).realmRoles(new String[]{AdminRoles.MANAGE_CLIENTS}).build();
         users.add(user);
 
         UserRepresentation commonUser = UserBuilder.create().id(COMMON_USER_ID)
@@ -258,7 +261,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         configureDefaultProfileAndPolicy();
 
         //advance 1 hour
-        setTimeOffset(3600);
+        timeOffSet.set(3600);
 
         String newSecret = clientResource.generateNewSecret().getValue();
         assertThat(newSecret, not(equalTo(secondSecret)));
@@ -297,7 +300,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         logger.debug("Current time " + Time.toDate(Time.currentTime()));
         //advance 1 hour
-        setTimeOffset(3601);
+        timeOffSet.set(3601);
         logger.debug("Time after offset " + Time.toDate(Time.currentTime()));
 
         clientRepresentation = clientResource.toRepresentation();
@@ -364,7 +367,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         oauth.doLogout(res.getRefreshToken());
 
         //advance 1 hour
-        setTimeOffset(3601);
+        timeOffSet.set(3601);
 
         oauth.client(clientId, DEFAULT_SECRET);
 
@@ -397,7 +400,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         clientResource.update(clientRepresentation);
 
         //advance 1 hour
-        setTimeOffset(3601);
+        timeOffSet.set(3601);
 
         // force client update (rotate the secret according to the policy)
         clientRepresentation = clientResource.toRepresentation();
@@ -451,7 +454,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         logger.debug(">>> secret creation time " + Time.toDate(Time.currentTime()));
 
-        setTimeOffset(3601);
+        timeOffSet.set(3601);
         clientResource.update(clientResource.toRepresentation());
 
         logger.debug(">>> secret expiration time after first update " + Time.toDate(
@@ -471,9 +474,9 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
                         wrapper.getClientSecretExpirationTime())
                         + " | Time: " + Time.toDate(Time.currentTime()));
 
-        oauth.clientId(clientId);
+        oauth.client(clientId);
 
-        setTimeOffset(7201);
+        timeOffSet.set(7201);
 
         logger.debug("client secret:" + updatedSecret + "\nsecret expiration: " + Time.toDate(
                 wrapper.getClientSecretExpirationTime()) + "\nrotated secret: "
@@ -510,7 +513,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         clientResource.update(clientResource.toRepresentation());
 
         //advance 1 hour
-        setTimeOffset(3601);
+        timeOffSet.set(3601);
 
         // force client update (rotate the secret according to the policy)
         String firstSecret = clientResource.getSecret().getValue();
@@ -881,20 +884,27 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
     private void successfulLoginAndLogout(String clientId, String clientSecret) {
         AccessTokenResponse res = successfulLogin(clientId, clientSecret);
         oauth.doLogout(res.getRefreshToken());
-        events.expectLogout(res.getSessionState()).client(clientId).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(res.getSessionState()).clientId(clientId).withoutDetails(Details.REDIRECT_URI);
     }
 
     private AccessTokenResponse successfulLogin(String clientId, String clientSecret) {
         oauth.client(clientId, clientSecret);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).clientId(clientId);
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
-        events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(clientId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         return res;
     }

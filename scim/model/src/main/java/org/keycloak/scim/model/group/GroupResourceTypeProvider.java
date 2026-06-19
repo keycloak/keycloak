@@ -52,7 +52,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
 public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<GroupModel, Group> implements ScimAttributeJpaExpressionResolver {
 
     public GroupResourceTypeProvider(KeycloakSession session) {
-        super(session, new GroupCoreModelSchema());
+        super(session, new GroupCoreModelSchema(session));
     }
 
     @Override
@@ -70,7 +70,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         List<Member> members = resource.getMembers();
 
         if (!Optional.ofNullable(members).orElse(List.of()).isEmpty()) {
-            throw new ModelValidationException("Managing members on updates are not supported");
+            throw new ModelValidationException("Managing members on updates is not supported");
         }
 
         return super.update(resource);

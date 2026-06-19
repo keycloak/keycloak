@@ -14,9 +14,15 @@ import static java.lang.System.out;
 
 public class RemoteKeycloakServer implements KeycloakServer {
 
+    private final long startTimeout;
+
     private boolean tlsEnabled = false;
 
     private String kcwCommand;
+
+    public RemoteKeycloakServer(long startTimeout) {
+        this.startTimeout = startTimeout;
+    }
 
     @Override
     public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder, boolean tlsEnabled) {
@@ -30,7 +36,7 @@ public class RemoteKeycloakServer implements KeycloakServer {
             }
             waitForStartup();
         }
-        ReadinessProbe.waitUntilReady(this);
+        ReadinessProbe.waitUntilReady(this, startTimeout);
     }
 
     @Override

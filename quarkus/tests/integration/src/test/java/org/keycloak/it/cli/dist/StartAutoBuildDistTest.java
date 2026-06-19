@@ -19,8 +19,10 @@ package org.keycloak.it.cli.dist;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.utils.KeycloakDistribution;
 
@@ -40,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class StartAutoBuildDistTest {
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "--verbose", "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false" })
     @Order(1)
@@ -54,7 +56,7 @@ public class StartAutoBuildDistTest {
         assertTrue(cliResult.getErrorOutput().isBlank());
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false" })
     @Order(2)
@@ -63,7 +65,7 @@ public class StartAutoBuildDistTest {
         assertTrue(cliResult.getErrorOutput().isBlank());
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false" })
     @Order(3)
@@ -72,7 +74,7 @@ public class StartAutoBuildDistTest {
         assertTrue(cliResult.getErrorOutput().isBlank());
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false" })
     @Order(4)
@@ -81,7 +83,7 @@ public class StartAutoBuildDistTest {
         assertTrue(cliResult.getErrorOutput().isBlank());
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "build", "--db=postgres" })
     @Order(5)
@@ -89,7 +91,7 @@ public class StartAutoBuildDistTest {
         cliResult.assertBuild();
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false" })
     @Order(6)
@@ -98,7 +100,7 @@ public class StartAutoBuildDistTest {
         assertTrue(cliResult.getErrorOutput().isBlank());
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start", "--db=postgres", "--http-enabled=true", "--hostname-strict=false" })
     @Order(7)
@@ -106,7 +108,7 @@ public class StartAutoBuildDistTest {
         cliResult.assertBuild();
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG})
     @Order(8)
@@ -114,7 +116,7 @@ public class StartAutoBuildDistTest {
         cliResult.assertNoBuild();
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start-dev" })
     @Order(8)
@@ -123,7 +125,7 @@ public class StartAutoBuildDistTest {
         cliResult.assertStartedDevMode();
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start-dev" })
     @Order(9)
@@ -133,46 +135,46 @@ public class StartAutoBuildDistTest {
         cliResult.assertStartedDevMode();
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @TestProvider(CustomUserProvider.class)
     @Order(10)
-    void testSpiAutoBuild(KeycloakDistribution dist) {
-        CLIResult cliResult = dist.run("start-dev", "--spi-user-provider=custom_jpa", "--spi-user-jpa-enabled=false");
+    void testSpiAutoBuild(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run("start-dev", "--spi-user-provider=custom_jpa", "--spi-user-jpa-enabled=false");
         cliResult.assertMessage("Updating the configuration");
         cliResult.assertStartedDevMode();
-        dist.stop();
+        runner.stop();
 
         // we should persist the spi provider and know not to rebuild
-        cliResult = dist.run("start-dev", "--spi-user-provider=custom_jpa", "--spi-user-jpa-enabled=false");
+        cliResult = runner.run("start-dev", "--spi-user-provider=custom_jpa", "--spi-user-jpa-enabled=false");
         cliResult.assertNoMessage("Updating the configuration");
         cliResult.assertStartedDevMode();
     }
 
     @Test
     @Order(11)
-    void testLogLevelNotPeristed(KeycloakDistribution dist) {
-        CLIResult cliResult = dist.run("start", "--db=dev-file", "--log-level=org.hibernate.SQL:debug", "--http-enabled=true", "--hostname-strict=false");
+    void testLogLevelNotPeristed(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run("start", "--db=dev-file", "--log-level=org.hibernate.SQL:debug", "--http-enabled=true", "--hostname-strict=false");
         cliResult.assertMessage("DEBUG [org.hibernate.SQL]");
         cliResult.assertStarted();
-        dist.stop();
+        runner.stop();
 
         // logging runtime defaults should not be used
-        cliResult = dist.run("start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false");
+        cliResult = runner.run("start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false");
         cliResult.assertNoMessage("DEBUG [org.hibernate.SQL]");
         cliResult.assertStarted();
     }
 
     @Test
     @Order(12)
-    void testLogLevelWildcardNotPeristed(KeycloakDistribution dist) {
-        CLIResult cliResult = dist.run("start-dev", "--log-level-org.hibernate.SQL=debug");
+    void testLogLevelWildcardNotPeristed(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run("start-dev", "--log-level-org.hibernate.SQL=debug");
         cliResult.assertMessage("DEBUG [org.hibernate.SQL]");
         cliResult.assertStartedDevMode();
-        dist.stop();
+        runner.stop();
 
         // logging runtime defaults should not be used
-        cliResult = dist.run("start-dev");
+        cliResult = runner.run("start-dev");
         cliResult.assertNoMessage("DEBUG [org.hibernate.SQL]");
         cliResult.assertStartedDevMode();
     }

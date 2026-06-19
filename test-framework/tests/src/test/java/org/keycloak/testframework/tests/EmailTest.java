@@ -15,10 +15,10 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -58,7 +58,7 @@ public class EmailTest {
     public static class EmailSenderRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             return realm.eventsListeners(EmailEventListenerProviderFactory.ID);
         }
     }
@@ -66,7 +66,7 @@ public class EmailTest {
     public static class UserWithEmail implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder user) {
+        public UserBuilder configure(UserBuilder user) {
             return user.username("test").email("test@local").password("password").emailVerified(true);
         }
     }

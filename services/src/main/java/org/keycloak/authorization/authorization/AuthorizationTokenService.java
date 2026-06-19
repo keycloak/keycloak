@@ -289,7 +289,7 @@ public class AuthorizationTokenService {
 
     private Response createSuccessfulResponse(Object response, KeycloakAuthorizationRequest request) {
         return Cors.builder()
-                .allowedOrigins(request.getKeycloakSession(), request.getKeycloakSession().getContext().getClient())
+                .checkAllowedOrigins(request.getKeycloakSession(), request.getKeycloakSession().getContext().getClient())
                 .allowedMethods(HttpMethod.POST)
                 .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS)
                 .add(Response.status(Status.OK).type(MediaType.APPLICATION_JSON_TYPE).entity(response));
@@ -677,9 +677,9 @@ public class AuthorizationTokenService {
                         if (permissionScopes != null) {
                             permissionScopes.retainAll(scopes);
                         }
+                        // the permission is explicitly granted by the owner, mark this permission as granted so that we don't run the evaluation engine on it
+                        resourcePermission.setGranted(true);
                     }
-                    // the permission is explicitly granted by the owner, mark this permission as granted so that we don't run the evaluation engine on it
-                    resourcePermission.setGranted(true);
                 }
 
                 Resource serverResource = resourceStore.findByName(resourceServer, resourceId);

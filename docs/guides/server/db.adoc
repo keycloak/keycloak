@@ -298,6 +298,13 @@ Default: `10s`.
 
 == Preparing for PostgreSQL
 
+=== Asynchronous commits
+
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use PostgreSQL's async commit feature.
+Logouts will still force a synchronous commit.
+
+You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
+
 === Writer and reader instances
 
 When running PostgreSQL reader and writer instances, {project_name} needs to always connect to the writer instance to do its work.
@@ -337,6 +344,8 @@ Secure the connection by adding the options:
 
 [[preparing-keycloak-for-amazon-aurora-postgresql]]
 == Preparing for Amazon Aurora PostgreSQL
+
+Asynchronous commits, an optimization for PostgreSQL databases, are disabled when logical replication is enabled as they might conflict with Debezium change data capture.
 
 When using Amazon Aurora PostgreSQL, the https://github.com/awslabs/aws-advanced-jdbc-wrapper[Amazon Web Services JDBC Driver] offers additional features like transfer of database connections when a writer instance changes in a Multi-AZ setup.
 This driver is not part of the distribution and needs to be installed before it can be used.
@@ -397,6 +406,22 @@ However, on MS SQL Server, the database isolation level needs to be modified by 
 ----
 ALTER DATABASE <your-database-name> SET READ_COMMITTED_SNAPSHOT ON;
 ----
+
+[NOTE]
+====
+* The `ALTER DATABASE` command requires exclusive access to the database.
+Ensure no other database connections are active, or the command will block until all other connections are closed.
+* For that, shutdown all instances of {project_name} first, and start them again once the change is complete.
+====
+
+To verify the current isolation level, connect to the database and execute:
+
+[source,sql]
+----
+DBCC USEROPTIONS;
+----
+
+In the output, look for the row where the option is `isolation level`. The value should be `read committed snapshot` after the `ALTER DATABASE` command has been applied.
 
 == Using Database Vendors with XA transaction support
 {project_name} uses non-XA transactions and the appropriate database drivers by default.
@@ -485,6 +510,67 @@ The following example demonstrates how to configure database TLS using these opt
 Alternatively, you can use `--truststore-paths` instead of the `db-tls-trust-store-*` options to add your certificate to the Java truststore.
 
 <@kc.start parameters="--db=postgres --db-tls-mode=verify-server --truststore-paths=/path/to/certificate.pem"/>
+
+=== Enabling mTLS
+
+For environments that require mutual TLS authentication, {project_name} supports configuring a client keystore in addition to the truststore.
+With mTLS, both the server and the client authenticate each other using certificates.
+
+The following additional options are available for mTLS:
+
+`db-mtls-key-store-file`::
+The path to the keystore file containing the client certificate and private key used for mTLS authentication with the database server.
+
+`db-mtls-key-store-password`::
+The password to access the keystore file specified in `db-mtls-key-store-file`.
+
+`db-mtls-key-store-type`::
+The type of the keystore file.
+Common values include `JKS` (Java KeyStore) and `PKCS12`.
+If not specified, the driver's default keystore type is used.
+
+The following example demonstrates how to configure database mTLS using these options for a PostgreSQL database.
+
+<@kc.start parameters="--db=postgres --db-tls-mode=verify-server --db-tls-trust-store-file=/path/to/truststore.pem --db-mtls-key-store-file=/path/to/keystore.p12 --db-mtls-key-store-password=changeit"/>
+
+=== Vendor-specific TLS and mTLS notes
+
+The following table summarizes the expected file types, mTLS support, and additional considerations for each supported database vendor.
+
+[cols="1,2,2,1,3",options="header"]
+|===
+| Vendor | Truststore type | Keystore type | mTLS | Notes
+
+| PostgreSQL
+| PEM certificate file (`.pem`)
+| PKCS#12 (`.p12` or `.pfx`)
+| Yes
+| The truststore file must be a PEM-encoded certificate. The keystore must be PKCS#12 with the private key alias set to `user` as this is hardcoded in pgjdbc's `PKCS12KeyManager`.
+
+| MySQL / TiDB
+| JKS or PKCS#12
+| JKS or PKCS#12
+| Yes
+| The truststore and keystore file paths must be prefixed with `file://` as the JDBC driver expects a URL e.g. `file:///path/to/keystore.p12`.
+
+| MariaDB
+| PEM certificate file (`.pem`)
+| JKS or PKCS#12
+| Yes
+|
+
+| Oracle
+| JKS or PKCS#12
+| JKS or PKCS#12
+| Yes
+| When mTLS is configured, {project_name} automatically sets `oracle.net.authentication_services=(TCPS)` to enable certificate-based authentication without requiring a database password, if this is not desired you should manually configure the JDBC URL.
+
+| MSSQL
+| JKS or PKCS#12
+| N/A
+| No
+| MSSQL does not natively support mTLS as a general-purpose authentication method for standard external client-to-database connections.
+|===
 
 [[encrypting-data-at-rest]]
 == Encrypting data at rest

@@ -26,6 +26,8 @@ import org.keycloak.provider.Provider;
  */
 public interface ExecutorsProvider extends Provider {
 
+    String EXPIRATION_TASKS = "expiration-tasks";
+
     /**
      * Impl will usually return different executors for different tasks.
      *

@@ -15,7 +15,7 @@ import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Assertions;
@@ -114,7 +114,7 @@ public class PartialImportUserTest extends AbstractPartialImportTest {
         setFail();
         addUsers();
 
-        UserRepresentation user = UserConfigBuilder.create().username(USER_PREFIX + 999).email(USER_PREFIX + 1 + "@foo.com").name("foo", "bar").build();
+        UserRepresentation user = UserBuilder.create().username(USER_PREFIX + 999).email(USER_PREFIX + 1 + "@foo.com").name("foo", "bar").build();
         piRep.getUsers().add(user);
 
         try (Response response = managedRealm.admin().partialImport(piRep)) {
@@ -135,7 +135,7 @@ public class PartialImportUserTest extends AbstractPartialImportTest {
         addUsers();
         doImport();
 
-        UserRepresentation user = UserConfigBuilder.create().username(USER_PREFIX + 999).email(USER_PREFIX + 1 + "@foo.com").name("foo", "bar").build();
+        UserRepresentation user = UserBuilder.create().username(USER_PREFIX + 999).email(USER_PREFIX + 1 + "@foo.com").name("foo", "bar").build();
         piRep.setUsers(List.of(user));
 
         PartialImportResults results = doImport();

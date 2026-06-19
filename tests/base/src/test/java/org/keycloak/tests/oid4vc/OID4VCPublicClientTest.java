@@ -21,12 +21,14 @@ import java.net.URI;
 import java.util.List;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.oid4vc.OID4VCBasicWallet.AuthorizationEndpointRequest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestServerConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -35,16 +37,13 @@ import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.NoSuchElementException;
-import org.opentest4j.AssertionFailedError;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -105,7 +104,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testAuthorizationRequestSuccess() throws Exception {
+    public void testAuthorizationRequestSuccess() {
 
         var ctx = new OID4VCTestContext(pubClient, jwtTypeCredentialScope);
 
@@ -122,47 +121,22 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testAuthorizationRequestNoPkce() throws Exception {
+    public void testAuthorizationRequestNoPkce() {
 
         var ctx = new OID4VCTestContext(pubClient, jwtTypeCredentialScope);
 
         // Send AuthorizationRequest without required PKCE
         //
-        NoSuchElementException ex = assertThrows(NoSuchElementException.class, () -> wallet
+        AuthorizationEndpointRequest authRequest = wallet
                 .authorizationRequest()
-                .scope(ctx.getScope())
-                .send(ctx.getHolder(), TEST_PASSWORD));
+                .scope(ctx.getScope());
 
-        assertNotNull(ex.getMessage(), "No error message");
-        assertTrue(ex.getMessage().contains("Unable to locate element with ID: 'username'"), ex.getMessage());
+        assertFalse(authRequest.openLoginForm(), "Error expected");
+        AuthorizationEndpointResponse authResponse = authRequest.parseLoginResponse();
 
-        // [TODO #47649] OAuthClient cannot handle invalid authorization requests
-        // https://github.com/keycloak/keycloak/issues/47649
-        // assertEquals("invalid_request", authResponse.getError());
-        // assertEquals("Missing parameter: code_challenge_method", authResponse.getErrorDescription());
-    }
-
-    @Test
-    public void testAuthorizationRequestWrongPassword() throws Exception {
-
-        var ctx = new OID4VCTestContext(pubClient, jwtTypeCredentialScope);
-
-        // Send AuthorizationRequest with incorrect credentials
-        //
-        AssertionFailedError ex = assertThrows(AssertionFailedError.class, () -> wallet
-                .authorizationRequest()
-                .scope(ctx.getScope())
-                .codeChallenge(PkceGenerator.s256())
-                .send(ctx.getHolder(), "wrong_password"));
-
-        assertTrue(ex.getMessage().contains("Expected OAuth callback, but URL was"), ex.getMessage());
-        assertTrue(ex.getMessage().contains("after timeout"), ex.getMessage());
-
-        // [TODO #47649] OAuthClient cannot handle invalid authorization requests
-        // https://github.com/keycloak/keycloak/issues/47649
-        // assertEquals("unauthorized", authResponse.getError());
-        // assertNull(authResponse.getErrorDescription(), "Null error description");
-
+        assertNull(authResponse.getCode(), "Expected no auth code");
+        assertEquals("invalid_request", authResponse.getError());
+        assertEquals("Missing parameter: code_challenge_method", authResponse.getErrorDescription());
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
@@ -173,11 +147,13 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull(credentialObj, "The first credential in the array should not be null");
 
+        wallet.verifyCredentialsSignature(credResponse);
+
         JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialObj.getCredential(), JsonWebToken.class).getToken();
         assertEquals("did:web:test.org", jsonWebToken.getIssuer());
         Object vc = jsonWebToken.getOtherClaims().get("vc");
         VerifiableCredential credential = JsonSerialization.mapper.convertValue(vc, VerifiableCredential.class);
-        assertEquals(List.of(scope), credential.getType());
+        assertEquals(List.of(CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE, scope), credential.getType());
         assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
         assertEquals(expUser + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
     }
