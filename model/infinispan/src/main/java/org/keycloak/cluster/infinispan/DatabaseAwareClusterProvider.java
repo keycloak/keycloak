@@ -72,20 +72,20 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
 
     @Override
     public <T> ExecutionResult<T> executeIfNotExecuted(String taskKey, int taskTimeoutInSeconds, Callable<T> task) {
-        if (!isPrimary()) {
+        if (!isPrimaryCluster()) {
             return ExecutionResult.notExecuted();
         }
         return delegate.executeIfNotExecuted(taskKey, taskTimeoutInSeconds, task);
     }
 
     @Override
-    public boolean isPrimary() {
+    public boolean isPrimaryCluster() {
         return Objects.equals(new JpaClusterEventStoreProvider(session).getPrimaryClusterName(), nodeInfo.clusterName());
     }
 
     @Override
-    public boolean isPrimarySupported() {
-        return true;
+    public boolean isPrimaryClusterSupported() {
+        return new JpaClusterEventStoreProvider(session).isUsingJdbcPing(nodeInfo.clusterName(), nodeInfo.nodeName());
     }
 
     @Override

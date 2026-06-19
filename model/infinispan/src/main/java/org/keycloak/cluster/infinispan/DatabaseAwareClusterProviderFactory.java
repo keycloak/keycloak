@@ -18,7 +18,6 @@
 package org.keycloak.cluster.infinispan;
 
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -28,6 +27,7 @@ import java.util.TimerTask;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.DurationConverter;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.NodeInfo;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -52,13 +52,13 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
 
     protected static final Logger logger = Logger.getLogger(DatabaseAwareClusterProviderFactory.class);
 
-    private static final long DEFAULT_POLL_INTERVAL_MS = 100;
+    private static final String DEFAULT_POLL_INTERVAL_MS = "100ms";
 
     private volatile NodeInfo nodeInfo;
     private volatile Marshaller protoStreamMarshaller;
     private Timer timer;
 
-    private Long pollIntervalMs;
+    private Duration pollInterval;
     private Duration awaitTimeout;
 
     public DatabaseAwareClusterProviderFactory() {
@@ -72,14 +72,14 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
 
     @Override
     public void init(Config.Scope config) {
-        pollIntervalMs = config.getLong("pollInterval", DEFAULT_POLL_INTERVAL_MS);
-        if (pollIntervalMs <= 0) {
+        pollInterval = DurationConverter.parseDuration(config.get("pollInterval", DEFAULT_POLL_INTERVAL_MS));
+        if (pollInterval.compareTo(Duration.ZERO) <= 0) {
             throw new IllegalArgumentException("pollInterval must be a positive number");
         }
-        if (pollIntervalMs > 1000) {
-            logger.warnf("Polling interval is %d milliseconds. This is longer than 1 second, which seems to be too high for a production setting. Please verify.", pollIntervalMs);
+        if (pollInterval.compareTo(Duration.ofSeconds(1)) > 0) {
+            logger.warnf("Polling interval is %s. This is longer than 1 second, which seems to be too high for a production setting. Please verify.", pollInterval.toString());
         }
-        awaitTimeout = Duration.of(pollIntervalMs * 5, ChronoUnit.MILLIS);
+        awaitTimeout = pollInterval.multipliedBy(5);
         // We run our own timer so that we're not delayed by other tasks
         timer = new Timer(true);
     }
@@ -89,7 +89,7 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
         return ProviderConfigurationBuilder.create()
                 .property()
                     .name("pollInterval")
-                    .type("long")
+                    .type("string")
                     .helpText("Interval in milliseconds between polling the database for new cluster events. In a multi-cluster setup, a publishing node will pause for up to 5 times the duration for the event to be consumed to ensure the information is received by all nodes before returning to the caller.")
                     .defaultValue(DEFAULT_POLL_INTERVAL_MS)
                     .add()
@@ -110,9 +110,9 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
                 public void run() {
                     runner.run();
                 }
-            }, pollIntervalMs, pollIntervalMs);
-            logger.infof("Scheduled cluster event poller with interval %d ms for cluster '%s'",
-                    pollIntervalMs, nodeInfo.clusterName());
+            }, pollInterval.toMillis(), pollInterval.toMillis());
+            logger.infof("Scheduled cluster event poller with interval %s ms for cluster '%s'",
+                    pollInterval.toString(), nodeInfo.clusterName());
         });
     }
 

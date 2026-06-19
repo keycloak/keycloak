@@ -39,7 +39,7 @@ final class UserStorageSyncTask implements ScheduledTask {
     @Override
     public void run(KeycloakSession session) {
         ClusterProvider clusterProvider = session.getProvider(ClusterProvider.class);
-        if (clusterProvider.isPrimarySupported() && !clusterProvider.isPrimary()) {
+        if (clusterProvider.isPrimaryClusterSupported() && !clusterProvider.isPrimaryCluster()) {
             // Ensure that LDAP sync runs only on one of the clusters to avoid conflicts and locking
             return;
         }

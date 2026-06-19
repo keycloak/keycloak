@@ -128,7 +128,7 @@ public interface ClusterProvider extends Provider {
      *
      * @return {@code true} if this node is the coordinator.
      */
-    default boolean isPrimary() {
+    default boolean isPrimaryCluster() {
         return false;
     }
 
@@ -139,7 +139,7 @@ public interface ClusterProvider extends Provider {
      *
      * @return {@code true} if the coordinator check is supported.
      */
-    default boolean isPrimarySupported() {
+    default boolean isPrimaryClusterSupported() {
         return false;
     }
 

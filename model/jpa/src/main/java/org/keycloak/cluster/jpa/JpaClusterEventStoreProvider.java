@@ -132,4 +132,17 @@ public class JpaClusterEventStoreProvider {
     private EntityManager getEntityManager() {
         return session.getProvider(JpaConnectionProvider.class).getEntityManager();
     }
+
+    public boolean isUsingJdbcPing(String cluster, String node) {
+        EntityManager em = getEntityManager();
+        String tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
+
+        return em.createNativeQuery(
+                        "SELECT 1 FROM " + tableName + " WHERE last_update > ?1 AND cluster_name = ?2 AND name = ?3")
+                .setParameter(1, Time.currentTime() - STALENESS_CUTOFF_SECONDS)
+                .setParameter(2, cluster)
+                .setParameter(3, node)
+                .setMaxResults(1)
+                .getSingleResult() != null;
+    }
 }
