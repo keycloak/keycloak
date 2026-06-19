@@ -69,6 +69,17 @@ class ClientSortAndSliceOptionsTest {
     }
 
     @Test
+    void descendingSortKeepsNullValuesLast() {
+        Comparator<BaseClientRepresentation> comparator = ClientField.DISPLAY_NAME.comparator(false);
+
+        BaseClientRepresentation withDisplayName = client("with-name", "Beta");
+        BaseClientRepresentation withoutDisplayName = client("without-name", null);
+
+        assertEquals(1, comparator.compare(withoutDisplayName, withDisplayName));
+        assertEquals(-1, comparator.compare(withDisplayName, withoutDisplayName));
+    }
+
+    @Test
     void invalidSortDirectionThrowsBadRequest() {
         ListOptions options = new ListOptions();
         options.setSort("clientId|what");

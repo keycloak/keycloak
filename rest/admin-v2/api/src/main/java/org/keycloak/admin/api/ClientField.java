@@ -16,15 +16,15 @@ public enum ClientField {
     DISPLAY_NAME("displayName", stringKey(BaseClientRepresentation::getDisplayName)),
     DESCRIPTION("description", stringKey(BaseClientRepresentation::getDescription)),
     PROTOCOL("protocol", stringKey(BaseClientRepresentation::getProtocol)),
-    ENABLED("enabled", Comparator.comparing(BaseClientRepresentation::getEnabled, Comparator.nullsLast(Boolean::compareTo))),
+    ENABLED("enabled", booleanKey(BaseClientRepresentation::getEnabled)),
     APP_URL("appUrl", stringKey(BaseClientRepresentation::getAppUrl));
 
     private final String apiName;
-    private final Comparator<BaseClientRepresentation> comparator;
+    private final ComparatorFactory comparatorFactory;
 
-    ClientField(String apiName, Comparator<BaseClientRepresentation> comparator) {
+    ClientField(String apiName, ComparatorFactory comparatorFactory) {
         this.apiName = apiName;
-        this.comparator = comparator;
+        this.comparatorFactory = comparatorFactory;
     }
 
     public String getApiName() {
@@ -36,7 +36,7 @@ public enum ClientField {
     }
 
     public Comparator<BaseClientRepresentation> comparator(boolean ascending) {
-        return ascending ? comparator : comparator.reversed();
+        return comparatorFactory.comparator(ascending);
     }
 
     public static ClientField defaultField() {
@@ -47,7 +47,18 @@ public enum ClientField {
         return Stream.of(values()).filter(field -> field.apiName.equals(apiName)).findFirst();
     }
 
-    private static Comparator<BaseClientRepresentation> stringKey(Function<BaseClientRepresentation, String> getter) {
-        return Comparator.comparing(getter, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+    private static ComparatorFactory stringKey(Function<BaseClientRepresentation, String> getter) {
+        return ascending -> Comparator.comparing(getter, Comparator.nullsLast(
+                ascending ? String.CASE_INSENSITIVE_ORDER : String.CASE_INSENSITIVE_ORDER.reversed()));
+    }
+
+    private static ComparatorFactory booleanKey(Function<BaseClientRepresentation, Boolean> getter) {
+        return ascending -> Comparator.comparing(getter, Comparator.nullsLast(
+                ascending ? Boolean::compareTo : Comparator.<Boolean>reverseOrder()));
+    }
+
+    @FunctionalInterface
+    private interface ComparatorFactory {
+        Comparator<BaseClientRepresentation> comparator(boolean ascending);
     }
 }
