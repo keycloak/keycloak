@@ -390,21 +390,17 @@ public class AuthenticationManager {
         RootAuthenticationSessionModel rootLogoutSession = null;
         boolean browserCookiePresent = false;
 
-        // Try to lookup current authSessionId from browser cookie. If doesn't exist, use the same as current userSession
+        // Try to lookup current authSessionId from browser cookie. If doesn't exist, use the same as current userSession if it can be reused
         if (browserCookie) {
             rootLogoutSession = asm.getCurrentRootAuthenticationSession(realm);
         }
         if (rootLogoutSession != null) {
             authSessionId = rootLogoutSession.getId();
             browserCookiePresent = true;
-        } else if (userSession != null) {
-            if (logoutSession != null && logoutSession.getParentSession() != null && !userSession.getId().equals(logoutSession.getParentSession().getId())) {
-                authSessionId = KeycloakModelUtils.generateId();
-                rootLogoutSession = null;
-            } else {
-                authSessionId = userSession.getId();
-                rootLogoutSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
-            }
+        } else if (userSession != null && (logoutSession == null || (logoutSession.getParentSession() != null
+                && userSession.getId().equals(logoutSession.getParentSession().getId())))) {
+            authSessionId = userSession.getId();
+            rootLogoutSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
         } else {
             authSessionId = KeycloakModelUtils.generateId();
         }
