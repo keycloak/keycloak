@@ -10,7 +10,7 @@
         "summary": "List all things",
         "operationId": "getThings",
         "parameters": [
-          { "name": "fields", "in": "query", "description": "Fields to include",
+          { "name": "fields", "in": "query", "description": "Fields to include", "explode": false,
             "schema": { "type": "array", "items": { "type": "string" } } },
           { "name": "q", "in": "query", "description": "Filter expression",
             "schema": { "type": "string" } },

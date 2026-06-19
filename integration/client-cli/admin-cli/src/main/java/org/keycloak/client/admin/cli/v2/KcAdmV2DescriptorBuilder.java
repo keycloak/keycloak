@@ -295,6 +295,7 @@ public class KcAdmV2DescriptorBuilder {
             opt.setFieldName(param.getName());
             opt.setDescription(param.getDescription());
             opt.setQueryParam(true);
+            opt.setExplode(param.getExplode() == null || param.getExplode());
             opt.setArray(isArrayType(paramSchema));
             opt.setType(resolveType(paramSchema));
             opt.setEnumValues(extractEnumValues(param.getSchema(), openApi));
