@@ -1,0 +1,97 @@
+[[_parameterized_client_scopes]]
+== Parameterized client scopes
+
+[IMPORTANT]
+====
+This feature is currently experimental. Do not use it in production. Backward compatibility is not guaranteed, and future updates may introduce breaking changes.
+
+To enable, start the server with `--features=parameterized-scopes`.
+====
+
+{project_name} supports parameterized client scopes, which allow clients to pass a parameter value along with the scope name in the OAuth 2.0 authorization request. A parameterized scope uses the format `scopeName:parameterValue`, where the colon (`:`) separates the scope name from its parameter.
+
+For example, a client scope named `contract` can be requested as `contract:42`, where `42` is the parameter value. This enables creating access tokens with fine-grained resource details without defining a separate client scope for each possible value.
+
+=== Creating a parameterized client scope
+
+To create a parameterized client scope, follow these steps:
+
+. Click *Client scopes* in the menu.
+. Click *Create client scope*.
+. Enter a *Name* for the scope (for example, `project`).
+. Enable the *Parameterized scope* toggle.
+. Select a *Parameter type* from the available options (for example, `String`).
+. If you selected the `Custom` parameter type, enter a regular expression pattern that the parameter value must match.
+. Set *Type* to *None* or *Optional*. When the *Parameterized scope* toggle is enabled, the *Default* option is not available.
+. Click *Save*.
+
+.Creating a parameterized client scope
+image:images/client-scopes-parameterized-create.png[width=600]
+
+=== Parameter types
+
+When creating a parameterized scope, you must select a parameter type that determines how the parameter value is validated at request time. The following built-in types are available:
+
+[cols="1,3",options="header"]
+|===
+| Type | Description
+
+| `string`
+| Accepts any string value. No validation is performed on the parameter.
+
+| `integer`
+| Accepts integer numbers only. The parameter value must be parsable as an integer number.
+
+| `boolean`
+| Accepts only `true` or `false` (case-insensitive).
+
+| `username`
+| Validates that the parameter value is the username of an existing, enabled user in the realm. Additionally, a user cannot target themselves with this scope type.
+
+| `custom`
+| Validates the parameter value against a regular expression pattern defined by the administrator. When selecting this type, you must provide a valid regex pattern.
+|===
+
+[[_parameterized_scopes_use_case]]
+=== Use case: resource-specific access
+
+Consider an application *ProjectHub* that manages projects. Without parameterized scopes, you would need to create a separate client scope for every project the client might access (for example, `project-backend-api`, `project-mobile-app`). This approach does not scale well as new projects are created.
+
+With parameterized scopes, you define a single `project` scope with the `string` parameter type. *ProjectHub* can then request access to a specific project at authorization time:
+
+[source,bash,subs=+attributes]
+----
+scope=openid project:backend-api
+----
+
+{project_name} validates the parameter value against the configured parameter type. If the validation fails, the scope value is silently excluded from the request. A client can also request multiple values for the same parameterized scope in a single request:
+
+[source,bash,subs=+attributes]
+----
+scope=openid project:backend-api project:mobile-app
+----
+
+Each value is validated independently. The resulting access token contains the validated parameterized scope values in its `scope` claim, allowing the resource server *ProjectService* to enforce access based on the parameter value.
+
+To restrict the parameter to known project identifiers, use the `custom` parameter type with a regular expression such as `[a-z0-9\-]+`.
+
+The following diagram illustrates the full flow:
+
+.Parameterized scopes flow with resource-specific access
+image::images/parameterized-scopes-flow.drawio.svg[Sequence diagram of the parameterized scopes flow, width=750]
+
+=== Consent screen
+
+When a client has *Consent Required* enabled and uses parameterized scopes, the consent screen displays each parameterized scope value individually. The consent text follows the format `scopeName: parameterValue`.
+
+For example, using the <<_parameterized_scopes_use_case, resource-specific access>> use case above, requesting `scope=openid project:mobile-app project:backend-api` would display the following on the consent screen:
+
+.Consent screen with parameterized scopes
+image:images/client-scopes-parameterized-consent.png[width=450]
+
+=== Constraints
+
+Parameterized client scopes have the following constraints:
+
+* A parameterized scope can only be an *optional* client scope. It cannot be assigned as a default client scope for a client.
+* A parameterized scope cannot be assigned as a realm default scope. It can be assigned as a realm optional scope.
