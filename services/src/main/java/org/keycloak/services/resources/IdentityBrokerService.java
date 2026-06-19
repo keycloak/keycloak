@@ -1172,7 +1172,10 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             return redirectToErrorWhenLinkingFailed(authSession, Messages.ACCOUNT_DISABLED);
         }
 
-        FederatedIdentityModel existingLinkForCurrentUser = this.session.users().getFederatedIdentity(this.realmModel, authenticatedUser, providerAlias);
+        FederatedIdentityModel existingLinkForCurrentUser = federatedUser == null
+                ? this.session.users().getFederatedIdentity(this.realmModel, authenticatedUser, providerAlias)
+                : null;
+        boolean replacedExistingLink = false;
         if (federatedUser == null && existingLinkForCurrentUser != null) {
             if (!context.getIdpConfig().isAllowLinkingWithExistingFederatedIdentity()) {
                 logger.debugf("Cannot link user '%s' to identity provider '%s'. Existing link found for this user and replacement is disabled", authenticatedUser.getUsername(), providerAlias);
@@ -1180,8 +1183,11 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                 return redirectToErrorWhenLinkingFailed(authSession, Messages.IDENTITY_PROVIDER_ALREADY_LINKED_TO_CURRENT_USER, idpDisplayName);
             }
 
-            this.session.users().updateFederatedIdentity(this.realmModel, authenticatedUser, newModel);
+            FederatedIdentityModel replacement = new FederatedIdentityModel(
+                    existingLinkForCurrentUser.getIdentityProvider(), newModel.getUserId(), newModel.getUserName(), existingLinkForCurrentUser.getToken());
+            this.session.users().updateFederatedIdentity(this.realmModel, authenticatedUser, replacement);
             federatedUser = authenticatedUser;
+            replacedExistingLink = true;
 
             if (isDebugEnabled()) {
                 logger.debugf("Replaced existing identity provider link [%s] for user [%s]. Previous federated user id [%s], new federated user id [%s]",
@@ -1192,7 +1198,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         }
 
         if (federatedUser != null) {
-            if (Booleans.isTrue(context.getIdpConfig().isStoreToken())) {
+            if (!replacedExistingLink && Booleans.isTrue(context.getIdpConfig().isStoreToken())) {
                 FederatedIdentityModel oldModel = this.session.users().getFederatedIdentity(this.realmModel, federatedUser, providerAlias);
                 if (!ObjectUtil.isEqualOrBothNull(context.getToken(), oldModel.getToken())) {
                     this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, newModel);
