@@ -20,7 +20,7 @@ public class ListOptions {
     @QueryParam("fields")
     protected String fields;
 
-    @Parameter(description = "Sort expression. Comma-separated fields with optional direction per field using | (e.g. displayName|desc,clientId). Default direction is asc. Allowed fields: clientId, displayName, description, protocol, enabled, appUrl.",
+    @Parameter(description = "Sort expression. Comma-separated fields with optional direction per field using | (e.g. displayName|desc,clientId). Default direction is asc.",
             schema = @Schema(type = SchemaType.STRING, defaultValue = "clientId"))
     @QueryParam("sort")
     protected String sort;

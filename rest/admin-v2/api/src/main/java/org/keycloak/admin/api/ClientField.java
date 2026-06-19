@@ -3,6 +3,7 @@ package org.keycloak.admin.api;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
@@ -45,6 +46,10 @@ public enum ClientField {
 
     public static Optional<ClientField> fromApiName(String apiName) {
         return Stream.of(values()).filter(field -> field.apiName.equals(apiName)).findFirst();
+    }
+
+    public static String allowedApiNames() {
+        return Stream.of(values()).map(ClientField::getApiName).collect(Collectors.joining(", "));
     }
 
     private static ComparatorFactory stringKey(Function<BaseClientRepresentation, String> getter) {

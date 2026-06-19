@@ -21,6 +21,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.StreamSupport;
 
+import org.keycloak.admin.api.ClientField;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -48,5 +50,7 @@ class OpenApiSortParameterTest {
         assertNotNull(sortParam, "sort parameter must exist in the spec");
         assertEquals("string", sortParam.at("/schema/type").asText(),
                 "sort schema type must be 'string' to support per-field sort directions");
+        assertTrue(sortParam.path("description").asText().contains("Allowed fields: " + ClientField.allowedApiNames()),
+                "sort parameter description must list allowed fields from ClientField metadata");
     }
 }
