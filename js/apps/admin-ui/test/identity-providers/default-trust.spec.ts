@@ -55,11 +55,7 @@ test.describe.serial("Default Trust identity provider test", () => {
   });
 
   test("should create and edit a Default Trust provider", async ({ page }) => {
-    await createDefaultTrustProvider(page, jwksUrl);
-    await assertNotificationMessage(
-      page,
-      "Identity provider successfully created",
-    );
+    await createDefaultTrustProvider(page, alias, jwksUrl);
 
     await goToIdentityProviders(page);
     await clickTableRowItem(page, alias);
