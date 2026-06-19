@@ -1022,7 +1022,7 @@ jobs:
           sudo insmod fake_fips.ko
 
       - name: Run crypto tests
-        run: docker run --rm --workdir /github/workspace -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi:latest .github/scripts/run-fips-ut.sh
+        run: docker run --rm --workdir /github/workspace -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi@sha256:1b99266db480e8aa6dfda6900697a07ec99334095b4f87d1687edfc06c965132 .github/scripts/run-fips-ut.sh
 
   fips-integration-tests:
     name: FIPS IT
@@ -1049,7 +1049,7 @@ jobs:
           sudo insmod fake_fips.ko
 
       - name: Run base tests
-        run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
+        run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi@sha256:1b99266db480e8aa6dfda6900697a07ec99334095b4f87d1687edfc06c965132 .github/scripts/run-fips-it.sh ${{ matrix.mode }}
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
