@@ -198,6 +198,18 @@ public class ThemeResourcesParserTest {
     }
 
     @Test
+    public void parseNormalizesSpaceSeparatedFaviconLeadingSlash() {
+        Properties properties = new Properties();
+        properties.setProperty("favicons", "/favicon.svg /favicon.png");
+
+        List<ThemeResourceDescriptor> favicons = ThemeResourcesParser.parse(properties).getFavicons();
+
+        assertEquals(2, favicons.size());
+        assertEquals("favicon.svg", favicons.get(0).getPath());
+        assertEquals("favicon.png", favicons.get(1).getPath());
+    }
+
+    @Test
     public void parseIgnoresResourceIdOrder() {
         Properties properties = new Properties();
         properties.setProperty("styles.order", "css/order.css");

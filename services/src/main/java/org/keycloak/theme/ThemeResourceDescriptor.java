@@ -29,8 +29,15 @@ public class ThemeResourceDescriptor {
     private final String blocking;
     private final String rel;
 
-    private ThemeResourceDescriptor(Builder builder) {
-        this.path = builder.path;
+    static String normalizeFaviconPath(String path) {
+        if (path != null && path.startsWith("/")) {
+            return path.substring(1);
+        }
+        return path;
+    }
+
+    private ThemeResourceDescriptor(Builder builder, boolean favicon) {
+        this.path = favicon ? normalizeFaviconPath(builder.path) : builder.path;
         this.media = builder.media;
         this.integrity = builder.integrity;
         this.crossorigin = builder.crossorigin;
@@ -208,17 +215,18 @@ public class ThemeResourceDescriptor {
         }
 
         public ThemeResourceDescriptor build() {
-            return new ThemeResourceDescriptor(this);
+            return new ThemeResourceDescriptor(this, false);
         }
 
         public ThemeResourceDescriptor buildFavicon() {
+            String normalizedPath = normalizeFaviconPath(path);
             if (type == null || type.isEmpty()) {
-                type = inferFaviconType(path);
+                type = inferFaviconType(normalizedPath);
             }
             if (rel == null || rel.isEmpty()) {
                 rel = "icon";
             }
-            return build();
+            return new ThemeResourceDescriptor(this, true);
         }
     }
 }

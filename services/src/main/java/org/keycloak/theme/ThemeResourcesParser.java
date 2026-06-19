@@ -83,9 +83,6 @@ public final class ThemeResourcesParser {
             if (path == null || path.isBlank()) {
                 continue;
             }
-            if (favicon && path.startsWith("/")) {
-                path = path.substring(1);
-            }
             builders.put(id, ThemeResourceDescriptor.builder(path));
         }
 
@@ -124,8 +121,7 @@ public final class ThemeResourcesParser {
             return List.of();
         }
 
-        String path = favIcon.startsWith("/") ? favIcon.substring(1) : favIcon;
-        ThemeResourceDescriptor.Builder builder = ThemeResourceDescriptor.builder(path);
+        ThemeResourceDescriptor.Builder builder = ThemeResourceDescriptor.builder(favIcon);
         String favIconType = properties.getProperty("favIconType");
         if (favIconType != null && !favIconType.isBlank()) {
             builder.type(favIconType);
