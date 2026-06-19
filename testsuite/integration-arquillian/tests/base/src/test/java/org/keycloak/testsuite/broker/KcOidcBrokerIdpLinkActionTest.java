@@ -523,18 +523,20 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
     }
 
     private void addFederatedIdentity(String username, String federatedUserId, String federatedUsername, String token) {
-        testingClient.server(bc.consumerRealmName()).run(session -> {
+        String realmName = bc.consumerRealmName(), idpAlias = bc.getIDPAlias();
+        testingClient.server(realmName).run(session -> {
             RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserByUsername(realm, username);
-            session.users().addFederatedIdentity(realm, user, new FederatedIdentityModel(bc.getIDPAlias(), federatedUserId, federatedUsername, token));
+            session.users().addFederatedIdentity(realm, user, new FederatedIdentityModel(idpAlias, federatedUserId, federatedUsername, token));
         });
     }
 
     private void assertFederatedIdentity(String username, String federatedUserId, String federatedUsername, String token) {
-        testingClient.server(bc.consumerRealmName()).run(session -> {
+        String realmName = bc.consumerRealmName(), idpAlias = bc.getIDPAlias();
+        testingClient.server(realmName).run(session -> {
             RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserByUsername(realm, username);
-            FederatedIdentityModel identity = session.users().getFederatedIdentity(realm, user, bc.getIDPAlias());
+            FederatedIdentityModel identity = session.users().getFederatedIdentity(realm, user, idpAlias);
             Assertions.assertNotNull(identity);
             Assertions.assertEquals(federatedUserId, identity.getUserId());
             Assertions.assertEquals(federatedUsername, identity.getUserName());
