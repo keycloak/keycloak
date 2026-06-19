@@ -130,7 +130,9 @@ const CreateStreamFormBody = ({
         );
       }
 
-      const delivery: SsfStreamConfigInputRepresentation["delivery"] = {
+      const delivery: NonNullable<
+        SsfStreamConfigInputRepresentation["delivery"]
+      > = {
         method:
           method === "POLL"
             ? DELIVERY_METHOD_POLL_URI

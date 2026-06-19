@@ -86,7 +86,7 @@ export const EventSearchTab = ({ client }: EventSearchTabProps) => {
       try {
         const result = await adminClient.ssf.findPendingEvent({
           clientId: client.clientId!,
-          jti: encodeURIComponent(lookupJti),
+          jti: lookupJti,
         });
         if (result === null) {
           setPendingLookupError(t("ssfPendingLookupNotFound"));

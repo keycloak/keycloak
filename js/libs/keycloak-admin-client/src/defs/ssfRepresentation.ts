@@ -23,6 +23,7 @@ export interface SsfClientStreamRepresentation {
 export interface SsfStreamConfigInputRepresentation {
   description?: string;
   events_requested?: string[];
+  events_delivered?: string[];
   delivery?: SsfStreamDeliveryConfig;
   aud?: string[];
   iss?: string;

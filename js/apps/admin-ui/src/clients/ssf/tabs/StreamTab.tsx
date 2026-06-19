@@ -1,4 +1,5 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type { SsfStreamConfigInputRepresentation } from "@keycloak/keycloak-admin-client";
 import {
   HelpItem,
   KeycloakSelect,
@@ -210,7 +211,7 @@ export const StreamTab = ({
     }
     setStreamEditSubmitting(true);
     try {
-      const body: Record<string, unknown> = {};
+      const body: Partial<SsfStreamConfigInputRepresentation> = {};
       if ((clientStream.description ?? "") !== editStreamDescription) {
         body.description = editStreamDescription;
       }
@@ -233,7 +234,7 @@ export const StreamTab = ({
 
       await adminClient.ssf.updateClientStream(
         { clientId: client.clientId! },
-        body as any,
+        body,
       );
       addAlert(t("ssfStreamUpdateSuccess"), AlertVariant.success);
       refresh();
