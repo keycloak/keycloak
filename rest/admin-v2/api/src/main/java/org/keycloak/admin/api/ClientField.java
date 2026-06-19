@@ -10,7 +10,7 @@ import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
- * Sortable fields for Client Admin API v2 list queries ({@code sortBy} / {@code sortOrder}).
+ * Sortable fields for Client Admin API v2 list queries ({@code sort}).
  * API names map to scalar {@code CLIENT} table columns.
  */
 @Schema(enumeration = {"clientId", "displayName", "description", "protocol", "enabled", "appUrl"})

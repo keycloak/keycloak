@@ -16,6 +16,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.models.Constants;
 import org.keycloak.admin.api.ClientField;
 import org.keycloak.admin.api.ListOptions;
+import org.keycloak.admin.api.SortOption;
 import org.keycloak.admin.api.SortOrder;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
@@ -42,46 +43,58 @@ public interface ClientService extends Service {
     }
 
     class ClientSortAndSliceOptions {
-        private final List<ClientField> sortFields;
-        private final boolean ascending;
+        private final List<SortOption> sortOptions;
 
-        private ClientSortAndSliceOptions(List<ClientField> sortFields, boolean ascending) {
-            this.sortFields = List.copyOf(sortFields);
-            this.ascending = ascending;
+        private ClientSortAndSliceOptions(List<SortOption> sortOptions) {
+            this.sortOptions = List.copyOf(sortOptions);
         }
 
         public static ClientSortAndSliceOptions fromQuery(ListOptions listOptions) {
-            List<ClientField> fields = listOptions.getSortBy() == null || listOptions.getSortBy().isEmpty()
-                    ? List.of(ClientField.defaultField())
-                    : parseSortBy(listOptions.getSortBy());
-            return new ClientSortAndSliceOptions(fields, isSortOrderAscending(listOptions.getSortOrder()));
+            List<SortOption> options = listOptions.getSort() == null || listOptions.getSort().isEmpty()
+                    ? List.of(SortOption.of(ClientField.defaultField()))
+                    : parseSort(listOptions.getSort());
+            return new ClientSortAndSliceOptions(options);
         }
 
-        private static List<ClientField> parseSortBy(String sortBy) {
-            List<ClientField> fields = Arrays.stream(sortBy.split(","))
+        private static List<SortOption> parseSort(String sort) {
+            List<SortOption> options = Arrays.stream(sort.split(","))
                     .map(String::trim)
-                    .filter(field -> !field.isEmpty())
-                    .map(ClientSortAndSliceOptions::parseSortField)
+                    .filter(segment -> !segment.isEmpty())
+                    .map(ClientSortAndSliceOptions::parseSortSegment)
                     .collect(Collectors.toList());
-            if (fields.isEmpty()) {
-                throw new ServiceException("sortBy must specify at least one field", Response.Status.BAD_REQUEST);
+            if (options.isEmpty()) {
+                throw new ServiceException("sort must specify at least one field", Response.Status.BAD_REQUEST);
             }
-            return fields;
+            return options;
         }
 
-        private static ClientField parseSortField(String field) {
-            return ClientField.fromApiName(field).orElseThrow(() -> {
-                return new ServiceException(String.format("%s is not a sortable field", field),  Response.Status.BAD_REQUEST);
-            });
+        private static SortOption parseSortSegment(String segment) {
+            String[] parts = segment.split("\\|", 2);
+            String fieldName = parts[0].trim();
+            if (fieldName.isEmpty()) {
+                throw new ServiceException("sort must specify at least one field", Response.Status.BAD_REQUEST);
+            }
+            ClientField field = ClientField.fromApiName(fieldName).orElseThrow(() ->
+                    new ServiceException(String.format("%s is not a sortable field", fieldName), Response.Status.BAD_REQUEST));
+            SortOrder order = parts.length == 1 ? SortOrder.ASC : parseSortOrder(parts[1].trim());
+            return SortOption.of(field, order);
         }
 
-        private static boolean isSortOrderAscending(SortOrder sortOrder) {
-            return sortOrder == null ? true : sortOrder.isAscending();
+        private static SortOrder parseSortOrder(String value) {
+            if (value.isEmpty()) {
+                return SortOrder.ASC;
+            }
+            for (SortOrder order : SortOrder.values()) {
+                if (order.name().equalsIgnoreCase(value)) {
+                    return order;
+                }
+            }
+            throw new ServiceException("sort direction must be asc or desc", Response.Status.BAD_REQUEST);
         }
 
         public Comparator<BaseClientRepresentation> getSortComparator() {
-            return sortFields.stream()
-                    .map(field -> field.comparator(ascending))
+            return sortOptions.stream()
+                    .map(option -> option.field().comparator(option.isAscending()))
                     .reduce(Comparator::thenComparing)
                     .orElseThrow();
         }

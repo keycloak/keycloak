@@ -10,8 +10,6 @@ import jakarta.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.enums.Explode;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.enums.ParameterStyle;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
 public class ListOptions {
@@ -21,19 +19,10 @@ public class ListOptions {
     @QueryParam("fields")
     protected String fields;
 
-    // TODO: this name is a temporary solution until we have a fix from smallrye-openapi https://github.com/smallrye/smallrye-open-api/issues/2585
-    @Parameter(name = "sortBy",
-               description = "Field(s) to sort by, comma-separated for multi-field sort (e.g. displayName,clientId).",
-               style = ParameterStyle.FORM,
-               explode = Explode.FALSE,
-               schema = @Schema(type = SchemaType.ARRAY, implementation = ClientField.class,
-               defaultValue = "clientId"))
-    @QueryParam("sortBy")
-    protected String sortBy;
-
-    @Parameter(description = "Sort direction. Allowed values: asc, desc.", schema = @Schema(implementation = SortOrder.class, defaultValue = "asc"))
-    @QueryParam("sortOrder")
-    protected SortOrder sortOrder;
+    @Parameter(description = "Sort expression. Comma-separated fields with optional direction per field using | (e.g. displayName|desc,clientId). Default direction is asc.",
+            schema = @Schema(type = SchemaType.STRING, defaultValue = "clientId"))
+    @QueryParam("sort")
+    protected String sort;
 
     @Parameter(description = "Filter expression using SCIM-like syntax, e.g. clientId eq \"my-app\" and enabled eq true")
     @QueryParam("q")
@@ -104,33 +93,17 @@ public class ListOptions {
     public void setOffset(Integer offset) {
         this.offset = offset;
     }
-    
-    public String getSortBy() {
-        return sortBy;
+
+    public String getSort() {
+        return sort;
     }
 
-    public void setSortBy(String sortBy) {
-        this.sortBy = sortBy;
+    public void setSort(String sort) {
+        this.sort = sort;
     }
 
-    public void setSortBy(ClientField sortBy) {
-        this.sortBy = sortBy == null ? null : sortBy.toQueryValue();
-    }
-
-    public void setSortBy(List<ClientField> sortBy) {
-        this.sortBy = stringify(sortBy);
-    }
-
-    public SortOrder getSortOrder() {
-        return sortOrder;
-    }
-
-    public void setSortOrder(SortOrder sortOrder) {
-        this.sortOrder = sortOrder;
-    }
-
-    private String stringify(List<ClientField> list) {
-        return list == null || list.isEmpty() ? null :
-                 list.stream().map(ClientField::toQueryValue).collect(Collectors.joining(","));
+    public void setSort(List<SortOption> sort) {
+        this.sort = sort == null || sort.isEmpty() ? null :
+                sort.stream().map(SortOption::toQuerySegment).collect(Collectors.joining(","));
     }
 }

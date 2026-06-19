@@ -23,6 +23,6 @@ public enum SortOrder {
                 return order;
             }
         }
-        throw new WebApplicationException("sortOrder must be asc or desc", Response.Status.BAD_REQUEST);
+        throw new WebApplicationException("sort direction must be asc or desc", Response.Status.BAD_REQUEST);
     }
 }

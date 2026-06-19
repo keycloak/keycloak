@@ -19,6 +19,8 @@ package org.keycloak.tests.admin.client.v2;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -34,6 +36,7 @@ import jakarta.ws.rs.core.MediaType;
 import org.keycloak.admin.api.ClientField;
 import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.PatchTypeNames;
+import org.keycloak.admin.api.SortOption;
 import org.keycloak.admin.api.SortOrder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
@@ -62,6 +65,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
@@ -382,7 +386,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         ListOptions listOptions = new ListOptions();
         listOptions.setFields(Set.of("clientId", "displayName"));
-        listOptions.setSortBy(List.of(ClientField.DISPLAY_NAME, ClientField.CLIENT_ID));
+        listOptions.setSort(List.of(SortOption.of(ClientField.DISPLAY_NAME), SortOption.of(ClientField.CLIENT_ID)));
 
         try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
             List<String> sortTestClientIds = clients
@@ -401,8 +405,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         ListOptions listOptions = new ListOptions();
         listOptions.setFields(Set.of("clientId", "displayName"));
-        listOptions.setSortBy(List.of(ClientField.DISPLAY_NAME, ClientField.CLIENT_ID));
-        listOptions.setSortOrder(SortOrder.DESC);
+        listOptions.setSort(List.of(SortOption.of(ClientField.DISPLAY_NAME, SortOrder.DESC), SortOption.of(ClientField.CLIENT_ID, SortOrder.DESC)));
 
         try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
             List<String> sortTestClientIds = clients
@@ -414,8 +417,10 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
-    public void getClientsSortByInvalidField() throws IOException {
-        HttpGet request = new HttpGet(getClientsApiUrl() + "?fields=clientId&sortBy=displayName,unknown");
+    public void getClientsSortByInvalidField() throws IOException, URISyntaxException {
+        URI uri = new URIBuilder(getClientsApiUrl()).addParameter("fields", "clientId")
+                .addParameter("sort", "displayName|desc,unknown").build();
+        HttpGet request = new HttpGet(uri);
         setAuthHeader(request);
         try (var response = client.execute(request)) {
             assertEquals(400, response.getStatusLine().getStatusCode());
@@ -429,7 +434,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         createSortTestClient("sort-a", "A", "alpha");
         createSortTestClient("sort-c", "A", "gamma");
 
-        HttpGet request = new HttpGet(getClientsApiUrl() + "?fields=clientId&fields=displayName&sortBy=displayName,clientId");
+        HttpGet request = new HttpGet(getClientsApiUrl() + "?fields=clientId,displayName&sort=displayName,clientId");
         setAuthHeader(request);
         try (var response = client.execute(request)) {
             String responseBody = EntityUtils.toString(response.getEntity());
@@ -446,12 +451,14 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
-    public void getClientsInvalidSortOrderReturns400() throws IOException {
-        HttpGet request = new HttpGet(getClientsApiUrl() + "?sortOrder=what");
+    public void getClientsInvalidSortDirectionReturns400() throws IOException, URISyntaxException {
+        URI uri = new URIBuilder(getClientsApiUrl()).addParameter("sort", "clientId|what").build();
+
+        HttpGet request = new HttpGet(uri);
         setAuthHeader(request);
         try (var response = client.execute(request)) {
             assertEquals(400, response.getStatusLine().getStatusCode());
-            assertThat(EntityUtils.toString(response.getEntity()), containsString("sortOrder must be asc or desc"));
+            assertThat(EntityUtils.toString(response.getEntity()), containsString("sort direction must be asc or desc"));
         }
     }
 

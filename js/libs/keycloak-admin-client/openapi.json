@@ -278,26 +278,12 @@
             "type" : "string"
           }
         }, {
-          "description" : "Field(s) to sort by, comma-separated for multi-field sort (e.g. displayName,clientId).",
-          "explode" : false,
-          "name" : "sortBy",
-          "schema" : {
-            "type" : "array",
-            "default" : "clientId",
-            "items" : {
-              "$ref" : "#/components/schemas/ClientField"
-            }
-          },
-          "style" : "form",
-          "in" : "query"
-        }, {
-          "description" : "Sort direction. Allowed values: asc, desc.",
+          "description" : "Sort expression. Comma-separated fields with optional direction per field using | (e.g. displayName|desc,clientId). Default direction is asc.",
           "schema" : {
             "type" : "string",
-            "enum" : [ "asc", "desc" ],
-            "default" : "asc"
+            "default" : "clientId"
           },
-          "name" : "sortOrder",
+          "name" : "sort",
           "in" : "query"
         } ],
         "responses" : {

@@ -29,26 +29,24 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class OpenApiSortByParameterTest {
+class OpenApiSortParameterTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Test
-    void sortByParameterIsArrayOfClientSortField() throws Exception {
+    void sortParameterIsString() throws Exception {
         Path openApiFile = Path.of("target/openapi.json");
         assertTrue(Files.exists(openApiFile), "OpenAPI spec must be generated before running this test");
 
         JsonNode spec = MAPPER.readTree(openApiFile.toFile());
         JsonNode params = spec.at("/paths/~1admin~1api~1{realmName}~1clients~1v2/get/parameters");
-        JsonNode sortByParam = StreamSupport.stream(params.spliterator(), false)
-                .filter(parameter -> "sortBy".equals(parameter.path("name").asText()))
+        JsonNode sortParam = StreamSupport.stream(params.spliterator(), false)
+                .filter(parameter -> "sort".equals(parameter.path("name").asText()))
                 .findFirst()
                 .orElse(null);
 
-        assertNotNull(sortByParam, "sortBy parameter must exist in the spec");
-        assertEquals("array", sortByParam.at("/schema/type").asText(),
-                "sortBy schema type must be 'array' to support multi-field sort");
-        assertEquals("#/components/schemas/ClientField", sortByParam.at("/schema/items/$ref").asText(),
-                "sortBy array items must reference ClientField");
+        assertNotNull(sortParam, "sort parameter must exist in the spec");
+        assertEquals("string", sortParam.at("/schema/type").asText(),
+                "sort schema type must be 'string' to support per-field sort directions");
     }
 }
