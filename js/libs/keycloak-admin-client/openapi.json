@@ -96,10 +96,6 @@
           }
         }
       },
-      "ClientField" : {
-        "type" : "string",
-        "enum" : [ "clientId", "displayName", "description", "protocol", "enabled", "appUrl" ]
-      },
       "Flow" : {
         "type" : "string",
         "enum" : [ "STANDARD", "IMPLICIT", "DIRECT_GRANT", "SERVICE_ACCOUNT", "TOKEN_EXCHANGE", "DEVICE", "CIBA" ]
@@ -217,10 +213,6 @@
       "SignatureAlgorithm" : {
         "type" : "string",
         "enum" : [ "RSA_SHA1", "RSA_SHA256", "RSA_SHA256_MGF1", "RSA_SHA512", "RSA_SHA512_MGF1", "DSA_SHA1" ]
-      },
-      "SortOrder" : {
-        "type" : "string",
-        "enum" : [ "asc", "desc" ]
       }
     },
     "securitySchemes" : {
@@ -278,7 +270,7 @@
             "type" : "string"
           }
         }, {
-          "description" : "Sort expression. Comma-separated fields with optional direction per field using | (e.g. displayName|desc,clientId). Default direction is asc.",
+          "description" : "Sort expression. Comma-separated fields with optional direction per field using | (e.g. displayName|desc,clientId). Default direction is asc. Allowed fields: clientId, displayName, description, protocol, enabled, appUrl.",
           "schema" : {
             "type" : "string",
             "default" : "clientId"

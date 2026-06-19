@@ -7,13 +7,10 @@ import java.util.stream.Stream;
 
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
 /**
  * Sortable fields for Client Admin API v2 list queries ({@code sort}).
  * API names map to scalar {@code CLIENT} table columns.
  */
-@Schema(enumeration = {"clientId", "displayName", "description", "protocol", "enabled", "appUrl"})
 public enum ClientField {
     CLIENT_ID("clientId", stringKey(BaseClientRepresentation::getClientId)),
     DISPLAY_NAME("displayName", stringKey(BaseClientRepresentation::getDisplayName)),
