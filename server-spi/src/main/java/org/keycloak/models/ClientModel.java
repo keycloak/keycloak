@@ -306,17 +306,11 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
         return null;
     }
 
-    default void setCreatedTimestamp(Long timestamp) {
-    }
-
     /**
      * Get timestamp of last client modification. May be null for clients that have not been modified
      * since this feature was introduced.
      */
     default Long getLastModifiedTimestamp() {
         return null;
-    }
-
-    default void setLastModifiedTimestamp(Long timestamp) {
     }
 }

@@ -82,6 +82,10 @@
             "maxItems" : 300,
             "description" : "Roles associated with this client. Validation: size must be between 0 and 300; each element must not be blank, size must be between 0 and 255"
           },
+          "protocol" : {
+            "type" : "string",
+            "description" : "Client protocol. Validation: on update/on patch: protocol cannot be changed for an existing client"
+          },
           "createdTimestamp" : {
             "type" : "integer",
             "format" : "int64",
@@ -93,10 +97,6 @@
             "format" : "int64",
             "description" : "Timestamp when the client was last updated",
             "readOnly" : true
-          },
-          "protocol" : {
-            "type" : "string",
-            "description" : "Client protocol. Validation: on update/on patch: protocol cannot be changed for an existing client"
           }
         },
         "required" : [ "clientId" ],

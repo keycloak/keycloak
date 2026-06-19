@@ -76,6 +76,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
@@ -258,7 +259,11 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         assertThat(created.getCreatedTimestamp() >= beforeCreate, is(true));
         assertThat(created.getCreatedTimestamp() <= afterCreate, is(true));
 
-        while (org.keycloak.common.util.Time.currentTimeMillis() <= created.getUpdatedTimestamp()) Thread.onSpinWait();
+        long deadline = Time.currentTimeMillis() + 1000;
+        while (Time.currentTimeMillis() <= created.getUpdatedTimestamp() && Time.currentTimeMillis() < deadline) {
+            Thread.onSpinWait();
+        }
+        assertThat(Time.currentTimeMillis(), greaterThan(created.getUpdatedTimestamp()));
 
         OIDCClientRepresentation patch = new OIDCClientRepresentation();
         patch.setDescription("Updated description");

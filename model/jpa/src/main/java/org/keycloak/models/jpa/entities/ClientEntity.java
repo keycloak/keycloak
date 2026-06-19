@@ -183,23 +183,19 @@ public class ClientEntity {
         return createdTimestamp;
     }
 
-    public void setCreatedTimestamp(Long createdTimestamp) {
-        this.createdTimestamp = createdTimestamp;
-    }
-
     public Long getLastModifiedTimestamp() {
         return lastModifiedTimestamp;
-    }
-
-    public void setLastModifiedTimestamp(Long lastModifiedTimestamp) {
-        this.lastModifiedTimestamp = lastModifiedTimestamp;
     }
 
     @PrePersist
     public void updateTimestampsOnCreate() {
         long now = Time.currentTimeMillis();
-        createdTimestamp = now;
-        lastModifiedTimestamp = now;
+        if (createdTimestamp == null) {
+            createdTimestamp = now;
+        }
+        if (lastModifiedTimestamp == null) {
+            lastModifiedTimestamp = createdTimestamp;
+        }
     }
 
     @PreUpdate
