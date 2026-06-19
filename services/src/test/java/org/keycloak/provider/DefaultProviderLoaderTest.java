@@ -21,24 +21,32 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
 /**
- * Verifies the dual-mode discovery in {@link DefaultProviderLoader}: factories listed in the
- * build-time {@link GeneratedProviderRegistry} resource are combined with
+ * Verifies the dual-mode discovery in {@link DefaultProviderLoader}: factories installed
+ * into the build-time {@link GeneratedProviderRegistry} are combined with
  * {@link java.util.ServiceLoader}-discovered factories, with deduplication by factory class.
  *
- * Companion test resources:
- * <ul>
- *   <li>{@code src/test/resources/META-INF/keycloak/keycloak-providers.list}</li>
- *   <li>{@code src/test/resources/META-INF/services/org.keycloak.provider.DefaultProviderLoaderTest$TestProviderFactory}</li>
- * </ul>
+ * The registry is populated in {@link #installRegistry()} as the Quarkus deployment
+ * processor would at build time. ServiceLoader picks up factories from
+ * {@code src/test/resources/META-INF/services/org.keycloak.provider.DefaultProviderLoaderTest$TestProviderFactory}.
  */
 public class DefaultProviderLoaderTest {
+
+    @BeforeClass
+    public static void installRegistry() {
+        GeneratedProviderRegistry.install(Set.of(
+                BothFactory.class,
+                RegistryOnlyFactory.class,
+                UnrelatedFactory.class));
+    }
 
     @Test
     public void loadCombinesRegistryAndServiceLoaderWithDedup() {
