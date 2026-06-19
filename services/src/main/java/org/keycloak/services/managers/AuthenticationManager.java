@@ -1011,7 +1011,7 @@ public class AuthenticationManager {
         String[] split = cookie.split("/");
         if (split.length >= 3) {
             String oldSessionId = split[2];
-            return !sessionId.equals(oldSessionId);
+            return sessionId.equals(oldSessionId);
         }
         return false;
     }
