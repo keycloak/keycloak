@@ -136,6 +136,7 @@ This approach uses a chroot, `+/mnt/rootfs+`, so that only the packages you spec
 
 WARNING: Some packages have a large tree of dependencies. By installing new RPMs you may unintentionally increase the container's attack surface. Check the list of installed packages carefully.
 
+[#custom-entrypoint-shell-scripts]
 === Custom ENTRYPOINT shell scripts
 
 If you use a custom entry point script, start {project_name} with `exec` so it can receive termination signals that are essential for a graceful shutdown.
@@ -157,6 +158,14 @@ exec /opt/keycloak/bin/kc.sh start "$@"
 Without `exec`, the shell script remains PID 1 in the container and blocks signals like `SIGTERM` from reaching {project_name}.
 This prevents a graceful shutdown and can lead to cache inconsistencies or data loss.
 ====
+
+To check if {project_name} shuts down gracefully, check the log file of the node shutting down for the following log entry.
+If it shows, the shutdown was graceful.
+If it is missing, it did not shut down gracefully, possibly because it did not receive the signal from the container runtime.
+
+----
+INFO  [io.quarkus] (Shutdown thread) Keycloak stopped in ...s
+----
 
 === Building the container image
 To build the actual container image, run the following command from the directory containing your Containerfile:
