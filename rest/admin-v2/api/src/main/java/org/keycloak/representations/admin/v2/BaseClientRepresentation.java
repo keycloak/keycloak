@@ -32,12 +32,12 @@ import org.hibernate.validator.constraints.URL;
     @JsonSubTypes.Type(value = SAMLClientRepresentation.class, name = SAMLClientRepresentation.PROTOCOL)
 })
 @ServerManagedFieldUnmodified(
-        field = "uuid",
+        affectedFieldNames = {"uuid"},
         message = "UUID is server-managed and must not be user-specified",
         groups = {PutClient.class, PatchClient.class},
         rejectExistingValueOnCreate = true)
 @ServerManagedFieldUnmodified(
-        field = "protocol",
+        affectedFieldNames = {"protocol"},
         message = "protocol cannot be changed for an existing client",
         groups = {PutClient.class, PatchClient.class})
 @ValidRedirectUris

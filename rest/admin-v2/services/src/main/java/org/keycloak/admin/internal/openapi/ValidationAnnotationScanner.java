@@ -372,17 +372,11 @@ public class ValidationAnnotationScanner {
 
     private String[] resolveAffectedFieldNames(AnnotationInstance annotation) {
         AnnotationValue affectedField = annotation.value("affectedFieldNames");
-        String[] affectedFields = affectedField != null
-                ? affectedField.asStringArray()
-                : getDefault(annotation.name(), "affectedFieldNames").asStringArray();
-        if (affectedFields != null && affectedFields.length > 0) {
-            return affectedFields;
+        if (affectedField != null) {
+            return affectedField.asStringArray();
         }
-        AnnotationValue field = annotation.value("field");
-        if (field != null) {
-            return new String[] { field.asString() };
-        }
-        return affectedFields;
+        AnnotationValue defaultValue = getDefault(annotation.name(), "affectedFieldNames");
+        return defaultValue != null ? defaultValue.asStringArray() : null;
     }
 
     /**
