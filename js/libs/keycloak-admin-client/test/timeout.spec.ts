@@ -11,7 +11,9 @@ describe("Timeout", () => {
       res.writeHead(200, { "Content-Type": "text/plain" });
       setTimeout(() => res.end("Hello, world!\n"), 1500);
     });
-    server.listen(8888, "localhost");
+    await new Promise<void>((resolve) => {
+      server.listen(8888, "127.0.0.1", resolve);
+    });
   });
 
   after(async () => {
@@ -20,7 +22,7 @@ describe("Timeout", () => {
 
   void it("create without timeout", async () => {
     const client = new KeycloakAdminClient({
-      baseUrl: "http://localhost:8888",
+      baseUrl: "http://127.0.0.1:8888",
     });
 
     try {
@@ -35,7 +37,7 @@ describe("Timeout", () => {
 
   void it("create with timeout", async () => {
     const client = new KeycloakAdminClient({
-      baseUrl: "http://localhost:8888",
+      baseUrl: "http://127.0.0.1:8888",
       timeout: 1000,
     });
 
