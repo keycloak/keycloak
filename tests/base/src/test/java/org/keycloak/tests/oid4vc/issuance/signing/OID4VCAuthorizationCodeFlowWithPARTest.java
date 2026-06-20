@@ -11,6 +11,9 @@ import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.page.RegisterPage;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCProofTestUtils;
 import org.keycloak.tests.oid4vc.issuance.OID4VCAuthorizationCodeFlowTestBase;
@@ -57,6 +60,12 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCAuthorizationC
     protected String getFirstNameProtocolMapperName() {
         return "givenName";
     }
+
+    @InjectPage
+    RegisterPage registerPage;
+
+    @InjectPage
+    LoginPage loginPage;
 
     @Override
     protected void verifyCredentialStructure(Object credentialObj) {
@@ -195,6 +204,56 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCAuthorizationC
         // Should fail because authorization_details from PAR request cannot be processed
         String errorDescription = authResponse.getErrorDescription();
         assertTrue(errorDescription != null && errorDescription.contains("Invalid authorization_details"), "Error message should indicate authorization_details processing failure");
+    }
+
+    @Test
+    public void testAuthorizationCodeFlowWithPARPromptCreateOpensTheRegistrationPage() throws Exception {
+        testRealm.updateWithCleanup(r -> r.registrationAllowed(true));
+        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
+        OIDCConfigurationRepresentation openidConfig = wallet.getAuthorizationServerMetadata(ctx);
+
+        // Step 1: Create PAR request with authorization_details
+        String credentialConfigurationId = ctx.getCredentialConfigurationId();
+
+        // Create authorization details with claims
+        ClaimsDescription claim = new ClaimsDescription();
+        List<Object> claimPath = Arrays.asList("credentialSubject", getExpectedClaimPath());
+        claim.setPath(claimPath);
+        claim.setMandatory(true);
+
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credentialConfigurationId);
+        authDetail.setClaims(List.of(claim));
+        authDetail.setLocations(Collections.singletonList(issuer.getCredentialIssuer()));
+
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
+
+        // Create PAR request
+        ParResponse parResponse = oauth.pushedAuthorizationRequest()
+                .endpoint(openidConfig.getPushedAuthorizationRequestEndpoint())
+                .client(client.getClientId(), client.getSecret())
+                .scopeParam(ctx.getScope())
+                .authorizationDetails(authDetails)
+                .state("test-state")
+                .nonce("test-nonce")
+                .prompt("create")
+                .send();
+        assertEquals(HttpStatus.SC_CREATED, parResponse.getStatusCode());
+        String requestUri = parResponse.getRequestUri();
+        assertNotNull(requestUri, "Request URI should not be null");
+
+        // Step 2: Perform authorization with PAR
+        oauth.client(client.getClientId(), client.getSecret());
+        oauth.scope(ctx.getScope());
+        oauth.loginForm().requestUri(requestUri).open();
+
+        registerPage.assertCurrent();
+        registerPage.register("Vilmos", "Szabó-Nagy", "vilmos@email", "vnagy", "AppleTree123");
+        testRealm.cleanup().add(r -> r.users().delete(r.users().search("vnagy").stream().findFirst().get().getId()));
+
+        AuthorizationEndpointResponse authResponse = oauth.parseLoginResponse();
+        assertTrue(authResponse.isSuccess());
     }
 
     @Test
