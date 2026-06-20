@@ -1,7 +1,7 @@
 <#import "/templates/guide.adoc" as tmpl>
 
 <@tmpl.guide
-title="Filtering and Projection"
+title="Admin API v2: Filtering and Projection"
 summary="Filter and project client resources using the Admin API v2 query syntax.">
 
 <#include "/templates/experimental-feature.adoc">
