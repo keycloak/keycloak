@@ -7,8 +7,9 @@ summary="Manage Keycloak OIDC and SAML clients declaratively using the operator.
 
 == Managing OIDC and SAML clients with the Operator
 
-<#-- TODO: per docs/features.md, experimental features should link to a GitHub Discussion in the Feedback category. Coordinate with PR #48001 (Admin API v2 docs) to create a shared Discussion. -->
 <#include "/templates/experimental-feature.adoc">
+
+To provide feedback, use the https://github.com/keycloak/keycloak/discussions/50186[Client Admin API v2] GitHub Discussion.
 
 The {project_name} Operator can manage OIDC and SAML clients declaratively through Custom Resources.
 The operator creates, updates, and deletes clients on the {project_name} server to match the desired state defined in the CR.
