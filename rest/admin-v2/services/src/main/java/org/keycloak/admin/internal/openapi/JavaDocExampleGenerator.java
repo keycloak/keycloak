@@ -12,6 +12,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.keycloak.models.mapper.BaseClientModelMapper;
+import org.keycloak.models.mapper.OIDCClientModelMapper;
+import org.keycloak.models.mapper.SAMLClientModelMapper;
+import org.keycloak.representations.admin.v2.BaseClientRepresentation;
+import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
+import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -70,7 +77,9 @@ final class JavaDocExampleGenerator {
             Map<String, String> discriminatorMapping) {}
     record JavaExample(String interfaceName, String example) {}
 
-    record DocModel(Map<String, DocCategory> categories, Map<String, DocSchema> schemas) {}
+    record DocModel(Map<String, DocCategory> categories, Map<String, DocSchema> schemas,
+                    Map<String, List<QueryableField>> queryableFields) {}
+    record QueryableField(String name, String type, String description) {}
     record DocSchema(String parent, List<String> required, List<DocProperty> properties,
             List<String> enumValues) {}
     record DocProperty(String name, String type, String typeRef, String description, Boolean readOnly) {}
@@ -96,7 +105,8 @@ final class JavaDocExampleGenerator {
         Map<String, JavaExample> javaExamples = collectJavaExamples(checkBody);
         Map<String, DocCategory> categories = buildDocModel(openAPI, javaExamples);
         Map<String, DocSchema> schemas = collectSchemas(openAPI, categories);
-        DocModel doc = new DocModel(categories, schemas);
+        Map<String, List<QueryableField>> queryableFields = collectQueryableFields(schemas);
+        DocModel doc = new DocModel(categories, schemas, queryableFields);
         Path targetDir = Path.of(classesDir).getParent();
 
         try {
@@ -336,6 +346,140 @@ final class JavaDocExampleGenerator {
                 collectReferencedSchemas(allSchemas, refToSimpleName(prop.getItems().getRef()), referenced);
             }
         }
+    }
+
+    private static final List<ProtocolEntry> PROTOCOLS = List.of(
+            new ProtocolEntry("openid-connect",
+                    new OIDCClientModelMapper(), OIDCClientRepresentation.class),
+            new ProtocolEntry("saml",
+                    new SAMLClientModelMapper(), SAMLClientRepresentation.class)
+    );
+
+    record ProtocolEntry(String name, BaseClientModelMapper<?> mapper,
+                         Class<? extends BaseClientRepresentation> schemaClass) {}
+
+    private static Map<String, List<QueryableField>> collectQueryableFields(Map<String, DocSchema> schemas) {
+        Set<String> commonFieldNames = null;
+        Map<String, Set<String>> protocolFieldNames = new LinkedHashMap<>();
+
+        for (ProtocolEntry protocol : PROTOCOLS) {
+            Set<String> fieldNames = new LinkedHashSet<>(protocol.mapper().getFieldNames());
+            if (commonFieldNames == null) {
+                commonFieldNames = new LinkedHashSet<>(fieldNames);
+            } else {
+                commonFieldNames.retainAll(fieldNames);
+            }
+            protocolFieldNames.put(protocol.name(), fieldNames);
+        }
+
+        String baseSchemaName = BaseClientRepresentation.class.getSimpleName();
+        Map<String, List<QueryableField>> result = new LinkedHashMap<>();
+        result.put("common", resolveFields(commonFieldNames, schemas, baseSchemaName));
+
+        for (ProtocolEntry protocol : PROTOCOLS) {
+            Set<String> onlyFieldNames = protocolFieldNames.get(protocol.name());
+            onlyFieldNames.removeAll(commonFieldNames);
+            String schemaName = protocol.schemaClass().getSimpleName();
+            expandNestedFields(onlyFieldNames, schemas, schemaName);
+            result.put(protocol.name(), resolveFields(onlyFieldNames, schemas, schemaName));
+        }
+        return result;
+    }
+
+    private static void expandNestedFields(Set<String> fieldNames, Map<String, DocSchema> schemas, String schemaName) {
+        DocSchema schema = schemas.get(schemaName);
+        if (schema == null) {
+            return;
+        }
+        List<String> toRemove = new ArrayList<>();
+        List<String> toAdd = new ArrayList<>();
+        for (DocProperty prop : schema.properties()) {
+            if (fieldNames.contains(prop.name()) && prop.typeRef() != null && schemas.containsKey(prop.typeRef())) {
+                DocSchema nestedSchema = schemas.get(prop.typeRef());
+                if (!nestedSchema.properties().isEmpty()) {
+                    toRemove.add(prop.name());
+                    DocProperty first = nestedSchema.properties().get(0);
+                    toAdd.add(prop.name() + "." + first.name());
+                }
+            }
+        }
+        fieldNames.removeAll(toRemove);
+        fieldNames.addAll(toAdd);
+    }
+
+    private static List<QueryableField> resolveFields(Set<String> fieldNames, Map<String, DocSchema> schemas, String schemaName) {
+        List<QueryableField> fields = new ArrayList<>();
+        DocSchema schema = schemas.get(schemaName);
+        Map<String, DocProperty> propsByName = schemaPropertyMap(schema);
+
+        for (String name : fieldNames) {
+            int dot = name.indexOf('.');
+            if (dot > 0) {
+                String parentName = name.substring(0, dot);
+                String childName = name.substring(dot + 1);
+                DocProperty parentProp = propsByName.get(parentName);
+                if (parentProp != null && parentProp.typeRef() != null) {
+                    DocSchema nestedSchema = schemas.get(parentProp.typeRef());
+                    Map<String, DocProperty> nestedProps = schemaPropertyMap(nestedSchema);
+                    DocProperty childProp = nestedProps.get(childName);
+                    if (childProp != null) {
+                        fields.add(new QueryableField(name, toQueryableType(childProp.type()), stripValidationSuffix(childProp.description())));
+                        continue;
+                    }
+                }
+                fields.add(new QueryableField(name, null, null));
+            } else {
+                DocProperty prop = propsByName.get(name);
+                if (prop != null) {
+                    fields.add(new QueryableField(name, toQueryableType(prop.type()), stripValidationSuffix(prop.description())));
+                } else {
+                    fields.add(new QueryableField(name, null, null));
+                }
+            }
+        }
+        return fields;
+    }
+
+    private static Map<String, DocProperty> schemaPropertyMap(DocSchema schema) {
+        if (schema == null) {
+            return Map.of();
+        }
+        Map<String, DocProperty> propsByName = new LinkedHashMap<>();
+        for (DocProperty prop : schema.properties()) {
+            propsByName.put(prop.name(), prop);
+        }
+        return propsByName;
+    }
+
+    private static String toQueryableType(String schemaType) {
+        if (schemaType == null) {
+            return null;
+        }
+        return switch (schemaType) {
+            case "string" -> "String";
+            case "boolean" -> "Boolean";
+            case "integer" -> "Integer";
+            default -> {
+                if (schemaType.startsWith("array<")) {
+                    yield "Set<String>";
+                }
+                yield "String";
+            }
+        };
+    }
+
+    private static String stripValidationSuffix(String description) {
+        if (description == null) {
+            return null;
+        }
+        int idx = description.indexOf(". Validation:");
+        if (idx >= 0) {
+            return description.substring(0, idx);
+        }
+        if (description.startsWith("Validation:")) {
+            return null;
+        }
+        return description;
     }
 
     record PropertyType(String display, String ref) {}

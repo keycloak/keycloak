@@ -9,7 +9,7 @@
           "method" : {
             "type" : "string",
             "pattern" : "\\S",
-            "description" : "Which authentication method is used for this client. Validation: must not be blank; valid client authenticator type is required"
+            "description" : "Client authentication method (e.g. `client-secret`, `client-secret-jwt`). Validation: must not be blank; valid client authenticator type is required"
           },
           "secret" : {
             "type" : "string",
