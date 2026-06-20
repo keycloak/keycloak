@@ -248,11 +248,24 @@ class KcAdmV2RequestExecutor extends AbstractTargetAuthOptionsCmd implements Run
                 continue;
             }
             if (opt.isArray() && value instanceof String[] array) {
-                for (String element : array) {
+                if (opt.isExplode()) {
+                    for (String element : array) {
+                        if (!queryString.isEmpty()) {
+                            queryString.append("&");
+                        }
+                        queryString.append(HttpUtil.urlencode(opt.getFieldName())).append("=").append(HttpUtil.urlencode(element));
+                    }
+                } else if (array.length > 0) {
                     if (!queryString.isEmpty()) {
                         queryString.append("&");
                     }
-                    queryString.append(HttpUtil.urlencode(opt.getFieldName())).append("=").append(HttpUtil.urlencode(element));
+                    queryString.append(HttpUtil.urlencode(opt.getFieldName())).append("=");
+                    for (int i = 0; i < array.length; i++) {
+                        if (i > 0) {
+                            queryString.append(",");
+                        }
+                        queryString.append(HttpUtil.urlencode(array[i]));
+                    }
                 }
             } else {
                 if (!queryString.isEmpty()) {

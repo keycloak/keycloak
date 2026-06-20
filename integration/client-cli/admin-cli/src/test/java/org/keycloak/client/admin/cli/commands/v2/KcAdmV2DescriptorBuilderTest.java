@@ -116,9 +116,11 @@ public class KcAdmV2DescriptorBuilderTest {
 
         assertTrue("should have fields but found: " + byName.keySet(), byName.containsKey("fields"));
         assertTrue("fields should be array but found: " + byName.get("fields").isArray(), byName.get("fields").isArray());
+        assertFalse("fields should not explode (comma-separated)", byName.get("fields").isExplode());
 
         assertTrue("should have q but found: " + byName.keySet(), byName.containsKey("q"));
         assertFalse("q should not be array but found: " + byName.get("q").isArray(), byName.get("q").isArray());
+        assertTrue("q should explode by default", byName.get("q").isExplode());
 
         assertTrue("should have limit but found: " + byName.keySet(), byName.containsKey("limit"));
         assertEquals("limit type", "integer", byName.get("limit").getType());

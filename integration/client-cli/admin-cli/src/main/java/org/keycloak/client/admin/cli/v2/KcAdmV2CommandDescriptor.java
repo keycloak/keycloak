@@ -218,6 +218,7 @@ public class KcAdmV2CommandDescriptor {
         private List<String> enumValues;
         private String parentFieldName;
         private boolean queryParam;
+        private boolean explode = true;
 
         public String getName() {
             return name;
@@ -281,6 +282,14 @@ public class KcAdmV2CommandDescriptor {
 
         public void setQueryParam(boolean queryParam) {
             this.queryParam = queryParam;
+        }
+
+        public boolean isExplode() {
+            return explode;
+        }
+
+        public void setExplode(boolean explode) {
+            this.explode = explode;
         }
     }
 }
