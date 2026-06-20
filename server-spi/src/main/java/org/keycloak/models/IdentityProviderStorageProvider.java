@@ -261,8 +261,23 @@ public interface IdentityProviderStorageProvider extends Provider {
             return value;
         }
 
-        public BiPredicate<IdentityProviderModel, Context> getFilter() {
+        BiPredicate<IdentityProviderModel, Context> getLoginFilter() {
             return filter;
+        }
+
+        /**
+         * Returns a {@link Predicate} that evaluates whether a given {@link IdentityProviderModel}
+         * satisfies the associated filter condition based on a standard context.
+         * <p>
+         * This method is deprecated and may be removed in future versions. Consider
+         * using {@link #getLoginFilter()) that returns a BiPredicate<IdentityProviderModel, Context> instead.
+         *
+         * @return a {@link Predicate} applied to an {@link IdentityProviderModel} using the standard context.
+         * @deprecated Use {@link #getLoginPredicate(Context)} instead for more explicit context handling.
+         */
+        @Deprecated
+        public Predicate<IdentityProviderModel> getFilter() {
+            return model -> filter.test(model, Context.standard());
         }
 
         public static Map<String, String> getLoginSearchOptions() {
@@ -290,7 +305,8 @@ public interface IdentityProviderStorageProvider extends Provider {
          * @return a {@link Predicate} applying all login filters with the given context.
          */
         public static Predicate<IdentityProviderModel> getLoginPredicate(Context ctx) {
-            return m -> Objects.nonNull(m) && Stream.of(values()).allMatch(f -> f.getFilter().test(m, ctx));
+            Objects.requireNonNull(ctx, "Context must not be null");
+            return m -> Objects.nonNull(m) && Stream.of(values()).allMatch(f -> f.getLoginFilter().test(m, ctx));
         }
 
         /**
