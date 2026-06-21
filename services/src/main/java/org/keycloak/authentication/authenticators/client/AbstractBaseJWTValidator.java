@@ -112,7 +112,7 @@ public abstract class AbstractBaseJWTValidator {
         // During rolling upgrades, nodes running older versions stored JTIs under the bare tokenId
         // (without namespace prefix). Check the legacy key as well so that tokens consumed by
         // old-version nodes cannot be replayed against upgraded nodes.
-        if (singleUseCache.get(tokenId) != null) {
+        if (singleUseCache.contains(tokenId)) {
             logger.warnf("Token '%s' already used (legacy cache key) for issuedFor '%s'.", tokenId, token.getIssuedFor());
             return failure("Token reuse detected");
         }
