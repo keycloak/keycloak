@@ -23,6 +23,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ScopePermissionResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
@@ -31,6 +32,7 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.junit.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -166,6 +168,12 @@ public class ScopePermissionManagementTest extends AbstractPolicyManagementTest 
 
         try (Response response = permissions.create(representation)) {
             assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+
+            // the validation error must be surfaced to the client instead of an opaque unknown_error
+            OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
+            assertEquals("invalid_request", error.getError());
+            assertTrue(error.getErrorDescription() != null && error.getErrorDescription().contains("delete"),
+                    "Expected the offending scope name in the error description");
         }
     }
 
