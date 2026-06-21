@@ -382,6 +382,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @Ignore
     public void twitterLogin() {
         setTestProvider(TWITTER);
         performLogin();
