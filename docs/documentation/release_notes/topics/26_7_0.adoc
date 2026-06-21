@@ -13,6 +13,13 @@ In a future release, V1 will be removed and V2 will become the default. Users ar
 
 For more information, see the link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] chapter in the {developerguide_name}.
 
+== Deprecated for removal the Twitter Identity Broker
+
+The Twitter Identity Broker is now deprecated for removal and is not enabled by default. It relies on the unmaintained `twitter4j` library and Twitter's legacy OAuth 1.0a endpoints.
+
+As Twitter (X) now supports OAuth 2.0, it is recommended to use the generic *OAuth v2* identity provider configured against Twitter's OAuth 2.0 endpoints instead.
+For the migration steps and details, see link:{upgradingguide_link}[{upgradingguide_name}].
+
 == OID4VCI Improvements
 
 https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OID4VCI] still remains experimental feature. However there is big progress on this feature with lots of contributions from the {project_name} community members as well
