@@ -109,6 +109,13 @@ public abstract class AbstractBaseJWTValidator {
         final String namespacePrefix = getJtiCacheKeyPrefix();
         final String cacheKey = namespacePrefix + ":" + tokenId;
         SingleUseObjectProvider singleUseCache = session.singleUseObjects();
+        // During rolling upgrades, nodes running older versions stored JTIs under the bare tokenId
+        // (without namespace prefix). Check the legacy key as well so that tokens consumed by
+        // old-version nodes cannot be replayed against upgraded nodes.
+        if (singleUseCache.get(tokenId) != null) {
+            logger.warnf("Token '%s' already used (legacy cache key) for issuedFor '%s'.", tokenId, token.getIssuedFor());
+            return failure("Token reuse detected");
+        }
         if (singleUseCache.putIfAbsent(cacheKey, lifespanInSecs)) {
             logger.tracef("Added token '%s' to single-use cache with key '%s'. Lifespan: %d seconds, issuedFor: %s", tokenId, cacheKey, lifespanInSecs, token.getIssuedFor());
         } else {
