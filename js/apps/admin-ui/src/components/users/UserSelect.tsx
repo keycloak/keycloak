@@ -57,14 +57,14 @@ export const UserSelect = ({
 
   const [open, toggleOpen, setOpen] = useToggle();
   const [selectedUsers, setSelectedUsers] = useState<UserRepresentation[]>([]);
-  const [searchedUsers, setSearchedUsers] = useState<UserRepresentation[]>([]);
+  const [pageUsers, setPageUsers] = useState<UserRepresentation[]>([]);
+  const [exactMatch, setExactMatch] = useState<UserRepresentation>();
   const [first, setFirst] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [search, setSearch] = useState("");
   const textInputRef = useRef<HTMLInputElement>();
-  const exactMatchId = useRef<string>();
 
   const debounceFn = useCallback(
     debounce((value: string) => {
@@ -96,43 +96,31 @@ export const UserSelect = ({
   );
 
   useFetch(
-    async () => {
-      const [page, exactMatches] = await Promise.all([
-        adminClient.users.find({
-          username: search,
-          first,
-          max: USER_SEARCH_LIMIT + 1,
-        }),
-        first === 0 && search
-          ? adminClient.users.find({ username: search, exact: true, max: 1 })
-          : Promise.resolve<UserRepresentation[]>([]),
-      ]);
-      return { page, exactMatch: exactMatches.at(0) };
-    },
-    ({ page, exactMatch }) => {
+    () =>
+      adminClient.users.find({
+        username: search,
+        first,
+        max: USER_SEARCH_LIMIT + 1,
+      }),
+    (page) => {
       const more = page.length > USER_SEARCH_LIMIT;
-      const pageUsers = more ? page.slice(0, USER_SEARCH_LIMIT) : page;
-      if (first === 0) {
-        if (
-          exactMatch &&
-          !pageUsers.some((user) => user.id === exactMatch.id)
-        ) {
-          exactMatchId.current = exactMatch.id;
-          setSearchedUsers([exactMatch, ...pageUsers]);
-        } else {
-          exactMatchId.current = undefined;
-          setSearchedUsers(pageUsers);
-        }
-      } else {
-        setSearchedUsers((current) => [
-          ...current,
-          ...pageUsers.filter((user) => user.id !== exactMatchId.current),
-        ]);
-      }
+      const nextUsers = more ? page.slice(0, USER_SEARCH_LIMIT) : page;
+      setPageUsers((current) =>
+        first === 0 ? nextUsers : [...current, ...nextUsers],
+      );
       setHasMore(more);
       setLoadingMore(false);
     },
     [search, first],
+  );
+
+  useFetch(
+    () =>
+      search
+        ? adminClient.users.find({ username: search, exact: true, max: 1 })
+        : Promise.resolve<UserRepresentation[]>([]),
+    (matches) => setExactMatch(matches.at(0)),
+    [search],
   );
 
   useEffect(() => {
@@ -141,6 +129,16 @@ export const UserSelect = ({
       setInputValue("");
     }
   }, [values]);
+
+  const searchedUsers = useMemo(() => {
+    if (!exactMatch) {
+      return pageUsers;
+    }
+    return [
+      exactMatch,
+      ...pageUsers.filter((user) => user.id !== exactMatch.id),
+    ];
+  }, [exactMatch, pageUsers]);
 
   const users = useMemo(
     () => [...selectedUsers, ...searchedUsers],
