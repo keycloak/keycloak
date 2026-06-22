@@ -80,6 +80,7 @@ import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.realm.RoleConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
@@ -1338,5 +1339,50 @@ public class ClientTest {
         rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, "950");
         createOrUpdateClientExpectingValidationErrors(rep, false,
                 "Client session max lifespan cannot exceed realm SSO session max lifespan and RememberMe Max span.");
+    }
+
+    @Test
+    @DatabaseTest
+    public void createClientWithEmptyRedirectUrisAndWebOrigins() {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setClientId("empty-uris-client");
+        rep.setEnabled(true);
+        rep.setRedirectUris(Arrays.asList("", "https://example.com", "  "));
+        rep.setWebOrigins(Arrays.asList("", "https://example.com", "  "));
+
+        Response response = managedRealm.admin().clients().create(rep);
+        assertEquals(201, response.getStatus());
+        String id = ApiUtil.getCreatedId(response);
+        managedRealm.cleanup().add(r -> r.clients().get(id).remove());
+        adminEvents.poll();
+
+        ClientRepresentation stored = managedRealm.admin().clients().get(id).toRepresentation();
+        assertEquals(Set.of("https://example.com"), new HashSet<>(stored.getRedirectUris()));
+        assertEquals(Set.of("https://example.com"), new HashSet<>(stored.getWebOrigins()));
+    }
+
+    @Test
+    @DatabaseTest
+    public void updateClientWithEmptyRedirectUrisAndWebOrigins() {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setClientId("update-empty-uris-client");
+        rep.setEnabled(true);
+        rep.setRedirectUris(Arrays.asList("https://example.com"));
+        rep.setWebOrigins(Arrays.asList("https://example.com"));
+
+        Response response = managedRealm.admin().clients().create(rep);
+        assertEquals(201, response.getStatus());
+        String id = ApiUtil.getCreatedId(response);
+        managedRealm.cleanup().add(r -> r.clients().get(id).remove());
+        adminEvents.poll();
+
+        rep.setRedirectUris(Arrays.asList("", "https://updated.com", "  "));
+        rep.setWebOrigins(Arrays.asList("", "https://updated.com", "  "));
+        managedRealm.admin().clients().get(id).update(rep);
+        adminEvents.poll();
+
+        ClientRepresentation stored = managedRealm.admin().clients().get(id).toRepresentation();
+        assertEquals(Set.of("https://updated.com"), new HashSet<>(stored.getRedirectUris()));
+        assertEquals(Set.of("https://updated.com"), new HashSet<>(stored.getWebOrigins()));
     }
 }

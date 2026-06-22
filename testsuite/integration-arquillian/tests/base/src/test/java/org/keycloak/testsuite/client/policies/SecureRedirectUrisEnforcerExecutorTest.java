@@ -17,9 +17,12 @@
 package org.keycloak.testsuite.client.policies;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.client.registration.ClientRegistrationException;
@@ -101,10 +104,10 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         try {
             updateClientByAdmin(cId, (ClientRepresentation clientRep) -> {
                 clientRep.setAttributes(new HashMap<>());
-                clientRep.setRedirectUris(List.of("")); // nomally, vacant redirect uri is not allowed.
+                clientRep.setRedirectUris(List.of("")); // empty redirect uris are filtered out before persistence.
             });
             ClientRepresentation cRep = getClientByAdmin(cId);
-            assertEquals(new HashSet<>(List.of("")), new HashSet<>(cRep.getRedirectUris()));
+            assertEquals(Collections.emptySet(), new HashSet<>(cRep.getRedirectUris()));
         } catch (ClientPolicyException cpe) {
             fail();
         }
@@ -639,7 +642,10 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
                 clientRep.setRedirectUris(redirectUrisList);
             });
             ClientRepresentation cRep = getClientByAdmin(alphaCid);
-            assertEquals(new HashSet<>(redirectUrisList), new HashSet<>(cRep.getRedirectUris()));
+            Set<String> expectedUris = redirectUrisList.stream()
+                    .filter(s -> s != null && !s.isBlank())
+                    .collect(Collectors.toSet());
+            assertEquals(expectedUris, new HashSet<>(cRep.getRedirectUris()));
         } catch (ClientPolicyException cpe) {
             fail();
         }
