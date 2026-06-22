@@ -26,7 +26,6 @@ import java.util.Set;
 
 import jakarta.ws.rs.ForbiddenException;
 
-import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -44,14 +43,12 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Permission;
 
-import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 class RolePermissions implements RolePermissionEvaluator, RolePermissionManagement {
-    private static final Logger logger = Logger.getLogger(RolePermissions.class);
     protected final KeycloakSession session;
     protected final RealmModel realm;
     protected final AuthorizationProvider authz;
@@ -151,167 +148,6 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         return root.resourceServer(client);
     }
 
-    protected boolean checkAdminRoles(RoleModel role) {
-        if (AdminRoles.ALL_ROLES.contains(role.getName())) {
-            if (root.admin().hasRole(role)) return true;
-
-            ClientModel adminClient = root.getRealmManagementClient();
-            // is this an admin role in 'realm-management' client of the realm we are managing?
-            if (adminClient.equals(role.getContainer())) {
-                // if this is realm admin role, then check to see if admin has similar permissions
-                // we do this so that the authz service is invoked
-                if (role.getName().equals(AdminRoles.MANAGE_CLIENTS)
-                        || role.getName().equals(AdminRoles.CREATE_CLIENT)
-                        ) {
-                    if (!root.clients().canManage()) {
-                        return adminConflictMessage(role);
-                    } else {
-                        return true;
-                    }
-                } else if (role.getName().equals(AdminRoles.VIEW_CLIENTS)) {
-                    if (!root.clients().canView()) {
-                        return adminConflictMessage(role);
-                    } else {
-                        return true;
-                    }
-
-                } else if (role.getName().equals(AdminRoles.QUERY_REALMS)) {
-                    return true;
-                } else if (role.getName().equals(AdminRoles.QUERY_CLIENTS)) {
-                    return true;
-                } else if (role.getName().equals(AdminRoles.QUERY_USERS)) {
-                    return true;
-                } else if (role.getName().equals(AdminRoles.QUERY_GROUPS)) {
-                    return true;
-                } else if (role.getName().equals(AdminRoles.QUERY_ORGANIZATIONS)) {
-                    return true;
-                } else if (role.getName().equals(AdminRoles.MANAGE_AUTHORIZATION)) {
-                    ResourceServer resourceServer = getResourceServer(role);
-                    if (!root.realm().canManageAuthorization(resourceServer)) {
-                        return adminConflictMessage(role);
-                    } else {
-                        return true;
-                    }
-                } else if (role.getName().equals(AdminRoles.VIEW_AUTHORIZATION)) {
-                    ResourceServer resourceServer = getResourceServer(role);
-                    if (!root.realm().canViewAuthorization(resourceServer)) {
-                        return adminConflictMessage(role);
-                    } else {
-                        return true;
-                    }
-                } else if (role.getName().equals(AdminRoles.MANAGE_EVENTS)) {
-                    if (!root.realm().canManageEvents()) {
-                        return adminConflictMessage(role);
-                    } else {
-                        return true;
-                    }
-                } else if (role.getName().equals(AdminRoles.VIEW_EVENTS)) {
-                    if (!root.realm().canViewEvents()) {
-                        return adminConflictMessage(role);
-                    } else {
-                        return true;
-                    }
-                } else if (role.getName().equals(AdminRoles.MANAGE_USERS)) {
-                    if (!root.users().canManage()) {
-                        return adminConflictMessage(role);
-                    } else {
-                        return true;
-                    }
-                } else if (role.getName().equals(AdminRoles.VIEW_USERS)) {
-                    if (!root.users().canView()) {
-                        return adminConflictMessage(role);
-                    } else {
-                        return true;
-                    }
-                } else if (role.getName().equals(AdminRoles.MANAGE_IDENTITY_PROVIDERS)) {
-                    if (!root.realm().canManageIdentityProviders()) {
-                        return adminConflictMessage(role);
-                    } else {
-                        return true;
-                    }
-                } else if (role.getName().equals(AdminRoles.VIEW_IDENTITY_PROVIDERS)) {
-                    if (!root.realm().canViewIdentityProviders()) {
-                        return adminConflictMessage(role);
-                    } else {
-                        return true;
-                    }
-                } else if (role.getName().equals(AdminRoles.MANAGE_REALM)) {
-                    if (!root.realm().canManageRealm()) {
-                        return adminConflictMessage(role);
-                    } else {
-                        return true;
-                    }
-                } else if (role.getName().equals(AdminRoles.VIEW_REALM)) {
-                    if (!root.realm().canViewRealm()) {
-                        return adminConflictMessage(role);
-                    } else {
-                        return true;
-                    }
-                } else if (role.getName().equals(AdminRoles.MANAGE_ORGANIZATIONS)) {
-                    if (!root.orgs().canManage()) {
-                        return adminConflictMessage(role);
-                    } else {
-                        return true;
-                    }
-                } else if (role.getName().equals(AdminRoles.VIEW_ORGANIZATIONS)) {
-                    if (!root.orgs().canView()) {
-                        return adminConflictMessage(role);
-                    } else {
-                        return true;
-                    }
-                } else if (role.getName().equals(AdminRoles.IMPERSONATION)) {
-                    if (!root.users().canImpersonate()) {
-                        return adminConflictMessage(role);
-                    } else {
-                        return true;
-                    }
-                } else if (role.getName().equals(AdminRoles.REALM_ADMIN)) {
-                    // check to see if we have masterRealm.admin role.  Otherwise abort
-                    if (root.adminsRealm() == null || !root.adminsRealm().getName().equals(Config.getAdminRealm())) {
-                        return adminConflictMessage(role);
-                    }
-
-                    RealmModel masterRealm = root.adminsRealm();
-                    RoleModel adminRole = masterRealm.getRole(AdminRoles.ADMIN);
-                    if (root.admin().hasRole(adminRole)) {
-                        return true;
-                    } else {
-                        return adminConflictMessage(role);
-                    }
-                 } else {
-                    return adminConflictMessage(role);
-                }
-
-            } else {
-                // now we need to check to see if this is a master admin role
-                if (role.getContainer() instanceof RealmModel) {
-                    RealmModel realm = (RealmModel)role.getContainer();
-                    // If realm role is master admin role then abort
-                    // if realm name is master realm, than we know this is a admin role in master realm.
-                    if (realm.getName().equals(Config.getAdminRealm())) {
-                        return adminConflictMessage(role);
-                    }
-                } else {
-                    ClientModel container = (ClientModel)role.getContainer();
-                    // abort if this is an role in master realm and role is an admin role of any realm
-                    if (container.getRealm().getName().equals(Config.getAdminRealm())
-                            && container.getClientId().endsWith("-realm")) {
-                        return adminConflictMessage(role);
-                    }
-                }
-                return true;
-            }
-
-        }
-        return true;
-
-    }
-
-    private boolean adminConflictMessage(RoleModel role) {
-        logger.debugf("Trying to assign admin privileges of role: %s but admin doesn't have same privilege", role.getName());
-        return false;
-    }
-
     /**
      * Is admin allowed to map this role?
      *
@@ -320,7 +156,10 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
      */
     @Override
     public boolean canMapRole(RoleModel role) {
-        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) return checkAdminRoles(role);
+        if (AdminRoles.containsAdminRole(role)) {
+            return root.isRealmAdmin();
+        }
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) return true;
         if (!root.isAdminSameRealm()) {
             return false;
         }
@@ -342,11 +181,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
         Resource roleResource = resource(role);
         Scope mapRoleScope = mapRoleScope(resourceServer);
-        if (root.evaluatePermission(roleResource, resourceServer, mapRoleScope)) {
-            return checkAdminRoles(role);
-        } else {
-            return false;
-        }
+        return root.evaluatePermission(roleResource, resourceServer, mapRoleScope);
     }
 
     @Override
@@ -410,7 +245,10 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     @Override
     public boolean canMapComposite(RoleModel role) {
-        if (canManageDefault(role)) return checkAdminRoles(role);
+        if (AdminRoles.containsAdminRole(role)) {
+            return root.isRealmAdmin();
+        }
+        if (canManageDefault(role)) return true;
 
         if (!root.isAdminSameRealm()) {
             return false;
@@ -432,11 +270,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
         Resource roleResource = resource(role);
         Scope scope = mapCompositeScope(resourceServer);
-        if (root.evaluatePermission(roleResource, resourceServer, scope)) {
-            return checkAdminRoles(role);
-        } else {
-            return false;
-        }
+        return root.evaluatePermission(roleResource, resourceServer, scope);
     }
 
     @Override
@@ -675,14 +509,6 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         return "role.resource." + role.getId();
     }
 
-    private ResourceServer getResourceServer(RoleModel role) {
-        ResourceServer resourceServer = null;
-        if (role.isClientRole()) {
-            RoleContainerModel container = role.getContainer();
-            resourceServer = session.getProvider(AuthorizationProvider.class).getStoreFactory().getResourceServerStore().findById(container.getId());
-        }
-        return resourceServer;
-    }
     private boolean isRealmAdminRole(RoleModel role) {
         return role.getContainer() instanceof RealmModel && List.of(AdminRoles.ADMIN, AdminRoles.CREATE_REALM).contains(role.getName());
     }

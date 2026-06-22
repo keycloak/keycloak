@@ -47,17 +47,14 @@ class RolePermissionsV2 extends RolePermissions {
 
     @Override
     public boolean canMapRole(RoleModel role) {
+        if (AdminRoles.containsAdminRole(role)) {
+            return root.isRealmAdmin();
+        }
         if (isRealmAdminRole(role)) {
-            if (realm.isAdminPermissionsEnabled()) {
-                // only server or realm admins can map roles if FGAP is enabled
-                return root.isRealmAdmin();
-            }
-            // otherwise, check if the user is granted with manage-users and is granted with the role being granted
-            return root.hasOneAdminRole(AdminRoles.MANAGE_USERS) && checkAdminRoles(role);
+            return root.isRealmAdmin();
         }
 
         if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
-            // user has manage-users, so they can map any non-admin role
             return true;
         }
 
@@ -72,18 +69,15 @@ class RolePermissionsV2 extends RolePermissions {
 
     @Override
     public boolean canMapComposite(RoleModel role) {
+        if (AdminRoles.containsAdminRole(role)) {
+            return root.isRealmAdmin();
+        }
         if (isRealmAdminRole(role)) {
-            if (realm.isAdminPermissionsEnabled()) {
-                // only server or realm admins can map roles if FGAP is enabled
-                return root.isRealmAdmin();
-            }
-            // otherwise, check if the user is granted with manage-realm or manage-client roles and is granted with the role being granted
-            return canManageDefault(role) && checkAdminRoles(role);
+            return root.isRealmAdmin();
         }
 
         if (canManageDefault(role)) {
-            // user has manage-realm or manage-client roles, so they can map any non-admin composite role
-            return checkAdminRoles(role);
+            return true;
         }
 
         if (role.getContainer() instanceof ClientModel clientModel) {

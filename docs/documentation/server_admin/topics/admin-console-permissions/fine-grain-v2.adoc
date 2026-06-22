@@ -409,8 +409,7 @@ if a respective admin role is assigned to a realm administrator, permission eval
 | *manage-organizations*   | A realm administrator can *view* and *manage* all organizations in the realm.
 |===
 
-When this feature is enabled in a realm, only server and realm administrators with the corresponding admin roles can grant these roles
-to other realm administrators. Delegated realm administrators cannot assign administrative roles to other realm administrators.
+Only server and realm administrators can grant admin roles to other users, regardless of whether this feature is enabled. Delegated administrators with individual admin roles such as `manage-users` cannot assign any admin roles, even the ones they hold themselves. This restriction also applies to adding users to groups that have admin roles assigned.
 
 ==== Understanding some common use cases
 

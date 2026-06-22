@@ -442,7 +442,6 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         RoleModel masterAdminRole = masterRealm.getRole(AdminRoles.ADMIN);
 
         if (admin.hasRole(masterAdminRole)) {
-            // server admin
             return true;
         }
 
@@ -452,8 +451,17 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
             RoleModel realmAdminRole = realmManagementClient.getRole(AdminRoles.REALM_ADMIN);
 
             if (realmAdminRole != null && admin.hasRole(realmAdminRole)) {
-                // realm admin
                 return true;
+            }
+        }
+
+        if (!realm.getName().equals(Config.getAdminRealm())) {
+            ClientModel masterAdminClient = realm.getMasterAdminClient();
+            if (masterAdminClient != null) {
+                RoleModel realmAdminRole = masterAdminClient.getRole(AdminRoles.REALM_ADMIN);
+                if (realmAdminRole != null && admin.hasRole(realmAdminRole)) {
+                    return true;
+                }
             }
         }
 

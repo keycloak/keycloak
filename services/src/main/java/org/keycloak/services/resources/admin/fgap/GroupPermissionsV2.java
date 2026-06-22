@@ -93,6 +93,9 @@ class GroupPermissionsV2 extends GroupPermissions {
 
     @Override
     public boolean canManageMembership(GroupModel group) {
+        if (AdminRoles.groupHasAdminRoles(group) && !root.isRealmAdmin()) {
+            return false;
+        }
         if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
             return true;
         }

@@ -96,14 +96,24 @@ public class AdminRoles {
         return false;
     }
 
-    public static boolean isAdminRoleOrComposite(RoleModel role) {
-        return isAdminRole(role, new HashSet<>());
+    public static boolean containsAdminRole(RoleModel role) {
+        return containsAdminRole(role, new HashSet<>());
+    }
+
+    private static boolean containsAdminRole(RoleModel role, Set<String> visited) {
+        if (isAdminRole(role)) {
+            return true;
+        }
+        if (!role.isComposite() || !visited.add(role.getId())) {
+            return false;
+        }
+        return role.getCompositesStream().anyMatch(r -> containsAdminRole(r, visited));
     }
 
     public static boolean groupHasAdminRoles(GroupModel group) {
         GroupModel current = group;
         while (current != null) {
-            if (current.getRoleMappingsStream().anyMatch(AdminRoles::isAdminRoleOrComposite)) {
+            if (current.getRoleMappingsStream().anyMatch(AdminRoles::containsAdminRole)) {
                 return true;
             }
             current = current.getParent();
@@ -111,16 +121,4 @@ public class AdminRoles {
         return false;
     }
 
-    private static boolean isAdminRole(RoleModel role, Set<String> visited) {
-        if (!visited.add(role.getId())) {
-            return false;
-        }
-        if (isAdminRole(role)) {
-            return true;
-        }
-        if (!role.isComposite()) {
-            return false;
-        }
-        return role.getCompositesStream().anyMatch(child -> isAdminRole(child, visited));
-    }
 }

@@ -297,28 +297,53 @@ public class IllegalAdminUpgradeTest {
 
                 roles.clear();
                 roles.add(realmManageUsers);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
+                try {
+                    realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
+                    Assertions.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
+                            is(equalTo(Response.Status.FORBIDDEN)));
+                }
 
                 roles.clear();
                 roles.add(realmViewUsers);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
+                try {
+                    realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
+                    Assertions.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
+                            is(equalTo(Response.Status.FORBIDDEN)));
+                }
 
                 roles.clear();
                 roles.add(realmQueryUsers);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
+                try {
+                    realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
+                    Assertions.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
+                            is(equalTo(Response.Status.FORBIDDEN)));
+                }
 
                 roles.clear();
                 roles.add(realmQueryGroups);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
+                try {
+                    realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
+                    Assertions.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
+                            is(equalTo(Response.Status.FORBIDDEN)));
+                }
 
                 roles.clear();
                 roles.add(realmQueryClients);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
+                try {
+                    realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
+                    Assertions.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
+                            is(equalTo(Response.Status.FORBIDDEN)));
+                }
             }
         }
         // test master user with manage_users can't assign realm's admin roles
@@ -448,28 +473,53 @@ public class IllegalAdminUpgradeTest {
 
                 roles.clear();
                 roles.add(realmManageUsers);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
+                try {
+                    realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
+                    Assertions.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
+                            is(equalTo(Response.Status.FORBIDDEN)));
+                }
 
                 roles.clear();
                 roles.add(realmViewUsers);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
+                try {
+                    realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
+                    Assertions.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
+                            is(equalTo(Response.Status.FORBIDDEN)));
+                }
 
                 roles.clear();
                 roles.add(realmQueryUsers);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
+                try {
+                    realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
+                    Assertions.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
+                            is(equalTo(Response.Status.FORBIDDEN)));
+                }
 
                 roles.clear();
                 roles.add(realmQueryGroups);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
+                try {
+                    realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
+                    Assertions.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
+                            is(equalTo(Response.Status.FORBIDDEN)));
+                }
 
                 roles.clear();
                 roles.add(realmQueryClients);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
-                realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
+                try {
+                    realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
+                    Assertions.fail("should fail with forbidden exception");
+                } catch (ClientErrorException e) {
+                    assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
+                            is(equalTo(Response.Status.FORBIDDEN)));
+                }
             }
         }
         // test master manageUsers only admin can do with master realm admin roles
