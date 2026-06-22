@@ -1,16 +1,19 @@
 package org.keycloak.tests.scim.tck;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -25,6 +28,8 @@ import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.user.GroupMembership;
 import org.keycloak.scim.resource.user.User;
+import org.keycloak.testframework.annotations.InjectHttpClient;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -32,9 +37,13 @@ import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 
+import org.apache.http.HttpHeaders;
+import org.apache.http.client.HttpClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -55,6 +64,12 @@ public class AuthorizationTest extends AbstractScimTest {
 
     @InjectUser
     ManagedUser managedUser;
+
+    @InjectHttpClient
+    HttpClient httpClient;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
 
     @BeforeEach
     public void onBefore() {
@@ -816,6 +831,53 @@ public class AuthorizationTest extends AbstractScimTest {
         assertEquals(1, groups.getTotalResults());
     }
 
+    @Test
+    public void testPublicClientAccessDenied() {
+        ClientRepresentation publicClient = ClientBuilder.create()
+                .clientId("public-scim-client")
+                .publicClient()
+                .directAccessGrantsEnabled()
+                .enabled(true)
+                .build();
+        realm.admin().clients().create(publicClient).close();
+        UserRepresentation user = UserBuilder.create()
+                .username("public-client-user")
+                .firstName("f")
+                .lastName("l")
+                .email("user@keycloak.org")
+                .enabled(true)
+                .password("password")
+                .build();
+        try (Response response = realm.admin().users().create(user)) {
+            user.setId(ApiUtil.getCreatedId(response));
+        }
+        grantAdminRole(AdminRoles.MANAGE_REALM, user);
+        grantAdminRole(AdminRoles.MANAGE_USERS, user);
+
+        String tokenEndpoint = keycloakUrls.getToken(realm.getName());
+        ScimClient publicScimClient = ScimClient.create(httpClient)
+                .withBaseUrl(keycloakUrls.getBase() + "/realms/" + realm.getName())
+                .withAuthorization((http, request) -> {
+                    try {
+                        AccessTokenResponse response = http.doPost(tokenEndpoint)
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                                .param(OAuth2Constants.CLIENT_ID, publicClient.getClientId())
+                                .param(OAuth2Constants.USERNAME, user.getUsername())
+                                .param(OAuth2Constants.PASSWORD, "password")
+                                .asJson(AccessTokenResponse.class);
+                        request.header(HttpHeaders.AUTHORIZATION, "Bearer " + response.getToken());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .build();
+
+        assertAccessDenied(() -> publicScimClient.users().getAll());
+        assertAccessDenied(() -> publicScimClient.groups().getAll(""));
+        assertAccessDenied(() -> publicScimClient.resourceTypes().getAll());
+        assertAccessDenied(() -> publicScimClient.schemas().getAll());
+    }
+
     private ClientRepresentation getScimClient() {
         return realm.admin().clients().findByClientId("scim-client-restricted").get(0);
     }
@@ -871,10 +933,14 @@ public class AuthorizationTest extends AbstractScimTest {
     }
 
     private void grantAdminRole(String role) {
-        ClientRepresentation realmMgmt = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
-        RoleRepresentation viewUserRole = realm.admin().clients().get(realmMgmt.getId()).roles().get(role).toRepresentation();
         ClientRepresentation clientRep = getScimClient();
         UserRepresentation serviceAccountUser = realm.admin().clients().get(clientRep.getId()).getServiceAccountUser();
+        grantAdminRole(role, serviceAccountUser);
+    }
+
+    private void grantAdminRole(String role, UserRepresentation serviceAccountUser) {
+        ClientRepresentation realmMgmt = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation viewUserRole = realm.admin().clients().get(realmMgmt.getId()).roles().get(role).toRepresentation();
         realm.admin().users().get(serviceAccountUser.getId()).roles().clientLevel(realmMgmt.getId()).add(List.of(viewUserRole));
     }
 

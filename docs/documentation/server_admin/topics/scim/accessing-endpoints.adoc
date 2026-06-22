@@ -9,6 +9,8 @@ All SCIM endpoints require authorization using an OAuth 2.0 Bearer Token.
 Unauthorized requests receive a `401 Unauthorized` response. The bearer token must also have the appropriate permissions
 to perform the requested operation.
 
+Only confidential clients can access the SCIM endpoints. Public clients are not supported for SCIM API calls.
+
 == Setting up a service account client
 
 To access the SCIM APIs programmatically, you typically create a confidential client with a service account in {project_name}.
