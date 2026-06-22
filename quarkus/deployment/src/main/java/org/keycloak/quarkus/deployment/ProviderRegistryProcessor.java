@@ -17,7 +17,9 @@
 
 package org.keycloak.quarkus.deployment;
 
+import java.lang.reflect.Modifier;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -39,8 +41,6 @@ import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.jandex.MethodInfo;
 import org.jboss.logging.Logger;
-
-import java.lang.reflect.Modifier;
 
 /**
  * Scans the Quarkus Jandex index for classes annotated with {@link KeycloakProvider},
@@ -85,10 +85,32 @@ class ProviderRegistryProcessor {
             classNames.add(classInfo.name().toString());
         }
 
+        // The augmentation JVM's DefaultProviderLoader.load(Spi) — called from
+        // KeycloakProcessor.configureKeycloakSessionFactory.loadFactories() in the same
+        // build-step phase — reads the registry directly. Install now so the baked
+        // factories map includes annotated factories whose META-INF/services entry was removed.
+        GeneratedProviderRegistry.install(loadFactoryClasses(classNames));
+
+        // Also record an install for the runtime JVM, so the registry is consistent post-startup
+        // and a shutdown task can safely clear it.
         recorder.installProviderRegistry(classNames);
-        logger.debugf("Recorded install of %d @KeycloakProvider-annotated provider factories", classNames.size());
+        logger.debugf("Installed %d @KeycloakProvider-annotated provider factories", classNames.size());
 
         return new ProviderRegistryBuildItem(classNames);
+    }
+
+    private static Set<Class<? extends ProviderFactory>> loadFactoryClasses(Set<String> classNames) {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        Set<Class<? extends ProviderFactory>> classes = new LinkedHashSet<>(classNames.size());
+        for (String className : classNames) {
+            try {
+                classes.add(Class.forName(className, false, classLoader).asSubclass(ProviderFactory.class));
+            } catch (ClassNotFoundException e) {
+                throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
+                        + " class " + className + " is in the Jandex index but not on the deployment classpath", e);
+            }
+        }
+        return classes;
     }
 
     @Record(ExecutionTime.STATIC_INIT)
