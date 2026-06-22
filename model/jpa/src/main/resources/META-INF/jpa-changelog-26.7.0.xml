@@ -101,7 +101,8 @@
                              columnNames="USER_ID, CLIENT_SCOPE_ID"
                              constraintName="UK_FED_USER_VC"/>
 
-        <createIndex tableName="FED_USER_VER_CREDENTIAL" indexName="IDX_FED_USER_VC_USER">
+        <createIndex tableName="FED_USER_VER_CREDENTIAL" indexName="IDX_FED_USER_VC_REALM_USER">
+            <column name="REALM_ID"/>
             <column name="USER_ID"/>
         </createIndex>
     </changeSet>
