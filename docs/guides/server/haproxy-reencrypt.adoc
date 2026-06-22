@@ -195,7 +195,7 @@ To enable this, add the following configuration:
 
 *`docker-compose.yaml`*::
 * Add `KC_HOSTNAME_ADMIN` on both `keycloak1` and `keycloak2` which tells each {project_name} node to serve the Admin UI and Admin API on the admin port.
-(`KC_HOSTNAME` is already set to the required `https://${KC_HOST}:8443` URL form.)
+(`KC_HOSTNAME` is already set to the required `https://${r"${KC_HOST}"}:8443` URL form.)
 * Add port `8444:8444` under the `haproxy` service — exposes the admin port on the host.
 
 *`haproxy.cfg`*::
