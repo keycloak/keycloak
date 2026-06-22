@@ -1,5 +1,8 @@
 package org.keycloak.tests.client.authentication.external;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.UUID;
 
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthenticator;
@@ -24,6 +27,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+
+import static org.keycloak.broker.kubernetes.KubernetesConstants.SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY;
 
 @KeycloakIntegrationTest
 @TestMethodOrder(MethodOrderer.MethodName.class)
@@ -55,6 +60,24 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
         int keysRequestCount = identityProvider.getKeysRequestCount();
         Assertions.assertTrue(doClientGrant(createDefaultToken()).isSuccess());
         Assertions.assertEquals(keysRequestCount, identityProvider.getKeysRequestCount());
+    }
+
+    @Test
+    public void testAuthorizationHeaderNotSentToExternalJwks() throws Exception {
+        Path tokenFile = Files.createTempFile("kubernetes-service-account-token", ".jwt");
+        try {
+            Files.writeString(tokenFile, identityProvider.encodeToken(createDefaultToken()), StandardCharsets.UTF_8);
+            System.setProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY, tokenFile.toString());
+
+            int keysRequestCount = identityProvider.getKeysRequestCount();
+            Assertions.assertTrue(doClientGrant(createDefaultToken()).isSuccess());
+            Assertions.assertEquals(keysRequestCount + 1, identityProvider.getKeysRequestCount());
+            Assertions.assertNull(identityProvider.getLastWellKnownAuthorizationHeader());
+            Assertions.assertNull(identityProvider.getLastJwksAuthorizationHeader());
+        } finally {
+            System.clearProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY);
+            Files.deleteIfExists(tokenFile);
+        }
     }
 
     @Test
