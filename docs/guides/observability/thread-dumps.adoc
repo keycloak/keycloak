@@ -10,15 +10,13 @@ includedOptions="">
 
 == What is a thread dump?
 
-JVM thread dump is a snapshot of the execution state of active threads within a Java Virtual Machine at a specific point in time.
+A JVM thread dump is a snapshot of the execution state of active threads within a Java Virtual Machine at a specific point in time.
 
 Thread dumps are useful for diagnosing issues such as thread contention, deadlocks, CPU spikes, or stuck IO operations.
 
 == How to capture a JVM thread dump
 
-There are several ways how to capture a thread dump.
-
-=== Using the `jcmd` command
+There are several ways how to capture a thread dump. This guide used `jcmd` as it provides the most straightforward command line experience.
 
 The `jcmd` tool sends diagnostic commands to a running JVM. There are two commands relevant for capturing thread dumps: `Thread.print` and `Thread.dump_to_file`.
 
@@ -61,46 +59,16 @@ There are some differences between the information collected using `Thread.print
 
 Depending on the information needed and the JDK version used, it might be necessary to use both `Thread.print` and `Thread.dump_to_file` to create a comprehensive picture.
 
-=== Alternatives
-
-* `jstack -l <PID> > threaddump.txt` The `jstack` command is a standard JDK utility used for printing stack traces. The `-l` option enables printing of additional information about locks.
-* `kill -3 <PID>` Sending a `SIGQUIT` signal to the JVM process will make it print out a thread dump to the standard output.
-
 === Finding PID of the {project_name} process
 
 There are several ways to find a PID of the {project_name} server process on the system.
 
-Running either `jps` or `jcmd` commands without any parameters will list out Java processes on the system and their PIDs.
+Running the `jcmd` command without any parameters will list out Java processes on the system and their PIDs.
 
-Example output with `jps`:
-[source]
-----
-242551 QuarkusEntryPoint
-268141 Jps
-----
-
-Example output with `jcmd`:
 [source]
 ----
 242551 io.quarkus.bootstrap.runner.QuarkusEntryPoint start ...
 268778 jdk.jcmd/sun.tools.jcmd.JCmd
-----
-
-Example output with `jcmd` running inside a {project_name} Docker container:
-[source]
-----
-$ docker exec -it keycloak jcmd
-1 io.quarkus.bootstrap.runner.QuarkusEntryPoint start
-389 jdk.jcmd/sun.tools.jcmd.JCmd
-----
-
-Alternatively it is possible to use standard OS tools like `ps` and `grep` to list and filter out processes.
-
-Example:
-[source]
-----
-$ ps -ef | grep QuarkusEntryPoint | grep -v grep
-<username> 242551  242461  1 13:08 pts/0    00:00:57 java -Dkc.script.pid=242461 -Djava.util.concurrent.ForkJoinPool.common.threadFactory=io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m ... keycloak-999.0.0-SNAPSHOT/bin/../lib/quarkus-run.jar io.quarkus.bootstrap.runner.QuarkusEntryPoint start ...
 ----
 
 === Collecting multiple samples
