@@ -1,7 +1,6 @@
 package org.keycloak.tests.admin.user;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
 
@@ -23,8 +22,6 @@ import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.jwtTypeNaturalPersonScopeName;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,8 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DatabaseTest
 public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
 
-    private static final String CREDENTIAL_TYPE_1 = jwtTypeNaturalPersonScopeName;
-    private static final String CREDENTIAL_TYPE_2 = "education-cert";
+    private static final String CLIENT_SCOPE_NAME_1 = "driving-license-cert";
+    private static final String CLIENT_SCOPE_NAME_2 = "education-cert";
 
     @InjectRealm(config = FederatedVcTestRealmConfig.class)
     protected ManagedRealm testRealm;
@@ -42,25 +39,26 @@ public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
     @Test
     public void testAddVerifiableCredentialForFederatedUser() {
         String federatedUserId = createFederatedUser("fed-user-1");
+        String expectedScopeId = resolveScopeId(CLIENT_SCOPE_NAME_1);
 
         runOnServer.run(session -> {
-            UserVerifiableCredentialModel vcModel = new UserVerifiableCredentialModel(CREDENTIAL_TYPE_1);
+            UserVerifiableCredentialModel vcModel = new UserVerifiableCredentialModel("vc-1", expectedScopeId);
             vcModel.setRevision("rev-001");
 
             UserVerifiableCredentialModel added = session.users().addVerifiableCredential(federatedUserId, vcModel);
             assertNotNull(added);
             assertNotNull(added.getRevision());
             assertNotNull(added.getCreatedDate());
-            assertNotNull(added.getCredentialScopeName());
+            assertEquals(expectedScopeId, added.getClientScopeId());
         });
 
         runOnServer.run(session -> {
             List<UserVerifiableCredentialModel> vcs = session.users()
                     .getVerifiableCredentialsByUser(federatedUserId)
-                    .collect(Collectors.toList());
+                    .toList();
 
             assertEquals(1, vcs.size());
-            assertNotNull(vcs.get(0).getCredentialScopeName());
+            assertEquals(expectedScopeId, vcs.get(0).getClientScopeId());
         });
     }
 
@@ -71,7 +69,7 @@ public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
         runOnServer.run(session -> {
             List<UserVerifiableCredentialModel> vcs = session.users()
                     .getVerifiableCredentialsByUser(federatedUserId)
-                    .collect(Collectors.toList());
+                    .toList();
 
             assertNotNull(vcs);
             assertTrue(vcs.isEmpty());
@@ -82,11 +80,14 @@ public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
     public void testRemoveVerifiableCredentialForFederatedUser() {
         String federatedUserId = createFederatedUser("fed-user-remove");
 
+        String scopeId1 = resolveScopeId(CLIENT_SCOPE_NAME_1);
+        String scopeId2 = resolveScopeId(CLIENT_SCOPE_NAME_2);
+
         runOnServer.run(session -> {
             session.users().addVerifiableCredential(federatedUserId,
-                    new UserVerifiableCredentialModel(CREDENTIAL_TYPE_1));
+                new UserVerifiableCredentialModel("vc-1", scopeId1));
             session.users().addVerifiableCredential(federatedUserId,
-                    new UserVerifiableCredentialModel(CREDENTIAL_TYPE_2));
+                new UserVerifiableCredentialModel("vc-2", scopeId2));
         });
 
         runOnServer.run(session -> {
@@ -94,8 +95,8 @@ public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
             assertEquals(2, count);
         });
 
-        runOnServer.run(session ->  {
-                boolean removed = session.users().removeVerifiableCredential(federatedUserId, CREDENTIAL_TYPE_1);
+        runOnServer.run(session -> {
+            boolean removed = session.users().removeVerifiableCredential(federatedUserId, scopeId1);
             assertTrue(removed);
         });
 
@@ -105,7 +106,7 @@ public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
                     .toList();
 
             assertEquals(1, remaining.size());
-            assertEquals(CREDENTIAL_TYPE_2, remaining.get(0).getCredentialScopeName());
+            assertEquals(scopeId2, remaining.get(0).getClientScopeId());
         });
     }
 
@@ -114,28 +115,33 @@ public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
         String localUserId = createUser("local-user", "local@test.com");
         String federatedUserId = createFederatedUser("fed-user-isolated");
 
+        // Use existing test scopes - resolve both before adding credentials
+        String localScopeId = resolveScopeId(CLIENT_SCOPE_NAME_1);
+        String fedScopeId = resolveScopeId(CLIENT_SCOPE_NAME_2);
 
         runOnServer.run(session -> {
-            session.users().addVerifiableCredential(localUserId, new UserVerifiableCredentialModel("local-cert"));
-            session.users().addVerifiableCredential(federatedUserId, new UserVerifiableCredentialModel("federated-cert"));
+            session.users().addVerifiableCredential(localUserId,
+                new UserVerifiableCredentialModel("local-vc-01", localScopeId));
+            session.users().addVerifiableCredential(federatedUserId,
+                new UserVerifiableCredentialModel("fed-vc-02", fedScopeId));
         });
 
         runOnServer.run(session -> {
             List<UserVerifiableCredentialModel> localVcs = session.users()
                     .getVerifiableCredentialsByUser(localUserId)
-                    .collect(Collectors.toList());
+                    .toList();
 
             assertEquals(1, localVcs.size());
-            assertEquals("local-cert", localVcs.get(0).getCredentialScopeName());
+            assertEquals(localScopeId, localVcs.get(0).getClientScopeId());
         });
 
         runOnServer.run(session -> {
             List<UserVerifiableCredentialModel> fedVcs = session.users()
                     .getVerifiableCredentialsByUser(federatedUserId)
-                    .collect(Collectors.toList());
+                    .toList();
 
             assertEquals(1, fedVcs.size());
-            assertEquals("federated-cert", fedVcs.get(0).getCredentialScopeName());
+            assertEquals(fedScopeId, fedVcs.get(0).getClientScopeId());
         });
     }
 
@@ -153,7 +159,7 @@ public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
         adminEvents.clear();
 
         runOnServer.run(session -> session.users().addVerifiableCredential(federatedUserId,
-                new UserVerifiableCredentialModel("test-scope-to-delete")));
+                new UserVerifiableCredentialModel("vc_1", scopeId)));
 
         runOnServer.run(session -> {
             long count = session.users().getVerifiableCredentialsByUser(federatedUserId).count();
@@ -179,8 +185,8 @@ public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
                     .eventsListeners("jboss-logging")
                     .verifiableCredentialsEnabled(true)
                     .clientScopes(
-                            createCredentialScope(CREDENTIAL_TYPE_1),
-                            createCredentialScope(CREDENTIAL_TYPE_2)
+                            createCredentialScope(CLIENT_SCOPE_NAME_1),
+                            createCredentialScope(CLIENT_SCOPE_NAME_2)
                     );
         }
 
@@ -191,6 +197,17 @@ public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
                     .setCredentialConfigurationId(scopeName);
         }
 
+    }
+
+    private String resolveScopeId(String scopeName) {
+        return runOnServer.fetchString(session ->
+            session.clientScopes()
+                    .getClientScopesStream(session.getContext().getRealm())
+                    .filter(cs -> scopeName.equals(cs.getName()))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("Client scope not found: " + scopeName))
+                    .getId()
+        );
     }
 
     private String createFederatedUser(String username) {

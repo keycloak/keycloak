@@ -692,7 +692,7 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     private UserVerifiableCredentialModel toModel(FederatedUserVerifiableCredentialEntity entity) {
-        UserVerifiableCredentialModel model = new UserVerifiableCredentialModel(entity.getCredentialScopeName());
+        UserVerifiableCredentialModel model = new UserVerifiableCredentialModel(entity.getId(), entity.getClientScopeId());
         model.setRevision(entity.getRevision());
         model.setCreatedDate(entity.getCreatedDate());
         model.setUpdatedDate(entity.getUpdatedDate());
@@ -908,13 +908,11 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void preRemove(ClientScopeModel clientScope) {
-        RealmModel realm = session.getContext().getRealm();
         em.createNamedQuery("deleteFederatedUserConsentClientScopesByClientScope")
                 .setParameter("scopeId", clientScope.getId())
                 .executeUpdate();
         em.createNamedQuery("deleteFederatedVerifiableCredentialsByClientScope")
-                .setParameter("realmId", realm.getId())
-                .setParameter("scopeName", clientScope.getName())
+                .setParameter("scopeId", clientScope.getId())
                 .executeUpdate();
     }
 
@@ -1032,7 +1030,7 @@ public class JpaUserFederatedStorageProvider implements
                 createdDate : credentialModel.getUpdatedDate();
         entity.setUpdatedDate(updatedDate);
 
-        entity.setCredentialScopeName(credentialModel.getCredentialScopeName());
+        entity.setClientScopeId(credentialModel.getClientScopeId());
 
         Map<String, List<String>> userAttributes;
         if (credentialModel.getUserAttributes() != null) {
@@ -1061,14 +1059,14 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String credentialScopeName) {
+    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String clientScopeId) {
         RealmModel realm = session.getContext().getRealm();
 
         FederatedUserVerifiableCredentialEntity entity = getFederatedVerifiableCredentialEntitiesByUser(userId)
-                .filter(vc -> credentialScopeName.equals(vc.getCredentialScopeName()))
+                .filter(vc -> clientScopeId.equals(vc.getClientScopeId()))
                 .findFirst()
                 .orElseThrow(() -> new ModelException(
-                        "Verifiable credential not found: " + credentialScopeName));
+                        "Verifiable credential not found: " + clientScopeId));
         UserModel user = session.users().getUserById(realm, userId);
         if(user !=null) {
             try {
@@ -1098,9 +1096,9 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public boolean removeVerifiableCredential(String userId, String credentialScopeName) {
+    public boolean removeVerifiableCredential(String userId, String clientScopeId) {
         FederatedUserVerifiableCredentialEntity found = getFederatedVerifiableCredentialEntitiesByUser(userId)
-                .filter(vcEnt -> vcEnt.getCredentialScopeName().equals(credentialScopeName))
+                .filter(vcEnt -> vcEnt.getClientScopeId().equals(clientScopeId))
                 .findFirst()
                 .orElse(null);
 
@@ -1116,6 +1114,6 @@ public class JpaUserFederatedStorageProvider implements
     public Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId) {
         return getFederatedVerifiableCredentialEntitiesByUser(userId)
                 .map(this::toModel)
-                .sorted(Comparator.comparing(UserVerifiableCredentialModel::getCredentialScopeName));
+                .sorted(Comparator.comparing(UserVerifiableCredentialModel::getClientScopeId));
     }
 }

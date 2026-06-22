@@ -83,7 +83,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="STORAGE_PROVIDER_ID" type="VARCHAR(36)"/>
-            <column name="CREDENTIAL_SCOPE_NAME" type="VARCHAR(255)">
+            <column name="CLIENT_SCOPE_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
             <column name="REVISION" type="VARCHAR(36)">
@@ -98,7 +98,7 @@
         </createTable>
 
         <addUniqueConstraint tableName="FED_USER_VER_CREDENTIAL"
-                             columnNames="REALM_ID, USER_ID, CREDENTIAL_SCOPE_NAME"
+                             columnNames="USER_ID, CLIENT_SCOPE_ID"
                              constraintName="UK_FED_USER_VC"/>
 
         <createIndex tableName="FED_USER_VER_CREDENTIAL" indexName="IDX_FED_USER_VC_USER">

@@ -35,19 +35,19 @@ public interface UserVerifiableCredentialFederatedStorage {
      * Updates a verifiable credential for a federated user.
      *
      * @param userId the federated user ID
-     * @param credentialScopeName the credential scope name
+     * @param clientScopeId the client scope ID
      * @return the updated credential
      */
-    UserVerifiableCredentialModel updateVerifiableCredential(String userId, String credentialScopeName);
+    UserVerifiableCredentialModel updateVerifiableCredential(String userId, String clientScopeId);
 
     /**
      * Removes a verifiable credential for a federated user.
      *
      * @param userId the federated user ID
-     * @param credentialScopeName the credential scope name to remove
+     * @param clientScopeId the client scope ID to remove
      * @return true if removed, false if not found
      */
-    boolean removeVerifiableCredential(String userId, String credentialScopeName);
+    boolean removeVerifiableCredential(String userId, String clientScopeId);
 
     /**
      * Gets all verifiable credentials for a federated user.

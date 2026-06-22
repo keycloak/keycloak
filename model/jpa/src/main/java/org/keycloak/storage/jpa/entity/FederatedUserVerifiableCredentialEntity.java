@@ -14,12 +14,12 @@ import jakarta.persistence.Version;
 
 @Entity
 @Table(name="FED_USER_VER_CREDENTIAL", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"USER_ID", "REALM_ID", "CREDENTIAL_SCOPE_NAME"})
+        @UniqueConstraint(columnNames = {"USER_ID", "CLIENT_SCOPE_ID"})
 })
 @NamedQueries({
         @NamedQuery(name="federatedVerifiableCredentialsByUser", query="select vc from FederatedUserVerifiableCredentialEntity vc where vc.userId = :userId"),
         @NamedQuery(name="deleteFederatedVerifiableCredentialsByRealm", query="delete from FederatedUserVerifiableCredentialEntity vc where vc.realmId = :realmId"),
-        @NamedQuery(name="deleteFederatedVerifiableCredentialsByClientScope", query="delete from FederatedUserVerifiableCredentialEntity vc where vc.realmId = :realmId and vc.credentialScopeName = :scopeName"),
+        @NamedQuery(name="deleteFederatedVerifiableCredentialsByClientScope", query="delete from FederatedUserVerifiableCredentialEntity vc where vc.clientScopeId = :scopeId"),
         @NamedQuery(name="deleteFederatedVerifiableCredentialsByUser", query="delete from FederatedUserVerifiableCredentialEntity vc where vc.userId = :userId and vc.realmId = :realmId"),
         @NamedQuery(name="deleteFederatedVerifiableCredentialsByStorageProvider", query="delete from FederatedUserVerifiableCredentialEntity vc where vc.storageProviderId = :storageProviderId"),
 })
@@ -39,8 +39,8 @@ public class FederatedUserVerifiableCredentialEntity {
     @Column(name="STORAGE_PROVIDER_ID", length = 36)
     protected String storageProviderId;
 
-    @Column(name="CREDENTIAL_SCOPE_NAME")
-    protected String credentialScopeName;
+    @Column(name="CLIENT_SCOPE_ID")
+    protected String clientScopeId;
 
     @Column(name="REVISION")
     protected String revision;
@@ -90,12 +90,12 @@ public class FederatedUserVerifiableCredentialEntity {
         this.storageProviderId = storageProviderId;
     }
 
-    public String getCredentialScopeName() {
-        return credentialScopeName;
+    public String getClientScopeId() {
+        return clientScopeId;
     }
 
-    public void setCredentialScopeName(String credentialScopeName) {
-        this.credentialScopeName = credentialScopeName;
+    public void setClientScopeId(String clientScopeId) {
+        this.clientScopeId = clientScopeId;
     }
 
     public String getRevision() {

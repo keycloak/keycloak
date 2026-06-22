@@ -946,7 +946,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (StorageId.isLocalStorage(userId)) {
             return localStorage().updateVerifiableCredential(userId, clientScopeId);
         } else {
-            return getFederatedStorage().updateVerifiableCredential(userId, credentialScopeName);
+            return getFederatedStorage().updateVerifiableCredential(userId, clientScopeId);
         }
     }
 
@@ -955,7 +955,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (StorageId.isLocalStorage(userId)) {
             return localStorage().removeVerifiableCredential(userId, clientScopeId);
         } else {
-            return getFederatedStorage().removeVerifiableCredential(userId, credentialScopeName);
+            return getFederatedStorage().removeVerifiableCredential(userId, clientScopeId);
         }
     }
 
