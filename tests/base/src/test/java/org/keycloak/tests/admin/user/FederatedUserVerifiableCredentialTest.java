@@ -248,8 +248,8 @@ public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
                     .eventsListeners("jboss-logging")
                     .verifiableCredentialsEnabled(true)
                     .clientScopes(
-                            createCredentialScope(CLIENT_SCOPE_NAME_1),
-                            createCredentialScope(CLIENT_SCOPE_NAME_2)
+                            createCredentialScope(CREDENTIAL_TYPE_1),
+                            createCredentialScope(CREDENTIAL_TYPE_2)
                     );
         }
 
