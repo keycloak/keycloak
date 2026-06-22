@@ -57,6 +57,9 @@ import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.admin.RoleMapperAssignmentRegisterContext;
+import org.keycloak.services.clientpolicy.context.admin.RoleMapperAssignmentRemoveContext;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.storage.ReadOnlyException;
@@ -263,13 +266,21 @@ public class RoleMapperResource {
 
         logger.debugv("** addRealmRoleMappings: {0}", roles);
 
+        List<RoleModel> roleModels = roles.stream()
+                .map(this::getValidatedRealmRole)
+                .collect(Collectors.toList());
+        List<RoleRepresentation> validatedRoles = roleModels.stream()
+                .map(ModelToRepresentation::toBriefRepresentation)
+                .collect(Collectors.toList());
+
         try {
-            for (RoleRepresentation role : roles) {
-                RoleModel roleModel = realm.getRole(role.getName());
-                if (roleModel == null || !roleModel.getId().equals(role.getId())) {
-                    throw new NotFoundException("Role not found");
-                }
-                auth.roles().requireMapRole(roleModel);
+            session.clientPolicy().triggerOnEvent(new RoleMapperAssignmentRegisterContext(roleMapper, null, validatedRoles, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+
+        try {
+            for (RoleModel roleModel : roleModels) {
                 roleMapper.grantRole(roleModel);
             }
         } catch (ModelIllegalStateException e) {
@@ -280,8 +291,8 @@ public class RoleMapperResource {
             throw new ErrorResponseException("invalid_request", "Could not add user role mappings!", Response.Status.BAD_REQUEST);
         }
 
-        if (!roles.isEmpty()) {
-            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(roles).success();
+        if (!validatedRoles.isEmpty()) {
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(validatedRoles).success();
         }
     }
 
@@ -306,41 +317,54 @@ public class RoleMapperResource {
         managePermission.require();
 
         logger.debug("deleteRealmRoleMappings");
+
+        List<RoleModel> roleModels;
         if (roles == null) {
-            roles = roleMapper.getRealmRoleMappingsStream()
-                    .peek(roleModel -> {
-                        auth.roles().requireMapRole(roleModel);
-                        roleMapper.deleteRoleMapping(roleModel);
-                    })
-                    .map(ModelToRepresentation::toBriefRepresentation)
+            roleModels = roleMapper.getRealmRoleMappingsStream()
+                    .filter(this::canMapRole)
                     .collect(Collectors.toList());
-
         } else {
-            for (RoleRepresentation role : roles) {
-                RoleModel roleModel = realm.getRole(role.getName());
-                if (roleModel == null || !roleModel.getId().equals(role.getId())) {
-                    throw new NotFoundException("Role not found");
-                }
-                auth.roles().requireMapRole(roleModel);
-                try {
-                    roleMapper.deleteRoleMapping(roleModel);
-                } catch (ModelIllegalStateException e) {
-                    logger.error(e.getMessage(), e);
-                    throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
-                } catch (ModelException | ReadOnlyException me) {
-                    logger.warn(me.getMessage(), me);
-                    throw new ErrorResponseException("invalid_request", "Could not remove user role mappings!", Response.Status.BAD_REQUEST);
-                }
-            }
+            roleModels = roles.stream()
+                    .map(this::getValidatedRealmRole)
+                    .collect(Collectors.toList());
+        }
+        List<RoleRepresentation> effectiveRoles = roleModels.stream()
+                .map(ModelToRepresentation::toBriefRepresentation)
+                .collect(Collectors.toList());
 
+        try {
+            session.clientPolicy().triggerOnEvent(new RoleMapperAssignmentRemoveContext(roleMapper, null, effectiveRoles, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(roles).success();
+        for (RoleModel roleModel : roleModels) {
+            try {
+                roleMapper.deleteRoleMapping(roleModel);
+            } catch (ModelIllegalStateException e) {
+                logger.error(e.getMessage(), e);
+                throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+            } catch (ModelException | ReadOnlyException me) {
+                logger.warn(me.getMessage(), me);
+                throw new ErrorResponseException("invalid_request", "Could not remove user role mappings!", Response.Status.BAD_REQUEST);
+            }
+        }
+
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(effectiveRoles).success();
 
     }
 
     private boolean canMapRole(RoleModel roleModel) {
         return auth.roles().canMapRole(roleModel);
+    }
+
+    private RoleModel getValidatedRealmRole(RoleRepresentation role) {
+        RoleModel roleModel = realm.getRole(role.getName());
+        if (roleModel == null || !roleModel.getId().equals(role.getId())) {
+            throw new NotFoundException("Role not found");
+        }
+        auth.roles().requireMapRole(roleModel);
+        return roleModel;
     }
 
     @Path("clients/{client-id}")
