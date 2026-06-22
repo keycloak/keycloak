@@ -59,4 +59,6 @@ public enum ClientPolicyEvent {
 
     SAML_AUTHN_REQUEST,
     SAML_LOGOUT_REQUEST,
+
+    UPDATE_CLIENT_CERTIFICATE,
 }
