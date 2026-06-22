@@ -376,7 +376,7 @@ public class TokenManager {
         AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session,
             validation.userSession, validation.clientSessionCtx).offlineToken( TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType())).accessToken(validation.newToken);
 
-        // Copy authorization_details from refresh token to new access token and to acessTokenResponse (if present)
+        // Copy authorization_details from refresh token to new access token and to accessTokenResponse (if present)
         List<AuthorizationDetailsJSONRepresentation> authorizationDetails = refreshToken.getAuthorizationDetails();
         if (authorizationDetails != null) {
             validation.newToken.setAuthorizationDetails(authorizationDetails);

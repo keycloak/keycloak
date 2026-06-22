@@ -454,7 +454,6 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         final var socialButton = this.loginPage.findSocialButton(bc.getIDPAlias());
     }
 
-
     @Test
     public void testDisplayName() {
 
