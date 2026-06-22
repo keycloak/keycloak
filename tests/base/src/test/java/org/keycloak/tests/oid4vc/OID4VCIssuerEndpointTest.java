@@ -77,6 +77,7 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.config.UPConfigUtils;
+import org.keycloak.userprofile.validator.DuplicateDidValidator;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.validators.PatternValidator;
 
@@ -212,7 +213,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
                             "error-message", "Value must follow the format 'did:method:identifier'",
                             "ignore.empty.value", "true"
                     ),
-                    "up-duplicate-did", Map.of()
+                    DuplicateDidValidator.ID, Map.of()
             ));
             profileConfig.addOrReplaceAttribute(attr);
         }
