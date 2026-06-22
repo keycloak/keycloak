@@ -69,6 +69,10 @@ export const UserSelect = ({
   const debounceFn = useCallback(
     debounce((value: string) => {
       setFirst(0);
+      setHasMore(false);
+      setLoadingMore(false);
+      setPageUsers([]);
+      setExactMatch(undefined);
       setSearch(value);
     }, 500),
     [],
