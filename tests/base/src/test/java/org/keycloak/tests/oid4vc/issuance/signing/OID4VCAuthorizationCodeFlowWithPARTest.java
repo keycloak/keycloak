@@ -12,7 +12,6 @@ import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.RegisterPage;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCProofTestUtils;
@@ -63,10 +62,6 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCAuthorizationC
 
     @InjectPage
     RegisterPage registerPage;
-
-    @InjectPage
-    LoginPage loginPage;
-
     @Override
     protected void verifyCredentialStructure(Object credentialObj) {
         assertNotNull(credentialObj, "JWT credential object should not be null");
@@ -250,8 +245,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCAuthorizationC
 
         registerPage.assertCurrent();
         registerPage.register("Vilmos", "Szabó-Nagy", "vilmos@email", "vnagy", "AppleTree123");
-        testRealm.cleanup().add(r -> r.users().delete(r.users().search("vnagy").stream().findFirst().get().getId()));
-
+        testRealm.cleanup().add(r -> r.users().search("vnagy").stream().findFirst().ifPresent(u -> r.users().delete(u.getId())));
         AuthorizationEndpointResponse authResponse = oauth.parseLoginResponse();
         assertTrue(authResponse.isSuccess());
     }
