@@ -37,18 +37,18 @@ import org.keycloak.urls.UrlType;
 public interface KeycloakContext {
 
     /**
-     * @throws {@link ContextNotActiveException} if no request is active and a non-full URL hostname is configured
+     * @throws ContextNotActiveException if no request is active and a non-full URL hostname is configured
      */
     URI getAuthServerUrl();
 
     /**
-     * @throws {@link ContextNotActiveException} if no request is active and a non-full URL hostname is configured
+     * @throws ContextNotActiveException if no request is active and a non-full URL hostname is configured
      */
     String getContextPath();
 
      /**
      * @deprecated Use {@link #getHttpRequest()} to obtain the request headers.
-     * @throws {@link ContextNotActiveException} when no request is active
+     * @throws ContextNotActiveException when no request is active
      */
     @Deprecated
     HttpHeaders getRequestHeaders();
@@ -57,7 +57,7 @@ public interface KeycloakContext {
     /**
      * Returns the URI assuming it is a frontend request. To resolve URI for a backend request use {@link #getUri(UrlType)}
      *
-     * method calls on the returned {@link KeycloakUriInfo} will throw a {@link ContextNotActiveException} if no request is active and a non-full URL hostname is configured
+     * method calls on the returned {@link KeycloakUriInfo} may throw a {@link ContextNotActiveException} if no request is active
      */
     KeycloakUriInfo getUri();
 
@@ -66,10 +66,11 @@ public interface KeycloakContext {
      * request (request from a client) should be set to false. Depending on the configure hostname provider it may
      * return a hard-coded base URL for frontend request (for example https://auth.mycompany.com) and use the
      * request URL for backend requests. Frontend URI should also be used for realm issuer fields in tokens.
+     * <p>
+     * Method calls on the returned {@link KeycloakUriInfo} may throw a {@link ContextNotActiveException} if no request is active.
      *
      * @param type the type of the request
-     *
-     * method calls on the returned {@link KeycloakUriInfo} will throw a {@link ContextNotActiveException} if no request is active and any information needs resolved from a request URI.
+     * @throws ContextNotActiveException if no request is active and information from a current request is needed to determine the base URI.
      */
     KeycloakUriInfo getUri(UrlType type);
 

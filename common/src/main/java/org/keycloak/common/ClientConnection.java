@@ -32,7 +32,7 @@ public interface ClientConnection {
         return null;
     }
     /**
-     * @return the remote host, which will be an IP address or whatever is provided via proxy headers, if 
+     * @return the remote host, which will be an IP address or whatever is provided via proxy headers, if
      * available, otherwise null
      */
     default String getRemoteHost() {
@@ -40,7 +40,7 @@ public interface ClientConnection {
     }
     
     /**
-     * @return the remote port if it available, otherwise 0
+     * @return the remote port if it is available, otherwise 0
      */
     default int getRemotePort() {
         return 0;
@@ -54,7 +54,7 @@ public interface ClientConnection {
     }
     
     /**
-     * @return the local port if it available, otherwise 0
+     * @return the local port if it is available, otherwise 0
      */
     default int getLocalPort() {
         return 0;

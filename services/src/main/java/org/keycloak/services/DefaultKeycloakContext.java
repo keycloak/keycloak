@@ -100,7 +100,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
                 info = getHttpRequest().getUri();
             } catch (ContextNotActiveException e) {
                 info = (UriInfo) Proxy.newProxyInstance(UriInfo.class.getClassLoader(), new Class[] { UriInfo.class }, (proxy, method, args) -> {
-                    throw new ContextNotActiveException();
+                    throw new ContextNotActiveException(e); // see the javadoc on UriInfo / KeycloakUriInfo, but we are throwing ContextNotActiveException, rather than IllegalStateException.
                 });
             }
             uriInfo.put(type, new KeycloakUriInfo(session, type, info));
