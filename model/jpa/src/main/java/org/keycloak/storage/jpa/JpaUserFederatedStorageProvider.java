@@ -1105,7 +1105,7 @@ public class JpaUserFederatedStorageProvider implements
         if (found == null) return false;
 
         em.remove(found);
-        //Remove associated issued credentials
+        // No issued VC records to delete here (issued VCs are linked to USER_VER_CREDENTIAL/USER_ENTITY only).
         em.flush();
         return true;
     }
