@@ -242,9 +242,14 @@ export const UserSelect = ({
                       <Button
                         variant="plain"
                         onClick={() => {
+                          debounceFn.cancel();
                           setInputValue("");
-                          setSearch("");
                           setFirst(0);
+                          setHasMore(false);
+                          setLoadingMore(false);
+                          setPageUsers([]);
+                          setExactMatch(undefined);
+                          setSearch("");
                           field.onChange([]);
                           textInputRef.current?.focus();
                         }}
