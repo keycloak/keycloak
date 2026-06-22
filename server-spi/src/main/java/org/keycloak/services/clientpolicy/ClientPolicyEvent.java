@@ -59,4 +59,7 @@ public enum ClientPolicyEvent {
 
     SAML_AUTHN_REQUEST,
     SAML_LOGOUT_REQUEST,
+
+    REGISTER_SCOPE_MAPPING,
+    UNREGISTER_SCOPE_MAPPING,
 }
