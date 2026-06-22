@@ -156,10 +156,9 @@ public class ConsentsTest {
         Assertions.assertTrue(consumerRealmOAuth.parseLoginResponse().isSuccess());
         providerRealm.cleanup().add(r -> AccountHelper.logout(r, userFromProviderRealm.getUsername()));
 
-        UserRepresentation foundUser = AdminApiUtil.findUserByUsername(consumerRealm.admin(), userFromProviderRealm.getUsername());
-        consumerRealm.cleanup().add(r -> r.users().get(foundUser.getId()).remove());
-
-        Assertions.assertNotNull(foundUser, "There must be user " + userFromProviderRealm.getUsername() + " in realm " + consumerRealm.getName());
+UserRepresentation foundUser = AdminApiUtil.findUserByUsername(consumerRealm.admin(), userFromProviderRealm.getUsername());
+Assertions.assertNotNull(foundUser, "There must be user " + userFromProviderRealm.getUsername() + " in realm " + consumerRealm.getName());
+consumerRealm.cleanup().add(r -> r.users().get(foundUser.getId()).remove());
         List<FederatedIdentityRepresentation> federatedIdentities = consumerRealm.admin().users().get(foundUser.getId()).getFederatedIdentity();
         Assertions.assertEquals(1, federatedIdentities.size(), "The user is not federated");
         Assertions.assertEquals(IDP_OIDC_ALIAS, federatedIdentities.get(0).getIdentityProvider());
