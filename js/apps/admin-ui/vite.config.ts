@@ -1,6 +1,7 @@
 import react from "@vitejs/plugin-react";
 import { readFileSync } from "node:fs";
 import path from "path";
+import reactHookFormNoMemo from "../../babel-plugin-react-hook-form-no-memo.js";
 import { getProperties } from "properties-file";
 import { defineConfig, loadEnv } from "vite";
 import { checker } from "vite-plugin-checker";
@@ -15,6 +16,7 @@ export default defineConfig(({ mode }) => {
     react({
       babel: {
         plugins: [
+          reactHookFormNoMemo,
           [
             "babel-plugin-react-compiler",
             { target: "18", panicThreshold: "NONE" },

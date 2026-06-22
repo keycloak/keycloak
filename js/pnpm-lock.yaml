@@ -18,6 +18,9 @@ importers:
 
   .:
     devDependencies:
+      '@babel/helper-plugin-utils':
+        specifier: ^7.27.1
+        version: 7.29.7
       '@eslint/compat':
         specifier: ^2.0.0
         version: 2.0.0(eslint@9.39.4)
@@ -699,10 +702,6 @@ packages:
 
   '@babel/helper-optimise-call-expression@7.27.1':
     resolution: {integrity: sha512-URMGH08NzYFhubNSGJrpUEphGKQwMQYBySzat5cAByY1/YgIRkULnIy3tAMeszlL/so2HbeilYloUmSpd7GdVw==}
-    engines: {node: '>=6.9.0'}
-
-  '@babel/helper-plugin-utils@7.27.1':
-    resolution: {integrity: sha512-1gn1Up5YXka3YYAHGKpbideQ5Yjf1tDa9qYcgysz+cNCXukyLl6DjPXhD3VRwSb8c0J9tA4b2+rHEZtc6R0tlw==}
     engines: {node: '>=6.9.0'}
 
   '@babel/helper-plugin-utils@7.29.7':
@@ -5157,8 +5156,6 @@ snapshots:
     dependencies:
       '@babel/types': 7.28.4
 
-  '@babel/helper-plugin-utils@7.27.1': {}
-
   '@babel/helper-plugin-utils@7.29.7': {}
 
   '@babel/helper-replace-supers@7.27.1(@babel/core@7.28.0)':
@@ -5229,7 +5226,7 @@ snapshots:
     dependencies:
       '@babel/core': 7.28.0
       '@babel/helper-create-class-features-plugin': 7.28.3(@babel/core@7.28.0)
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.29.7
     transitivePeerDependencies:
       - supports-color
 
@@ -5237,7 +5234,7 @@ snapshots:
     dependencies:
       '@babel/core': 7.28.4
       '@babel/helper-create-class-features-plugin': 7.28.3(@babel/core@7.28.4)
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.29.7
     transitivePeerDependencies:
       - supports-color
 

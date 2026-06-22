@@ -20,7 +20,7 @@ import {
 } from "@patternfly/react-core";
 import { saveAs } from "file-saver";
 import { Fragment, useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
@@ -93,21 +93,26 @@ const KeySection = ({
   save,
 }: KeySectionProps) => {
   const { t } = useTranslation();
-  const { control, watch } = useFormContext<FormFields>();
+  const { control } = useFormContext<FormFields>();
   const title = KEYS_MAPPING[attr].title;
   const key = KEYS_MAPPING[attr].key;
   const name = KEYS_MAPPING[attr].name;
 
   const [showImportDialog, toggleImportDialog] = useToggle();
 
-  const section = watch(name as keyof FormFields);
+  const section = useWatch({
+    control,
+    name: name as keyof FormFields,
+    defaultValue: "false",
+  });
 
-  const useMetadataDescriptorUrl = watch(
-    convertAttributeNameToForm<FormFields>(
+  const useMetadataDescriptorUrl = useWatch({
+    control,
+    name: convertAttributeNameToForm<FormFields>(
       "attributes.saml.useMetadataDescriptorUrl",
     ),
-    "false",
-  );
+    defaultValue: "false",
+  });
 
   return (
     <>

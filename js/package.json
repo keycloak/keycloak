@@ -19,6 +19,7 @@
     }
   },
   "devDependencies": {
+    "@babel/helper-plugin-utils": "^7.27.1",
     "@eslint/compat": "^2.0.0",
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^9.39.4",

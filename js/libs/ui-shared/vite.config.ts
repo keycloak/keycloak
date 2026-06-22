@@ -1,5 +1,6 @@
 import react from "@vitejs/plugin-react";
 import path from "node:path";
+import reactHookFormNoMemo from "../../babel-plugin-react-hook-form-no-memo.js";
 import peerDepsExternal from "rollup-plugin-peer-deps-external";
 import { defineConfig } from "vite";
 import { checker } from "vite-plugin-checker";
@@ -27,6 +28,7 @@ export default defineConfig({
     react({
       babel: {
         plugins: [
+          reactHookFormNoMemo,
           [
             "babel-plugin-react-compiler",
             { target: "18", panicThreshold: "NONE" },

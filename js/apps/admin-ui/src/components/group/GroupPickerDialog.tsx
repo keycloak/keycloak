@@ -345,7 +345,7 @@ const GroupRow = ({
             className="kc-join-group-modal-check"
             data-testid={`${group.name}-check`}
             aria-label={group.name}
-            checked={group.checked}
+            checked={!!selectedRows.find((r) => r.id === group.id)}
             isDisabled={isRowDisabled(group)}
             onChange={(_event, checked) => {
               let newSelectedRows: SelectableGroup[] = [];
