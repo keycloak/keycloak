@@ -132,6 +132,10 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             return Response.Status.CONFLICT;
         }
 
+        if (throwable instanceof IllegalArgumentException) {
+            return Response.Status.BAD_REQUEST;
+        }
+
         return Response.Status.INTERNAL_SERVER_ERROR;
     }
 
@@ -144,6 +148,10 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
         if (cause instanceof ModelDuplicateException || throwable instanceof ModelDuplicateException) {
             return "conflict";
+        }
+
+        if (throwable instanceof IllegalArgumentException) {
+            return OAuthErrorException.INVALID_REQUEST;
         }
 
         if (throwable instanceof WebApplicationException && throwable.getMessage() != null) {
