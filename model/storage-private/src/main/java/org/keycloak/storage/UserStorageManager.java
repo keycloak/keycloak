@@ -978,7 +978,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (StorageId.isLocalStorage(userId)) {
             return localStorage().getVerifiableCredentialByClientScope(userId, clientScopeId);
         } else {
-            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+            return getFederatedStorage().getVerifiableCredentialByClientScope(userId, clientScopeId);
         }
     }
 

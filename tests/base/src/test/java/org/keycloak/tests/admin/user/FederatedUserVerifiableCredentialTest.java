@@ -1,6 +1,7 @@
 package org.keycloak.tests.admin.user;
 
 import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
@@ -171,6 +172,36 @@ public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
         runOnServer.run(session -> {
             long count = session.users().getVerifiableCredentialsByUser(federatedUserId).count();
             assertEquals(0, count);
+        });
+    }
+
+    @Test
+    public void testGetVerifiableCredentialByClientScope() {
+        String federatedUserId = createFederatedUser("fed-user-get-verify-fields");
+        String scopeId = resolveScopeId(CLIENT_SCOPE_NAME_1);
+
+        runOnServer.run(session -> {
+            UserVerifiableCredentialModel vcModel = new UserVerifiableCredentialModel("vc-with-fields", scopeId);
+            vcModel.setRevision("rev-123");
+            vcModel.setUserAttributes(Map.of(
+                    "firstName", List.of("John"),
+                    "lastName", List.of("Doe")
+            ));
+
+            session.users().addVerifiableCredential(federatedUserId, vcModel);
+        });
+
+        runOnServer.run(session -> {
+            UserVerifiableCredentialModel retrieved = session.users().getVerifiableCredentialByClientScope(federatedUserId, scopeId);
+
+            assertNotNull(retrieved);
+            assertNotNull(retrieved.getId());
+            assertEquals(scopeId, retrieved.getClientScopeId());
+            assertEquals("rev-123", retrieved.getRevision());
+            assertNotNull(retrieved.getCreatedDate());
+            assertNotNull(retrieved.getUserAttributes());
+            assertEquals(List.of("John"), retrieved.getUserAttributes().get("firstName"));
+            assertEquals(List.of("Doe"), retrieved.getUserAttributes().get("lastName"));
         });
     }
 

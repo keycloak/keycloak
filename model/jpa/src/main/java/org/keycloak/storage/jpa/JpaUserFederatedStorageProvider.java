@@ -1116,4 +1116,12 @@ public class JpaUserFederatedStorageProvider implements
                 .map(this::toModel)
                 .sorted(Comparator.comparing(UserVerifiableCredentialModel::getClientScopeId));
     }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialByClientScope(String userId, String clientScopeId) {
+        return getFederatedVerifiableCredentialEntitiesByUser(userId)
+                .filter(federatedUserVerifiableCredentialEntity -> federatedUserVerifiableCredentialEntity.getClientScopeId().equals(clientScopeId))
+                .map(this::toModel)
+                .findFirst().orElse(null);
+    }
 }
