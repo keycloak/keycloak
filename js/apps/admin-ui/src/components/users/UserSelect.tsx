@@ -304,7 +304,9 @@ export const UserSelect = ({
                   key={SHOW_MORE}
                   value={SHOW_MORE}
                   isDisabled={loadingMore}
-                  aria-label={t("showMoreUsers")}
+                  aria-label={
+                    loadingMore ? t("spinnerLoading") : t("showMoreUsers")
+                  }
                 >
                   {loadingMore ? (
                     <>
