@@ -47,6 +47,9 @@ public class TokenInputValidationTest {
 
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+        assertEquals("Invalid Content-Type header", response.getErrorDescription());
+        assertEquals("no-store", response.getHeader("Cache-Control"));
+        assertEquals("no-cache", response.getHeader("Pragma"));
     }
 
     @Test
