@@ -14,10 +14,12 @@ public class ContentTypeExceptionFilter implements Handler<RoutingContext> {
     public void handle(RoutingContext routingContext) {
         String contentType = routingContext.request().getHeader("Content-Type");
 
-        if (contentType != null && !contentType.isBlank() && !isParseable(contentType)) {
+        if (contentType != null && !isParseable(contentType)) {
             LOGGER.debugf("Rejecting request with malformed Content-Type header: %s", contentType);
             routingContext.response()
                     .setStatusCode(400)
+                    .putHeader("Cache-Control", "no-store")
+                    .putHeader("Pragma", "no-cache")
                     .putHeader("Content-Type", MediaType.APPLICATION_JSON)
                     .end(MALFORMED_CONTENT_TYPE_RESPONSE);
             return;

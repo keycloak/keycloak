@@ -39,7 +39,7 @@ public class TokenInputValidationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"application/", "application/@##", ""})
+    @ValueSource(strings = {"invalid/@@##", "", "</><script>alert(1)</script>", " application/ "})
     public void tokenEndpointRejectsMalformed(String input) {
         AccessTokenResponse response = oauth.passwordGrantRequest("user", "password")
                 .header("Content-Type", input)
