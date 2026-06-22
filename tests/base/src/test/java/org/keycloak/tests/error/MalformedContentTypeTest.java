@@ -77,6 +77,20 @@ class MalformedContentTypeTest {
         assertThat("error code", error.getError(), is(OAuthErrorException.INVALID_REQUEST));
     }
 
+    @Test
+    void xssScriptPayloadContentTypeOnTokenEndpoint() throws IOException {
+        HttpPost post = new HttpPost(tokenUri());
+        post.setHeader("Content-Type", "</><script>alert(1)</script>");
+        post.setEntity(new StringEntity("grant_type=password&client_id=admin-cli&username=admin&password=admin"));
+
+        HttpResponse response = httpClient.execute(post);
+        assertThat("status code should be 400", response.getStatusLine().getStatusCode(), is(400));
+
+        OAuth2ErrorRepresentation error = JsonSerialization.readValue(
+                response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
+        assertThat("error code", error.getError(), is(OAuthErrorException.INVALID_REQUEST));
+    }
+
     private URI tokenUri() {
         return KeycloakUriBuilder.fromUri(keycloakUrls.getMasterRealm())
                 .path("protocol/openid-connect/token")

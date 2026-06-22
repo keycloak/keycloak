@@ -132,7 +132,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             return Response.Status.CONFLICT;
         }
 
-        if (throwable instanceof IllegalArgumentException) {
+        if (throwable instanceof IllegalArgumentException && isMediaTypeParsingError(throwable)) {
             return Response.Status.BAD_REQUEST;
         }
 
@@ -150,7 +150,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             return "conflict";
         }
 
-        if (throwable instanceof IllegalArgumentException) {
+        if (throwable instanceof IllegalArgumentException && isMediaTypeParsingError(throwable)) {
             return OAuthErrorException.INVALID_REQUEST;
         }
 
@@ -159,6 +159,26 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         }
 
         return "unknown_error";
+    }
+
+    private static boolean isMediaTypeParsingError(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            String msg = current.getMessage();
+            if (msg != null) {
+                String lower = msg.toLowerCase(Locale.ROOT);
+                if (lower.contains("media type") || lower.contains("content-type") ||
+                    lower.contains("could not find") || lower.contains("invalid")) {
+                    return true;
+                }
+            }
+            Class<?> cls = current.getClass();
+            if (cls.getName().contains("MediaType") || cls.getName().contains("BadRequest")) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private static RealmModel resolveRealm(KeycloakSession session) {
