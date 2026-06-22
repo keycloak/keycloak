@@ -89,10 +89,7 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
                     .map(f -> session.getProvider(RefreshTokenProvider.class, f.getId()))
                     .filter(p -> p.supports(refreshTokenCtx))
                     .findFirst()
-                    .orElseThrow(() -> {
-                        event.error(Errors.INVALID_REQUEST);
-                        return new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "No provider available to handle refresh token", Response.Status.BAD_REQUEST);
-                    });
+                    .orElseThrow(() -> new OAuthErrorException(Errors.INVALID_REQUEST, "No provider available to handle refresh token"));
 
             TokenManager.AccessTokenResponseBuilder responseBuilder = refreshTokenProvider.refreshAccessToken(refreshTokenCtx);
 
@@ -103,8 +100,8 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
             res = responseBuilder.build();
 
             if (!responseBuilder.isOfflineToken()) {
-                UserSessionModel userSession = session.sessions().getUserSession(realm, res.getSessionState());
-                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+                AuthenticatedClientSessionModel clientSession = responseBuilder.getClientSessionCtx().getClientSession();
+                UserSessionModel userSession = clientSession.getUserSession();
                 updateClientSession(clientSession);
                 updateUserSessionFromClientAuth(userSession);
             }
