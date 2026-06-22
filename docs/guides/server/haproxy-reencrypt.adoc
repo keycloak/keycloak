@@ -175,6 +175,51 @@ If the number of intermediate certificates in your certificate chain is longer t
 
 See <@links.server id="reverseproxy" /> for more details.
 
+[[admin-dedicated-port-haproxy-reencrypt]]
+== Optional: Admin UI and Admin API on a dedicated port
+
+By default, the Admin UI and Admin API are served on the same port (8443) as the public endpoints, protected only by the source IP filtering (`is_allowed_src`).
+For stricter network-level isolation, you can move them to a dedicated port (8444) so they can be independently firewalled.
+
+The dedicated admin port uses the *same hostname* as the public port, so the existing external certificate already covers it and no additional Subject Alternative Name is required.
+Because the admin port and the public port share the same HAProxy frontend, the header filtering and client certificate forwarding described above apply to both automatically.
+
+[NOTE]
+====
+Setting `hostname-admin` only changes the URLs {project_name} generates for the Admin Console and Admin API.
+It does not stop the Admin API from also answering on the public frontend URL — restricting administration access to the dedicated port must be enforced at the reverse proxy, which is what the rules below do.
+See the <@links.server id="hostname"/> {section}.
+====
+
+To enable this, add the following configuration:
+
+*`docker-compose.yaml`*::
+* Add `KC_HOSTNAME_ADMIN` on both `keycloak1` and `keycloak2` which tells each {project_name} node to serve the Admin UI and Admin API on the admin port.
+(`KC_HOSTNAME` is already set to the required `https://${KC_HOST}:8443` URL form.)
+* Add port `8444:8444` under the `haproxy` service — exposes the admin port on the host.
+
+*`haproxy.cfg`*::
+* Add the second `bind *:8444 ...`  which makes the frontend also listen on the admin port.
+* Replace the default `http-request deny unless is_public_path or is_allowed_src` rule with the three isolation rules:
++
+[source,haproxy]
+----
+acl is_admin_port dst_port 8444
+http-request deny if !is_admin_port !is_public_path
+http-request deny if is_admin_port !is_allowed_src
+----
+
+These rules route by destination port:
+
+* *Public port (8443):* only the public paths (`/realms/`, `/resources/`, `/.well-known/`) are served; any other path, including the Admin Console and Admin API, is denied.
+* *Admin port (8444):* all paths are served, but only to the allowed source IP ranges.
+
+[NOTE]
+====
+With this setup, any request to an admin path on port 8443 is denied with an HTTP 403 response.
+Because the admin port shares the hostname with the public port, in production, restrict the admin port (8444) to an internal/management network at the firewall.
+====
+
 [[graceful-shutdown-considerations-haproxy-reencrypt]]
 == Graceful shutdown considerations
 

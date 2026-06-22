@@ -211,6 +211,32 @@ See the <@links.server id="mutual-tls"/> guide for additional details.
 Disables the client authentication requirement for the management endpoint.
 This allows Traefik to perform HTTPS health checks against the management port (`9000`) without needing to present the mTLS client certificate.
 
+[[admin-dedicated-port-traefik-reencrypt]]
+== Optional: Admin UI and Admin API on a dedicated hostname and port
+
+By default, the Admin UI and Admin API are served on the same port (8443) as the public endpoints, protected only by the `ip-allowlist` middleware.
+For stricter network-level isolation, you can move them to a dedicated hostname and port (8444) so they can be independently firewalled.
+
+To enable this, add the following configuration:
+
+*`docker-compose.yaml`*::
+* Add `KC_HOSTNAME_ADMIN` on both `keycloak1` and `keycloak2` which tells each {project_name} node to serve the Admin UI and Admin API on the admin hostname.
+* Add port `8444:8444` under the `traefik` service — exposes the admin port on the host.
+
+*`traefik.yaml`*::
+* Add the `keycloak-admin` entrypoint which adds a second Traefik entrypoint listening on port 8444.
+
+*`keycloak.yaml`*::
+* Add the `keycloak-admin` router — routes all traffic coming on the `keycloak-admin` entrypoint to the {project_name} service, restricted to the `ip-allowlist`.
+* Remove the `keycloak-internal` router as it is no longer needed, as the admin paths are now handled exclusively by the dedicated `keycloak-admin` router on port 8444.
+Leaving both enabled would cause the `keycloak-internal` router to match admin paths on port 8443 as well.
+
+[NOTE]
+====
+With this setup, any request to an admin path on port 8443 will fall through to the `keycloak-public` router, which only matches `/realms/`, `/resources/`, and `/.well-known/`.
+Admin paths on port 8443 will return a 404.
+====
+
 [[graceful-shutdown-considerations-traefik-reencrypt]]
 == Graceful shutdown considerations
 
