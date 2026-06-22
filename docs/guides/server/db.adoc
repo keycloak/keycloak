@@ -762,6 +762,11 @@ Therefore, use `quarkus.datasource.user-store.db-kind=h2`, instead of `quarkus.d
 
 <@opts.printRelevantOptions includedOptions="db db-* transaction-xa-enabled transaction-default-timeout transaction-setup-timeout" excludedOptions="db-*-<datasource>">
 
+=== Health checks
+
+Additional datasources are included by default in the readiness heatlh check endpoint that is available when health and metrics are enabled. If the additional datasource is not critical to your usage, you may exclude it from
+the health check with `db-health-exclude-<name>` set to `true`. 
+
 === Additional datasources options
 <@opts.includeOptions includedOptions="*-<datasource>"/>
 
