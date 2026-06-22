@@ -26,8 +26,8 @@ import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.SignatureSignerContext;
-import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.rule.CryptoInitRule;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
