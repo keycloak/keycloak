@@ -2,6 +2,9 @@ package org.keycloak.tests.oauth;
 
 import java.io.IOException;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
@@ -10,6 +13,7 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
@@ -32,6 +36,17 @@ public class TokenInputValidationTest {
         assertEquals(401, response.getStatusCode());
         assertFalse(response.isSuccess());
         assertEquals(OAuthErrorException.INVALID_TOKEN, response.getError());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application/", "application/@##", ""})
+    public void tokenEndpointRejectsMalformed(String input) {
+        AccessTokenResponse response = oauth.passwordGrantRequest("user", "password")
+                .header("Content-Type", input)
+                .send();
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
     }
 
     @Test
