@@ -17,6 +17,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -31,6 +32,9 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.storage.UserStorageUtil;
+import org.keycloak.storage.federated.UserFederatedStorageProvider;
+import org.keycloak.storage.jpa.entity.FederatedUser;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -39,6 +43,8 @@ import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
@@ -74,6 +80,9 @@ public class AbstractUserTest {
 
     @InjectPage
     LoginPage loginPage;
+
+    @InjectTimeOffSet(enableForCaches = true)
+    TimeOffSet timeOffSetWithCaches;
 
     protected Set<String> managedAttributes = new HashSet<>();
 
@@ -272,4 +281,41 @@ public class AbstractUserTest {
             throw new RuntimeException("Failed to parse json", e);
         }
     }
+
+    protected String createFederatedUser(String username) {
+        return createFederatedUser(username, "John", "Doe", username + "@example.com");
+    }
+
+    protected String createFederatedUser(String username, String firstName, String lastName, String email) {
+        return runOnServer.fetchString(session -> {
+            String providerId = "test";
+            // Create federated user ID: f:<providerId>:<externalId>
+            String federatedUserId = "f:" + providerId + ":" + username;
+
+            FederatedUser fedUser = new FederatedUser();
+            fedUser.setId(federatedUserId);
+            fedUser.setRealmId(session.getContext().getRealm().getId());
+            fedUser.setStorageProviderId(providerId);
+            session.getProvider(JpaConnectionProvider.class).getEntityManager().persist(fedUser);
+
+            UserFederatedStorageProvider federatedStorage = UserStorageUtil.userFederatedStorage(session);
+            federatedStorage.setSingleAttribute(session.getContext().getRealm(), federatedUserId, "username", username);
+            federatedStorage.setSingleAttribute(session.getContext().getRealm(), federatedUserId, "firstName", firstName);
+            federatedStorage.setSingleAttribute(session.getContext().getRealm(), federatedUserId, "lastName", lastName);
+            federatedStorage.setSingleAttribute(session.getContext().getRealm(), federatedUserId, "email", email);
+            return federatedUserId;
+        });
+    }
+
+    protected String resolveScopeId(String scopeName) {
+        return runOnServer.fetchString(session ->
+                session.clientScopes()
+                        .getClientScopesStream(session.getContext().getRealm())
+                        .filter(cs -> scopeName.equals(cs.getName()))
+                        .findFirst()
+                        .orElseThrow(() -> new AssertionError("Client scope not found: " + scopeName))
+                        .getId()
+        );
+    }
+
 }

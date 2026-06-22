@@ -5,13 +5,9 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.storage.UserStorageUtil;
-import org.keycloak.storage.federated.UserFederatedStorageProvider;
-import org.keycloak.storage.jpa.entity.FederatedUser;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -248,8 +244,8 @@ public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
                     .eventsListeners("jboss-logging")
                     .verifiableCredentialsEnabled(true)
                     .clientScopes(
-                            createCredentialScope(CREDENTIAL_TYPE_1),
-                            createCredentialScope(CREDENTIAL_TYPE_2)
+                            createCredentialScope(CLIENT_SCOPE_NAME_1),
+                            createCredentialScope(CLIENT_SCOPE_NAME_2)
                     );
         }
 
@@ -260,41 +256,5 @@ public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
                     .setCredentialConfigurationId(scopeName);
         }
 
-    }
-
-    private String resolveScopeId(String scopeName) {
-        return runOnServer.fetchString(session ->
-            session.clientScopes()
-                    .getClientScopesStream(session.getContext().getRealm())
-                    .filter(cs -> scopeName.equals(cs.getName()))
-                    .findFirst()
-                    .orElseThrow(() -> new AssertionError("Client scope not found: " + scopeName))
-                    .getId()
-        );
-    }
-
-    private String createFederatedUser(String username) {
-        return createFederatedUser(username, "John", "Doe", username + "@example.com");
-    }
-
-    private String createFederatedUser(String username, String firstName, String lastName, String email) {
-        return runOnServer.fetchString(session -> {
-            String providerId = "00000000-0000-0000-0000-000000000001";
-            // Create federated user ID: f:<providerId>:<externalId>
-            String federatedUserId = "f:" + providerId + ":" + username;
-
-            FederatedUser fedUser = new FederatedUser();
-            fedUser.setId(federatedUserId);
-            fedUser.setRealmId(session.getContext().getRealm().getId());
-            fedUser.setStorageProviderId(providerId);
-            session.getProvider(JpaConnectionProvider.class).getEntityManager().persist(fedUser);
-
-            UserFederatedStorageProvider federatedStorage = UserStorageUtil.userFederatedStorage(session);
-            federatedStorage.setSingleAttribute(session.getContext().getRealm(), federatedUserId, "username", username);
-            federatedStorage.setSingleAttribute(session.getContext().getRealm(), federatedUserId, "firstName", firstName);
-            federatedStorage.setSingleAttribute(session.getContext().getRealm(), federatedUserId, "lastName", lastName);
-            federatedStorage.setSingleAttribute(session.getContext().getRealm(), federatedUserId, "email", email);
-            return federatedUserId;
-        });
     }
 }
