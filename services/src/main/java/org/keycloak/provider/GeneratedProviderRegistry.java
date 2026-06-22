@@ -50,4 +50,12 @@ public final class GeneratedProviderRegistry {
     public static void install(Set<Class<? extends ProviderFactory>> classes) {
         factoryClasses = Set.copyOf(classes);
     }
+
+    /**
+     * Reset the registry. Called from a recorded Quarkus shutdown task so that the
+     * static state does not leak across hot-reloads or in-JVM application restarts.
+     */
+    public static void clear() {
+        factoryClasses = Set.of();
+    }
 }

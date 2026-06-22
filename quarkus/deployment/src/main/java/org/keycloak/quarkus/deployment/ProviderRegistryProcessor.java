@@ -17,36 +17,44 @@
 
 package org.keycloak.quarkus.deployment;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Modifier;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
 import org.keycloak.provider.GeneratedProviderRegistry;
 import org.keycloak.provider.KeycloakProvider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.quarkus.runtime.KeycloakRecorder;
 
-import io.quarkus.arc.deployment.BeanDiscoveryFinishedBuildItem;
 import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.annotations.Consume;
+import io.quarkus.deployment.annotations.ExecutionTime;
+import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
+import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
+import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
+import org.jboss.jandex.MethodInfo;
 import org.jboss.logging.Logger;
 
+import java.lang.reflect.Modifier;
+
 /**
- * Scans the Quarkus Jandex index for classes annotated with {@link KeycloakProvider}
- * and installs the discovered classes into {@link GeneratedProviderRegistry} so that
- * {@link org.keycloak.provider.DefaultProviderLoader} can include them alongside
- * {@link java.util.ServiceLoader}-discovered factories.
+ * Scans the Quarkus Jandex index for classes annotated with {@link KeycloakProvider},
+ * validates them at build time, and records a runtime call to populate
+ * {@link GeneratedProviderRegistry} at {@code STATIC_INIT}. A second build step records
+ * a shutdown task that clears the registry, so the static state does not leak across
+ * in-JVM restarts.
  *
- * Validates each annotated class at build time:
+ * Build-time validation:
  * <ul>
- *   <li>must implement {@link ProviderFactory},</li>
- *   <li>must have a public no-arg constructor <em>or</em> be a CDI bean.</li>
+ *   <li>the annotation target must be a class (the annotation is already {@code @Target(TYPE)},
+ *       so a non-class target indicates an illegal state),</li>
+ *   <li>the class must implement {@link ProviderFactory} (checked via Jandex hierarchy walk),</li>
+ *   <li>the class must declare a public no-arg constructor.</li>
  * </ul>
  */
 class ProviderRegistryProcessor {
@@ -54,13 +62,14 @@ class ProviderRegistryProcessor {
     private static final Logger logger = Logger.getLogger(ProviderRegistryProcessor.class);
 
     private static final DotName KEYCLOAK_PROVIDER = DotName.createSimple(KeycloakProvider.class.getName());
+    private static final DotName PROVIDER_FACTORY = DotName.createSimple(ProviderFactory.class.getName());
 
+    @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     ProviderRegistryBuildItem scanKeycloakProviders(CombinedIndexBuildItem indexBuildItem,
-                                                   BeanDiscoveryFinishedBuildItem beanDiscovery) {
+                                                   KeycloakRecorder recorder) {
         IndexView index = indexBuildItem.getIndex();
         TreeSet<String> classNames = new TreeSet<>();
-        Set<Class<? extends ProviderFactory>> factoryClasses = new LinkedHashSet<>();
 
         Collection<AnnotationInstance> annotations = index.getAnnotations(KEYCLOAK_PROVIDER);
         for (AnnotationInstance annotation : annotations) {
@@ -71,55 +80,75 @@ class ProviderRegistryProcessor {
                         + " (kind=" + target.kind() + ")");
             }
 
-            String className = target.asClass().name().toString();
-            Class<? extends ProviderFactory> factoryClass = loadAndValidate(className, beanDiscovery);
-
-            classNames.add(className);
-            factoryClasses.add(factoryClass);
+            ClassInfo classInfo = target.asClass();
+            validate(classInfo, index);
+            classNames.add(classInfo.name().toString());
         }
 
-        GeneratedProviderRegistry.install(factoryClasses);
-        logger.debugf("Installed %d @KeycloakProvider-annotated provider factories into the registry", classNames.size());
+        recorder.installProviderRegistry(classNames);
+        logger.debugf("Recorded install of %d @KeycloakProvider-annotated provider factories", classNames.size());
 
         return new ProviderRegistryBuildItem(classNames);
     }
 
-    private static Class<? extends ProviderFactory> loadAndValidate(String className, BeanDiscoveryFinishedBuildItem beanDiscovery) {
-        Class<?> clazz;
-        try {
-            clazz = Class.forName(className, false, Thread.currentThread().getContextClassLoader());
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
-                    + " class " + className + " is in the Jandex index but not on the deployment classpath", e);
-        }
-
-        if (!ProviderFactory.class.isAssignableFrom(clazz)) {
-            throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
-                    + " class " + className + " does not implement " + ProviderFactory.class.getName());
-        }
-
-        Class<? extends ProviderFactory> factoryClass = clazz.asSubclass(ProviderFactory.class);
-
-        if (!hasPublicNoArgConstructor(factoryClass) && !isCdiBean(className, beanDiscovery)) {
-            throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
-                    + " class " + className
-                    + " must have a public no-arg constructor or be a CDI bean");
-        }
-
-        return factoryClass;
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    @Consume(ProviderRegistryBuildItem.class)
+    void clearProviderRegistryOnShutdown(KeycloakRecorder recorder, ShutdownContextBuildItem shutdownContext) {
+        recorder.clearProviderRegistryOnShutdown(shutdownContext);
     }
 
-    private static boolean hasPublicNoArgConstructor(Class<?> clazz) {
-        for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
-            if (constructor.getParameterCount() == 0 && Modifier.isPublic(constructor.getModifiers())) {
+    private static void validate(ClassInfo classInfo, IndexView index) {
+        if (!implementsProviderFactory(classInfo, index)) {
+            throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
+                    + " class " + classInfo.name() + " does not implement " + PROVIDER_FACTORY
+                    + " (or its hierarchy is not in the Jandex index)");
+        }
+        if (!hasPublicNoArgConstructor(classInfo)) {
+            throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
+                    + " class " + classInfo.name() + " must have a public no-arg constructor");
+        }
+    }
+
+    private static boolean implementsProviderFactory(ClassInfo classInfo, IndexView index) {
+        ClassInfo current = classInfo;
+        while (current != null) {
+            for (DotName iface : current.interfaceNames()) {
+                if (interfaceExtendsProviderFactory(iface, index)) {
+                    return true;
+                }
+            }
+            DotName superName = current.superName();
+            if (superName == null || superName.equals(DotName.OBJECT_NAME)) {
+                return false;
+            }
+            current = index.getClassByName(superName);
+        }
+        return false;
+    }
+
+    private static boolean interfaceExtendsProviderFactory(DotName ifaceName, IndexView index) {
+        if (PROVIDER_FACTORY.equals(ifaceName)) {
+            return true;
+        }
+        ClassInfo ifaceInfo = index.getClassByName(ifaceName);
+        if (ifaceInfo == null) {
+            return false;
+        }
+        for (DotName parent : ifaceInfo.interfaceNames()) {
+            if (interfaceExtendsProviderFactory(parent, index)) {
                 return true;
             }
         }
         return false;
     }
 
-    private static boolean isCdiBean(String className, BeanDiscoveryFinishedBuildItem beanDiscovery) {
-        DotName name = DotName.createSimple(className);
-        return beanDiscovery.beanStream().withBeanClass(name).iterator().hasNext();
+    private static boolean hasPublicNoArgConstructor(ClassInfo classInfo) {
+        for (MethodInfo constructor : classInfo.constructors()) {
+            if (constructor.parametersCount() == 0 && Modifier.isPublic(constructor.flags())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
