@@ -47,6 +47,7 @@ import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -185,7 +186,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
     }
 
     @Override
-    protected void validateAudience(AccessToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients) {
+    protected void validateAudience(JsonWebToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients) {
         ClientModel tokenHolder = token == null ? null : realm.getClientByClientId(token.getIssuedFor());
 
         if (client.isPublicClient()) {
@@ -221,7 +222,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
     // For now, include "scope" parameter as is
     @Override
-    protected String getRequestedScope(AccessToken token, List<ClientModel> targetAudienceClients) {
+    protected String getRequestedScope(JsonWebToken token, List<ClientModel> targetAudienceClients) {
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
         if (!TokenManager.isValidScope(session, scope, client)) {
@@ -236,7 +237,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
     @Override
     protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
-                                                  List<ClientModel> targetAudienceClients, String scope, AccessToken subjectToken) {
+                                                  List<ClientModel> targetAudienceClients, String scope, JsonWebToken subjectToken) {
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
         AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
         boolean isOfflineSession = targetUserSession.isOffline();

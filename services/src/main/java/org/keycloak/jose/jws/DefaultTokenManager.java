@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
 import org.keycloak.common.util.SecretGenerator;
@@ -200,6 +201,7 @@ public class DefaultTokenManager implements TokenManager {
             case INTERNAL:
                 return Constants.INTERNAL_SIGNATURE_ALGORITHM;
             case ADMIN:
+            case IDJAG:
                 return getSignatureAlgorithm(null);
             case ACCESS:
                 return getSignatureAlgorithm(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG);
@@ -250,6 +252,8 @@ public class DefaultTokenManager implements TokenManager {
                     : "JWT";
             case LOGOUT:
                 return TokenUtil.TOKEN_TYPE_JWT_LOGOUT_TOKEN;
+            case IDJAG:
+                return OAuth2Constants.IDENTITY_ASSERTION_JWT_HEADER_TYPE;
             default:
                 return "JWT";
         }
