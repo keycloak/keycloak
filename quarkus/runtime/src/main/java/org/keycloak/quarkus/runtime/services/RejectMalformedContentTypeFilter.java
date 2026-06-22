@@ -5,8 +5,8 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.ws.rs.core.MediaType;
 import org.jboss.logging.Logger;
 
-public class ContentTypeExceptionFilter implements Handler<RoutingContext> {
-    private static final Logger LOGGER = Logger.getLogger(ContentTypeExceptionFilter.class);
+public class RejectMalformedContentTypeFilter implements Handler<RoutingContext> {
+    private static final Logger LOGGER = Logger.getLogger(RejectMalformedContentTypeFilter.class);
     private static final String MALFORMED_CONTENT_TYPE_RESPONSE =
             "{\"error\":\"invalid_request\",\"error_description\":\"Invalid Content-Type header\"}";
 

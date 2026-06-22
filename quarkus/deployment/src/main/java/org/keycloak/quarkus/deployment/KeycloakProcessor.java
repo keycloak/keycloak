@@ -99,7 +99,7 @@ import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakHandlerChainCustomizer;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakTracingCustomizer;
 import org.keycloak.quarkus.runtime.logging.ClearMappedDiagnosticContextFilter;
-import org.keycloak.quarkus.runtime.services.ContentTypeExceptionFilter;
+import org.keycloak.quarkus.runtime.services.RejectMalformedContentTypeFilter;
 import org.keycloak.quarkus.runtime.services.RejectSourceMapFilter;
 import org.keycloak.quarkus.runtime.services.health.BootstrapReadyHealthCheck;
 import org.keycloak.quarkus.runtime.services.health.KeycloakClusterReadyHealthCheck;
@@ -318,8 +318,8 @@ class KeycloakProcessor {
     }
 
     @BuildStep
-    void filterContentTypeExceptions(BuildProducer<FilterBuildItem> filters) {
-        filters.produce(new FilterBuildItem(new ContentTypeExceptionFilter(), SecurityHandlerPriorities.CORS + 1));
+    void filterRejectMalformedContentType(BuildProducer<FilterBuildItem> filters) {
+        filters.produce(new FilterBuildItem(new RejectMalformedContentTypeFilter(), SecurityHandlerPriorities.CORS + 1));
     }
 
     @Record(ExecutionTime.STATIC_INIT)
