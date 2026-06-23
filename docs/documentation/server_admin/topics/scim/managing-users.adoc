@@ -147,7 +147,7 @@ The response uses the SCIM list format:
 }
 ----
 
-For filtering and pagination of results, see <<_scim_filtering_resources_,Filtering resources>>.
+For filtering and pagination of results, see <<_scim_filtering_resources,Filtering resources>>.
 
 == Selecting attributes
 
