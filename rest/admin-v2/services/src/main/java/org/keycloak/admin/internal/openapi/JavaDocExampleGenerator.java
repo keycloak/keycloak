@@ -18,6 +18,7 @@ import org.keycloak.models.mapper.SAMLClientModelMapper;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
+import org.keycloak.services.client.query.FieldResolver;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -349,9 +350,9 @@ final class JavaDocExampleGenerator {
     }
 
     private static final List<ProtocolEntry> PROTOCOLS = List.of(
-            new ProtocolEntry("openid-connect",
+            new ProtocolEntry(OIDCClientRepresentation.PROTOCOL,
                     new OIDCClientModelMapper(), OIDCClientRepresentation.class),
-            new ProtocolEntry("saml",
+            new ProtocolEntry(SAMLClientRepresentation.PROTOCOL,
                     new SAMLClientModelMapper(), SAMLClientRepresentation.class)
     );
 
@@ -391,20 +392,37 @@ final class JavaDocExampleGenerator {
         if (schema == null) {
             return;
         }
-        List<String> toRemove = new ArrayList<>();
-        List<String> toAdd = new ArrayList<>();
+        Map<String, String> replacements = new LinkedHashMap<>();
         for (DocProperty prop : schema.properties()) {
-            if (fieldNames.contains(prop.name()) && prop.typeRef() != null && schemas.containsKey(prop.typeRef())) {
-                DocSchema nestedSchema = schemas.get(prop.typeRef());
-                if (!nestedSchema.properties().isEmpty()) {
-                    toRemove.add(prop.name());
-                    DocProperty first = nestedSchema.properties().get(0);
-                    toAdd.add(prop.name() + "." + first.name());
+            if (!fieldNames.contains(prop.name()) || prop.typeRef() == null || !schemas.containsKey(prop.typeRef())) {
+                continue;
+            }
+            DocSchema nestedSchema = schemas.get(prop.typeRef());
+            if (nestedSchema == null || nestedSchema.properties().isEmpty()) {
+                continue;
+            }
+            String match = null;
+            for (DocProperty nested : nestedSchema.properties()) {
+                String dotPath = prop.name() + "." + nested.name();
+                if (FieldResolver.isKnownField(dotPath)) {
+                    match = dotPath;
+                    break;
                 }
             }
+            if (match == null) {
+                throw new IllegalStateException("No nested property of '" + prop.name()
+                        + "' is recognized by FieldResolver — update FieldResolver or the schema");
+            }
+            replacements.put(prop.name(), match);
         }
-        fieldNames.removeAll(toRemove);
-        fieldNames.addAll(toAdd);
+        if (!replacements.isEmpty()) {
+            Set<String> reordered = new LinkedHashSet<>();
+            for (String name : fieldNames) {
+                reordered.add(replacements.getOrDefault(name, name));
+            }
+            fieldNames.clear();
+            fieldNames.addAll(reordered);
+        }
     }
 
     private static List<QueryableField> resolveFields(Set<String> fieldNames, Map<String, DocSchema> schemas, String schemaName) {
