@@ -7,7 +7,7 @@ summary="Capture JVM thread dumps of a {project_name} server to diagnose perform
 
 == What is a thread dump?
 
-A JVM thread dump is a snapshot of the execution state of active threads within a Java Virtual Machine at a specific point in time.
+A JVM thread dump is a snapshot of all active threads in the JVM at a specific point in time.
 
 Thread dumps are useful for diagnosing issues such as thread contention, deadlocks, CPU spikes, or stuck I/O operations.
 
@@ -17,10 +17,11 @@ There are several ways to capture a thread dump. This guide uses `jcmd` as it pr
 
 The `jcmd` tool sends diagnostic commands to a running JVM. There are two commands relevant to capturing thread dumps: `Thread.print` and `Thread.dump_to_file`.
 
-Thread dumps created by the `Thread.print` command lack detailed information about virtual threads.
-Thread dumps created by the `Thread.dump_to_file` command lack information about locks and object monitors on JDK versions prior to JDK 25, as well as some additional JVM-internal and OS-level information.
+The `Thread.print` command lacks detailed information about virtual threads.
+The `Thread.dump_to_file` command lacks information about locks and object monitors on JDK versions prior to JDK 25.
+It also omits some JVM-internal and OS-level information that `Thread.print` includes.
 
-To form a comprehensive picture of the JVM state for an engineer to analyze the situation, create thread dumps using both the `Thread.print` and the `Thread.dump_to_file` commands, and provide them to an engineer for further analysis.
+To form a comprehensive picture of the JVM state, create thread dumps using both the `Thread.print` and the `Thread.dump_to_file` commands, and provide them to an engineer for analysis.
 
 === Using the `Thread.print` command
 
@@ -34,16 +35,14 @@ jcmd <PID> Thread.print -l #<1>
 
 === Using the `Thread.dump_to_file` command
 
-The following command writes a thread dump to a file in a plain-text format.
-
-NOTE: The file is created in the working directory of the {project_name} process, not in the working directory of the `jcmd`.
+The following command writes a thread dump to a file in plain-text format.
 
 [source]
 ----
 jcmd <PID> Thread.dump_to_file thread_dump.txt
 ----
 
-The following command writes a thread dump to a file in the JSON format.
+The following command writes a thread dump to a file in JSON format.
 
 [source]
 ----
@@ -52,11 +51,9 @@ jcmd <PID> Thread.dump_to_file -format=json thread_dump.json
 
 Compared with the plain-text format, the JSON output contains additional information about the thread container hierarchy.
 
-If the filename argument is not an absolute path, the thread dump will be created in the current working directory of the target process. In the case of {project_name}, this is the `bin/` directory.
+NOTE: If the filename argument is not an absolute path, the thread dump will be created in the current working directory of the target process.
 
-== Finding PID of the {project_name} process
-
-Running the `jcmd` commands without arguments lists the Java processes running on the system and their PIDs.
+Running the `jcmd` command without arguments lists the Java processes running on the system and their PIDs.
 
 [source]
 ----
@@ -69,9 +66,9 @@ Example output:
 242551 io.quarkus.bootstrap.runner.QuarkusEntryPoint start ... #<1>
 268778 jdk.jcmd/sun.tools.jcmd.JCmd
 ----
-<1> Assuming {project_name} is the only Quarkus-based application running on the system its PID in this example would be `242551`.
+<1> Assuming {project_name} is the only Quarkus-based application running on the system, its PID in this example would be `242551`.
 
-A script with a simple PID auto-detection could look like this:
+The following script demonstrates simple PID auto-detection:
 [source]
 ----
 #!/bin/bash -e
@@ -81,20 +78,20 @@ if [ -z "$PID" ]; then
   exit 1
 fi
 jcmd $PID Thread.print -l > thread_dump_print.txt
-jcmd $PID Thread.dump_to_file thread_dump_to_file.txt
+jcmd $PID Thread.dump_to_file $PWD/thread_dump_to_file.txt
 ----
 
 == Collecting multiple samples
 
-Because a single thread dump is just a snapshot of the JVM state at a particular point in time, it is recommended to capture multiple thread dumps over a short period of time, for example three to four samples spaced one or two seconds apart.
-This allows to see which threads are blocked, and which are making progress.
+Because a single thread dump captures only one moment in time, it is recommended to capture multiple thread dumps over a short period -- for example, three to four samples spaced one to two seconds apart.
+This allows you to see which threads are blocked and which are making progress.
 
-For example, assuming the PID variable is set, the following script captures four thread dumps two seconds apart:
+For example, assuming the `PID` variable is set, the following script captures four thread dumps two seconds apart:
 [source,bash]
 ----
 for i in {1..4}; do
   jcmd $PID Thread.print -l > thread_dump_print_$i.txt
-  jcmd $PID Thread.dump_to_file thread_dump_to_file_$i.txt
+  jcmd $PID Thread.dump_to_file $PWD/thread_dump_to_file_$i.txt
   sleep 2
 done
 ----
