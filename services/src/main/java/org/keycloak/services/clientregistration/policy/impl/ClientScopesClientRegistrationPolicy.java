@@ -18,6 +18,7 @@
 package org.keycloak.services.clientregistration.policy.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -124,7 +125,7 @@ public class ClientScopesClientRegistrationPolicy implements ClientRegistrationP
         List<String> allAllowed = new LinkedList<>();
 
         // Add client scopes allowed by config
-        List<String> allowedScopesConfig = componentModel.getConfig().getList(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES);
+        List<String> allowedScopesConfig = componentModel.getConfig().getOrDefault(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES, Collections.emptyList());
         if (allowedScopesConfig != null) {
             allAllowed.addAll(allowedScopesConfig);
         }
