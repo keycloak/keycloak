@@ -1328,7 +1328,11 @@ public class TokenManager {
 
         private void invokeTokenPostProcessors() {
             TokenPostProcessorContext context = new TokenPostProcessorContext(code, requestRefreshToken, refreshToken, accessToken, clientSessionCtx);
-            session.getAllProviders(TokenPostProcessor.class).forEach(processor -> processor.process(context));
+            session.getKeycloakSessionFactory()
+                    .getProviderFactoriesStream(TokenPostProcessor.class)
+                    .sorted((f1, f2) -> f2.order() - f1.order())
+                    .map(f -> session.getProvider(TokenPostProcessor.class, f.getId()))
+                    .forEach(processor -> processor.process(context));
         }
 
         public AccessTokenResponse build() {
