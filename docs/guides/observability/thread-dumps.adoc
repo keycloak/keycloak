@@ -17,6 +17,11 @@ There are several ways to capture a thread dump. This guide uses `jcmd` as it pr
 
 The `jcmd` tool sends diagnostic commands to a running JVM. There are two commands relevant to capturing thread dumps: `Thread.print` and `Thread.dump_to_file`.
 
+Thread dumps created by the `Thread.print` command lack detailed information about virtual threads.
+Thread dumps created by the `Thread.dump_to_file` command lack information about locks and object monitors on JDK versions prior to JDK 25, as well as some additional JVM-internal and OS-level information.
+
+To form a comprehensive picture of the JVM state for an engineer to analyze the situation, create thread dumps using both the `Thread.print` and the `Thread.dump_to_file` commands, and provide them to an engineer for further analysis.
+
 === Using the `Thread.print` command
 
 The following command prints a thread dump to the standard output.
@@ -30,6 +35,8 @@ jcmd <PID> Thread.print -l #<1>
 === Using the `Thread.dump_to_file` command
 
 The following command writes a thread dump to a file in a plain-text format.
+
+NOTE: The file is created in the working directory of the {project_name} process, not in the working directory of the `jcmd`.
 
 [source]
 ----
@@ -46,12 +53,6 @@ jcmd <PID> Thread.dump_to_file -format=json thread_dump.json
 Compared with the plain-text format, the JSON output contains additional information about the thread container hierarchy.
 
 If the filename argument is not an absolute path, the thread dump will be created in the current working directory of the target process. In the case of {project_name}, this is the `bin/` directory.
-
-=== Forming a comprehensive picture
-
-Thread dumps created by the `Thread.print` command lack detailed information about virtual threads.
-Thread dumps created by the `Thread.dump_to_file` command lack information about locks and object monitors (on JDK versions prior to JDK 25), as well as some additional JVM-internal and OS-level information.
-To form a comprehensive picture of the JVM state, create thread dumps using both the `Thread.print` and the `Thread.dump_to_file` commands.
 
 == Finding PID of the {project_name} process
 
@@ -79,18 +80,21 @@ if [ -z "$PID" ]; then
   echo "Process not found."
   exit 1
 fi
-jcmd $PID Thread.print -l > thread_dump.txt
+jcmd $PID Thread.print -l > thread_dump_print.txt
+jcmd $PID Thread.dump_to_file thread_dump_to_file.txt
 ----
 
 == Collecting multiple samples
 
-Because a single thread dump is just a snapshot of the JVM state at a particular point in time, it is recommended to capture multiple thread dumps over a short period of time, for example 3-4 samples spaced 1-2 seconds apart.
+Because a single thread dump is just a snapshot of the JVM state at a particular point in time, it is recommended to capture multiple thread dumps over a short period of time, for example three to four samples spaced one or two seconds apart.
+This allows to see which threads are blocked, and which are making progress.
 
 For example, assuming the PID variable is set, the following script captures four thread dumps two seconds apart:
 [source,bash]
 ----
 for i in {1..4}; do
-  jcmd $PID Thread.print -l > thread_dump_$i.txt
+  jcmd $PID Thread.print -l > thread_dump_print_$i.txt
+  jcmd $PID Thread.dump_to_file thread_dump_to_file_$i.txt
   sleep 2
 done
 ----
