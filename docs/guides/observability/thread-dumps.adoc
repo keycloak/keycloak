@@ -6,7 +6,7 @@
 <@tmpl.guide
 title="Troubleshooting performance issues using JVM thread dumps"
 summary="Capture JVM thread dumps of a {project_name} server to diagnose performance issues"
-includedOptions="">
+>
 
 == What is a thread dump?
 
@@ -46,9 +46,9 @@ The following command writes a thread dump to a file in the JSON format.
 jcmd <PID> Thread.dump_to_file -format=json threaddump.json
 ----
 
-Compared with the plain-text format the JSON output contains additional information about thread container hierarchy.
+Compared with the plain-text format, the JSON output contains additional information about the thread container hierarchy.
 
-If the filename argument is not an absolute path the thread dumps will be created inside the current working directory of the target process. In case of {project_name} this would be inside the `bin/` directory.
+If the filename argument is not an absolute path, the thread dump will be created in the current working directory of the target process. In the case of {project_name}, this is the `bin/` directory.
 
 === Forming a comprehensive picture
 
@@ -56,7 +56,7 @@ Because thread dumps created by the `Thread.print` command lack detailed informa
 
 == Finding PID of the {project_name} process
 
-Running the `jcmd` command without parameters will list out Java processes running on the system, and their PIDs.
+Running `jcmd` without arguments lists the Java processes running on the system and their PIDs.
 
 [source]
 ----
