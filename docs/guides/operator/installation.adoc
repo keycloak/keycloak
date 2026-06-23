@@ -262,7 +262,7 @@ kubectl rollout restart deployment/keycloak-operator -n $OPERATOR_NAMESPACE
 
 === Installing Multiple Operators
 
-In most cases, a single Operator installed in cluster-wide mode is simpler than installing multiple Operators. Install multiple Operators only when you need separate Operator instances, for example to run different Operator versions in parallel.
+In most cases, a single Operator installed in cluster-wide mode is simpler than installing multiple Operators. Install multiple Operators only when you need separate Operator instances, for example to run different {project_name} or Operator versions in parallel.
 
 If you install multiple Operators, please be aware:
 
