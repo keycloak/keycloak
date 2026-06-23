@@ -1191,6 +1191,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
             FederatedIdentityModel replacement = new FederatedIdentityModel(
                     existingLinkForCurrentUser.getIdentityProvider(), newModel.getUserId(), newModel.getUserName(), existingLinkForCurrentUser.getToken());
+            // Use remove+add because some storage implementations do not update the broker user ID through updateFederatedIdentity.
             this.session.users().removeFederatedIdentity(this.realmModel, authenticatedUser, providerAlias);
             this.session.users().addFederatedIdentity(this.realmModel, authenticatedUser, replacement);
             federatedUser = authenticatedUser;
