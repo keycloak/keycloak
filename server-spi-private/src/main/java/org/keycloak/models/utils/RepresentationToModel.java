@@ -1462,12 +1462,12 @@ public class RepresentationToModel {
             resource.getScopes().forEach(scope -> resourceScopeIds.add(scope.getId()));
 
             // a typed resource not owned by the resource server inherits the scopes defined by its resource type
-            if (resource.getType() != null && !resource.getOwner().equals(resourceServer.getClientId())) {
-                for (Resource typed : resourceStore.findByType(resourceServer, resource.getType())) {
-                    if (typed.getOwner().equals(resourceServer.getClientId()) && !typed.getId().equals(resource.getId())) {
+            if (resource.getType() != null && !resourceServer.getClientId().equals(resource.getOwner())) {
+                resourceStore.findByType(resourceServer, resource.getType(), resourceServer.getClientId(), typed -> {
+                    if (!typed.getId().equals(resource.getId())) {
                         typed.getScopes().forEach(scope -> resourceScopeIds.add(scope.getId()));
                     }
-                }
+                });
             }
         }
 
