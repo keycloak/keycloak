@@ -44,7 +44,7 @@ public class GeneratedAesKeyProviderFactory extends AbstractGeneratedSecretKeyPr
 
     private static final ProviderConfigProperty AES_KEY_SIZE_PROPERTY;
 
-    private static final int DEFAULT_AES_KEY_SIZE = 16;
+    private static final int DEFAULT_AES_KEY_SIZE = 32;
 
     static {
         AES_KEY_SIZE_PROPERTY = new ProviderConfigProperty(Attributes.SECRET_SIZE_KEY, "AES Key size",
