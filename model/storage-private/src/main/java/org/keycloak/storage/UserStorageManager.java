@@ -970,7 +970,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public UserVerifiableCredentialModel getVerifiableCredentialById(String id) {
-        return localStorage().getVerifiableCredentialById(id);
+        UserVerifiableCredentialModel credentialModel = localStorage().getVerifiableCredentialById(id);
+        if (credentialModel == null) {
+            return getFederatedStorage().getVerifiableCredentialById(id);
+        }
+        return credentialModel;
     }
 
     @Override

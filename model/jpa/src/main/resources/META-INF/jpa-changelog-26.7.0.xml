@@ -74,7 +74,7 @@
     <changeSet author="keycloak" id="26.7.0-federated-verifiable-credentials-1">
         <createTable tableName="FED_USER_VER_CREDENTIAL">
             <column name="ID" type="VARCHAR(36)">
-                <constraints primaryKey="true" nullable="false"/>
+                <constraints primaryKey="true" nullable="false" primaryKeyName="PK_FED_USER_VER_CREDENTIAL"/>
             </column>
             <column name="USER_ID" type="VARCHAR(255)">
                 <constraints nullable="false"/>

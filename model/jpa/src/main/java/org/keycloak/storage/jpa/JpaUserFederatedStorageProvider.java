@@ -1010,6 +1010,9 @@ public class JpaUserFederatedStorageProvider implements
     @Override
     public UserVerifiableCredentialModel addVerifiableCredential(String userId, UserVerifiableCredentialModel credentialModel) {
         RealmModel realm = session.getContext().getRealm();
+        if (credentialModel.getClientScopeId() == null) {
+            throw new ModelException("Credential scope not specified");
+        }
         createIndex(realm, userId);
 
         FederatedUserVerifiableCredentialEntity entity = new FederatedUserVerifiableCredentialEntity();
@@ -1068,7 +1071,7 @@ public class JpaUserFederatedStorageProvider implements
                 .orElseThrow(() -> new ModelException(
                         "Verifiable credential not found: " + clientScopeId));
         UserModel user = session.users().getUserById(realm, userId);
-        if(user !=null) {
+        if (user != null) {
             try {
                 UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
                 UserProfile profile = profileProvider.create(UserProfileContext.USER_API, user);
@@ -1123,5 +1126,11 @@ public class JpaUserFederatedStorageProvider implements
                 .filter(federatedUserVerifiableCredentialEntity -> federatedUserVerifiableCredentialEntity.getClientScopeId().equals(clientScopeId))
                 .map(this::toModel)
                 .findFirst().orElse(null);
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialById(String id) {
+        FederatedUserVerifiableCredentialEntity entity = em.find(FederatedUserVerifiableCredentialEntity.class, id);
+        return entity != null ? toModel(entity) : null;
     }
 }

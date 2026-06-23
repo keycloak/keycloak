@@ -153,10 +153,11 @@ public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("test-scope-to-delete");
         scopeRep.setProtocol("oid4vc");
-        Response resp = managedRealm.admin().clientScopes().create(scopeRep);
-        assertNotNull(resp);
-        String scopeId = ApiUtil.getCreatedId(resp);
-        resp.close();
+        String scopeId;
+        try(Response resp = managedRealm.admin().clientScopes().create(scopeRep)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), resp.getStatus());
+            scopeId = ApiUtil.getCreatedId(resp);
+        }
         adminEvents.clear();
 
         runOnServer.run(session -> session.users().addVerifiableCredential(federatedUserId,
@@ -205,6 +206,37 @@ public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
         });
     }
 
+    @Test
+    public void testGetVerifiableCredentialById() {
+        String federatedUserId = createFederatedUser("fed-user-get-verify-fields-by-id");
+        String scopeId = resolveScopeId(CLIENT_SCOPE_NAME_1);
+
+        String verCredId = runOnServer.fetchString(session -> {
+            UserVerifiableCredentialModel vcModel = new UserVerifiableCredentialModel("vc-with-fields", scopeId);
+            vcModel.setRevision("rev-456");
+            vcModel.setUserAttributes(Map.of(
+                    "firstName", List.of("Max"),
+                    "lastName", List.of("Mustermann")
+            ));
+
+            UserVerifiableCredentialModel added = session.users().addVerifiableCredential(federatedUserId, vcModel);
+            return added.getId();
+        });
+
+        runOnServer.run(session -> {
+            UserVerifiableCredentialModel retrieved = session.users().getVerifiableCredentialById(verCredId);
+
+            assertNotNull(retrieved);
+            assertNotNull(retrieved.getId());
+            assertEquals(scopeId, retrieved.getClientScopeId());
+            assertEquals("rev-456", retrieved.getRevision());
+            assertNotNull(retrieved.getCreatedDate());
+            assertNotNull(retrieved.getUserAttributes());
+            assertEquals(List.of("Max"), retrieved.getUserAttributes().get("firstName"));
+            assertEquals(List.of("Mustermann"), retrieved.getUserAttributes().get("lastName"));
+        });
+    }
+
     public static class FederatedVcTestRealmConfig implements RealmConfig {
         public static final String TEST_REALM_NAME = "test";
 
@@ -247,7 +279,7 @@ public class FederatedUserVerifiableCredentialTest extends AbstractUserTest {
 
     private String createFederatedUser(String username, String firstName, String lastName, String email) {
         return runOnServer.fetchString(session -> {
-            String providerId = "test-provider";
+            String providerId = "00000000-0000-0000-0000-000000000001";
             // Create federated user ID: f:<providerId>:<externalId>
             String federatedUserId = "f:" + providerId + ":" + username;
 

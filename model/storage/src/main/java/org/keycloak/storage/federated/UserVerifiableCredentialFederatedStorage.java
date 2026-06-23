@@ -61,9 +61,17 @@ public interface UserVerifiableCredentialFederatedStorage {
      * Gets a verifiable credential for a federated user and client scope.
      *
      * @param userId the federated user ID
-     * @param clientScopeId the clien scope ID
-     * @return stream of verifiable credentials
+     * @param clientScopeId the client scope ID
+     * @return the verifiable credential model, or {@code null} if not found
      */
     UserVerifiableCredentialModel getVerifiableCredentialByClientScope(String userId, String clientScopeId);
+
+    /**
+     * Gets a verifiable credential by its ID.
+     *
+     * @param id the ID of the verifiable credential
+     * @return the verifiable credential model, or {@code null} if not found
+     */
+    UserVerifiableCredentialModel getVerifiableCredentialById(String id);
 
 }
