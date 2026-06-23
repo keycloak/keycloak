@@ -1330,7 +1330,7 @@ public class TokenManager {
             TokenPostProcessorContext context = new TokenPostProcessorContext(code, requestRefreshToken, refreshToken, accessToken, clientSessionCtx);
             session.getKeycloakSessionFactory()
                     .getProviderFactoriesStream(TokenPostProcessor.class)
-                    .sorted((f1, f2) -> f2.order() - f1.order())
+.sorted((f1, f2) -> Integer.compare(f2.order(), f1.order()))
                     .map(f -> session.getProvider(TokenPostProcessor.class, f.getId()))
                     .forEach(processor -> processor.process(context));
         }
