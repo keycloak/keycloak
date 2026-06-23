@@ -21,6 +21,7 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 
 public class AdminGroupProtectionRealmConfig extends ScimRealmConfig {
 
@@ -28,6 +29,7 @@ public class AdminGroupProtectionRealmConfig extends ScimRealmConfig {
     public static final String ADMIN_PARENT_GROUP = "admin-parent-group";
     public static final String ADMIN_CHILD_GROUP = "admin-child-group";
     public static final String REGULAR_GROUP = "regular-group";
+    public static final String REGULAR_USER = "regular-user";
 
     @Override
     public RealmBuilder configure(RealmBuilder realm) {
@@ -39,6 +41,10 @@ public class AdminGroupProtectionRealmConfig extends ScimRealmConfig {
                                 .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_AUTHORIZATION)
                                 .subGroups(ADMIN_CHILD_GROUP),
                         GroupBuilder.create(REGULAR_GROUP)
+                )
+                .users(
+                        UserBuilder.create(REGULAR_USER)
+                                .enabled(true)
                 );
     }
 }

@@ -20,6 +20,7 @@ package org.keycloak.tests.scim.tck;
 import java.util.List;
 
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.scim.client.ResourceFilter;
 import org.keycloak.scim.client.ScimClient;
 import org.keycloak.scim.client.ScimClientException;
@@ -37,6 +38,7 @@ import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.ADMIN_
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.ADMIN_GROUP;
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.ADMIN_PARENT_GROUP;
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.REGULAR_GROUP;
+import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.REGULAR_USER;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -157,6 +159,61 @@ public class AdminGroupProtectionTest {
         assertNotNull(result);
         assertEquals(REGULAR_GROUP, result.getDisplayName());
         assertNotNull(result.getMeta().getCreated());
+    }
+
+    @Test
+    public void testCannotAddUserToAdminGroupViaUserPatch() {
+        String userId = getUserId(REGULAR_USER);
+        String adminGroupId = getGroupId(ADMIN_GROUP);
+
+        try {
+            client.users().patch(userId, PatchRequest.create()
+                    .add("groups", adminGroupId)
+                    .build());
+            fail("Should not be able to add user to admin group via user PATCH");
+        } catch (ScimClientException sce) {
+            assertEquals(403, sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testCannotRemoveUserFromAdminGroupViaUserPatch() {
+        String userId = getUserId(REGULAR_USER);
+        String adminGroupId = getGroupId(ADMIN_GROUP);
+
+        realm.admin().users().get(userId).joinGroup(adminGroupId);
+
+        try {
+            client.users().patch(userId, PatchRequest.create()
+                    .remove("groups[value eq \"" + adminGroupId + "\"]")
+                    .build());
+            fail("Should not be able to remove user from admin group via user PATCH");
+        } catch (ScimClientException sce) {
+            assertEquals(403, sce.getError().getStatusInt());
+        } finally {
+            realm.admin().users().get(userId).leaveGroup(adminGroupId);
+        }
+    }
+
+    @Test
+    public void testCannotAddMemberToAdminGroupViaGroupPatch() {
+        String userId = getUserId(REGULAR_USER);
+        String adminGroupId = getGroupId(ADMIN_GROUP);
+
+        try {
+            client.groups().patch(adminGroupId, PatchRequest.create()
+                    .add("members", userId)
+                    .build());
+            fail("Should not be able to add member to admin group via group PATCH");
+        } catch (ScimClientException sce) {
+            assertEquals(403, sce.getError().getStatusInt());
+        }
+    }
+
+    private String getUserId(String username) {
+        List<UserRepresentation> users = realm.admin().users().searchByUsername(username, true);
+        assertEquals(1, users.size());
+        return users.get(0).getId();
     }
 
     private String getGroupId(String name) {
