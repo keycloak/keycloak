@@ -90,7 +90,7 @@ public class UserSessionLimitsAuthenticatorFactory implements AuthenticatorFacto
         ProviderConfigProperty sessionCountingScope = new ProviderConfigProperty();
         sessionCountingScope.setName(SESSION_COUNTING_SCOPE);
         sessionCountingScope.setLabel("Session Counting Scope");
-        sessionCountingScope.setHelpText("Determines how sessions are counted. 'This Authentication Flow' counts only sessions created through this specific flow. 'All Authentication Flows' counts all user sessions across all flows..");
+        sessionCountingScope.setHelpText("Determines how sessions are counted. 'This Authentication Flow' counts only sessions created through this specific flow. 'All Authentication Flows' counts all user sessions across all flows.");
         sessionCountingScope.setType(ProviderConfigProperty.LIST_TYPE);
         sessionCountingScope.setDefaultValue(SCOPE_ALL_FLOWS);
         sessionCountingScope.setOptions(Arrays.asList(SCOPE_THIS_FLOW, SCOPE_ALL_FLOWS));
