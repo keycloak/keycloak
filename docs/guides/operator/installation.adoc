@@ -41,7 +41,7 @@ Make sure you are installing from the *fast* channel:
 +
 image::configure-operator.png["Configure {project_name} Operator"]
 
-You may select to either have the Operator watch the namespace where it is installed, or to watch a single namespace of your choosing.
+You may select to have the Operator watch the namespace where it is installed, watch a single namespace of your choosing, or watch all namespaces in the cluster.
 
 For cluster-wide installation with OLM, see <<cluster_wide_installation>>.
 
