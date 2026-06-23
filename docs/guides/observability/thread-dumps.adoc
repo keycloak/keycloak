@@ -12,7 +12,7 @@ includedOptions="">
 
 A JVM thread dump is a snapshot of the execution state of active threads within a Java Virtual Machine at a specific point in time.
 
-Thread dumps are useful for diagnosing issues such as thread contention, deadlocks, CPU spikes, or stuck IO operations.
+Thread dumps are useful for diagnosing issues such as thread contention, deadlocks, CPU spikes, or stuck I/O operations.
 
 == How to capture a JVM thread dump
 
@@ -67,6 +67,6 @@ Running the `jcmd` command without parameters will list out Java processes runni
 
 == Collecting multiple samples
 
-Because a single thread dump is just a snapshot of the JVM state at a particular point in time, it is recommended to capture multiple thread dumps over a period of time, for example 3-5 samples spaced 5-10 seconds apart.
+Because a single thread dump is just a snapshot of the JVM state at a particular point in time, it is recommended to capture multiple thread dumps over a short period of time, for example 3-4 samples spaced 1-2 seconds apart.
 
 </@tmpl.guide>
