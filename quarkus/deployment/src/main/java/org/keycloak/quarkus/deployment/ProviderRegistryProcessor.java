@@ -29,8 +29,8 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
 
 import io.quarkus.deployment.annotations.BuildStep;
-import io.quarkus.deployment.annotations.Consume;
 import io.quarkus.deployment.annotations.ExecutionTime;
+import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
@@ -53,21 +53,24 @@ import org.jboss.logging.Logger;
  * <ul>
  *   <li>the annotation target must be a class (the annotation is already {@code @Target(TYPE)},
  *       so a non-class target indicates an illegal state),</li>
- *   <li>the class must implement {@link ProviderFactory} (checked via Jandex hierarchy walk),</li>
- *   <li>the class must declare a public no-arg constructor.</li>
+ *   <li>the class must declare a public no-arg constructor (Jandex check).</li>
  * </ul>
+ * The {@link ProviderFactory} assignability check happens inside
+ * {@link #loadFactoryClasses(Set)} via {@link Class#asSubclass(Class)} so we do not need
+ * to pull {@code keycloak-server-spi} into the Quarkus Jandex index just to walk the
+ * interface chain.
  */
 class ProviderRegistryProcessor {
 
     private static final Logger logger = Logger.getLogger(ProviderRegistryProcessor.class);
 
     private static final DotName KEYCLOAK_PROVIDER = DotName.createSimple(KeycloakProvider.class.getName());
-    private static final DotName PROVIDER_FACTORY = DotName.createSimple(ProviderFactory.class.getName());
 
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
-    ProviderRegistryBuildItem scanKeycloakProviders(CombinedIndexBuildItem indexBuildItem,
-                                                   KeycloakRecorder recorder) {
+    @Produce(ProviderRegistryBuildItem.class)
+    void scanKeycloakProviders(CombinedIndexBuildItem indexBuildItem,
+                              KeycloakRecorder recorder) {
         IndexView index = indexBuildItem.getIndex();
         TreeSet<String> classNames = new TreeSet<>();
 
@@ -76,12 +79,14 @@ class ProviderRegistryProcessor {
             AnnotationTarget target = annotation.target();
             if (target.kind() != AnnotationTarget.Kind.CLASS) {
                 throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
-                        + " is declared @Target(TYPE) but was found on " + target
-                        + " (kind=" + target.kind() + ")");
+                        + " must be placed on a class but was found on " + target);
             }
 
             ClassInfo classInfo = target.asClass();
-            validate(classInfo, index);
+            if (!hasPublicNoArgConstructor(classInfo)) {
+                throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
+                        + " class " + classInfo.name() + " must have a public no-arg constructor");
+            }
             classNames.add(classInfo.name().toString());
         }
 
@@ -91,78 +96,35 @@ class ProviderRegistryProcessor {
         // factories map includes annotated factories whose META-INF/services entry was removed.
         GeneratedProviderRegistry.install(loadFactoryClasses(classNames));
 
-        // Also record an install for the runtime JVM, so the registry is consistent post-startup
-        // and a shutdown task can safely clear it.
+        // Also record an install for the runtime JVM in case anything at runtime queries the
+        // registry through DefaultProviderLoader. The shutdown step below pairs with this.
         recorder.installProviderRegistry(classNames);
         logger.debugf("Installed %d @KeycloakProvider-annotated provider factories", classNames.size());
-
-        return new ProviderRegistryBuildItem(classNames);
-    }
-
-    private static Set<Class<? extends ProviderFactory>> loadFactoryClasses(Set<String> classNames) {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        Set<Class<? extends ProviderFactory>> classes = new LinkedHashSet<>(classNames.size());
-        for (String className : classNames) {
-            try {
-                classes.add(Class.forName(className, false, classLoader).asSubclass(ProviderFactory.class));
-            } catch (ClassNotFoundException e) {
-                throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
-                        + " class " + className + " is in the Jandex index but not on the deployment classpath", e);
-            }
-        }
-        return classes;
     }
 
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
-    @Consume(ProviderRegistryBuildItem.class)
     void clearProviderRegistryOnShutdown(KeycloakRecorder recorder, ShutdownContextBuildItem shutdownContext) {
         recorder.clearProviderRegistryOnShutdown(shutdownContext);
     }
 
-    private static void validate(ClassInfo classInfo, IndexView index) {
-        if (!implementsProviderFactory(classInfo, index)) {
-            throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
-                    + " class " + classInfo.name() + " does not implement " + PROVIDER_FACTORY
-                    + " (or its hierarchy is not in the Jandex index)");
-        }
-        if (!hasPublicNoArgConstructor(classInfo)) {
-            throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
-                    + " class " + classInfo.name() + " must have a public no-arg constructor");
-        }
-    }
-
-    private static boolean implementsProviderFactory(ClassInfo classInfo, IndexView index) {
-        ClassInfo current = classInfo;
-        while (current != null) {
-            for (DotName iface : current.interfaceNames()) {
-                if (interfaceExtendsProviderFactory(iface, index)) {
-                    return true;
-                }
-            }
-            DotName superName = current.superName();
-            if (superName == null || superName.equals(DotName.OBJECT_NAME)) {
-                return false;
-            }
-            current = index.getClassByName(superName);
-        }
-        return false;
-    }
-
-    private static boolean interfaceExtendsProviderFactory(DotName ifaceName, IndexView index) {
-        if (PROVIDER_FACTORY.equals(ifaceName)) {
-            return true;
-        }
-        ClassInfo ifaceInfo = index.getClassByName(ifaceName);
-        if (ifaceInfo == null) {
-            return false;
-        }
-        for (DotName parent : ifaceInfo.interfaceNames()) {
-            if (interfaceExtendsProviderFactory(parent, index)) {
-                return true;
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static Set<Class<? extends ProviderFactory<?>>> loadFactoryClasses(Set<String> classNames) {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        Set<Class<? extends ProviderFactory<?>>> classes = new LinkedHashSet<>(classNames.size());
+        for (String className : classNames) {
+            try {
+                Class<? extends ProviderFactory> raw = Class.forName(className, false, classLoader).asSubclass(ProviderFactory.class);
+                classes.add((Class<? extends ProviderFactory<?>>) raw);
+            } catch (ClassNotFoundException e) {
+                throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
+                        + " class " + className + " is in the Jandex index but not on the deployment classpath", e);
+            } catch (ClassCastException e) {
+                throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
+                        + " class " + className + " does not implement " + ProviderFactory.class.getName(), e);
             }
         }
-        return false;
+        return classes;
     }
 
     private static boolean hasPublicNoArgConstructor(ClassInfo classInfo) {

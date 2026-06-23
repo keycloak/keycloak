@@ -17,26 +17,14 @@
 
 package org.keycloak.quarkus.deployment;
 
-import java.util.Collections;
-import java.util.Set;
-import java.util.TreeSet;
-
-import io.quarkus.builder.item.SimpleBuildItem;
+import io.quarkus.builder.item.EmptyBuildItem;
 
 /**
- * Holds the fully-qualified class names of {@link org.keycloak.provider.ProviderFactory}
- * implementations discovered at build time via the {@link org.keycloak.provider.KeycloakProvider}
- * annotation.
+ * Ordering marker produced once the {@link org.keycloak.provider.KeycloakProvider}
+ * annotation scan has run and the build-time
+ * {@link org.keycloak.provider.GeneratedProviderRegistry} install has happened.
+ * Consumed by {@link KeycloakProcessor#configureKeycloakSessionFactory(...)} so that
+ * {@code loadFactories()} sees the discovered factories.
  */
-public final class ProviderRegistryBuildItem extends SimpleBuildItem {
-
-    private final Set<String> providerFactoryClassNames;
-
-    public ProviderRegistryBuildItem(Set<String> providerFactoryClassNames) {
-        this.providerFactoryClassNames = Collections.unmodifiableSet(new TreeSet<>(providerFactoryClassNames));
-    }
-
-    public Set<String> getProviderFactoryClassNames() {
-        return providerFactoryClassNames;
-    }
+public final class ProviderRegistryBuildItem extends EmptyBuildItem {
 }

@@ -30,7 +30,7 @@ import java.util.Set;
  */
 public final class GeneratedProviderRegistry {
 
-    private static volatile Set<Class<? extends ProviderFactory>> factoryClasses = Set.of();
+    private static volatile Set<Class<? extends ProviderFactory<?>>> factoryClasses = Set.of();
 
     private GeneratedProviderRegistry() {
     }
@@ -39,7 +39,7 @@ public final class GeneratedProviderRegistry {
      * Returns the {@link ProviderFactory} classes discovered at build time, or an empty set
      * if the scan has not been installed (non-Quarkus contexts).
      */
-    public static Set<Class<? extends ProviderFactory>> getProviderFactoryClasses() {
+    public static Set<Class<? extends ProviderFactory<?>>> getProviderFactoryClasses() {
         return factoryClasses;
     }
 
@@ -47,7 +47,7 @@ public final class GeneratedProviderRegistry {
      * Install the result of the build-time scan. Called exactly once by the Quarkus
      * deployment processor before any {@link DefaultProviderLoader#load(Spi)} call.
      */
-    public static void install(Set<Class<? extends ProviderFactory>> classes) {
+    public static void install(Set<Class<? extends ProviderFactory<?>>> classes) {
         factoryClasses = Set.copyOf(classes);
     }
 
