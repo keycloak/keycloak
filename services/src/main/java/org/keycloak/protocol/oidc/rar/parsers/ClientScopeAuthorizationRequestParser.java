@@ -58,19 +58,24 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
         this.session = session;
     }
 
+    @Override
+    public AuthorizationRequestContext parseScopes(ClientModel client, String scopeParam) {
+        return parseScopes(null, client, scopeParam);
+    }
+
     /**
      * Creates a {@link AuthorizationRequestContext} with a list of {@link AuthorizationDetails} that will be parsed from
      * the provided OAuth scopes that have been requested in a given Auth request, together with default client scopes.
      * <p>
      * Parameterized scopes will also be parsed with the extracted parameter, so it can be used later
      *
-     * @param client The client requesting the parsing
      * @param user The user in the login (can be null, for example in the authorization endpoint)
+     * @param client The client requesting the parsing
      * @param scopeParam the OAuth scope param for the current request
      * @return see description
      */
     @Override
-    public AuthorizationRequestContext parseScopes(ClientModel client, UserModel user, String scopeParam) {
+    public AuthorizationRequestContext parseScopes(UserModel user, ClientModel client, String scopeParam) {
         // Process all the default ClientScopeModels for the current client, and maps them to the IntermediaryScopeRepresentation to make use of a HashSet
         Set<IntermediaryScopeRepresentation> clientScopeModelSet = client.getClientScopes(true).values().stream()
                 .filter(clientScopeModel -> !clientScopeModel.isParameterizedScope()) // not strictly needed as Parameterized Scopes are going to be Optional scopes for now

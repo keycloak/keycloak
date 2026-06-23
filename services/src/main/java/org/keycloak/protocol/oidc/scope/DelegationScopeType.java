@@ -33,7 +33,7 @@ public class DelegationScopeType extends UsernameScopeType {
 
     public static final String TYPE = "delegation";
 
-    private final KeycloakSession session;
+    protected final KeycloakSession session;
 
     public DelegationScopeType() {
         this.session = null;
@@ -60,7 +60,7 @@ public class DelegationScopeType extends UsernameScopeType {
         if (targetUser.getId().equals(currentUser.getId())) {
             throw new InvalidScopeParameterException("User cannot target themselves");
         }
-        RealmModel realm = session.getContext().getRealm();
+        RealmModel realm = scope.getRealm();
         AdminPermissionEvaluator evaluator = AdminPermissions.evaluator(session, realm, realm, targetUser);
         if (!evaluator.users().canImpersonate(currentUser, session.getContext().getClient())) {
             throw new InvalidScopeParameterException(String.format("User '%s' cannot be impersonated by the administrator '%s' in realm '%s'",

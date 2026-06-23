@@ -16,6 +16,9 @@
  */
 package org.keycloak.protocol.oidc.rar;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
@@ -26,6 +29,10 @@ import org.keycloak.rar.AuthorizationRequestContext;
  */
 public interface AuthorizationRequestParserProvider extends Provider {
 
-    AuthorizationRequestContext parseScopes(ClientModel client, UserModel user, String scopeParam);
+    AuthorizationRequestContext parseScopes(@Nonnull ClientModel client, @Nonnull String scopeParam);
+
+    default AuthorizationRequestContext parseScopes(@Nullable UserModel user, @Nonnull ClientModel client, @Nonnull String scopeParam) {
+        return parseScopes(client, scopeParam);
+    }
 
 }

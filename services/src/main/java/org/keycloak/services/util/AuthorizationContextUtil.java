@@ -42,6 +42,17 @@ public class AuthorizationContextUtil {
      * Base function to obtain a bare AuthorizationRequestContext with just OAuth2 Scopes
      * @param session
      * @param client
+     * @param scope
+     * @return an {@link AuthorizationRequestContext} with scope entries
+     */
+    public static AuthorizationRequestContext getAuthorizationRequestContextFromScopes(KeycloakSession session, ClientModel client, String scope) {
+        return getAuthorizationRequestContextFromScopes(session, client, null, scope);
+    }
+
+    /**
+     * Base function to obtain a bare AuthorizationRequestContext with just OAuth2 Scopes
+     * @param session
+     * @param client
      * @param user
      * @param scope
      * @return an {@link AuthorizationRequestContext} with scope entries
@@ -58,7 +69,7 @@ public class AuthorizationContextUtil {
                     ClientScopeAuthorizationRequestParserProviderFactory.CLIENT_SCOPE_PARSER_ID));
         }
 
-        return clientScopeParser.parseScopes(client, user, scope);
+        return clientScopeParser.parseScopes(user, client, scope);
     }
 
     /**
