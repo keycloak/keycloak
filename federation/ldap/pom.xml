@@ -81,6 +81,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-tls-registry</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <!-- needed for InMemoryUserAdapter -->
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-storage-private</artifactId>

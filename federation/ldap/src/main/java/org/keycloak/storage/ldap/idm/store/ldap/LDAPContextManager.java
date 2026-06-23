@@ -63,7 +63,9 @@ public final class LDAPContextManager implements AutoCloseable {
             // Send StartTLS request and setup SSL context if needed.
             if (ldapConfig.isStartTls()) {
                 SSLSocketFactory sslSocketFactory = null;
-                if (LDAPUtil.shouldUseTruststoreSpi(ldapConfig)) {
+                if (LDAPConstants.AUTH_TYPE_EXTERNAL.equals(ldapConfig.getAuthType())) {
+                    sslSocketFactory = LDAPSSLSocketFactory.getDefault();
+                } else if (LDAPUtil.shouldUseTruststoreSpi(ldapConfig)) {
                     TruststoreProvider provider = session.getProvider(TruststoreProvider.class);
                     sslSocketFactory = provider.getSSLSocketFactory();
                 }
@@ -123,14 +125,16 @@ public final class LDAPContextManager implements AutoCloseable {
             ldapContext.addToEnvironment(Context.SECURITY_AUTHENTICATION, authType);
         }
 
-        String bindPassword = getBindPassword();
-        if (bindPassword != null) {
-            ldapContext.addToEnvironment(SECURITY_CREDENTIALS, bindPassword);
-        }
+        if (!LDAPConstants.AUTH_TYPE_EXTERNAL.equals(authType)) {
+            String bindPassword = getBindPassword();
+            if (bindPassword != null) {
+                ldapContext.addToEnvironment(SECURITY_CREDENTIALS, bindPassword);
+            }
 
-        String bindDN = ldapConfig.getBindDN();
-        if (bindDN != null) {
-            ldapContext.addToEnvironment(Context.SECURITY_PRINCIPAL, bindDN);
+            String bindDN = ldapConfig.getBindDN();
+            if (bindDN != null) {
+                ldapContext.addToEnvironment(Context.SECURITY_PRINCIPAL, bindDN);
+            }
         }
 
         if (logger.isDebugEnabled()) {
@@ -141,7 +145,6 @@ public final class LDAPContextManager implements AutoCloseable {
             logger.debugf("Creating LdapContext using properties: [%s]", copyEnv);
         }
     }
-
 
     /**
      * This method is used for admin connection and user authentication. Hence it returns just connection properties NOT related to
@@ -171,8 +174,13 @@ public final class LDAPContextManager implements AutoCloseable {
 
         // when using Start TLS, use default socket factory for LDAP client but pass the TrustStore SSL socket factory later
         // when calling StartTlsResponse.negotiate(trustStoreSSLSocketFactory)
-        if (!ldapConfig.isStartTls() && LDAPUtil.shouldUseTruststoreSpi(ldapConfig)) {
-            env.put("java.naming.ldap.factory.socket", "org.keycloak.truststore.SSLSocketFactory");
+        if (!ldapConfig.isStartTls()) {
+            if (LDAPConstants.AUTH_TYPE_EXTERNAL.equals(ldapConfig.getAuthType())) {
+                env.put("java.naming.ldap.factory.socket",
+                    "org.keycloak.storage.ldap.idm.store.ldap.LDAPSSLSocketFactory");
+            } else if (LDAPUtil.shouldUseTruststoreSpi(ldapConfig)) {
+                env.put("java.naming.ldap.factory.socket", "org.keycloak.truststore.SSLSocketFactory");
+            }
         }
 
         String connectionPooling = ldapConfig.getConnectionPooling();
