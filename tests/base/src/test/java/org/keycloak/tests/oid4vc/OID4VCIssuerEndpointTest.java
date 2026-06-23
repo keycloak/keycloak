@@ -445,7 +445,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
     record OAuth2CodeEntry(String key, OAuth2Code code) {}
 
 
-    static OID4VCIssuerEndpoint prepareIssuerEndpoint(
+    protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(
             KeycloakSession session,
             AppAuthManager.BearerTokenAuthenticator authenticator) {
 
@@ -460,7 +460,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
         return prepareIssuerEndpoint(session, authenticator, credentialBuilders);
     }
 
-    static OID4VCIssuerEndpoint prepareIssuerEndpoint(
+    protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(
             KeycloakSession session,
             AppAuthManager.BearerTokenAuthenticator authenticator,
             Map<String, CredentialBuilder> credentialBuilders) {

@@ -521,7 +521,13 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     }
 
     protected boolean isIncludeAttributeIfNotProvided(AttributeMetadata metadata) {
-        return !metadata.canEdit(createAttributeContext(metadata));
+        if (!metadata.canEdit(createAttributeContext(metadata))) {
+            return true;
+        }
+        if (context.equals(UserProfileContext.USER_API)) {
+            return isReadOnlyInternalAttribute(metadata.getName());
+        }
+        return false;
     }
 
     /**

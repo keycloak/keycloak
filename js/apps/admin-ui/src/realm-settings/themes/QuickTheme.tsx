@@ -31,9 +31,13 @@ export const QuickTheme = ({ realm, theme }: QuickThemeProps) => {
     const { favicon, logo, bgimage, fileName } = realm;
 
     const logoName =
-      "img/logo" + logo?.name?.substring(logo?.name?.lastIndexOf("."));
+      logo instanceof File
+        ? "img/logo" + logo.name.substring(logo.name.lastIndexOf("."))
+        : undefined;
     const bgimageName =
-      "img/bgimage" + bgimage?.name?.substring(bgimage?.name?.lastIndexOf("."));
+      bgimage instanceof File
+        ? "img/bgimage" + bgimage.name.substring(bgimage.name.lastIndexOf("."))
+        : undefined;
 
     const themeNameClean =
       (realm.themeName ?? "quick-theme")

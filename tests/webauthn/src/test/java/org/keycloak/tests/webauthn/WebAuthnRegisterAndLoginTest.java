@@ -98,7 +98,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         webAuthnRegisterPage.clickRegister();
         webAuthnRegisterPage.registerWebAuthnCredential(authenticatorLabel);
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
         // confirm that registration is successfully completed
         userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), username).getId();
@@ -114,7 +114,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         EventRepresentation event = events.poll();
 
-        EventAssertion.assertSuccess(event).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).isCodeId()
+        EventAssertion.assertSuccess(event).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel)
@@ -124,7 +124,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         EventRepresentation event2 = events.poll();
 
-        EventAssertion.assertSuccess(event2).type(EventType.UPDATE_CREDENTIAL).sessionId(null).userId(userId).isCodeId()
+        EventAssertion.assertSuccess(event2).type(EventType.UPDATE_CREDENTIAL).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel)
@@ -135,14 +135,14 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         assertThat(regPubKeyCredentialId1, equalTo(regPubKeyCredentialId2));
 
         // confirm login event
-        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel);
 
         // confirm user registered
         assertUserRegistered(userId, username.toLowerCase(), email.toLowerCase());
-        assertRegisteredCredentials(userId, ALL_ZERO_AAGUID, "none");
+        assertRegisteredCredentials(userId, ALL_ZERO_AAGUID, "none", 1);
 
         events.clear();
 
@@ -163,13 +163,14 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnLoginPage.clickAuthenticate();
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
         // confirm login event
-        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, regPubKeyCredentialId2)
                 .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, Boolean.FALSE.toString());
+        assertRegisteredCredentials(userId, ALL_ZERO_AAGUID, "none", 2);
 
         events.clear();
         // logout by user
@@ -223,12 +224,12 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnRegisterPage.assertCurrent();
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, WEBAUTHN_LABEL);
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL).sessionId(null).userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, WEBAUTHN_LABEL);
@@ -236,19 +237,19 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         webAuthnRegisterPage.clickRegister();
         webAuthnRegisterPage.registerWebAuthnCredential(PASSWORDLESS_LABEL);
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnPasswordlessRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, PASSWORDLESS_LABEL);
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL).sessionId(null).userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnPasswordlessRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, PASSWORDLESS_LABEL);
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
 
@@ -276,7 +277,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnLoginPage.clickAuthenticate();
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
         logout();
 
         // Only passwordless login
@@ -298,7 +299,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnLoginPage.clickAuthenticate();
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
         logout();
     }
 
@@ -350,12 +351,12 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnRegisterPage.assertCurrent();
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, WEBAUTHN_LABEL);
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL).sessionId(null).userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, WEBAUTHN_LABEL);
@@ -363,7 +364,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         webAuthnRegisterPage.clickRegister();
         webAuthnRegisterPage.registerWebAuthnCredential(PASSWORDLESS_LABEL);
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
 
         logout();
 
@@ -384,7 +385,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnLoginPage.clickAuthenticate();
 
-        Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
         logout();
 
         // Only passwordless login
@@ -446,7 +447,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         assertThat(user.getLastName(), is("lastName"));
     }
 
-    private void assertRegisteredCredentials(String userId, String aaguid, String attestationStatementFormat) {
+    private void assertRegisteredCredentials(String userId, String aaguid, String attestationStatementFormat, long expectedCounter) {
         List<CredentialRepresentation> credentials = getCredentials(userId);
         credentials.forEach(i -> {
             if (WebAuthnCredentialModel.TYPE_TWOFACTOR.equals(i.getType())) {
@@ -454,6 +455,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
                     WebAuthnCredentialData data = JsonSerialization.readValue(i.getCredentialData(), WebAuthnCredentialData.class);
                     assertThat(data.getAaguid(), is(aaguid));
                     assertThat(data.getAttestationStatementFormat(), is(attestationStatementFormat));
+                    assertThat(data.getCounter(), is(expectedCounter));
                 } catch (IOException e) {
                     Assertions.fail();
                 }

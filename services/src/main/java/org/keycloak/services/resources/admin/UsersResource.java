@@ -70,7 +70,6 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
 import org.keycloak.services.util.DateUtil;
 import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.SearchQueryUtils;
 
@@ -173,6 +172,7 @@ public class UsersResource {
             RepresentationToModel.createGroups(session, rep, realm, user);
 
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
+            RepresentationToModel.createVerifiableCredentials(rep, session, user);
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(user.getId()).build()).build();
@@ -568,7 +568,7 @@ public class UsersResource {
     }
 
     private Stream<UserRepresentation> toRepresentation(RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Stream<UserModel> userModels) {
-        boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
+        boolean briefRep = Boolean.TRUE.equals(briefRepresentation);
 
         if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
             usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
@@ -576,15 +576,9 @@ public class UsersResource {
             usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
         }
 
-        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-
         return userModels
                 .map(user -> {
-                    UserProfile profile = provider.create(UserProfileContext.USER_API, user);
-                    UserRepresentation rep = profile.toRepresentation(!briefRepresentationB);
-                    UserRepresentation userRep = briefRepresentationB ?
-                            ModelToRepresentation.toBriefRepresentation(user, rep, false) :
-                            ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
+                    UserRepresentation userRep = ModelToRepresentation.toRepresentation(session, user, briefRep);
                     userRep.setAccess(usersEvaluator.getAccessForListing(user));
                     return userRep;
                 });

@@ -103,7 +103,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         boolean isUserIdentified = false;
         if (user != null) {
             // in 2 Factor Scenario where the user has already been identified
-            WebAuthnAuthenticatorsBean authenticators = new WebAuthnAuthenticatorsBean(context.getSession(), context.getRealm(), user, getCredentialType());
+            WebAuthnMetadataService metadataService = getCredentialProvider(context.getSession()).getMetadataService();
+            WebAuthnAuthenticatorsBean authenticators = new WebAuthnAuthenticatorsBean(context.getSession(), context.getRealm(), user, getCredentialType(), metadataService);
             if (authenticators.getAuthenticators().isEmpty()) {
                 // require the user to register webauthn authenticator
                 return null;
@@ -170,7 +171,11 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         String rpId = getRpID(context);
 
         Origin origin = new Origin(baseUrl);
-        Challenge challenge = new DefaultChallenge(context.getAuthenticationSession().getAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE));
+        final String challengeNote = context.getAuthenticationSession().getAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE);
+        if (challengeNote != null) {
+            context.getAuthenticationSession().removeAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE);
+        }
+        Challenge challenge = new DefaultChallenge(challengeNote);
         ServerProperty server = new ServerProperty(origin, rpId, challenge);
 
         byte[] credentialId = Base64Url.decode(params.getFirst(WebAuthnConstants.CREDENTIAL_ID));
@@ -360,7 +365,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         LoginFormsProvider provider = context.form().setError(errorCase, "");
         UserModel user = context.getUser();
         if (user != null) {
-            WebAuthnAuthenticatorsBean authenticators = new WebAuthnAuthenticatorsBean(context.getSession(), context.getRealm(), user, getCredentialType());
+            WebAuthnMetadataService metadataService = getCredentialProvider(context.getSession()).getMetadataService();
+            WebAuthnAuthenticatorsBean authenticators = new WebAuthnAuthenticatorsBean(context.getSession(), context.getRealm(), user, getCredentialType(), metadataService);
             if (authenticators.getAuthenticators() != null) {
                 provider.setAttribute(WebAuthnConstants.ALLOWED_AUTHENTICATORS, authenticators);
             }

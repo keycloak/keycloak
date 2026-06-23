@@ -14,6 +14,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -69,7 +70,7 @@ public class DeleteAccountActionTest extends AbstractTestRealmKeycloakTest {
 
     deleteAccountPage.clickConfirmAction();
 
-    events.expect(EventType.DELETE_ACCOUNT);
+    EventAssertion.assertSuccess(events.poll()).type(EventType.DELETE_ACCOUNT);
 
     List<UserRepresentation> users = managedRealm.admin().users().search("test-user@localhost");
 
@@ -96,7 +97,7 @@ public class DeleteAccountActionTest extends AbstractTestRealmKeycloakTest {
         Cookie authSessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
         deleteAccountPage.clickConfirmAction();
 
-        events.expect(EventType.DELETE_ACCOUNT);
+        EventAssertion.assertSuccess(events.poll()).type(EventType.DELETE_ACCOUNT);
 
         List<UserRepresentation> users = managedRealm.admin().users().search(userRep.getUsername());
 

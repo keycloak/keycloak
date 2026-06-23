@@ -19,7 +19,6 @@ import {
   Switch,
   Text,
   TextInput,
-  TextArea,
   TextVariants,
 } from "@patternfly/react-core";
 import { useState } from "react";
@@ -71,7 +70,7 @@ export const RealmSettingsTokensTab = ({
   const { control, register, reset, formState, handleSubmit } =
     useFormContext<RealmRepresentation>();
   const credentialOfferLifespanDefaultValue =
-    realm.attributes?.["credentialOfferLifespanS"] ?? 30;
+    realm.attributes?.["credentialOfferLifespanS"] ?? 300;
 
   // Show a global error notification if validation fails
   const onError = () => {
@@ -209,12 +208,10 @@ export const RealmSettingsTokensTab = ({
                       id="oAuthDevicePollingInterval"
                       value={field.value}
                       min={0}
-                      onPlus={() => field.onChange(Number(field?.value) + 1)}
+                      onPlus={() => field.onChange(Number(field.value) + 1)}
                       onMinus={() =>
                         field.onChange(
-                          Number(field?.value) > 0
-                            ? Number(field?.value) - 1
-                            : 0,
+                          Number(field.value) > 0 ? Number(field.value) - 1 : 0,
                         )
                       }
                       onChange={(event) => {
@@ -679,6 +676,7 @@ export const RealmSettingsTokensTab = ({
             )}
             label={t("oid4vciNonceLifetime")}
             labelIcon={t("oid4vciNonceLifetimeHelp")}
+            className="c-nonce-lifetime"
             controller={{
               defaultValue: 60,
               rules: { min: 30 },
@@ -692,6 +690,7 @@ export const RealmSettingsTokensTab = ({
             )}
             label={t("credentialOfferLifespan")}
             labelIcon={t("credentialOfferLifespanHelp")}
+            className="credential-offer-lifespan"
             controller={{
               defaultValue: credentialOfferLifespanDefaultValue,
               rules: { min: 30 },
@@ -705,6 +704,7 @@ export const RealmSettingsTokensTab = ({
             )}
             label={t("signedMetadataLifespan")}
             labelIcon={t("signedMetadataLifespanHelp")}
+            className="signed-metadata-lifespan"
             controller={{
               defaultValue: 60,
             }}
@@ -768,62 +768,6 @@ export const RealmSettingsTokensTab = ({
             }}
             data-testid="batch-issuance-size"
           />
-
-          <Text
-            className="kc-override-action-tokens-subtitle"
-            component={TextVariants.h1}
-          >
-            {t("attestationTrust")}
-          </Text>
-          <FormGroup
-            label={t("trustedKeyIds")}
-            fieldId="trustedKeyIds"
-            labelIcon={
-              <HelpItem
-                helpText={t("trustedKeyIdsHelp")}
-                fieldLabelId="trustedKeyIds"
-              />
-            }
-          >
-            <TextInput
-              id="trustedKeyIds"
-              data-testid="trusted-key-ids"
-              {...register(
-                convertAttributeNameToForm(
-                  "attributes.oid4vc.attestation.trusted_key_ids",
-                ),
-              )}
-            />
-          </FormGroup>
-          <FormGroup
-            label={t("trustedKeys")}
-            fieldId="trustedKeys"
-            labelIcon={
-              <HelpItem
-                helpText={t("trustedKeysHelp")}
-                fieldLabelId="trustedKeys"
-              />
-            }
-          >
-            <Controller
-              name={convertAttributeNameToForm(
-                "attributes.oid4vc.attestation.trusted_keys",
-              )}
-              control={control}
-              defaultValue={
-                realm.attributes?.["oid4vc.attestation.trusted_keys"]
-              }
-              render={({ field }) => (
-                <TextArea
-                  id="trustedKeys"
-                  data-testid="trusted-keys"
-                  value={field.value}
-                  onChange={(_event, value) => field.onChange(value)}
-                  resizeOrientation="vertical"
-                />
-              )}
-            />
-          </FormGroup>
 
           <Text
             className="kc-override-action-tokens-subtitle"

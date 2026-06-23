@@ -41,3 +41,6 @@
 :kubernetes: Kubernetes
 :keycloak_benchmark_link: https://www.keycloak.org/keycloak-benchmark/
 :keycloak_benchmark_name: Keycloak Benchmark Project
+:ui_customization_guide_name: UI Customization Guide
+:ui_customization_guide_link: {project_doc_base_url}/ui-customization/
+

@@ -60,6 +60,7 @@ import static org.keycloak.scim.resource.Scim.getCoreSchema;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -1250,6 +1251,40 @@ public class UserTest extends AbstractScimTest {
         }
 
         return subGroup;
+    }
+
+    @Test
+    public void testMetaLocationUrl() {
+        User user = client.users().create(createUser());
+        String id = user.getId();
+
+        // location from create response should end with /Users/{id}
+        assertNotNull(user.getMeta());
+        assertTrue(user.getMeta().getLocation().endsWith("/Users/" + id),
+                "Create location should end with /Users/" + id + " but was: " + user.getMeta().getLocation());
+        assertFalse(user.getMeta().getLocation().contains(id + "/" + id),
+                "Create location should not contain duplicated ID: " + user.getMeta().getLocation());
+
+        // location from single-resource GET should also be correct
+        User fetched = client.users().get(id);
+        assertNotNull(fetched.getMeta());
+        assertTrue(fetched.getMeta().getLocation().endsWith("/Users/" + id),
+                "GET location should end with /Users/" + id + " but was: " + fetched.getMeta().getLocation());
+        assertFalse(fetched.getMeta().getLocation().contains(id + "/" + id),
+                "GET location should not contain duplicated ID: " + fetched.getMeta().getLocation());
+
+        // location from list response should match
+        String filter = ResourceFilter.filter().eq("userName", user.getUserName()).build();
+        ListResponse<User> response = client.users().getAll(filter);
+        assertFalse(response.getResources().isEmpty());
+        User listed = response.getResources().get(0);
+        assertNotNull(listed.getMeta());
+        assertTrue(listed.getMeta().getLocation().endsWith("/Users/" + id),
+                "List location should end with /Users/" + id + " but was: " + listed.getMeta().getLocation());
+
+        // all three locations should be equal
+        assertEquals(user.getMeta().getLocation(), fetched.getMeta().getLocation());
+        assertEquals(user.getMeta().getLocation(), listed.getMeta().getLocation());
     }
 
     @Test

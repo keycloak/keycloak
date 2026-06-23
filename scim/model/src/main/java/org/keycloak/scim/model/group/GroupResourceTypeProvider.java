@@ -52,7 +52,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
 public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<GroupModel, Group> implements ScimAttributeJpaExpressionResolver {
 
     public GroupResourceTypeProvider(KeycloakSession session) {
-        super(session, new GroupCoreModelSchema());
+        super(session, new GroupCoreModelSchema(session));
     }
 
     @Override

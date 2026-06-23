@@ -22,6 +22,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.ReverseProxy;
@@ -35,6 +36,7 @@ import org.apache.http.ssl.SSLContextBuilder;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
@@ -210,16 +212,13 @@ public final class KcSamlBrokerFrontendUrlTest extends AbstractBrokerTest {
                 .execute(response -> {
                     assertThat(response, Matchers.statusCodeIsHC(Response.Status.BAD_REQUEST));
                     String consumerRealmId = realmsResouce().realm(bc.consumerRealmName()).toRepresentation().getId();
-                    events.expect(EventType.IDENTITY_PROVIDER_RESPONSE_ERROR)
-                            .clearDetails()
-                            .session((String) null)
-                            .realm(consumerRealmId)
-                            .user((String) null)
-                            .client((String) null)
+                    EventAssertion.assertError(events.poll()).type(EventType.IDENTITY_PROVIDER_RESPONSE_ERROR)
+                            .sessionId(null)
+                            .userId(null)
+                            .clientId(null)
                             .error(Errors.INVALID_SAML_RESPONSE)
-                            .detail("reason", Errors.INVALID_DESTINATION)
-                            .assertEvent();
-                    events.assertEmpty();
+                            .details("reason", Errors.INVALID_DESTINATION);
+                    Assertions.assertNull(events.poll());
                 });
     }
 

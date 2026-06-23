@@ -39,7 +39,7 @@ import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.UIUtils;
 
@@ -78,7 +78,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
     }
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected AppPage appPage;
@@ -331,7 +331,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
         // Receive email
-        MimeMessage message = greenMail.getReceivedMessages()[greenMail.getReceivedMessages().length - 1];
+        MimeMessage message = mail.getReceivedMessages()[mail.getReceivedMessages().length - 1];
 
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 

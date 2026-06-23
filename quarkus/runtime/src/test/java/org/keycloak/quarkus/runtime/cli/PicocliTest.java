@@ -207,6 +207,14 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(),
                 containsString("'xyz' is an unrecognized feature, it should be one of"));
+        onAfter();
+
+        // near-match should suggest similar features
+        nonRunningPicocli = pseudoLaunch("build", "--features", "tokn-exchang");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(),
+                containsString("'tokn-exchang' is an unrecognized feature. Did you mean:"));
+        assertThat(nonRunningPicocli.getErrString(), containsString("token-exchange"));
     }
 
     @Test
@@ -564,7 +572,7 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void warnProviderChanged() {
         build("build", "--db=dev-file");
 
-        putEnvVar("KC_RUN_IN_CONTAINER", "true");
+        putEnvVar(Environment.KC_RUN_IN_CONTAINER, "true");
         String key = PersistedConfigSource.getInstance().getConfigValueProperties().keySet().stream().filter(k -> k.startsWith(Picocli.KC_PROVIDER_FILE_PREFIX)).findAny().orElseThrow();
         addPersistedConfigValues(Map.of(key, "1")); // change to a fake timestamp
 
@@ -1292,7 +1300,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertThat(nonRunningPicocli.getErrString(), containsString("Missing value for feature 'spiffe'"));
         onAfter();
 
-        // Non-existing
+        // Non-existing - no close match, falls back to full list
         nonRunningPicocli = pseudoLaunch("start-dev", "--feature-not-here=enabled");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("'not-here' is an unrecognized feature, it should be one of"));
@@ -1309,6 +1317,13 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("'non-existing-feature' is an unrecognized feature, it should be one of"));
         assertThat(nonRunningPicocli.getErrString(), not(containsString("preview")));
+        onAfter();
+
+        // Near-match - should suggest similar features
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-impersonaton=enabled");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("'impersonaton' is an unrecognized feature. Did you mean:"));
+        assertThat(nonRunningPicocli.getErrString(), containsString("impersonation"));
         onAfter();
 
         // wrong value

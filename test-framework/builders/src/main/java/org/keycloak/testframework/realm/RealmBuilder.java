@@ -2,6 +2,7 @@ package org.keycloak.testframework.realm;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +18,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
+import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 public class RealmBuilder extends Builder<RealmRepresentation> {
@@ -477,8 +479,17 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
-    public RealmBuilder webAuthnPolicyRequireResidentKey(String residentKey) {
-        rep.setWebAuthnPolicyRequireResidentKey(residentKey);
+    /**
+     * @deprecated Use {@link #webAuthnPolicyResidentKey(String)} instead.
+     */
+    @Deprecated
+    public RealmBuilder webAuthnPolicyRequireResidentKey(String requireResidentKey) {
+        rep.setWebAuthnPolicyRequireResidentKey(requireResidentKey);
+        return this;
+    }
+
+    public RealmBuilder webAuthnPolicyResidentKey(String residentKey) {
+        rep.setWebAuthnPolicyResidentKey(residentKey);
         return this;
     }
 
@@ -522,8 +533,17 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
-    public RealmBuilder webAuthnPolicyPasswordlessRequireResidentKey(String residentKey) {
-        rep.setWebAuthnPolicyPasswordlessRequireResidentKey(residentKey);
+    /**
+     * @deprecated Use {@link #webAuthnPolicyPasswordlessResidentKey(String)} instead.
+     */
+    @Deprecated
+    public RealmBuilder webAuthnPolicyPasswordlessRequireResidentKey(String requireResidentKey) {
+        rep.setWebAuthnPolicyPasswordlessRequireResidentKey(requireResidentKey);
+        return this;
+    }
+
+    public RealmBuilder webAuthnPolicyPasswordlessResidentKey(String residentKey) {
+        rep.setWebAuthnPolicyPasswordlessResidentKey(residentKey);
         return this;
     }
 
@@ -585,6 +605,34 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
 
     public RealmBuilder clientScopes(ClientScopeBuilder... clientScopes) {
         rep.setClientScopes(combine(rep.getClientScopes(), clientScopes));
+        return this;
+    }
+
+    public RealmBuilder addClientScopeRealmRoleMapping(String clientScopeName, String... roleNames) {
+        ScopeMappingRepresentation mapping = rep.clientScopeScopeMapping(clientScopeName);
+        for (String roleName : roleNames) {
+            mapping.role(roleName);
+        }
+        return this;
+    }
+
+    public RealmBuilder addClientScopeClientRoleMapping(String clientName, String clientScopeName, String... roleNames) {
+        ScopeMappingRepresentation mapping = new ScopeMappingRepresentation();
+        mapping.setClientScope(clientScopeName);
+        for (String roleName : roleNames) {
+            mapping.role(roleName);
+        }
+        Map<String, List<ScopeMappingRepresentation>> mappings = rep.getClientScopeMappings();
+        if (mappings == null) {
+            mappings = new HashMap<>();
+            rep.setClientScopeMappings(mappings);
+        }
+        mappings.computeIfAbsent(clientName, k -> new LinkedList<>()).add(mapping);
+        return this;
+    }
+
+    public RealmBuilder accountTheme(String accountTheme) {
+        rep.setAccountTheme(accountTheme);
         return this;
     }
 

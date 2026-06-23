@@ -423,8 +423,10 @@ public class SdJwtVerificationContext {
                 }
             }
 
-            // Remove all array elements for which the digest was not found in the previous step.
-            indexesToRemove.forEach(currentArrayNode::remove);
+            // Remove in reverse order so that each removal does not shift indices of earlier elements.
+            for (int i = indexesToRemove.size() - 1; i >= 0; i--) {
+                currentArrayNode.remove((int) indexesToRemove.get(i));
+            }
         }
 
         for (JsonNode childNode : currentNode) {

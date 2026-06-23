@@ -44,6 +44,7 @@ import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
@@ -941,9 +942,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public boolean removeVerifiableCredential(String userId, String credentialScopeName) {
+    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String clientScopeId) {
         if (StorageId.isLocalStorage(userId)) {
-            return localStorage().removeVerifiableCredential(userId, credentialScopeName);
+            return localStorage().updateVerifiableCredential(userId, clientScopeId);
+        } else {
+            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+        }
+    }
+
+    @Override
+    public boolean removeVerifiableCredential(String userId, String clientScopeId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().removeVerifiableCredential(userId, clientScopeId);
         } else {
             throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
         }
@@ -956,6 +966,52 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         } else {
             throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
         }
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialById(String id) {
+        return localStorage().getVerifiableCredentialById(id);
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialByClientScope(String userId, String clientScopeId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().getVerifiableCredentialByClientScope(userId, clientScopeId);
+        } else {
+            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+        }
+    }
+
+    @Override
+    public IssuedVerifiableCredentialModel addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc) {
+        if (StorageId.isLocalStorage(issuedVc.getUserId())) {
+            return localStorage().addIssuedVerifiableCredential(issuedVc);
+        } else {
+            throw new UnsupportedOperationException("Issued verifiable credential operations not yet supported on federated users");
+        }
+    }
+
+    @Override
+    public Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().getIssuedVerifiableCredentialsStreamByUser(userId);
+        } else {
+            throw new UnsupportedOperationException("Issued verifiable credential operations not yet supported on federated users");
+        }
+    }
+
+    @Override
+    public boolean removeIssuedVerifiableCredential(String credentialId) {
+        if (StorageId.isLocalStorage(credentialId)) {
+            return localStorage().removeIssuedVerifiableCredential(credentialId);
+        } else {
+            throw new UnsupportedOperationException("Issued verifiable credential operations not yet supported on federated users");
+        }
+    }
+
+    @Override
+    public void removeExpiredIssuedVerifiableCredentials() {
+        localStorage().removeExpiredIssuedVerifiableCredentials();
     }
 
     @Override
@@ -1043,7 +1099,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
         localStorage().preRemove(realm, component);
         if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, component);
-        StoreSyncEvent.fire(session, realm, component, true);
+        // enlistAfterCompletion(..) as we need to ensure that the realm is updated with the final settings
+        session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                StoreSyncEvent.fire(session, realm, component, true);
+            }
+
+            @Override
+            protected void rollbackImpl() {
+                // NOOP
+            }
+        });
     }
 
     @Override
@@ -1093,7 +1160,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         UserStorageProviderModel actual= new UserStorageProviderModel(newModel);
 
         if (isSyncSettingsUpdated(previous, actual)) {
-            StoreSyncEvent.fire(session, realm, actual, false);
+            // enlistAfterCompletion(..) as we need to ensure that the realm is updated with the final settings
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    StoreSyncEvent.fire(session, realm, actual, false);
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    // NOOP
+                }
+            });
         }
     }
 
@@ -1143,7 +1221,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
         OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
 
-        if (organizationProvider.count() == 0) {
+        if (!organizationProvider.hasOrganizations()) {
             return false;
         }
 

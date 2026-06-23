@@ -7,6 +7,9 @@ public class ClusteredKeycloakServerSupplier extends AbstractKeycloakServerSuppl
 
     private static final Logger LOGGER = Logger.getLogger(ClusteredKeycloakServerSupplier.class);
 
+    @ConfigProperty(name = "start.timeout", defaultValue = "300")
+    long startTimeout;
+
     @ConfigProperty(name = "numContainer", defaultValue = "2")
     int numContainers = 2;
 
@@ -15,7 +18,7 @@ public class ClusteredKeycloakServerSupplier extends AbstractKeycloakServerSuppl
 
     @Override
     public KeycloakServer getServer() {
-        return new ClusteredKeycloakServer(numContainers, images);
+        return new ClusteredKeycloakServer(numContainers, images, startTimeout);
     }
 
     @Override

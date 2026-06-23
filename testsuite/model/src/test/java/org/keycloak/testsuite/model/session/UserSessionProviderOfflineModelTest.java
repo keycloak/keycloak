@@ -391,7 +391,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
             }
             awaitLatch(afterFirstNodeLatch);
 
-            if (InfinispanUtils.isEmbeddedInfinispan()) {
+            if (!Profile.isFeatureEnabled(Profile.Feature.CACHELESS) && InfinispanUtils.isEmbeddedInfinispan()) {
                 log.debug("Joining the cluster");
                 inComittedTransaction(session -> {
                     InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
@@ -443,7 +443,9 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
         withRealm(realmId, (session, realm) -> {
             // remove offline client sessions from the cache
             // this simulates the cases when offline client sessions are lost from the cache due to various reasons (a cache limit/expiration/preloading issue)
-            session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).clear();
+            if (!Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
+                session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).clear();
+            }
 
             String clientUUID = realm.getClientByClientId("test-app").getId();
 
@@ -497,8 +499,10 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
         withRealm(realmId, (session, realm) -> {
             // remove offline client sessions from the cache
             // this simulates the cases when offline client sessions are lost from the cache due to various reasons (a cache limit/expiration/preloading issue)
-            session.getProvider(InfinispanConnectionProvider.class)
-                    .getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).clear();
+            if (!Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
+                session.getProvider(InfinispanConnectionProvider.class)
+                        .getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).clear();
+            }
 
             String clientUUID = realm.getClientByClientId("test-app").getId();
 

@@ -30,6 +30,7 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.LDAPRule;
+import org.keycloak.testsuite.util.runonserver.LdapHelper;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
@@ -79,7 +80,7 @@ public abstract class AbstractLDAPTest extends AbstractTestRealmKeycloakTest {
 
     protected void createLDAPProvider() {
         Map<String, String> cfg = getLDAPRule().getConfig();
-        ldapModelId = testingClient.testing().ldap(TEST_REALM_NAME).createLDAPProvider(cfg, isImportEnabled());
+        ldapModelId = runOnServer.fetchString(LdapHelper.createLDAPProvider(cfg, isImportEnabled())).replace("\"", "");
         Assertions.assertEquals(22, ldapModelId.length(), "Short ID not used for ldap id");
         log.infof("LDAP Provider created");
     }

@@ -1,0 +1,43 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== The `view-system` admin role no longer exists
+
+Since version 26.5.4, when introduced, the `view-system` admin role was marked as deprecated. In this release, the role
+has been removed for security reasons.
+
+Access to full server information is now restricted to users in the `master` realm holding the `manage-realm` role.
+
+If you are still relying on the `view-system` role, you should consider accessing the full server information using a user
+(or service account) from the `master` realm and granted with `manage-realm` admin roles.
+
+Before upgrading, you should check if any of your users, service accounts, or groups are still relying on the
+`view-system` role and review their access controls to ensure they have the necessary permissions to access the server
+information after the upgrade. The `manage-realm` admin role is a high-privileged role and should only be granted to
+highly-trusted accounts.
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== <TODO>
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== <TODO>
+
+// ------------------------ Removed features ------------------------ //
+== Removed features
+
+The following features have been removed from this release.
+
+=== <TODO>
+

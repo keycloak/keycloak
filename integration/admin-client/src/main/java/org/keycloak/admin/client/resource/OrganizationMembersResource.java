@@ -49,7 +49,7 @@ public interface OrganizationMembersResource {
     /**
      * Return all members in the organization.
      *
-     * @return a list containing the organization members.
+     * @return a list containing the organization members. Returns brief user representations by default.
      * @Deprecated Use {@link org.keycloak.admin.client.resource.OrganizationMembersResource#list} instead.
      */
     @Deprecated
@@ -62,13 +62,31 @@ public interface OrganizationMembersResource {
      *
      * @param first index of the first element (pagination offset).
      * @param max the maximum number of results.
-     * @return a list containing organization members.
+     * @return a list containing organization members. Returns brief user representations by default.
+     *         Use {@link #list(Integer, Integer, boolean)} to control the representation type.
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<MemberRepresentation> list(
             @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults
+    );
+
+    /**
+     * Return members in the organization.
+     *
+     * @param first index of the first element (pagination offset).
+     * @param max the maximum number of results.
+     * @param briefRepresentation if false, return the full representation. Otherwise, only the basic fields are returned. It is true by default.
+     * @return a list containing organization members.
+     * @since Keycloak server 26.7
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<MemberRepresentation> list(
+            @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults,
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation
     );
 
     /**
@@ -80,13 +98,61 @@ public interface OrganizationMembersResource {
      *              the method returns all members with at least one main attribute partially matching the {@code search} param.
      * @param first index of the first element (pagination offset).
      * @param max the maximum number of results.
-     * @return a list containing the matched organization members.
+     * @return a list containing the matched organization members. Returns brief user representations by default.
+     *         Use {@link #search(String, Boolean, Integer, Integer, boolean)} to control the representation type.
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<MemberRepresentation> search(
             @QueryParam("search") String search,
             @QueryParam("exact") Boolean exact,
+            @QueryParam("first") Integer first,
+            @QueryParam("max") Integer max
+    );
+
+    /**
+     * Return all organization members that match the specified filters.
+     *
+     * @param search a {@code String} representing either a member's username, e-mail, first name, or last name.
+     * @param exact if {@code true}, the members will be searched using exact match for the {@code search} param - i.e.
+     *              at least one of the username main attributes must match exactly the {@code search} param. If false,
+     *              the method returns all members with at least one main attribute partially matching the {@code search} param.
+     * @param first index of the first element (pagination offset).
+     * @param max the maximum number of results.
+     * @param briefRepresentation if false, return the full representation. Otherwise, only the basic fields are returned. It is true by default.
+     * @return a list containing the matched organization members.
+     * @since Keycloak server 26.7
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<MemberRepresentation> search(
+            @QueryParam("search") String search,
+            @QueryParam("exact") Boolean exact,
+            @QueryParam("first") Integer first,
+            @QueryParam("max") Integer max,
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation
+    );
+
+    /**
+     * Return all organization members that match the specified filters.
+     *
+     * @param search a {@code String} representing either a member's username, e-mail, first name, or last name.
+     * @param exact if {@code true}, the members will be searched using exact match for the {@code search} param - i.e.
+     *              at least one of the username main attributes must match exactly the {@code search} param. If false,
+     *              the method returns all members with at least one main attribute partially matching the {@code search} param.
+     * @param membershipType The {@link org.keycloak.representations.idm.MembershipType}. The parameter is supported since Keycloak 26.1
+     * @param first index of the first element (pagination offset).
+     * @param max the maximum number of results.
+     * @return a list containing the matched organization members. Returns brief user representations by default.
+     *         Use {@link #search(String, Boolean, MembershipType, Integer, Integer, boolean)} to control the representation type.
+     * @since Keycloak 26.1. Use method {@link #search(String, Boolean, Integer, Integer)} for the older versions of the Keycloak server
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<MemberRepresentation> search(
+            @QueryParam("search") String search,
+            @QueryParam("exact") Boolean exact,
+            @QueryParam("membershipType") MembershipType membershipType,
             @QueryParam("first") Integer first,
             @QueryParam("max") Integer max
     );
@@ -101,8 +167,9 @@ public interface OrganizationMembersResource {
      * @param membershipType The {@link org.keycloak.representations.idm.MembershipType}. The parameter is supported since Keycloak 26.1
      * @param first index of the first element (pagination offset).
      * @param max the maximum number of results.
+     * @param briefRepresentation if false, return the full representation. Otherwise, only the basic fields are returned. It is true by default.
      * @return a list containing the matched organization members.
-     * @since Keycloak 26.1. Use method {@link #search(String, Boolean, Integer, Integer)} for the older versions of the Keycloak server
+     * @since Keycloak server 26.7
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -111,7 +178,8 @@ public interface OrganizationMembersResource {
             @QueryParam("exact") Boolean exact,
             @QueryParam("membershipType") MembershipType membershipType,
             @QueryParam("first") Integer first,
-            @QueryParam("max") Integer max
+            @QueryParam("max") Integer max,
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation
     );
 
     @Path("{id}")

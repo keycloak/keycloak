@@ -28,11 +28,13 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.DurationConverter;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.connections.infinispan.remote.RemoteInfinispanConnectionProvider;
@@ -74,6 +76,8 @@ import org.infinispan.factories.GlobalComponentRegistry;
 import org.infinispan.health.CacheHealth;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.remoting.transport.Transport;
+import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
@@ -85,6 +89,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.L
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanUtil.setTimeServiceToKeycloakTime;
 import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_CLEAR_CACHE_EVENTS;
 import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_INVALIDATION_EVENTS;
@@ -246,6 +251,13 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     protected EmbeddedCacheManager createEmbeddedCacheManager(KeycloakSession session) {
         var holder = session.getProvider(CacheEmbeddedConfigProvider.class).configuration();
 
+        // remove clustered caches
+        if (Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
+            Arrays.stream(CLUSTERED_CACHE_NAMES)
+                    .filter(Predicate.not(WORK_CACHE_NAME::equals))
+                    .forEach(holder.getNamedConfigurationBuilders()::remove);
+        }
+
         StringBuilderWriter sw = new StringBuilderWriter();
         ParserRegistry parser = new ParserRegistry();
         try (ConfigurationWriter w = ConfigurationWriter.to(sw).prettyPrint(true).build()) {
@@ -256,6 +268,14 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         }
 
         var cm = getDefaultCacheManager(session, holder);
+        if (cm.getCacheManagerConfiguration().metrics().enabled()) {
+            var transport = GlobalComponentRegistry.componentOf(cm, Transport.class);
+            if (transport != null) {
+                // we miss some messages stats (aka state transfer) by enabling this late.
+                // but here works for all stacks, including custom ones by users.
+                ((JGroupsTransport) transport).getChannel().getProtocolStack().getTransport().enableStats(true);
+            }
+        }
         cm.getCache(KEYS_CACHE_NAME, true);
         cm.getCache(CRL_CACHE_NAME, true);
 
@@ -387,6 +407,16 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     @Override
     public boolean isClusterHealthSupported() {
         return clusterHealth.isSupported();
+    }
+
+    @Override
+    public boolean isCoordinator() {
+        return cacheManager.isCoordinator();
+    }
+
+    @Override
+    public boolean isCoordinatorSupported() {
+        return true;
     }
 
     private void addEmbeddedOperationalInfo(Map<String, String> info) {

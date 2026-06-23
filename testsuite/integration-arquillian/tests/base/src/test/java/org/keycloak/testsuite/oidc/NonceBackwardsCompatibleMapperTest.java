@@ -23,6 +23,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -175,14 +176,18 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
         checkNonce(nonce, refreshToken.getNonce(), mapper);
 
-        EventRepresentation tokenEvent = events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
-                .detail(Details.REFRESH_TOKEN_TYPE, offlineSession? TokenUtil.TOKEN_TYPE_OFFLINE : TokenUtil.TOKEN_TYPE_REFRESH)
-                .assertEvent();
+        EventRepresentation tokenEvent = EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(loginEvent.getSessionId())
+                .details(Details.CODE_ID, loginEvent.getDetails().get(Details.CODE_ID))
+                .details(Details.REFRESH_TOKEN_TYPE, offlineSession? TokenUtil.TOKEN_TYPE_OFFLINE : TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID).getEvent();
 
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-        events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), loginEvent.getSessionId())
-                .detail(Details.REFRESH_TOKEN_TYPE, offlineSession? TokenUtil.TOKEN_TYPE_OFFLINE : TokenUtil.TOKEN_TYPE_REFRESH)
-                .assertEvent();
+        EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .sessionId(loginEvent.getSessionId())
+                .details(Details.REFRESH_TOKEN_ID, tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID))
+                .details(Details.REFRESH_TOKEN_TYPE, offlineSession? TokenUtil.TOKEN_TYPE_OFFLINE : TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         token = oauth.verifyToken(response.getAccessToken());
         checkNonce(nonce, token.getNonce(), mapper);

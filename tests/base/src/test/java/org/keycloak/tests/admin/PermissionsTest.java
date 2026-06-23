@@ -327,6 +327,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.roles().get("sample-role").getRoleComposites(), Resource.REALM, false);
         invoke(realm -> realm.roles().get("sample-role").getRealmRoleComposites(), Resource.REALM, false);
         invoke(realm -> realm.roles().get("sample-role").getClientRoleComposites(KeycloakModelUtils.generateId()), Resource.REALM, false);
+        invoke(realm -> realm.roles().list(), clients.get(AdminRoles.MANAGE_IDENTITY_PROVIDERS), true);
     }
 
     @Test
@@ -428,9 +429,11 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.users().get(user.getId()).revokeConsent("testclient"), Resource.USER, true);
 
         invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().getCredentials(), Resource.USER, false);
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().getIssuedCredentials(), Resource.USER, false);
         UserVerifiableCredentialRepresentation verifCred = new UserVerifiableCredentialRepresentation();
         verifCred.setCredentialScopeName("nosuch");
         invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().createCredential(verifCred), Resource.USER, true);
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().updateCredential("nosuch"), Resource.USER, true);
         invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().revokeCredential("nosuch"), Resource.USER, true);
 
         invoke(realm -> realm.users().get(user.getId()).logout(), Resource.USER, true);

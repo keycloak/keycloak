@@ -58,7 +58,7 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
     }
         
     public BaseClientModelMapper() {
-        this.addMapping("protocol", BaseClientRepresentation::getProtocol, null, ClientModel::getProtocol, ClientModel::setProtocol);
+        this.addMapping("protocol", BaseClientRepresentation::getProtocol, BaseClientRepresentation::setProtocol, ClientModel::getProtocol, ClientModel::setProtocol);
         this.addMapping("uuid", BaseClientRepresentation::getUuid, BaseClientRepresentation::setUuid, ClientModel::getId, null);
         this.addMapping("enabled", BaseClientRepresentation::getEnabled, BaseClientRepresentation::setEnabled, ClientModel::isEnabled, (model, enabled) -> model.setEnabled(Boolean.TRUE.equals(enabled)));
         this.addMapping("clientId", BaseClientRepresentation::getClientId, BaseClientRepresentation::setClientId, ClientModel::getClientId, ClientModel::setClientId);
@@ -89,6 +89,15 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
     @SuppressWarnings("unchecked")
     public void toModel(BaseClientRepresentation rep, ClientModel existingModel) {
         fields.values().forEach(m -> m.toModel(rep, existingModel));
+    }
+
+    @SuppressWarnings("unchecked")
+    public void applyProjection(BaseClientRepresentation rep, Set<String> includeFields) {
+        if (includeFields == null || includeFields.isEmpty()) return;
+        fields.entrySet().stream()
+                .filter(e -> !includeFields.contains(e.getKey()))
+                .filter(e -> e.getValue().repSetter != null)
+                .forEach(e -> e.getValue().repSetter.accept(rep, null));
     }
 
     protected abstract T createClientRepresentation();

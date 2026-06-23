@@ -25,6 +25,7 @@ import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -43,6 +44,7 @@ import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.interceptors.AsyncInterceptorChain;
 import org.infinispan.interceptors.impl.CacheMgmtInterceptor;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createClients;
@@ -265,6 +267,7 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
 
     @Test
     public void testRemoveAfterCreation() {
+        Assume.assumeFalse(Profile.isFeatureEnabled(Profile.Feature.CACHELESS));
         var computeOperationCount = operationCounterSupplier();
         var operationsBefore = computeOperationCount.getAsLong();
 

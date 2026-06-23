@@ -811,10 +811,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         // make sure we don't overwrite anything from the user input
         var property = tlsJdbcProperties.keySet().iterator().next();
         var urlProperty = "?%s=bar".formatted(property);
-        // oracle does not support --db-url-properties
-        var arg = "oracle".equals(dbKind) ?
-                "--db-url=" + dbUrl + urlProperty :
-                "--db-url-properties=%s".formatted(urlProperty);
+        var arg = "--db-url-properties=%s".formatted(urlProperty);
 
         config = createConfigFromCliArguments("--db=" + dbKind, "--db-url-host=myhost", "--db-tls-mode=verify-server", arg);
 

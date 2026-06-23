@@ -45,6 +45,7 @@ import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
 import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
@@ -58,6 +59,7 @@ import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.TokenUtil;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
@@ -305,12 +307,12 @@ public class CustomFlowTest extends AbstractFlowTest {
         AuthenticatorState state = new AuthenticatorState();
         state.setUsername("login-test");
         state.setClientId("test-app");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
 
         oauth.openLoginForm();
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
     }
@@ -320,7 +322,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         AuthenticatorState state = new AuthenticatorState();
         state.setUsername("login-test");
         state.setClientId("test-app");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
 
         grantAccessToken("test-app", "login-test");
     }
@@ -330,15 +332,15 @@ public class CustomFlowTest extends AbstractFlowTest {
         AuthenticatorState state = new AuthenticatorState();
         state.setClientId("dummy-client");
         state.setUsername("login-test");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
         grantAccessToken("dummy-client", "login-test");
 
         state.setClientId("test-app");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
         grantAccessToken("test-app", "login-test");
 
         state.setClientId("unknown");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
 
         AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user", "password");
         assertEquals(401, response.getStatusCode());
@@ -355,7 +357,7 @@ public class CustomFlowTest extends AbstractFlowTest {
                 .error(Errors.CLIENT_NOT_FOUND);
 
         state.setClientId("test-app");
-        testingClient.testing().updateAuthenticator(state);
+        runOnServerMaster.run(updateAuthenticator(state));
 
         // Test throwing exception from the client authenticator. No error details should be displayed
         response = oauth.passwordGrantRequest("test-user", "password").param(PassThroughClientAuthenticator.TEST_ERROR_PARAM, "Some Random Error").send();
@@ -398,12 +400,24 @@ public class CustomFlowTest extends AbstractFlowTest {
         assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
         assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState())
-                .user(userId)
-                .client(clientId)
-                .detail(Details.CLIENT_AUTH_METHOD, PassThroughClientAuthenticator.PROVIDER_ID)
-                .assertEvent();
+        EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .sessionId(refreshToken.getSessionState())
+                .userId(userId)
+                .clientId(clientId)
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, PassThroughClientAuthenticator.PROVIDER_ID);
     }
 
+    public static RunOnServer updateAuthenticator(AuthenticatorState state) {
+        return  session -> {
+            if (state.getClientId() != null) {
+                PassThroughClientAuthenticator.clientId = state.getClientId();
+            }
+            if (state.getUsername() != null) {
+                PassThroughAuthenticator.username = state.getUsername();
+            }
+        };
+    }
 
 }

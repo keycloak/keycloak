@@ -39,16 +39,19 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.ECDSAAlgorithm;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
@@ -57,6 +60,7 @@ import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.keys.GeneratedEddsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -111,6 +115,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -199,7 +205,39 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void accessTokenRequest() throws Exception {
+        // Avoid existing authentication session to interfere with Hibernate statistics count
+        oauth.openLoginForm();
+        driver.manage().deleteAllCookies();
+        driver.get("about:blank");
+
+        runOnServerMaster.run(session -> {
+            Statistics stats = statistics(session);
+            stats.setStatisticsEnabled(true);
+            stats.clear();
+        });
+
         oauth.doLogin("test-user@localhost", "password");
+
+        runOnServerMaster.run(session -> {
+            Statistics stats = statistics(session);
+            if (!Profile.isFeatureEnabled(Profile.Feature.CACHELESS) && Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                assertEquals(1, stats.getEntityStatistics("org.keycloak.models.jpa.session.PersistentUserSessionEntity").getInsertCount());
+                assertEquals(4, stats.getSuccessfulTransactionCount());
+            } else if (Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
+                // user session
+                assertEquals(0, stats.getEntityStatistics("org.keycloak.models.jpa.session.PersistentUserSessionEntity").getUpdateCount());
+                assertEquals(1, stats.getEntityStatistics("org.keycloak.models.jpa.session.PersistentUserSessionEntity").getInsertCount());
+                assertEquals(0, stats.getEntityStatistics("org.keycloak.models.jpa.session.PersistentUserSessionEntity").getFetchCount());
+                // authentication session
+                assertEquals(1, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getLoadCount());
+                assertEquals(0, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getUpdateCount());
+                assertEquals(1, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getInsertCount());
+                assertEquals(1, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getDeleteCount());
+                assertEquals(0, stats.getEntityStatistics("org.keycloak.authentication.jpa.RootAuthenticationSessionEntity").getFetchCount());
+                // Total transactions: Open login page, submit password, perform code-to-token exchange = 3 transactions
+                assertEquals(3, stats.getSuccessfulTransactionCount());
+            }
+        });
 
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
@@ -265,11 +303,22 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(1, token.getResourceAccess(oauth.getClientId()).getRoles().size());
         assertTrue(token.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
 
-        EventRepresentation event = events.expectCodeToToken(codeId, sessionId).assertEvent();
+        EventRepresentation event = EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID).getEvent();
         assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
         assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
 
+    }
+
+    private static Statistics statistics(KeycloakSession session) {
+        return session.getProvider(JpaConnectionProvider.class).getEntityManager()
+                .getEntityManagerFactory()
+                .unwrap(SessionFactory.class)
+                .getStatistics();
     }
 
     @Test
@@ -345,8 +394,11 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         AccessTokenResponse response = oauth.client("test-app", "invalid").doAccessTokenRequest(code);
         assertEquals(401, response.getStatusCode());
 
-        AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_client_credentials").clearDetails().user((String) null).session((String) null);
-        expectedEvent.assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.CODE_TO_TOKEN_ERROR)
+                .error("invalid_client_credentials")
+                .userId(null)
+                .sessionId(null);
     }
 
     @Test
@@ -361,8 +413,11 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertEquals(401, response.getStatusCode());
 
-        AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_client_credentials").clearDetails().user((String) null).session((String) null);
-        expectedEvent.assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.CODE_TO_TOKEN_ERROR)
+                .error("invalid_client_credentials")
+                .userId(null)
+                .sessionId(null);
     }
 
     @Test
@@ -384,11 +439,13 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals("invalid_grant", response.getError());
         assertEquals("Incorrect redirect_uri", response.getErrorDescription());
 
-        events.expectCodeToToken(codeId, loginEvent.getSessionId()).error(Errors.INVALID_REDIRECT_URI)
-                .removeDetail(Details.TOKEN_ID)
-                .removeDetail(Details.REFRESH_TOKEN_ID)
-                .removeDetail(Details.REFRESH_TOKEN_TYPE)
-                .assertEvent();
+        EventAssertion.expectCodeToTokenError(events.poll())
+                .details(Details.CODE_ID, codeId)
+                .sessionId(loginEvent.getSessionId())
+                .error(Errors.INVALID_REDIRECT_URI)
+                .withoutDetails(Details.TOKEN_ID)
+                .withoutDetails(Details.REFRESH_TOKEN_ID)
+                .withoutDetails(Details.REFRESH_TOKEN_TYPE);
 
         //@TODO Reset back to the original URI. Maybe we should have something to reset to the original state at OAuthClient
         oauth.redirectUri(redirectUri);
@@ -405,7 +462,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
 
 
-        runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
+        runOnServer.run(RunHelpers.removeUserSession(sessionId));
         String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
@@ -413,12 +470,14 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertNull(tokenResponse.getAccessToken());
         assertNull(tokenResponse.getRefreshToken());
 
-        events.expectCodeToToken(codeId, sessionId)
-                .removeDetail(Details.TOKEN_ID)
-                .user((String) null)
-                .removeDetail(Details.REFRESH_TOKEN_ID)
-                .removeDetail(Details.REFRESH_TOKEN_TYPE)
-                .error(Errors.INVALID_CODE).assertEvent();
+        EventAssertion.expectCodeToTokenError(events.poll())
+                .details(Details.CODE_ID, codeId)
+                .sessionId(sessionId)
+                .withoutDetails(Details.TOKEN_ID)
+                .userId(null)
+                .withoutDetails(Details.REFRESH_TOKEN_ID)
+                .withoutDetails(Details.REFRESH_TOKEN_TYPE)
+                .error(Errors.INVALID_CODE);
 
         events.clear();
     }
@@ -440,22 +499,23 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String code = oauth.parseLoginResponse().getCode();
 
         try {
-            setTimeOffset(2);
+            timeOffSet.set(2);
 
             AccessTokenResponse response = oauth.doAccessTokenRequest(code);
             Assertions.assertEquals(400, response.getStatusCode());
         } finally {
             getTestingClient().testing().revertTestingInfinispanTimeService();
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
 
-        AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, codeId);
-        expectedEvent.error("invalid_code")
-                .removeDetail(Details.TOKEN_ID)
-                .removeDetail(Details.REFRESH_TOKEN_ID)
-                .removeDetail(Details.REFRESH_TOKEN_TYPE)
-                .user((String) null);
-        expectedEvent.assertEvent();
+        EventAssertion.expectCodeToTokenError(events.poll())
+                .details(Details.CODE_ID, codeId)
+                .sessionId(codeId)
+                .error("invalid_code")
+                .withoutDetails(Details.TOKEN_ID)
+                .withoutDetails(Details.REFRESH_TOKEN_ID)
+                .withoutDetails(Details.REFRESH_TOKEN_TYPE)
+                .userId(null);
 
         events.clear();
 
@@ -510,13 +570,14 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             response = oauth.doAccessTokenRequest(code);
             Assertions.assertEquals(400, response.getStatusCode());
 
-            AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, codeId);
-            expectedEvent.error("invalid_code")
-                    .removeDetail(Details.TOKEN_ID)
-                    .removeDetail(Details.REFRESH_TOKEN_ID)
-                    .removeDetail(Details.REFRESH_TOKEN_TYPE)
-                    .user((String) null);
-            expectedEvent.assertEvent();
+            EventAssertion.expectCodeToTokenError(events.poll())
+                    .details(Details.CODE_ID, codeId)
+                    .sessionId(codeId)
+                    .error("invalid_code")
+                    .withoutDetails(Details.TOKEN_ID)
+                    .withoutDetails(Details.REFRESH_TOKEN_ID)
+                    .withoutDetails(Details.REFRESH_TOKEN_TYPE)
+                    .userId(null);
 
             // Check that userInfo can't be invoked with invalidated accessToken
             userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(jaxrsClient, accessToken);
@@ -672,8 +733,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            // 401 because the client is now a bearer without a secret
-            assertEquals(401, response.getStatus());
+            // 400 for a bearer-only client as it should not be allowed to do a resource-owner-password grant
+            assertEquals(400, response.getStatus());
             response.close();
 
             {
@@ -1077,7 +1138,12 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             AccessTokenResponse response = new AccessTokenResponse(client.execute(post));
             Assertions.assertEquals(200, response.getStatusCode());
             AccessToken token = oauth.verifyToken(response.getAccessToken());
-            events.expectCodeToToken(codeId, sessionId).client("sample-public-client").assertEvent();
+            EventAssertion.expectCodeToTokenSuccess(events.poll())
+                    .sessionId(sessionId)
+                    .clientId("sample-public-client")
+                    .details(Details.CODE_ID, codeId)
+                    .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                    .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
         }
     }
 
@@ -1107,7 +1173,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             // Assert token expiration equals token lifespan
             assertExpiration(response.getExpiresIn(), tokenLifespan);
 
-            setTimeOffset(sessionMax - 60);
+            timeOffSet.set(sessionMax - 60);
 
             response = oauth.doRefreshTokenRequest(response.getRefreshToken());
             assertEquals(200, response.getStatusCode());
@@ -1491,7 +1557,11 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         assertEquals(sessionId, token.getSessionState());
 
-        EventRepresentation event = events.expectCodeToToken(codeId, sessionId).assertEvent();
+        EventRepresentation event = EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID).getEvent();
         assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
         assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());

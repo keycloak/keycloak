@@ -168,6 +168,7 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         rep.setAuth(auth);
         // Add a login flow to ensure it's treated as a confidential client
         rep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.STANDARD));
+        rep.setRedirectUris(Set.of("http://localhost/callback"));
 
         try (var response = getClientsApi().createClient(rep)) {
             int statusCode = response.getStatus();
@@ -193,6 +194,7 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         rep.setClientId("test-auto-config-client");
         rep.setEnabled(true);
         rep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.STANDARD));
+        rep.setRedirectUris(Set.of("http://localhost/callback"));
 
         try (var response = getClientsApi().createClient(rep)) {
             int statusCode = response.getStatus();

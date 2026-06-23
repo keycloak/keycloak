@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -46,7 +47,6 @@ import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.infinispan.commons.api.BasicCache;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
-import static org.keycloak.storage.datastore.DefaultDatastoreProviderFactory.setupClearExpiredRevokedTokensScheduledTask;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -115,7 +115,6 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
             factory.register(event -> {
                 if (event instanceof PostMigrationEvent pme) {
                     KeycloakSessionFactory sessionFactory = pme.getFactory();
-                    setupClearExpiredRevokedTokensScheduledTask(sessionFactory);
                     try (KeycloakSession session = sessionFactory.create()) {
                         // load sessions during startup, not on first request to avoid congestion
                         initialize(session);
@@ -142,7 +141,7 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return InfinispanUtils.isEmbeddedInfinispan();
+        return !Profile.isFeatureEnabled(Profile.Feature.CACHELESS) && InfinispanUtils.isEmbeddedInfinispan();
     }
 
     @Override

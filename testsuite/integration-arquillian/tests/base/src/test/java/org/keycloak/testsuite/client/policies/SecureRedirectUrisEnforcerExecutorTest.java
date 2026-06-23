@@ -17,9 +17,12 @@
 package org.keycloak.testsuite.client.policies;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.client.registration.ClientRegistrationException;
@@ -101,10 +104,10 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         try {
             updateClientByAdmin(cId, (ClientRepresentation clientRep) -> {
                 clientRep.setAttributes(new HashMap<>());
-                clientRep.setRedirectUris(List.of("")); // nomally, vacant redirect uri is not allowed.
+                clientRep.setRedirectUris(List.of("")); // empty redirect uris are filtered out before persistence.
             });
             ClientRepresentation cRep = getClientByAdmin(cId);
-            assertEquals(new HashSet<>(List.of("")), new HashSet<>(cRep.getRedirectUris()));
+            assertEquals(Collections.emptySet(), new HashSet<>(cRep.getRedirectUris()));
         } catch (ClientPolicyException cpe) {
             fail();
         }
@@ -474,7 +477,7 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
     }
 
     @Test
-    public void testSecureRedirectUrisEnforcerExecutor_OAuth2_1Complient() throws Exception {
+    public void testSecureRedirectUrisEnforcerExecutor_OAuth2_1Compliant() throws Exception {
         // register profiles
         String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
                 (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
@@ -520,6 +523,62 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         // authorization request - fail
         // redirect_uri not match with registered redirect uris
         testSecureRedirectUrisEnforcerExecutor_failAuthorizationRequest(alphaClientId, "com.example.app:/oauth3redirect/example-provider");
+    }
+
+    @Test
+    public void testSecureRedirectUrisEnforcerExecutor_OAuth2_0Compliant() throws Exception {
+        // register profiles - OAuth 2.0 compliant rejects fragments and wildcards
+        // but is less strict than OAuth 2.1 (allows localhost, HTTP, single-word schemes)
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID,
+                                createSecureRedirectUrisEnforcerExecutorConfig(it->{
+                                    it.setAllowIPv4LoopbackAddress(true);
+                                    it.setAllowIPv6LoopbackAddress(true);
+                                    it.setAllowHttpScheme(true);
+                                    it.setOAuth2_0Compliant(true);}))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // register - fail
+        // fragment in redirect URI not allowed per RFC 6749
+        testSecureRedirectUrisEnforcerExecutor_failRegisterByAdmin(List.of("https://example.com/callback#fragment"));
+
+        // register - fail
+        // wildcard in redirect URI not allowed
+        testSecureRedirectUrisEnforcerExecutor_failRegisterByAdmin(List.of("https://example.com/*"));
+
+        // register - success
+        // localhost is still allowed (unlike OAuth 2.1)
+        List<String> registerResultList = testSecureRedirectUrisEnforcerExecutor_successRegisterByAdmin(
+                List.of("http://localhost/auth/admin"));
+        String alphaClientId = registerResultList.get(0);
+        String alphaCid = registerResultList.get(1);
+
+        // update - fail
+        // fragment not allowed
+        testSecureRedirectUrisEnforcerExecutor_failUpdateByAdmin(alphaCid,
+                List.of("http://localhost/auth/admin#frag"));
+
+        // update - success
+        // HTTP scheme and localhost are allowed under OAuth 2.0 (unlike OAuth 2.1)
+        testSecureRedirectUrisEnforcerExecutor_successUpdateByAdmin(alphaCid,
+                List.of("http://localhost/auth/redirect", "http://127.0.0.1:8080/callback"));
+
+        // authorization request - fail
+        // redirect_uri not match with registered redirect uris
+        testSecureRedirectUrisEnforcerExecutor_failAuthorizationRequest(alphaClientId, "http://localhost/auth/other");
     }
 
     @Test
@@ -639,7 +698,10 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
                 clientRep.setRedirectUris(redirectUrisList);
             });
             ClientRepresentation cRep = getClientByAdmin(alphaCid);
-            assertEquals(new HashSet<>(redirectUrisList), new HashSet<>(cRep.getRedirectUris()));
+            Set<String> expectedUris = redirectUrisList.stream()
+                    .filter(s -> s != null && !s.isBlank())
+                    .collect(Collectors.toSet());
+            assertEquals(expectedUris, new HashSet<>(cRep.getRedirectUris()));
         } catch (ClientPolicyException cpe) {
             fail();
         }

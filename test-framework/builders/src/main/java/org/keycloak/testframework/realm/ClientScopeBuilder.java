@@ -16,6 +16,8 @@
  */
 package org.keycloak.testframework.realm;
 
+import java.util.HashMap;
+
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 /**
@@ -47,6 +49,12 @@ public class ClientScopeBuilder extends Builder<ClientScopeRepresentation> {
 
     public ClientScopeBuilder protocol(String protocol) {
         rep.setProtocol(protocol);
+        return this;
+    }
+
+    public ClientScopeBuilder attribute(String key, String value) {
+        rep.setAttributes(Builder.createIfNull(rep.getAttributes(), HashMap::new));
+        rep.getAttributes().put(key, value);
         return this;
     }
 }

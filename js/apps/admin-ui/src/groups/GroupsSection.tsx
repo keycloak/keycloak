@@ -243,7 +243,7 @@ export default function GroupsSection({ orgId }: { orgId?: string } = {}) {
                   >
                     <GroupAttributes />
                   </Tab>
-                  {!isOrganization && canViewRoles && (
+                  {canViewRoles && (
                     <Tab
                       eventKey={3}
                       data-testid="role-mapping-tab"

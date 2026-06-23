@@ -155,7 +155,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         appPage.assertCurrent();
 
         try {
-            setTimeOffset(10);
+            timeOffSet.set(10);
             oauth.realm(bc.consumerRealmName());
             oauth.loginForm().maxAge(1).kcAction(RequiredAction.UPDATE_PASSWORD.name()).open();
             loginPage.assertCurrent();
@@ -165,7 +165,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             updatePasswordPage.updatePasswords(memberPassword, memberPassword);
             appPage.assertCurrent();
         } finally {
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
     }
 

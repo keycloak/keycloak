@@ -77,25 +77,28 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     @Test
     public void testServiceAccountAndLogoutSuccess() throws Exception {
         String client1Jwt = getClient1SignedJWT();
-        JsonWebToken client1JsonWebToken = new JWSInput(client1Jwt).readJsonContent(JsonWebToken.class);
+        JWSInput client1JwsInput = new JWSInput(client1Jwt);
+        JsonWebToken client1JsonWebToken = client1JwsInput.readJsonContent(JsonWebToken.class);
         AccessTokenResponse response = doClientCredentialsGrantRequest(client1Jwt);
 
         assertEquals(200, response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
-        events.expectClientLogin()
-                .client("client1")
-                .user(client1SAUserId)
-                .session(accessToken.getSessionState())
-                .detail(Details.TOKEN_ID, accessToken.getId())
-                .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "client1")
-                .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
-                .detail(Details.CLIENT_ASSERTION_ID, client1JsonWebToken.getId())
-                .detail(Details.CLIENT_ASSERTION_ISSUER, "client1")
-                .detail(Details.CLIENT_ASSERTION_SUB, "client1")
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.CLIENT_LOGIN)
+                .clientId("client1")
+                .userId(client1SAUserId)
+                .hasSessionId()
+                .sessionId(accessToken.getSessionState())
+                .details(Details.TOKEN_ID, accessToken.getId())
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .details(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "client1")
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
+                .details(Details.CLIENT_ASSERTION_ID, client1JsonWebToken.getId())
+                .details(Details.CLIENT_ASSERTION_ISSUER, "client1")
+                .details(Details.CLIENT_ASSERTION_SUB, "client1")
+                .details(Details.CLIENT_JWT_KID, client1JwsInput.getHeader().getKeyId());
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
 
@@ -107,11 +110,10 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
         assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState())
-                .user(client1SAUserId)
-                .client("client1")
-                .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
-                .assertEvent();
+        EventAssertion.expectRefreshTokenSuccess(events.poll()).details(Details.REFRESH_TOKEN_ID, refreshToken.getId()).sessionId(refreshToken.getSessionState())
+                .userId(client1SAUserId)
+                .clientId("client1")
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID);
 
         // Logout and assert refresh will fail
         HttpResponse logoutResponse = doLogout(response.getRefreshToken(), getClient1SignedJWT());
@@ -128,13 +130,13 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         assertEquals(400, response.getStatusCode());
         assertEquals("invalid_grant", response.getError());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState())
-                .client("client1")
-                .user((String) null)
-                .removeDetail(Details.TOKEN_ID)
-                .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
-                .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
-                .error(Errors.INVALID_TOKEN).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.REFRESH_TOKEN_ERROR).details(Details.REFRESH_TOKEN_ID, refreshToken.getId()).sessionId(refreshToken.getSessionState())
+                .clientId("client1")
+                .userId(null)
+                .withoutDetails(Details.TOKEN_ID)
+                .withoutDetails(Details.UPDATED_REFRESH_TOKEN_ID)
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
+                .error(Errors.INVALID_TOKEN);
 
     }
 
@@ -623,7 +625,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     public void testAssertionExpired() throws Exception {
         String invalidJwt = getClient1SignedJWT();
 
-        setTimeOffset(1000);
+        timeOffSet.set(1000);
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
@@ -633,7 +635,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
         AccessTokenResponse response = new AccessTokenResponse(resp);
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
 
         assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
     }
@@ -748,7 +750,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     public void testAssertionInvalidNotBefore() throws Exception {
         String invalidJwt = getClient1SignedJWT();
 
-        setTimeOffset(-1000);
+        timeOffSet.set(-1000);
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
@@ -758,7 +760,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
         AccessTokenResponse response = new AccessTokenResponse(resp);
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
 
         assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
 
@@ -906,13 +908,13 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         assertSuccess(response, app1.getClientId(), serviceAccountUser.getId(), serviceAccountUser.getUsername());
 
         // in the max-exp window the token should be detected as already used
-        setTimeOffset(30);
+        timeOffSet.set(30);
         response = doClientCredentialsGrantRequest(jwt);
         assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
         assertThat(response.getErrorDescription(), containsString("Token reuse detected"));
 
         // after the max-exp window the token cannot be used because iat is too far in the past
-        setTimeOffset(65);
+        timeOffSet.set(65);
         response = doClientCredentialsGrantRequest(jwt);
         assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
         assertThat(response.getErrorDescription(), containsString("Token was issued too far in the past to be used now"));

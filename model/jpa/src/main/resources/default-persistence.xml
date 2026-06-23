@@ -46,6 +46,7 @@
         <class>org.keycloak.models.jpa.entities.UserConsentEntity</class>
         <class>org.keycloak.models.jpa.entities.UserConsentClientScopeEntity</class>
         <class>org.keycloak.models.jpa.entities.UserVerifiableCredentialEntity</class>
+        <class>org.keycloak.models.jpa.entities.IssuedVerifiableCredentialEntity</class>
         <class>org.keycloak.models.jpa.entities.AuthenticationFlowEntity</class>
         <class>org.keycloak.models.jpa.entities.AuthenticationExecutionEntity</class>
         <class>org.keycloak.models.jpa.entities.AuthenticatorConfigEntity</class>
@@ -53,6 +54,7 @@
         <class>org.keycloak.models.jpa.session.PersistentUserSessionEntity</class>
         <class>org.keycloak.models.jpa.session.PersistentClientSessionEntity</class>
         <class>org.keycloak.models.jpa.entities.RevokedTokenEntity</class>
+        <class>org.keycloak.models.jpa.entities.OutboxEntryEntity</class>
         <class>org.keycloak.models.jpa.entities.GroupEntity</class>
         <class>org.keycloak.models.jpa.entities.GroupAttributeEntity</class>
         <class>org.keycloak.models.jpa.entities.GroupRoleMappingEntity</class>
@@ -63,10 +65,17 @@
         <class>org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.DefaultClientScopeRealmMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.ClientInitialAccessEntity</class>
+        <class>org.keycloak.authentication.jpa.AuthenticationSessionEntity</class>
+        <class>org.keycloak.authentication.jpa.RootAuthenticationSessionEntity</class>
+        <class>org.keycloak.singleobject.jpa.SingleUseObjectEntity</class>
+        <class>org.keycloak.loginfailures.jpa.LoginFailureEntity</class>
 
         <!-- JpaAuditProviders -->
         <class>org.keycloak.events.jpa.EventEntity</class>
         <class>org.keycloak.events.jpa.AdminEventEntity</class>
+
+        <!-- Cluster Events -->
+        <class>org.keycloak.cluster.jpa.ClusterEventEntity</class>
 
         <!-- Authorization -->
         <class>org.keycloak.authorization.jpa.entities.ResourceServerEntity</class>

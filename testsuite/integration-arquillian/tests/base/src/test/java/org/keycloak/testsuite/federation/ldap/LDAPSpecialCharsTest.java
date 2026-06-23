@@ -37,6 +37,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+import org.keycloak.testsuite.util.runonserver.LdapHelper;
 
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
@@ -74,7 +75,7 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
 
     @Override
     protected void afterImportTestRealm() {
-        testingClient.testing().ldap(TEST_REALM_NAME).prepareGroupsLDAPTest();
+        runOnServer.run(LdapHelper.prepareGroupsLDAPTest());
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -131,7 +132,7 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
         // Success login as username exactly match
         loginPage.login("jamees,key*cložak)ppp", "Password1");
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -223,7 +224,7 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
             // Success login as username exactly match
             loginPage.login("jamees,key*cložak)ppp", "Password1");
             Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } finally {
             // Revert config changes to be back to previous UUID attribute
             ComponentRepresentation ldapRep = managedRealm.admin().components().component(ldapModelId).toRepresentation();

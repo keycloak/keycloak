@@ -37,7 +37,36 @@ import org.keycloak.common.crypto.CryptoIntegration;
  */
 public class KeystoreUtil {
 
-    public enum KeystoreFormat {
+    public interface StoreFormat {
+        List<String> getFileExtensions();
+        String getPrimaryExtension();
+    };
+
+    public enum TruststoreFormat implements StoreFormat {
+        JKS("jks", "truststore"),
+        PKCS12("p12", "pfx", "pkcs12"),
+        PEM("pem", "ca", "crt"),
+        BCFKS("bcfks");
+
+        // Typical file extension for this keystore format
+        private final List<String> fileExtensions;
+
+        TruststoreFormat(String... extensions) {
+            this.fileExtensions = Arrays.asList(extensions);
+        }
+
+        @Override
+        public List<String> getFileExtensions() {
+            return fileExtensions;
+        }
+
+        @Override
+        public String getPrimaryExtension() {
+            return fileExtensions.get(0);
+        }
+    }
+
+    public enum KeystoreFormat implements StoreFormat {
         JKS("jks"),
         PKCS12("p12", "pfx", "pkcs12"),
         BCFKS("bcfks");
@@ -48,10 +77,12 @@ public class KeystoreUtil {
             this.fileExtensions = Arrays.asList(extensions);
         }
 
+        @Override
         public List<String> getFileExtensions() {
             return fileExtensions;
         }
 
+        @Override
         public String getPrimaryExtension() {
             return fileExtensions.get(0);
         }
@@ -104,17 +135,44 @@ public class KeystoreUtil {
         }
     }
 
-    public static Optional<KeystoreFormat> getKeystoreFormat(String path) {
+    private static <T extends StoreFormat> Optional<T> getStoreFormat(String path, T[] values) {
         int lastDotIndex = path.lastIndexOf('.');
         if (lastDotIndex > -1) {
             String ext = path.substring(lastDotIndex + 1).toLowerCase();
-            return Arrays.stream(KeystoreUtil.KeystoreFormat.values())
+            return Arrays.stream(values)
                     .filter(ksFormat -> ksFormat.getFileExtensions().contains(ext))
                     .findFirst();
         }
         return Optional.empty();
     }
 
+    public static Optional<TruststoreFormat> getTruststoreFormat(String path) {
+        return getStoreFormat(path, TruststoreFormat.values());
+    }
+
+    public static Optional<KeystoreFormat> getKeystoreFormat(String path) {
+        return getStoreFormat(path, KeystoreFormat.values());
+    }
+
+    private static <T extends StoreFormat> String getStoreType(String preferredType, String path, String defaultType, T[] values) {
+        // Configured type has precedence
+        if (preferredType != null) {
+            return preferredType;
+        }
+
+        // Fallback to path
+        Optional<StoreFormat> format = getStoreFormat(path, values);
+        if (format.isPresent()) {
+            return format.get().toString();
+        }
+
+        // Fallback to default
+        return defaultType;
+    }
+
+    public static String getTruststoreType(String preferredType, String path, String defaultType) {
+        return getStoreType(preferredType, path, defaultType, TruststoreFormat.values());
+    }
 
     /**
      * Try to return supported keystore type
@@ -125,18 +183,6 @@ public class KeystoreUtil {
      * @return format as specified above
      */
     public static String getKeystoreType(String preferredType, String path, String defaultType) {
-        // Configured type has precedence
-        if (preferredType != null) {
-            return preferredType;
-        }
-
-        // Fallback to path
-        Optional<KeystoreFormat> format = getKeystoreFormat(path);
-        if (format.isPresent()) {
-            return format.get().toString();
-        }
-
-        // Fallback to default
-        return defaultType;
+        return getStoreType(preferredType, path, defaultType, KeystoreFormat.values());
     }
 }

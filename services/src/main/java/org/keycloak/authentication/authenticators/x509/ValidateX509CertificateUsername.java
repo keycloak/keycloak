@@ -75,12 +75,12 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
         try {
             CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(context.getSession(), config);
             CertificateValidator validator = builder.build(certs);
-            validator.checkRevocationStatus()
-                    .validateTrust()
+            validator.validateTrust()
+                    .validateTimestamps()
                     .validateKeyUsage()
                     .validateExtendedKeyUsage()
-                    .validateTimestamps()
-                    .validatePolicy();
+                    .validatePolicy()
+                    .checkRevocationStatus();
         } catch(Exception e) {
             logger.error(e.getMessage(), e);
             // TODO use specific locale to load error messages

@@ -402,4 +402,29 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Multiple audiences not allowed", response, events.poll());
     }
+
+    @Test
+    public void testInvalidSignatureDoesNotConsumeJti() {
+        String jti = "test-sig-jti-" + System.currentTimeMillis();
+        JsonWebToken token = createDefaultAuthorizationGrantToken();
+        token.id(jti);
+
+        // Create request with invalid signature
+        OAuthIdentityProvider.OAuthIdentityProviderKeys newKeys = getIdentityProvider().createKeys();
+        OAuthIdentityProvider.OAuthIdentityProviderKeys keys = getIdentityProvider().getKeys();
+        newKeys.getKeyWrapper().setKid(keys.getKeyWrapper().getKid());
+        String jwtInvalidSig = getIdentityProvider().encodeToken(token, newKeys);
+
+        // First request with invalid signature should fail
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwtInvalidSig).send();
+        assertFailure("Invalid signature", response, events.poll());
+
+        // Second request with valid signature and same jti
+        String jwtValidSig = getIdentityProvider().encodeToken(token);
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwtValidSig).send();
+        assertSuccess("test-app", response);
+
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwtValidSig).send();
+        assertFailure("Token reuse detected", response, events.poll());
+    }
 }

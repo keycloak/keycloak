@@ -293,7 +293,7 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
         webAuthnLoginPage.clickAuthenticate();
 
         if (shouldSuccess) {
-            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+            Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
         } else {
             displayErrorMessageIfPresent();
         }
@@ -382,11 +382,11 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
         assertThat(realmRep, notNullValue());
         if(!isPasswordless()) {
             assertThat(realmRep.getWebAuthnPolicyRpEntityName(), is("localhost"));
-            assertThat(realmRep.getWebAuthnPolicyRequireResidentKey(), is(residentKey));
+            assertThat(realmRep.getWebAuthnPolicyResidentKey(), is(residentKey));
             assertThat(realmRep.getWebAuthnPolicyUserVerificationRequirement(), is(userVerification));
         } else {
             assertThat(realmRep.getWebAuthnPolicyPasswordlessRpEntityName(), is("localhost"));
-            assertThat(realmRep.getWebAuthnPolicyPasswordlessRequireResidentKey(), is(residentKey));
+            assertThat(realmRep.getWebAuthnPolicyPasswordlessResidentKey(), is(residentKey));
             assertThat(realmRep.getWebAuthnPolicyPasswordlessUserVerificationRequirement(), is(userVerification));
         }
     }
@@ -467,7 +467,7 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
             builder.webAuthnPolicySignatureAlgorithms(List.of("ES256", "RS256", "RS1"))
                 .webAuthnPolicyAttestationConveyancePreference("not specified")
                 .webAuthnPolicyAuthenticatorAttachment("not specified")
-                .webAuthnPolicyRequireResidentKey("not specified")
+                .webAuthnPolicyResidentKey("not specified")
                 .webAuthnPolicyUserVerificationRequirement("not specified")
                 .webAuthnPolicyRpEntityName("keycloak-webauthn-2FA")
                 .webAuthnPolicyCreateTimeout(60)
@@ -476,7 +476,7 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
             builder.webAuthnPolicyPasswordlessSignatureAlgorithms(List.of("ES256", "RS256", "RS1"))
                 .webAuthnPolicyPasswordlessAttestationConveyancePreference("not specified")
                 .webAuthnPolicyPasswordlessAuthenticatorAttachment("not specified")
-                .webAuthnPolicyPasswordlessRequireResidentKey("not specified")
+                .webAuthnPolicyPasswordlessResidentKey("not specified")
                 .webAuthnPolicyPasswordlessUserVerificationRequirement("not specified")
                 .webAuthnPolicyPasswordlessRpEntityName("keycloak-webauthn-passwordless-2FA")
                 .webAuthnPolicyPasswordlessCreateTimeout(60)

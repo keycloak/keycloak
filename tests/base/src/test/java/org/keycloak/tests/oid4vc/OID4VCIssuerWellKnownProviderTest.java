@@ -51,6 +51,7 @@ import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.ClaimDisplay;
 import org.keycloak.protocol.oid4vc.model.Claims;
+import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
@@ -99,10 +100,10 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.AssertionsKt.assertNotNull;
 
 
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
@@ -667,9 +668,13 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
             assertNull(supportedConfig.getVct(), "JWT_VC credentials should not have vct");
             assertNotNull(supportedConfig.getCredentialDefinition());
             assertNotNull(supportedConfig.getCredentialDefinition().getType());
+            // VerifiableCredential must always be present as a base type per W3C VC Data Model
+            MatcherAssert.assertThat(supportedConfig.getCredentialDefinition().getType(),
+                    Matchers.hasItem(CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE));
             List<String> credentialDefinitionTypes = credScope.getSupportedCredentialTypes();
             if (!credentialDefinitionTypes.isEmpty()) {
-                assertEquals(credentialDefinitionTypes.size(), supportedConfig.getCredentialDefinition().getType().size());
+                MatcherAssert.assertThat(supportedConfig.getCredentialDefinition().getType(),
+                        Matchers.hasItems(credentialDefinitionTypes.toArray(new String[0])));
             }
 
             // @context must not be present for jwt_vc_json format per OID4VCI spec

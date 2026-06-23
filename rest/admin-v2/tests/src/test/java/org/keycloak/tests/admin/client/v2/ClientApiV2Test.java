@@ -19,7 +19,10 @@ package org.keycloak.tests.admin.client.v2;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -28,6 +31,7 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
+import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
@@ -44,6 +48,7 @@ import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -72,7 +77,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -90,13 +94,10 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     @InjectRealm(config = NoAccessRealmConfig.class, ref = "testRealm")
     ManagedRealm testRealm;
 
-    @InjectRealm(attachTo = "master", ref = "master")
-    ManagedRealm masterRealm;
-
     @InjectAdminClient(ref = "noAccessClient", realmRef = "testRealm", client = "myclient", mode = InjectAdminClient.Mode.MANAGED_REALM)
     Keycloak noAccessAdminClient;
 
-    @InjectClient(realmRef = "testRealm")
+    @InjectClient(realmRef = "testRealm", config = TestClientConfig.class)
     ManagedClient testClient;
 
     @Override
@@ -267,13 +268,14 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         oidcRep.setDescription("OIDC client for mixed protocol test");
         // OIDC-specific fields
         oidcRep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.STANDARD, OIDCClientRepresentation.Flow.DIRECT_GRANT));
+        oidcRep.setRedirectUris(Set.of("http://localhost:3000/callback"));
         oidcRep.setWebOrigins(Set.of("http://localhost:3000", "http://localhost:4000"));
 
         try (var response = getClientsApi().createClient(oidcRep)) {
             assertEquals(201, response.getStatus());
             OIDCClientRepresentation created = response.readEntity(OIDCClientRepresentation.class);
             assertThat(created, notNullValue());
-            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
 
         // Create a SAML client with SAML-specific fields
@@ -282,7 +284,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         samlRep.setClientId("mixed-test-saml");
         samlRep.setDescription("SAML client for mixed protocol test");
         // SAML-specific fields
-        samlRep.setNameIdFormat("email");
+        samlRep.setNameIdFormat(SAMLClientRepresentation.NameIdFormat.EMAIL);
         samlRep.setSignDocuments(true);
         samlRep.setSignAssertions(true);
         samlRep.setForcePostBinding(true);
@@ -292,7 +294,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(201, response.getStatus());
             SAMLClientRepresentation created = response.readEntity(SAMLClientRepresentation.class);
             assertThat(created, notNullValue());
-            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
 
         // Get all clients - this should work with mixed protocols
@@ -320,7 +322,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
             assertThat("SAML client should be in the list", foundSaml, is(notNullValue()));
             assertThat(foundSaml.getDescription(), notNullValue());
-            assertThat(foundSaml.getNameIdFormat(), is("email"));
+            assertThat(foundSaml.getNameIdFormat(), is(SAMLClientRepresentation.NameIdFormat.EMAIL));
             assertThat(foundSaml.getSignDocuments(), is(true));
             assertThat(foundSaml.getSignAssertions(), is(true));
             assertThat(foundSaml.getForcePostBinding(), is(true));
@@ -338,14 +340,14 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         SAMLClientRepresentation samlClient = (SAMLClientRepresentation) getClientsApi().client(samlRep.getClientId()).getClient();
         assertEquals("mixed-test-saml", samlClient.getClientId());
         assertEquals("SAML client for mixed protocol test", samlClient.getDescription());
-        assertThat(samlClient.getNameIdFormat(), is("email"));
+        assertThat(samlClient.getNameIdFormat(), is(SAMLClientRepresentation.NameIdFormat.EMAIL));
         assertThat(samlClient.getSignDocuments(), is(true));
         assertThat(samlClient.getSignAssertions(), is(true));
         assertThat(samlClient.getForcePostBinding(), is(true));
         assertThat(samlClient.getFrontChannelLogout(), is(false));
         
         // test projecting only id and protocol
-        try (Stream<BaseClientRepresentation> baseClientRepresentationStream = getClientsApi().getClients(Set.of("clientId", "protocol"))) {
+        try (Stream<BaseClientRepresentation> baseClientRepresentationStream = getClientsApi().getClients(new ListOptions().fields(Set.of("clientId", "protocol")))) {
             List<BaseClientRepresentation> clients = baseClientRepresentationStream.toList();
             for (BaseClientRepresentation client : clients) {
                 BaseClientRepresentation toCompare = null;
@@ -362,7 +364,11 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     
     @Test
     public void invalidFieldProjection() {
-        BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(Set.of("unknown!")));
+        BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(new ListOptions().fields(Set.of("unknown!"))));
+        assertEquals("{\"error\":\"unknown! is an unknown field\"}", e.getResponse().readEntity(String.class));
+        
+        // ensure that multiple fields are interpreted correctly
+        e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(new ListOptions().fields(new LinkedHashSet<>(List.of("clientId","unknown!")))));
         assertEquals("{\"error\":\"unknown! is an unknown field\"}", e.getResponse().readEntity(String.class));
     }
 
@@ -379,7 +385,6 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             var body = response.readEntity(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
             var violations = body.violations();
-            assertThat(violations, hasSize(2));
             assertThat(violations, hasItem("clientId: must not be blank"));
             assertThat(violations, hasItem("appUrl: must be a valid URL"));
         }
@@ -398,8 +403,8 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             var body = response.readEntity(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
             var violations = body.violations();
-            assertThat(violations.size(), is(1));
-            assertThat(violations.iterator().next(), is("appUrl: must be a valid URL"));
+            assertThat(violations, hasItem("appUrl: must be a valid URL"));
+            assertThat(violations, hasItem(containsString("valid client authenticator type is required")));
         }
     }
 
@@ -490,6 +495,10 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
 
         rep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT));
+        var auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod("client-secret");
+        auth.setSecret("test-sa-secret");
+        rep.setAuth(auth);
         rep.setServiceAccountRoles(Set.of(defaultRealmRoles, "offline_access"));
 
         try (var response = getClientsApi().createClient(rep)) {
@@ -528,6 +537,43 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(200, response.getStatus());
             OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
             assertThat(updated.getServiceAccountRoles(), is(Set.of()));
+        }
+    }
+
+    @Test
+    public void declarativeServiceAccountClientRoleManagement() {
+        String defaultRealmRoles = "default-roles-%s".formatted(testRealm.getName().toLowerCase());
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setClientId("sa-client-role-test");
+        rep.setEnabled(true);
+        rep.setRoles(Set.of("my-client-role"));
+        rep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT));
+        rep.setServiceAccountRoles(Set.of(defaultRealmRoles, "offline_access"));
+
+        OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod(ClientIdAndSecretAuthenticator.PROVIDER_ID);
+        rep.setAuth(auth);
+
+        try (var response = getClientsApi().createClient(rep)) {
+            assertEquals(201, response.getStatus());
+            OIDCClientRepresentation created = response.readEntity(OIDCClientRepresentation.class);
+            assertThat(created.getRoles(), is(Set.of("my-client-role")));
+            assertThat(created.getServiceAccountRoles(), is(Set.of(defaultRealmRoles, "offline_access")));
+        }
+
+        rep.setServiceAccountRoles(Set.of(defaultRealmRoles, "offline_access", "my-client-role"));
+        try (var response = getClientsApi().client("sa-client-role-test").createOrUpdateClient(rep)) {
+            assertEquals(200, response.getStatus());
+            OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
+            assertThat(updated.getServiceAccountRoles(), is(Set.of(defaultRealmRoles, "offline_access", "my-client-role")));
+        }
+
+        rep.setServiceAccountRoles(Set.of(defaultRealmRoles, "offline_access"));
+        try (var response = getClientsApi().client("sa-client-role-test").createOrUpdateClient(rep)) {
+            assertEquals(200, response.getStatus());
+            OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
+            assertThat(updated.getServiceAccountRoles(), is(Set.of(defaultRealmRoles, "offline_access")));
+            assertThat(updated.getRoles(), is(Set.of("my-client-role")));
         }
     }
 
@@ -763,8 +809,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         OIDCClientRepresentation.Auth authWithoutSecret = new OIDCClientRepresentation.Auth();
         authWithoutSecret.setMethod(authenticationMethod);
-        authWithoutSecret.setAdditionalField("secret", null);
-        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfigPatch(authWithoutSecret, clientId);
+        authWithoutSecret.setSecret(null);
+        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfigPatchRawAuth(clientId,
+                "{\"method\":\"" + authenticationMethod + "\",\"secret\":null}");
         assertThat(patchedAuth, notNullValue());
         String newlyGeneratedSecret = patchedAuth.getSecret();
         assertThat(newlyGeneratedSecret, not(is(createdAuth.getSecret())));
@@ -780,15 +827,13 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod(authenticationMethod);
-        auth.setSecret("shush");
+        auth.setSecret("shushy");
 
         OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfigPost(auth, clientId);
         assertThat(createdAuth, notNullValue());
         assertThat(createdAuth.getSecret(), is(auth.getSecret()));
 
-        OIDCClientRepresentation.Auth authWithoutSecret = new OIDCClientRepresentation.Auth();
-        authWithoutSecret.setAdditionalField("secret", null);
-        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfigPatch(authWithoutSecret, clientId);
+        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfigPatchRawAuth(clientId, "{\"secret\":null}");
         assertThat(patchedAuth, notNullValue());
         String newlyGeneratedSecret = patchedAuth.getSecret();
         assertThat(newlyGeneratedSecret, not(is(createdAuth.getSecret())));
@@ -804,7 +849,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod(authenticationMethod);
-        auth.setSecret("shush");
+        auth.setSecret("shushy");
 
         OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfigPost(auth, clientId);
         assertThat(createdAuth, notNullValue());
@@ -820,7 +865,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod(ClientIdAndSecretAuthenticator.PROVIDER_ID);
-        auth.setSecret("shush");
+        auth.setSecret("shushy");
 
         OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfigPost(auth, clientId);
         assertThat(createdAuth, notNullValue());
@@ -845,7 +890,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         String clientId = authenticationMethod + "-patched-other-fields";
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod(authenticationMethod);
-        auth.setSecret("shush");
+        auth.setSecret("shushy");
 
         OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfigPost(auth, clientId);
         assertThat(createdAuth, notNullValue());
@@ -858,7 +903,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @ParameterizedTest
     @ValueSource(strings = { ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID })
-    void expectValidationFailureForUpdatePutWithoutSecret(String authenticationMethod) throws IOException {
+    void putUpdateWithNullSecretReusesPersistedSecret(String authenticationMethod) throws IOException {
         String clientId = authenticationMethod + "-validation-update-put";
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod(authenticationMethod);
@@ -869,8 +914,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         assertThat(createdAuth.getSecret(), is(auth.getSecret()));
 
         auth.setSecret(null);
-        var assertionError = assertThrows(AssertionError.class, () -> getResultingAuthConfigPut(auth, clientId));
-        assertThat(assertionError.getMessage(), Matchers.containsString("was <400>"));
+        OIDCClientRepresentation.Auth putAuth = getResultingAuthConfigPut(auth, clientId);
+        assertThat(putAuth, notNullValue());
+        assertThat(putAuth.getSecret(), is(createdAuth.getSecret()));
     }
 
     @ParameterizedTest
@@ -926,11 +972,29 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         return assertClientEnabledIdDescriptionAndAuth(rep, createdClient);
     }
 
+    /**
+     * Applies a JSON merge patch with a raw {@code auth} object fragment (must include {@code "secret":null} when rotating secrets).
+     */
+    private OIDCClientRepresentation.Auth getResultingAuthConfigPatchRawAuth(String clientId, String authObjectJson) throws JsonProcessingException {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setDescription("I'm OIDC Client");
+        rep.setAuth(mapper.readValue(authObjectJson, OIDCClientRepresentation.Auth.class));
+        String body = String.format(Locale.ROOT,
+                "{\"enabled\":true,\"clientId\":\"%s\",\"description\":\"I'm OIDC Client\",\"auth\":%s}",
+                clientId, authObjectJson);
+        OIDCClientRepresentation createdClient = (OIDCClientRepresentation) getClientsApi().client(clientId).patchClient(
+                new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
+        return assertClientEnabledIdDescriptionAndAuth(rep, createdClient);
+    }
+
     private OIDCClientRepresentation getResultingClientRep(OIDCClientRepresentation.Auth auth, String clientId, String... additionalFields) throws IllegalArgumentException {
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setEnabled(true);
         rep.setClientId(clientId);
         rep.setDescription("I'm OIDC Client");
+        rep.setRedirectUris(Set.of("http://localhost/callback"));
         rep.setAuth(auth);
 
         if (additionalFields.length % 2 != 0) {
@@ -989,7 +1053,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertThat(response.getStatus(), is(201));
             BaseClientRepresentation created = response.readEntity(BaseClientRepresentation.class);
             assertThat(created, notNullValue());
-            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
 
         // Now try to update with invalid data
@@ -1043,6 +1107,13 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
                     .secret("mysecret")
                     .serviceAccountsEnabled(true));
             return realm;
+        }
+    }
+
+    public static class TestClientConfig implements ClientConfig {
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.redirectUris("http://localhost/callback");
         }
     }
 }

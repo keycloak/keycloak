@@ -313,6 +313,11 @@ public class KeycloakDeploymentDependentResource extends VersionTolerantCRUDKube
                     .endTemplate()
                     .withReplicas(keycloakCR.getSpec().getInstances())
                 .endSpec();
+        
+        if (KeycloakController.isMultiNamespace(context)) {
+            baseDeploymentBuilder = baseDeploymentBuilder.editSpec().editTemplate().editSpec().withServiceAccount(null)
+                    .withServiceAccountName(null).endSpec().endTemplate().endSpec();
+        }
 
         var specBuilder = baseDeploymentBuilder.editSpec().editTemplate().editOrNewSpec();
 

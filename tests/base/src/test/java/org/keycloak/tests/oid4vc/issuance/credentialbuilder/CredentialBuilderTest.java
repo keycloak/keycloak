@@ -17,19 +17,11 @@
 
 package org.keycloak.tests.oid4vc.issuance.credentialbuilder;
 
-import java.net.URI;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
-import org.keycloak.protocol.oid4vc.model.CredentialSubject;
-import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 
 /**
@@ -49,28 +41,6 @@ public abstract class CredentialBuilderTest extends OID4VCIssuerTestBase {
 
     protected SignatureVerifierContext exampleVerifier() {
         return new AsymmetricSignatureVerifierContext(keyWrapper);
-    }
-
-    protected static CredentialSubject getCredentialSubject(Map<String, Object> claims) {
-        CredentialSubject credentialSubject = new CredentialSubject();
-        claims.forEach(credentialSubject::setClaims);
-        return credentialSubject;
-    }
-
-    protected static VerifiableCredential getTestCredential(Map<String, Object> claims) {
-
-        VerifiableCredential testCredential = new VerifiableCredential();
-        testCredential.setId(URI.create(String.format("uri:uuid:%s", UUID.randomUUID())));
-        testCredential.setContext(List.of(CONTEXT_URL));
-        testCredential.setType(TEST_TYPES);
-        testCredential.setIssuer(TEST_DID);
-        testCredential.setExpirationDate(TEST_EXPIRATION_DATE);
-        if (claims.containsKey("issuanceDate")) {
-            testCredential.setIssuanceDate((Instant) claims.get("issuanceDate"));
-        }
-
-        testCredential.setCredentialSubject(getCredentialSubject(claims));
-        return testCredential;
     }
 
 }

@@ -33,7 +33,7 @@ import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
-import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.Constants;
@@ -71,8 +71,8 @@ public class Organizations {
     }
 
     public static boolean canManageOrganizationGroup(KeycloakSession session, GroupModel group) {
-        //  if it's not an organization group OR the feature is disabled, we don't need further checks
-        if (!isOrganizationGroup(group) || !Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        //  if it's not an organization group OR organizations are disabled, we don't need further checks
+        if (!isOrganizationGroup(group) || !isEnabled(session)) {
             return true;
         }
 
@@ -86,6 +86,9 @@ public class Organizations {
     }
 
     public static List<IdentityProviderModel> resolveHomeBroker(KeycloakSession session, UserModel user) {
+        if (!isEnabled(session)) {
+            return List.of();
+        }
         OrganizationProvider provider = getProvider(session);
         RealmModel realm = session.getContext().getRealm();
         List<OrganizationModel> organizations = Optional.ofNullable(user).stream().flatMap(provider::getByMember)
@@ -145,8 +148,16 @@ public class Organizations {
         };
     }
 
+    public static boolean isEnabled(KeycloakSession session) {
+        if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            return false;
+        }
+        OrganizationProvider provider = getProvider(session);
+        return provider != null && provider.isEnabled();
+    }
+
     public static boolean isEnabledAndOrganizationsPresent(OrganizationProvider orgProvider) {
-        return orgProvider != null && orgProvider.isEnabled() && orgProvider.count() != 0;
+        return orgProvider != null && orgProvider.isEnabled() && orgProvider.hasOrganizations();
     }
 
     public static boolean isEnabledAndOrganizationsPresent(KeycloakSession session) {
@@ -181,7 +192,7 @@ public class Organizations {
                 .withChecks(TokenVerifier.IS_ACTIVE,
                         new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(context.getUri().getBaseUri(), realm.getName())));
 
-        SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+        SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
         verifier.verifierContext(verifierContext);
 
         return verifier.verify().getToken();
@@ -329,7 +340,7 @@ public class Organizations {
 
         OrganizationProvider provider = getProvider(session);
 
-        if (provider.count() == 0) {
+        if (!provider.hasOrganizations()) {
             return null;
         }
 
@@ -408,7 +419,7 @@ public class Organizations {
 
         var organizationProvider = getProvider(session);
 
-        if (organizationProvider.count() == 0) {
+        if (!organizationProvider.hasOrganizations()) {
             return false;
         }
 

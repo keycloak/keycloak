@@ -51,6 +51,7 @@ import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -61,7 +62,7 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.OrganizationAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.MailUtils.EmailBody;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -94,7 +95,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public AssertEvents events = new AssertEvents(this);
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected InfoPage infoPage;
@@ -264,28 +265,22 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         registerUser(organization, email);
 
         // Assert INVITE_ORG event fires when user is added to the organization
-        EventRepresentation inviteEvent = events.expect(EventType.INVITE_ORG)
-                .client("account")
-                .user(Matchers.notNullValue(String.class))
-                .detail(Details.ORG_ID, orgId)
-                .assertEvent();
+        EventRepresentation inviteEvent = EventAssertion.assertSuccess(events.poll()).type(EventType.INVITE_ORG)
+                .clientId("account")
+                .hasUserId()
+                .details(Details.ORG_ID, orgId).getEvent();
 
         // Assert REGISTER event fires during new user registration via organization invite
-        events.expect(EventType.REGISTER)
-                .client("account")
-                .user(inviteEvent.getUserId())
-                .detail(Details.EMAIL, email)
-                .detail(Details.REGISTER_METHOD, "form")
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.REGISTER)
+                .clientId("account")
+                .userId(inviteEvent.getUserId())
+                .details(Details.EMAIL, email)
+                .details(Details.REGISTER_METHOD, "form");
 
         // Assert LOGIN event fires after registration completes
-        events.expectLogin()
-                .client("account")
-                .user(inviteEvent.getUserId())
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .session(AssertEvents.isSessionId())
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId("account")
+                .userId(inviteEvent.getUserId());
 
         List<UserRepresentation> users = managedRealm.admin().users().searchByEmail(email, true);
         assertThat(users, not(empty()));
@@ -495,7 +490,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     private String getInvitationLinkFromEmail(String ...parameters) throws MessagingException, IOException {
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        MimeMessage message = mail.getLastReceivedMessage();
         Assertions.assertNotNull(message);
         Assertions.assertEquals("Invitation to join the " + organizationName + " organization", message.getSubject());
 
@@ -527,7 +522,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         organization.members().inviteUser(email, "Homer", "Simpson").close();
 
         try {
-            setTimeOffset((int) TimeUnit.DAYS.toSeconds(1));
+            timeOffSet.set((int) TimeUnit.DAYS.toSeconds(1));
 
             List<OrganizationInvitationRepresentation> list = organization.invitations().list();
             assertThat(list, Matchers.hasSize(1));
@@ -540,7 +535,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             assertThat(driver.getPageSource(), Matchers.containsString("Action expired."));
             assertThat(managedRealm.admin().users().searchByEmail(email, true), Matchers.empty());
         } finally {
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
     }
 

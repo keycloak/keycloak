@@ -84,10 +84,10 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
     }
 
     @Test
-    public void webauthnLoginWithDiscoverableKey() throws IOException {
+    public void webauthnLoginWithDiscoverableCredential() throws IOException {
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
-        // set passwordless policy for discoverable keys
+        // set passwordless policy for discoverable credentials
         try (Closeable c = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicyRpEntityName("localhost")
                 .setWebAuthnPolicyRequireResidentKey(Constants.WEBAUTHN_POLICY_OPTION_YES)
@@ -105,7 +105,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             logout();
             events.clear();
 
-            // the user should be automatically logged in using the discoverable key
+            // the user should be automatically logged in using the discoverable credential
             oauth.openLoginForm();
             WaitUtils.waitForPageToLoad();
 
@@ -138,7 +138,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
     }
 
     @Test
-    public void webauthnLoginWithDiscoverableKeyRequiresMembership() throws IOException {
+    public void webauthnLoginWithDiscoverableCredentialRequiresMembership() throws IOException {
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
         // enable organization configuration
@@ -153,7 +153,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
         config.getConfig().put(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.TRUE.toString());
         getCleanup().addAuthenticationConfigId(ApiUtil.getCreatedId(managedRealm.admin().flows().newExecutionConfig(organizationExec.getId(), config)));
 
-        // set passwordless policy for discoverable keys
+        // set passwordless policy for discoverable credentials
         try (Closeable c = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicyRpEntityName("localhost")
                 .setWebAuthnPolicyRequireResidentKey(Constants.WEBAUTHN_POLICY_OPTION_YES)
@@ -171,7 +171,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             logout();
             events.clear();
 
-            // the user should be automatically logged in using the discoverable key but error because no org
+            // the user should be automatically logged in using the discoverable credential but error because no org
             oauth.openLoginForm();
             WaitUtils.waitForPageToLoad();
 
@@ -181,7 +181,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
     }
 
     @Test
-    public void passwordLoginWithNonDiscoverableKey() throws Exception {
+    public void passwordLoginWithNonDiscoverableCredential() throws Exception {
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
         // set passwordless policy not specified, key will not be discoverable
@@ -216,10 +216,9 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             loginPage.login("invalid-password");
             loginPage.assertCurrent();
             MatcherAssert.assertThat(loginPage.getPasswordInputError(), Matchers.is("Invalid username or password."));
-            events.expect(EventType.LOGIN_ERROR)
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR)
                     .error(Errors.INVALID_USER_CREDENTIALS)
-                    .user(user.getId())
-                    .assertEvent();
+                    .userId(user.getId());
 
             // correct login now
             MatcherAssert.assertThat(loginPage.getAttemptedUsername(), Matchers.is("UserWebAuthn"));
@@ -239,7 +238,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
         // use a default resident key which is not shown in conditional UI
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
 
-        // set passwordless policy for discoverable keys
+        // set passwordless policy for discoverable credentials
         try (Closeable c = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicyRpEntityName("localhost")
                 .setWebAuthnPolicyRequireResidentKey(Constants.WEBAUTHN_POLICY_OPTION_YES)
@@ -281,10 +280,10 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
 
     // Test users is able to authenticate with passkey during re-authentication (for example when OIDC parameter prompt=login is used)
     @Test
-    public void webauthnLoginWithDiscoverableKey_reauthentication() throws IOException {
+    public void webauthnLoginWithDiscoverableCredential_reauthentication() throws IOException {
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
-        // set passwordless policy for discoverable keys
+        // set passwordless policy for discoverable credentials
         try (Closeable c = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicyRpEntityName("localhost")
                 .setWebAuthnPolicyRequireResidentKey(Constants.WEBAUTHN_POLICY_OPTION_YES)
@@ -302,7 +301,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             logout();
             events.clear();
 
-            // the user should be automatically logged in using the discoverable key
+            // the user should be automatically logged in using the discoverable credential
             oauth.openLoginForm();
             WaitUtils.waitForPageToLoad();
 

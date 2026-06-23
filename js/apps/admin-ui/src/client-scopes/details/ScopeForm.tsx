@@ -2,6 +2,7 @@ import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/
 import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
 import {
   ActionGroup,
+  Alert,
   Button,
   FormHelperText,
   HelperText,
@@ -23,6 +24,7 @@ import { useAdminClient } from "../../admin-client";
 import { getProtocolName } from "../../clients/utils";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import {
+  ClientScope,
   allClientScopeTypes,
   ClientScopeDefaultOptionalType,
 } from "../../components/client-scope/ClientScopeTypes";
@@ -80,10 +82,12 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const providers = useLoginProviders();
   const serverInfo = useServerInfo();
   const isFeatureEnabled = useIsFeatureEnabled();
-  const isDynamicScopesEnabled = isFeatureEnabled(Feature.DynamicScopes);
+  const isParameterizedScopesEnabled = isFeatureEnabled(
+    Feature.ParameterizedScopes,
+  );
 
   // Get available hash algorithms from server info
-  const hashAlgorithms = serverInfo?.providers?.hash?.providers
+  const hashAlgorithms = serverInfo.providers?.hash.providers
     ? Object.keys(serverInfo.providers.hash.providers).map((alg) =>
         alg.toLowerCase(),
       )
@@ -91,7 +95,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
 
   // Get available asymmetric signature algorithms from server info
   const asymmetricAlgorithms = useMemo(
-    () => serverInfo?.cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? [],
+    () => serverInfo.cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? [],
     [serverInfo],
   );
 
@@ -120,7 +124,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   // Filter only active keys suitable for signing credentials AND using asymmetric algorithms
   const keyOptions = useMemo(() => {
     const options = [{ key: "", value: t("useDefaultKey") }];
-    if (realmKeys && realmKeys.length > 0) {
+    if (realmKeys.length > 0) {
       const keyOptions = realmKeys
         .filter(
           (key) =>
@@ -145,13 +149,36 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       clientScope?.attributes?.["display.on.consent.screen"] ?? "true",
   });
 
-  const dynamicScope = useWatch({
+  const parameterizedScope = useWatch({
     control,
     name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-      "attributes.is.dynamic.scope",
+      "attributes.is.parameterized.scope",
     ),
     defaultValue: "false",
   });
+
+  const parameterTypeFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.parameterized.scope.type",
+    );
+
+  const parameterType: string = useWatch({
+    control,
+    name: parameterTypeFieldName,
+    defaultValue:
+      clientScope?.attributes?.["parameterized.scope.type"] ?? "string",
+  });
+
+  const scopeName = useWatch({ control, name: "name", defaultValue: "" }) ?? "";
+
+  const isParameterized =
+    isParameterizedScopesEnabled && parameterizedScope === "true";
+  const isParameterizedScopeWithFeatureDisabled =
+    !isParameterizedScopesEnabled &&
+    clientScope?.attributes?.["is.parameterized.scope"] === "true";
+  const scopeTypeOptions = isParameterized
+    ? allClientScopeTypes.filter((key) => key !== "default")
+    : allClientScopeTypes;
 
   const selectedProtocol = useWatch({
     control,
@@ -178,7 +205,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const isOid4vcProtocol = selectedProtocol === OID4VC_PROTOCOL;
   const isOid4vcEnabled =
     isFeatureEnabled(Feature.OpenId4VCI) &&
-    realmRepresentation?.verifiableCredentialsEnabled;
+    realmRepresentation.verifiableCredentialsEnabled;
   const isNotSaml = selectedProtocol != "saml";
   const recommendedTokenJwsType =
     selectedFormat === VC_FORMAT_SD_JWT
@@ -207,18 +234,23 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     defaultValue: clientScope?.attributes?.["vc.signing_key_id"] ?? "",
   });
 
-  const setDynamicRegex = (value: string, append: boolean) =>
-    setValue(
-      convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-        "attributes.dynamic.scope.regexp",
-      ),
-      append ? `${value}:*` : value,
-      { shouldDirty: true }, // Mark the field as dirty when we modify the field
-    );
+  const scopeTypeNames = serverInfo.parameterizedScopeTypes || [];
 
   useEffect(() => {
     convertToFormValues(clientScope ?? {}, setValue);
   }, [clientScope, setValue]);
+
+  useEffect(() => {
+    if (isParameterizedScopeWithFeatureDisabled) {
+      setValue(
+        convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+          "attributes.is.parameterized.scope",
+        ),
+        "false",
+        { shouldDirty: true, shouldValidate: true },
+      );
+    }
+  }, [setValue, isParameterizedScopeWithFeatureDisabled]);
 
   useEffect(() => {
     if (isSigningKeySelected) {
@@ -236,6 +268,22 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       }
     }
   }, [isSigningKeySelected, realmKeys, setValue]);
+
+  const isCustomType = parameterType === "custom";
+
+  const regexpFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.parameterized.scope.regexp",
+    );
+
+  useEffect(() => {
+    if (parameterizedScope === "true" && isCustomType) {
+      const current = (form.getValues(regexpFieldName) as string) || "";
+      if (!current) {
+        setValue(regexpFieldName, ".+", { shouldDirty: true });
+      }
+    }
+  }, [parameterType, parameterizedScope]);
 
   /* Form-level validation handles correctness; here we only prune known optional
        OID4VC fields when empty. If new attributes are added, extend
@@ -259,37 +307,62 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           labelIcon={t("scopeNameHelp")}
           rules={{
             required: t("required"),
-            onChange: (e) => {
-              if (isDynamicScopesEnabled)
-                setDynamicRegex(e.target.validated, true);
-            },
           }}
         />
-        {isDynamicScopesEnabled && (
+        {isParameterizedScopeWithFeatureDisabled && (
+          <Alert
+            variant="warning"
+            isInline
+            isPlain
+            title={t("parameterizedScopeDisabledInfo")}
+          />
+        )}
+        {isParameterizedScopesEnabled && (
           <>
             <DefaultSwitchControl
               name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                "attributes.is.dynamic.scope",
+                "attributes.is.parameterized.scope",
               )}
-              label={t("dynamicScope")}
-              labelIcon={t("dynamicScopeHelp")}
+              label={t("parameterizedScope")}
+              labelIcon={t("parameterizedScopeHelp")}
               onChange={(event, value) => {
-                setDynamicRegex(
-                  value ? form.getValues("name") || "" : "",
-                  value,
-                );
+                if (value && form.getValues("type") === ClientScope.default) {
+                  setValue("type", ClientScope.optional, { shouldDirty: true });
+                }
               }}
               stringify
             />
-            {dynamicScope === "true" && (
-              <TextControl
-                name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                  "attributes.dynamic.scope.regexp",
+            {parameterizedScope === "true" && (
+              <>
+                <SelectControl
+                  id="kc-parameter-type"
+                  name={parameterTypeFieldName}
+                  label={t("parameterizedScopeType")}
+                  labelIcon={t("parameterizedScopeTypeHelp")}
+                  controller={{ defaultValue: "string" }}
+                  options={scopeTypeNames.map((key) => ({
+                    key,
+                    value: t(`parameterizedScopeType.${key}`),
+                  }))}
+                />
+                {isCustomType && (
+                  <TextControl
+                    name={regexpFieldName}
+                    label={t("parameterizedScopeFormat")}
+                    labelIcon={t("parameterizedScopeFormatHelp")}
+                    helperText={`${scopeName}:${form.watch(regexpFieldName) ?? ""}`}
+                    rules={{
+                      required: t("required"),
+                      validate: (value) => {
+                        if (value.includes("(") || value.includes(")")) {
+                          return t("regexGroupsNotAllowed");
+                        }
+                        return true;
+                      },
+                    }}
+                  />
                 )}
-                label={t("dynamicScopeFormat")}
-                labelIcon={t("dynamicScopeFormatHelp")}
-                isDisabled
-              />
+              </>
             )}
           </>
         )}
@@ -310,7 +383,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           label={t("type")}
           labelIcon={t("scopeTypeHelp")}
           controller={{ defaultValue: allClientScopeTypes[0] }}
-          options={allClientScopeTypes.map((key) => ({
+          options={scopeTypeOptions.map((key) => ({
             key,
             value: t(`clientScopeType.${key}`),
           }))}
@@ -342,13 +415,26 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           stringify
         />
         {displayOnConsentScreen === "true" && (
-          <TextAreaControl
-            name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-              "attributes.consent.screen.text",
+          <>
+            {isParameterizedScopesEnabled && (
+              <DefaultSwitchControl
+                name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                  "attributes.always.display.consent",
+                )}
+                defaultValue="false"
+                label={t("alwaysDisplayConsent")}
+                labelIcon={t("alwaysDisplayConsentHelp")}
+                stringify
+              />
             )}
-            label={t("consentScreenText")}
-            labelIcon={t("consentScreenTextHelp")}
-          />
+            <TextAreaControl
+              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                "attributes.consent.screen.text",
+              )}
+              label={t("consentScreenText")}
+              labelIcon={t("consentScreenTextHelp")}
+            />
+          </>
         )}
         <DefaultSwitchControl
           name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
@@ -394,6 +480,17 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               )}
               label={t("credentialIdentifier")}
               labelIcon={t("credentialIdentifierHelp")}
+            />
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                "attributes.vc.policy.offer.required",
+              )}
+              defaultValue={
+                clientScope?.attributes?.["vc.policy.offer.required"] ?? "false"
+              }
+              label={t("credentialOfferRequired")}
+              labelIcon={t("credentialOfferRequiredHelp")}
+              stringify
             />
             <TextControl
               name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
@@ -456,7 +553,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                 </HelperText>
               </FormHelperText>
             )}
-            {realmKeys && realmKeys.length > 0 && (
+            {realmKeys.length > 0 && (
               <SelectControl
                 id="kc-signing-key-id"
                 name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
@@ -660,7 +757,10 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           <FormSubmitButton
             data-testid="save"
             formState={formState}
-            disabled={!isDirty || !isValid}
+            allowNonDirty={isParameterizedScopeWithFeatureDisabled}
+            isDisabled={
+              !(isDirty || isParameterizedScopeWithFeatureDisabled) || !isValid
+            }
           >
             {t("save")}
           </FormSubmitButton>
