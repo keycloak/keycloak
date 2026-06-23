@@ -29,7 +29,6 @@ import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.user.GroupMembership;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.testframework.annotations.InjectHttpClient;
-import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -39,7 +38,6 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
-import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.apache.http.HttpHeaders;
@@ -68,18 +66,9 @@ public class AuthorizationTest extends AbstractScimTest {
     @InjectHttpClient
     HttpClient httpClient;
 
-    @InjectKeycloakUrls
-    KeycloakUrls keycloakUrls;
-
     @BeforeEach
     public void onBefore() {
-        realm.admin().clients().create(ClientBuilder
-                .create()
-                .clientId("scim-client-restricted")
-                .secret("secret")
-                .serviceAccountsEnabled(true)
-                .enabled(true)
-                .build()).close();
+        createScimClient("scim-client-restricted");
     }
 
     @Test
@@ -832,6 +821,91 @@ public class AuthorizationTest extends AbstractScimTest {
     }
 
     @Test
+    public void testIdTokenAccessDenied() {
+        ClientBuilder clientBuilder = ClientBuilder.create()
+                .clientId("scim-idtoken-client")
+                .secret("secret")
+                .directAccessGrantsEnabled()
+                .protocolMappers(createScimAudienceMapper())
+                .enabled(true);
+        realm.admin().clients().create(clientBuilder.build()).close();
+        UserRepresentation user = UserBuilder.create()
+                .username("idtoken-user")
+                .firstName("f")
+                .lastName("l")
+                .email("idtoken@keycloak.org")
+                .enabled(true)
+                .password("password")
+                .build();
+        try (Response response = realm.admin().users().create(user)) {
+            user.setId(ApiUtil.getCreatedId(response));
+        }
+        grantAdminRole(AdminRoles.MANAGE_USERS, user);
+
+        String tokenEndpoint = keycloakUrls.getToken(realm.getName());
+        ScimClient idTokenScimClient = ScimClient.create(httpClient)
+                .withBaseUrl(keycloakUrls.getBase() + "/realms/" + realm.getName())
+                .withAuthorization((http, request) -> {
+                    try {
+                        AccessTokenResponse response = http.doPost(tokenEndpoint)
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                                .param(OAuth2Constants.CLIENT_ID, "scim-idtoken-client")
+                                .param(OAuth2Constants.CLIENT_SECRET, "secret")
+                                .param(OAuth2Constants.USERNAME, user.getUsername())
+                                .param(OAuth2Constants.PASSWORD, "password")
+                                .asJson(AccessTokenResponse.class);
+                        request.header(HttpHeaders.AUTHORIZATION, "Bearer " + response.getIdToken());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .build();
+
+        assertAccessUnauthorized(() -> idTokenScimClient.users().getAll());
+    }
+
+    @Test
+    public void testAccessDeniedWithoutAudienceMapping() {
+        ClientRepresentation noAudienceClient = ClientBuilder.create()
+                .clientId("scim-no-audience-client")
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+
+        String clientDbId;
+        try (Response response = realm.admin().clients().create(noAudienceClient)) {
+            clientDbId = ApiUtil.getCreatedId(response);
+        }
+
+        UserRepresentation serviceAccountUser = realm.admin().clients().get(clientDbId).getServiceAccountUser();
+        ClientRepresentation realmMgmt = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation manageUsersRole = realm.admin().clients().get(realmMgmt.getId()).roles()
+                .get(AdminRoles.MANAGE_USERS).toRepresentation();
+        realm.admin().users().get(serviceAccountUser.getId()).roles()
+                .clientLevel(realmMgmt.getId()).add(List.of(manageUsersRole));
+
+        String tokenEndpoint = keycloakUrls.getToken(realm.getName());
+        ScimClient noAudienceScimClient = ScimClient.create(httpClient)
+                .withBaseUrl(keycloakUrls.getBase() + "/realms/" + realm.getName())
+                .withAuthorization((http, request) -> {
+                    try {
+                        AccessTokenResponse response = http.doPost(tokenEndpoint)
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
+                                .param(OAuth2Constants.CLIENT_ID, "scim-no-audience-client")
+                                .param(OAuth2Constants.CLIENT_SECRET, "secret")
+                                .asJson(AccessTokenResponse.class);
+                        request.header(HttpHeaders.AUTHORIZATION, "Bearer " + response.getToken());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .build();
+
+        assertAccessUnauthorized(() -> noAudienceScimClient.users().getAll());
+    }
+
+    @Test
     public void testPublicClientAccessDenied() {
         ClientRepresentation publicClient = ClientBuilder.create()
                 .clientId("public-scim-client")
@@ -929,6 +1003,15 @@ public class AuthorizationTest extends AbstractScimTest {
             fail("Expected access denied");
         } catch (ScimClientException sce) {
             assertEquals(Status.FORBIDDEN.getStatusCode(), sce.getError().getStatusInt());
+        }
+    }
+
+    private void assertAccessUnauthorized(Runnable action) {
+        try {
+            action.run();
+            fail("Expected unauthorized");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), sce.getError().getStatusInt());
         }
     }
 

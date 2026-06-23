@@ -79,6 +79,31 @@ The following table summarizes the permissions required for each type of SCIM op
 The minimum set of roles required for full access to the SCIM API is `manage-users`, which covers all user and group
 management operations as well as access to discovery endpoints.
 
+== Configuring the token audience
+
+The SCIM API validates that access tokens contain the correct audience (`aud`) claim. The expected audience
+is the SCIM API base URL for the realm:
+
+----
+http://<host>:<port>/realms/<realm-name>/scim/v2
+----
+
+Tokens without this audience are rejected with a `401 Unauthorized` response.
+
+To configure the audience, add an *Audience* protocol mapper to the client:
+
+.Procedure
+. Click *Clients* in the menu, then select the client you created.
+. Click the *Client scopes* tab, then click the dedicated scope for the client (for example, `scim-client-dedicated`).
+. Click *Configure a new mapper*, then select *Audience*.
+. Set *Name* to a descriptive value (for example, `scim-audience`).
+. In *Included Custom Audience*, enter the SCIM API base URL for your realm (for example, `\http://localhost:8080/realms/myrealm/scim/v2`).
+. Ensure *Add to access token* is enabled.
+. Click *Save*.
+
+The audience value must match the SCIM API base URL exactly as seen by {project_name}, including the scheme, host, port,
+and path. If {project_name} is running behind a reverse proxy, use the frontend URL configured through the hostname settings.
+
 == Obtaining an access token
 
 To call the SCIM APIs, obtain an access token using the client credentials grant:

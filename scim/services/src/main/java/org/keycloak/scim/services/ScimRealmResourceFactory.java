@@ -1,5 +1,7 @@
 package org.keycloak.scim.services;
 
+import java.net.URI;
+
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -13,12 +15,15 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
+import org.keycloak.urls.UrlType;
 
 import org.jboss.logging.Logger;
 
@@ -62,6 +67,21 @@ public class ScimRealmResourceFactory implements RealmResourceProviderFactory, E
                         throw new ErrorResponseException(Response.status(Status.FORBIDDEN)
                                 .type(MediaType.APPLICATION_JSON)
                                 .entity(new ErrorResponse("Public client not allowed", Status.FORBIDDEN.getStatusCode()))
+                                .build());
+                    }
+
+                    AccessToken accessToken = authResult.token();
+                    URI frontendBaseUri = session.getContext().getUri(UrlType.FRONTEND).getBaseUri();
+                    String scimAudience = Urls.realmBase(frontendBaseUri)
+                            .path("{realm}/scim/v2")
+                            .build(realm.getName())
+                            .toString();
+
+                    if (!accessToken.hasAudience(scimAudience)) {
+                        logger.debug("SCIM request rejected: token does not contain the required audience");
+                        throw new ErrorResponseException(Response.status(Status.UNAUTHORIZED)
+                                .type(MediaType.APPLICATION_JSON)
+                                .entity(new ErrorResponse("Invalid token audience", Status.UNAUTHORIZED.getStatusCode()))
                                 .build());
                     }
 
