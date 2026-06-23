@@ -70,14 +70,6 @@ kubectl create namespace keycloak
 kubectl apply -k target/kubernetes
 ```
 
-to install in the `default` namespace:
-
-```bash
-kubectl apply -k target/overlays/default-namespace
-```
-
-NOTE: you may create your own overlays as needed to target other namespaces
-
 Remove the created resources with:
 
 ```bash

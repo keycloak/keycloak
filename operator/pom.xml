@@ -22,6 +22,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
         <quarkus.docker.build-args.KEYCLOAK_VERSION>${project.version}</quarkus.docker.build-args.KEYCLOAK_VERSION>
+        <crd.path.prefix></crd.path.prefix>
+        <kustomize.namespace>keycloak</kustomize.namespace>
     </properties>
 
     <dependencyManagement>
@@ -224,7 +226,7 @@
                         </goals>
                         <configuration>
                             <target>
-                                <pathconvert pathsep="${line.separator}  - " property="crds">
+                                <pathconvert pathsep="${line.separator}  - ${crd.path.prefix}" property="crds">
                                     <map from="${project.basedir}/target/kubernetes/" to=""/>
                                     <sort>
                                         <fileset dir="${project.basedir}/target/kubernetes">
@@ -259,7 +261,6 @@
                                     </excludes>
                                     <includes>
                                         <include>kubernetes/**</include>
-                                        <include>overlays/**</include>
                                     </includes>
                              </resource>
                             </resources>
@@ -383,6 +384,13 @@
             <id>operator-prod</id>
             <properties>
                 <quarkus.profile>rhbk</quarkus.profile>
+            </properties>
+        </profile>
+        <profile>
+            <id>cluster-wide</id>
+            <properties>
+                <quarkus.operator-sdk.generate-with-watched-namespaces>JOSDK_ALL_NAMESPACES</quarkus.operator-sdk.generate-with-watched-namespaces>
+                <kustomize.namespace>keycloak-operator</kustomize.namespace>
             </properties>
         </profile>
     </profiles>
