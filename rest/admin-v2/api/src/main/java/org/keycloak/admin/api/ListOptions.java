@@ -23,6 +23,14 @@ public class ListOptions {
     @QueryParam("q")
     protected String query;
 
+    @Parameter(description = "Maximum number of results to return. Defaults to 100.")
+    @QueryParam("limit")
+    protected Integer limit;
+
+    @Parameter(description = "Index of the first result to return, counted from 0. Defaults to 0.")
+    @QueryParam("offset")
+    protected Integer offset;
+
     public ListOptions fields(Set<String> fields) {
         this.setFields(fields);
         return this;
@@ -30,6 +38,16 @@ public class ListOptions {
 
     public ListOptions query(String query) {
         this.setQuery(query);
+        return this;
+    }
+
+    public ListOptions limit(int limit) {
+        this.setLimit(limit);
+        return this;
+    }
+
+    public ListOptions offset(int offset) {
+        this.setOffset(offset);
         return this;
     }
 
@@ -53,6 +71,22 @@ public class ListOptions {
 
     public void setQuery(String query) {
         this.query = query;
+    }
+
+    public Integer getLimit() {
+        return limit;
+    }
+
+    public void setLimit(Integer limit) {
+        this.limit = limit;
+    }
+
+    public Integer getOffset() {
+        return offset;
+    }
+
+    public void setOffset(Integer offset) {
+        this.offset = offset;
     }
     
 }

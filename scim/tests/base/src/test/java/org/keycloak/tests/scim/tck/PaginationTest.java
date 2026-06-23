@@ -142,7 +142,7 @@ public class PaginationTest extends AbstractScimTest {
         assertThat(response.getItemsPerPage(), is(100));
         assertThat(response.getStartIndex(), is(1));
 
-        // if we send a request with a count higher than the default max results, we should still get back only the default max results of 100
+        // if we send a request with a count higher than the default max results, we should get back the results that we want
         response = client.users().search(null, 1, 150);
         assertThat(response, is(not(nullValue())));
         assertThat(response.getTotalResults(), is(120));
