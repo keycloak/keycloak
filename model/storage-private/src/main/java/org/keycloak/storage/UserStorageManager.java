@@ -942,18 +942,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String credentialScopeName) {
+    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String clientScopeId) {
         if (StorageId.isLocalStorage(userId)) {
-            return localStorage().updateVerifiableCredential(userId, credentialScopeName);
+            return localStorage().updateVerifiableCredential(userId, clientScopeId);
         } else {
             throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
         }
     }
 
     @Override
-    public boolean removeVerifiableCredential(String userId, String credentialScopeName) {
+    public boolean removeVerifiableCredential(String userId, String clientScopeId) {
         if (StorageId.isLocalStorage(userId)) {
-            return localStorage().removeVerifiableCredential(userId, credentialScopeName);
+            return localStorage().removeVerifiableCredential(userId, clientScopeId);
         } else {
             throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
         }
@@ -963,6 +963,20 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     public Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId) {
         if (StorageId.isLocalStorage(userId)) {
             return localStorage().getVerifiableCredentialsByUser(userId);
+        } else {
+            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+        }
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialById(String id) {
+        return localStorage().getVerifiableCredentialById(id);
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialByClientScope(String userId, String clientScopeId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().getVerifiableCredentialByClientScope(userId, clientScopeId);
         } else {
             throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
         }

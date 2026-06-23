@@ -1,12 +1,8 @@
 package org.keycloak.tests.admin.cli.v2;
 
 import java.io.File;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
-import org.keycloak.client.admin.cli.KcAdmMain;
 import org.keycloak.client.admin.cli.v2.KcAdmV2Cmd;
-import org.keycloak.client.cli.common.Globals;
 import org.keycloak.client.cli.util.HttpUtil;
 import org.keycloak.common.Profile;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
@@ -20,12 +16,12 @@ import org.keycloak.testframework.https.ManagedCertificates;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.tests.admin.cli.v2.AbstractKcAdmV2CLITest.CommandResult;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import picocli.CommandLine;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -84,9 +80,10 @@ public class KcAdmV2TlsCLITest {
 
     @Test
     void testTruststoreWithCorrectPassword() {
-        CommandResult result = kcAdmV2Cmd("client", "list", "-c",
+        CommandResult result = kcAdmV2Cmd(
                 "--truststore", getClientTruststorePath(),
-                "--trustpass", getStorePassword());
+                "--trustpass", getStorePassword(),
+                "client", "list", "-c");
 
         assertThat("list with truststore should succeed: " + result.err(),
                 result.exitCode(), is(0));
@@ -96,9 +93,10 @@ public class KcAdmV2TlsCLITest {
 
     @Test
     void testTruststoreWithWrongPassword() {
-        CommandResult result = kcAdmV2Cmd("client", "list", "-c",
+        CommandResult result = kcAdmV2Cmd(
                 "--truststore", getClientTruststorePath(),
-                "--trustpass", "wrong-password");
+                "--trustpass", "wrong-password",
+                "client", "list", "-c");
 
         assertThat("wrong truststore password should fail", result.exitCode(), is(not(0)));
         assertThat(result.err(), containsString("Failed to load truststore"));
@@ -106,9 +104,10 @@ public class KcAdmV2TlsCLITest {
 
     @Test
     void testTruststoreWithNonExistentFile() {
-        CommandResult result = kcAdmV2Cmd("client", "list", "-c",
+        CommandResult result = kcAdmV2Cmd(
                 "--truststore", "/nonexistent/truststore.jks",
-                "--trustpass", "password");
+                "--trustpass", "password",
+                "client", "list", "-c");
 
         assertThat("non-existent truststore should fail", result.exitCode(), is(not(0)));
         assertThat(result.err(), containsString("Failed to load truststore"));
@@ -116,7 +115,7 @@ public class KcAdmV2TlsCLITest {
 
     @Test
     void testInsecureSkipsTlsValidation() {
-        CommandResult result = kcAdmV2Cmd("client", "list", "-c", "--insecure");
+        CommandResult result = kcAdmV2Cmd("--insecure", "client", "list", "-c");
 
         assertThat("--insecure should allow connection without truststore: " + result.err(),
                 result.exitCode(), is(0));
@@ -136,23 +135,8 @@ public class KcAdmV2TlsCLITest {
     }
 
     private CommandResult kcAdmV2Cmd(String... args) {
-        CommandLine cli = Globals.createCommandLine(new KcAdmV2Cmd(), KcAdmMain.CMD, new PrintWriter(System.err, true));
-
-        StringWriter out = new StringWriter();
-        StringWriter err = new StringWriter();
-        cli.setOut(new PrintWriter(out));
-        cli.setErr(new PrintWriter(err));
-
-        String[] fullArgs = new String[args.length + 2];
-        System.arraycopy(args, 0, fullArgs, 0, args.length);
-        fullArgs[args.length] = "--config";
-        fullArgs[args.length + 1] = configFilePath;
-
-        int exitCode = cli.execute(fullArgs);
-        return new CommandResult(exitCode, out.toString(), err.toString());
-    }
-
-    record CommandResult(int exitCode, String out, String err) {
+        String[] fullArgs = AbstractKcAdmV2CLITest.withConfigArg(configFilePath, args);
+        return AbstractKcAdmV2CLITest.execute(new KcAdmV2Cmd(fullArgs), fullArgs);
     }
 
     private static class TlsEnabledConfig implements CertificatesConfig {

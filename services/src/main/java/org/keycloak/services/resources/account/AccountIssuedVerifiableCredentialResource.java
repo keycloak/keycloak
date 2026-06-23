@@ -74,7 +74,7 @@ public class AccountIssuedVerifiableCredentialResource {
 
         List<IssuedVerifiableCredentialRepresentation> credentials = session.users()
                 .getIssuedVerifiableCredentialsStreamByUser(user.getId())
-                .map(ModelToRepresentation::toRepresentation)
+                .map(model -> ModelToRepresentation.toRepresentation(model, session, realm))
                 .map(rep -> enrichWithClientInfo(rep, session, realm))
                 .toList();
 
