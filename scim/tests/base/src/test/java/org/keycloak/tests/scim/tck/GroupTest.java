@@ -430,6 +430,38 @@ public class GroupTest extends AbstractScimTest {
     }
 
     @Test
+    public void testQueryGroupsExcludesOrganizationGroup() {
+        realm.updateWithCleanup(realm -> realm.organizationsEnabled(true));
+
+        Group expected = new Group();
+        expected.setDisplayName(KeycloakModelUtils.generateId());
+        expected = client.groups().create(expected);
+        String expectedId = expected.getId();
+
+        OrganizationRepresentation orgRep = new OrganizationRepresentation();
+        String orgName = KeycloakModelUtils.generateId();
+        orgRep.setName(orgName);
+        orgRep.setAlias(orgName);
+        orgRep.addDomain(new OrganizationDomainRepresentation(orgName + ".org"));
+        try (Response response = realm.admin().organizations().create(orgRep)) {
+            orgRep.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.organizations().get(orgRep.getId()).delete().close());
+
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName(KeycloakModelUtils.generateId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+        try (Response response = orgResource.groups().addTopLevelGroup(group)) {
+            group.setId(ApiUtil.getCreatedId(response));
+        }
+        String organizationGroupId = group.getId();
+
+        ListResponse<Group> groups = client.groups().getAll("displayName pr");
+        assertTrue(groups.getResources().stream().anyMatch(g -> expectedId.equals(g.getId())));
+        assertTrue(groups.getResources().stream().noneMatch(g -> organizationGroupId.equals(g.getId())));
+    }
+
+    @Test
     public void testOrganizationGroupMembersNotManagedViaScim() {
         realm.updateWithCleanup(realm -> realm.organizationsEnabled(true));
 
@@ -451,6 +483,10 @@ public class GroupTest extends AbstractScimTest {
         try (Response response = orgResource.groups().addTopLevelGroup(group)) {
             group.setId(ApiUtil.getCreatedId(response));
         }
+
+        Group scimGroup = client.groups().get(group.getId());
+        assertNotNull(scimGroup);
+        assertEquals(group.getName(), scimGroup.getDisplayName());
 
         try {
             User userA = createScimUser();
