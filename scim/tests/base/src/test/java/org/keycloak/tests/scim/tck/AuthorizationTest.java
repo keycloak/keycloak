@@ -25,6 +25,7 @@ import org.keycloak.scim.client.ScimClient;
 import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.protocol.response.ListResponse;
+import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.user.GroupMembership;
 import org.keycloak.scim.resource.user.User;
@@ -196,6 +197,7 @@ public class AuthorizationTest extends AbstractScimTest {
     public void testDiscoveryEndpointsDeniedIfRolesNotGranted() {
         assertAccessDenied(() -> noAccessClient.config().get());
         assertAccessDenied(() -> noAccessClient.schemas().getAll());
+        assertAccessDenied(() -> noAccessClient.schemas().get(Scim.USER_CORE_SCHEMA));
         assertAccessDenied(() -> noAccessClient.resourceTypes().getAll());
     }
 
@@ -208,6 +210,12 @@ public class AuthorizationTest extends AbstractScimTest {
             assertNotNull(noAccessClient.resourceTypes().getAll());
             revokeAdminRole(role);
         }
+    }
+
+    @Test
+    public void testSchemaByIdAccessIfQueryUsersRoleGranted() {
+        grantAdminRole(AdminRoles.QUERY_USERS);
+        assertNotNull(noAccessClient.schemas().get(Scim.USER_CORE_SCHEMA));
     }
 
     @Test
