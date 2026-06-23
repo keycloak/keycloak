@@ -15,6 +15,7 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
@@ -33,13 +34,17 @@ public class ResourceIndicatorsTest {
     @InjectRealm(config = ResourceIndicatorsRealm.class)
     ManagedRealm realm;
 
+    @InjectOAuthClient(config = OAuthClientConfigWithRefreshTokens.class)
+    OAuthClient oauthWithRefreshTokens;
+
     @InjectOAuthClient(config = OAuthClientConfig.class)
     OAuthClient oauth;
 
     @TestSetup
     public void loginUser() {
-        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.loginForm().resource("urn:client:theservice").doLogin("user", "pass");
-        Assertions.assertTrue(authorizationEndpointResponse.isRedirected());
+        Assertions.assertTrue(oauthWithRefreshTokens.loginForm().resource("urn:client:theservice").doLogin("user", "pass").isRedirected());
+        AccountHelper.logout(realm.admin(), "user");
+        Assertions.assertTrue(oauth.loginForm().resource("urn:client:theservice").doLogin("user", "pass").isRedirected());
     }
 
     @Test
@@ -109,28 +114,34 @@ public class ResourceIndicatorsTest {
 
     @Test
     public void testRefreshWithNoResource() {
-        AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass").resource("urn:client:theservice").send();
+        AccessTokenResponse tokenResponse = oauthWithRefreshTokens.passwordGrantRequest("user", "pass").resource("urn:client:theservice").send();
         Assertions.assertTrue(tokenResponse.isSuccess());
 
-        AccessTokenResponse refreshResponse = oauth.refreshRequest(tokenResponse.getRefreshToken()).send();
+        String refreshToken = tokenResponse.getRefreshToken();
+        Assertions.assertNotNull(refreshToken);
+        AccessTokenResponse refreshResponse = oauthWithRefreshTokens.refreshRequest(refreshToken).send();
         assertValidResponse(refreshResponse, "theservice");
     }
 
     @Test
     public void testRefreshWithResourceByClientUrl() {
-        AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass").resource("urn:client:theservice").send();
+        AccessTokenResponse tokenResponse = oauthWithRefreshTokens.passwordGrantRequest("user", "pass").resource("urn:client:theservice").send();
         Assertions.assertTrue(tokenResponse.isSuccess());
 
-        AccessTokenResponse refreshResponse = oauth.refreshRequest(tokenResponse.getRefreshToken()).resource("urn:client:theservice").send();
+        String refreshToken = tokenResponse.getRefreshToken();
+        Assertions.assertNotNull(refreshToken);
+        AccessTokenResponse refreshResponse = oauthWithRefreshTokens.refreshRequest(refreshToken).resource("urn:client:theservice").send();
         assertValidResponse(refreshResponse,  "theservice");
     }
 
     @Test
     public void testRefreshWithDifferentResource() {
-        AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass").resource("https://theservice").send();
+        AccessTokenResponse tokenResponse = oauthWithRefreshTokens.passwordGrantRequest("user", "pass").resource("https://theservice").send();
         Assertions.assertTrue(tokenResponse.isSuccess());
 
-        AccessTokenResponse refreshResponse = oauth.refreshRequest(tokenResponse.getRefreshToken()).resource("https://otherservice").send();
+        String refreshToken = tokenResponse.getRefreshToken();
+        Assertions.assertNotNull(refreshToken);
+        AccessTokenResponse refreshResponse = oauthWithRefreshTokens.refreshRequest(refreshToken).resource("https://otherservice").send();
         assertErrorResponse(refreshResponse,  INVALID_TARGET, ERROR_NOT_MATCHING);
     }
 
@@ -156,11 +167,21 @@ public class ResourceIndicatorsTest {
         }
     }
 
-    private static final class OAuthClientConfig extends DefaultOAuthClientConfiguration {
+    private static final class OAuthClientConfigWithRefreshTokens extends DefaultOAuthClientConfiguration {
 
         @Override
         public ClientBuilder configure(ClientBuilder client) {
             return super.configure(client).fullScopeEnabled(true);
+        }
+    }
+
+    private static final class OAuthClientConfig extends DefaultOAuthClientConfiguration {
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return super.configure(client)
+                    .fullScopeEnabled(true)
+                    .clientId("test-app2")
+                    .attribute("use.refresh.tokens", String.valueOf(false));
         }
     }
 
@@ -174,7 +195,7 @@ public class ResourceIndicatorsTest {
     private void assertValidResponse(AccessTokenResponse response, String... expectedAudience) {
         Assertions.assertTrue(response.isSuccess());
 
-        AccessToken accessToken = oauth.parseToken(response.getAccessToken(), AccessToken.class);
+        AccessToken accessToken = oauthWithRefreshTokens.parseToken(response.getAccessToken(), AccessToken.class);
         MatcherAssert.assertThat(accessToken.getAudience(), Matchers.arrayContainingInAnyOrder(expectedAudience));
     }
 
