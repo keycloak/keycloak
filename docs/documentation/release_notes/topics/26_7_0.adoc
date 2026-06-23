@@ -13,6 +13,29 @@ In a future release, V1 will be removed and V2 will become the default. Users ar
 
 For more information, see the link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] chapter in the {developerguide_name}.
 
+== OID4VCI Improvements
+
+https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OID4VCI] still remains experimental feature. However there is big progress on this feature with lots of contributions from the {project_name} community members as well
+as from the {project_name} core team. Some highlights include:
+
+* Polishing of existing functionality and improving configuration. Everything configurable in admin UI now in addition to admin REST API
+* Lots of bugs fixed. Improved specification compliance
+* Conformance with the https://openid.net/specs/openid4vc-high-assurance-interoperability-profile-1_0.html[OpenID4VC High Assurance Interoperability Profile (HAIP)].
+This work involves introduction of the dedicated {project_name} experimental feature `client-auth-abca` for https://datatracker.ietf.org/doc/html/draft-ietf-oauth-attestation-based-client-auth-07[Attestation based client authentication (ABCA)]
+* Management of verifiable credentials for individual users. This involves ability for administrator to create verifiable credential for user
+to indicate that this user can retrieve verifiable credential as well as ability for users to start issuance of verifiable credential from the {project_name} account console
+* https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-pre-authorized-code-flow[Pre-authorized code grant] support is still experimental and was moved to the dedicated experimental feature `oid4vc-vci-preauth-code`
+* Documentation updated and improved
+
+ifeval::[{project_community}==true]
+Lots of community members was involved in the related development. Many thanks to https://github.com/Awambeng[Awambeng],
+https://github.com/Captain-P-Goldfish[Pascal Knüppel], https://github.com/dominikschlosser[Dominik Schlosser], https://github.com/forkimenjeckayang[forkimenjeckayang],
+https://github.com/IngridPuppet[Ingrid Kamga], https://github.com/keshavprashantdeshpande[Keshav Deshpande], https://github.com/namanONcode[Naman Jain],
+https://github.com/officialasishkumar[Asish Kumar], https://github.com/Ogenbertrand[Ogen Bertrand], https://github.com/Oluwatobi-Mustapha[Oluwatobi Mustapha],
+https://github.com/pulsastrix[Hugo Hakim Damer], https://github.com/rameshkumarkoyya[rameshkumarkoyya], https://github.com/tdiesler[Thomas Diesler] and
+https://github.com/Vitalisn4[Palpable] for the contributions!
+endif::[]
+
 = Administration
 
 == Delegated administration for organizations
@@ -43,9 +66,9 @@ When a user wants to authenticate with Passkeys, {project_name} shows the authen
 As part of this change, the passkey authentication page in the login theme and the signing-in page in the account console were updated.
 If you use a custom theme that overrides these pages, verify that your customizations work as expected with this release.
 
-== New `Discoverable key` option in the WebAuthn policies
+== New `Discoverable credential` option in the WebAuthn policies
 
-The WebAuthn Policy and WebAuthn Passwordless Policy provide a new `Discoverable key` option that follows the current WebAuthn specification.
+The WebAuthn Policy and WebAuthn Passwordless Policy provide a new `Discoverable credential` option that follows the current WebAuthn specification.
 In addition to requiring or discouraging discoverable credentials (passkeys), it supports the `preferred` value, which was not possible with the previous Yes/No option.
 The new option is sent to the browser as `authenticatorSelection.residentKey` when registering WebAuthn credentials, which improves compatibility with passkey providers.
 The previous `Require Discoverable Credential` option is now deprecated, and it is planned to be removed in future.

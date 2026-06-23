@@ -942,18 +942,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String credentialScopeName) {
+    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String clientScopeId) {
         if (StorageId.isLocalStorage(userId)) {
-            return localStorage().updateVerifiableCredential(userId, credentialScopeName);
+            return localStorage().updateVerifiableCredential(userId, clientScopeId);
         } else {
             throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
         }
     }
 
     @Override
-    public boolean removeVerifiableCredential(String userId, String credentialScopeName) {
+    public boolean removeVerifiableCredential(String userId, String clientScopeId) {
         if (StorageId.isLocalStorage(userId)) {
-            return localStorage().removeVerifiableCredential(userId, credentialScopeName);
+            return localStorage().removeVerifiableCredential(userId, clientScopeId);
         } else {
             throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
         }
@@ -969,9 +969,23 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public void addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc) {
+    public UserVerifiableCredentialModel getVerifiableCredentialById(String id) {
+        return localStorage().getVerifiableCredentialById(id);
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialByClientScope(String userId, String clientScopeId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().getVerifiableCredentialByClientScope(userId, clientScopeId);
+        } else {
+            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+        }
+    }
+
+    @Override
+    public IssuedVerifiableCredentialModel addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc) {
         if (StorageId.isLocalStorage(issuedVc.getUserId())) {
-            localStorage().addIssuedVerifiableCredential(issuedVc);
+            return localStorage().addIssuedVerifiableCredential(issuedVc);
         } else {
             throw new UnsupportedOperationException("Issued verifiable credential operations not yet supported on federated users");
         }
@@ -993,6 +1007,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         } else {
             throw new UnsupportedOperationException("Issued verifiable credential operations not yet supported on federated users");
         }
+    }
+
+    @Override
+    public void removeExpiredIssuedVerifiableCredentials() {
+        localStorage().removeExpiredIssuedVerifiableCredentials();
     }
 
     @Override
@@ -1202,7 +1221,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
         OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
 
-        if (organizationProvider.count() == 0) {
+        if (!organizationProvider.hasOrganizations()) {
             return false;
         }
 

@@ -19,6 +19,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.suites.DatabaseTest;
@@ -44,9 +46,16 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
 
     private static final String CREDENTIAL_TYPE_1 = jwtTypeNaturalPersonScopeName;
     private static final String CREDENTIAL_TYPE_2 = "education-cert";
+    private static final String CERT_1 = "cert-1";
+    private static final String CERT_2 = "cert-2";
+    private static final String CERT_3 = "cert-3";
 
     @InjectRealm(config = IssuedVcTestRealmConfig.class)
     protected ManagedRealm testRealm;
+
+    @InjectTimeOffSet
+    protected TimeOffSet timeOffSet;
+
 
     @Test
     @DatabaseTest
@@ -90,18 +99,18 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
         String userId = createUser();
         long baseTime = Time.currentTimeMillis();
 
-        createIssuedVcViaModelLayer(userId, "cert-1", "wallet-1", "rev-1", baseTime);
-        createIssuedVcViaModelLayer(userId, "cert-2", "wallet-2", "rev-2", baseTime + 1000);
-        createIssuedVcViaModelLayer(userId, "cert-3", "wallet-3", "rev-3", baseTime + 2000);
+        createIssuedVcViaModelLayer(userId, CERT_1, "wallet-1", "rev-1", baseTime);
+        createIssuedVcViaModelLayer(userId, CERT_2, "wallet-2", "rev-2", baseTime + 1000);
+        createIssuedVcViaModelLayer(userId, CERT_3, "wallet-3", "rev-3", baseTime + 2000);
 
         UserResource userResource = managedRealm.admin().users().get(userId);
         List<IssuedVerifiableCredentialRepresentation> issuedCreds = userResource.verifiableCredentials().getIssuedCredentials();
 
         assertThat(issuedCreds, hasSize(3));
 
-        assertEquals("cert-3", issuedCreds.get(0).getCredentialType());
-        assertEquals("cert-2", issuedCreds.get(1).getCredentialType());
-        assertEquals("cert-1", issuedCreds.get(2).getCredentialType());
+        assertEquals(CERT_3, issuedCreds.get(0).getCredentialType());
+        assertEquals(CERT_2, issuedCreds.get(1).getCredentialType());
+        assertEquals(CERT_1, issuedCreds.get(2).getCredentialType());
     }
 
     @Test
@@ -110,22 +119,22 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
         String user1Id = createUser("user1", "user1@test.com");
         String user2Id = createUser("user2", "user2@test.com");
 
-        createIssuedVcViaModelLayer(user1Id, "user1-cert", "wallet1", "rev1");
-        createIssuedVcViaModelLayer(user2Id, "user2-cert", "wallet2", "rev2");
+        createIssuedVcViaModelLayer(user1Id, CREDENTIAL_TYPE_1, "wallet1", "rev1");
+        createIssuedVcViaModelLayer(user2Id, CREDENTIAL_TYPE_2, "wallet2", "rev2");
 
         // User 1 should only see their VC
         List<IssuedVerifiableCredentialRepresentation> user1Creds =
                 managedRealm.admin().users().get(user1Id).verifiableCredentials().getIssuedCredentials();
 
         assertThat(user1Creds, hasSize(1));
-        assertEquals("user1-cert", user1Creds.get(0).getCredentialType());
+        assertEquals(CREDENTIAL_TYPE_1, user1Creds.get(0).getCredentialType());
 
         // User 2 should only see their VC
         List<IssuedVerifiableCredentialRepresentation> user2Creds =
                 managedRealm.admin().users().get(user2Id).verifiableCredentials().getIssuedCredentials();
 
         assertThat(user2Creds, hasSize(1));
-        assertEquals("user2-cert", user2Creds.get(0).getCredentialType());
+        assertEquals(CREDENTIAL_TYPE_2, user2Creds.get(0).getCredentialType());
     }
 
     @Test
@@ -135,14 +144,19 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
         long issuedAt = Time.currentTimeMillis();
         long expiresAt = issuedAt + 86400000L; // 24 hours later
 
-        runOnServer.run(session -> {
-            UserVerifiableCredentialModel vcModel = new UserVerifiableCredentialModel(CREDENTIAL_TYPE_1);
-            vcModel.setRevision("rev-001");
-            session.users().addVerifiableCredential(userId, vcModel);
-        });
+        // Resolve scope ID
+        String clientScopeId = managedRealm.admin().clientScopes().findAll().stream()
+                .filter(s -> CREDENTIAL_TYPE_1.equals(s.getName()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Client scope not found: " + CREDENTIAL_TYPE_1))
+                .getId();
 
         runOnServer.run(session -> {
-            IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(userId, CREDENTIAL_TYPE_1, "wallet-123");
+            UserVerifiableCredentialModel vcModel = new UserVerifiableCredentialModel(null, clientScopeId);
+            vcModel.setRevision("rev-001");
+            UserVerifiableCredentialModel added = session.users().addVerifiableCredential(userId, vcModel);
+
+            IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(userId, added.getId(), "wallet-123");
             model.setRevision("rev-001");
             model.setIssuedAt(issuedAt);
             model.setExpiresAt(expiresAt);
@@ -302,6 +316,62 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
         assertThat(userResource.verifiableCredentials().getIssuedCredentials(), empty());
     }
 
+    @Test
+    @DatabaseTest
+    public void testRemoveExpiredIssuedVerifiableCredentials() {
+        String userId = createUser();
+        String clientId = createTestClient("wallet-client");
+
+        long now = Time.currentTimeMillis();
+        long oneHourInMs = 3600000L;
+
+        // Resolve scope ID
+        String clientScopeId = managedRealm.admin().clientScopes().findAll().stream()
+                .filter(s -> CREDENTIAL_TYPE_1.equals(s.getName()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Client scope not found: " + CREDENTIAL_TYPE_1))
+                .getId();
+
+        // Create one verifiable credential and two issued credentials with different expiration times
+        runOnServer.run(session -> {
+            UserVerifiableCredentialModel vcModel = new UserVerifiableCredentialModel(null, clientScopeId);
+            vcModel.setRevision("rev-001");
+            UserVerifiableCredentialModel added = session.users().addVerifiableCredential(userId, vcModel);
+
+            IssuedVerifiableCredentialModel model1 = new IssuedVerifiableCredentialModel(userId, added.getId(), clientId);
+            model1.setRevision("rev-001");
+            model1.setIssuedAt(now);
+            model1.setExpiresAt(now + oneHourInMs); // Expires in 1 hour
+            session.users().addIssuedVerifiableCredential(model1);
+
+            IssuedVerifiableCredentialModel model2 = new IssuedVerifiableCredentialModel(userId, added.getId(), clientId);
+            model2.setRevision("rev-002");
+            model2.setIssuedAt(now);
+            model2.setExpiresAt(now + oneHourInMs * 2); // Expires in 2 hour
+            session.users().addIssuedVerifiableCredential(model2);
+        });
+
+        UserResource userResource = managedRealm.admin().users().get(userId);
+        assertThat(userResource.verifiableCredentials().getIssuedCredentials(), hasSize(2));
+
+        // no expirations
+        runOnServer.run(session -> session.users().removeExpiredIssuedVerifiableCredentials());
+        List<IssuedVerifiableCredentialRepresentation> issuedCredentials = userResource.verifiableCredentials().getIssuedCredentials();
+        assertThat(issuedCredentials, hasSize(2));
+
+        //first expires
+        timeOffSet.set((int) (oneHourInMs / 1000));
+        runOnServer.run(session -> session.users().removeExpiredIssuedVerifiableCredentials());
+        issuedCredentials = userResource.verifiableCredentials().getIssuedCredentials();
+        assertThat(issuedCredentials, hasSize(1));
+
+        //all expired
+        timeOffSet.set((int) (2 * oneHourInMs / 1000));
+        runOnServer.run(session -> session.users().removeExpiredIssuedVerifiableCredentials());
+        issuedCredentials = userResource.verifiableCredentials().getIssuedCredentials();
+        assertThat(issuedCredentials, hasSize(0));
+    }
+
     // Helper methods
 
     protected void createIssuedVcViaModelLayer(String userId, String credentialType,
@@ -311,14 +381,19 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
 
     protected void createIssuedVcViaModelLayer(String userId, String credentialType,
                                                String clientId, String revision, Long issuedAt) {
-        runOnServer.run(session -> {
-            UserVerifiableCredentialModel vcModel = new UserVerifiableCredentialModel(credentialType);
-            vcModel.setRevision(revision);
-            session.users().addVerifiableCredential(userId, vcModel);
-        });
+        // Resolve scope ID
+        String clientScopeId = testRealm.admin().clientScopes().findAll().stream()
+                .filter(s -> credentialType.equals(s.getName()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Client scope not found: " + credentialType))
+                .getId();
 
         runOnServer.run(session -> {
-            IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(userId, credentialType, clientId);
+            UserVerifiableCredentialModel vcModel = new UserVerifiableCredentialModel(null, clientScopeId);
+            vcModel.setRevision(revision);
+            UserVerifiableCredentialModel added = session.users().addVerifiableCredential(userId, vcModel);
+
+            IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(userId, added.getId(), clientId);
             model.setRevision(revision);
             if (issuedAt != null) {
                 model.setIssuedAt(issuedAt);
@@ -349,7 +424,13 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
                     .eventsEnabled(true)
                     .eventsListeners("jboss-logging")
                     .verifiableCredentialsEnabled(true)
-                    .clientScopes(createCredentialScope(CREDENTIAL_TYPE_1), createCredentialScope(CREDENTIAL_TYPE_2));
+                    .clientScopes(
+                            createCredentialScope(CREDENTIAL_TYPE_1),
+                            createCredentialScope(CREDENTIAL_TYPE_2),
+                            createCredentialScope(CERT_1),
+                            createCredentialScope(CERT_2),
+                            createCredentialScope(CERT_3)
+                    );
         }
     }
 

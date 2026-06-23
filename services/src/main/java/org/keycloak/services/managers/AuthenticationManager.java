@@ -90,7 +90,6 @@ import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionExpirationUtils;
@@ -375,10 +374,12 @@ public class AuthenticationManager {
     public static AuthenticationSessionModel createOrJoinLogoutSession(KeycloakSession session, RealmModel realm,
             final AuthenticationSessionManager asm, UserSessionModel userSession, boolean browserCookie, boolean initiateLogout) {
         AuthenticationSessionModel logoutSession = session.getContext().getAuthenticationSession();
-        if (logoutSession != null && AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(logoutSession.getAction())) {
+        // Don't reuse logout session if it belongs to a different user session
+        if (logoutSession != null && AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(logoutSession.getAction())
+                && (userSession == null || (logoutSession.getParentSession() != null
+                && userSession.getId().equals(logoutSession.getParentSession().getId())))) {
             return logoutSession;
         }
-
         ClientModel client = session.getContext().getClient();
         if (client == null) {
             // Account management client is used as a placeholder
@@ -389,14 +390,15 @@ public class AuthenticationManager {
         RootAuthenticationSessionModel rootLogoutSession = null;
         boolean browserCookiePresent = false;
 
-        // Try to lookup current authSessionId from browser cookie. If doesn't exist, use the same as current userSession
+        // Try to lookup current authSessionId from browser cookie. If doesn't exist, use the same as current userSession if it can be reused
         if (browserCookie) {
             rootLogoutSession = asm.getCurrentRootAuthenticationSession(realm);
         }
         if (rootLogoutSession != null) {
             authSessionId = rootLogoutSession.getId();
             browserCookiePresent = true;
-        } else if (userSession != null) {
+        } else if (userSession != null && (logoutSession == null || (logoutSession.getParentSession() != null
+                && userSession.getId().equals(logoutSession.getParentSession().getId())))) {
             authSessionId = userSession.getId();
             rootLogoutSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
         } else {
@@ -990,7 +992,6 @@ public class AuthenticationManager {
         logSuccess(session, authSession);
 
         return protocol.authenticated(authSession, userSession, clientSessionCtx);
-
     }
 
     /**
@@ -1742,7 +1743,7 @@ public class AuthenticationManager {
                         user,
                         session.getContext().getConnection(),
                         session.getContext().getHttpRequest().getUri(),
-                        AuthenticatorUtil.getAuthnCredentials(authSession).contains(OTPCredentialModel.TYPE) ? OTPCredentialModel.TYPE : null
+                        Set.copyOf(AuthenticatorUtil.getAuthnCredentials(authSession))
                 );
             }
         }

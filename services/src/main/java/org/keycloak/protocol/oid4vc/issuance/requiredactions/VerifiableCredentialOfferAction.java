@@ -29,7 +29,7 @@ import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferProv
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
-import org.keycloak.representations.idm.oid4vc.CredentialOfferActionConfig;
+import org.keycloak.representations.idm.oid4vc.VerifiableCredentialOfferActionConfig;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import com.google.zxing.WriterException;
@@ -101,7 +101,7 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
             return;
         }
 
-        CredentialOfferActionConfig actionConfig = getActionConfig(credentialOfferConfig);
+        VerifiableCredentialOfferActionConfig actionConfig = getActionConfig(credentialOfferConfig);
         if (actionConfig == null) {
             event.detail(REASON, "Parameter of AIA in incorrect format. KC action parameter value was: " + credentialOfferConfig)
                     .error(INVALID_CREDENTIAL_OFFER_REQUEST.getValue());
@@ -163,7 +163,7 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
 
 
     private CredentialOfferState createCredentialsOffer(KeycloakSession session, RealmModel realm, UserModel user, EventBuilder event,
-                                                        CredentialOfferActionConfig actionConfig) throws CredentialOfferException {
+                                                        VerifiableCredentialOfferActionConfig actionConfig) throws CredentialOfferException {
         boolean preAuthorized = actionConfig.getPreAuthorized() != null && actionConfig.getPreAuthorized();
         String grantType = preAuthorized ? PRE_AUTH_GRANT_TYPE : AUTH_CODE_GRANT_TYPE;
         int credentialOfferLifespan = Optional.ofNullable(realm.getAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY))
@@ -227,9 +227,9 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
         RequiredActionProvider.super.initiatedActionCanceled(session, authSession);
     }
 
-    private CredentialOfferActionConfig getActionConfig(String credentialOfferUserConfig) {
+    private VerifiableCredentialOfferActionConfig getActionConfig(String credentialOfferUserConfig) {
         try {
-            return CredentialOfferActionConfig.decodeConfig(credentialOfferUserConfig);
+            return VerifiableCredentialOfferActionConfig.decodeConfig(credentialOfferUserConfig);
         } catch (IOException ioe) {
             logger.warnf("Parameter of %s AIA in incorrect format. Parameter value was: %s", VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID, credentialOfferUserConfig);
             return null;

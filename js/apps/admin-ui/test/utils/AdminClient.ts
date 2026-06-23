@@ -63,13 +63,18 @@ class AdminClient {
     return await this.#client.clients.create(client);
   }
 
-  async deleteClient(clientName: string) {
+  async getClient(clientName: string, realmName?: string) {
     await this.#login();
-    const client = (
-      await this.#client.clients.find({ clientId: clientName })
-    )[0];
+    return (
+      await this.#client.clients.find({
+        clientId: clientName,
+        ...(realmName !== undefined && { realm: realmName }),
+      })
+    ).at(0);
+  }
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- find()[0] is undefined when client does not exist
+  async deleteClient(clientName: string) {
+    const client = await this.getClient(clientName);
     if (client) {
       await this.#client.clients.del({ id: client.id! });
     }

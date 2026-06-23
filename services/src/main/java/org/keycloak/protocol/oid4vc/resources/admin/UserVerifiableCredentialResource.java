@@ -39,9 +39,9 @@ import org.keycloak.protocol.oid4vc.issuance.requiredactions.CredentialOfferActi
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.representations.idm.ErrorRepresentation;
-import org.keycloak.representations.idm.oid4vc.CredentialOfferActionConfig;
 import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
+import org.keycloak.representations.idm.oid4vc.VerifiableCredentialOfferActionConfig;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -106,10 +106,10 @@ public class UserVerifiableCredentialResource {
         CredentialScopeModel credentialScope = checkCredentialScope(representation.getCredentialScopeName());
 
         try {
-            UserVerifiableCredentialModel modelToCreate = RepresentationToModel.toModel(representation);
+            UserVerifiableCredentialModel modelToCreate = RepresentationToModel.toModel(representation, realm);
             UserVerifiableCredentialModel createdModel = session.users().addVerifiableCredential(user.getId(), modelToCreate);
 
-            UserVerifiableCredentialRepresentation createdRep = ModelToRepresentation.toRepresentation(createdModel);
+            UserVerifiableCredentialRepresentation createdRep = ModelToRepresentation.toRepresentation(createdModel, credentialScope.getName());
             createdRep.setCredentialConfigurationId(credentialScope.getCredentialConfigurationId());
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(createdRep).success();
             return createdRep;
@@ -139,11 +139,7 @@ public class UserVerifiableCredentialResource {
         checkOid4VCIEnabled();
 
         return session.users().getVerifiableCredentialsByUser(user.getId())
-                .map(ModelToRepresentation::toRepresentation)
-                .peek(userVerifiableCredential -> {
-                    CredentialScopeModel credentialScope = checkCredentialScope(userVerifiableCredential.getCredentialScopeName());
-                    userVerifiableCredential.setCredentialConfigurationId(credentialScope.getCredentialConfigurationId());
-                })
+                .map(model -> ModelToRepresentation.toRepresentation(model, realm))
                 .toList();
     }
 
@@ -163,12 +159,18 @@ public class UserVerifiableCredentialResource {
         auth.users().requireManage(user);
         checkOid4VCIEnabled();
 
+        // Resolve name to ID
+        ClientScopeModel clientScope = realm.getClientScopesStream()
+                .filter(s -> s.getName().equals(credentialScopeName))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("Client scope not found: " + credentialScopeName));
+
         try {
-            UserVerifiableCredentialModel updatedModel = session.users().updateVerifiableCredential(user.getId(), credentialScopeName);
+            UserVerifiableCredentialModel updatedModel = session.users().updateVerifiableCredential(user.getId(), clientScope.getId());
 
-            UserVerifiableCredentialRepresentation updatedRep = ModelToRepresentation.toRepresentation(updatedModel);
+            UserVerifiableCredentialRepresentation updatedRep = ModelToRepresentation.toRepresentation(updatedModel, realm);
 
-            CredentialScopeModel credentialScope = checkCredentialScope(updatedRep.getCredentialScopeName());
+            CredentialScopeModel credentialScope = new CredentialScopeModel(clientScope);
             updatedRep.setCredentialConfigurationId(credentialScope.getCredentialConfigurationId());
 
             adminEvent.operation(OperationType.UPDATE)
@@ -204,7 +206,13 @@ public class UserVerifiableCredentialResource {
         auth.users().requireManage(user);
         checkOid4VCIEnabled();
 
-        boolean removed = session.users().removeVerifiableCredential(user.getId(), credentialScopeName);
+        // Resolve name to ID
+        ClientScopeModel clientScope = realm.getClientScopesStream()
+                .filter(s -> s.getName().equals(credentialScopeName))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("Client scope not found: " + credentialScopeName));
+
+        boolean removed = session.users().removeVerifiableCredential(user.getId(), clientScope.getId());
         if (!removed) {
             logger.warn(String.format("Verifiable credential '%s' not found for user '%s' in the realm '%s'.",
                     credentialScopeName, user.getUsername(), realm.getName()));
@@ -228,7 +236,7 @@ public class UserVerifiableCredentialResource {
         checkOid4VCIEnabled();
 
         return session.users().getIssuedVerifiableCredentialsStreamByUser(user.getId())
-                .map(ModelToRepresentation::toRepresentation)
+                .map(model -> ModelToRepresentation.toRepresentation(model, session, realm))
                 .toList();
     }
 
@@ -273,7 +281,7 @@ public class UserVerifiableCredentialResource {
     public Response sendCredentialOffer(@Parameter(description = "Client id. Optional parameter. If it is set, then once user clicks on 'Continue' button from credential offer page (which is displayed to him after he clicks on the link from the email), the Base URL of this client might be displayed, which means user is guided to be redirected to that specified client application") @QueryParam("client_id") String clientId,
                                     @Parameter(description = "Redirect uri. Optional parameter. If it is set, it needs to be valid redirect URI for the client specified by 'client ID' parameter. It allows to use different URL than client base URL on the screen, which is displayed to the user after continue from credential offer page.") @QueryParam("redirect_uri") String redirectUri,
                                     @Parameter(description = "Number of seconds after which the generated token expires. If not set, the default value is realm option 'Default Admin-Initiated Action Lifespan', which defaults to 12 hours.") @QueryParam("lifespan") Integer lifespan,
-                                    @Parameter(description = "Configuration of the requested credential offer. This is required parameter, but only credential_configuration_id needs to be filled inside this offer") CredentialOfferActionConfig credentialOfferConfig) {
+                                    @Parameter(description = "Configuration of the requested credential offer. This is required parameter, but only credentialConfigurationId needs to be filled inside this offer") VerifiableCredentialOfferActionConfig credentialOfferConfig) {
         auth.users().requireManage(user);
         checkOid4VCIEnabled();
 

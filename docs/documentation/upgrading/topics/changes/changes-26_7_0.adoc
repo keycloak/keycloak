@@ -38,6 +38,12 @@ When searching for users using the Admin REST API, the user profile metadata is 
 This change was made to improve performance of user search operations, as fetching user profile metadata for each user can be resource-intensive.
 The user profile metadata can still be retrieved when fetching a specific user by their identifier.
 
+=== Organization member query returns brief user representation by default
+
+When querying organization members using the Admin REST API (`GET /admin/realms/\{realm}/organizations/\{id}/members`), a brief user representation is now returned by default.
+To retrieve the full user representation, pass `?briefRepresentation=false` as a query parameter.
+The single-member endpoint (`GET /admin/realms/\{realm}/organizations/\{id}/members/\{member-id}`) continues to return the full representation.
+
 === X509 client authentication requires CA Subject DN
 
 Since this release, the X509 client authentication, that allows a client authenticate presenting a certificate in the mutual TLS (mTLS) handshake, requires to configure a new option called **Certificate Authority subject DN** to identify the trusted anchor CA for the client certificate. As the {project_name}'s trust-store (or mTLS store) is shared for all the realms, the new option allows to identify the correct CA of the certificate and avoids interferences with other unrelated CAs.
@@ -55,6 +61,12 @@ In general, all this new configuration requires {project_name} to always revalid
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
+
+=== Organization invitation filters use exact matching
+
+The `email`, `firstName`, and `lastName` query parameters on the organization invitations list endpoint (`GET /admin/realms/{realm}/orgs/{orgId}/invitations`) now use case-insensitive exact matching instead of substring matching.
+
+If you rely on partial matching for these fields, use the `search` query parameter instead, which performs case-insensitive substring matching across email, firstName, and lastName fields.
 
 === Dynamic Scopes feature renamed to Parameterized Scopes
 
@@ -205,13 +217,13 @@ future, this will not be possible anymore.
 
 The option **Allow regex pattern comparison** is deprecated for the X509 client authenticator. This option allows to configure a Java regular expression instead of the exact DN for the client certificate subject DN. As previously commented in the breaking changes section, this option is now deprecated and it will be removed in a future version. The certificate for the client should be unambiguously identified because of security reasons.
 
-=== WebAuthn policy option `Require Discoverable Credential` deprecated in favor of `Discoverable key`
+=== WebAuthn policy option `Require Discoverable Credential` deprecated in favor of `Discoverable Credential`
 
 The WebAuthn policy option `Require Discoverable Credential` (`requireResidentKey`) is deprecated and planned to be removed in the future.
-A new option `Discoverable key` (`residentKey`) is available in the WebAuthn Policy and WebAuthn Passwordless Policy, following the current https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-residentkey[WebAuthn specification].
+A new option `Discoverable Credential` (`residentKey`) is available in the WebAuthn Policy and WebAuthn Passwordless Policy, following the current https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-residentkey[WebAuthn specification].
 Unlike the deprecated Yes/No option, it supports the values `required`, `preferred` and `discouraged`, and is sent to the browser as `authenticatorSelection.residentKey` during the registration of WebAuthn credentials.
 
-The deprecated option keeps working and is only used when `Discoverable key` is left as `not specified`.
+The deprecated option keeps working and is only used when `Discoverable Credential` is left as `not specified`.
 A warning is logged when the deprecated option is set to a concrete value.
 The corresponding realm representation attributes `webAuthnPolicyRequireResidentKey` and `webAuthnPolicyPasswordlessRequireResidentKey` are deprecated in favor of `webAuthnPolicyResidentKey` and `webAuthnPolicyPasswordlessResidentKey`.
 

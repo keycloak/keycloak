@@ -144,6 +144,15 @@ public class EventEmitterService {
         if (stream == null) {
             return EmitEventResult.dropped(EmitEventStatus.STREAM_NOT_FOUND);
         }
+        // ... with a delivery configuration. Without one the dispatcher
+        // has nowhere to send the SET and would skip delivery before the
+        // outbox enqueue — the emitter would see a "dispatched" result
+        // (and a jti) for an event that never existed anywhere. Fail
+        // early with an explicit status instead.
+        if (stream.getDelivery() == null) {
+            return EmitEventResult.dropped(EmitEventStatus.NO_DELIVERY_CONFIG,
+                    "Stream has no delivery method configured — configure push or poll delivery for the stream first");
+        }
 
         // 4. Event type must be in the receiver's events_requested
         //    set. Receivers that pass null opt into everything.

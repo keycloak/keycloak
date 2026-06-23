@@ -106,14 +106,20 @@ public abstract class AbstractBaseJWTValidator {
     protected boolean validateTokenReuse(long lifespanInSecs) {
         final JsonWebToken token = clientAssertionState.getToken();
         final String tokenId = token.getId();
+        final String namespacePrefix = getJtiCacheKeyPrefix();
+        final String cacheKey = namespacePrefix + ":" + tokenId;
         SingleUseObjectProvider singleUseCache = session.singleUseObjects();
-        if (singleUseCache.putIfAbsent(tokenId, lifespanInSecs)) {
-            logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, issuedFor: %s", tokenId, lifespanInSecs, token.getIssuedFor());
+        if (singleUseCache.putIfAbsent(cacheKey, lifespanInSecs)) {
+            logger.tracef("Added token '%s' to single-use cache with key '%s'. Lifespan: %d seconds, issuedFor: %s", tokenId, cacheKey, lifespanInSecs, token.getIssuedFor());
         } else {
             logger.warnf("Token '%s' already used when for issuedFor '%s'.", tokenId, token.getIssuedFor());
             return failure("Token reuse detected");
         }
         return true;
+    }
+
+    protected String getJtiCacheKeyPrefix() {
+        return getClass().getSimpleName().toLowerCase();
     }
 
     public boolean validateTokenAudience(List<String> expectedAudiences, boolean multipleAudienceAllowed) {
