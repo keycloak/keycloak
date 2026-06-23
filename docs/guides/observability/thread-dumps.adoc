@@ -1,7 +1,4 @@
 <#import "/templates/guide.adoc" as tmpl>
-<#import "/templates/kc.adoc" as kc>
-<#import "/templates/options.adoc" as opts>
-<#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
 title="Troubleshooting performance issues using JVM thread dumps"
@@ -28,7 +25,7 @@ The following command prints a thread dump to the standard output.
 ----
 jcmd <PID> Thread.print -l #<1>
 ----
-<1> The `-l` option enables printing additional information about locks.
+<1> The `-l` option enables printing of additional information about locks.
 
 === Using the `Thread.dump_to_file` command
 
@@ -36,14 +33,14 @@ The following command writes a thread dump to a file in a plain-text format.
 
 [source]
 ----
-jcmd <PID> Thread.dump_to_file threaddump.txt
+jcmd <PID> Thread.dump_to_file thread_dump.txt
 ----
 
 The following command writes a thread dump to a file in the JSON format.
 
 [source]
 ----
-jcmd <PID> Thread.dump_to_file -format=json threaddump.json
+jcmd <PID> Thread.dump_to_file -format=json thread_dump.json
 ----
 
 Compared with the plain-text format, the JSON output contains additional information about the thread container hierarchy.
@@ -52,12 +49,20 @@ If the filename argument is not an absolute path, the thread dump will be create
 
 === Forming a comprehensive picture
 
-Because thread dumps created by the `Thread.print` command lack detailed information about virtual threads, and thread dumps created by the `Thread.dump_to_file` command lack information about locks and object monitors (on JDK versions prior to JDK 25), and some additional JVM-internal and OS-specific information, it is recommended to create thread dumps using both the `Thread.print` and the `Thread.dump_to_file` commands in order to form a comprehensive picture about the state of the JVM.
+Thread dumps created by the `Thread.print` command lack detailed information about virtual threads.
+Thread dumps created by the `Thread.dump_to_file` command lack information about locks and object monitors (on JDK versions prior to JDK 25), as well as some additional JVM-internal and OS-level information.
+To form a comprehensive picture of the JVM state, create thread dumps using both the `Thread.print` and the `Thread.dump_to_file` commands.
 
 == Finding PID of the {project_name} process
 
-Running `jcmd` without arguments lists the Java processes running on the system and their PIDs.
+Running the `jcmd` commands without arguments lists the Java processes running on the system and their PIDs.
 
+[source]
+----
+jcmd
+----
+
+Example output:
 [source]
 ----
 242551 io.quarkus.bootstrap.runner.QuarkusEntryPoint start ... #<1>
@@ -65,8 +70,29 @@ Running `jcmd` without arguments lists the Java processes running on the system 
 ----
 <1> Assuming {project_name} is the only Quarkus-based application running on the system its PID in this example would be `242551`.
 
+A script with a simple PID auto-detection could look like this:
+[source]
+----
+#!/bin/bash -e
+PID=$(jcmd | grep QuarkusEntryPoint | head -1 | awk '{print $1}')
+if [ -z "$PID" ]; then
+  echo "Process not found."
+  exit 1
+fi
+jcmd $PID Thread.print -l > thread_dump.txt
+----
+
 == Collecting multiple samples
 
 Because a single thread dump is just a snapshot of the JVM state at a particular point in time, it is recommended to capture multiple thread dumps over a short period of time, for example 3-4 samples spaced 1-2 seconds apart.
+
+For example, assuming the PID variable is set, the following script captures four thread dumps two seconds apart:
+[source,bash]
+----
+for i in {1..4}; do
+  jcmd $PID Thread.print -l > thread_dump_$i.txt
+  sleep 2
+done
+----
 
 </@tmpl.guide>
