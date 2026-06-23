@@ -37,6 +37,7 @@ import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
 
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.scim.resource.Scim.getCoreSchema;
 import static org.keycloak.tests.scim.tck.AdminUserProtectionRealmConfig.ADMIN_IMPERSONATION;
 import static org.keycloak.tests.scim.tck.AdminUserProtectionRealmConfig.ADMIN_MANAGE_CLIENTS;
 import static org.keycloak.tests.scim.tck.AdminUserProtectionRealmConfig.ADMIN_MANAGE_CLIENTS_REVOKABLE;
@@ -55,6 +56,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest(config = ScimServerConfig.class)
@@ -101,6 +103,7 @@ public class AdminUserProtectionTest {
 
         assertNotNull(result);
         assertEquals(ADMIN_MANAGE_IDENTITY_PROVIDERS, result.getUserName());
+        assertTrue(result.hasSchema(getCoreSchema(result.getClass())));
         assertNull(result.getActive());
         assertNull(result.getName());
         assertNull(result.getEmails());

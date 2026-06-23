@@ -79,13 +79,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
             throw new ForbiddenException();
         }
 
-        R resource = createResourceTypeInstance();
-
-        for (ModelSchema<M, R> schema : schemas) {
-            schema.populate(resource, model, attributes, excludedAttributes);
-        }
-
-        return resource;
+        return createResourceTypeInstance(model, attributes, excludedAttributes);
     }
 
     @Override
@@ -180,9 +174,15 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
         }
     }
 
-    private R createResourceTypeInstance() {
+    protected R createResourceTypeInstance(M model, List<String> attributes, List<String> excludedAttributes) {
         try {
-            return getResourceType().getDeclaredConstructor().newInstance();
+            R resource = getResourceType().getDeclaredConstructor().newInstance();
+
+            for (ModelSchema<M, R> schema : schemas) {
+                schema.populate(resource, model, attributes, excludedAttributes);
+            }
+
+            return resource;
         } catch (Exception e) {
             throw new RuntimeException("Could not create instance of resource type " + getResourceType(), e);
         }
@@ -193,12 +193,19 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
                 || session.getContext().getPermissions().hasPermission(getRealmResourceType(), AdminPermissionsSchema.VIEW);
     }
 
-    protected boolean hasPermission(String realmResourceType, String scope) {
+    private boolean hasPermission(String realmResourceType, String scope) {
         return session.getContext().getPermissions().hasPermission(realmResourceType, scope);
     }
 
     protected boolean hasPermission(M model, String realmResourceType, String scope) {
-        return session.getContext().getPermissions().hasPermission(model, realmResourceType, scope);
+        if (AdminPermissionsSchema.VIEW.equals(scope)) {
+            return session.getContext().getPermissions().hasPermission(model, realmResourceType, scope);
+        }
+
+        return session.getContext().getPermissions().hasPermission(model, realmResourceType, scope) && isManageable(model);
     }
 
+    protected boolean isManageable(M model) {
+        return true;
+    }
 }

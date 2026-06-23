@@ -34,6 +34,7 @@ import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
 
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.scim.resource.Scim.getCoreSchema;
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.ADMIN_CHILD_GROUP;
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.ADMIN_GROUP;
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.ADMIN_PARENT_GROUP;
@@ -43,6 +44,7 @@ import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.REGULA
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest(config = ScimServerConfig.class)
@@ -61,6 +63,7 @@ public class AdminGroupProtectionTest {
 
         assertNotNull(result);
         assertEquals(ADMIN_GROUP, result.getDisplayName());
+        assertTrue(result.hasSchema(getCoreSchema(result.getClass())));
         assertNull(result.getMeta().getCreated());
         assertNull(result.getMembers());
     }

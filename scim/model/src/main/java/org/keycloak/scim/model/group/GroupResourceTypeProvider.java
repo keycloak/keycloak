@@ -39,8 +39,6 @@ import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
-import org.keycloak.scim.protocol.ForbiddenException;
-import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.group.Member;
@@ -68,25 +66,17 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     }
 
     @Override
-    public Group get(String id, List<String> attributes, List<String> excludedAttributes) {
-        GroupModel model = getModel(id);
-
-        if (model == null) {
-            return null;
-        }
-
-        if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.VIEW)) {
-            throw new ForbiddenException();
-        }
-
+    protected Group createResourceTypeInstance(GroupModel model, List<String> attributes, List<String> excludedAttributes) {
         if (session.getContext().getPermissions().isAdminGroup(model)) {
-            Group resource = new Group();
-            resource.setId(model.getId());
-            resource.setDisplayName(model.getName());
-            return resource;
-        }
+            Group group = new Group();
 
-        return super.get(id, attributes, excludedAttributes);
+            group.addSchema(getSchema());
+            group.setId(model.getId());
+            group.setDisplayName(model.getName());
+
+            return group;
+        }
+        return super.createResourceTypeInstance(model, attributes, excludedAttributes);
     }
 
     @Override
@@ -95,12 +85,6 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
 
         if (!Optional.ofNullable(members).orElse(List.of()).isEmpty()) {
             throw new ModelValidationException("Managing members on updates is not supported");
-        }
-
-        GroupModel model = getModel(resource.getId());
-
-        if (model != null && session.getContext().getPermissions().isAdminGroup(model)) {
-            throw new ForbiddenException();
         }
 
         return super.update(resource);
@@ -176,28 +160,6 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     }
 
     @Override
-    public boolean delete(String id) {
-        GroupModel model = getModel(id);
-
-        if (model != null && session.getContext().getPermissions().isAdminGroup(model)) {
-            throw new ForbiddenException();
-        }
-
-        return super.delete(id);
-    }
-
-    @Override
-    public void patch(Group existing, List<PatchOperation> operations) {
-        GroupModel model = getModel(existing.getId());
-
-        if (model != null && session.getContext().getPermissions().isAdminGroup(model)) {
-            throw new ForbiddenException();
-        }
-
-        super.patch(existing, operations);
-    }
-
-    @Override
     public boolean onDelete(String id) {
         RealmModel realm = session.getContext().getRealm();
         return session.groups().removeGroup(realm, getModel(id));
@@ -239,5 +201,10 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
             return join.get("user").get("id");
         }
         return null;
+    }
+
+    @Override
+    protected boolean isManageable(GroupModel model) {
+        return !session.getContext().getPermissions().isAdminGroup(model);
     }
 }

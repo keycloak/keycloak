@@ -101,11 +101,24 @@ public class AdminRoles {
     public static boolean groupHasAdminRoles(GroupModel group) {
         GroupModel current = group;
         while (current != null) {
-            if (current.getRoleMappingsStream().anyMatch(AdminRoles::isAdminRole)) {
+            if (current.getRoleMappingsStream().anyMatch(role -> isAdminRole(role, new HashSet<>()))) {
                 return true;
             }
             current = current.getParent();
         }
         return false;
+    }
+
+    private static boolean isAdminRole(RoleModel role, Set<String> visited) {
+        if (!visited.add(role.getId())) {
+            return false;
+        }
+        if (isAdminRole(role)) {
+            return true;
+        }
+        if (!role.isComposite()) {
+            return false;
+        }
+        return role.getCompositesStream().anyMatch(child -> isAdminRole(child, visited));
     }
 }

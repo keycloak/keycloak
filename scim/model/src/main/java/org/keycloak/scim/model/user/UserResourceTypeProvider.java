@@ -32,8 +32,6 @@ import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.filter.ScimFilterParser.FilterContext;
 import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
-import org.keycloak.scim.protocol.ForbiddenException;
-import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
@@ -115,58 +113,17 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     }
 
     @Override
-    public User get(String id, List<String> attributes, List<String> excludedAttributes) {
-        UserModel model = getModel(id);
-
-        if (model == null) {
-            return null;
-        }
-
-        if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.VIEW)) {
-            throw new ForbiddenException();
-        }
-
+    protected User createResourceTypeInstance(UserModel model, List<String> attributes, List<String> excludedAttributes) {
         if (session.getContext().getPermissions().isAdminUser(model)) {
-            User resource = new User();
-            resource.setId(model.getId());
-            resource.setUserName(model.getUsername());
-            return resource;
+            User user = new User();
+
+            user.addSchema(getSchema());
+            user.setId(model.getId());
+            user.setUserName(model.getUsername());
+
+            return user;
         }
-
-        return super.get(id, attributes, excludedAttributes);
-    }
-
-    @Override
-    public User update(User resource) {
-        UserModel model = getModel(resource.getId());
-
-        if (model != null && session.getContext().getPermissions().isAdminUser(model)) {
-            throw new ForbiddenException();
-        }
-
-        return super.update(resource);
-    }
-
-    @Override
-    public boolean delete(String id) {
-        UserModel model = getModel(id);
-
-        if (model != null && session.getContext().getPermissions().isAdminUser(model)) {
-            throw new ForbiddenException();
-        }
-
-        return super.delete(id);
-    }
-
-    @Override
-    public void patch(User existing, List<PatchOperation> operations) {
-        UserModel model = getModel(existing.getId());
-
-        if (model != null && session.getContext().getPermissions().isAdminUser(model)) {
-            throw new ForbiddenException();
-        }
-
-        super.patch(existing, operations);
+        return super.createResourceTypeInstance(model, attributes, excludedAttributes);
     }
 
     @Override
@@ -279,5 +236,10 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             return join.get("groupId");
         }
         return null;
+    }
+
+    @Override
+    protected boolean isManageable(UserModel model) {
+        return !session.getContext().getPermissions().isAdminUser(model);
     }
 }
