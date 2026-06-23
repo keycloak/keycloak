@@ -962,7 +962,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
             clientRepresentation.setImplicitFlowEnabled(true);
         });
 
-        String errorMessage = "DPoP is not supported for implicit and hybrid flows. Client requires DPoP bound access tokens.";
+        String errorMessage = "DPoP is not supported for implicit nor hybrid flows. Client requires DPoP bound access tokens.";
 
         oauth.client(TEST_PUBLIC_CLIENT_ID);
 

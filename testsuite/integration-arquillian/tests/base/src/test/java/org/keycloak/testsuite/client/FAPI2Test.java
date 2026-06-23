@@ -169,8 +169,8 @@ public class FAPI2Test extends AbstractFAPI2Test {
         // requiring hybrid request - should fail
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN);
         ParResponse pResp = oauth.pushedAuthorizationRequest().nonce("123456").codeChallenge(pkceGenerator).send();
-        assertEquals(401, pResp.getStatusCode());
-        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, pResp.getError());
+        assertEquals(400, pResp.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
 
         // authorization request does not match PAR request - should fail
         oauth.responseType(OIDCResponseType.CODE);

@@ -18,8 +18,6 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,20 +33,11 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.protocol.oid4vc.clientpolicy.PredicateCredentialClientPolicy;
-import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
-import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
-import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
-import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
-import org.keycloak.protocol.oid4vc.model.IssuerState;
-import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
-import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
@@ -70,8 +59,7 @@ import org.keycloak.utils.StringUtil;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
-import static org.keycloak.OAuth2Constants.ISSUER_STATE;
-import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
+import static org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor.getRequestUriType;
 
 /**
  * Implements some checks typical for OIDC Authorization Endpoint. Useful to consolidate various checks on single place to avoid duplicated
@@ -160,22 +148,27 @@ public class AuthorizationEndpointChecker {
     }
 
     public void checkRedirectUri() throws AuthorizationCheckException {
-        String redirectUriParam = request.getRedirectUri();
-        boolean isOIDCRequest = TokenUtil.isOIDCRequest(request.getScope());
 
-        event.detail(Details.REDIRECT_URI, redirectUriParam);
+        String redirectUri = request.getRedirectUri();
+        String scope = request.getScope();
+
+        // The redirect_uri parameter is required for OIDC, but optional for OAuth2
+        boolean isOIDCRequest = TokenUtil.isOIDCRequest(scope);
+
+        event.detail(Details.REDIRECT_URI, redirectUri);
 
         // redirect_uri parameter is required per OpenID Connect, but optional per OAuth2
-        this.redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUriParam, client, isOIDCRequest);
-        if (redirectUri == null) {
+        this.redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUri, client, isOIDCRequest);
+        if (this.redirectUri == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
         }
     }
 
-
     public void checkResponseType() throws AuthorizationCheckException {
+
         String responseType = request.getResponseType();
+        String responseMode = request.getResponseMode();
 
         if (responseType == null) {
             ServicesLogger.LOGGER.missingParameter(OAuth2Constants.RESPONSE_TYPE);
@@ -188,16 +181,15 @@ public class AuthorizationEndpointChecker {
         event.detail(Details.RESPONSE_TYPE, responseType);
 
         try {
-            this.parsedResponseType = OIDCResponseType.parse(responseType);
+            parsedResponseType = OIDCResponseType.parse(responseType);
         } catch (IllegalArgumentException iae) {
             event.detail(Details.REASON, iae.getMessage());
             event.error(Errors.INVALID_REQUEST);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
         }
 
-        OIDCResponseMode parsedResponseMode = null;
         try {
-            parsedResponseMode = OIDCResponseMode.parse(request.getResponseMode(), parsedResponseType);
+            parsedResponseMode = OIDCResponseMode.parse(responseMode, parsedResponseType);
         } catch (IllegalArgumentException iae) {
             ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
             String errorMessage = "Invalid parameter: " + OIDCLoginProtocol.RESPONSE_MODE_PARAM;
@@ -205,8 +197,6 @@ public class AuthorizationEndpointChecker {
             event.error(Errors.INVALID_REQUEST);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
-
-        event.detail(Details.RESPONSE_MODE, parsedResponseMode.toString().toLowerCase());
 
         // Disallowed by OIDC specs
         if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY) {
@@ -217,7 +207,7 @@ public class AuthorizationEndpointChecker {
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
 
-        this.parsedResponseMode = parsedResponseMode;
+        event.detail(Details.RESPONSE_MODE, parsedResponseMode.toString().toLowerCase());
 
         if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY_JWT &&
                 (!StringUtil.isNotBlank(client.getAttribute(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ALG)) ||
@@ -237,19 +227,19 @@ public class AuthorizationEndpointChecker {
             throw new AuthorizationCheckException(Response.Status.UNAUTHORIZED, OAuthErrorException.UNAUTHORIZED_CLIENT, errorMessage);
         }
 
-        if (parsedResponseType.isImplicitOrHybridFlow() && !client.isImplicitFlowEnabled()) {
-            ServicesLogger.LOGGER.flowNotAllowed("Implicit");
-            String errorMessage = "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.";
+        // DPoP is not supported for implicit nor hybrid flows
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        if (clientConfig.isUseDPoP() && parsedResponseType.isImplicitOrHybridFlow()) {
+            ServicesLogger.LOGGER.flowNotAllowed("Implicit/Hybrid with DPoP");
+            String errorMessage = "DPoP is not supported for implicit nor hybrid flows. Client requires DPoP bound access tokens.";
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
             throw new AuthorizationCheckException(Response.Status.UNAUTHORIZED, OAuthErrorException.UNAUTHORIZED_CLIENT, errorMessage);
         }
 
-        // DPoP is not supported for implicit and hybrid flows
-        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
-        if (clientConfig.isUseDPoP() && parsedResponseType.isImplicitOrHybridFlow()) {
-            ServicesLogger.LOGGER.flowNotAllowed("Implicit/Hybrid with DPoP");
-            String errorMessage = "DPoP is not supported for implicit and hybrid flows. Client requires DPoP bound access tokens.";
+        if (parsedResponseType.isImplicitOrHybridFlow() && !client.isImplicitFlowEnabled()) {
+            ServicesLogger.LOGGER.flowNotAllowed("Implicit");
+            String errorMessage = "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.";
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
             throw new AuthorizationCheckException(Response.Status.UNAUTHORIZED, OAuthErrorException.UNAUTHORIZED_CLIENT, errorMessage);
@@ -349,7 +339,7 @@ public class AuthorizationEndpointChecker {
             return;
         }
         String requestUriParam = params.getFirst(OIDCLoginProtocol.REQUEST_URI_PARAM);
-        if (requestUriParam != null && AuthorizationEndpointRequestParserProcessor.getRequestUriType(requestUriParam) == RequestUriType.PAR) {
+        if (requestUriParam != null && getRequestUriType(requestUriParam) == RequestUriType.PAR) {
             return;
         }
         ServicesLogger.LOGGER.missingParameter(OIDCLoginProtocol.REQUEST_URI_PARAM);
@@ -378,47 +368,6 @@ public class AuthorizationEndpointChecker {
         Set<AuthorizationEndpointCheckProvider> additionalChecks = session.getAllProviders(AuthorizationEndpointCheckProvider.class);
         for (AuthorizationEndpointCheckProvider check : additionalChecks) {
             check.check(this);
-        }
-    }
-
-    public void checkCredentialScope() throws AuthorizationCheckException {
-
-        // Get the list of requested credential scopes that are associated with this client
-        //
-        List<CredentialScopeModel> credScopes = CredentialScopeUtils.getCredentialScopesForAuthorization(client, request);
-
-        // Proceed when there are requested credential scopes
-        //
-        if (!credScopes.isEmpty()) {
-
-            PredicateCredentialClientPolicy offerRequiredPolicy = VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
-
-            // Get the potential offer state derived from issuer_state
-            //
-            String issuerStateParam = request.getAdditionalReqParams().get(ISSUER_STATE);
-            CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
-            CredentialOfferState offerState = Optional.ofNullable(issuerStateParam)
-                    .map(IssuerState::fromEncodedString)
-                    .map(IssuerState::getCredentialsOfferId)
-                    .map(offerStorage::getOfferStateById)
-                    .orElse(null);
-
-            List<String> offeredConfigurationIds = Optional.ofNullable(offerState)
-                    .map(CredentialOfferState::getCredentialsOffer)
-                    .map(CredentialsOffer::getCredentialConfigurationIds)
-                    .orElse(List.of());
-
-            // Check whether each requested credential_configuration_id has actually been offered
-            //
-            for (CredentialScopeModel credScope : credScopes) {
-                String credConfigId = credScope.getCredentialConfigurationId();
-
-                boolean requiredByScope = offerRequiredPolicy.validate(new CredentialScopeRepresentation(credScope));
-                if (requiredByScope && !offeredConfigurationIds.contains(credConfigId)) {
-                    String errorDetail = "Authorization request rejected by policy " + offerRequiredPolicy.getName() + " for scope: " + credScope.getName();
-                    throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorDetail);
-                }
-            }
         }
     }
 

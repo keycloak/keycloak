@@ -874,9 +874,9 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     @Override
-    public boolean removeVerifiableCredential(String userId, String credentialScopeName) {
+    public boolean removeVerifiableCredential(String userId, String clientScopeId) {
         invalidateVerifiableCredentials(userId);
-        return getDelegate().removeVerifiableCredential(userId, credentialScopeName);
+        return getDelegate().removeVerifiableCredential(userId, clientScopeId);
     }
 
     private void invalidateVerifiableCredentials(String userId) {
@@ -913,17 +913,31 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     private UserVerifiableCredentialModel toCredentialModel(CachedUserVerifiableCredential cachedCredential) {
-        UserVerifiableCredentialModel credentialModel = new UserVerifiableCredentialModel(cachedCredential.getCredentialScopeName());
+        UserVerifiableCredentialModel credentialModel = new UserVerifiableCredentialModel(cachedCredential.getId(), cachedCredential.getClientScopeId());
         credentialModel.setRevision(cachedCredential.getRevision());
         credentialModel.setCreatedDate(cachedCredential.getCreatedDate());
+        credentialModel.setUpdatedDate(cachedCredential.getUpdatedDate());
         credentialModel.setUserAttributes(cachedCredential.getUserAttributes());
         return credentialModel;
     }
 
     @Override
-    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String credentialScopeName) {
+    public UserVerifiableCredentialModel getVerifiableCredentialById(String id) {
+        return getDelegate().getVerifiableCredentialById(id);
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialByClientScope(String userId, String clientScopeId) {
+        return getVerifiableCredentialsByUser(userId)
+                .filter(vc -> clientScopeId.equals(vc.getClientScopeId()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String clientScopeId) {
         invalidateVerifiableCredentials(userId);
-        return getDelegate().updateVerifiableCredential(userId, credentialScopeName);
+        return getDelegate().updateVerifiableCredential(userId, clientScopeId);
     }
 
     @Override
@@ -939,6 +953,11 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     @Override
     public boolean removeIssuedVerifiableCredential(String credentialId) {
         return getDelegate().removeIssuedVerifiableCredential(credentialId);
+    }
+
+    @Override
+    public void removeExpiredIssuedVerifiableCredentials() {
+        getDelegate().removeExpiredIssuedVerifiableCredentials();
     }
 
     @Override

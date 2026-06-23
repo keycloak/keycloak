@@ -10,9 +10,9 @@ summary="REST API for managing Keycloak resources. Experimental feature.">
 
 == Prerequisites
 
-The Admin API v2 requires the `client-admin-api-v2` feature:
+The Admin API v2 requires the `client-admin-api:v2` feature:
 
-<@kc.start parameters="--features=client-admin-api-v2"/>
+<@kc.start parameters="--features=client-admin-api:v2"/>
 
 == Client Setup
 

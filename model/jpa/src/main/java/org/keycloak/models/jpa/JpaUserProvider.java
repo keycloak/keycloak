@@ -175,8 +175,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         em.createNamedQuery("deleteUserGroupMembershipsByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentClientScopesByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentsByUser").setParameter("user", user).executeUpdate();
-        em.createNamedQuery("deleteVerifiableCredentialsByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteIssuedVcsByUser").setParameter("userId", user.getId()).executeUpdate();
+        em.createNamedQuery("deleteVerifiableCredentialsByUser").setParameter("user", user).executeUpdate();
 
         em.remove(user);
         em.flush();
@@ -394,12 +394,13 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public UserVerifiableCredentialModel addVerifiableCredential(String userId, UserVerifiableCredentialModel verifCredentialModel) {
-        if (verifCredentialModel.getCredentialScopeName() == null) {
+        if (verifCredentialModel.getClientScopeId() == null) {
             throw new BadRequestException("Credential scope not specified");
         }
 
         UserVerifiableCredentialEntity vcEntity = new UserVerifiableCredentialEntity();
-        vcEntity.setId(KeycloakModelUtils.generateId());
+        String id = KeycloakModelUtils.generateId();
+        vcEntity.setId(id);
         vcEntity.setUser(em.getReference(UserEntity.class, userId));
 
         String revision = verifCredentialModel.getRevision() == null ? SecretGenerator.getInstance().generateSecureID() : verifCredentialModel.getRevision();
@@ -411,7 +412,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         long updatedDate = verifCredentialModel.getUpdatedDate() == null ? createdDate : verifCredentialModel.getUpdatedDate();
         vcEntity.setUpdatedDate(updatedDate);
 
-        vcEntity.setCredentialScopeName(verifCredentialModel.getCredentialScopeName());
+        vcEntity.setClientScopeId(verifCredentialModel.getClientScopeId());
 
         Map<String, List<String>> userAttributes;
         if (verifCredentialModel.getUserAttributes() != null) {
@@ -437,21 +438,21 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     }
 
     @Override
-    public boolean removeVerifiableCredential(String userId, String credentialScopeName) {
+    public boolean removeVerifiableCredential(String userId, String clientScopeId) {
         UserVerifiableCredentialEntity found = getVerifiableCredentialsEntitiesByUser(userId)
-                .filter(vcEnt -> vcEnt.getCredentialScopeName().equals(credentialScopeName))
+                .filter(vcEnt -> vcEnt.getClientScopeId().equals(clientScopeId))
                 .findFirst()
                 .orElse(null);
 
         if (found == null) return false;
 
-        em.remove(found);
-
+        // Delete issued VCs first, then the VC itself (FK constraint)
         em.createNamedQuery("deleteIssuedVcsByUserAndType")
                 .setParameter("userId", userId)
-                .setParameter("credentialType", credentialScopeName)
+                .setParameter("verifiableCredentialId", found.getId())
                 .executeUpdate();
 
+        em.remove(found);
         em.flush();
         return true;
     }
@@ -460,11 +461,26 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     public Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId) {
         return getVerifiableCredentialsEntitiesByUser(userId)
                 .map(this::toVerifiableCredentialModel)
-                .sorted(Comparator.comparing(UserVerifiableCredentialModel::getCredentialScopeName));
+                .sorted(Comparator.comparing(UserVerifiableCredentialModel::getClientScopeId));
     }
 
     @Override
-    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String credentialScopeName) {
+    public UserVerifiableCredentialModel getVerifiableCredentialById(String id) {
+        UserVerifiableCredentialEntity entity = em.find(UserVerifiableCredentialEntity.class, id);
+        return entity != null ? toVerifiableCredentialModel(entity) : null;
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialByClientScope(String userId, String clientScopeId) {
+        return getVerifiableCredentialsEntitiesByUser(userId)
+                .filter(vc -> clientScopeId.equals(vc.getClientScopeId()))
+                .findFirst()
+                .map(this::toVerifiableCredentialModel)
+                .orElse(null);
+    }
+
+    @Override
+    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String clientScopeId) {
         UserEntity userEntity = em.find(UserEntity.class, userId);
         if (userEntity == null || !session.getContext().getRealm().getId().equals(userEntity.getRealmId())) {
             throw new ModelException("User not found: " + userId);
@@ -472,10 +488,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         UserModel user = new UserAdapter(session, session.getContext().getRealm(), em, userEntity);
 
         UserVerifiableCredentialEntity entity = getVerifiableCredentialsEntitiesByUser(userId)
-                .filter(vc -> credentialScopeName.equals(vc.getCredentialScopeName()))
+                .filter(vc -> clientScopeId.equals(vc.getClientScopeId()))
                 .findFirst()
                 .orElseThrow(() -> new ModelException(
-                        "Verifiable credential not found: " + credentialScopeName));
+                        "Verifiable credential not found: " + clientScopeId));
 
 
         // Filter attributes using UserProfile with admin context to include only admin-visible attributes
@@ -509,7 +525,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     }
 
     private UserVerifiableCredentialModel toVerifiableCredentialModel(UserVerifiableCredentialEntity entity) {
-        UserVerifiableCredentialModel model = new UserVerifiableCredentialModel(entity.getCredentialScopeName());
+        UserVerifiableCredentialModel model = new UserVerifiableCredentialModel(entity.getId(), entity.getClientScopeId());
         model.setRevision(entity.getRevision());
         model.setCreatedDate(entity.getCreatedDate());
         model.setUpdatedDate(entity.getUpdatedDate());
@@ -560,9 +576,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                 .setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("deleteUserConsentsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
-        em.createNamedQuery("deleteVerifiableCredentialsByRealm")
-                .setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("deleteIssuedVcsByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
+        em.createNamedQuery("deleteVerifiableCredentialsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("deleteUserRoleMappingsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
@@ -669,11 +685,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         em.createNamedQuery("deleteUserConsentClientScopesByClientScope")
                 .setParameter("scopeId", clientScope.getId())
                 .executeUpdate();
-        em.createNamedQuery("deleteVerifiableCredentialsByClientScope")
-                .setParameter("scopeName", clientScope.getName())
-                .executeUpdate();
         em.createNamedQuery("deleteIssuedVcsByClientScope")
-                .setParameter("scopeName", clientScope.getName())
+                .setParameter("scopeId", clientScope.getId())
+                .executeUpdate();
+        em.createNamedQuery("deleteVerifiableCredentialsByClientScope")
+                .setParameter("scopeId", clientScope.getId())
                 .executeUpdate();
     }
 
@@ -1139,11 +1155,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         if (model.getRevision() != null) {
             revision = model.getRevision();
         } else {
-            UserVerifiableCredentialEntity userVerifiableCredentialEntity = getVerifiableCredentialsEntitiesByUser(model.getUserId())
-                    .filter(vc -> model.getCredentialType().equals(vc.getCredentialScopeName()))
-                    .findFirst()
-                    .orElseThrow(() -> new ModelException(
-                            "Verifiable credential not found: " + model.getCredentialType()));
+            UserVerifiableCredentialEntity userVerifiableCredentialEntity = em.find(UserVerifiableCredentialEntity.class, model.getVerifiableCredentialId());
+            if (userVerifiableCredentialEntity == null) {
+                throw new ModelException("Verifiable credential not found: " + model.getVerifiableCredentialId());
+            }
             revision = userVerifiableCredentialEntity.getRevision();
         }
 
@@ -1151,7 +1166,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         issuedVerifiableCredentialEntity.setId(SecretGenerator.getInstance().generateSecureID());
         issuedVerifiableCredentialEntity.setUser(em.getReference(UserEntity.class, model.getUserId()));
-        issuedVerifiableCredentialEntity.setCredentialType(model.getCredentialType());
+        issuedVerifiableCredentialEntity.setVerifiableCredentialId(model.getVerifiableCredentialId());
         issuedVerifiableCredentialEntity.setClientId(model.getClientId());
         issuedVerifiableCredentialEntity.setRevision(revision);
 
@@ -1365,11 +1380,19 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                 .where(predicates);
     }
 
+    @Override
+    public void removeExpiredIssuedVerifiableCredentials() {
+        long currentTimeMillis = Time.currentTimeMillis();
+        em.createNamedQuery("deleteExpiredIssuedVcs")
+            .setParameter("currentTime", currentTimeMillis)
+            .executeUpdate();
+    }
+
     private IssuedVerifiableCredentialModel toIssuedVcModel(IssuedVerifiableCredentialEntity entity) {
         IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel();
         model.setId(entity.getId());
         model.setUserId(entity.getUser().getId());
-        model.setCredentialType(entity.getCredentialType());
+        model.setVerifiableCredentialId(entity.getVerifiableCredentialId());
         model.setRevision(entity.getRevision());
         model.setIssuedAt(entity.getIssuedAt());
         model.setExpiresAt(entity.getExpiresAt());

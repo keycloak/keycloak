@@ -437,13 +437,15 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     private Stream<UserSessionModel> readOnlyStream(RealmModel realm, boolean offline) {
         var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTime());
         return session.getProvider(UserSessionPersisterProvider.class).readOnlyUserSessionStream(realm, offline)
-                .filter(Predicate.not(expiration::isUserSessionExpired));
+                .filter(Predicate.not(expiration::isUserSessionExpired))
+                .filter(s -> s.getUser() != null);
     }
 
     private Stream<UserSessionModel> readOnlyStream(RealmModel realm, ClientModel client, boolean offline, int skip, int maxResults) {
         var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTime());
         return session.getProvider(UserSessionPersisterProvider.class).readOnlyUserSessionStream(realm, client, offline, skip, maxResults)
-                .filter(Predicate.not(expiration::isUserSessionExpired));
+                .filter(Predicate.not(expiration::isUserSessionExpired))
+                .filter(s -> s.getUser() != null);
     }
 
     protected void onRemoveUserSessionsEvent(String realmId) {

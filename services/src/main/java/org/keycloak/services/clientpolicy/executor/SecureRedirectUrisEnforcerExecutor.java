@@ -38,11 +38,7 @@ import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationReprese
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
-import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
-import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
-import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory.UriType;
 
@@ -182,14 +178,8 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
         switch (context.getEvent()) {
             case REGISTER:
-                if (context instanceof AdminClientRegisterContext || context instanceof DynamicClientRegisterContext) {
-                    verifyRedirectUris((ClientCRUDContext) context);
-                } else {
-                    throw invalidRedirectUri(ERR_GENERAL);
-                }
-                return;
             case UPDATE:
-                if (context instanceof AdminClientUpdateContext || context instanceof DynamicClientUpdateContext) {
+                if (context instanceof ClientCRUDContext) {
                     verifyRedirectUris((ClientCRUDContext) context);
                 } else {
                     throw invalidRedirectUri(ERR_GENERAL);
