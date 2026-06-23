@@ -24,7 +24,7 @@ import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 
-public class AdminUserFilterRealmConfig extends ScimRealmConfig {
+public class AdminUserProtectionRealmConfig extends ScimRealmConfig {
 
     public static final String ADMIN_MANAGE_USERS = "admin-manage-users";
     public static final String ADMIN_MANAGE_CLIENTS = "admin-manage-clients";

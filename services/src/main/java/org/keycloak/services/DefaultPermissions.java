@@ -1,16 +1,24 @@
 package org.keycloak.services;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.keycloak.Token;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
 import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
@@ -23,6 +31,13 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.REALMS_RESO
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 
 public class DefaultPermissions implements Permissions {
+
+    private static final Set<String> ADMIN_CLIENT_ROLE_NAMES;
+    static {
+        ADMIN_CLIENT_ROLE_NAMES = new HashSet<>(Arrays.asList(AdminRoles.ALL_REALM_ROLES));
+        ADMIN_CLIENT_ROLE_NAMES.add(AdminRoles.IMPERSONATION);
+        ADMIN_CLIENT_ROLE_NAMES.add(AdminRoles.REALM_ADMIN);
+    }
 
     private final KeycloakSession session;
     private final KeycloakContext context;
@@ -105,6 +120,27 @@ public class DefaultPermissions implements Permissions {
         }
 
         return false;
+    }
+
+    @Override
+    public boolean isAdminGroup(GroupModel group) {
+        RealmModel realm = context.getRealm();
+
+        if (RealmManager.isAdministrationRealm(realm)) {
+            RoleModel masterAdminRole = realm.getRole(AdminRoles.ADMIN);
+            if (masterAdminRole != null && group.hasRole(masterAdminRole)) {
+                return true;
+            }
+        }
+
+        ClientModel realmManagement = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+        if (realmManagement == null) {
+            return false;
+        }
+
+        return realmManagement.getRolesStream()
+                .filter(role -> ADMIN_CLIENT_ROLE_NAMES.contains(role.getName()))
+                .anyMatch(group::hasRole);
     }
 
     @Override

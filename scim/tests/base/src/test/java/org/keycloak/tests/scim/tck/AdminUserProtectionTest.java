@@ -37,18 +37,18 @@ import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
 
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.tests.scim.tck.AdminUserFilterRealmConfig.ADMIN_IMPERSONATION;
-import static org.keycloak.tests.scim.tck.AdminUserFilterRealmConfig.ADMIN_MANAGE_CLIENTS;
-import static org.keycloak.tests.scim.tck.AdminUserFilterRealmConfig.ADMIN_MANAGE_CLIENTS_REVOKABLE;
-import static org.keycloak.tests.scim.tck.AdminUserFilterRealmConfig.ADMIN_MANAGE_IDENTITY_PROVIDERS;
-import static org.keycloak.tests.scim.tck.AdminUserFilterRealmConfig.ADMIN_MANAGE_REALM;
-import static org.keycloak.tests.scim.tck.AdminUserFilterRealmConfig.ADMIN_MANAGE_USERS;
-import static org.keycloak.tests.scim.tck.AdminUserFilterRealmConfig.ADMIN_QUERY_USERS;
-import static org.keycloak.tests.scim.tck.AdminUserFilterRealmConfig.ADMIN_VIA_COMPOSITE;
-import static org.keycloak.tests.scim.tck.AdminUserFilterRealmConfig.ADMIN_VIA_GROUP;
-import static org.keycloak.tests.scim.tck.AdminUserFilterRealmConfig.ADMIN_VIA_NESTED_GROUP;
-import static org.keycloak.tests.scim.tck.AdminUserFilterRealmConfig.ADMIN_VIEW_CLIENTS;
-import static org.keycloak.tests.scim.tck.AdminUserFilterRealmConfig.REGULAR_USER;
+import static org.keycloak.tests.scim.tck.AdminUserProtectionRealmConfig.ADMIN_IMPERSONATION;
+import static org.keycloak.tests.scim.tck.AdminUserProtectionRealmConfig.ADMIN_MANAGE_CLIENTS;
+import static org.keycloak.tests.scim.tck.AdminUserProtectionRealmConfig.ADMIN_MANAGE_CLIENTS_REVOKABLE;
+import static org.keycloak.tests.scim.tck.AdminUserProtectionRealmConfig.ADMIN_MANAGE_IDENTITY_PROVIDERS;
+import static org.keycloak.tests.scim.tck.AdminUserProtectionRealmConfig.ADMIN_MANAGE_REALM;
+import static org.keycloak.tests.scim.tck.AdminUserProtectionRealmConfig.ADMIN_MANAGE_USERS;
+import static org.keycloak.tests.scim.tck.AdminUserProtectionRealmConfig.ADMIN_QUERY_USERS;
+import static org.keycloak.tests.scim.tck.AdminUserProtectionRealmConfig.ADMIN_VIA_COMPOSITE;
+import static org.keycloak.tests.scim.tck.AdminUserProtectionRealmConfig.ADMIN_VIA_GROUP;
+import static org.keycloak.tests.scim.tck.AdminUserProtectionRealmConfig.ADMIN_VIA_NESTED_GROUP;
+import static org.keycloak.tests.scim.tck.AdminUserProtectionRealmConfig.ADMIN_VIEW_CLIENTS;
+import static org.keycloak.tests.scim.tck.AdminUserProtectionRealmConfig.REGULAR_USER;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -58,9 +58,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest(config = ScimServerConfig.class)
-public class AdminUserFilterTest {
+public class AdminUserProtectionTest {
 
-    @InjectRealm(config = AdminUserFilterRealmConfig.class)
+    @InjectRealm(config = AdminUserProtectionRealmConfig.class)
     ManagedRealm realm;
 
     @InjectScimClient

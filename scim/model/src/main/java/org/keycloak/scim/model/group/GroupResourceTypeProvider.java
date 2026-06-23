@@ -39,6 +39,8 @@ import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
+import org.keycloak.scim.protocol.ForbiddenException;
+import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.group.Member;
@@ -66,11 +68,39 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     }
 
     @Override
+    public Group get(String id, List<String> attributes, List<String> excludedAttributes) {
+        GroupModel model = getModel(id);
+
+        if (model == null) {
+            return null;
+        }
+
+        if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.VIEW)) {
+            throw new ForbiddenException();
+        }
+
+        if (session.getContext().getPermissions().isAdminGroup(model)) {
+            Group resource = new Group();
+            resource.setId(model.getId());
+            resource.setDisplayName(model.getName());
+            return resource;
+        }
+
+        return super.get(id, attributes, excludedAttributes);
+    }
+
+    @Override
     public Group update(Group resource) {
         List<Member> members = resource.getMembers();
 
         if (!Optional.ofNullable(members).orElse(List.of()).isEmpty()) {
             throw new ModelValidationException("Managing members on updates is not supported");
+        }
+
+        GroupModel model = getModel(resource.getId());
+
+        if (model != null && session.getContext().getPermissions().isAdminGroup(model)) {
+            throw new ForbiddenException();
         }
 
         return super.update(resource);
@@ -143,6 +173,28 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         } else {
             return session.groups().getGroupsCount(realm, true);
         }
+    }
+
+    @Override
+    public boolean delete(String id) {
+        GroupModel model = getModel(id);
+
+        if (model != null && session.getContext().getPermissions().isAdminGroup(model)) {
+            throw new ForbiddenException();
+        }
+
+        return super.delete(id);
+    }
+
+    @Override
+    public void patch(Group existing, List<PatchOperation> operations) {
+        GroupModel model = getModel(existing.getId());
+
+        if (model != null && session.getContext().getPermissions().isAdminGroup(model)) {
+            throw new ForbiddenException();
+        }
+
+        super.patch(existing, operations);
     }
 
     @Override

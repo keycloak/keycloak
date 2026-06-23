@@ -30,4 +30,12 @@ public interface Permissions {
      * @return {@code true} if the user has any admin role, {@code false} otherwise
      */
     boolean isAdminUser(UserModel user);
+
+    /**
+     * Returns {@code true} if the given group has any admin role assigned, either directly, via parent groups, or via composite roles.
+     *
+     * @param group the group to check
+     * @return {@code true} if the group has any admin role, {@code false} otherwise
+     */
+    boolean isAdminGroup(GroupModel group);
 }
