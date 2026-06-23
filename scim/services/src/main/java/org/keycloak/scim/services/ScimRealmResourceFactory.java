@@ -8,6 +8,7 @@ import org.keycloak.Config.Scope;
 import org.keycloak.Token;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -51,6 +52,16 @@ public class ScimRealmResourceFactory implements RealmResourceProviderFactory, E
                         throw new ErrorResponseException(Response.status(Status.UNAUTHORIZED)
                                 .type(MediaType.APPLICATION_JSON)
                                 .entity(new ErrorResponse("Bearer token required", Status.UNAUTHORIZED.getStatusCode()))
+                                .build());
+                    }
+
+                    ClientModel client = authResult.client();
+
+                    if (client.isPublicClient()) {
+                        logger.debug("SCIM request rejected: public clients not allowed");
+                        throw new ErrorResponseException(Response.status(Status.FORBIDDEN)
+                                .type(MediaType.APPLICATION_JSON)
+                                .entity(new ErrorResponse("Public client not allowed", Status.FORBIDDEN.getStatusCode()))
                                 .build());
                     }
 

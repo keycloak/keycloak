@@ -28,6 +28,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.reflections.Types;
@@ -937,7 +938,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (StorageId.isLocalStorage(userId)) {
             return localStorage().addVerifiableCredential(userId, credentialModel);
         } else {
-            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+            return getFederatedStorage().addVerifiableCredential(userId, credentialModel);
         }
     }
 
@@ -946,7 +947,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (StorageId.isLocalStorage(userId)) {
             return localStorage().updateVerifiableCredential(userId, clientScopeId);
         } else {
-            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+            return getFederatedStorage().updateVerifiableCredential(userId, clientScopeId);
         }
     }
 
@@ -955,7 +956,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (StorageId.isLocalStorage(userId)) {
             return localStorage().removeVerifiableCredential(userId, clientScopeId);
         } else {
-            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+            return getFederatedStorage().removeVerifiableCredential(userId, clientScopeId);
         }
     }
 
@@ -964,13 +965,17 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (StorageId.isLocalStorage(userId)) {
             return localStorage().getVerifiableCredentialsByUser(userId);
         } else {
-            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+            return getFederatedStorage().getVerifiableCredentialsByUser(userId);
         }
     }
 
     @Override
     public UserVerifiableCredentialModel getVerifiableCredentialById(String id) {
-        return localStorage().getVerifiableCredentialById(id);
+        UserVerifiableCredentialModel credentialModel = localStorage().getVerifiableCredentialById(id);
+        if (credentialModel == null) {
+            return getFederatedStorage().getVerifiableCredentialById(id);
+        }
+        return credentialModel;
     }
 
     @Override
@@ -978,7 +983,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (StorageId.isLocalStorage(userId)) {
             return localStorage().getVerifiableCredentialByClientScope(userId, clientScopeId);
         } else {
-            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+            return getFederatedStorage().getVerifiableCredentialByClientScope(userId, clientScopeId);
         }
     }
 
@@ -1225,10 +1230,12 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             return false;
         }
 
-        // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
-        return organizationProvider.getByMember(delegate)
-                .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
-                        (!organizationProvider.isEnabled() && org.isManaged(delegate)));
+        // disable FGAP filtering for this system-level check to avoid infinite recursion:
+        // getByMember -> applyAuthorizationFilters -> getPredicates -> getUser -> getUserById -> validateUser -> isReadOnlyOrganizationMember -> ...
+        return AdminPermissionsSchema.runWithoutAuthorization(session, () ->
+                organizationProvider.getByMember(delegate)
+                        .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
+                                (!organizationProvider.isEnabled() && org.isManaged(delegate))));
     }
 
     private void publishUserPreRemovedEvent(RealmModel realm, UserModel user) {

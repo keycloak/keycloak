@@ -72,6 +72,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.util.EntityUtils;
 
 import static org.keycloak.representations.admin.v2.validators.ClientSecretNotBlankValidator.isClientSecret;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
@@ -135,14 +136,28 @@ public class DefaultClientService implements ClientService {
         // When FGAP is enabled, authorization filtering is applied at the JPA layer (via PartialEvaluator predicates), so we trust the DB results.
         // When disabled, we fall back to in-memory filtering by VIEW_CLIENTS role.
         boolean canView = AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || permissions.clients().canView();
+        boolean hasQuery = searchOptions != null && searchOptions.query() != null && !searchOptions.query().isBlank();
+        boolean useJpaPagination = canView && !hasQuery;
+        int offset = sortAndSliceOptions.offset();
+        int limit = sortAndSliceOptions.limit();
+
         try {
-            Stream<BaseClientRepresentation> stream = realm.getClientsStream()
+            Stream<ClientModel> clientModels = useJpaPagination
+                    ? realm.getClientsStream(offset, limit)
+                    : realm.getClientsStream();
+
+            Stream<BaseClientRepresentation> stream = clientModels
                     .filter(client -> canView || permissions.clients().canView(client))
                     .filter(client -> client.getProtocol() != null)
                     .map(client -> getMapper(client.getProtocol()).fromModel(client))
-                    .filter(java.util.Objects::nonNull);
+                    .filter(Objects::nonNull);
 
             stream = applySearchFilter(stream, searchOptions);
+
+            if (!useJpaPagination) {
+                stream = paginatedStream(stream, offset, limit);
+            }
+
             return applyProjection(stream, projectionOptions);
         } catch (ModelException e) {
             throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);

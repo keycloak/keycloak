@@ -27,7 +27,7 @@ import org.keycloak.services.client.query.ClientQueryException;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 public class DefaultClientsApi implements ClientsApi {
-    
+
     private final KeycloakSession session;
     private final AdminPermissionEvaluator permissions;
     private final RealmModel realm;
@@ -41,14 +41,16 @@ public class DefaultClientsApi implements ClientsApi {
         this.permissions = permissions;
         this.clientService = new DefaultClientService(session, realm, permissions);
     }
-    
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Override
     public Stream<BaseClientRepresentation> getClients(ListOptions params) {
         try {
             var searchOptions = params.getQuery() != null ? new ClientService.ClientSearchOptions(params.getQuery()) : null;
-            return clientService.getClients(realm, new ClientProjectionOptions(params.getFields()), searchOptions, null);
+            var sortAndSliceOptions = ClientService.normalizePagination(params.getOffset(), params.getLimit());
+            return clientService.getClients(realm, new ClientProjectionOptions(params.getFields()), searchOptions,
+                    sortAndSliceOptions);
         } catch (ClientQueryException e) {
             throw new BadRequestException(e.getMessage());
         }
@@ -63,8 +65,10 @@ public class DefaultClientsApi implements ClientsApi {
     }
 
     /**
-     * When the path {@code clientId} does not resolve, return 403 if the caller cannot list clients
-     * (anti client-ID phishing), matching {@code ClientsResource#getClient} for Admin API v1.
+     * When the path {@code clientId} does not resolve, return 403 if the caller
+     * cannot list clients
+     * (anti client-ID phishing), matching {@code ClientsResource#getClient} for
+     * Admin API v1.
      */
     private void enforceAntiPhishingIfClientMissing(String clientId) {
         if (realm.getClientByClientId(clientId) == null && !permissions.clients().canList()) {

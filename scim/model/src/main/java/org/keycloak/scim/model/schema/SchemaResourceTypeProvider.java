@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
 import org.keycloak.models.ModelException;
@@ -203,7 +202,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
 
     @Override
     public Schema get(String id) {
-        if (!session.getContext().getPermissions().hasPermission(AdminPermissionsSchema.REALMS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW)) {
+        if (!hasDiscoveryEndpointPermission(session)) {
             throw new ForbiddenException();
         }
         return schemas.get(id);

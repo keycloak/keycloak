@@ -71,6 +71,42 @@
         <addUniqueConstraint columnNames="USER_ID, CLIENT_SCOPE_ID" constraintName="UK_KKUWUVD67ONTGSUGOGM8UEWRE" tableName="USER_VER_CREDENTIAL"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.7.0-federated-verifiable-credentials-1">
+        <createTable tableName="FED_USER_VER_CREDENTIAL">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="PK_FED_USER_VER_CREDENTIAL"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STORAGE_PROVIDER_ID" type="VARCHAR(36)"/>
+            <column name="CLIENT_SCOPE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REVISION" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ATTRIBUTES" type="TEXT"/>
+            <column name="CREATED_DATE" type="BIGINT"/>
+            <column name="UPDATED_DATE" type="BIGINT"/>
+            <column name="VERSION" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint tableName="FED_USER_VER_CREDENTIAL"
+                             columnNames="USER_ID, CLIENT_SCOPE_ID"
+                             constraintName="UK_FED_USER_VC"/>
+
+        <createIndex tableName="FED_USER_VER_CREDENTIAL" indexName="IDX_FED_USER_VC_REALM_USER">
+            <column name="REALM_ID"/>
+            <column name="USER_ID"/>
+        </createIndex>
+    </changeSet>
+
     <changeSet author="keycloak" id="26.7.0-outbox">
 
     <!--
