@@ -1,6 +1,7 @@
 package org.keycloak.tests.oauth;
 
 import org.keycloak.common.Profile;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -39,6 +40,9 @@ public class ResourceIndicatorsTest {
 
     @InjectOAuthClient(ref = "bare", config = BareClientConfig.class)
     OAuthClient bareOauth;
+
+    @InjectOAuthClient(ref = "no-refresh-tokens", config = NoRefreshTokensClientConfig.class)
+    OAuthClient noRefreshTokensOauth;
 
     @TestSetup
     public void loginUser() {
@@ -152,6 +156,14 @@ public class ResourceIndicatorsTest {
         assertValidResponse(tokenResponse, "test-app");
     }
 
+    @Test
+    public void testPasswordGrantWithoutRefreshTokenSetsAudience() {
+        AccessTokenResponse tokenResponse = noRefreshTokensOauth.passwordGrantRequest("user", "pass")
+                .resource("urn:client:theservice").send();
+        assertValidResponse(tokenResponse, "theservice");
+        Assertions.assertNull(tokenResponse.getRefreshToken());
+    }
+
     private static final class ResourceIndicatorsRealm implements RealmConfig {
 
         @Override
@@ -190,6 +202,17 @@ public class ResourceIndicatorsTest {
         @Override
         public ClientBuilder configure(ClientBuilder client) {
             return super.configure(client).fullScopeEnabled(true);
+        }
+    }
+
+    private static final class NoRefreshTokensClientConfig extends DefaultOAuthClientConfiguration {
+
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return super.configure(client)
+                    .clientId("no-refresh-tokens")
+                    .fullScopeEnabled(true)
+                    .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN, Boolean.FALSE.toString());
         }
     }
 
