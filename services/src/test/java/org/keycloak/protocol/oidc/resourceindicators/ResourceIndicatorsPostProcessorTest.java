@@ -25,8 +25,8 @@ public class ResourceIndicatorsPostProcessorTest {
     @Test
     public void matchingResourceWithNullRefreshTokenSetsAudience() {
         AccessToken accessToken = new AccessToken();
-        accessToken.audience("my-service");
-        ClientSessionContext clientSessionCtx = stubClientSessionContext("urn:client:my-service", "implicit");
+        accessToken.audience("other-service", "my-service");
+        ClientSessionContext clientSessionCtx = stubClientSessionContext("urn:client:my-service", OAuth2Constants.CLIENT_CREDENTIALS);
         TokenPostProcessorContext context = new TokenPostProcessorContext(
                 null, null, null, accessToken, clientSessionCtx);
 
@@ -37,7 +37,7 @@ public class ResourceIndicatorsPostProcessorTest {
 
     private void runWithNullAudience(String resource) {
         AccessToken accessToken = new AccessToken();
-        ClientSessionContext clientSessionCtx = stubClientSessionContext(resource, "implicit");
+        ClientSessionContext clientSessionCtx = stubClientSessionContext(resource, OAuth2Constants.CLIENT_CREDENTIALS);
         TokenPostProcessorContext context = new TokenPostProcessorContext(
                 null, null, null, accessToken, clientSessionCtx);
         new ResourceIndicatorsPostProcessor(null).process(context);
