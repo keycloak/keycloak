@@ -22,4 +22,12 @@ public interface Permissions {
      * @return {@code true} if the current user has permissions to perform an action on a realm resource type with the given scope, {@code false} otherwise
      */
     boolean hasPermission(Model model, String resourceType, String scope);
+
+    /**
+     * Returns {@code true} if the given user has any admin role assigned, either directly, via group membership, or via composite roles.
+     *
+     * @param user the user to check
+     * @return {@code true} if the user has any admin role, {@code false} otherwise
+     */
+    boolean isAdminUser(UserModel user);
 }

@@ -126,9 +126,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             throw new ForbiddenException();
         }
 
-        RealmModel realm = session.getContext().getRealm();
-
-        if (AdminUserUtils.isAdminUser(session, realm, model)) {
+        if (session.getContext().getPermissions().isAdminUser(model)) {
             User resource = new User();
             resource.setId(model.getId());
             resource.setUserName(model.getUsername());
@@ -141,9 +139,8 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     public User update(User resource) {
         UserModel model = getModel(resource.getId());
-        RealmModel realm = session.getContext().getRealm();
 
-        if (model != null && AdminUserUtils.isAdminUser(session, realm, model)) {
+        if (model != null && session.getContext().getPermissions().isAdminUser(model)) {
             throw new ForbiddenException();
         }
 
@@ -153,9 +150,8 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     public boolean delete(String id) {
         UserModel model = getModel(id);
-        RealmModel realm = session.getContext().getRealm();
 
-        if (model != null && AdminUserUtils.isAdminUser(session, realm, model)) {
+        if (model != null && session.getContext().getPermissions().isAdminUser(model)) {
             throw new ForbiddenException();
         }
 
@@ -165,9 +161,8 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     public void patch(User existing, List<PatchOperation> operations) {
         UserModel model = getModel(existing.getId());
-        RealmModel realm = session.getContext().getRealm();
 
-        if (model != null && AdminUserUtils.isAdminUser(session, realm, model)) {
+        if (model != null && session.getContext().getPermissions().isAdminUser(model)) {
             throw new ForbiddenException();
         }
 
