@@ -77,9 +77,9 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     /**
      * Listing the groups of a user is called frequently within a login session if users are not cached.
-     * Cache if then it is first retrieved during a session and discard it when a group membership changes.
+     * Cache when it is first retrieved during a session and discard it when a group membership changes.
      */
-    private List<String> allGroups = null;
+    private List<String> groupIdsCache = null;
 
     public UserAdapter(KeycloakSession session, RealmModel realm, EntityManager em, UserEntity user) {
         this.em = em;
@@ -424,14 +424,10 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public Stream<GroupModel> getGroupsStream(String search, Integer first, Integer max) {
-        if (first == null && max == null) {
-            if (allGroups == null) {
-                allGroups = createGetGroupsQuery().getResultList();
-            }
-            return session.groups().getGroupsStream(realm, allGroups.stream(), search, first, max);
-        } else {
-            return session.groups().getGroupsStream(realm, closing(createGetGroupsQuery().getResultStream()), search, first, max);
+        if (groupIdsCache == null) {
+            groupIdsCache = createGetGroupsQuery().getResultList();
         }
+        return session.groups().getGroupsStream(realm, groupIdsCache.stream(), search, first, max);
     }
 
     @Override
@@ -456,7 +452,6 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     @Override
     public void joinGroup(GroupModel group) {
         joinGroup(group, null);
-        allGroups = null;
     }
 
     private boolean hasDirectGroup(GroupModel group) {
@@ -491,6 +486,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
             em.flush();
             em.detach(entity);
         }
+        groupIdsCache = null;
         GroupMemberJoinEvent.fire(group, this, session);
     }
 
@@ -506,8 +502,8 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
             em.remove(entity);
         }
         em.flush();
-        if (allGroups != null) {
-            allGroups.remove(group.getId());
+        if (groupIdsCache != null) {
+            groupIdsCache.remove(group.getId());
         }
         GroupMemberLeaveEvent.fire(group, this, session);
     }
