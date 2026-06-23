@@ -104,7 +104,13 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     protected UserModel getModel(String id) {
         RealmModel realm = session.getContext().getRealm();
-        return session.users().getUserById(realm, id);
+        UserModel model = session.users().getUserById(realm, id);
+
+        if (model == null || model.getServiceAccountClientLink() == null) {
+            return model;
+        }
+
+        return null;
     }
 
     @Override
