@@ -24,9 +24,10 @@ Admin Console or the Admin REST API, never through SCIM.
 
 == Protected admin users
 
-A user is considered an administrative user if they hold any role from the `realm-management` client. This
-includes roles assigned directly to the user, inherited through group membership, or obtained through composite
-roles.
+A user is considered an administrative user if they hold any administrative role. This includes roles from the
+`realm-management` client, roles from the master realm administration clients (such as `<realm-name>-realm`),
+and administrative realm roles on the master realm (such as `admin` or `create-realm`). Roles may be assigned
+directly to the user, inherited through group membership, or obtained through composite roles.
 
 The following restrictions apply to administrative users accessed through the SCIM API:
 
