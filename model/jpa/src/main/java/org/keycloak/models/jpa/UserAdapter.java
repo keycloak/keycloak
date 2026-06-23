@@ -75,6 +75,12 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     protected RealmModel realm;
     private final KeycloakSession session;
 
+    /**
+     * Listing the groups of a user is called frequently within a login session if users are not cached.
+     * Cache if then it is first retrieved during a session and discard it when a group membership changes.
+     */
+    private List<String> allGroups = null;
+
     public UserAdapter(KeycloakSession session, RealmModel realm, EntityManager em, UserEntity user) {
         this.em = em;
         this.user = user;
@@ -418,7 +424,14 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public Stream<GroupModel> getGroupsStream(String search, Integer first, Integer max) {
-        return session.groups().getGroupsStream(realm, closing(createGetGroupsQuery().getResultStream()), search, first, max);
+        if (first == null && max == null) {
+            if (allGroups == null) {
+                allGroups = createGetGroupsQuery().getResultList();
+            }
+            return session.groups().getGroupsStream(realm, allGroups.stream(), search, first, max);
+        } else {
+            return session.groups().getGroupsStream(realm, closing(createGetGroupsQuery().getResultStream()), search, first, max);
+        }
     }
 
     @Override
@@ -443,6 +456,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     @Override
     public void joinGroup(GroupModel group) {
         joinGroup(group, null);
+        allGroups = null;
     }
 
     private boolean hasDirectGroup(GroupModel group) {
@@ -492,6 +506,9 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
             em.remove(entity);
         }
         em.flush();
+        if (allGroups != null) {
+            allGroups.remove(group.getId());
+        }
         GroupMemberLeaveEvent.fire(group, this, session);
     }
 
