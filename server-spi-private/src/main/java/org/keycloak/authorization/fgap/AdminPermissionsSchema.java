@@ -23,6 +23,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -583,6 +584,29 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         try {
             session.setAttribute(SKIP_EVALUATION, Boolean.TRUE.toString());
             runnable.run();
+        } finally {
+            session.removeAttribute(SKIP_EVALUATION);
+        }
+    }
+
+    /**
+     * <p>Disables authorization and evaluation of permissions for realm resource types when executing the given {@code supplier}
+     * in the context of the given {@code session}, returning the supplier's result.
+     *
+     * @param session the session. If {@code null}, the supplier is executed directly without modifying authorization state
+     * @param supplier the supplier to execute
+     * @param <T> the return type
+     * @return the result of the supplier
+     * @see AdminPermissionsSchema#runWithoutAuthorization(KeycloakSession, Runnable)
+     */
+    public static <T> T runWithoutAuthorization(KeycloakSession session, Supplier<T> supplier) {
+        if (isSkipEvaluation(session)) {
+            return supplier.get();
+        }
+
+        try {
+            session.setAttribute(SKIP_EVALUATION, Boolean.TRUE.toString());
+            return supplier.get();
         } finally {
             session.removeAttribute(SKIP_EVALUATION);
         }
