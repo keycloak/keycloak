@@ -227,13 +227,14 @@ public class KeycloakRecorder {
      * from the build step so the registry is populated before any
      * {@link org.keycloak.provider.DefaultProviderLoader#load(org.keycloak.provider.Spi)} runs.
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void installProviderRegistry(Set<String> classNames) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        Set<Class<? extends ProviderFactory>> classes = new LinkedHashSet<>(classNames.size());
+        Set<Class<? extends ProviderFactory<?>>> classes = new LinkedHashSet<>(classNames.size());
         for (String className : classNames) {
             try {
-                Class<?> clazz = Class.forName(className, false, classLoader);
-                classes.add(clazz.asSubclass(ProviderFactory.class));
+                Class<? extends ProviderFactory> raw = Class.forName(className, false, classLoader).asSubclass(ProviderFactory.class);
+                classes.add((Class<? extends ProviderFactory<?>>) raw);
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException("@KeycloakProvider class " + className
                         + " is not on the runtime classpath", e);
