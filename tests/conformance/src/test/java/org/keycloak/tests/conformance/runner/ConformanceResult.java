@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,9 +15,16 @@
  * limitations under the License.
  */
 
-package org.keycloak.cluster;
+package org.keycloak.tests.conformance.runner;
 
-import org.keycloak.provider.ProviderFactory;
-
-public interface ClusterEventStoreProviderFactory extends ProviderFactory<ClusterEventStoreProvider> {
+/**
+ * Terminal results a module can finish with. Modules that capture an error page snapshot finish with REVIEW.
+ */
+public enum ConformanceResult {
+    PASSED,
+    WARNING,
+    FAILED,
+    REVIEW,
+    SKIPPED,
+    UNKNOWN
 }

@@ -143,20 +143,24 @@ public class LinkedAccountsResource {
                     .sorted(), firstResult, maxResults)
                     .toList();
         } else {
-            // we want all enabled, realm-level identity providers available (i.e. not already linked) for the user to link their accounts to.
-            String fedAliasesToExclude = session.users().getFederatedIdentitiesStream(realm, user).map(FederatedIdentityModel::getIdentityProvider)
-                    .collect(Collectors.joining(","));
+            if (Organizations.resolveHomeBroker(session, user).isEmpty()) {
+                // we want all enabled, realm-level identity providers available (i.e. not already linked) for the user to link their accounts to.
+                String fedAliasesToExclude = session.users().getFederatedIdentitiesStream(realm, user).map(FederatedIdentityModel::getIdentityProvider)
+                        .collect(Collectors.joining(","));
 
-            Map<String, String> searchOptions = Map.of(
-                    IdentityProviderModel.ENABLED, "true",
-                    IdentityProviderModel.ORGANIZATION_ID, "",
-                    IdentityProviderModel.SEARCH, search == null ? "" : search,
-                    IdentityProviderModel.ALIAS_NOT_IN, fedAliasesToExclude,
-					IdentityProviderModel.SHOW_IN_ACCOUNT_CONSOLE, IdentityProviderShowInAccountConsole.ALWAYS.name());
+                Map<String, String> searchOptions = Map.of(
+                        IdentityProviderModel.ENABLED, "true",
+                        IdentityProviderModel.ORGANIZATION_ID, "",
+                        IdentityProviderModel.SEARCH, search == null ? "" : search,
+                        IdentityProviderModel.ALIAS_NOT_IN, fedAliasesToExclude,
+                        IdentityProviderModel.SHOW_IN_ACCOUNT_CONSOLE, IdentityProviderShowInAccountConsole.ALWAYS.name());
 
-            linkedAccounts = session.identityProviders().getAllStream(IdentityProviderQuery.userAuthentication().with(searchOptions), firstResult, maxResults)
-                    .map(idp -> this.toLinkedAccount(idp, null, null))
-                    .toList();
+                linkedAccounts = session.identityProviders().getAllStream(IdentityProviderQuery.userAuthentication().with(searchOptions), firstResult, maxResults)
+                        .map(idp -> this.toLinkedAccount(idp, null, null))
+                        .toList();
+            } else {
+                linkedAccounts = List.of();
+            }
         }
         return Cors.builder().auth().checkAllowedOrigins(auth.getToken()).add(Response.ok(linkedAccounts));
     }
@@ -266,6 +270,9 @@ public class LinkedAccountsResource {
         String errorMessage = checkCommonPreconditions(providerAlias);
         if (errorMessage != null) {
             throw ErrorResponse.error(errorMessage, Response.Status.BAD_REQUEST);
+        }
+        if (!Organizations.resolveHomeBroker(session, user).isEmpty()) {
+            throw ErrorResponse.error(translateErrorMessage(Messages.FEDERATED_IDENTITY_BOUND_ORGANIZATION), Response.Status.BAD_REQUEST);
         }
         if (auth.getSession() == null) {
             throw ErrorResponse.error(Messages.SESSION_NOT_ACTIVE, Response.Status.BAD_REQUEST);

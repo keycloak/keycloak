@@ -409,6 +409,16 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         return clusterHealth.isSupported();
     }
 
+    @Override
+    public boolean isCoordinator() {
+        return cacheManager.isCoordinator();
+    }
+
+    @Override
+    public boolean isCoordinatorSupported() {
+        return true;
+    }
+
     private void addEmbeddedOperationalInfo(Map<String, String> info) {
         var cacheManagerInfo = cacheManager.getCacheManagerInfo();
         info.put("clusterSize", Integer.toString(cacheManagerInfo.getClusterSize()));
