@@ -185,7 +185,6 @@ When the Operator watches all namespaces:
 
 * `spec.podTemplate.spec.serviceAccountName` cannot be used on a `Keycloak` custom resource. The Operator ignores this field and reports a warning.
 * The Operator does not support reconciling multiple {project_name} versions in one cluster. A single Operator version supports a single matching {project_name} version.
-* You need cluster-admin permissions, or equivalent permissions, to configure cluster-scoped RBAC for non-OLM installations.
 
 ==== Installing with OLM
 
