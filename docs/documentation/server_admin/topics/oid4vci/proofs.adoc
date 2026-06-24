@@ -1,11 +1,11 @@
 [[_oid4vci_proofs]]
 === Proof Types and Key Binding in OID4VCI
 
-This section documents the proof types supported by OpenID for Verifiable Credential Issuance (OID4VCI), how to configure trusted attestation keys, and how key binding works in the resulting credentials.
+This section documents the proof types supported by OpenID for Verifiable Credential Issuance (OID4VCI), how to configure trusted attester keys, and how key binding works in the resulting credentials.
 
-==== Proof Types Overview
+==== Supported Proof Types
 
-OID4VCI supports different proof types for holder binding:
+{project_name} currently supports the following proof types for holder binding:
 
 [cols="1,1,2", options="header"]
 |===
@@ -17,10 +17,6 @@ OID4VCI supports different proof types for holder binding:
 | `jwt`
 | A signed JWT containing holder binding information. The key used to sign the JWT becomes the holder binding key in the credential.
 
-| Data Integrity Proof
-| `di_vp`
-| Linked Data proof for Data Integrity verification.
-
 | Attestation Proof
 | `attestation`
 | Proof containing key attestations from a trusted attestation authority.
@@ -28,11 +24,24 @@ OID4VCI supports different proof types for holder binding:
 
 When a credential requires cryptographic holder binding, the client must provide a proof of an appropriate type. The issuer validates the proof and extracts the binding key, which is then included in the issued credential.
 
-==== Configuring Trusted Attestation Keys
+==== Configuring Trusted Attester Keys
 
-Keycloak supports JWT proofs that can optionally include key attestations. To validate attested keys, configure trusted keys via trust-material identity providers at the client level.
+{project_name} supports JWT proofs that can optionally include key attestations, and the `attestation` proof type. To validate these attestations, configure the trusted attester keys through trust-material identity providers and link those identity providers to the OID4VCI client.
 
-===== Client Attribute for Trusted Keys
+Trusted attester keys are configured per client because different wallets can rely on different attestation authorities. The former realm-level options **Trusted Key IDs** and **Trusted Keys (JSON)** are no longer used for OID4VCI proof validation.
+
+===== Admin Console
+
+. Create or configure a trust-material identity provider, such as **Default Trust**, that exposes the trusted attester public keys. The identity provider must be configured with either a JWKS URL or a validating public key.
+. Go to *Clients* and select the wallet client that requests credentials.
+. Open the *Advanced* tab.
+. In the *OpenID Verifiable Credentials* section, enable **Enable OID4VCI**.
+. In **OID4VCI Attester Trust Identity Providers**, select the trust-material identity providers that contain the trusted attester public keys.
+. Save the client.
+
+The **OID4VCI Attester Trust Identity Providers** option is only shown when **Enable OID4VCI** is enabled for the client. It accepts only trust-material identity providers from the current realm. If no trust-material identity provider is configured, the dropdown has no values to select.
+
+===== Client Attribute
 
 [cols="1,1,2", options="header"]
 |===
@@ -42,24 +51,28 @@ Keycloak supports JWT proofs that can optionally include key attestations. To va
 
 | `oid4vci.attester_trust_idps`
 | none
-| Comma-separated aliases of trust-material identity providers containing trusted attester public keys for key attestation validation.
+| Comma-separated aliases of trust-material identity providers containing trusted attester public keys for OID4VCI key attestation validation.
 
 |===
 
-===== Configuring Trusted Attester Identity Providers via Admin REST API
+===== Admin REST API
+
+Use the Admin REST API when you need to configure the client attribute directly.
 
 [source,bash]
 ----
-# Configure trusted attester identity providers (comma-separated list of aliases)
 curl -X PUT "https://localhost:8443/admin/realms/{realm}/clients/{client-uuid}" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
         "attributes": {
+          "oid4vci.enabled": "true",
           "oid4vci.attester_trust_idps": "alias-1,alias-2"
         }
       }'
 ----
+
+For a JWT proof with a `key_attestation` JOSE header, or for an `attestation` proof, {project_name} resolves the attester signing key from the configured identity providers. Key resolution can use the attestation JWT header and payload, including the `kid`, `alg`, and `iss` values. If no configured identity provider exposes a matching trusted key, proof validation fails.
 
 ==== Creating and Sending JWT Proofs
 
@@ -350,7 +363,7 @@ curl -X POST "https://localhost:8443/realms/myrealm/protocol/oid4vc/credential" 
 
 ==== Client Scope Configuration for Proof Types
 
-To enable proof types for a credential, configure the client scope with the appropriate attributes:
+To require key binding for a credential, configure the OID4VCI client scope with the appropriate attributes. These settings are advertised in the issuer metadata as `cryptographic_binding_methods_supported` and `proof_types_supported`, and they determine which proof types the wallet can use.
 
 [source,json]
 ----
@@ -361,7 +374,9 @@ To enable proof types for a credential, configure the client scope with the appr
     "include.in.token.scope": "true",
     "vc.format": "jwt_vc_json",
     "vc.credential_configuration_id": "my-credential-config",
+    "vc.binding_required": "true",
     "vc.cryptographic_binding_methods_supported": "jwk",
+    "vc.binding_required_proof_types": "jwt,attestation",
     "vc.credential_signing_alg": "ES256"
   },
   "protocolMappers": [
@@ -378,7 +393,9 @@ To enable proof types for a credential, configure the client scope with the appr
 }
 ----
 
-The `proof_signing_alg_values_supported` is automatically included in the issuer metadata based on the realm's supported algorithms and the `vc.credential_signing_alg` attribute.
+The `vc.binding_required_proof_types` attribute accepts a comma-separated list of supported proof types, currently `jwt` and `attestation`. If `vc.binding_required` is not enabled, the credential configuration does not require holder binding and the issuer metadata omits `cryptographic_binding_methods_supported` and `proof_types_supported`.
+
+The `proof_signing_alg_values_supported` values are automatically included in the issuer metadata based on the realm's supported asymmetric signing algorithms.
 
 ==== Related Configuration
 

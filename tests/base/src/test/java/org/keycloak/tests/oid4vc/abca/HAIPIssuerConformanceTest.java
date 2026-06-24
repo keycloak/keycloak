@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.keycloak.TokenVerifier;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderConfig;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderFactory;
+import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
@@ -279,7 +280,7 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
         try {
             oauth.config().responseType("code id_token");
 
-            // Send PAR Request (without redirect_uri)
+            // Send PAR Request (with hybrid response type)
             //
             ParResponse parResponse = oauth.pushedAuthorizationRequest()
                     .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
@@ -297,9 +298,66 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
         }
     }
 
+    /**
+     * fapi2-security-profile-final-ensure-holder-of-key-required
+     *
+     * This test ensures that all endpoints comply with the TLS version/cipher limitations and that the token endpoint
+     * returns an error if a valid request is sent without a holder of key mechanism (i.e. without DPoP / MTLS).
+     *
+     */
+    @Test
+    public void testHolderOfKeyRequired() {
+
+        var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);
+        ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
+
+        var pkce = PkceGenerator.s256();
+
+        // Generate ABCA Headers
+        //
+        KeyWrapper rsaKey = wallet.getRSAKeyPair(ctx);
+        String attestationJwt = wallet.buildClientAttestationJWT(ctx, rsaKey);
+        String attestationPoPJwt = wallet.buildClientAttestationPoPJWT(ctx, rsaKey);
+
+        // Send PAR Request
+        //
+        String requestUri = oauth.pushedAuthorizationRequest()
+                .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                .scopeParam(ctx.getScope())
+                .codeChallenge(pkce)
+                .send().getRequestUri();
+        assertNotNull(requestUri, "No requestUri");
+
+        // Send Authorization Request
+        //
+        String authCode = wallet.authorizationRequest()
+                .requestUri(requestUri)
+                .codeChallenge(pkce)
+                .send(ctx.getHolder(), TEST_PASSWORD)
+                .getCode();
+        assertNotNull(authCode, "No auth code");
+
+        // Send Token Request (without DPoP proof)
+        //
+        String clientId = oauth.config().getClientId();
+        try {
+            oauth.config().client(null);
+
+            AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode)
+                    .codeVerifier(pkce)
+                    .send();
+            assertFalse(tokenResponse.isSuccess());
+            assertEquals("invalid_request", tokenResponse.getError());
+            assertEquals("DPoP proof is missing", tokenResponse.getErrorDescription());
+        } finally {
+            oauth.config().client(clientId);
+        }
+    }
+
     // Private ---------------------------------------------------------------------------------------------------------
 
-    private void verifyCredentialResponse(OID4VCTestContext ctx, CredentialResponse credResponse) throws Exception {
+    private void verifyCredentialResponse(OID4VCTestContext ctx, CredentialResponse credResponse) throws VerificationException {
 
         CredentialScopeRepresentation credScope = ctx.getCredentialScope();
         String issuer = wallet.getIssuerMetadata(ctx).getCredentialIssuer();

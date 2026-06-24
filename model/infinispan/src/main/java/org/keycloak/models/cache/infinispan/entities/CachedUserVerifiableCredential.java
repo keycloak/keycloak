@@ -9,15 +9,19 @@ import org.keycloak.models.UserVerifiableCredentialModel;
 
 public class CachedUserVerifiableCredential {
 
-    private final String credentialScopeName;
+    private final String id;
+    private final String clientScopeId;
     private final String revision;
     private final Long createdDate;
+    private final Long updatedDate;
     private final MultivaluedHashMap<String, String> userAttributes;
 
     public CachedUserVerifiableCredential(UserVerifiableCredentialModel credentialModel) {
-        this.credentialScopeName = credentialModel.getCredentialScopeName();
+        this.id = credentialModel.getId();
+        this.clientScopeId = credentialModel.getClientScopeId();
         this.revision = credentialModel.getRevision();
         this.createdDate = credentialModel.getCreatedDate();
+        this.updatedDate = credentialModel.getUpdatedDate();
 
         this.userAttributes = new MultivaluedHashMap<>();
         if (credentialModel.getUserAttributes() != null) {
@@ -27,8 +31,12 @@ public class CachedUserVerifiableCredential {
         }
     }
 
-    public String getCredentialScopeName() {
-        return credentialScopeName;
+    public String getId() {
+        return id;
+    }
+
+    public String getClientScopeId() {
+        return clientScopeId;
     }
 
     public String getRevision() {
@@ -37,6 +45,10 @@ public class CachedUserVerifiableCredential {
 
     public Long getCreatedDate() {
         return createdDate;
+    }
+
+    public Long getUpdatedDate() {
+        return updatedDate;
     }
 
     public Map<String, List<String>> getUserAttributes() {
