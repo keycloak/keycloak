@@ -216,7 +216,11 @@ public abstract class PathMatcher<P> {
                         }
 
                         if (c == '{') {
-                            uri.replace(uri.indexOf("{", lastPattern), uri.indexOf("}", lastPattern) + 1, value.toString());
+                            int closingBraceIndex = uri.indexOf("}", lastPattern);
+                            if (closingBraceIndex == -1) {
+                                return null;
+                            }
+                            uri.replace(uri.indexOf("{", lastPattern), closingBraceIndex + 1, value.toString());
                         }
 
                         if (value.charAt(value.length() - 1) == '}') {
