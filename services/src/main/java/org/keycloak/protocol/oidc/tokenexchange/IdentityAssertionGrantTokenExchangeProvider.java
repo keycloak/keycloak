@@ -26,7 +26,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.TokenCategory;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.SignatureProvider;
@@ -36,6 +35,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -67,11 +67,6 @@ public class IdentityAssertionGrantTokenExchangeProvider implements TokenExchang
     // ID-JAGs are minted on demand and redeemed right away, so they are short-lived. 300s matches
     // the value used in the spec examples.
     static final int DEFAULT_ID_JAG_LIFESPAN_SECONDS = 300;
-
-    @Override
-    public int getVersion() {
-        return 2;
-    }
 
     @Override
     public boolean supports(TokenExchangeContext context) {
@@ -166,7 +161,7 @@ public class IdentityAssertionGrantTokenExchangeProvider implements TokenExchang
         event.detail(Details.SUBJECT_TOKEN_CLIENT_ID, subjectJwt.getIssuedFor());
 
         String scope = params.getScope();
-        String idJag = signIdJag(session, buildIdJag(session, realm, clientConfig, client, subjectJwt, audience, resource, scope));
+        String idJag = signIdJag(session, realm, buildIdJag(session, realm, clientConfig, client, subjectJwt, audience, resource, scope));
 
         AccessTokenResponse response = new AccessTokenResponse();
         response.setToken(idJag);
@@ -215,9 +210,14 @@ public class IdentityAssertionGrantTokenExchangeProvider implements TokenExchang
         return idJag;
     }
 
-    // Signs with the realm key and stamps the oauth-id-jag+jwt header so the resource AS recognises it.
-    private String signIdJag(KeycloakSession session, JsonWebToken idJag) {
-        String signatureAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.ACCESS);
+    // Signs with the realm's default signature key and stamps the oauth-id-jag+jwt header. We use the
+    // realm default (not a per-client access/ID token algorithm) so the assertion is predictable and
+    // validatable by the resource AS via the realm JWKS, independent of the requesting client's config.
+    private String signIdJag(KeycloakSession session, RealmModel realm, JsonWebToken idJag) {
+        String signatureAlgorithm = realm.getDefaultSignatureAlgorithm();
+        if (signatureAlgorithm == null || signatureAlgorithm.isEmpty()) {
+            signatureAlgorithm = Constants.DEFAULT_SIGNATURE_ALGORITHM;
+        }
         SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
         SignatureSignerContext signer = signatureProvider.signer();
         return new JWSBuilder()
