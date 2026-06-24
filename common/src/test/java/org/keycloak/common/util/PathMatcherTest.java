@@ -13,6 +13,15 @@ public class PathMatcherTest {
 
         Assertions.assertEquals("/api/v1/1/campaigns/*/excelFiles", matcher.customBuildUriFromTemplate("/api/v1/{clientId}/campaigns/*/excelFiles", "/api/v1/1/contentConnectorConfigs/29/contentConnectorContents", false));
     }
+
+    @Test
+    public void missingClosingBraceShouldReturnNull() {
+        TestingPathMatcher matcher = new TestingPathMatcher();
+
+        // A template with no closing '}' must not throw; buildUriFromTemplate
+        // should return null (treated as non-matching).
+        Assertions.assertNull(matcher.customBuildUriFromTemplate("/api/{clientId", "/api/123", false));
+    }
     
     private static final class TestingPathMatcher extends PathMatcher<Object> {
 
