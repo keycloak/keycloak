@@ -17,6 +17,7 @@
 
 package org.keycloak.services.clientregistration.policy.impl;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -132,7 +133,7 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
     }
 
     private List<String> getAllowedMapperProviders() {
-        return componentModel.getConfig().getList(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES);
+        return componentModel.getConfig().getOrDefault(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES, Collections.emptyList());
     }
 
 }
