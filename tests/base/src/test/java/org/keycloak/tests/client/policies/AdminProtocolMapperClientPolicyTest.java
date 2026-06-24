@@ -93,6 +93,7 @@ public class AdminProtocolMapperClientPolicyTest extends AbstractClientPoliciesT
         try (Response response = realm.admin().clients().create(client)) {
             Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
             String id = ApiUtil.getCreatedId(response);
+            realm.cleanup().add(r -> r.clients().delete(id));
             return realm.admin().clients().get(id);
         }
     }
