@@ -30,8 +30,14 @@ public class CompositeRoleExpansionQueryCountTest extends KeycloakModelTest {
     // Deep composite chain r0 -> r1 -> ... -> r9 (r9 is a leaf): V = 10 nodes, C = 9 composite nodes.
     private static final int CHAIN_LENGTH = 10;
 
+    // Wide tree: root -> BRANCHING mids -> BRANCHING leaves each. V = 1 + 5 + 25 = 31, depth = 3 levels.
+    private static final int BRANCHING = 5;
+    private static final int BUSHY_SIZE = 1 + BRANCHING + BRANCHING * BRANCHING;
+    private static final int BUSHY_LEVELS = 3;
+
     private String realmId;
     private String rootRoleId;
+    private String bushyRootId;
 
     @Override
     public void createEnvironment(KeycloakSession s) {
@@ -49,6 +55,16 @@ public class CompositeRoleExpansionQueryCountTest extends KeycloakModelTest {
                 previous.addCompositeRole(role);
             }
             previous = role;
+        }
+
+        RoleModel bushyRoot = s.roles().addRealmRole(realm, "bushy-root");
+        bushyRootId = bushyRoot.getId();
+        for (int i = 0; i < BRANCHING; i++) {
+            RoleModel mid = s.roles().addRealmRole(realm, "bushy-mid-" + i);
+            bushyRoot.addCompositeRole(mid);
+            for (int j = 0; j < BRANCHING; j++) {
+                mid.addCompositeRole(s.roles().addRealmRole(realm, "bushy-leaf-" + i + "-" + j));
+            }
         }
     }
 
@@ -77,6 +93,33 @@ public class CompositeRoleExpansionQueryCountTest extends KeycloakModelTest {
         assertThat(prePatchCount, is((long) (2 * CHAIN_LENGTH - 1)));       // V + C = 19
         // Saved exactly C = number of composite nodes.
         assertThat(prePatchCount - currentCount, is((long) (CHAIN_LENGTH - 1))); // 9
+    }
+
+    @Test
+    public void levelWiseBatchingCollapsesGetChildRolesToOnePerLevel() {
+        Set<String> perNodeIds = new HashSet<>();
+        long perNodeCount = withRealm(realmId, (s, realm) -> {
+            RoleModel root = s.roles().getRoleById(realm, bushyRootId);
+            return countQueries(s, () -> collectIds(RoleUtils.expandCompositeRoles(Set.of(root)), perNodeIds));
+        });
+
+        Set<String> batchedIds = new HashSet<>();
+        long batchedCount = withRealm(realmId, (s, realm) -> {
+            RoleModel root = s.roles().getRoleById(realm, bushyRootId);
+            return countQueries(s, () -> collectIds(RoleUtils.expandCompositeRoles(s, realm, Set.of(root)), batchedIds));
+        });
+
+        // Both expansions yield the same role set ...
+        assertThat(perNodeIds.size(), is(BUSHY_SIZE));    // 31
+        assertThat(batchedIds, is(perNodeIds));
+        // ... but the per-node walk issues one getChildRoles query per node ...
+        assertThat(perNodeCount, is((long) BUSHY_SIZE));  // 31
+        // ... whereas level-wise batching issues a single query per breadth-first level.
+        assertThat(batchedCount, is((long) BUSHY_LEVELS)); // 3
+    }
+
+    private static void collectIds(Set<RoleModel> roles, Set<String> into) {
+        roles.forEach(role -> into.add(role.getId()));
     }
 
     private long countQueries(KeycloakSession session, Runnable walk) {
