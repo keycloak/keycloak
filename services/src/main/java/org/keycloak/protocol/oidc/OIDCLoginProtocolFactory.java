@@ -372,7 +372,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
         if (Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_DELEGATION)) {
             ClientScopeModel delegationScope = newRealm.addClientScope(DELEGATION_SCOPE);
-            delegationScope.setDescription("Delegation scope to add the may_claim claim to the access token using parameters");
+            delegationScope.setDescription("Delegation scope to add the 'may_act' claim to the access token using parameters");
             delegationScope.setIsParameterizedScope(true);
             delegationScope.setDisplayOnConsentScreen(true);
             delegationScope.setAttribute(ClientScopeModel.IS_ALWAYS_CONSENT, Boolean.TRUE.toString());
