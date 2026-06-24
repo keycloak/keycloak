@@ -117,6 +117,12 @@ export const CapabilityConfig = ({
                       );
                       setValue(
                         convertAttributeNameToForm<FormFields>(
+                          "attributes.id.jag.issuance.enabled",
+                        ),
+                        false,
+                      );
+                      setValue(
+                        convertAttributeNameToForm<FormFields>(
                           "attributes.ssf.enabled",
                         ),
                         false,
@@ -342,6 +348,41 @@ export const CapabilityConfig = ({
                           <HelpItem
                             helpText={t("jwtAuthorizationGrantEnabledHelp")}
                             fieldLabelId="jwtAuthorizationGrantEnabled"
+                          />
+                        </InputGroupItem>
+                      </InputGroup>
+                    )}
+                  />
+                </GridItem>
+              )}
+              {isFeatureEnabled(Feature.IdentityAssertionJwt) && (
+                <GridItem lg={8} sm={6}>
+                  <Controller
+                    name={convertAttributeNameToForm<
+                      Required<ClientRepresentation["attributes"]>
+                    >("attributes.id.jag.issuance.enabled")}
+                    defaultValue={false}
+                    control={control}
+                    render={({ field }) => (
+                      <InputGroup>
+                        <InputGroupItem>
+                          <Checkbox
+                            data-testid="identity-assertion-grant-enabled"
+                            label={t("identityAssertionGrantEnabled")}
+                            id="kc-identity-assertion-grant-enabled"
+                            name="identity-assertion-grant-enabled"
+                            isChecked={
+                              field.value.toString() === "true" &&
+                              !clientAuthentication
+                            }
+                            onChange={field.onChange}
+                            isDisabled={clientAuthentication}
+                          />
+                        </InputGroupItem>
+                        <InputGroupItem>
+                          <HelpItem
+                            helpText={t("identityAssertionGrantEnabledHelp")}
+                            fieldLabelId="identityAssertionGrantEnabled"
                           />
                         </InputGroupItem>
                       </InputGroup>

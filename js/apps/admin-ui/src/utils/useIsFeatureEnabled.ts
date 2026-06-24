@@ -18,6 +18,7 @@ export enum Feature {
   QuickTheme = "QUICK_THEME",
   StandardTokenExchangeV2 = "TOKEN_EXCHANGE_STANDARD_V2",
   JWTAuthorizationGrant = "JWT_AUTHORIZATION_GRANT",
+  IdentityAssertionJwt = "IDENTITY_ASSERTION_JWT",
   Passkeys = "PASSKEYS",
   ClientAuthFederated = "CLIENT_AUTH_FEDERATED",
   Workflows = "WORKFLOWS",

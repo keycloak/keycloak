@@ -50,6 +50,13 @@ export const AdvancedSettings = ({
     [],
   );
 
+  const identityAssertionGrantEnabled =
+    watch(
+      convertAttributeNameToForm<FormFields>(
+        "attributes.id.jag.issuance.enabled",
+      ),
+    )?.toString() === "true";
+
   const validAcrLoAOptions = () =>
     acrLoAMapClient.length > 0
       ? acrLoAMapClient.map((i: any) => i?.key).filter((i: any) => i !== "")
@@ -273,6 +280,59 @@ export const AdvancedSettings = ({
             label={t("minimumACRValue")}
             labelIcon={t("minimumACRValueHelp")}
           />
+          {isFeatureEnabled(Feature.IdentityAssertionJwt) &&
+            identityAssertionGrantEnabled && (
+              <>
+                <FormGroup
+                  label={t("identityAssertionGrantAllowedAudiences")}
+                  fieldId="identityAssertionGrantAllowedAudiences"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t(
+                        "identityAssertionGrantAllowedAudiencesHelp",
+                      )}
+                      fieldLabelId="identityAssertionGrantAllowedAudiences"
+                    />
+                  }
+                >
+                  <MultiLineInput
+                    id="identityAssertionGrantAllowedAudiences"
+                    aria-label="identityAssertionGrantAllowedAudiences"
+                    name={convertAttributeNameToForm(
+                      "attributes.id.jag.allowed.audiences",
+                    )}
+                    stringify
+                  />
+                </FormGroup>
+                <TextControl
+                  type="text"
+                  name={convertAttributeNameToForm(
+                    "attributes.id.jag.client.id",
+                  )}
+                  label={t("identityAssertionGrantClientId")}
+                  labelIcon={t("identityAssertionGrantClientIdHelp")}
+                />
+                <FormGroup
+                  label={t("identityAssertionGrantAllowedScopes")}
+                  fieldId="identityAssertionGrantAllowedScopes"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t("identityAssertionGrantAllowedScopesHelp")}
+                      fieldLabelId="identityAssertionGrantAllowedScopes"
+                    />
+                  }
+                >
+                  <MultiLineInput
+                    id="identityAssertionGrantAllowedScopes"
+                    aria-label="identityAssertionGrantAllowedScopes"
+                    name={convertAttributeNameToForm(
+                      "attributes.id.jag.allowed.scopes",
+                    )}
+                    stringify
+                  />
+                </FormGroup>
+              </>
+            )}
         </>
       )}
       <ActionGroup>

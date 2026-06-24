@@ -54,6 +54,8 @@ The client requests the assertion at the token endpoint as a token exchange whos
 
 The assertion is short-lived (300 seconds) and never issues a refresh token.
 
+NOTE: The `subject_token` must be an ID token issued by the *same* realm that performs the exchange. That realm is the enterprise IdP and the ID-JAG issuer. In a setup with two {project_name} realms, the realm that authenticated the user issues the ID-JAG, and the *other* realm consumes it through the JWT Authorization Grant (see <@links.securingapps id="jwt-authorization-grant" />) - not the other way around. An ID token issued by a different realm is rejected; {project_name} validates the assertion with the local realm keys and does not fetch a foreign issuer's keys here.
+
 [[_configuration]]
 == Configuration
 

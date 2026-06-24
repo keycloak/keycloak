@@ -34,6 +34,8 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -128,6 +130,17 @@ public class IdentityAssertionGrantTokenExchangeProvider implements TokenExchang
 
         // resource = the MCP server id. Optional; echoed into the JAG when present.
         String resource = getSingleResource(event, cors, params.getResource());
+
+        // The subject token must be issued by THIS realm - the realm minting the ID-JAG is the
+        // enterprise IdP the user logged in to. A token from another issuer (e.g. a different realm)
+        // is rejected here; that realm should mint the ID-JAG and this realm would consume it via the
+        // jwt-bearer grant instead. Checked explicitly so the error is clear rather than a generic one.
+        String realmIssuer = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
+        String subjectIssuer = readSubjectTokenIssuer(subjectToken);
+        if (subjectIssuer != null && !realmIssuer.equals(subjectIssuer)) {
+            throw error(event, cors, Errors.INVALID_TOKEN, OAuthErrorException.INVALID_GRANT,
+                    "subject_token must be an ID token issued by this realm", Response.Status.BAD_REQUEST);
+        }
 
         // Verify the subject token: a valid, active token issued by this realm. checkTokenType=false
         // so the verifier doesn't reject the non-Bearer ID token; the ID-token constraints are
@@ -225,6 +238,17 @@ public class IdentityAssertionGrantTokenExchangeProvider implements TokenExchang
                 .type(OAuth2Constants.IDENTITY_ASSERTION_JWT_HEADER_TYPE)
                 .jsonContent(idJag)
                 .sign(signer);
+    }
+
+    // Reads the iss claim without verifying the signature, just to give a clear error when the subject
+    // token was issued by a different realm. Returns null for a non-parseable token, which lets the
+    // normal verification produce the generic error.
+    private String readSubjectTokenIssuer(String subjectToken) {
+        try {
+            return new JWSInput(subjectToken).readJsonContent(JsonWebToken.class).getIssuer();
+        } catch (JWSInputException e) {
+            return null;
+        }
     }
 
     // When the client configures an allowed-scope list, every requested scope must be in it. An empty
