@@ -15,7 +15,7 @@ For more information, see the link:{developerguide_link}#_identity-brokering-api
 
 == Deprecated for removal the Twitter Identity Broker
 
-The Twitter Identity Broker is now deprecated for removal and is not enabled by default. It relies on the unmaintained `twitter4j` library and Twitter's legacy OAuth 1.0a endpoints.
+The Twitter Identity Broker is now deprecated for removal. It relies on Twitter's legacy OAuth 1.0a endpoints. It remains enabled by default for backward compatibility, but is planned for removal in a future release.
 
 As Twitter (X) now supports OAuth 2.0, it is recommended to use the generic *OAuth v2* identity provider configured against Twitter's OAuth 2.0 endpoints instead.
 For the migration steps and details, see link:{upgradingguide_link}[{upgradingguide_name}].

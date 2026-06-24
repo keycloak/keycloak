@@ -3,9 +3,9 @@
 
 ==== Twitter
 
-IMPORTANT: The Twitter Identity Broker is deprecated for removal. It relies on the unmaintained `twitter4j` library and Twitter's legacy OAuth 1.0a endpoints.
+IMPORTANT: The Twitter Identity Broker is deprecated for removal. It relies on Twitter's legacy OAuth 1.0a endpoints.
 Prefer configuring the generic *OAuth v2* identity provider against Twitter's (X) OAuth 2.0 endpoints instead, as described in <<_twitter_oauth2_migration>>.
-To keep using the deprecated broker, start the server with `--features=twitter-broker`.
+The broker remains enabled by default, but is planned for removal in a future release.
 
 .Prerequisites
 . A Twitter developer account.

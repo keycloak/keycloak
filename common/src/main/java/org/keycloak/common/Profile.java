@@ -182,7 +182,7 @@ public class Profile {
          * @see <a href="https://github.com/keycloak/keycloak/issues/44013">Deprecate the Twitter IDP implementation due to old twitter4j library</a>.
          */
         @Deprecated
-        TWITTER_BROKER("Twitter Identity Broker", Type.DEPRECATED, 1),
+        TWITTER_BROKER("Twitter Identity Broker", Type.DEFAULT, 1, true, null, null),
 
         SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.EXPERIMENTAL),
 

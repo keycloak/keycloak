@@ -201,23 +201,23 @@ The following sections provide details on deprecated features.
 
 === Deprecated for removal the Twitter Identity Broker
 
-In this release, the Twitter Identity Broker is deprecated for removal and is not enabled by default.
-The broker relies on the `twitter4j` library, which has not had a release in several years and uses Java serialization to record its state.
+In this release, the Twitter Identity Broker is deprecated for removal.
+It relies on Twitter's legacy OAuth 1.0a endpoints.
 
 As Twitter (X) now supports OAuth 2.0, it is recommended to use the generic *OAuth v2* identity provider configured against Twitter's OAuth 2.0 endpoints instead.
 For the migration steps, see the link:{adminguide_link}#_twitter[Twitter] section in the {adminguide_name}.
 
-If you are using the Twitter Identity Broker and want to re-enable it, you can do it by enabling the `twitter-broker`
-feature using the `features` server option:
+The broker remains enabled by default for backward compatibility. If you no longer use it, you can disable the
+`twitter-broker` feature using the `features-disabled` server option:
 
 [source]
 ----
---features=twitter-broker
+--features-disabled=twitter-broker
 ----
 
-The `twitter-broker` feature, and the underlying `twitter4j` dependency, are planned for removal in a future release.
+The `twitter-broker` feature is planned for removal in a future release.
 For more details, see
-https://github.com/keycloak/keycloak/issues/44013[Deprecate the Twitter IDP implementation due to old twitter4j library].
+https://github.com/keycloak/keycloak/issues/44013[Deprecate the Twitter IDP implementation].
 
 === Identity Brokering API V1 is deprecated
 
