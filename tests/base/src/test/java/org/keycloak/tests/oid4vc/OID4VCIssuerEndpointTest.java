@@ -61,6 +61,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.protocol.oid4vc.userprofile.DuplicateDidValidator;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.representations.JsonWebToken;
@@ -77,7 +78,6 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.config.UPConfigUtils;
-import org.keycloak.userprofile.validator.DuplicateDidValidator;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.validators.PatternValidator;
 

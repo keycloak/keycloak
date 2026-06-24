@@ -1,4 +1,4 @@
-package org.keycloak.userprofile.validator;
+package org.keycloak.protocol.oid4vc.userprofile;
 
 import java.util.List;
 import java.util.Objects;
