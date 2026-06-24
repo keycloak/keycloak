@@ -39,6 +39,7 @@ import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapper;
@@ -1130,5 +1131,66 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestUtils.updateConfigOptions(mapperModel, LDAPConstants.BATCH_SIZE_FOR_SYNC, configuredBatchSize);
             appRealm.updateComponent(mapperModel);
         });
+    }
+
+    // Regression test for the customUserSearchFilter leaking into group lookups.
+    //
+    // Resolving a group by its id goes through LDAPOperationManager.lookupById - the same path the
+    // admin console's group "Members" tab relies on, and the path that actually triggers when the
+    // configured UUID attribute is also a group's naming attribute (e.g. cn in eDirectory, the
+    // setup that originally reported the bug). Before the fix this path unconditionally appended
+    // the User LDAP filter, so the group entry - which has none of the user attributes the filter
+    // matches on, such as mail - was filtered out and the Members tab came back empty.
+    //
+    // Only user searches (LDAPUtils.createQueryForUserSearch) flag the query as a user query, so a
+    // group query built here must resolve the group even while a custom User LDAP filter is set.
+    @Test
+    public void test12_groupLookupByIdIgnoresCustomUserFilter() {
+        // Capture the LDAP id (uuid) of an existing group while no custom filter is configured.
+        String group1Uuid = testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ctx.getLdapProvider(), appRealm);
+            LDAPObject ldapGroup = groupMapper.loadLDAPGroupByName("group1");
+            Assert.assertNotNull(ldapGroup);
+            return ldapGroup.getUuid();
+        }, String.class);
+
+        // Configure a User LDAP filter that matches user entries but never a group entry.
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(mail=*@email.org)");
+            appRealm.updateComponent(ctx.getLdapModel());
+        });
+
+        try {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel appRealm = ctx.getRealm();
+                LDAPStorageProvider ldapProvider = ctx.getLdapProvider();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+                GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, appRealm);
+
+                String uuidAttrName = ldapProvider.getLdapIdentityStore().getConfig().getUuidLDAPAttributeName();
+
+                // Querying by the uuid attribute drives the lookupById path. The group must still
+                // be found - if the custom User LDAP filter leaks in, getFirstResult() is null.
+                try (LDAPQuery query = groupMapper.createGroupQuery(false)) {
+                    query.addWhereCondition(new LDAPQueryConditionsBuilder().equal(uuidAttrName, group1Uuid));
+                    LDAPObject ldapGroup = query.getFirstResult();
+                    Assert.assertNotNull("Group lookup by id must not apply the custom User LDAP filter", ldapGroup);
+                    Assert.assertEquals(group1Uuid, ldapGroup.getUuid());
+                }
+            });
+        } finally {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel appRealm = ctx.getRealm();
+                ctx.getLdapModel().getConfig().remove(LDAPConstants.CUSTOM_USER_SEARCH_FILTER);
+                appRealm.updateComponent(ctx.getLdapModel());
+            });
+        }
     }
 }
