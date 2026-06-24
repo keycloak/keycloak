@@ -223,7 +223,7 @@ public class ClientRoleMappingsResource {
         List<RoleModel> roleModels;
         if (roles == null) {
             roleModels = user.getClientRoleMappingsStream(client)
-                    .filter(this::canMapRole)
+                    .peek(rm -> auth.roles().requireMapRole(rm))
                     .collect(Collectors.toList());
         } else {
             roleModels = roles.stream()

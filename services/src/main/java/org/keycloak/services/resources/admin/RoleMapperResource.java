@@ -321,7 +321,7 @@ public class RoleMapperResource {
         List<RoleModel> roleModels;
         if (roles == null) {
             roleModels = roleMapper.getRealmRoleMappingsStream()
-                    .filter(this::canMapRole)
+                    .peek(rm -> auth.roles().requireMapRole(rm))
                     .collect(Collectors.toList());
         } else {
             roleModels = roles.stream()
