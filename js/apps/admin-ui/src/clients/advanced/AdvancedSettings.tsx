@@ -288,9 +288,7 @@ export const AdvancedSettings = ({
                   fieldId="identityAssertionGrantAllowedAudiences"
                   labelIcon={
                     <HelpItem
-                      helpText={t(
-                        "identityAssertionGrantAllowedAudiencesHelp",
-                      )}
+                      helpText={t("identityAssertionGrantAllowedAudiencesHelp")}
                       fieldLabelId="identityAssertionGrantAllowedAudiences"
                     />
                   }
