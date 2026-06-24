@@ -1,0 +1,152 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/features.adoc" as features>
+
+<@tmpl.guide
+title="Issuing Identity Assertion JWT Authorization Grants (ID-JAG)"
+priority=135
+summary="Guide for issuing an Identity Assertion JWT Authorization Grant (ID-JAG) so {project_name} can act as the enterprise identity provider in the Enterprise-Managed Authorization / Cross-App Access flow.">
+
+<#include "/templates/experimental-feature.adoc">
+
+This guide describes how {project_name} issues an *Identity Assertion JWT Authorization Grant (ID-JAG)*. With this feature {project_name} acts as the enterprise Identity Provider (IdP): a client that has already authenticated a user exchanges the user's ID token for a short-lived assertion that it can redeem for an access token at a different trust domain, such as a SaaS or Model Context Protocol (MCP) server, without sending the user through an interactive authorization step at that server.
+
+This is the *issuer* side of the flow. The complementary *consumer* side, where a Resource Authorization Server validates an ID-JAG and returns an access token, is handled by the JWT Authorization Grant (see <@links.securingapps id="jwt-authorization-grant" />).
+
+The ID-JAG builds on existing standards rather than defining new cryptography:
+
+* link:https://datatracker.ietf.org/doc/html/rfc8693[OAuth 2.0 Token Exchange (RFC 8693)] - the assertion is requested through a token exchange.
+* link:https://datatracker.ietf.org/doc/html/rfc7523[JWT Profile for OAuth 2.0 Client Authentication and Authorization Grants (RFC 7523)] - the assertion is a JWT authorization grant.
+* link:https://datatracker.ietf.org/doc/draft-ietf-oauth-identity-assertion-authz-grant/[Identity Assertion Authorization Grant] - the profile that constrains the above for cross-domain single sign-on. It is the single-enterprise specialization of <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" />, and the mechanism behind MCP Enterprise-Managed Authorization (see <@links.securingapps id="mcp-authz-server" />).
+
+== Enabling the feature
+
+ID-JAG issuance is an experimental feature and must be explicitly enabled when starting {project_name}:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --features=identity-assertion-jwt
+----
+
+When the feature is enabled, {project_name} advertises support in the realm OpenID Connect discovery document (`/realms/{realm}/.well-known/openid-configuration`) through the `authorization_grant_profiles_supported` field:
+
+[source,json]
+----
+{
+  "authorization_grant_profiles_supported": [ "urn:ietf:params:oauth:grant-profile:id-jag" ]
+}
+----
+
+NOTE: Token exchange must be available for the grant to be served. The fully supported Standard token exchange (V2) is enabled by default. See <@links.securingapps id="token-exchange" /> for more information.
+
+== How it works
+
+The client requests the assertion at the token endpoint as a token exchange whose `requested_token_type` is the ID-JAG token type. The processing that {project_name} performs is the following:
+
+. The requesting client must be a *confidential* client. Public clients are rejected, because the assertion delegates the user's identity to a third-party authorization server and therefore requires client authentication.
+. The client must have ID-JAG issuance enabled (see <<_configuration>>).
+. The `subject_token` must be an ID token (`subject_token_type` is `urn:ietf:params:oauth:token-type:id_token`). It is validated against the realm and must be active. An access token presented as an ID token is rejected.
+. The ID token must have been issued *to the requesting client* - a client can only exchange its own ID token, not one minted for a different client.
+. The `audience` parameter is required and identifies the issuer of the Resource Authorization Server. It must be present in the client's allow-list, otherwise the request is denied. The value becomes the `aud` claim of the assertion.
+. The `resource` parameter is optional. When present it identifies the resource server (for example an MCP server) and becomes the `resource` claim.
+. When the client configures an allowed-scope list, every requested `scope` must be contained in it; otherwise an `invalid_scope` error is returned.
+. {project_name} mints the assertion, signs it with the realm's default signature key, and returns it. The JWS header type is `oauth-id-jag+jwt`, so the Resource Authorization Server can recognize it. The assertion is validatable through the realm JWKS endpoint.
+
+The assertion is short-lived (300 seconds) and never issues a refresh token.
+
+[[_configuration]]
+== Configuration
+
+Only confidential clients can issue an ID-JAG. Issuance is controlled per client through the following client attributes:
+
+`id.jag.issuance.enabled`::
+    Set to `true` to allow the client to issue an ID-JAG. Disabled by default.
+
+`id.jag.allowed.audiences`::
+    The list of Resource Authorization Server issuer identifiers that this client may request an assertion for (the `audience` parameter, which becomes the `aud` claim). This is the trust gate: an empty list means the client cannot issue any assertion (deny by default). Multiple values are separated with `##`.
+
+`id.jag.client.id`::
+    Optional. The `client_id` that the client is known by at the Resource Authorization Server, embedded as the `client_id` claim of the assertion. This can differ from the client's own client ID in {project_name}. When unset, the client's own client ID is used.
+
+`id.jag.allowed.scopes`::
+    Optional. The scopes the client may request in an assertion. When set, a requested scope outside the list is rejected with `invalid_scope`. When unset, no restriction is applied and the Resource Authorization Server enforces its own scopes. Multiple values are separated with `##`.
+
+These attributes can be set when creating or updating the client through the Admin REST API or a realm import. For example, in the client representation:
+
+[source,json]
+----
+{
+  "clientId": "mcp-client",
+  "publicClient": false,
+  "directAccessGrantsEnabled": true,
+  "attributes": {
+    "id.jag.issuance.enabled": "true",
+    "id.jag.allowed.audiences": "https://auth.chat.example",
+    "id.jag.client.id": "mcp-client-at-resource-as",
+    "id.jag.allowed.scopes": "chat.read##chat.history"
+  }
+}
+----
+
+== Examples
+
+The following request exchanges the user's ID token for an ID-JAG. The client `mcp-client` authenticates with its secret, and is configured to allow issuance for the Resource Authorization Server `https://auth.chat.example`.
+
+[source,bash]
+----
+POST /realms/demo/protocol/openid-connect/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+client_id=mcp-client&
+client_secret=XXXXX&
+grant_type=urn:ietf:params:oauth:grant-type:token-exchange&
+requested_token_type=urn:ietf:params:oauth:token-type:id-jag&
+subject_token=eyJhbGci[...redacted...]&
+subject_token_type=urn:ietf:params:oauth:token-type:id_token&
+audience=https://auth.chat.example&
+resource=https://mcp.chat.example/mcp&
+scope=chat.read chat.history
+----
+
+If the request is valid, {project_name} returns the assertion in the `access_token` field. The `token_type` is `N_A` and the `issued_token_type` identifies the result as an ID-JAG.
+
+[source,json]
+----
+{
+  "access_token": "eyJhbGci[...redacted...].eyJpc3Mi[...redacted...].J9l-ZhwP[...redacted...]",
+  "issued_token_type": "urn:ietf:params:oauth:token-type:id-jag",
+  "token_type": "N_A",
+  "expires_in": 300,
+  "scope": "chat.read chat.history"
+}
+----
+
+The assertion is a JWT whose header declares the ID-JAG type:
+
+[source,json]
+----
+{"alg":"RS256", "kid":"2AOACLJmd5dQ8HPrDxwpkS-83yBhrzaLWSny9wmnYcY", "typ":"oauth-id-jag+jwt"}
+----
+
+The claims identify the issuing realm (`iss`), the user (`sub`), the Resource Authorization Server (`aud`), the resource server (`resource`), and the client's identity at that server (`client_id`):
+
+[source,json]
+----
+{
+  "jti": "abcd1234-5678-efgh-ijkl-9012mnopqrst",
+  "iss": "https://keycloak.server/realms/demo",
+  "sub": "b3588c7e-14cb-46a9-9387-28adfd82f7a4",
+  "email": "user@example.com",
+  "aud": "https://auth.chat.example",
+  "resource": "https://mcp.chat.example/mcp",
+  "client_id": "mcp-client-at-resource-as",
+  "iat": 1764839065,
+  "exp": 1764839365,
+  "scope": "chat.read chat.history"
+}
+----
+
+The client then redeems the assertion for an access token at the Resource Authorization Server using the JWT Authorization Grant. When that server is another {project_name} realm, see <@links.securingapps id="jwt-authorization-grant" /> for how it validates the assertion and returns an access token.
+
+</@tmpl.guide>
