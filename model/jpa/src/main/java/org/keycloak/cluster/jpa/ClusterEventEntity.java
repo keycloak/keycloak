@@ -20,27 +20,34 @@ package org.keycloak.cluster.jpa;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.Lob;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
+import org.keycloak.connections.jpa.AsynchronousCommitAllowed;
+
 @Entity
 @Table(name = "CLUSTER_EVENT")
 @NamedQueries({
-        @NamedQuery(name = "readByTargetCluster",
-                query = "SELECT e.id, eventData FROM ClusterEventEntity e WHERE e.targetCluster = :target ORDER BY e.createdAt"),
-        @NamedQuery(name = "deleteByIds",
-                query = "DELETE FROM ClusterEventEntity e WHERE e.id IN :ids"),
-        @NamedQuery(name = "deleteOlderThan",
-                query = "DELETE FROM ClusterEventEntity e WHERE e.createdAt < :timestamp")
+        @NamedQuery(name = "clusterEvent.readByTargetCluster",
+                query = "SELECT e.id, e.eventData FROM ClusterEventEntity e WHERE e.targetCluster = :target ORDER BY e.createdAt"),
+        @NamedQuery(name = "clusterEvent.deleteByIds",
+                query = "DELETE FROM ClusterEventEntity e WHERE e.id IN :ids AND e.targetCluster = :targetCluster"),
+        @NamedQuery(name = "clusterEvent.deleteOlderThan",
+                query = "DELETE FROM ClusterEventEntity e WHERE e.createdAt < :timestamp"),
+        @NamedQuery(name = "clusterEvent.eventWithIdExists",
+                query = "SELECT 1 FROM ClusterEventEntity e WHERE e.id = :id")
 })
-public class ClusterEventEntity {
+@IdClass(ClusterEventKey.class)
+public class ClusterEventEntity implements AsynchronousCommitAllowed {
 
     @Id
     @Column(name = "ID", length = 36)
     private String id;
 
+    @Id
     @Column(name = "TARGET_CLUSTER", nullable = false, length = 200)
     private String targetCluster;
 

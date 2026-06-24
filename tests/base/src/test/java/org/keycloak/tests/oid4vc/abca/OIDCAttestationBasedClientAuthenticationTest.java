@@ -32,7 +32,6 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
-import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
@@ -40,8 +39,6 @@ import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.ParResponse;
-import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -161,9 +158,11 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
 
         // Send Token Request
         //
+        String tokenEndpoint = oauth.getEndpoints().getToken();
         AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode)
                 .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
                 .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                .dpopProof(wallet.generateSignedDPoPProof(tokenEndpoint, ecKey, null))
                 .send();
 
         errorDescription = tokenResponse.getErrorDescription();
@@ -181,103 +180,16 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
         // Send Nonce Request
         //
         String nonce = wallet.nonceRequest().send().getNonce();
-        Proofs jwtProof = wallet.generateJwtProof(ctx, ecKey, nonce);
 
         // Send Credential Request
         //
-        CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
+        String credentialEndpoint = oauth.getEndpoints().getOid4vcCredential();
+        CredentialResponse credResponse = wallet.credentialRequest(ctx, tokenType, accessToken)
                 .credentialIdentifier(credIdentifier)
-                .proofs(jwtProof)
+                .dpopProof(wallet.generateSignedDPoPProof(credentialEndpoint, ecKey, accessToken))
+                .proofs(wallet.generateJwtProof(ctx, ecKey, nonce))
                 .send().getCredentialResponse();
 
         assertFalse(credResponse.getCredentials().isEmpty(), "No credential");
-    }
-
-    @Test
-    public void testClientAttestationHappyFlow_HaipProfileEnabled() {
-
-        Boolean wasEnabled = getClientPolicy(VCI_CLIENT_POLICY_HAIP).isEnabled();
-        try {
-            setClientPolicyEnabled(VCI_CLIENT_POLICY_HAIP, true);
-
-            var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);
-            ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
-
-            var kw = wallet.getRSAKeyPair(ctx);
-            String attestationJwt = wallet.buildClientAttestationJWT(ctx, kw);
-            String attestationPoPJwt = wallet.buildClientAttestationPoPJWT(ctx, kw);
-
-            PkceGenerator pkce = PkceGenerator.s256();
-            KeyWrapper ecKey = wallet.getECKeyPair(ctx);
-
-            // Send PAR Request
-            //
-            ParResponse parResponse = oauth.pushedAuthorizationRequest()
-                    .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
-                    .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
-                    .scopeParam(ctx.getScope())
-                    .codeChallenge(pkce)
-                    .send();
-
-            String errorDescription = parResponse.getErrorDescription();
-            assertNull(errorDescription, "PAR request error: " + errorDescription);
-
-            String requestUri = parResponse.getRequestUri();
-            assertNotNull(requestUri, "No requestUri");
-
-            // Send Authorization Request
-            //
-            AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
-                    .scope(ctx.getScope())
-                    .codeChallenge(pkce)
-                    .requestUri(requestUri)
-                    .send(ctx.getHolder(), TEST_PASSWORD);
-
-            errorDescription = authResponse.getErrorDescription();
-            assertNull(errorDescription, "Authorization error: " + errorDescription);
-
-            String authCode = authResponse.getCode();
-            assertNotNull(authCode, "No auth code");
-
-            // Send Token Request
-            //
-            String tokenEndpoint = oauth.getEndpoints().getToken();
-            AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode)
-                    .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
-                    .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
-                    .dpopProof(wallet.generateSignedDPoPProof(tokenEndpoint, ecKey, null))
-                    .codeVerifier(pkce)
-                    .send();
-
-            errorDescription = tokenResponse.getErrorDescription();
-            assertNull(errorDescription, "Token request error: " + errorDescription);
-
-            String tokenType = tokenResponse.getTokenType();
-            assertNotNull(tokenType, "No token type");
-
-            String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
-            assertNotNull(accessToken, "No access token");
-
-            String credIdentifier = ctx.getAuthorizedCredentialIdentifier();
-            assertNotNull(credIdentifier, "No credential identifier");
-
-            // Send Nonce Request
-            //
-            String nonce = wallet.nonceRequest().send().getNonce();
-
-            // Send Credential Request
-            //
-            String credentialEndpoint = oauth.getEndpoints().getOid4vcCredential();
-            CredentialResponse credResponse = wallet.credentialRequest(ctx, tokenType, accessToken)
-                    .credentialIdentifier(credIdentifier)
-                    .dpopProof(wallet.generateSignedDPoPProof(credentialEndpoint, ecKey, accessToken))
-                    .proofs(wallet.generateJwtProof(ctx, ecKey, nonce))
-                    .send().getCredentialResponse();
-
-            assertFalse(credResponse.getCredentials().isEmpty(), "No credential");
-
-        } finally {
-            setClientPolicyEnabled(VCI_CLIENT_POLICY_HAIP, wasEnabled);
-        }
     }
 }

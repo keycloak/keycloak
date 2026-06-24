@@ -72,7 +72,7 @@ curl http://localhost:8080/realms/myrealm/scim/v2/Groups \
   -H "Accept: application/scim+json"
 ----
 
-For filtering and pagination of results, see <<_scim_filtering_resources_,Filtering resources>>.
+For filtering and pagination of results, see <<_scim_filtering_resources,Filtering resources>>.
 
 == Updating a group
 

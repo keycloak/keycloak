@@ -280,31 +280,61 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
      */
     @Test
     public void authenticateWithValidClientSecretWhenRotationPolicyIsEnableForHS256() throws Exception {
-        processAuthenticateWithAlgorithm(Algorithm.HS256, SecretGenerator.SECRET_LENGTH_256_BITS);
+        processAuthenticateWithAlgorithm(Algorithm.HS256);
     }
 
     @Test
     public void authenticateWithValidClientSecretWhenRotationPolicyIsEnableForHS384() throws Exception {
-        processAuthenticateWithAlgorithm(Algorithm.HS384, SecretGenerator.SECRET_LENGTH_384_BITS);
+        processAuthenticateWithAlgorithm(Algorithm.HS384);
     }
 
     @Test
     public void authenticateWithValidClientSecretWhenRotationPolicyIsEnableForHS512() throws Exception {
-        processAuthenticateWithAlgorithm(Algorithm.HS512, SecretGenerator.SECRET_LENGTH_512_BITS);
+        processAuthenticateWithAlgorithm(Algorithm.HS512);
     }
 
-    private void processAuthenticateWithAlgorithm(String algorithm, Integer secretLength) throws Exception{
+    @Test
+    public void regenerateClientSecretForClientSecretBasicWithIdTokenHs512() throws Exception {
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId("basic-hs512-client");
+        clientRep.setName("basic-hs512-client");
+        clientRep.setProtocol(OIDC);
+        clientRep.setBearerOnly(Boolean.FALSE);
+        clientRep.setPublicClient(Boolean.FALSE);
+        clientRep.setClientAuthenticatorType("client-secret");
+        clientRep.setStandardFlowEnabled(Boolean.TRUE);
+        clientRep.setAttributes(new HashMap<>());
+        clientRep.getAttributes().put(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG, Algorithm.HS512);
+        clientRep.setRedirectUris(Collections.singletonList(
+                ServerURLs.getAuthServerContextRoot() + "/auth/realms/master/app/auth"));
+
+        Response resp = adminClient.realm(REALM_NAME).clients().create(clientRep);
+        assertEquals(Response.Status.CREATED.getStatusCode(), resp.getStatus());
+        String clientUuid = ApiUtil.getCreatedId(resp);
+        resp.close();
+        testContext.getOrCreateCleanup(REALM_NAME).addClientUuid(clientUuid);
+
+        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(clientUuid);
+        String secret = clientResource.generateNewSecret().getValue();
+        assertThat(secret.length(), is(SecretGenerator.equivalentEntropySize(
+                SecretGenerator.SECRET_LENGTH_512_BITS, SecretGenerator.ALPHANUM.length)));
+    }
+
+    private void processAuthenticateWithAlgorithm(String algorithm) throws Exception{
         String cidConfidential= createClientByAdmin("jwt-client","jwt-client",CLIENT_SECRET,algorithm);
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
         configureDefaultProfileAndPolicy();
 
+        int requiredSecretLength = SecretGenerator.equivalentEntropySize(
+                SecretGenerator.SECRET_LENGTH_512_BITS, SecretGenerator.ALPHANUM.length);
+
         String firstSecret = clientResource.generateNewSecret().getValue(); //clientResource.getSecret().getValue();
-        assertThat(firstSecret.length(), is(SecretGenerator.equivalentEntropySize(secretLength, SecretGenerator.ALPHANUM.length)));
+        assertThat(firstSecret.length(), is(requiredSecretLength));
 
         //generate new secret, rotate the secret
         String newSecret = clientResource.generateNewSecret().getValue();
         assertThat(firstSecret, not(equalTo(newSecret)));
-        assertThat(newSecret.length(), is(SecretGenerator.equivalentEntropySize(secretLength, SecretGenerator.ALPHANUM.length)));
+        assertThat(newSecret.length(), is(requiredSecretLength));
 
         oauth.client("jwt-client");
         oauth.doLogin("test-user@localhost", "password");
