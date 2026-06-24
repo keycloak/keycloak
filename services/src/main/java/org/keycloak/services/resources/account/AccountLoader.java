@@ -116,10 +116,12 @@ public class AccountLoader {
 
     private AccountRestService getAccountRestService(ClientModel client, String versionStr) {
         AccountRestService.checkAccountApiEnabled();
+        final var errorCors = Cors.builder().auth().allowAllOrigins().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
                 .authenticate();
         if (authResult == null) {
+            errorCors.add();
             throw new NotAuthorizedException("Bearer token required");
         }
 
@@ -133,6 +135,7 @@ public class AccountLoader {
         }
 
         if (!accessToken.hasAudience(client.getClientId())) {
+            errorCors.add();
             throw new NotAuthorizedException("Invalid audience for client " + client.getClientId());
         }
 
