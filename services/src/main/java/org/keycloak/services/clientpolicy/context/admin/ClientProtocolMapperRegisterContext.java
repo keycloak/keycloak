@@ -26,7 +26,7 @@ import org.keycloak.services.resources.admin.AdminAuth;
 /**
  * Fired when protocol mappers are being created on a client or client scope through the admin REST API.
  *
- * <p>Emitted from {@link org.keycloak.services.resources.admin.ProtocolMappersResource#createMapper}
+ * <p>Emitted from {@link org.keycloak.services.resources.admin.ProtocolMappersResource#createMapper(java.util.List)}
  * before the mapper is persisted. An executor may inspect {@link #getProposedProtocolMappers()} and throw
  * {@link org.keycloak.services.clientpolicy.ClientPolicyException} to reject the request.
  *
