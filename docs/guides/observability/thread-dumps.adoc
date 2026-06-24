@@ -13,7 +13,7 @@ Thread dumps are useful for diagnosing issues such as thread contention, deadloc
 
 == How to capture a JVM thread dump
 
-There are several ways to capture a thread dump. This guide uses `jcmd` as it provides the most straightforward command line experience.
+There are several ways to capture a thread dump. This guide uses `jcmd` as it provides the most straightforward command-line experience.
 
 The `jcmd` tool sends diagnostic commands to a running JVM. There are two commands relevant to capturing thread dumps: `Thread.print` and `Thread.dump_to_file`.
 
@@ -72,13 +72,13 @@ The following script demonstrates simple PID auto-detection:
 [source]
 ----
 #!/bin/bash -e
-PID=$(jcmd | grep QuarkusEntryPoint | head -1 | awk '{print $1}')
+PID=$(jcmd | grep -m1 QuarkusEntryPoint | awk '{print $1}')
 if [ -z "$PID" ]; then
   echo "Process not found."
   exit 1
 fi
-jcmd $PID Thread.print -l > thread_dump_print.txt
-jcmd $PID Thread.dump_to_file $PWD/thread_dump_to_file.txt
+jcmd "$PID" Thread.print -l > thread_dump_print.txt
+jcmd "$PID" Thread.dump_to_file "$PWD/thread_dump_to_file.txt"
 ----
 
 == Collecting multiple samples
@@ -90,8 +90,8 @@ For example, assuming the `PID` variable is set, the following script captures f
 [source,bash]
 ----
 for i in {1..4}; do
-  jcmd $PID Thread.print -l > thread_dump_print_$i.txt
-  jcmd $PID Thread.dump_to_file $PWD/thread_dump_to_file_$i.txt
+  jcmd "$PID" Thread.print -l > "thread_dump_print_${i}.txt"
+  jcmd "$PID" Thread.dump_to_file "$PWD/thread_dump_to_file_${i}.txt"
   sleep 2
 done
 ----
