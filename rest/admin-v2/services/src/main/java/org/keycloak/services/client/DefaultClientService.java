@@ -154,11 +154,11 @@ public class DefaultClientService implements ClientService {
                     .map(client -> getMapper(client.getProtocol()).fromModel(client))
                     .filter(Objects::nonNull);
 
-            stream = applySearchFilter(stream, searchOptions);
-            return applyProjection(stream.sorted(sortComparator), projectionOptions);
+            stream = applySearchFilter(stream, searchOptions).sorted(sortComparator);
             if (!useJpaPagination) {
                 stream = paginatedStream(stream, offset, limit);
             }
+            return applyProjection(stream, projectionOptions);
 
         } catch (ModelException e) {
             throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);

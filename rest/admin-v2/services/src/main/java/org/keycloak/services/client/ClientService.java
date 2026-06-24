@@ -11,10 +11,10 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.models.Constants;
 import org.keycloak.admin.api.ClientField;
 import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.SortOption;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.PatchType;
@@ -40,22 +40,47 @@ public interface ClientService extends Service {
     }
 
     class ClientSortAndSliceOptions {
-        private final List<SortOption> sortOptions;
+        private List<SortOption> sortOptions;
+        private int offset;
+        private int limit;
 
-        private ClientSortAndSliceOptions(List<SortOption> sortOptions) {
+        private ClientSortAndSliceOptions(List<SortOption> sortOptions, int offset, int limit) {
+            this.offset = offset;
+            this.limit = limit;
             this.sortOptions = List.copyOf(sortOptions);
+        }
+
+        public int limit() {
+            return this.limit;
+        }
+
+        public int offset() {
+            return this.offset;
         }
 
         public static ClientSortAndSliceOptions fromQuery(ListOptions listOptions) {
             List<SortOption> options;
+            int normalizedOffset;
+            int normalizedLimit;
             try {
                 options = listOptions.getSort() == null || listOptions.getSort().isEmpty()
                         ? List.of(SortOption.of(ClientField.defaultField()))
                         : listOptions.getSort();
+
+                Integer offset = listOptions.getOffset();
+                Integer limit = listOptions.getLimit();
+                if (offset != null && offset < 0) {
+                    throw new ServiceException("offset must be greater than or equal to 0", Response.Status.BAD_REQUEST);
+                }
+                if (limit != null && limit < 1) {
+                    throw new ServiceException("limit must be greater than or equal to 1", Response.Status.BAD_REQUEST);
+                }
+                normalizedOffset = offset != null ? offset : 0;
+                normalizedLimit = limit != null ? limit : Constants.DEFAULT_MAX_RESULTS;
             } catch (IllegalArgumentException e) {
                 throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
             }
-            return new ClientSortAndSliceOptions(options);
+            return new ClientSortAndSliceOptions(options, normalizedOffset, normalizedLimit);
         }
 
         public Comparator<BaseClientRepresentation> getSortComparator() {
@@ -64,6 +89,7 @@ public interface ClientService extends Service {
                     .reduce(Comparator::thenComparing)
                     .orElseThrow();
         }
+    }
 
     record CreateOrUpdateResult(BaseClientRepresentation representation, boolean created) {}
 
@@ -81,15 +107,4 @@ public interface ClientService extends Service {
 
     BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, InputStream patch) throws ServiceException;
 
-    public static ClientSortAndSliceOptions normalizePagination(Integer offset, Integer limit) throws ServiceException {
-        if (offset != null && offset < 0) {
-            throw new ServiceException("offset must be greater than or equal to 0", Response.Status.BAD_REQUEST);
-        }
-        if (limit != null && limit < 1) {
-            throw new ServiceException("limit must be greater than or equal to 1", Response.Status.BAD_REQUEST);
-        }
-        int normalizedOffset = offset != null ? offset : 0;
-        int normalizedLimit = limit != null ? limit : Constants.DEFAULT_MAX_RESULTS;
-        return new ClientSortAndSliceOptions(normalizedOffset, normalizedLimit);
-    }
 }
