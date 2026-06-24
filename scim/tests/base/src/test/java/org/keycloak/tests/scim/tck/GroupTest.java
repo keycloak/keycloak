@@ -459,6 +459,8 @@ public class GroupTest extends AbstractScimTest {
         ListResponse<Group> groups = client.groups().getAll("displayName pr");
         assertTrue(groups.getResources().stream().anyMatch(g -> expectedId.equals(g.getId())));
         assertTrue(groups.getResources().stream().noneMatch(g -> organizationGroupId.equals(g.getId())));
+
+        assertNull(client.groups().get(group.getId()));
     }
 
     @Test
@@ -484,10 +486,6 @@ public class GroupTest extends AbstractScimTest {
             group.setId(ApiUtil.getCreatedId(response));
         }
 
-        Group scimGroup = client.groups().get(group.getId());
-        assertNotNull(scimGroup);
-        assertEquals(group.getName(), scimGroup.getDisplayName());
-
         try {
             User userA = createScimUser();
             client.groups().patch(group.getId(), PatchRequest.create()
@@ -497,8 +495,138 @@ public class GroupTest extends AbstractScimTest {
         } catch (ScimClientException e) {
             ErrorResponse error = e.getError();
             assertNotNull(error);
-            assertEquals("Cannot access organization related group via non Organization API.", error.getDetail());
+            assertEquals("Resource not found with id " + group.getId(), error.getDetail());
         }
+    }
+
+    @Test
+    public void testOrganizationSubGroupNotManagedViaScim() {
+        realm.updateWithCleanup(realm -> realm.organizationsEnabled(true));
+
+        OrganizationRepresentation orgRep = new OrganizationRepresentation();
+        String orgName = KeycloakModelUtils.generateId();
+        orgRep.setName(orgName);
+        orgRep.setAlias(orgName);
+        orgRep.addDomain(new OrganizationDomainRepresentation(orgName + ".org"));
+        try (Response response = realm.admin().organizations().create(orgRep)) {
+            orgRep.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.organizations().get(orgRep.getId()).delete().close());
+
+        GroupRepresentation orgGroup = new GroupRepresentation();
+        orgGroup.setName(KeycloakModelUtils.generateId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+        try (Response response = orgResource.groups().addTopLevelGroup(orgGroup)) {
+            orgGroup.setId(ApiUtil.getCreatedId(response));
+        }
+
+        GroupRepresentation child = new GroupRepresentation();
+        child.setName(KeycloakModelUtils.generateId());
+        try (Response response = realm.admin().organizations().get(orgRep.getId()).groups().group(orgGroup.getId()).addSubGroup(child)) {
+            child.setId(ApiUtil.getCreatedId(response));
+        }
+
+        // child of org group should be excluded from listing
+        ListResponse<Group> groups = client.groups().getAll("displayName pr");
+        assertTrue(groups.getResources().stream().noneMatch(g -> child.getId().equals(g.getId())));
+
+        // direct GET by ID should not return the child
+        assertNull(client.groups().get(child.getId()));
+
+        // direct UPDATE should fail
+        Group update = new Group();
+        update.setId(child.getId());
+        update.setDisplayName("hijacked");
+        try {
+            client.groups().update(child.getId(), update);
+            fail("Should not be able to update a subgroup of an organization group via SCIM");
+        } catch (ScimClientException e) {
+            assertEquals(404, e.getError().getStatusInt());
+        }
+
+        // direct PATCH should fail
+        try {
+            client.groups().patch(child.getId(), PatchRequest.create()
+                    .replace("displayName", "hijacked")
+                    .build());
+            fail("Should not be able to patch a subgroup of an organization group via SCIM");
+        } catch (ScimClientException e) {
+            assertEquals(404, e.getError().getStatusInt());
+        }
+
+        // direct DELETE should fail
+        try {
+            client.groups().delete(child.getId());
+            fail("Should not be able to delete a subgroup of an organization group via SCIM");
+        } catch (ScimClientException e) {
+            assertEquals(404, e.getError().getStatusInt());
+        }
+
+        // membership operations on the child should also fail
+        try {
+            User user = createScimUser();
+            client.groups().patch(child.getId(), PatchRequest.create()
+                    .add("members", user.getId())
+                    .build());
+            fail("Should not be able to add members to a subgroup of an organization group via SCIM");
+        } catch (ScimClientException e) {
+            assertEquals(404, e.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testUserGroupsAttributeExcludesOrganizationGroups() {
+        realm.updateWithCleanup(realm -> realm.organizationsEnabled(true));
+
+        // create an organization with a group and a child under it
+        OrganizationRepresentation orgRep = new OrganizationRepresentation();
+        String orgName = KeycloakModelUtils.generateId();
+        orgRep.setName(orgName);
+        orgRep.setAlias(orgName);
+        orgRep.addDomain(new OrganizationDomainRepresentation(orgName + ".org"));
+        try (Response response = realm.admin().organizations().create(orgRep)) {
+            orgRep.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.organizations().get(orgRep.getId()).delete().close());
+
+        GroupRepresentation orgGroup = new GroupRepresentation();
+        orgGroup.setName(KeycloakModelUtils.generateId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+        try (Response response = orgResource.groups().addTopLevelGroup(orgGroup)) {
+            orgGroup.setId(ApiUtil.getCreatedId(response));
+        }
+
+        GroupRepresentation orgChildGroup = new GroupRepresentation();
+        orgChildGroup.setName(KeycloakModelUtils.generateId());
+        try (Response response = realm.admin().organizations().get(orgRep.getId()).groups().group(orgGroup.getId()).addSubGroup(orgChildGroup)) {
+            orgChildGroup.setId(ApiUtil.getCreatedId(response));
+        }
+
+        // create a regular REALM group
+        Group realmGroup = new Group();
+        realmGroup.setDisplayName(KeycloakModelUtils.generateId());
+        realmGroup = client.groups().create(realmGroup);
+        adminEvents.clear();
+
+        // create a user, add to realm group, then add as org member and assign to org groups
+        User user = createScimUser();
+        realm.admin().users().get(user.getId()).joinGroup(realmGroup.getId());
+        orgResource.members().addMember(user.getId()).close();
+        orgResource.groups().group(orgGroup.getId()).addMember(user.getId());
+        orgResource.groups().group(orgChildGroup.getId()).addMember(user.getId());
+
+        // fetch the user via SCIM requesting the groups attribute
+        User fetched = client.users().get(user.getId(), List.of("groups"));
+        assertNotNull(fetched.getGroups());
+
+        List<String> returnedGroupIds = fetched.getGroups().stream()
+                .map(g -> g.getValue())
+                .toList();
+
+        // only the regular REALM group should be present
+        assertTrue(returnedGroupIds.contains(realmGroup.getId()));
+        assertFalse(returnedGroupIds.contains(orgGroup.getId()));
+        assertFalse(returnedGroupIds.contains(orgChildGroup.getId()));
     }
 
     private static void assertMember(List<Member> members, String userId, String userName) {
