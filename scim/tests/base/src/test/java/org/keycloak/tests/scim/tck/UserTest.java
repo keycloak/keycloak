@@ -38,6 +38,7 @@ import org.keycloak.scim.resource.user.Name;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
