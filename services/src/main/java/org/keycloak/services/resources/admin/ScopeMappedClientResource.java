@@ -196,13 +196,22 @@ public class ScopeMappedClientResource {
     public void deleteClientScopeMapping(List<RoleRepresentation> roles) {
         managePermission.require();
 
+        List<RoleModel> roleModels;
         List<RoleRepresentation> effectiveRoles;
         if (roles == null) {
-            effectiveRoles = KeycloakModelUtils.getClientScopeMappingsStream(scopedClient, scopeContainer)
+            roleModels = KeycloakModelUtils.getClientScopeMappingsStream(scopedClient, scopeContainer).collect(Collectors.toList());
+            effectiveRoles = roleModels.stream()
                     .map(ModelToRepresentation::toBriefRepresentation)
                     .collect(Collectors.toList());
         } else {
             effectiveRoles = roles;
+            roleModels = roles.stream().map(role -> {
+                RoleModel roleModel = scopedClient.getRole(role.getName());
+                if (roleModel == null) {
+                    throw new NotFoundException("Role not found");
+                }
+                return roleModel;
+            }).collect(Collectors.toList());
         }
 
         try {
@@ -211,11 +220,7 @@ public class ScopeMappedClientResource {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
-        for (RoleRepresentation role : effectiveRoles) {
-            RoleModel roleModel = scopedClient.getRole(role.getName());
-            if (roleModel == null) {
-                throw new NotFoundException("Role not found");
-            }
+        for (RoleModel roleModel : roleModels) {
             scopeContainer.deleteScopeMapping(roleModel);
         }
 
