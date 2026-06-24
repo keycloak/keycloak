@@ -64,6 +64,8 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.Cookie;
 
+import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -312,15 +314,21 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
                 "aes-generated",
                 realmId,
                 new MultivaluedHashMap<>(Map.of(
-                        "secretSize", List.of("16"),
-                        "priority", List.of("100")
+                        Attributes.SECRET_SIZE_KEY, List.of("16")
                 ))
         );
+        aes128Keys.getConfig().putSingle(Attributes.PRIORITY_KEY, "150");
         try (Response response = realm.components().add(aes128Keys)) {
             assertEquals(201, response.getStatus(), "Should create AES-128 key provider");
+            getCleanup().addComponentId(getCreatedId(response));
         }
         oauth.openLoginForm();
         String aes128Cookie = driver.manage().getCookieNamed(RestartLoginCookie.KC_RESTART).getValue();
+
+        // Verify cookie uses AES128 encoding
+        String aes128Header = aes128Cookie.split("\\.")[0];
+        String aes128HeaderJson = new String(java.util.Base64.getUrlDecoder().decode(aes128Header), StandardCharsets.UTF_8);
+        Assertions.assertTrue(aes128HeaderJson.contains("A128GCM"), "Expected pre-migration cookie to use A128GCM (AES-128)");
 
         // use AES256
         ComponentRepresentation aes256Keys = createComponentRep(
@@ -328,12 +336,13 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
                 "aes-generated",
                 realmId,
                 new MultivaluedHashMap<>(Map.of(
-                        "secretSize", List.of("32"),
-                        "priority", List.of("200")
+                        Attributes.SECRET_SIZE_KEY, List.of("32")
                 ))
         );
+        aes256Keys.getConfig().putSingle(Attributes.PRIORITY_KEY, "200");
         try (Response response = realm.components().add(aes256Keys)) {
             assertEquals(201, response.getStatus(), "Should create AES-256 key provider");
+            getCleanup().addComponentId(getCreatedId(response));
         }
 
         // Verify AES-128 cookie still decrypts with new AES-256 key active
@@ -352,7 +361,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
                 RestartLoginCookie decoded = RestartLoginCookie.decryptAndDecode(session, aes128Cookie);
                 Assertions.assertNotNull(decoded, "Should decrypt AES-128 cookie with AES-256 key present");
             } catch (Exception e) {
-                Assertions.fail("Failed to decrypt AES-128 cookie after AES-256 migration: " + e.getMessage());
+                Assertions.fail("Failed to decrypt AES-128 cookie after AES-256 migration", e);
             }
         });
 
@@ -376,7 +385,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
                 RestartLoginCookie decoded = RestartLoginCookie.decryptAndDecode(session, aes256Cookie);
                 Assertions.assertNotNull(decoded, "Should decrypt new AES-256 cookie");
             } catch (Exception e) {
-                Assertions.fail("Failed to process AES-256 cookie: " + e.getMessage());
+                Assertions.fail("Failed to process AES-256 cookie: " + e);
             }
         });
 
