@@ -317,7 +317,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
                         Attributes.SECRET_SIZE_KEY, List.of("16")
                 ))
         );
-        aes128Keys.getConfig().putSingle(Attributes.PRIORITY_KEY, "150");
+        aes128Keys.getConfig().putSingle(Attributes.PRIORITY_KEY, Long.toString(Long.MAX_VALUE - 10));
         try (Response response = realm.components().add(aes128Keys)) {
             assertEquals(201, response.getStatus(), "Should create AES-128 key provider");
             getCleanup().addComponentId(getCreatedId(response));
@@ -339,7 +339,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
                         Attributes.SECRET_SIZE_KEY, List.of("32")
                 ))
         );
-        aes256Keys.getConfig().putSingle(Attributes.PRIORITY_KEY, "200");
+        aes256Keys.getConfig().putSingle(Attributes.PRIORITY_KEY, Long.toString(Long.MAX_VALUE - 9));
         try (Response response = realm.components().add(aes256Keys)) {
             assertEquals(201, response.getStatus(), "Should create AES-256 key provider");
             getCleanup().addComponentId(getCreatedId(response));
@@ -385,7 +385,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
                 RestartLoginCookie decoded = RestartLoginCookie.decryptAndDecode(session, aes256Cookie);
                 Assertions.assertNotNull(decoded, "Should decrypt new AES-256 cookie");
             } catch (Exception e) {
-                Assertions.fail("Failed to process AES-256 cookie: " + e);
+                Assertions.fail("Failed to process AES-256 cookie: ", e);
             }
         });
 
