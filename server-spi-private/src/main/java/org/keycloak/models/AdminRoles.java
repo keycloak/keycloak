@@ -21,6 +21,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.keycloak.Config;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -70,5 +72,53 @@ public class AdminRoles {
         ALL_ROLES.add(ADMIN);
         ALL_ROLES.add(CREATE_REALM);
         ALL_ROLES.add(REALM_ADMIN);
+    }
+
+    public static boolean isAdminRole(RoleModel role) {
+        if (!ALL_ROLES.contains(role.getName())) {
+            return false;
+        }
+
+        RoleContainerModel container = role.getContainer();
+
+        if (container instanceof RealmModel r) {
+            return r.getName().equals(Config.getAdminRealm());
+        }
+
+        if (container instanceof ClientModel c) {
+            if (c.getClientId().equals(Constants.REALM_MANAGEMENT_CLIENT_ID)) {
+                return true;
+            }
+            if (c.getRealm().getName().equals(Config.getAdminRealm())
+                    && c.getClientId().endsWith(APP_SUFFIX)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean groupHasAdminRoles(GroupModel group) {
+        GroupModel current = group;
+        while (current != null) {
+            if (current.getRoleMappingsStream().anyMatch(role -> isAdminRole(role, new HashSet<>()))) {
+                return true;
+            }
+            current = current.getParent();
+        }
+        return false;
+    }
+
+    private static boolean isAdminRole(RoleModel role, Set<String> visited) {
+        if (!visited.add(role.getId())) {
+            return false;
+        }
+        if (isAdminRole(role)) {
+            return true;
+        }
+        if (!role.isComposite()) {
+            return false;
+        }
+        return role.getCompositesStream().anyMatch(child -> isAdminRole(child, visited));
     }
 }

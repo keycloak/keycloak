@@ -2,11 +2,13 @@ package org.keycloak.services;
 
 import org.keycloak.Token;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
 import org.keycloak.models.Permissions;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.resources.admin.AdminAuth;
@@ -103,6 +105,20 @@ public class DefaultPermissions implements Permissions {
         }
 
         return false;
+    }
+
+    @Override
+    public boolean isAdminGroup(GroupModel group) {
+        return AdminRoles.groupHasAdminRoles(group);
+    }
+
+    @Override
+    public boolean isAdminUser(UserModel user) {
+        RealmModel realm = context.getRealm();
+        var evaluator = AdminPermissions.evaluator(session, realm, realm, user);
+        return evaluator.isRealmAdmin()
+                || evaluator.hasOneAdminRole(AdminRoles.ALL_REALM_ROLES)
+                || evaluator.hasOneAdminRole(AdminRoles.IMPERSONATION);
     }
 
     private AdminPermissionEvaluator getEvaluator(AccessToken accessToken) {
