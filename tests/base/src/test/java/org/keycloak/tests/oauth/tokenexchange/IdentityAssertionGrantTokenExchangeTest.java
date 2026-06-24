@@ -68,6 +68,7 @@ public class IdentityAssertionGrantTokenExchangeTest {
     private static final String DOWNSTREAM_CLIENT_ID = "mcp-client-at-resource-as";
     private static final String DISABLED_CLIENT = "mcp-client-disabled";
     private static final String PUBLIC_CLIENT = "mcp-client-public";
+    private static final String OTHER_CLIENT = "other-client";
 
     // The Resource Authorization Server issuer (RFC 8693 "audience") and the MCP server resource
     // identifier ("resource"). Both are opaque URIs to the issuer and are echoed into the ID-JAG.
@@ -165,6 +166,47 @@ public class IdentityAssertionGrantTokenExchangeTest {
 
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
         assertEquals(OAuthErrorException.ACCESS_DENIED, response.getError());
+    }
+
+    @Test
+    public void testAccessTokenAsSubjectRejected() {
+        // A valid access token (typ=Bearer) presented as subject_token_type=id_token must be rejected.
+        oauth.client(MCP_CLIENT, MCP_CLIENT_SECRET);
+        oauth.openid(false);
+        oauth.scope(null);
+        String accessToken = oauth.doPasswordGrantRequest("alice", "password").getAccessToken();
+
+        AccessTokenResponse response = oauth.tokenExchangeRequest(accessToken, OAuth2Constants.ID_TOKEN_TYPE)
+                .client(MCP_CLIENT, MCP_CLIENT_SECRET)
+                .requestedTokenType(OAuth2Constants.ID_JAG_TOKEN_TYPE)
+                .audience(RESOURCE_AS_ISSUER)
+                .resource(MCP_SERVER_RESOURCE)
+                .send();
+
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+    }
+
+    @Test
+    public void testSubjectTokenIssuedForDifferentClientRejected() {
+        // Mint an ID token that belongs to other-client...
+        oauth.client(OTHER_CLIENT, MCP_CLIENT_SECRET);
+        oauth.openid(true);
+        oauth.scope("openid");
+        String otherIdToken = oauth.doPasswordGrantRequest("alice", "password").getIdToken();
+        oauth.openid(false);
+        oauth.scope(null);
+
+        // ...and confirm mcp-client cannot exchange it.
+        AccessTokenResponse response = oauth.tokenExchangeRequest(otherIdToken, OAuth2Constants.ID_TOKEN_TYPE)
+                .client(MCP_CLIENT, MCP_CLIENT_SECRET)
+                .requestedTokenType(OAuth2Constants.ID_JAG_TOKEN_TYPE)
+                .audience(RESOURCE_AS_ISSUER)
+                .resource(MCP_SERVER_RESOURCE)
+                .send();
+
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
     }
 
     @Test
@@ -290,6 +332,14 @@ public class IdentityAssertionGrantTokenExchangeTest {
                     .directAccessGrantsEnabled(true)
                     .attribute(OIDCConfigAttributes.ID_JAG_ISSUANCE_ENABLED, "true")
                     .attribute(OIDCConfigAttributes.ID_JAG_ALLOWED_AUDIENCES, RESOURCE_AS_ISSUER));
+
+            // Another confidential client, used to mint an ID token that belongs to a different client.
+            realm.clients(ClientBuilder.create()
+                    .clientId(OTHER_CLIENT)
+                    .secret(MCP_CLIENT_SECRET)
+                    .redirectUris("*")
+                    .webOrigins("*")
+                    .directAccessGrantsEnabled(true));
 
             return realm;
         }

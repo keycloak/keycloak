@@ -134,7 +134,9 @@ public class IdentityAssertionGrantTokenExchangeProvider implements TokenExchang
         // resource = the MCP server id. Optional; echoed into the JAG when present.
         String resource = getSingleResource(event, cors, params.getResource());
 
-        // Verify the subject token. checkTokenType=false so an ID token (typ=ID) is accepted.
+        // Verify the subject token: a valid, active token issued by this realm. checkTokenType=false
+        // so the verifier doesn't reject the non-Bearer ID token; the ID-token constraints are
+        // enforced right after.
         AuthenticationManager.AuthResult authResult = AuthenticationManager.verifyIdentityToken(session, realm,
                 session.getContext().getUri(), clientConnection, true, false, null, false, subjectToken,
                 context.getHeaders(), verifier -> {});
@@ -143,10 +145,25 @@ public class IdentityAssertionGrantTokenExchangeProvider implements TokenExchang
                     "Invalid " + OAuth2Constants.SUBJECT_TOKEN, Response.Status.BAD_REQUEST);
         }
 
-        UserModel user = authResult.user();
         AccessToken subjectJwt = authResult.token();
+
+        // It must really be an ID token, not an access token presented with subject_token_type=id_token.
+        if (!TokenUtil.TOKEN_TYPE_ID.equals(subjectJwt.getType())) {
+            throw error(event, cors, Errors.INVALID_TOKEN, OAuthErrorException.INVALID_GRANT,
+                    "subject_token must be an ID token", Response.Status.BAD_REQUEST);
+        }
+
+        // And it must have been issued to the requesting client - a client may only exchange its own
+        // ID token, not one minted for a different client.
+        if (!client.getClientId().equals(subjectJwt.getIssuedFor())) {
+            throw error(event, cors, Errors.INVALID_TOKEN, OAuthErrorException.INVALID_GRANT,
+                    "subject_token was not issued to this client", Response.Status.BAD_REQUEST);
+        }
+
+        UserModel user = authResult.user();
         event.user(user);
         event.detail(Details.USERNAME, user.getUsername());
+        event.detail(Details.SUBJECT_TOKEN_CLIENT_ID, subjectJwt.getIssuedFor());
 
         String scope = params.getScope();
         String idJag = signIdJag(session, buildIdJag(session, realm, clientConfig, client, subjectJwt, audience, resource, scope));
