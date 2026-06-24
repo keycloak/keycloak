@@ -174,6 +174,9 @@ public class IdentityAssertionGrantTokenExchangeProvider implements TokenExchang
         event.detail(Details.SUBJECT_TOKEN_CLIENT_ID, subjectJwt.getIssuedFor());
 
         String scope = params.getScope();
+        if (scope != null && scope.isBlank()) {
+            scope = null;
+        }
         validateRequestedScopes(event, cors, clientConfig, scope);
         String idJag = signIdJag(session, realm, buildIdJag(session, realm, clientConfig, client, subjectJwt, audience, resource, scope));
 
