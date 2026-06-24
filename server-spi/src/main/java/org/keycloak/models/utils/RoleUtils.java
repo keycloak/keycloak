@@ -146,14 +146,18 @@ public class RoleUtils {
                 RoleModel current = stack.pop();
                 sb.add(current);
 
-                if (current.isComposite()) {
-                    current.getCompositesStream()
-                            .filter(r -> !visited.contains(r))
-                            .forEach(r -> {
-                                visited.add(r);
-                                stack.add(r);
-                            });
-                }
+                // Fetch the composites directly rather than gating on isComposite() first.
+                // On the JPA (cache-miss) path isComposite() runs its own getChildRoles query --
+                // and the FlushMode.AUTO flush before it -- immediately before getCompositesStream()
+                // runs another, doubling the per-node round-trips while expanding the tree.
+                // getCompositesStream() already yields an empty stream for non-composite roles,
+                // so the pre-check is redundant.
+                current.getCompositesStream()
+                        .filter(r -> !visited.contains(r))
+                        .forEach(r -> {
+                            visited.add(r);
+                            stack.add(r);
+                        });
             }
         }
 
