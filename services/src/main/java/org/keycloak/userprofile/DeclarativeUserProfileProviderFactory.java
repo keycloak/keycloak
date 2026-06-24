@@ -633,7 +633,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         Predicate<AttributeContext> readAllowed = DeclarativeUserProfileProviderFactory::isVerifiableCredentialsEnabled;
         Predicate<AttributeContext> writeAllowed = c -> isVerifiableCredentialsEnabled(c) && USER_API.equals(c.getContext());
         AttributeValidatorMetadata patternValidator = new AttributeValidatorMetadata(PatternValidator.ID, new ValidatorConfig(Map.of(
-                "pattern", "^did:[a-z0-9]+:.+$",
+                "pattern", "^did:[a-z0-9]+:\\S+$",
                 "error-message", "Value must follow the format 'did:method:identifier'",
                 "ignore.empty.value", "true")));
         AttributeValidatorMetadata duplicateValidator = new AttributeValidatorMetadata(DuplicateDidValidator.ID);

@@ -209,7 +209,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
             attr.setPermissions(new UPAttributePermissions(Set.of(ROLE_ADMIN, ROLE_USER), Set.of(ROLE_ADMIN)));
             attr.setValidations(Map.of(
                     PatternValidator.ID, Map.of(
-                            "pattern", "^did:[a-z0-9]+:.+$",
+                            "pattern", "^did:[a-z0-9]+:\\S+$",
                             "error-message", "Value must follow the format 'did:method:identifier'",
                             "ignore.empty.value", "true"
                     ),
