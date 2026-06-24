@@ -31,22 +31,24 @@ directly to the user, inherited through group membership, or obtained through co
 
 The following restrictions apply to administrative users accessed through the SCIM API:
 
-* *Read operations* (`GET`) return a minimal representation containing only the `id` and `userName` attributes.
-  Personal details such as `name` and `emails` are not included.
+* *Read operations* (`GET`) return a minimal representation containing only the `id`, `schemas`, and `userName`
+  attributes. Personal details such as `name` and `emails` are not included.
 * *Write operations* (`PUT`, `PATCH`, `DELETE`) return a `403 Forbidden` response.
 * Administrative users still appear in listing and search results, but always with the minimal representation.
 * Once all administrative roles are revoked from a user, the user becomes fully manageable through SCIM again.
 
 == Protected admin groups
 
-A group is considered an administrative group if it holds any role from the `realm-management` client. This
-includes roles assigned directly to the group or obtained through composite roles. Child groups of an
-administrative group are also protected, because their members inherit the parent group's administrative roles.
+A group is considered an administrative group if it holds any administrative role. This includes roles from the
+`realm-management` client, roles from the master realm administration clients (such as `<realm-name>-realm`),
+and administrative realm roles on the master realm. Roles may be assigned directly to the group or obtained
+through composite roles. Child groups of an administrative group are also protected, because their members
+inherit the parent group's administrative roles.
 
 The following restrictions apply to administrative groups accessed through the SCIM API:
 
-* *Read operations* (`GET`) return a minimal representation containing only the `id` and `displayName` attributes.
-  Members and other attributes are not included.
+* *Read operations* (`GET`) return a minimal representation containing only the `id`, `schemas`, and `displayName`
+  attributes. Members and other attributes are not included.
 * *Write operations* (`PUT`, `PATCH`, `DELETE`) return a `403 Forbidden` response.
 * *Membership changes are blocked from both directions:*
 ** Adding or removing members through a `PATCH` on the group resource returns `403 Forbidden`.

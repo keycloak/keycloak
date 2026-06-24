@@ -38,6 +38,7 @@ import static org.keycloak.scim.resource.Scim.getCoreSchema;
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.ADMIN_CHILD_GROUP;
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.ADMIN_GROUP;
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.ADMIN_PARENT_GROUP;
+import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.ADMIN_VIA_COMPOSITE_GROUP;
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.REGULAR_GROUP;
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.REGULAR_USER;
 
@@ -152,6 +153,29 @@ public class AdminGroupProtectionTest {
         assertEquals(ADMIN_PARENT_GROUP, result.getDisplayName());
         assertNull(result.getMeta().getCreated());
         assertNull(result.getMembers());
+    }
+
+    @Test
+    public void testAdminViaCompositeRoleReturnsMinimalRepresentation() {
+        String groupId = getGroupId(ADMIN_VIA_COMPOSITE_GROUP);
+        Group result = client.groups().get(groupId);
+
+        assertNotNull(result);
+        assertEquals(ADMIN_VIA_COMPOSITE_GROUP, result.getDisplayName());
+        assertNull(result.getMeta().getCreated());
+        assertNull(result.getMembers());
+    }
+
+    @Test
+    public void testAdminViaCompositeRoleCannotBeDeleted() {
+        String groupId = getGroupId(ADMIN_VIA_COMPOSITE_GROUP);
+
+        try {
+            client.groups().delete(groupId);
+            fail("Should not be able to delete group with composite admin role");
+        } catch (ScimClientException sce) {
+            assertEquals(403, sce.getError().getStatusInt());
+        }
     }
 
     @Test
