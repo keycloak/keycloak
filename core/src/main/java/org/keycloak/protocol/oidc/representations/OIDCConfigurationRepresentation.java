@@ -64,6 +64,10 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("grant_types_supported")
     private List<String> grantTypesSupported;
 
+    // e.g. "urn:ietf:params:oauth:grant-profile:id-jag" to signal ID-JAG issuance support.
+    @JsonProperty("authorization_grant_profiles_supported")
+    private List<String> authorizationGrantProfilesSupported;
+
     @JsonProperty("acr_values_supported")
     private List<String> acrValuesSupported;
 
@@ -286,6 +290,14 @@ public class OIDCConfigurationRepresentation {
 
     public void setGrantTypesSupported(List<String> grantTypesSupported) {
         this.grantTypesSupported = grantTypesSupported;
+    }
+
+    public List<String> getAuthorizationGrantProfilesSupported() {
+        return authorizationGrantProfilesSupported;
+    }
+
+    public void setAuthorizationGrantProfilesSupported(List<String> authorizationGrantProfilesSupported) {
+        this.authorizationGrantProfilesSupported = authorizationGrantProfilesSupported;
     }
 
     public List<String> getAcrValuesSupported() {

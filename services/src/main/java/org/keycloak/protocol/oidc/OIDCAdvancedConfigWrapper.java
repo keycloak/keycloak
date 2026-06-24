@@ -287,6 +287,37 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         return MapperTypeSerializer.deserialize(audiences);
     }
 
+    // Whether this client may exchange an ID token for an Identity Assertion JWT (ID-JAG).
+    public boolean isIdentityAssertionGrantIssuanceEnabled() {
+        String val = getAttribute(OIDCConfigAttributes.ID_JAG_ISSUANCE_ENABLED, "false");
+        return Boolean.parseBoolean(val);
+    }
+
+    public void setIdentityAssertionGrantIssuanceEnabled(boolean enable) {
+        setAttribute(OIDCConfigAttributes.ID_JAG_ISSUANCE_ENABLED, String.valueOf(enable));
+    }
+
+    // Resource AS issuers this client may request an ID-JAG for (the audience param / aud claim).
+    // Empty means no ID-JAG can be issued - deny by default.
+    public List<String> getIdentityAssertionGrantAllowedAudiences() {
+        List<String> allowed = getAttributeMultivalued(OIDCConfigAttributes.ID_JAG_ALLOWED_AUDIENCES);
+        return allowed == null ? Collections.emptyList() : allowed;
+    }
+
+    public void setIdentityAssertionGrantAllowedAudiences(List<String> allowedAudiences) {
+        setAttributeMultivalued(OIDCConfigAttributes.ID_JAG_ALLOWED_AUDIENCES, allowedAudiences);
+    }
+
+    // The client_id this client uses at the resource AS, put in the ID-JAG client_id claim.
+    // May differ from the Keycloak clientId; null falls back to the clientId.
+    public String getIdentityAssertionGrantClientId() {
+        return getAttribute(OIDCConfigAttributes.ID_JAG_CLIENT_ID);
+    }
+
+    public void setIdentityAssertionGrantClientId(String resourceServerClientId) {
+        setAttribute(OIDCConfigAttributes.ID_JAG_CLIENT_ID, resourceServerClientId);
+    }
+
     public boolean getExternalTokenEnabled() {
         String val = getAttribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, "false");
         return Boolean.parseBoolean(val);

@@ -151,6 +151,10 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setSubjectTypesSupported(DEFAULT_SUBJECT_TYPES_SUPPORTED);
         config.setResponseModesSupported(DEFAULT_RESPONSE_MODES_SUPPORTED);
         config.setGrantTypesSupported(getGrantTypesSupported());
+        // Advertise ID-JAG issuance support (per-client policy still applies at request time).
+        if (Profile.isFeatureEnabled(Profile.Feature.IDENTITY_ASSERTION_JWT)) {
+            config.setAuthorizationGrantProfilesSupported(List.of(OAuth2Constants.ID_JAG_GRANT_PROFILE));
+        }
         config.setAcrValuesSupported(getAcrValuesSupported(realm));
 
         config.setPromptValuesSupported(getPromptValuesSupported(realm));

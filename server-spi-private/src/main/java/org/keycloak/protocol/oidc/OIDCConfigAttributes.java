@@ -99,6 +99,11 @@ public final class OIDCConfigAttributes {
     public static final String JWT_AUTHORIZATION_GRANT_IDP = "oauth2.jwt.authorization.grant.idp";
     public static final String JWT_AUTHORIZATION_GRANT_AUDIENCE = "oauth2.jwt.authorization.grant.audience";
 
+    // Identity Assertion JWT (ID-JAG) issuance - the IdP side of MCP Enterprise-Managed Authorization.
+    public static final String ID_JAG_ISSUANCE_ENABLED = "id.jag.issuance.enabled";
+    public static final String ID_JAG_ALLOWED_AUDIENCES = "id.jag.allowed.audiences";
+    public static final String ID_JAG_CLIENT_ID = "id.jag.client.id";
+
     public static final String EXTERNAL_TOKEN_ENABLED = "external.token.enabled";
     public static final String EXTERNAL_TOKEN_IDP = "external.token.idp";
 

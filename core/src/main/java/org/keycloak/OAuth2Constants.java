@@ -83,6 +83,12 @@ public interface OAuth2Constants {
     // https://datatracker.ietf.org/doc/draft-ietf-oauth-identity-assertion-authz-grant/
     String IDENTITY_ASSERTION_JWT_HEADER_TYPE = "oauth-id-jag+jwt";
 
+    // requested_token_type / issued_token_type value for an ID-JAG (RFC 8693 token exchange).
+    String ID_JAG_TOKEN_TYPE = "urn:ietf:params:oauth:token-type:id-jag";
+
+    // Advertised in discovery (authorization_grant_profiles_supported) to signal ID-JAG issuance.
+    String ID_JAG_GRANT_PROFILE = "urn:ietf:params:oauth:grant-profile:id-jag";
+
 
     // https://tools.ietf.org/html/draft-ietf-oauth-assertions-01#page-5
     String CLIENT_ASSERTION_TYPE = "client_assertion_type";
