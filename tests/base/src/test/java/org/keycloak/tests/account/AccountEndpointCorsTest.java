@@ -44,9 +44,9 @@ public class AccountEndpointCorsTest {
 
         String accountUrl = realm.getBaseUrl() + "/account";
         final var accountResponse = oauth
-                .origin(VALID_CORS_URL)
                 .accountRequest(response.getAccessToken())
                 .endpoint(accountUrl)
+                .header("Origin", VALID_CORS_URL)
                 .send();
         assertEquals(200, accountResponse.getStatusCode());
         assertCors(accountResponse);
@@ -55,9 +55,9 @@ public class AccountEndpointCorsTest {
         realm.admin().users().get(userRep.getId()).logout();
 
         final var accountResponseAfterLogout = oauth
-                .origin(VALID_CORS_URL)
                 .accountRequest(response.getAccessToken())
                 .endpoint(accountUrl)
+                .header("Origin", VALID_CORS_URL)
                 .send();
         assertEquals(401, accountResponseAfterLogout.getStatusCode());
         assertCors(accountResponseAfterLogout);
@@ -70,9 +70,9 @@ public class AccountEndpointCorsTest {
 
         String accountUrl = realm.getBaseUrl() + "/account";
         final var accountResponse = oauth
-                .origin(INVALID_CORS_URL)
                 .accountRequest(response.getAccessToken())
                 .endpoint(accountUrl)
+                .header("Origin", INVALID_CORS_URL)
                 .send();
         assertEquals(403, accountResponse.getStatusCode());
         assertNotCors(accountResponse);
@@ -85,9 +85,9 @@ public class AccountEndpointCorsTest {
 
         String accountUrl = realm.getBaseUrl() + "/account";
         final var accountResponse = oauthNoAudience
-                .origin(VALID_CORS_URL)
                 .accountRequest(response.getAccessToken())
                 .endpoint(accountUrl)
+                .header("Origin", VALID_CORS_URL)
                 .send();
         assertEquals(401, accountResponse.getStatusCode());
         assertCors(accountResponse);
