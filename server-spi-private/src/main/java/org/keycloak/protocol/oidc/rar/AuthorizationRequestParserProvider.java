@@ -29,9 +29,9 @@ import org.keycloak.rar.AuthorizationRequestContext;
  */
 public interface AuthorizationRequestParserProvider extends Provider {
 
-    AuthorizationRequestContext parseScopes(@Nonnull ClientModel client, @Nonnull String scopeParam);
+    AuthorizationRequestContext parseScopes(@Nonnull ClientModel client, @Nullable String scopeParam);
 
-    default AuthorizationRequestContext parseScopes(@Nullable UserModel user, @Nonnull ClientModel client, @Nonnull String scopeParam) {
+    default AuthorizationRequestContext parseScopes(@Nullable UserModel user, @Nonnull ClientModel client, @Nullable String scopeParam) {
         return parseScopes(client, scopeParam);
     }
 
