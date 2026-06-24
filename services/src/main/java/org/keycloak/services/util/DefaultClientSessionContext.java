@@ -285,7 +285,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         }
 
         // Expand (resolve composite roles)
-        clientScopeRoles = RoleUtils.expandCompositeRoles(clientScopeRoles);
+        clientScopeRoles = RoleUtils.expandCompositeRoles(session, clientSession.getClient().getRealm(), clientScopeRoles);
 
         //remove roles that are not contained in requested audience
         if (attributes.get(Constants.REQUESTED_AUDIENCE_CLIENTS) != null) {
@@ -304,7 +304,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     private Set<RoleModel> loadRoles() {
         UserModel user = clientSession.getUserSession().getUser();
         ClientModel client = clientSession.getClient();
-        return TokenManager.getAccess(user, client, getClientScopesStream());
+        return TokenManager.getAccess(session, user, client, getClientScopesStream());
     }
 
 
@@ -329,7 +329,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     private Set<RoleModel> loadUserRoles() {
         UserModel user = clientSession.getUserSession().getUser();
-        return RoleUtils.getDeepUserRoleMappings(user);
+        return RoleUtils.getDeepUserRoleMappings(session, clientSession.getClient().getRealm(), user);
     }
 
 }

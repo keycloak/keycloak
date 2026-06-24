@@ -225,6 +225,14 @@ public class RoleUtils {
         return roles.flatMap(roleModel -> RoleUtils.expandCompositeRolesStream(roleModel, visited));
     }
 
+    /**
+     * Bulk variant of {@link #expandCompositeRolesStream(Stream)} backed by
+     * {@link #expandCompositeRoles(KeycloakSession, RealmModel, Set)}.
+     */
+    public static Stream<RoleModel> expandCompositeRolesStream(KeycloakSession session, RealmModel realm, Stream<RoleModel> roles) {
+        return expandCompositeRoles(session, realm, roles.collect(Collectors.toSet())).stream();
+    }
+
 
     /**
      * @param roleMapper
@@ -252,6 +260,16 @@ public class RoleUtils {
         Set<RoleModel> roleMappings = user.getRoleMappingsStream().collect(Collectors.toSet());
         user.getGroupsStream().forEach(group -> addGroupRoles(group, roleMappings));
         return expandCompositeRoles(roleMappings);
+    }
+
+    /**
+     * Bulk variant of {@link #getDeepUserRoleMappings(UserModel)} that expands composite roles with
+     * a single child lookup per breadth-first level instead of one per role on a cache miss.
+     */
+    public static Set<RoleModel> getDeepUserRoleMappings(KeycloakSession session, RealmModel realm, UserModel user) {
+        Set<RoleModel> roleMappings = user.getRoleMappingsStream().collect(Collectors.toSet());
+        user.getGroupsStream().forEach(group -> addGroupRoles(group, roleMappings));
+        return expandCompositeRoles(session, realm, roleMappings);
     }
 
 
