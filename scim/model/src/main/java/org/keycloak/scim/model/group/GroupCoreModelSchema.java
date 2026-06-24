@@ -207,6 +207,9 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
         if (GroupModel.Type.ORGANIZATION.equals(group.getType()) && group.getOrganization() != null) {
             throw new ModelValidationException("Cannot access organization related group via non Organization API.");
         }
+        if (permissions.isAdminGroup(group)) {
+            throw new ForbiddenException();
+        }
         if (!permissions.hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.MANAGE_MEMBERSHIP)) {
             throw new ForbiddenException();
         }
