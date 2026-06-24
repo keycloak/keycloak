@@ -276,15 +276,15 @@ public class ClientAttributeCertificateResource {
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.YEAR, validity);
         CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId(), keySize, calendar);
-        byte[] rtn = getKeystore(config, info.getPrivateKey(), info.getCertificate());
-
-        info.setPrivateKey(null);
 
         try {
             session.clientPolicy().triggerOnEvent(new ClientCertificateUpdateContext(client, attributePrefix, info, auth.adminAuth()));
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
+
+        byte[] rtn = getKeystore(config, info.getPrivateKey(), info.getCertificate());
+        info.setPrivateKey(null);
 
         CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
 
