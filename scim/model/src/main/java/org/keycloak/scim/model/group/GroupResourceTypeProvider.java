@@ -66,6 +66,20 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     }
 
     @Override
+    protected Group createResourceTypeInstance(GroupModel model, List<String> attributes, List<String> excludedAttributes) {
+        if (session.getContext().getPermissions().isAdminGroup(model)) {
+            Group group = new Group();
+
+            group.addSchema(getSchema());
+            group.setId(model.getId());
+            group.setDisplayName(model.getName());
+
+            return group;
+        }
+        return super.createResourceTypeInstance(model, attributes, excludedAttributes);
+    }
+
+    @Override
     public Group update(Group resource) {
         List<Member> members = resource.getMembers();
 
@@ -187,5 +201,10 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
             return join.get("user").get("id");
         }
         return null;
+    }
+
+    @Override
+    protected boolean isManageable(GroupModel model) {
+        return !session.getContext().getPermissions().isAdminGroup(model);
     }
 }

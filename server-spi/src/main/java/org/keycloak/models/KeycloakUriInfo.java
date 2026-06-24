@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.enterprise.context.ContextNotActiveException;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.PathSegment;
@@ -33,6 +34,9 @@ import org.jboss.resteasy.reactive.common.jaxrs.UriBuilderImpl;
 
 import static org.keycloak.common.util.UriUtils.parseQueryParameters;
 
+/**
+ * Contrary to the {@link UriInfo} javadocs, most methods throw {@link ContextNotActiveException}, not {@link IllegalStateException}, if there is no active request.
+ */
 public class KeycloakUriInfo implements UriInfo {
 
     private final UriInfo delegate;

@@ -1116,6 +1116,14 @@ public class AuthenticationManager {
         }
         RealmModel realm = authSession.getRealm();
 
+        UserModel user = authSession.getAuthenticatedUser();
+        if (user != null && !user.isEnabled()) {
+            event.user(user);
+            event.detail(Details.USERNAME, user.getUsername());
+            event.error(Errors.USER_DISABLED);
+            return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.ACCOUNT_DISABLED);
+        }
+
         ClientSessionContext clientSessionCtx = AuthenticationProcessor.attachSession(authSession, userSession, session, realm, clientConnection, event);
         userSession = clientSessionCtx.getClientSession().getUserSession();
 
