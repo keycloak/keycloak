@@ -17,6 +17,7 @@
 package org.keycloak.storage;
 
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.common.util.reflections.Types;
@@ -159,6 +160,11 @@ public class RoleStorageManager implements RoleProvider {
     @Override
     public Stream<RoleModel> getRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
         return localStorage().getRolesStream(realm, ids, search, first, max);
+    }
+
+    @Override
+    public Stream<RoleModel> getCompositeRolesStream(RealmModel realm, Set<String> parentRoleIds) {
+        return localStorage().getCompositeRolesStream(realm, parentRoleIds);
     }
 
     /**

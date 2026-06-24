@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleMapperModel;
@@ -175,6 +176,43 @@ public class RoleUtils {
         return roles.stream()
                 .flatMap(roleModel -> RoleUtils.expandCompositeRolesStream(roleModel, visited))
                 .collect(Collectors.toSet());
+    }
+
+    /**
+     * Bulk variant of {@link #expandCompositeRoles(Set)}. Expands the composite-role tree one
+     * breadth-first level at a time using {@code session.roles().getCompositeRolesStream}, issuing a
+     * single child lookup per level instead of one per role. Storage-backed providers batch that
+     * lookup, so this avoids the per-node N+1 on a cache miss.
+     *
+     * @param session Keycloak session.
+     * @param realm Realm the roles belong to.
+     * @param roles Roles to expand.
+     * @return new set with composite roles expanded
+     */
+    public static Set<RoleModel> expandCompositeRoles(KeycloakSession session, RealmModel realm, Set<RoleModel> roles) {
+        Set<RoleModel> result = new HashSet<>();
+        Set<String> enqueued = new HashSet<>();
+        Set<RoleModel> frontier = roles;
+
+        while (!frontier.isEmpty()) {
+            result.addAll(frontier);
+
+            Set<String> parentIds = new HashSet<>();
+            frontier.forEach(role -> {
+                if (enqueued.add(role.getId())) {
+                    parentIds.add(role.getId());
+                }
+            });
+            if (parentIds.isEmpty()) {
+                break;
+            }
+
+            frontier = session.roles().getCompositeRolesStream(realm, parentIds)
+                    .filter(role -> !enqueued.contains(role.getId()))
+                    .collect(Collectors.toSet());
+        }
+
+        return result;
     }
 
     /**
