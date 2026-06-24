@@ -188,6 +188,12 @@ See the link:{client_certificate_lookup_link}[Reverse Proxy guide] for more deta
 
 Async custom REST endpoints using `AsyncResponse` or returning an async type such as `CompletableFuture` or `CompletionState` should not be used. If you are using them, be aware that the `KeycloakSession` used to initial the request will be immediately closed - it will not remain open for the entire lifespan of the request - and that you are fully responsible for transaction management in the async work.
 
+=== `KeycloakContext` refinements when no request is active
+
+The `KeycloakContext` provided by `KeycloakSession` for async work will typically not have an active request. The JavaDocs for methods now describe when a
+`ContextNotActiveException` is thrown, and some of the logic is now tolerant to returning values even if no request is active. Please review places where you are
+catching `ContextNotActiveException` in your extension logic against the new JavaDocs.
+
 === Validation of client_session_host parameter
 The `client_session_host` parameter is now validated against the client's registered nodes and management URL.
 This parameter is sent by clients during token refresh and is used when the `${application.session.host}` placeholder is present in a client's backchannel logout URL configuration.
@@ -218,6 +224,7 @@ The broker remains enabled by default for backward compatibility. If you no long
 The `twitter-broker` feature is planned for removal in a future release.
 For more details, see
 https://github.com/keycloak/keycloak/issues/44013[Deprecate the Twitter IDP implementation].
+
 
 === Identity Brokering API V1 is deprecated
 

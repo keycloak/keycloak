@@ -382,6 +382,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @Ignore("Twitter broker is deprecated and disabled by default; enable --features=twitter-broker to test")
     public void twitterLogin() {
         setTestProvider(TWITTER);
         performLogin();
