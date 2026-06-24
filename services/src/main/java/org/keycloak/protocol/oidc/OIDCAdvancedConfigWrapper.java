@@ -318,6 +318,17 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(OIDCConfigAttributes.ID_JAG_CLIENT_ID, resourceServerClientId);
     }
 
+    // Scopes this client may request in an ID-JAG. Empty means no restriction (the resource AS
+    // still enforces its own scopes); when set, a requested scope outside the list is rejected.
+    public List<String> getIdentityAssertionGrantAllowedScopes() {
+        List<String> allowed = getAttributeMultivalued(OIDCConfigAttributes.ID_JAG_ALLOWED_SCOPES);
+        return allowed == null ? Collections.emptyList() : allowed;
+    }
+
+    public void setIdentityAssertionGrantAllowedScopes(List<String> allowedScopes) {
+        setAttributeMultivalued(OIDCConfigAttributes.ID_JAG_ALLOWED_SCOPES, allowedScopes);
+    }
+
     public boolean getExternalTokenEnabled() {
         String val = getAttribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, "false");
         return Boolean.parseBoolean(val);

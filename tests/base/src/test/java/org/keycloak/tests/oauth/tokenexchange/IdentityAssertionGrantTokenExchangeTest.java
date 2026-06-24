@@ -169,6 +169,38 @@ public class IdentityAssertionGrantTokenExchangeTest {
     }
 
     @Test
+    public void testAllowedScopeIssued() {
+        String idToken = login(MCP_CLIENT, MCP_CLIENT_SECRET);
+        oauth.scope("chat.read"); // within the client's allowed-scope list
+
+        AccessTokenResponse response = oauth.tokenExchangeRequest(idToken, OAuth2Constants.ID_TOKEN_TYPE)
+                .client(MCP_CLIENT, MCP_CLIENT_SECRET)
+                .requestedTokenType(OAuth2Constants.ID_JAG_TOKEN_TYPE)
+                .audience(RESOURCE_AS_ISSUER)
+                .resource(MCP_SERVER_RESOURCE)
+                .send();
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        assertEquals("chat.read", parseIdJag(response.getAccessToken()).getOtherClaims().get(OAuth2Constants.SCOPE));
+    }
+
+    @Test
+    public void testScopeNotAllowed() {
+        String idToken = login(MCP_CLIENT, MCP_CLIENT_SECRET);
+        oauth.scope("chat.write"); // not in the client's allowed-scope list
+
+        AccessTokenResponse response = oauth.tokenExchangeRequest(idToken, OAuth2Constants.ID_TOKEN_TYPE)
+                .client(MCP_CLIENT, MCP_CLIENT_SECRET)
+                .requestedTokenType(OAuth2Constants.ID_JAG_TOKEN_TYPE)
+                .audience(RESOURCE_AS_ISSUER)
+                .resource(MCP_SERVER_RESOURCE)
+                .send();
+
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
+    }
+
+    @Test
     public void testAccessTokenAsSubjectRejected() {
         // A valid access token (typ=Bearer) presented as subject_token_type=id_token must be rejected.
         oauth.client(MCP_CLIENT, MCP_CLIENT_SECRET);
@@ -312,7 +344,8 @@ public class IdentityAssertionGrantTokenExchangeTest {
                     .directAccessGrantsEnabled(true)
                     .attribute(OIDCConfigAttributes.ID_JAG_ISSUANCE_ENABLED, "true")
                     .attribute(OIDCConfigAttributes.ID_JAG_ALLOWED_AUDIENCES, RESOURCE_AS_ISSUER)
-                    .attribute(OIDCConfigAttributes.ID_JAG_CLIENT_ID, DOWNSTREAM_CLIENT_ID));
+                    .attribute(OIDCConfigAttributes.ID_JAG_CLIENT_ID, DOWNSTREAM_CLIENT_ID)
+                    .attribute(OIDCConfigAttributes.ID_JAG_ALLOWED_SCOPES, "chat.read##chat.history"));
 
             // Confidential client WITHOUT ID-JAG issuance enabled.
             realm.clients(ClientBuilder.create()

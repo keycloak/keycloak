@@ -103,6 +103,7 @@ public final class OIDCConfigAttributes {
     public static final String ID_JAG_ISSUANCE_ENABLED = "id.jag.issuance.enabled";
     public static final String ID_JAG_ALLOWED_AUDIENCES = "id.jag.allowed.audiences";
     public static final String ID_JAG_CLIENT_ID = "id.jag.client.id";
+    public static final String ID_JAG_ALLOWED_SCOPES = "id.jag.allowed.scopes";
 
     public static final String EXTERNAL_TOKEN_ENABLED = "external.token.enabled";
     public static final String EXTERNAL_TOKEN_IDP = "external.token.idp";

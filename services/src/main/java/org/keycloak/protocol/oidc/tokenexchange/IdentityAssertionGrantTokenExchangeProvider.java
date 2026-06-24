@@ -161,6 +161,7 @@ public class IdentityAssertionGrantTokenExchangeProvider implements TokenExchang
         event.detail(Details.SUBJECT_TOKEN_CLIENT_ID, subjectJwt.getIssuedFor());
 
         String scope = params.getScope();
+        validateRequestedScopes(event, cors, clientConfig, scope);
         String idJag = signIdJag(session, realm, buildIdJag(session, realm, clientConfig, client, subjectJwt, audience, resource, scope));
 
         AccessTokenResponse response = new AccessTokenResponse();
@@ -224,6 +225,21 @@ public class IdentityAssertionGrantTokenExchangeProvider implements TokenExchang
                 .type(OAuth2Constants.IDENTITY_ASSERTION_JWT_HEADER_TYPE)
                 .jsonContent(idJag)
                 .sign(signer);
+    }
+
+    // When the client configures an allowed-scope list, every requested scope must be in it. An empty
+    // list means no restriction - the resource AS still enforces its own scopes.
+    private void validateRequestedScopes(EventBuilder event, Cors cors, OIDCAdvancedConfigWrapper clientConfig, String scope) {
+        List<String> allowedScopes = clientConfig.getIdentityAssertionGrantAllowedScopes();
+        if (allowedScopes.isEmpty() || scope == null || scope.isBlank()) {
+            return;
+        }
+        for (String requested : scope.trim().split("\\s+")) {
+            if (!requested.isEmpty() && !allowedScopes.contains(requested)) {
+                throw error(event, cors, Errors.INVALID_REQUEST, OAuthErrorException.INVALID_SCOPE,
+                        "Scope not allowed for an Identity Assertion JWT: " + requested, Response.Status.BAD_REQUEST);
+            }
+        }
     }
 
     private String getSingleAudience(EventBuilder event, Cors cors, List<String> audiences) {
