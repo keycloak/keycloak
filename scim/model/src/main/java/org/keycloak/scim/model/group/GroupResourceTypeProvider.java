@@ -29,6 +29,7 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
@@ -76,6 +77,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
 
             return group;
         }
+
         return super.createResourceTypeInstance(model, attributes, excludedAttributes);
     }
 
@@ -101,7 +103,13 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     @Override
     protected GroupModel getModel(String id) {
         RealmModel realm = session.getContext().getRealm();
-        return session.groups().getGroupById(realm, id);
+        GroupModel model = session.groups().getGroupById(realm, id);
+
+        if (model == null || Type.REALM.equals(model.getType())) {
+            return model;
+        }
+
+        return null;
     }
 
     @Override

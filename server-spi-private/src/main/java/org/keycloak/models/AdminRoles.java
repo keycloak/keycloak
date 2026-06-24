@@ -89,19 +89,21 @@ public class AdminRoles {
             if (c.getClientId().equals(Constants.REALM_MANAGEMENT_CLIENT_ID)) {
                 return true;
             }
-            if (c.getRealm().getName().equals(Config.getAdminRealm())
-                    && c.getClientId().endsWith(APP_SUFFIX)) {
-                return true;
-            }
+            return c.getRealm().getName().equals(Config.getAdminRealm())
+                    && c.getClientId().endsWith(APP_SUFFIX);
         }
 
         return false;
     }
 
+    public static boolean isAdminRoleOrComposite(RoleModel role) {
+        return isAdminRole(role, new HashSet<>());
+    }
+
     public static boolean groupHasAdminRoles(GroupModel group) {
         GroupModel current = group;
         while (current != null) {
-            if (current.getRoleMappingsStream().anyMatch(role -> isAdminRole(role, new HashSet<>()))) {
+            if (current.getRoleMappingsStream().anyMatch(AdminRoles::isAdminRoleOrComposite)) {
                 return true;
             }
             current = current.getParent();

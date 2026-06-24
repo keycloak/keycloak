@@ -15,11 +15,17 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.scim.client.ScimClient;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -28,10 +34,13 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
 import static org.keycloak.scim.model.user.AbstractUserModelSchema.ANNOTATION_SCIM_SCHEMA_ATTRIBUTE;
 import static org.keycloak.scim.resource.Scim.ENTERPRISE_USER_SCHEMA;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public abstract class AbstractScimTest {
 
@@ -46,6 +55,9 @@ public abstract class AbstractScimTest {
 
     @InjectKeycloakUrls
     KeycloakUrls keycloakUrls;
+
+    @InjectAdminClient
+    Keycloak adminClient;
 
     protected void addEnterpriseUserUserProfileAttributes() {
         UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
@@ -88,19 +100,34 @@ public abstract class AbstractScimTest {
         return upAttribute;
     }
 
-    protected void createScimClient(String clientId) {
-        realm.admin().clients().create(ClientBuilder
+    protected ClientRepresentation createScimClient(String clientId) {
+        return createScimClient(realm.getName(), clientId);
+    }
+
+    protected ClientRepresentation createScimClient(String realm, String clientId) {
+        ClientRepresentation client = ClientBuilder
                 .create()
                 .clientId(clientId)
                 .secret("secret")
                 .serviceAccountsEnabled(true)
-                .protocolMappers(createScimAudienceMapper())
+                .protocolMappers(createScimAudienceMapper(realm))
                 .enabled(true)
-                .build()).close();
+                .build();
+
+        try (Response response = adminClient.realm(realm).clients().create(client)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            client.setId(ApiUtil.getCreatedId(response));
+        }
+
+        return client;
     }
 
     protected ProtocolMapperRepresentation createScimAudienceMapper() {
-        String scimAudience = keycloakUrls.getBase() + "/realms/" + realm.getName() + "/scim/v2";
+        return createScimAudienceMapper(realm.getName());
+    }
+
+    protected ProtocolMapperRepresentation createScimAudienceMapper(String realm) {
+        String scimAudience = keycloakUrls.getBase() + "/realms/" + realm + "/scim/v2";
         ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
         mapper.setName("scim-audience-mapper");
         mapper.setProtocol("openid-connect");
