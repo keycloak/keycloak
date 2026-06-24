@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
@@ -132,11 +131,7 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
 
     protected List<String> getTrustedHosts() {
         List<String> trustedHostsConfig = componentModel.getConfig().getOrDefault(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS, Collections.emptyList());
-        return trustedHostsConfig.stream().filter((String hostname) -> {
-
-            return !hostname.startsWith("*.");
-
-        }).collect(Collectors.toList());
+        return trustedHostsConfig.stream().filter((String hostname) -> !hostname.startsWith("*.")).toList();
     }
 
 

@@ -46,7 +46,7 @@ public class RegistrationWebOriginsPolicy implements ClientRegistrationPolicy {
 
     @Override
     public Collection<String> getAllowedOrigins() {
-        return allowedWebOrigins != null ? allowedWebOrigins : Collections.emptyList();
+        return allowedWebOrigins;
     }
 
 }
