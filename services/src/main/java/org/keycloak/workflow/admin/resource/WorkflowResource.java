@@ -1,6 +1,5 @@
 package org.keycloak.workflow.admin.resource;
 
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -13,6 +12,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.Workflow;
@@ -34,12 +34,16 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class WorkflowResource {
 
+    private final KeycloakSession session;
     private final WorkflowProvider provider;
     private final Workflow workflow;
+    private final String locale;
 
-    public WorkflowResource(WorkflowProvider provider, Workflow workflow) {
+    public WorkflowResource(KeycloakSession session, WorkflowProvider provider, Workflow workflow, String locale) {
+        this.session = session;
         this.provider = provider;
         this.workflow = workflow;
+        this.locale = locale;
     }
 
     @DELETE
@@ -56,7 +60,7 @@ public class WorkflowResource {
         try {
             provider.removeWorkflow(workflow);
         } catch (ModelException me) {
-            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(session, locale, me, Response.Status.BAD_REQUEST);
         }
     }
 
@@ -79,7 +83,7 @@ public class WorkflowResource {
             rep.setId(workflow.getId());
             provider.updateWorkflow(workflow, rep);
         } catch (ModelException me) {
-            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(session, locale, me, Response.Status.BAD_REQUEST);
         }
     }
 
@@ -144,7 +148,7 @@ public class WorkflowResource {
         Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
 
         if (resource == null) {
-            throw new BadRequestException("Resource with id " + resourceId + " not found");
+            throw ErrorResponse.error(ErrorResponse.resolveMessage(session, locale, "workflowResourceNotFound", new Object[]{resourceId}), Response.Status.BAD_REQUEST);
         }
 
         if (notBefore != null) {
@@ -181,7 +185,7 @@ public class WorkflowResource {
         Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
 
         if (resource == null) {
-            throw new BadRequestException("Resource with id " + resourceId + " not found");
+            throw ErrorResponse.error(ErrorResponse.resolveMessage(session, locale, "workflowResourceNotFound", new Object[]{resourceId}), Response.Status.BAD_REQUEST);
         }
 
         provider.deactivate(workflow, resourceId);

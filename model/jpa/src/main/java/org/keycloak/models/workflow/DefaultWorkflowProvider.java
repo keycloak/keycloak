@@ -10,8 +10,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jakarta.ws.rs.BadRequestException;
-
 import org.keycloak.common.util.DurationConverter;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
@@ -77,12 +75,12 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
             // if there are scheduled steps, we don't allow to update the workflow's 'on' config
             WorkflowRepresentation currentRepresentation = toRepresentation(workflow);
             if (!Objects.equals(currentRepresentation.getOn(), representation.getOn())) {
-                throw new ModelValidationException("Cannot update 'on' configuration when there are scheduled resources for the workflow.");
+                throw new ModelValidationException("workflowCannotUpdateOnWithScheduled");
             }
 
             // we do not allow changing the workflow type
             if (representation.getSupports() != null && !Objects.equals(representation.getSupports(), currentRepresentation.getSupports())) {
-                throw new ModelValidationException("Cannot update 'supports' configuration.");
+                throw new ModelValidationException("workflowCannotUpdateSupports");
             }
 
             // we also need to guarantee the steps remain the same - that is, in the same order with the same 'uses' property.
@@ -90,13 +88,13 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
             List<WorkflowStepRepresentation> currentSteps = currentRepresentation.getSteps();
             List<WorkflowStepRepresentation> newSteps = ofNullable(representation.getSteps()).orElse(List.of());
             if (currentSteps.size() != newSteps.size()) {
-                throw new ModelValidationException("Cannot change the number or order of steps when there are scheduled resources for the workflow.");
+                throw new ModelValidationException("workflowCannotChangeStepsWithScheduled");
             }
             for (int i = 0; i < currentSteps.size(); i++) {
                 WorkflowStepRepresentation currentStep = currentSteps.get(i);
                 WorkflowStepRepresentation newStep = newSteps.get(i);
                 if (!Objects.equals(currentStep.getUses(), newStep.getUses())) {
-                    throw new ModelValidationException("Cannot change the number or order of steps when there are scheduled resources for the workflow.");
+                    throw new ModelValidationException("workflowCannotChangeStepsWithScheduled");
                 }
                 // set the id of the step to match the existing one, so we can update the config
                 newStep.setId(currentStep.getId());
@@ -226,7 +224,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
 
             // ensure both workflows support the same resource type
             if (workflowFrom.getSupportedType() != workflowTo.getSupportedType()) {
-                throw new ModelValidationException("Cannot migrate scheduled resources between workflows that support different resource types.");
+                throw new ModelValidationException("workflowMigrateDifferentTypes");
             }
 
             // ensure all resources scheduled in the source step satisfy the activation conditions of the destination workflow
@@ -234,8 +232,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
             for (ScheduledStep scheduledStep : scheduledStepsFrom) {
                 DefaultWorkflowExecutionContext context = new DefaultWorkflowExecutionContext(session, workflowTo, scheduledStep);
                 if (!eventBasedWorkflow.validateResourceConditions(context)) {
-                    throw new ModelValidationException("Cannot migrate resource %s to workflow %s as it does not satisfy the workflow's activation conditions."
-                            .formatted(scheduledStep.resourceId(), workflowTo.getName()));
+                    throw new ModelValidationException("workflowMigrateConditionsNotMet", scheduledStep.resourceId(), workflowTo.getName());
                 }
             }
         }
@@ -284,7 +281,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
     @Override
     public void activate(Workflow workflow, ResourceType type, String resourceId) {
         if (type != workflow.getSupportedType()) {
-            throw new BadRequestException("Resource Type '%s' is not supported for this workflow (supports %s)".formatted(type.name(), workflow.getSupportedType()));
+            throw new WorkflowInvalidStateException("workflowResourceTypeNotSupported", type.name(), workflow.getSupportedType());
         }
 
         processEvent(Stream.of(workflow), new AdhocWorkflowEvent(type, resourceId));
@@ -350,7 +347,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
         ComponentModel component = realm.getComponent(id);
 
         if (component == null || !Objects.equals(providerType, component.getProviderType())) {
-            throw new BadRequestException("Not a valid workflow resource: " + id);
+            throw new WorkflowInvalidStateException("workflowInvalidResource", id);
         }
         return component;
     }
