@@ -310,7 +310,8 @@ jobs:
         run: |
           for file in ../target/kubernetes/*k8s.keycloak.org-v1.yml; do
             name=$(basename "$file" -v1.yml)
-            kubectl wait --for condition=Established crd/${name}
+            kubectl wait --for=create crd/${name} --timeout=120s
+            kubectl wait --for condition=Established crd/${name} --timeout=120s
           done
           kubectl create ns keycloak
           ./deploy-examples.sh keycloak
