@@ -97,6 +97,10 @@ Parameterized scopes can now define a parameter type that validates the captured
 
 For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
+== Additional datasources may be excluded from health checks
+
+Read more about it in the link:https://www.keycloak.org/server/db#multiple-datasources[Configure multiple datasources] guide.
+
 = Configuring and Running
 
 == Deprecation of SHA1 hashing functions in {project_name} 27
