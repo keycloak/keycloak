@@ -1,0 +1,157 @@
+<#import "/templates/guide.adoc" as tmpl>
+
+<@tmpl.guide
+title="Troubleshooting performance issues using Java Flight Recorder (JFR)"
+summary="Create Java flight recordings of a {project_name} server to diagnose performance issues"
+>
+
+== What is Java Flight Recorder
+
+Java Flight Recorder (JFR) is a standard monitoring tool for collecting diagnostic and profiling data about a running Java application. It is built-into a JVM and designed to have a low performance impact.
+
+JFR can be started on JVM startup by providing parameters via the `-XX:StartFlightRecording` argument, or it can be started later during application runtime by sending the `JFR.start` command using the `jcmd` tool.
+
+Recording can either be started in a continuous mode in which case the `JFR.dump` command is needed to export the diagnostic data into a file, or it can be started in a fixed-time mode, in which case the data will be exported automatically after the requested interval elapses.
+
+This guide further demonstrates creating a fixed-time flight recording using the `jcmd` tool.
+
+== Find the {project_name} server process
+
+The `jcmd` tool can use a PID or a main class to identify the target process:
+[source]
+----
+jcmd <PID|main-class> <diagnostic-command> ...
+----
+
+Running the `jcmd` command without any arguments will list all Java processes on the system with their PIDs and main classes:
+[source]
+----
+jcmd
+----
+
+Example output:
+[source]
+----
+897052 jdk.jcmd/sun.tools.jcmd.JCmd
+896224 io.quarkus.bootstrap.runner.QuarkusEntryPoint start ... #<1>
+----
+<1> Assuming {project_name} is the only Quarkus-based application running on the system, its PID in this example would be `896224`. It is also possible to use the main class `QuarkusEntryPoint` instead of the PID.
+
+Example: Running a `JFR.check` diagnostic command using the PID:
+[source]
+----
+jcmd 896224 JFR.check
+----
+
+Example: Running a `JFR.check` diagnostic command using the main class:
+[source]
+----
+jcmd QuarkusEntryPoint JFR.check
+----
+
+Example output:
+[source]
+----
+896224:
+No available recordings.
+
+Use jcmd 896224 JFR.start to start a recording.
+----
+
+== Create a fixed-time recording
+
+A fixed-time recording can be created executing the `JFR.start` command with the `duration` parameter. After the requested interval elapses the recording will be stopped and its data automatically dumped into a file.
+
+[source]
+----
+jcmd QuarkusEntryPoint JFR.start \
+  duration=2m \ #<1>
+  settings=profile \ #<2>
+  filename=recording.jfr #<3>
+----
+<1> Intended duration of the recording.
+<2> Name of a JFR configuration file. A Java installation comes with two configurations in the `$JAVA_HOME/lib/jfr/` directory: `default.jfc` and `profile.jfc`.
++
+The `default` configuration has a lower performance overhead and is suitable for continuous recording. The `profile` configuration provides more diagnostic data but has a higher impact on performance. It is recommended only for short periods of time. It is also possible to create a custom configuration using `jfr configure --interactive` command. For configuration files outside of the default location it is necessary to provide a full path.
+<3> The `filename` parameter is optional. If not provided the name will be generated automatically based on PID and timestamp. If an absolute path is not provided the file will be created in the current working directory of the target application.
+
+Use the `JFR.check` command shortly after to verify that the recording was started:
+[source]
+----
+jcmd QuarkusEntryPoint JFR.check
+----
+
+Expected output (example):
+[source]
+----
+896224:
+Recording 1: name=1 duration=2m (running)
+----
+
+IMPORTANT: Once a recording is dumped into a file it is important to sanitize it for potentially sensitive data using the `jfr scrub` command. See the <<scrub-sensitive-data>> section below.
+
+[[scrub-sensitive-data]]
+== Scrub sensitive data from a flight recording
+
+Once a recording is dumped into a file it is important to scrub it for potentially sensistive data to prevent security leaks. This can be done using a standard `jfr scrub` command.
+
+In case of {project_name} sensitive information includes:
+* Environment variables
+* Command-line options
+* Initial system properties
+* JVM startup arguments
+*
+
+[source]
+----
+jfr scrub --exclude-events jdk.InitialEnvironmentVariable,jdk.InitialSystemProperty,jdk.JVMInformation,jdk.OldObjectSample recording.jfr recording-scrubbed.jfr
+----
+
+Remove the original unsanitized file to prevent leaks:
+[source]
+----
+rm recording.jfr
+----
+
+== View and manipulate a dumped recording
+
+Once the recording is dumped into a file it can be viewed and manipulated using the standard `jfr` tool.
+
+[source]
+----
+jfr summary recording.jfr
+----
+
+Example output:
+[source]
+----
+
+ Version: 2.1
+ Chunks: 1
+ Start: YYYY-MM-DD HH:mm:ss (UTC)
+ Duration: 120 s
+
+ Event Type                              Count  Size (bytes) 
+=============================================================
+ jdk.NativeMethodSample                   5919         82597
+ jdk.ModuleExport                         2134         27601
+ jdk.ThreadPark                           2082         73000
+ jdk.JavaMonitorWait                       781         22715
+ jdk.BooleanFlag                           494         16124
+ jdk.ActiveSetting                         376         10893
+ jdk.Checkpoint                            168        136675
+ jdk.ModuleRequire                         160          1920
+ jdk.LongFlag                              137          4674
+ jdk.ThreadAllocationStatistics            122          1604
+ jdk.CPULoad                               120          2520
+ jdk.ClassLoadingStatistics                120          1560
+ jdk.CompilerStatistics                    120          3840
+ jdk.ExceptionStatistics                   120          1440
+ jdk.JavaThreadStatistics                  120          1560
+ ⋯
+----
+
+== Safe-point bias
+
+
+</@tmpl.guide>
