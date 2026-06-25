@@ -44,10 +44,6 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
 
     @Override
     public void evaluate(ResourcePermission permission, AuthorizationProvider authorizationProvider, EvaluationContext executionContext, Decision decision, Map<Policy, Map<Object, Decision.Effect>> decisionCache) {
-        StoreFactory storeFactory = authorizationProvider.getStoreFactory();
-        PolicyStore policyStore = storeFactory.getPolicyStore();
-        ResourceStore resourceStore = storeFactory.getResourceStore();
-
         ResourceServer resourceServer = permission.getResourceServer();
         PolicyEnforcementMode enforcementMode = resourceServer.getPolicyEnforcementMode();
 
