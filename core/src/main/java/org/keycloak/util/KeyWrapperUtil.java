@@ -17,6 +17,7 @@ public class KeyWrapperUtil {
                 return new ECDSASignatureSignerContext(keyWrapper);
             case KeyType.RSA:
             case KeyType.OKP:
+            case KeyType.AKP:
                 return new AsymmetricSignatureSignerContext(keyWrapper);
             default:
                 throw new IllegalArgumentException("No signer provider for key algorithm type " + keyWrapper.getType());
@@ -29,6 +30,7 @@ public class KeyWrapperUtil {
                 return new ECDSASignatureVerifierContext(keyWrapper);
             case KeyType.RSA:
             case KeyType.OKP:
+            case KeyType.AKP:
                 return new AsymmetricSignatureVerifierContext(keyWrapper);
             default:
                 throw new IllegalArgumentException("No signer provider for key algorithm type " + keyWrapper.getType());

@@ -15,6 +15,9 @@ public class CryptoUtilsTest extends AbstractUtilSessionTest {
     @Test
     public void getSignatureProviderReturnsProviderForSupportedAlgorithm() throws VerificationException {
         assertNotNull(CryptoUtils.getSignatureProvider(session, "RS256"));
+        assertNotNull(CryptoUtils.getSignatureProvider(session, "ML-DSA-44"));
+        assertNotNull(CryptoUtils.getSignatureProvider(session, "ML-DSA-65"));
+        assertNotNull(CryptoUtils.getSignatureProvider(session, "ML-DSA-87"));
     }
 
     @Test
