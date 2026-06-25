@@ -23,7 +23,6 @@
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
         <quarkus.docker.build-args.KEYCLOAK_VERSION>${project.version}</quarkus.docker.build-args.KEYCLOAK_VERSION>
         <quarkus.operator-sdk.generate-with-watched-namespaces>JOSDK_WATCH_CURRENT</quarkus.operator-sdk.generate-with-watched-namespaces>
-        <crd.path.prefix></crd.path.prefix>
         <kustomize.namespace>keycloak</kustomize.namespace>
     </properties>
 
@@ -227,7 +226,7 @@
                         </goals>
                         <configuration>
                             <target>
-                                <pathconvert pathsep="${line.separator}  - ${crd.path.prefix}" property="crds">
+                                <pathconvert pathsep="${line.separator}  - " property="crds">
                                     <map from="${project.basedir}/target/kubernetes/" to=""/>
                                     <sort>
                                         <fileset dir="${project.basedir}/target/kubernetes">
