@@ -733,7 +733,7 @@ public class AuthenticationManagementResource {
 
                 if (factory == null) {
                     // Return a placeholder so a flow with an orphan execution stays manageable. See issue #15535.
-                    logger.debugf("Cannot find authentication provider implementation with provider ID '%s'", providerId);
+                    logger.warnf("Cannot find authentication provider implementation with provider ID '%s' for execution '%s' in flow '%s'", providerId, execution.getId(), flow.getAlias());
                     rep.setDisplayName(providerId);
                     rep.setConfigurable(false);
                     rep.setProviderUnavailable(true);
