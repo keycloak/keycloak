@@ -187,6 +187,37 @@ class SsfPushUrlValidatorTest {
                 SsfPushUrlValidator.matchesAllowList(allow, "https://backup.example.com/feeds/x"));
     }
 
+    @Test
+    void match_authorityWildcardStaysConfinedToHost() {
+        // "https://example.com*" — the '*' sits on the authority with no path
+        // separator. It must behave like "https://example.com/*": match the
+        // host and anything under it, but never a different host that merely
+        // begins with the same characters. Mirrors RedirectUtils.
+        Set<String> allow = set("https://example.com*");
+
+        assertEquals("https://example.com",
+                SsfPushUrlValidator.matchesAllowList(allow, "https://example.com"));
+        assertEquals("https://example.com",
+                SsfPushUrlValidator.matchesAllowList(allow, "https://example.com/feeds/x"));
+
+        assertEquals(null,
+                SsfPushUrlValidator.matchesAllowList(allow, "https://example.com.attacker.example/feeds/x"),
+                "an authority-attached wildcard must not match an extended host");
+    }
+
+    @Test
+    void validate_rejectsAuthorityWildcardHostExtension() {
+        // End-to-end: a wildcard that sits on the authority must not let the
+        // push target slip onto a different, attacker-controlled host outside
+        // the host the operator reviewed.
+        SsfPushUrlValidationException ex = assertThrows(SsfPushUrlValidationException.class,
+                () -> strict.validate(
+                        "https://example.com.attacker.example/feeds/x",
+                        set("https://example.com*")));
+
+        assertEquals(Reason.NOT_IN_ALLOWLIST, ex.getReason());
+    }
+
     // -- validate(): rejection codes ----------------------------------------
 
     @Test
