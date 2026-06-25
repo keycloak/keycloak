@@ -65,6 +65,10 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-scim-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-scim-model</artifactId>
+        </dependency>
 
         <!-- used by OAS Filter during OpenAPI spec generation -->
         <dependency>
