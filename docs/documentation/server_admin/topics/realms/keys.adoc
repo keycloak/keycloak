@@ -44,10 +44,12 @@ Use this procedure to generate a key pair including a self-signed certificate.
 . Click *Add provider* and select *rsa-generated*.
 . Enter a number in the *Priority* field. This number determines if the new key pair becomes the active key pair. The highest number makes the key pair active.
 . Select a value for *AES Key size*.
+. Optionally, set a value for the certificate validity in days.
 . Click *Save*.
 
-Changing the priority for a provider will not cause the keys to be re-generated, but if you want to change the keysize
+Changing the priority for a provider will not cause the keys to be re-generated, but if you want to change the keysize or reduce the certificate validity
 you can edit the provider and new keys will be generated.
+Increasing the certificate validity will not regenerate existing keys; the current certificate will simply expire earlier than the new setting.
 
 ==== Rotating keys by extracting a certificate
 
