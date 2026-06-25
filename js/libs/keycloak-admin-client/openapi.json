@@ -269,6 +269,14 @@
           "schema" : {
             "type" : "string"
           }
+        }, {
+          "description" : "Sort expression. Comma-separated fields with optional direction per field using | (e.g. displayName|desc,clientId). Default direction is asc. Allowed fields: clientId, displayName, description, protocol, enabled, appUrl.",
+          "schema" : {
+            "type" : "string",
+            "default" : "clientId"
+          },
+          "name" : "sort",
+          "in" : "query"
         } ],
         "responses" : {
           "200" : {
@@ -283,6 +291,9 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "Invalid sort parameter"
           }
         }
       },
