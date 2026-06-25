@@ -19,6 +19,7 @@ import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataD
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
@@ -82,6 +83,7 @@ public class ClientIdMetadataDocumentTest {
     private static final String REDIRECT_URI = "http://localhost:8500/";
     private static final String JWKS_URI = "http://localhost:8500/idp/jwks";
     private static final String LOGO_URI = "http://localhost:8500/logo.png";
+    private static final String RESOURCE = "https://mcp.example.com/api";
     private static final int CIMD_EXECUTOR_MIN_CACHE_TIME_SEC = 300;
 
     @InjectRealm
@@ -229,6 +231,102 @@ public class ClientIdMetadataDocumentTest {
 
         // delete the persisted client
         logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorPermissiveModeWithoutResourceParam() throws Exception {
+        // Resource Indicators feature is enabled (server config), allow list is vacant, client not yet registered,
+        // authorization request does not include the resource parameter -> CIMD should not enforce anything.
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        String code = loginUserAndGetCode(true);
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(signedJwt).send();
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+        String[] audience = accessToken.getAudience();
+        Assertions.assertFalse(audience != null && Arrays.asList(audience).contains(RESOURCE));
+
+        logoutAndDelete(findByClientIdByAdmin().getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorRejectedWhenAllowListVacant() throws Exception {
+        // Resource Indicators feature is enabled (server config), allow list is vacant, client not yet registered,
+        // authorization request includes the resource parameter -> invalid_target.
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.loginForm().codeChallenge(null).resource(RESOURCE).open();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
+    }
+
+    @Test
+    public void testResourceIndicatorAllowedForNewClientAssignsAudienceMapper() throws Exception {
+        // allow list includes the resource, client not yet registered -> client gets registered
+        // and an audience mapper for the resource is attached to the client.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        String code = loginUserAndGetCode(true, RESOURCE);
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).resource(RESOURCE).signedJwt(signedJwt).send();
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+        MatcherAssert.assertThat(Arrays.asList(accessToken.getAudience()), Matchers.hasItem(RESOURCE));
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(hasResourceIndicatorAudienceMapper(clientRepresentation.getId(), RESOURCE));
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorRejectedWhenNotInAllowList() throws Exception {
+        // allow list does not include the resource requested, client not yet registered -> invalid_target
+        // and no audience mapper is assigned to the newly registered client.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of("https://mcp.example.com/other-api"));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.loginForm().codeChallenge(null).resource(RESOURCE).open();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
+    }
+
+    @Test
+    public void testResourceIndicatorRemovedFromClientWhenNoLongerAllowListed() throws Exception {
+        // 1. allow list includes the resource -> client registers and gets the audience mapper assigned.
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(conditionConfig, executorConfig);
+
+        String code = loginUserAndGetCode(true, RESOURCE);
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).resource(RESOURCE).signedJwt(signedJwt).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        logout(tokenResponse.getIdToken());
+
+        // 2. remove the resource from the allow list -> the client's own cache is still valid (NO_UPDATE),
+        // but the resource indicator is still enforced on every authorization request.
+        executorConfig.setResourceIndicatorAllowList(List.of());
+        updatePolicy(conditionConfig, executorConfig);
+
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.loginForm().codeChallenge(null).resource(RESOURCE).open();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
+
+        // the audience mapper got synchronized (removed) to keep it aligned with the allow list.
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertFalse(hasResourceIndicatorAudienceMapper(clientRepresentation.getId(), RESOURCE));
+
+        deleteClientByAdmin(clientRepresentation.getId());
     }
 
     @Test
@@ -988,9 +1086,13 @@ public class ClientIdMetadataDocumentTest {
     }
 
     private String loginUserAndGetCode(boolean isGrantRequred) {
+        return loginUserAndGetCode(isGrantRequred, null);
+    }
+
+    private String loginUserAndGetCode(boolean isGrantRequred, String resource) {
         oauth.client(CLIENT_ID);
         oauth.redirectUri(REDIRECT_URI);
-        oauth.loginForm().codeChallenge(null).open();
+        oauth.loginForm().codeChallenge(null).resource(resource).open();
         oauth.fillLoginForm(user.getUsername(), user.getPassword());
 
         if (isGrantRequred) {
@@ -1129,6 +1231,12 @@ public class ClientIdMetadataDocumentTest {
         return clients.iterator().next();
     }
 
+    private boolean hasResourceIndicatorAudienceMapper(String clientId, String resource) {
+        return realm.admin().clients().get(clientId).getProtocolMappers().getMappers().stream()
+                .filter(m -> AudienceProtocolMapper.PROVIDER_ID.equals(m.getProtocolMapper()))
+                .anyMatch(m -> resource.equals(m.getConfig().get(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE)));
+    }
+
     private void deleteClientByAdmin(String id) {
         realm.admin().clients().get(id).remove();
     }
@@ -1145,7 +1253,7 @@ public class ClientIdMetadataDocumentTest {
     public static class CimdServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.CIMD);
+            return config.features(Profile.Feature.CIMD, Profile.Feature.RESOURCE_INDICATORS);
         }
     }
 
