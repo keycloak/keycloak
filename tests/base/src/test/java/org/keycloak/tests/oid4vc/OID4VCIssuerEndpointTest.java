@@ -61,6 +61,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.protocol.oid4vc.userprofile.DuplicateDidValidator;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.representations.JsonWebToken;
@@ -205,12 +206,14 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
         if (profileConfig.getAttribute(UserModel.DID) == null) {
             UPAttribute attr = new UPAttribute(UserModel.DID);
             attr.setDisplayName("${did}");
-            attr.setPermissions(new UPAttributePermissions(Set.of(ROLE_ADMIN, ROLE_USER), Set.of(ROLE_ADMIN, ROLE_USER)));
+            attr.setPermissions(new UPAttributePermissions(Set.of(ROLE_ADMIN, ROLE_USER), Set.of(ROLE_ADMIN)));
             attr.setValidations(Map.of(
                     PatternValidator.ID, Map.of(
-                            "pattern", "^did:.+:.+$",
-                            "error-message", "Value must start with 'did:scheme:'"
-                    )
+                            "pattern", "^did:[a-z0-9]+:\\S+$",
+                            "error-message", "Value must follow the format 'did:method:identifier'",
+                            "ignore.empty.value", "true"
+                    ),
+                    DuplicateDidValidator.ID, Map.of()
             ));
             profileConfig.addOrReplaceAttribute(attr);
         }

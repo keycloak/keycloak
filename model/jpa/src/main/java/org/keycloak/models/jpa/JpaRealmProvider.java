@@ -1143,7 +1143,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             }
         });
 
-        int countRemoved = em.createNamedQuery("deleteClientScopeClientMappingByClient")
+        em.createNamedQuery("deleteClientScopeClientMappingByClient")
                 .setParameter("clientId", clientEntity.getId())
                 .executeUpdate();
         em.remove(clientEntity);  // i have no idea why, but this needs to come before deleteScopeMapping

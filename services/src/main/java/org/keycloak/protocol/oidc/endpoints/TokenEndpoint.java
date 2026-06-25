@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.xml.namespace.QName;
 
@@ -35,7 +36,6 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
@@ -63,6 +63,7 @@ import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.utils.StringUtil;
@@ -71,6 +72,7 @@ import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import static org.keycloak.OAuth2Constants.UMA_GRANT_TYPE;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 
 /**
@@ -119,14 +121,10 @@ public class TokenEndpoint {
     public Response processGrantRequest() {
         cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
-        MultivaluedMap<String, String> formParameters = request.getDecodedFormParameters();
+        formParams = Optional.ofNullable(request.getDecodedFormParameters())
+                .map(this::sanitizeFormParameters)
+                .orElse(new MultivaluedHashMap<>());
 
-        if (formParameters == null) {
-            formParameters = new MultivaluedHashMap<>();
-        }
-
-        formParams = formParameters;
-        sanitizeFormParameters();
         grantType = formParams.getFirst(OIDCLoginProtocol.GRANT_TYPE_PARAM);
 
         // https://tools.ietf.org/html/rfc6749#section-5.1
@@ -139,9 +137,18 @@ public class TokenEndpoint {
         checkRealm();
         checkGrantType();
 
-        if (!grantType.equals(OAuth2Constants.UMA_GRANT_TYPE)
-                // pre-authorized grants are not necessarily used by known clients.
-                && !grantType.equals(PRE_AUTH_GRANT_TYPE)) {
+        try {
+            grant.preProcess(session, formParams);
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+        }
+
+        // pre-authorized grants are not necessarily used by known clients.
+        if (!grantType.equals(UMA_GRANT_TYPE) && !grantType.equals(PRE_AUTH_GRANT_TYPE)) {
             checkClient();
             checkParameterDuplicated();
         }
@@ -203,8 +210,6 @@ public class TokenEndpoint {
         if (client.isBearerOnly()) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
         }
-
-
     }
 
     private void checkGrantType() {
@@ -221,11 +226,6 @@ public class TokenEndpoint {
         event.detail(Details.GRANT_TYPE, grantType);
     }
 
-    private CorsErrorResponseException newUnsupportedGrantTypeException() {
-        return new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_GRANT_TYPE,
-                "Unsupported " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Status.BAD_REQUEST);
-    }
-
     private void checkParameterDuplicated() {
         for (var entry : formParams.entrySet()) {
             if (entry.getValue().size() != 1 && !grant.getSupportedMultivaluedRequestParameters().contains(entry.getKey())) {
@@ -235,14 +235,19 @@ public class TokenEndpoint {
         }
     }
 
-    private void sanitizeFormParameters() {
+    private CorsErrorResponseException newUnsupportedGrantTypeException() {
+        return new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_GRANT_TYPE,
+                "Unsupported " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Status.BAD_REQUEST);
+    }
+
+    private MultivaluedMap<String, String> sanitizeFormParameters(MultivaluedMap<String, String> formParams) {
         MultivaluedMap<String, String> sanitized = new MultivaluedHashMap<>();
         for (Map.Entry<String, List<String>> entry : formParams.entrySet()) {
             for (String value : entry.getValue()) {
                 sanitized.add(entry.getKey(), StringUtil.removeControlCharacters(value));
             }
         }
-        formParams = sanitized;
+        return sanitized;
     }
 
 

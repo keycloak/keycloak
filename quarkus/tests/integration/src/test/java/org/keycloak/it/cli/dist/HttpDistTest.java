@@ -28,16 +28,22 @@ import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
+import io.restassured.RestAssured;
+import io.restassured.config.RedirectConfig;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -48,6 +54,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @DistributionTest(stopServer = Mode.MANUAL, enableTls = true)
 @RawDistOnly(reason = "Containers are immutable")
 public class HttpDistTest {
+
+    @BeforeEach
+    public void setRestAssuredHttps() {
+        RestAssured.useRelaxedHTTPSValidation();
+        RestAssured.config = RestAssured.config.redirect(RedirectConfig.redirectConfig().followRedirects(false));
+    }
+    
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
     public void maxQueuedRequestsTest(KeycloakRunner runner) {
@@ -114,6 +127,26 @@ public class HttpDistTest {
         result = runner.run("start", "--https-trust-store-file=" + truststorePath, "--hostname-strict=false");
         result.assertExitCode(-1);
         result.assertMessage("ERROR: No trust store password provided");
+    }
+    
+    @StopServer(Mode.MANUAL)
+    @Test
+    @Launch({"start", "--db=dev-file", "--hostname-strict=false", "--http-enabled=true"})
+    void testStartNonLocalHttps(CLIResult cliResult) {
+        cliResult.assertStarted();
+        
+        // should not be directed to create an admin user - we can't be sure if a local proxy is being used
+        when().get("https://localhost:8443/").then().statusCode(200).body(containsString("You will need local access"));
+    }
+    
+    @StopServer(Mode.MANUAL)
+    @Test
+    @Launch({"start", "--db=dev-file", "--proxy-headers=forwarded", "--hostname-strict=false", "--http-enabled=true"})
+    void testStartLocalHttps(CLIResult cliResult) {
+        cliResult.assertStarted();
+        
+        // should be directed to create an admin user, as the request is not setting the proxy header
+        when().get("https://localhost:8443/").then().statusCode(200).body(Matchers.not(containsString("You will need local access")));
     }
 
     @Test

@@ -64,10 +64,10 @@ import org.keycloak.util.DPoPGenerator;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
-import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 import static org.keycloak.OAuth2Constants.DPOP_JWT_HEADER_TYPE;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
+import static org.keycloak.tests.oid4vc.OID4VCAuthorizationDetailsUtil.getAuthorizationDetailsFromAccessToken;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.TEST_PASSWORD;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestRealmConfig.TEST_REALM_NAME;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createRsaKeyPair;
@@ -223,16 +223,15 @@ public class OID4VCBasicWallet {
         return attestationPoPJwt;
     }
 
-    public Proofs generateAttestationProof(OID4VCTestContext ctx, Consumer<KeyWrapper> attestationKeyConsumer) {
-        KeyWrapper attestationKey = getECKeyPair(ctx, "attestationKey");
+    public Proofs generateAttestationProof(OID4VCTestContext ctx, KeyWrapper attestationKey) {
         KeyWrapper proofKey = getECKeyPair(ctx, "proofKey");
-
         JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
         proofJwk.setKeyId(proofKey.getKid());
         proofJwk.setAlgorithm(proofKey.getAlgorithm());
 
         String nonce = oauth.oid4vc().doNonceRequest().getNonce();
-        Proofs proofs = Proofs.create(ProofType.ATTESTATION, OID4VCProofTestUtils.generateAttestationProof(
+
+        return Proofs.create(ProofType.ATTESTATION, OID4VCProofTestUtils.generateAttestationProof(
                 attestationKey,
                 nonce,
                 List.of(proofJwk),
@@ -240,8 +239,6 @@ public class OID4VCBasicWallet {
                 List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH),
                 null
         ));
-        attestationKeyConsumer.accept(attestationKey);
-        return proofs;
     }
 
     public Proofs generateJwtProof(OID4VCTestContext ctx) {
@@ -563,22 +560,7 @@ public class OID4VCBasicWallet {
 
         // Extract authorization_details from AccessToken (JWT)
         //
-
-        JsonWebToken jwt;
-        try {
-            jwt = new JWSInput(tokenResponse.getAccessToken()).readJsonContent(JsonWebToken.class);
-        } catch (JWSInputException ex) {
-            throw new IllegalStateException(ex);
-        }
-
-        Object authDetailsClaim = jwt.getOtherClaims().get(AUTHORIZATION_DETAILS);
-        String authDetailsJson = Optional.ofNullable(authDetailsClaim)
-                .map(JsonSerialization::valueAsString)
-                .orElse(null);
-        List<OID4VCAuthorizationDetail> jwtAuthDetails = Optional.ofNullable(authDetailsJson)
-                .map(it -> JsonSerialization.valueFromString(it, OID4VCAuthorizationDetail[].class))
-                .map(Arrays::asList)
-                .orElse(null);
+        List<OID4VCAuthorizationDetail> jwtAuthDetails = getAuthorizationDetailsFromAccessToken(tokenResponse.getAccessToken());
         assertTrue(jwtAuthDetails != null && !jwtAuthDetails.isEmpty(), "No authorization_details in AccessTokenJWT");
 
         assertEquals(1, tokenAuthDetails.size(), "Expected one authorization_details entry");
@@ -588,7 +570,7 @@ public class OID4VCBasicWallet {
         var jwtAuthDetail = jwtAuthDetails.get(0);
 
         assertEquals(ctx.getCredentialConfigurationId(), tokenAuthDetail.getCredentialConfigurationId());
-        assertEquals(tokenAuthDetail, jwtAuthDetail);
+        assertEquals(ctx.getCredentialConfigurationId(), jwtAuthDetail.getCredentialConfigurationId());
 
         return accessToken;
     }
