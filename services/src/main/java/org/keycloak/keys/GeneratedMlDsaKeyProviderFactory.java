@@ -123,13 +123,20 @@ public class GeneratedMlDsaKeyProviderFactory extends AbstractMlDsaKeyProviderFa
             model.put(MLDSA_PRIVATE_KEY_KEY, Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded()));
             model.put(MLDSA_PUBLIC_KEY_KEY, Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
             model.put(MLDSA_ALGORITHM_KEY, algorithm);
-        } catch (Throwable t) {
-            throw new ComponentValidationException("Failed to generate ML-DSA keys", t);
+        } catch (Exception e) {
+            throw new ComponentValidationException("Failed to generate ML-DSA keys", e);
         }
     }
 
     private String getAlgorithmFromPublicKey(String publicKeyBase64) {
-        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getMimeDecoder().decode(publicKeyBase64));
+        X509EncodedKeySpec publicKeySpec;
+        try {
+            publicKeySpec = new X509EncodedKeySpec(Base64.getMimeDecoder().decode(publicKeyBase64));
+        } catch (Exception e) {
+            throw new ComponentValidationException("Failed to determine ML-DSA algorithm from its public key", e);
+        }
+
+        Exception firstException = null;
         for (String alg : List.of(Algorithm.ML_DSA_44, Algorithm.ML_DSA_65, Algorithm.ML_DSA_87)) {
             try {
                 KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory(alg);
@@ -137,9 +144,14 @@ public class GeneratedMlDsaKeyProviderFactory extends AbstractMlDsaKeyProviderFa
                 if (pubKey != null) {
                     return alg;
                 }
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                if (firstException == null) {
+                    firstException = e;
+                } else {
+                    firstException.addSuppressed(e);
+                }
             }
         }
-        throw new ComponentValidationException("Failed to determine ML-DSA algorithm from its public key");
+        throw new ComponentValidationException("Failed to determine ML-DSA algorithm from its public key", firstException);
     }
 }

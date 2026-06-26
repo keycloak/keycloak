@@ -32,47 +32,13 @@ public class MLDSASignatureProvider implements SignatureProvider {
 
     @Override
     public SignatureSignerContext signer() throws SignatureException {
-        return new ServerAsymmetricSignatureSignerContext(session, algorithm) {
-            @Override
-            public byte[] sign(byte[] data) throws SignatureException {
-                try {
-                    java.security.Signature signature;
-                    try {
-                        signature = java.security.Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(this.key.getAlgorithmOrDefault(), this.key.getCurve()));
-                    } catch (java.security.NoSuchAlgorithmException e) {
-                        signature = org.keycloak.common.crypto.CryptoIntegration.getProvider().getSignature(this.key.getAlgorithmOrDefault());
-                    }
-                    signature.initSign((java.security.PrivateKey) this.key.getPrivateKey());
-                    signature.update(data);
-                    return signature.sign();
-                } catch (Exception e) {
-                    throw new SignatureException("Signing failed", e);
-                }
-            }
-        };
+        return new ServerAsymmetricSignatureSignerContext(session, algorithm);
     }
 
     @Override
     public SignatureSignerContext signer(KeyWrapper key) throws SignatureException {
         SignatureProvider.checkKeyForSignature(key, algorithm, KeyType.AKP);
-        return new ServerAsymmetricSignatureSignerContext(key) {
-            @Override
-            public byte[] sign(byte[] data) throws SignatureException {
-                try {
-                    java.security.Signature signature;
-                    try {
-                        signature = java.security.Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(this.key.getAlgorithmOrDefault(), this.key.getCurve()));
-                    } catch (java.security.NoSuchAlgorithmException e) {
-                        signature = org.keycloak.common.crypto.CryptoIntegration.getProvider().getSignature(this.key.getAlgorithmOrDefault());
-                    }
-                    signature.initSign((java.security.PrivateKey) this.key.getPrivateKey());
-                    signature.update(data);
-                    return signature.sign();
-                } catch (Exception e) {
-                    throw new SignatureException("Signing failed", e);
-                }
-            }
-        };
+        return new ServerAsymmetricSignatureSignerContext(key);
     }
 
     @Override
