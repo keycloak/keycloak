@@ -152,7 +152,7 @@ For cluster-wide installation without OLM, see <<installing_cluster_wide_with_ku
 
 A single {project_name} Operator can reconcile custom resources in all namespaces in the cluster. This avoids running one Operator per namespace while still allowing {project_name} instances to be deployed in separate namespaces.
 
-The Operator supports the standard OLM install modes:
+The Operator supports the following OLM install modes (`MultiNamespace` is not supported):
 
 [cols="1,2",options="header"]
 |===
@@ -168,6 +168,8 @@ The Operator supports the standard OLM install modes:
 | All namespaces in the cluster
 |===
 
+Install the cluster-wide Operator in a dedicated namespace rather than converting an existing single-namespace installation.
+
 [WARNING]
 ====
 *Preview support*
@@ -175,7 +177,9 @@ The Operator supports the standard OLM install modes:
 Cluster-wide installation is supported for common scenarios, but it is still considered in preview.
 
 * Limitations apply; see <<cluster_wide_limitations>>.
+<@profile.ifCommunity>
 * For non-OLM installations, cluster-wide setup requires additional RBAC configuration.
+</@profile.ifCommunity>
 ====
 
 [[cluster_wide_limitations]]
@@ -188,9 +192,27 @@ When the Operator watches all namespaces:
 
 ==== Installing with OLM
 
-To install in `AllNamespaces` mode, create an OperatorGroup without `spec.targetNamespaces`, subscribe to the Operator, and approve the install plan.
+To install in `AllNamespaces` mode, subscribe to the Operator and approve the install plan.
 
 We recommend only using manual approval for the install plan.
+
+===== Using the OpenShift web console
+
+. Open the OpenShift Container Platform web console.
+
+. In the left column, click *Home*, *Operators*, *OperatorHub*.
+
+. Search for "keycloak" and select the {project_name} Operator from the *fast* channel.
+
+. On the install screen, select *All namespaces on the cluster* as the installation mode.
+
+. Select *Manual* approval for updates.
+
+. Complete the installation and approve the install plan when prompted.
+
+. Verify that the Operator pod is running in the operator namespace.
+
+===== Using the CLI
 
 Create a global OperatorGroup in the namespace where the Operator is installed by omitting `spec.targetNamespaces`:
 
@@ -202,6 +224,23 @@ metadata:
   name: keycloak-operator-group
   namespace: <operator-namespace>
 spec: {}
+----
+
+Create a Subscription with `installPlanApproval: Manual`:
+
+[source,yaml]
+----
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: keycloak-operator
+  namespace: <operator-namespace>
+spec:
+  channel: fast
+  name: keycloak-operator
+  source: <catalog-source>
+  sourceNamespace: <catalog-namespace>
+  installPlanApproval: Manual
 ----
 
 Approve the install plan, then verify that the Operator pod is running.
