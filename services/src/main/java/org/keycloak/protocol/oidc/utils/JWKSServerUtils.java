@@ -64,7 +64,11 @@ import org.keycloak.models.RealmModel;
         } else if (key.getType().equals(KeyType.OKP)) {
             return b.okp(key.getPublicKey(), key.getUse());
         } else if (key.getType().equals(KeyType.AKP)) {
-            return b.akp((PublicKey) key.getPublicKey());
+            JWK jwk = b.akp((PublicKey) key.getPublicKey());
+            if (key.getUse() != null) {
+                jwk.setPublicKeyUse(key.getUse().getSpecName());
+            }
+            return jwk;
         }
         return null;
     }
