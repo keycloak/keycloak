@@ -15,6 +15,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.spec.ECParameterSpec;
+import java.util.Comparator;
 import java.util.stream.Stream;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -103,7 +104,7 @@ public interface CryptoProvider {
      * PEM is an input certificate format, not a generated Java KeyStore format.
      */
     default KeyStore getTrustStore(TruststoreFormat format) throws KeyStoreException, NoSuchProviderException {
-        if (format == TruststoreFormat.PEM) {
+        if (!format.isJavaTrustStore()) {
             throw new KeyStoreException("PEM is not a Java KeyStore truststore format");
         }
         return getKeyStore(KeystoreFormat.valueOf(format.name()));
@@ -129,7 +130,7 @@ public interface CryptoProvider {
      */
     default Stream<TruststoreFormat> getSupportedTrustStoreTypes() {
         return Stream.of(TruststoreFormat.values())
-                .filter(format -> format != TruststoreFormat.PEM)
+                .filter(TruststoreFormat::isJavaTrustStore)
                 .filter(format -> {
                     try {
                         getTrustStore(format);
@@ -144,16 +145,8 @@ public interface CryptoProvider {
      * @return Preferred format for a generated system truststore.
      */
     default TruststoreFormat getPreferredGeneratedTrustStoreType() {
-        for (TruststoreFormat format : new TruststoreFormat[] { TruststoreFormat.PKCS12, TruststoreFormat.BCFKS }) {
-            try {
-                getTrustStore(format);
-                return format;
-            } catch (KeyStoreException | NoSuchProviderException ex) {
-                // Try the next preferred generated truststore format.
-            }
-        }
         return getSupportedTrustStoreTypes()
-                .findFirst()
+                .min(Comparator.comparingInt(TruststoreFormat::getPreference))
                 .orElseThrow(() -> new IllegalStateException("No Java KeyStore backed truststore types are supported"));
     }
 

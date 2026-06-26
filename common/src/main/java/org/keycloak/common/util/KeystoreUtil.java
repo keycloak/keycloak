@@ -43,15 +43,17 @@ public class KeystoreUtil {
     };
 
     public enum TruststoreFormat implements StoreFormat {
-        JKS("jks", "truststore"),
-        PKCS12("p12", "pfx", "pkcs12"),
-        PEM("pem", "ca", "crt"),
-        BCFKS("bcfks");
+        JKS(2, "jks", "truststore"),
+        PKCS12(0, "p12", "pfx", "pkcs12"),
+        PEM(Integer.MAX_VALUE, "pem", "ca", "crt"),
+        BCFKS(1, "bcfks");
 
         // Typical file extension for this keystore format
         private final List<String> fileExtensions;
+        private final int preference;
 
-        TruststoreFormat(String... extensions) {
+        TruststoreFormat(int preference, String... extensions) {
+            this.preference = preference;
             this.fileExtensions = Arrays.asList(extensions);
         }
 
@@ -63,6 +65,14 @@ public class KeystoreUtil {
         @Override
         public String getPrimaryExtension() {
             return fileExtensions.get(0);
+        }
+
+        public int getPreference() {
+            return preference;
+        }
+
+        public boolean isJavaTrustStore() {
+            return this != PEM;
         }
     }
 

@@ -107,7 +107,7 @@ For the details, see the link:{adminguide_link}[{adminguide_name}].
 
 For all database connections, {project_name} now sets a socket read timeout matching the respective transaction timeout to prevent long hanging threads. For PostgreSQL databases, it additionally sets a query timeout.
 
-=== System truststore format is not automatically inferred
+=== Generated system truststore format follows the active crypto provider
 
 The generated system truststore created from `conf/truststores`, `--truststore-paths`, and automatically discovered Kubernetes or OpenShift CA certificates now uses the generated truststore format preferred by the active crypto provider.
 
