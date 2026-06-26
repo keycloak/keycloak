@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.is;
 
 @RequireProvider(RealmProvider.class)
 @RequireProvider(RoleProvider.class)
+@RequireProvider(JpaConnectionProvider.class)
 public class CompositeRoleExpansionQueryCountTest extends KeycloakModelTest {
 
     // Deep composite chain r0 -> r1 -> ... -> r9 (r9 is a leaf): V = 10 nodes, C = 9 composite nodes.

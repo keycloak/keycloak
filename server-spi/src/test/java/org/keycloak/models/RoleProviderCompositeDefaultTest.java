@@ -1,5 +1,6 @@
 package org.keycloak.models;
 
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -16,6 +17,13 @@ import org.junit.Test;
 // children correctly through the interface default implementation (de-duplicated, per parent).
 public class RoleProviderCompositeDefaultTest {
 
+    // Non-null realm satisfying the getCompositeRolesStream contract; the default impl only forwards
+    // it to getRoleById (ignored by the stub), so it is never actually invoked.
+    private static final RealmModel REALM = (RealmModel) Proxy.newProxyInstance(
+            RoleProviderCompositeDefaultTest.class.getClassLoader(),
+            new Class<?>[]{RealmModel.class},
+            (proxy, method, args) -> { throw new UnsupportedOperationException(); });
+
     @Test
     public void defaultGetCompositeRolesStreamResolvesAndDeduplicates() {
         // root -> a, b ; a -> c ; b -> c (diamond, c shared) ; c is a leaf
@@ -29,11 +37,11 @@ public class RoleProviderCompositeDefaultTest {
         // c is shared by a and b but must appear once
         Assert.assertEquals(Set.of("c"), childIds(provider, "a", "b"));
         Assert.assertEquals(Set.of(), childIds(provider, "c"));
-        Assert.assertEquals(Set.of(), provider.getCompositeRolesStream(null, Set.of()).collect(Collectors.toSet()));
+        Assert.assertEquals(Set.of(), provider.getCompositeRolesStream(REALM, Set.of()).collect(Collectors.toSet()));
     }
 
     private static Set<String> childIds(FakeRoleProvider provider, String... parentIds) {
-        return provider.getCompositeRolesStream(null, Set.of(parentIds))
+        return provider.getCompositeRolesStream(REALM, Set.of(parentIds))
                 .map(RoleModel::getId).collect(Collectors.toSet());
     }
 
