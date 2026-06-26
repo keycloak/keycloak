@@ -20,10 +20,12 @@ package org.keycloak.services.util;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.AbstractMap;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -42,6 +44,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureProviderFactory;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -54,6 +57,7 @@ import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
@@ -105,7 +109,7 @@ public class DPoPUtil {
     }
 
     private static URI normalize(URI uri) {
-        return UriBuilder.fromUri(uri).replaceQuery("").build();
+        return UriBuilder.fromUri(uri).replaceQuery("").fragment(null).build();
     }
 
     /**
@@ -184,15 +188,18 @@ public class DPoPUtil {
             throw new VerificationException("Invalid or missing type in DPoP header: " + header.getType());
         }
 
-        String algorithm = header.getAlgorithm().name();
+        if (header.getAlgorithm() == null) {
+            throw new VerificationException("No alg in DPoP header");
+        }
 
+        String algorithm = header.getAlgorithm().name();
         if (!getDPoPSupportedAlgorithms(session).contains(algorithm)) {
             throw new VerificationException("Unsupported DPoP algorithm: " + header.getAlgorithm());
         }
 
         JWK jwk = header.getKey();
-        KeyWrapper key;
 
+        KeyWrapper key;
         if (jwk == null) {
             throw new VerificationException("No JWK in DPoP header");
         } else {
@@ -203,8 +210,15 @@ public class DPoPUtil {
             if (key.getPublicKey() == null) {
                 throw new VerificationException("No public key in DPoP header");
             }
-            if (key.getPrivateKey() != null) {
-                throw new VerificationException("Private key is present in DPoP header");
+            // JWKSUtils.getKeyWrapper() does actually never return the private key
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            if (sessionFactory.getProviderFactory(SignatureProvider.class, algorithm) instanceof SignatureProviderFactory providerFactory) {
+                Set<String> jwkOther = jwk.getOtherClaims().keySet();
+                if (key.getPrivateKey() != null || !Collections.disjoint(jwkOther, providerFactory.getJwkPrivateKeyClaims())) {
+                    throw new VerificationException("Private key material must not be present in DPoP JWK");
+                }
+            } else {
+                throw new VerificationException("No signature provider factory for: " + algorithm);
             }
         }
 
