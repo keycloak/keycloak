@@ -614,7 +614,7 @@ public class TokenManager {
      * @return
      */
     public static boolean isValidScope(KeycloakSession session, String scopes, AuthorizationRequestContext authorizationRequestContext, ClientModel client) {
-        return isValidScope(session, scopes, client, null);
+        return isValidScope(session, scopes, authorizationRequestContext, client, null);
     }
 
     public static boolean isValidScope(KeycloakSession session, String scopes, AuthorizationRequestContext authorizationRequestContext, ClientModel client, UserModel user) {
