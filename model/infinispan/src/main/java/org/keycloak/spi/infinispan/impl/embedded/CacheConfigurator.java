@@ -101,7 +101,7 @@ public final class CacheConfigurator {
     private static final String OWNER_SUFFIX = "Owners";
     private static final int STATE_TRANSFER_CHUNK_SIZE = 16;
     private static final int MIN_NUM_OWNERS_REMOTE_CACHE = 2;
-    private static final long DEFAULT_LIFESPAN = Duration.ofSeconds(10).toMillis();
+    private static final long DEFAULT_LIFESPAN = Duration.ofHours(1).toMillis();
     private static final int DISABLED_LIFESPAN = -1;
 
     private CacheConfigurator() {

@@ -49,6 +49,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.credential.CredentialMetadata;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.deployment.DeployedConfigurationsManager;
@@ -91,6 +92,7 @@ import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.light.LightweightUserAdapter;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.account.LocalizedMessage;
@@ -178,6 +180,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAttestationConveyancePreference");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAuthenticatorAttachment");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyRequireResidentKey");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyResidentKey");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyUserVerificationRequirement");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyCreateTimeout");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAvoidSameAuthenticatorRegister");
@@ -189,6 +192,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAttestationConveyancePreferencePasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAuthenticatorAttachmentPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyRequireResidentKeyPasswordless");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyResidentKeyPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyUserVerificationRequirementPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyCreateTimeoutPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAvoidSameAuthenticatorRegisterPasswordless");
@@ -590,6 +594,7 @@ public class ModelToRepresentation {
         rep.setWebAuthnPolicyAttestationConveyancePreference(webAuthnPolicy.getAttestationConveyancePreference());
         rep.setWebAuthnPolicyAuthenticatorAttachment(webAuthnPolicy.getAuthenticatorAttachment());
         rep.setWebAuthnPolicyRequireResidentKey(webAuthnPolicy.getRequireResidentKey());
+        rep.setWebAuthnPolicyResidentKey(webAuthnPolicy.getResidentKey());
         rep.setWebAuthnPolicyUserVerificationRequirement(webAuthnPolicy.getUserVerificationRequirement());
         rep.setWebAuthnPolicyCreateTimeout(webAuthnPolicy.getCreateTimeout());
         rep.setWebAuthnPolicyAvoidSameAuthenticatorRegister(webAuthnPolicy.isAvoidSameAuthenticatorRegister());
@@ -603,6 +608,7 @@ public class ModelToRepresentation {
         rep.setWebAuthnPolicyPasswordlessAttestationConveyancePreference(webAuthnPolicy.getAttestationConveyancePreference());
         rep.setWebAuthnPolicyPasswordlessAuthenticatorAttachment(webAuthnPolicy.getAuthenticatorAttachment());
         rep.setWebAuthnPolicyPasswordlessRequireResidentKey(webAuthnPolicy.getRequireResidentKey());
+        rep.setWebAuthnPolicyPasswordlessResidentKey(webAuthnPolicy.getResidentKey());
         rep.setWebAuthnPolicyPasswordlessUserVerificationRequirement(webAuthnPolicy.getUserVerificationRequirement());
         rep.setWebAuthnPolicyPasswordlessCreateTimeout(webAuthnPolicy.getCreateTimeout());
         rep.setWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(webAuthnPolicy.isAvoidSameAuthenticatorRegister());
@@ -1057,12 +1063,32 @@ public class ModelToRepresentation {
         return consentRep;
     }
 
-    public static UserVerifiableCredentialRepresentation toRepresentation(UserVerifiableCredentialModel model) {
+    public static UserVerifiableCredentialRepresentation toRepresentation(UserVerifiableCredentialModel model, String credentialScopeName) {
         UserVerifiableCredentialRepresentation rep = new UserVerifiableCredentialRepresentation();
-        rep.setCredentialScopeName(model.getCredentialScopeName());
+        rep.setCredentialScopeName(credentialScopeName);
         rep.setRevision(model.getRevision());
         rep.setCreatedDate(model.getCreatedDate());
+        rep.setUpdatedDate(model.getUpdatedDate());
         rep.setUserAttributes(model.getUserAttributes());
+        return rep;
+    }
+
+    public static UserVerifiableCredentialRepresentation toRepresentation(UserVerifiableCredentialModel model, RealmModel realm) {
+        ClientScopeModel clientScope = realm.getClientScopeById(model.getClientScopeId());
+        String scopeName = null;
+
+        if (clientScope != null) {
+            scopeName = clientScope.getName();
+        }
+
+        UserVerifiableCredentialRepresentation rep = toRepresentation(model, scopeName);
+
+        // Enrich with credentialConfigurationId if it's an OID4VCI scope
+        if (clientScope != null && OID4VCIConstants.OID4VC_PROTOCOL.equals(clientScope.getProtocol())) {
+            CredentialScopeModel credentialScope = new CredentialScopeModel(clientScope);
+            rep.setCredentialConfigurationId(credentialScope.getCredentialConfigurationId());
+        }
+
         return rep;
     }
 
@@ -1502,16 +1528,28 @@ public class ModelToRepresentation {
         return representation;
     }
 
-    public static IssuedVerifiableCredentialRepresentation toRepresentation(IssuedVerifiableCredentialModel model) {
+    public static IssuedVerifiableCredentialRepresentation toRepresentation(IssuedVerifiableCredentialModel model, String credentialType) {
         IssuedVerifiableCredentialRepresentation rep = new IssuedVerifiableCredentialRepresentation();
         rep.setId(model.getId());
         rep.setUserId(model.getUserId());
-        rep.setCredentialType(model.getCredentialType());
+        rep.setCredentialType(credentialType);
         rep.setRevision(model.getRevision());
         rep.setIssuedAt(model.getIssuedAt());
         rep.setExpiresAt(model.getExpiresAt());
         rep.setClientId(model.getClientId());
         return rep;
+    }
+
+    public static IssuedVerifiableCredentialRepresentation toRepresentation(IssuedVerifiableCredentialModel model, KeycloakSession session, RealmModel realm) {
+        String credentialType = null;
+        UserVerifiableCredentialModel vcModel = session.users().getVerifiableCredentialById(model.getVerifiableCredentialId());
+        if (vcModel != null) {
+            ClientScopeModel clientScope = realm.getClientScopeById(vcModel.getClientScopeId());
+            if (clientScope != null) {
+                credentialType = clientScope.getName();
+            }
+        }
+        return toRepresentation(model, credentialType);
     }
 
 }

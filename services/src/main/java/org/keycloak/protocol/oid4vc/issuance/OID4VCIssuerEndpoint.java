@@ -53,7 +53,6 @@ import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.Details;
@@ -70,7 +69,6 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -94,6 +92,7 @@ import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerException;
 import org.keycloak.protocol.oid4vc.model.AttestationProof;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer.BatchCredentialIssuance;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
@@ -140,6 +139,7 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+import static org.keycloak.constants.OID4VCIConstants.BATCH_CREDENTIAL_ISSUANCE_DEFAULT_MAX_BATCH_SIZE;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.getSupportedCredentials;
 import static org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant.AUTH_CODE_GRANT_TYPE;
@@ -740,6 +740,21 @@ public class OID4VCIssuerEndpoint {
         }
     }
 
+    private void checkUserHasIssuedVerifiableCredential(UserModel user, CredentialScopeModel requestedCredential, String issuedCredentialId, ClientModel client, EventBuilder event) {
+        try {
+            OID4VCUtil.checkIssuedVerifiableCredential(session, user, issuedCredentialId, requestedCredential, client);
+        } catch (IllegalStateException ise) {
+            String errorMessage = String.format("User '%s' does not have valid requested issued verifiable credential with ID '%s'. Details: %s",
+                    user.getUsername(), issuedCredentialId, ise.getMessage());
+            LOGGER.debugf(errorMessage);
+            event.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+            throw new CorsErrorResponseException(cors,
+                    ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(),
+                    errorMessage,
+                    Response.Status.BAD_REQUEST);
+        }
+    }
+
     /**
      * Returns a verifiable credential
      */
@@ -915,7 +930,7 @@ public class OID4VCIssuerEndpoint {
 
         // Validate that authorization_details from the token matches the offer state
         // This ensures the correct access token is being used for the credential request
-        if (offerState != null && !List.of(tokenAuthDetail).equals(offerState.getAuthorizationDetails())) {
+        if (offerState != null && !offerState.matchAuthorizationDetails(List.of(tokenAuthDetail))) {
             var errorMessage = "Authorization details in access token do not match the credential offer state. " +
                     "The access token may not be the one issued for this credential offer.";
             LOGGER.debug(errorMessage);
@@ -977,6 +992,7 @@ public class OID4VCIssuerEndpoint {
 
         checkScope(authorizedCredentialScope);
         checkUserHasVerifiableCredential(userModel, authorizedCredentialScope, eventBuilder);
+        checkUserHasIssuedVerifiableCredential(userModel, authorizedCredentialScope, tokenAuthDetail.getIssuedCredentialId(), clientModel, eventBuilder);
 
         SupportedCredentialConfiguration supportedCredential =
                 OID4VCIssuerWellKnownProvider.toSupportedCredentialConfiguration(session, authorizedCredentialScope);
@@ -985,6 +1001,8 @@ public class OID4VCIssuerEndpoint {
 
         // Get the list of all proofs (handles single proof, multiple proofs, or none)
         List<String> allProofs = getAllProofs(credentialRequest);
+        if (allProofs.stream().anyMatch(p -> p == null || p.isBlank()))
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF, "Proof values must not be null or blank"));
 
         // Generate credential response
         CredentialResponse responseVO = new CredentialResponse();
@@ -998,6 +1016,16 @@ public class OID4VCIssuerEndpoint {
             Proofs originalProofs = credentialRequest.getProofs();
             // Determine the proof type from the original proofs
             String proofType = originalProofs.getProofType();
+
+            if (allProofs.size() > 1) {
+                Integer maxBatchSize = Optional.ofNullable(issuerMetadata.getBatchCredentialIssuance())
+                        .map(BatchCredentialIssuance::getBatchSize)
+                        .orElse(BATCH_CREDENTIAL_ISSUANCE_DEFAULT_MAX_BATCH_SIZE);
+                if (allProofs.size() > maxBatchSize) {
+                    LOGGER.warnf("Reducing credential batch size to: %d", maxBatchSize);
+                    allProofs = allProofs.subList(0, maxBatchSize);
+                }
+            }
 
             for (String currentProof : allProofs) {
                 Proofs proofForIteration = Proofs.create(proofType, currentProof);
@@ -1030,8 +1058,6 @@ public class OID4VCIssuerEndpoint {
                 .detail(Details.VERIFIABLE_CREDENTIAL_FORMAT, supportedCredential.getFormat())
                 .detail(Details.VERIFIABLE_CREDENTIALS_ISSUED, String.valueOf(responseVO.getCredentials().size()));
 
-        recordIssuedVerifiableCredentials(userModel, clientModel, authorizedCredentialScope, responseVO.getCredentials().size());
-
         eventBuilder.success();
 
         // Clean up offer state after successful credential issuance
@@ -1042,24 +1068,6 @@ public class OID4VCIssuerEndpoint {
         }
 
         return response;
-    }
-
-    private void recordIssuedVerifiableCredentials(UserModel userModel, ClientModel clientModel, CredentialScopeModel credentialScope, int count) {
-        String credentialScopeName = credentialScope.getName();
-        try {
-            if (count > 0) {
-                IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(userModel.getId(), credentialScopeName, clientModel.getId());
-
-                long issuedAt = Time.currentTimeMillis();
-                model.setIssuedAt(issuedAt);
-                model.setExpiresAt(issuedAt + (credentialScope.getExpiryInSeconds() * 1000));
-
-                session.users().addIssuedVerifiableCredential(model);
-                LOGGER.debugf("Recorded VC issuance: user=%s, client=%s, type=%s, credentials=%d", userModel.getUsername(), clientModel.getClientId(), credentialScopeName, count);
-            }
-        } catch (Exception e) {
-            LOGGER.warnf(e, "Failed to record VC issuance for user=%s, client=%s, type=%s", userModel.getUsername(), clientModel.getClientId(), credentialScopeName);
-        }
     }
 
     private List<OID4VCAuthorizationDetail> getAuthorizationDetailsResponse(AccessToken accessToken) {

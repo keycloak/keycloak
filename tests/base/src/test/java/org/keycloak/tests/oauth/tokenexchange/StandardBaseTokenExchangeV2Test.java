@@ -580,7 +580,7 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
 
         // SSO login to "requester-client". Will create client session for "requester-client"
         oauth.client("requester-client", "secret").openLoginForm();
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
         response = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
         String requesterClientToken = response.getAccessToken();
@@ -963,6 +963,63 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
 
         realm.admin().clients().get(subjectClient.getId()).getProtocolMappers().delete(mapperId);
 
+    }
+
+    @Test
+    public void testExchangeFromLightweightToRegularToken() {
+        subjectClient.getAttributes().put(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, "true");
+        realm.admin().clients().get(subjectClient.getId()).update(subjectClient);
+
+        ProtocolMapperModel mapperModel = AudienceProtocolMapper.createClaimMapper(
+                "requester-client-jwt",
+                "requester-client",
+                null,
+                true,
+                false,
+                true,
+                true
+        );
+
+        ProtocolMapperRepresentation mapperRep = ModelToRepresentation.toRepresentation(mapperModel);
+        Response createMapperResponse = realm.admin().clients().get(subjectClient.getId()).getProtocolMappers().createMapper(mapperRep);
+        String newMapperId = ApiUtil.getCreatedId(createMapperResponse);
+        createMapperResponse.close();
+
+        // Login to get initial lightweight access token
+        String lightweightToken = resourceOwnerLogin("john", "password", "subject-client", "secret", "openid", true).getAccessToken();
+
+        // Verify initial token is lightweight
+        AccessToken initialToken = verifyAccessToken(lightweightToken);
+        assertAccessTokenContext(initialToken.getId(), AccessTokenContext.SessionType.ONLINE, AccessTokenContext.TokenType.LIGHTWEIGHT, OAuth2Constants.PASSWORD);
+        assertNull(initialToken.getSubject());
+
+        // userinfo should fail
+        assertUserInfoError(lightweightToken, "subject-client", "secret", Errors.INVALID_TOKEN, "Lightweight access token not allowed for userinfo endpoint");
+
+        // introspection works
+        assertIntrospectSuccess(lightweightToken, "requester-client", "secret", john.getId());
+
+        // Token exchange to requester-client
+        AccessTokenResponse response = tokenExchange(lightweightToken, "requester-client", "secret", null, null);
+        assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
+        String exchangedTokenString = response.getAccessToken();
+        AccessToken exchangedToken = verifyAccessToken(exchangedTokenString);
+        assertEquals(getSessionIdFromToken(lightweightToken), exchangedToken.getSessionId());
+        assertEquals("requester-client", exchangedToken.getIssuedFor());
+
+        //exchanged token should be regular (not lightweight)
+        assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.ONLINE_TRANSIENT_CLIENT, AccessTokenContext.TokenType.REGULAR, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+        assertNotNull(exchangedToken.getSubject());
+
+        // userinfo works
+        assertUserInfoSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
+
+        // introspection works
+        assertIntrospectSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
+
+        realm.admin().clients().get(subjectClient.getId()).getProtocolMappers().delete(newMapperId);
+        subjectClient.getAttributes().remove(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED);
+        realm.admin().clients().get(subjectClient.getId()).update(subjectClient);
     }
 
 }

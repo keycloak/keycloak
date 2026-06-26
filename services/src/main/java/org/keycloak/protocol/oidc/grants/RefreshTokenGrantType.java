@@ -31,7 +31,11 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
+import org.keycloak.protocol.oidc.refresh.RefreshTokenContext;
+import org.keycloak.protocol.oidc.refresh.RefreshTokenProvider;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
@@ -75,8 +79,22 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
 
         AccessTokenResponse res;
         try {
-            // KEYCLOAK-6771 Certificate Bound Token
-            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.refreshAccessToken(session, session.getContext().getUri(), clientConnection, realm, client, refreshToken, event, headers, request, scopeParameter, resourceParameter);
+            RefreshToken oldRefreshToken = tokenManager.verifyRefreshToken(session, realm, client, request, refreshToken, true);
+
+            RefreshTokenContext refreshTokenCtx = new RefreshTokenContext(oldRefreshToken, tokenManager, clientConnection, realm, client, event, headers, scopeParameter, resourceParameter);
+
+            RefreshTokenProvider refreshTokenProvider = session.getKeycloakSessionFactory()
+                    .getProviderFactoriesStream(RefreshTokenProvider.class)
+                    .sorted((f1, f2) -> f2.order() - f1.order())
+                    .map(f -> session.getProvider(RefreshTokenProvider.class, f.getId()))
+                    .filter(p -> p.supports(refreshTokenCtx))
+                    .findFirst()
+                    .orElseThrow(() -> {
+                        event.error(Errors.INVALID_REQUEST);
+                        return new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "No provider available to handle refresh token", Response.Status.BAD_REQUEST);
+                    });
+
+            TokenManager.AccessTokenResponseBuilder responseBuilder = refreshTokenProvider.refreshAccessToken(refreshTokenCtx);
 
             checkAndBindMtlsHoKToken(responseBuilder, clientConfig.isUseRefreshToken());
 
@@ -110,6 +128,10 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
+        // Sanitize authorization details before they are sent as part of the Token Response
+        var authDetailsProcessor = new AuthorizationDetailsProcessorManager(session);
+        authDetailsProcessor.sanitizeBeforeSendingTokenResponse(res);
+
         event.success();
 
         return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
@@ -124,5 +146,4 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
     public Set<String> getTokenParameterNames() {
         return Collections.emptySet();
     }
-
 }

@@ -579,7 +579,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         loginConfirmationPage.confirm();
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation eventRep = events.poll();
         EventAssertion.expectLoginSuccess(eventRep)

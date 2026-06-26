@@ -67,6 +67,9 @@ public class UserCacheManager extends CacheManager {
 
         // Consents
         invalidations.add(UserCacheSession.getConsentCacheKey(userId));
+
+        // Verifiable credentials
+        invalidations.add(UserCacheSession.getVerifiableCredentialsCacheKey(userId));
     }
 
     public void federatedIdentityLinkUpdatedInvalidation(String userId, Set<String> invalidations) {
@@ -82,6 +85,10 @@ public class UserCacheManager extends CacheManager {
 
     public void consentInvalidation(String userId, Set<String> invalidations) {
         invalidations.add(UserCacheSession.getConsentCacheKey(userId));
+    }
+
+    public void verifiableCredentialsInvalidation(String userId, Set<String> invalidations) {
+        invalidations.add(UserCacheSession.getVerifiableCredentialsCacheKey(userId));
     }
 
 

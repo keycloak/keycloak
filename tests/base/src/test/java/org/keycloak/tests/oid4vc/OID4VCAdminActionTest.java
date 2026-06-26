@@ -13,8 +13,8 @@ import org.keycloak.models.Constants;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.representations.idm.ErrorRepresentation;
-import org.keycloak.representations.idm.oid4vc.CredentialOfferActionConfig;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
+import org.keycloak.representations.idm.oid4vc.VerifiableCredentialOfferActionConfig;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -177,7 +177,7 @@ public class OID4VCAdminActionTest extends OID4VCIssuerTestBase {
 
     @Test
     public void testAdminCredentialOfferErrorInvalidRedirectUri() {
-        CredentialOfferActionConfig actionConfig = getActionConfig(minimalJwtTypeCredentialConfigurationIdName, null, false);
+        VerifiableCredentialOfferActionConfig actionConfig = getActionConfig(minimalJwtTypeCredentialConfigurationIdName, null, false);
         try {
             user.admin().verifiableCredentials().sendCredentialOffer("oidc-client", "http://localhost:8080/invalid", null, actionConfig);
             fail("Not expected to successfully send the credential offer");
@@ -189,7 +189,7 @@ public class OID4VCAdminActionTest extends OID4VCIssuerTestBase {
 
     @Test
     public void testAdminCredentialOfferErrorInvalidAction() {
-        CredentialOfferActionConfig actionConfig = getActionConfig("unknown", null, false);
+        VerifiableCredentialOfferActionConfig actionConfig = getActionConfig("unknown", null, false);
         try {
             user.admin().verifiableCredentials().sendCredentialOffer(null, null, null, actionConfig);
             fail("Not expected to successfully send the credential offer");
@@ -201,7 +201,7 @@ public class OID4VCAdminActionTest extends OID4VCIssuerTestBase {
 
     @Test
     public void testAdminCredentialOfferErrorActionMissingForUser() {
-        CredentialOfferActionConfig actionConfig = getActionConfig(sdJwtTypeNaturalPersonScopeName, null, false);
+        VerifiableCredentialOfferActionConfig actionConfig = getActionConfig(sdJwtTypeNaturalPersonScopeName, null, false);
         try {
             user.admin().verifiableCredentials().sendCredentialOffer(null, null, null, actionConfig);
             fail("Not expected to successfully send the credential offer");
@@ -230,7 +230,7 @@ public class OID4VCAdminActionTest extends OID4VCIssuerTestBase {
     }
 
     private String sendEmailAndGetLink(String clientId, String redirectUri, Integer lifespan, String expectedLifespanMessage) throws IOException {
-        CredentialOfferActionConfig actionConfig = getActionConfig(minimalJwtTypeCredentialConfigurationIdName, null, false);
+        VerifiableCredentialOfferActionConfig actionConfig = getActionConfig(minimalJwtTypeCredentialConfigurationIdName, null, false);
         user.admin().verifiableCredentials().sendCredentialOffer(clientId, redirectUri, lifespan, actionConfig);
 
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.ACTION, AdminEventPaths.userVerifiableCredentialsPath(user.getId()) + "/send-credential-offer", null, ResourceType.USER);
@@ -248,8 +248,8 @@ public class OID4VCAdminActionTest extends OID4VCIssuerTestBase {
         return MailUtils.getPasswordResetEmailLink(body);
     }
 
-    private CredentialOfferActionConfig getActionConfig(String credentialConfigId, String clientId, boolean preAuthorized) {
-        CredentialOfferActionConfig cfg = new CredentialOfferActionConfig();
+    private VerifiableCredentialOfferActionConfig getActionConfig(String credentialConfigId, String clientId, boolean preAuthorized) {
+        VerifiableCredentialOfferActionConfig cfg = new VerifiableCredentialOfferActionConfig();
         cfg.setCredentialConfigurationId(credentialConfigId);
         cfg.setPreAuthorized(preAuthorized);
         cfg.setClientId(clientId);

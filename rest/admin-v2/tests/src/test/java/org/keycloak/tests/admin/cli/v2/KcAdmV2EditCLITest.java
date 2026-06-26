@@ -126,8 +126,8 @@ public class KcAdmV2EditCLITest extends AbstractKcAdmV2CLITest {
     void testEditWithRealmOverride() throws Exception {
         assertThat("managed realm should not be master", realm.getName(), is(not("master")));
 
-        CommandResult createResult = kcAdmV2Cmd("client", "create", "oidc",
-                "-r", realm.getName(),
+        CommandResult createResult = kcAdmV2Cmd("-r", realm.getName(),
+                "client", "create", "oidc",
                 "--client-id", "edit-realm-override",
                 "--enabled", "true");
         assertThat("setup: create should succeed: " + createResult.err(), createResult.exitCode(), is(0));
@@ -136,7 +136,7 @@ public class KcAdmV2EditCLITest extends AbstractKcAdmV2CLITest {
 
         setEditor(createEnabledFlipEditor());
 
-        CommandResult result = kcAdmV2Cmd("client", "edit", "edit-realm-override", "-r", realm.getName());
+        CommandResult result = kcAdmV2Cmd("-r", realm.getName(), "client", "edit", "edit-realm-override");
 
         assertThat("edit in other realm should succeed: " + result.err(), result.exitCode(), is(0));
         assertThat(result.out(), containsString("\"enabled\" : false"));

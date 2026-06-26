@@ -47,7 +47,7 @@ const RevokeDialog = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("Delete Credential")}
+      title={t("revokeVerifiableCredentialTitle")}
       isOpen={true}
       onClose={onClose}
       actions={[
@@ -59,14 +59,14 @@ const RevokeDialog = ({
             onClose();
           }}
         >
-          {t("delete")}
+          {t("doRevoke")}
         </Button>,
         <Button key="cancel" variant="link" onClick={onClose}>
-          {t("cancel")}
+          {t("doCancel")}
         </Button>,
       ]}
     >
-      {t("Confirm Revoke Credential", {
+      {t("deleteCredentialConfirm", {
         credentialName,
       })}
     </Modal>
@@ -112,8 +112,8 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
     try {
       // Construct the AIA action parameter
       const config = {
-        credential_configuration_id: credential.credentialConfigurationId,
-        pre_authorized: false,
+        credentialConfigurationId: credential.credentialConfigurationId,
+        preAuthorized: false,
       };
 
       // Base64 encode the config
@@ -171,19 +171,14 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
                     )
                   : "—"}
               </DataListCell>,
-              <DataListCell key="attributes" width={2}>
-                {hasUserAttributes ? (
-                  <Button
-                    variant="link"
-                    onClick={() => setShowAttributesDialog(true)}
-                  >
-                    {t("credentialViewAttributes")}
-                  </Button>
-                ) : (
-                  <span className="pf-v5-u-color-200">
-                    {t("credentialNoUserAttributes")}
-                  </span>
-                )}
+              <DataListCell key="updated" width={2}>
+                {credential.updatedDate
+                  ? formatDate(
+                      new Date(credential.updatedDate),
+                      undefined,
+                      FORMAT_DATE_ONLY,
+                    )
+                  : "—"}
               </DataListCell>,
             ]}
           />
@@ -199,7 +194,7 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
                   variant="link"
                   onClick={() => setShowIssuedCredentialsModal(true)}
                 >
-                  {t("View Issued Credentials")}
+                  {t("viewIssuedCredentials")}
                 </Button>
               </FlexItem>
               <FlexItem>
@@ -218,7 +213,7 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
                     variant="link"
                     onClick={() => setShowRevokeDialog(true)}
                   >
-                    {t("revoke")}
+                    {t("doRevoke")}
                   </Button>
                 </FlexItem>
               )}

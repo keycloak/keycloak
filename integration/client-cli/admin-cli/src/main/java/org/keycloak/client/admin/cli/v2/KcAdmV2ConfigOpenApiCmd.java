@@ -48,7 +48,7 @@ class KcAdmV2ConfigOpenApiCmd implements Runnable {
 
     @Override
     public void run() {
-        String configPath = config != null ? config : KcAdmMain.DEFAULT_CONFIG_FILE_PATH;
+        String configPath = resolveConfigPath();
         String serverUrl = KcAdmV2Cmd.readServerUrlFrom(configPath);
         if (serverUrl == null) {
             throw new RuntimeException("No server configured. Run 'config credentials' first.");
@@ -102,5 +102,14 @@ class KcAdmV2ConfigOpenApiCmd implements Runnable {
             OpenAPI openApi = KcAdmV2DescriptorBuilder.parseOpenApi(() -> is);
             return KcAdmV2DescriptorBuilder.convert(openApi);
         }
+    }
+
+    private String resolveConfigPath() {
+        if (config != null) {
+            return config;
+        }
+        String rootConfig = spec.commandLine().getParseResult().commandSpec()
+                .root().findOption(KcAdmV2Cmd.CONFIG_OPTION).getValue();
+        return rootConfig != null ? rootConfig : KcAdmMain.DEFAULT_CONFIG_FILE_PATH;
     }
 }

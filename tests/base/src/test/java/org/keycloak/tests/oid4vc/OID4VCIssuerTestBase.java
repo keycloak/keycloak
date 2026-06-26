@@ -45,6 +45,7 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.EventType;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
@@ -127,14 +128,15 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS;
-import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_DEFAULT_TRUST_IDP_ALIAS;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
+import static org.keycloak.constants.OID4VCIConstants.OID4VCI_ATTESTER_TRUST_IDPS_ATTR;
 import static org.keycloak.models.Constants.CREATE_DEFAULT_CLIENT_SCOPES;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT_DEFAULT;
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS;
 
 /**
  * Abstract base class for OID4VCI Testing
@@ -148,6 +150,9 @@ public abstract class OID4VCIssuerTestBase {
     public static final String OID4VCI_CLIENT_ID = "oid4vci-client";
     public static final String OID4VCI_ABCA_CLIENT_ID = "oid4vci-client-abca";
     public static final String OID4VCI_PUBLIC_CLIENT_ID = "oid4vci-client-pub";
+
+    public static final String OAUTH_CLIENT_ATTESTATION_DEFAULT_TRUST_IDP_ALIAS = "abca-attester-default-trust";
+    public static final String OID4VCI_ATTESTER_DEFAULT_TRUST_IDP_ALIAS = "oid4vci-attester-default-trust";
 
     public static final String TEST_ISSUER_DID = "did:web:test.org";
     public static final String TEST_CREDENTIAL_MAPPERS_FILE = "/oid4vc/test-credential-mappers.json";
@@ -832,6 +837,8 @@ public abstract class OID4VCIssuerTestBase {
             secureParContents.setExecutorProviderId(SecureParContentsExecutorFactory.PROVIDER_ID);
             secureParContents.setConfiguration(JsonNodeFactory.instance.objectNode());
 
+            // dpop-bind-enforcer
+            //
             ClientPolicyExecutorRepresentation dpopBindEnforcerExecutor = new ClientPolicyExecutorRepresentation();
             dpopBindEnforcerExecutor.setExecutorProviderId(DPoPBindEnforcerExecutorFactory.PROVIDER_ID);
             dpopBindEnforcerExecutor.setConfiguration(JsonNodeFactory.instance.objectNode()
@@ -968,7 +975,7 @@ public abstract class OID4VCIssuerTestBase {
                     .password(TEST_PASSWORD)
                     .attribute("address_street_address", "221B Baker Street")
                     .attribute("address_locality", "London")
-                    .realmRoles("account", "manage-account", "view-profile")
+                    .realmRoles(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + TEST_REALM_NAME)
                     .verifiableCredential(jwtTypeCredentialScopeName)
                     .verifiableCredential(sdJwtTypeCredentialScopeName)
                     .verifiableCredential(minimalJwtTypeCredentialScopeName)
@@ -1017,6 +1024,7 @@ public abstract class OID4VCIssuerTestBase {
                     .defaultClientScopes("basic", "profile", "roles")
                     .optionalClientScopes(optionalClientScopes)
                     .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
+                    .attribute(DPOP_BOUND_ACCESS_TOKENS, "true")
                     .attribute(OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS, OAUTH_CLIENT_ATTESTATION_DEFAULT_TRUST_IDP_ALIAS)
                     .redirectUris("*");
             return client;
@@ -1065,6 +1073,7 @@ public abstract class OID4VCIssuerTestBase {
                     .optionalClientScopes(optionalClientScopes)
                     .redirectUris("http://127.0.0.1:8500/callback/oauth")
                     .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
+                    .attribute(OID4VCI_ATTESTER_TRUST_IDPS_ATTR, OID4VCI_ATTESTER_DEFAULT_TRUST_IDP_ALIAS)
                     .attribute("pkce.code.challenge.method", "S256");  // require PKCE
             return client;
         }

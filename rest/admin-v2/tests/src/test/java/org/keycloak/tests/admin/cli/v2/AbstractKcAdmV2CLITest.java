@@ -18,19 +18,15 @@ abstract class AbstractKcAdmV2CLITest {
     KeycloakUrls keycloakUrls;
 
     protected CommandResult kcAdmV2Cmd(Path cacheDir, String configFile, String... args) {
-        String[] fullArgs = new String[args.length + 2];
-        System.arraycopy(args, 0, fullArgs, 0, args.length);
-        fullArgs[args.length] = "--config";
-        fullArgs[args.length + 1] = configFile;
-
+        String[] fullArgs = withConfigArg(configFile, args);
         KcAdmV2Cmd cmd = cacheDir != null ? new KcAdmV2Cmd(cacheDir, fullArgs) : new KcAdmV2Cmd(fullArgs);
         return execute(cmd, fullArgs);
     }
 
     protected CommandResult kcAdmV2CmdNoConfig(String... args) {
         String[] fullArgs = new String[args.length + 1];
-        System.arraycopy(args, 0, fullArgs, 0, args.length);
-        fullArgs[args.length] = "--no-config";
+        fullArgs[0] = "--no-config";
+        System.arraycopy(args, 0, fullArgs, 1, args.length);
 
         return execute(new KcAdmV2Cmd(fullArgs), fullArgs);
     }
@@ -39,7 +35,7 @@ abstract class AbstractKcAdmV2CLITest {
         return execute(new KcAdmV2Cmd(args), args);
     }
 
-    private CommandResult execute(KcAdmV2Cmd cmd, String[] args) {
+    static CommandResult execute(KcAdmV2Cmd cmd, String[] args) {
         CommandLine cli = Globals.createCommandLine(cmd, KcAdmMain.CMD, new PrintWriter(System.err, true));
 
         StringWriter out = new StringWriter();
@@ -49,6 +45,20 @@ abstract class AbstractKcAdmV2CLITest {
 
         int exitCode = cli.execute(args);
         return new CommandResult(exitCode, out.toString(), err.toString());
+    }
+
+    static String[] withConfigArg(String configFile, String... args) {
+        String[] fullArgs = new String[args.length + 2];
+        if (args.length > 0 && "config".equals(args[0])) {
+            System.arraycopy(args, 0, fullArgs, 0, args.length);
+            fullArgs[args.length] = "--config";
+            fullArgs[args.length + 1] = configFile;
+        } else {
+            fullArgs[0] = "--config";
+            fullArgs[1] = configFile;
+            System.arraycopy(args, 0, fullArgs, 2, args.length);
+        }
+        return fullArgs;
     }
 
     protected String managementBaseUrl() {

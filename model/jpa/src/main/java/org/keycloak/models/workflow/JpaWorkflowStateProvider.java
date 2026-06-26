@@ -220,17 +220,15 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
     @Override
     public boolean hasScheduledSteps(String workflowId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<Long> criteriaQuery = cb.createQuery(Long.class);
+        CriteriaQuery<WorkflowStateEntity> criteriaQuery = cb.createQuery(WorkflowStateEntity.class);
         Root<WorkflowStateEntity> stateRoot = criteriaQuery.from(WorkflowStateEntity.class);
 
-        criteriaQuery.select(cb.count(stateRoot));
         criteriaQuery.where(cb.equal(stateRoot.get("workflowId"), workflowId));
 
-        TypedQuery<Long> query = em.createQuery(criteriaQuery);
+        TypedQuery<WorkflowStateEntity> query = em.createQuery(criteriaQuery);
         query.setMaxResults(1);
 
-        Long count = query.getSingleResult();
-        return count > 0;
+        return query.getSingleResultOrNull() != null;
     }
 
     @Override
