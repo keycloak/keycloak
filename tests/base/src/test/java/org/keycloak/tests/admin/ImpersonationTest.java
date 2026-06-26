@@ -169,7 +169,7 @@ public class ImpersonationTest {
     }
 
     @Test
-    public void testImpersonateServiceAccountByTestImpersonator() {
+    public void testImpersonateByTestImpersonator() {
         testSuccessfulImpersonation("impersonator", managedRealm.getName());
     }
 
@@ -365,7 +365,7 @@ public class ImpersonationTest {
             client.realms().realm(impersonatedRealm).users().get(impersonatedId).impersonate();
             Assertions.fail("Expected ClientErrorException wasn't thrown.");
         } catch (ClientErrorException e) {
-            assertThat(e.getResponse().getStatusInfo(), is(Response.Status.BAD_REQUEST));
+            assertThat(e.getResponse().getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
             ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
             assertThat(error.getErrorMessage(), is(errorExpected));
         }
@@ -427,7 +427,7 @@ public class ImpersonationTest {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build()) {
 
             HttpUriRequest req = RequestBuilder.post()
-                    .setUri(keycloakUrls.getBase() + "/admin/realms/test/users/" + managedUser.getId() + "/impersonation")
+                    .setUri(keycloakUrls.getBase() + "/admin/realms/" + managedRealm.getName() + "/users/" + managedUser.getId() + "/impersonation")
                     .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + adminClient.tokenManager().getAccessTokenString())
                     .build();
 
