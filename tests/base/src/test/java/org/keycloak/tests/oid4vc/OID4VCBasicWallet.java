@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -243,13 +244,22 @@ public class OID4VCBasicWallet {
 
     public Proofs generateJwtProof(OID4VCTestContext ctx) {
         String nonce = nonceRequest().send().getNonce();
-        KeyWrapper ecKey = getECKeyPair(ctx, null);
-        return generateJwtProof(ctx, ecKey, nonce);
+        KeyWrapper vcKey = getECKeyPair(ctx, null);
+        return generateJwtProofs(ctx, nonce, vcKey);
     }
 
-    public Proofs generateJwtProof(OID4VCTestContext ctx, KeyWrapper ecKey, String nonce) {
+    public Proofs generateJwtProofs(OID4VCTestContext ctx, String nonce, KeyWrapper... keys) {
         String aud = getIssuerMetadata(ctx).getCredentialIssuer();
-        return Proofs.create(ProofType.JWT, OID4VCProofTestUtils.generateJwtProof(aud, ecKey, nonce));
+        if (keys == null || keys.length == 0) {
+            throw new IllegalArgumentException("keys cannot be null or empty");
+        }
+        if (Arrays.stream(keys).anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException("keys cannot contain null elements");
+        }
+        String[] proofValues = Arrays.stream(keys)
+                .map(k -> OID4VCProofTestUtils.generateJwtProof(aud, nonce, k))
+                .toArray(String[]::new);
+        return Proofs.create(ProofType.JWT, proofValues);
     }
 
     public KeyWrapper getECKeyPair(OID4VCTestContext ctx) {

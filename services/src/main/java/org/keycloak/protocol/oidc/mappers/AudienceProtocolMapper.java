@@ -116,6 +116,13 @@ public class AudienceProtocolMapper extends AbstractOIDCProtocolMapper implement
                                                         String includedClientAudience,
                                                         String includedCustomAudience,
                                                         boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
+        return createClaimMapper(name, includedClientAudience, includedCustomAudience, accessToken, idToken, introspectionEndpoint, false);
+    }
+
+    public static ProtocolMapperModel createClaimMapper(String name,
+                                                        String includedClientAudience,
+                                                        String includedCustomAudience,
+                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint, boolean lightweightAccessToken) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(PROVIDER_ID);
@@ -132,6 +139,7 @@ public class AudienceProtocolMapper extends AbstractOIDCProtocolMapper implement
         if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
         if (introspectionEndpoint) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
+        if (lightweightAccessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN, "true");
         mapper.setConfig(config);
         return mapper;
     }

@@ -51,7 +51,7 @@ public final class OID4VCProofTestUtils {
         return generateJwtProofWithClaims(List.of(audience), nonce, null, null, null, null, createEcKeyPair("proof-key"));
     }
 
-    public static String generateJwtProof(String audience, KeyWrapper keyWrapper, String nonce) {
+    public static String generateJwtProof(String audience, String nonce, KeyWrapper keyWrapper) {
         return generateJwtProofWithClaims(List.of(audience), nonce, null, null, null, null, keyWrapper);
     }
 

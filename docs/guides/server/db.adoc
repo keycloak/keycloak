@@ -708,7 +708,7 @@ In the example above, the `org.your.extension.UserEntity` JPA entity will be man
 ==== 2. Required properties
 
 Once you have set up your `persistence.xml`, the minimal configuration on the {project_name} side is the setup of the DB kind/vendor for the specified datasource.
-You need to specify the build time option `db-kind-<name>`, where the `<name>` is the name of your datasource and must be the **same** as specified in the `persistence.xml` file.
+You need to specify the build time option `db-kind-<datasource>`, where the `<datasource>` is the name of your datasource and must be the **same** as specified in the `persistence.xml` file.
 
 Therefore, you can enable the additional datasource `user-store` as follows (`postgres` as an example):
 
@@ -761,6 +761,11 @@ WARNING: Use Quarkus properties **without quotation** for the datasource name, a
 Therefore, use `quarkus.datasource.user-store.db-kind=h2`, instead of `quarkus.datasource."user-store".db-kind=h2` to prevent any issues.
 
 <@opts.printRelevantOptions includedOptions="db db-* transaction-xa-enabled transaction-default-timeout transaction-setup-timeout" excludedOptions="db-*-<datasource>">
+
+=== Health checks
+
+Additional datasources are included by default in the readiness health check endpoint. If the additional datasource is not critical to your usage, you may exclude it from
+the health check with `db-health-exclude-<datasource>` set to `true`. 
 
 === Additional datasources options
 <@opts.includeOptions includedOptions="*-<datasource>"/>

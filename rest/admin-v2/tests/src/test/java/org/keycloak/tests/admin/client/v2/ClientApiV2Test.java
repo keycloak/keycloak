@@ -19,6 +19,8 @@ package org.keycloak.tests.admin.client.v2;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -31,8 +33,11 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
+import org.keycloak.admin.api.ClientField;
 import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.PatchTypeNames;
+import org.keycloak.admin.api.SortOption;
+import org.keycloak.admin.api.SortOrder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
@@ -60,6 +65,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
@@ -370,6 +376,103 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         // ensure that multiple fields are interpreted correctly
         e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(new ListOptions().fields(new LinkedHashSet<>(List.of("clientId","unknown!")))));
         assertEquals("{\"error\":\"unknown! is an unknown field\"}", e.getResponse().readEntity(String.class));
+    }
+
+    @Test
+    public void getClientsSortByMultipleFields() {
+        createSortTestClient("sort-b", "B", "beta");
+        createSortTestClient("sort-a", "A", "alpha");
+        createSortTestClient("sort-c", "A", "gamma");
+
+        ListOptions listOptions = new ListOptions();
+        listOptions.setFields(Set.of("clientId", "displayName"));
+        listOptions.setSort(List.of(SortOption.of(ClientField.DISPLAY_NAME), SortOption.of(ClientField.CLIENT_ID)));
+
+        try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
+            List<String> sortTestClientIds = clients
+                    .map(BaseClientRepresentation::getClientId)
+                    .filter(id -> id.startsWith("sort-"))
+                    .toList();
+            assertThat(sortTestClientIds, is(List.of("sort-a", "sort-c", "sort-b")));
+        }
+    }
+
+    @Test
+    public void getClientsSortByMultipleFieldsDesc() {
+        createSortTestClient("sort-b", "B", "beta");
+        createSortTestClient("sort-a", "A", "alpha");
+        createSortTestClient("sort-c", "A", "gamma");
+
+        ListOptions listOptions = new ListOptions();
+        listOptions.setFields(Set.of("clientId", "displayName"));
+        listOptions.setSort(List.of(SortOption.of(ClientField.DISPLAY_NAME, SortOrder.DESC), SortOption.of(ClientField.CLIENT_ID, SortOrder.DESC)));
+
+        try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
+            List<String> sortTestClientIds = clients
+                    .map(BaseClientRepresentation::getClientId)
+                    .filter(id -> id.startsWith("sort-"))
+                    .toList();
+            assertThat(sortTestClientIds, is(List.of("sort-b", "sort-c", "sort-a")));
+        }
+    }
+
+    @Test
+    public void getClientsSortByInvalidField() throws IOException, URISyntaxException {
+        URI uri = new URIBuilder(getClientsApiUrl()).addParameter("fields", "clientId")
+                .addParameter("sort", "displayName|desc,unknown").build();
+        HttpGet request = new HttpGet(uri);
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            assertThat(EntityUtils.toString(response.getEntity()), containsString("unknown is not a sortable field"));
+        }
+    }
+
+    @Test
+    public void getClientsSortByMultipleFieldsViaHttp() throws IOException {
+        createSortTestClient("sort-b", "B", "beta");
+        createSortTestClient("sort-a", "A", "alpha");
+        createSortTestClient("sort-c", "A", "gamma");
+
+        HttpGet request = new HttpGet(getClientsApiUrl() + "?fields=clientId,displayName&sort=displayName,clientId");
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            String responseBody = EntityUtils.toString(response.getEntity());
+            assertEquals(200, response.getStatusLine().getStatusCode(), "Response body: " + responseBody);
+            List<BaseClientRepresentation> clients = mapper.readValue(
+                    responseBody,
+                    mapper.getTypeFactory().constructCollectionType(List.class, BaseClientRepresentation.class));
+            List<String> sortTestClientIds = clients.stream()
+                    .map(BaseClientRepresentation::getClientId)
+                    .filter(id -> id.startsWith("sort-"))
+                    .toList();
+            assertThat(sortTestClientIds, is(List.of("sort-a", "sort-c", "sort-b")));
+        }
+    }
+
+    @Test
+    public void getClientsInvalidSortDirectionReturns400() throws IOException, URISyntaxException {
+        URI uri = new URIBuilder(getClientsApiUrl()).addParameter("sort", "clientId|what").build();
+
+        HttpGet request = new HttpGet(uri);
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            assertThat(EntityUtils.toString(response.getEntity()), containsString("sort direction must be asc or desc"));
+        }
+    }
+
+    private void createSortTestClient(String clientId, String displayName, String description) {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setDisplayName(displayName);
+        rep.setDescription(description);
+        try (var response = getClientsApi().createClient(rep)) {
+            assertEquals(201, response.getStatus());
+            BaseClientRepresentation created = response.readEntity(BaseClientRepresentation.class);
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+        }
     }
 
     @Test

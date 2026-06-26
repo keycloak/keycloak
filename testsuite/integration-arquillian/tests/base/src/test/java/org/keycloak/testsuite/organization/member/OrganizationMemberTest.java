@@ -741,6 +741,55 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         }
     }
 
+    @Test
+    public void testSearchMembersBriefVsFullRepresentation() {
+        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
+        upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+        managedRealm.admin().users().userProfile().update(upConfig);
+
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        UserRepresentation member = addMember(organization, "member@neworg.org");
+
+        // set a custom attribute on the member so we can verify it's absent in brief representation
+        UserResource userResource = managedRealm.admin().users().get(member.getId());
+        member = userResource.toRepresentation();
+        member.singleAttribute("testAttr", "testValue");
+        userResource.update(member);
+
+        // default search returns brief representation — attributes should be null
+        List<MemberRepresentation> briefMembers = organization.members().search("member@neworg.org", true, null, null);
+        assertThat(briefMembers, hasSize(1));
+        MemberRepresentation briefMember = briefMembers.get(0);
+        assertNotNull(briefMember.getId());
+        assertNotNull(briefMember.getUsername());
+        assertNotNull(briefMember.getEmail());
+        assertNotNull(briefMember.getMembershipType());
+        assertNull(briefMember.getAttributes(), "Brief representation should not include attributes");
+
+        // explicit briefRepresentation=false returns full representation — attributes should be present
+        List<MemberRepresentation> fullMembers = organization.members().search("member@neworg.org", true, null, null, false);
+        assertThat(fullMembers, hasSize(1));
+        MemberRepresentation fullMember = fullMembers.get(0);
+        assertNotNull(fullMember.getId());
+        assertNotNull(fullMember.getUsername());
+        assertNotNull(fullMember.getEmail());
+        assertNotNull(fullMember.getMembershipType());
+        assertNotNull(fullMember.getAttributes(), "Full representation should include attributes");
+        assertTrue(fullMember.getAttributes().containsKey("testAttr"),
+                "Full representation should include the test attribute");
+        assertEquals("testValue", fullMember.getAttributes().get("testAttr").get(0));
+
+        // explicit briefRepresentation=true also returns brief
+        List<MemberRepresentation> explicitBriefMembers = organization.members().search("member@neworg.org", true, null, null, true);
+        assertThat(explicitBriefMembers, hasSize(1));
+        assertNull(explicitBriefMembers.get(0).getAttributes(), "Explicit brief representation should not include attributes");
+
+        // single-member GET should still return full representation
+        MemberRepresentation singleMember = organization.members().member(briefMember.getId()).toRepresentation();
+        assertNotNull(singleMember.getAttributes(), "Single member GET should return full representation");
+        assertTrue(singleMember.getAttributes().containsKey("testAttr"));
+    }
+
     private void loginViaNonOrgIdP(String idpAlias) {
         oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
