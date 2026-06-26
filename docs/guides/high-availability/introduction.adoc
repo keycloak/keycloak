@@ -25,7 +25,7 @@ in such high availability architectures.
 
 == Architectures
 
-This document describes two high availability architectures in which to deploy {project_name}: Single-cluster deployments and multi-cluster deployments.
+This document describes the high availability architectures in which to deploy {project_name}.
 
 === Single-cluster deployments
 
@@ -74,6 +74,25 @@ Disadvantages::
 ** Two {kubernetes} control-planes must be provisioned
 * Not supported with three or more availability zones
 
+<@profile.ifCommunity>
+=== Multi-cluster deployments (experimental)
+
+Connect two or more {project_name} clusters without an external {jdgserver_name} cluster using <@links.ha id="multi-cluster-experimental-introduction" />.
+
+Advantages::
+* Tolerate availability-zone failure
+* Tolerate cluster failure
+* Simpler architecture: no external {jdgserver_name} cluster required
+* No requirement for a specific environment such as {kubernetes} or AWS
+
+Disadvantages::
+* Complexity:
+** External load-balancer required
+* Cost:
+** Additional load-balancer required
+** Two or more control-planes must be provisioned
+</@profile.ifCommunity>
+
 === Next Steps
 
 To learn more about the different high-availability architectures and their supported configurations, please consult the individual {sections}.
@@ -81,6 +100,7 @@ To learn more about the different high-availability architectures and their supp
 <@profile.ifCommunity>
 * <@links.ha id="single-cluster-introduction" />
 * <@links.ha id="multi-cluster-introduction" />
+* <@links.ha id="multi-cluster-experimental-introduction" />
 </@profile.ifCommunity>
 
 </@tmpl.guide>

@@ -29,3 +29,6 @@ multi-cluster/operate-site-online
 multi-cluster/operate-synchronize
 multi-cluster/health-checks
 multi-cluster/upgrades
+multi-cluster-experimental/introduction
+multi-cluster-experimental/concepts
+multi-cluster-experimental/deploy-keycloak-kubernetes
