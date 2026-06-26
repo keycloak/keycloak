@@ -62,6 +62,21 @@ In general, all this new configuration requires {project_name} to always revalid
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== Built-in cross-site health check available for multi-site deployments
+
+When the `multi-site` feature is enabled, {project_name} provides a built-in cross-site health check algorithm that coordinates failover between sites using a database-backed state machine.
+This algorithm controls which site receives traffic by manipulating the `/lb-check` health endpoint.
+
+For backwards compatibility, the built-in health check is **disabled by default**. If you want to use the new algorithm, you must explicitly enable it:
+
+[source]
+----
+--spi-connections-infinispan--default--site-health-enabled=true
+----
+
+If you are using the AWS Lambda-based fencing mechanism to manage failover via AWS Global Accelerator, keep the built-in health check disabled (the default).
+Running both mechanisms simultaneously is not supported, as each may independently reach a different conclusion about which site is active, leading to split-brain or downtime.
+
 === Organization invitation filters use exact matching
 
 The `email`, `firstName`, and `lastName` query parameters on the organization invitations list endpoint (`GET /admin/realms/{realm}/orgs/{orgId}/invitations`) now use case-insensitive exact matching instead of substring matching.

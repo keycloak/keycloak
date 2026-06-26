@@ -70,4 +70,13 @@ public interface InfinispanConnectionProviderFactory extends ProviderFactory<Inf
         return false;
     }
 
+    /**
+     * Checks if this site is the active site in a cross-site deployment.
+     *
+     * @return {@code true} if this site is active or if cross-site is not configured.
+     */
+    default boolean isSiteActive() {
+        return true;
+    }
+
 }
