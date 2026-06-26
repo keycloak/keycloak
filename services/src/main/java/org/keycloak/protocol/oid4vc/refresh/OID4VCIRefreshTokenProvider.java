@@ -157,6 +157,12 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
         return new TokenManager.TokenValidation(user, userSession, clientSessionCtx);
     }
 
+    @Override
+    protected void afterRefreshTokenGenerated(RefreshTokenContext ctx, TokenManager.AccessTokenResponseBuilder responseBuilder) {
+        // Nothing needed for OID4VCI refresh tokens
+    }
+
+
     // Might be eventually overriden for the scenarios where user not available in Keycloak DB
     protected UserModel getUser(RealmModel realm, RefreshToken oldToken) {
         return session.users().getUserById(realm, oldToken.getSubject());

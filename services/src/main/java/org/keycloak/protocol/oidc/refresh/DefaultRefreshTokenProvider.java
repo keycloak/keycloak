@@ -82,6 +82,14 @@ public class DefaultRefreshTokenProvider extends AbstractRefreshTokenProvider im
         return tokenManager.validateToken(session, session.getContext().getUri(), connection, realm, oldToken, headers, scope);
     }
 
+    @Override
+    protected void afterRefreshTokenGenerated(RefreshTokenContext ctx, TokenManager.AccessTokenResponseBuilder responseBuilder) {
+        AuthenticatedClientSessionModel clientSession = responseBuilder.getClientSessionCtx().getClientSession();
+        UserSessionModel userSession = clientSession.getUserSession();
+        ctx.grant().updateClientSession(clientSession);
+        ctx.grant().updateUserSessionFromClientAuth(userSession);
+    }
+
     private Long getExpiration(ClientSessionContext clientSessionCtx, UserSessionModel userSession, boolean offline) {
         ClientModel client = clientSessionCtx.getClientSession().getClient();
         RealmModel realm = client.getRealm();

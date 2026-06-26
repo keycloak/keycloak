@@ -59,11 +59,11 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
 
     @Override
     public TokenManager.AccessTokenResponseBuilder refreshAccessToken(RefreshTokenContext ctx) throws OAuthErrorException {
-        RealmModel realm = ctx.realm();
+        RealmModel realm = ctx.grantContext().getRealm();
         TokenManager tokenManager = ctx.tokenManager();
         RefreshToken oldRefreshToken = ctx.oldRefreshToken();
-        EventBuilder event = ctx.event();
-        ClientModel authorizedClient = ctx.authorizedClient();
+        EventBuilder event = ctx.grantContext().getEvent();
+        ClientModel authorizedClient = ctx.grantContext().getClient();
         String scopeParameter = ctx.scopeParameter();
 
         if (realm.isRevokeRefreshToken()) {
@@ -92,8 +92,8 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
                     .collect(Collectors.joining(" "));
         }
 
-        TokenManager.TokenValidation validation = validateToken(session, session.getContext().getUri(), ctx.connection(), realm, oldRefreshToken, ctx.headers(),
-                                                                oldTokenScope, authorizedClient, tokenManager, event);
+        TokenManager.TokenValidation validation = validateToken(session, session.getContext().getUri(), ctx.grantContext().getClientConnection(), realm,
+                                                                oldRefreshToken, ctx.grantContext().getHeaders(), oldTokenScope, authorizedClient, tokenManager, event);
         UserModel user = validation.user;
         ClientSessionContext clientSessionCtx = validation.clientSessionCtx;
         UserSessionModel userSession = validation.userSession;
@@ -178,6 +178,8 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
 
         responseBuilder.requestRefreshToken(oldRefreshToken);
 
+        afterRefreshTokenGenerated(ctx, responseBuilder);
+
         return responseBuilder;
     }
 
@@ -191,6 +193,14 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
                                                                   RefreshToken oldToken, HttpHeaders headers, String scope, ClientModel client,
                                                                   TokenManager tokenManager, EventBuilder event) throws OAuthErrorException;
 
+
+    /**
+     * Callback method invoked after refresh token is generated
+     *
+     * @param ctx context
+     * @param responseBuilder response builder with already filled refresh token and client session context
+     */
+    protected abstract void afterRefreshTokenGenerated(RefreshTokenContext ctx, TokenManager.AccessTokenResponseBuilder responseBuilder);
 
     protected RefreshToken createRefreshToken(AccessToken accessToken, AccessToken.Confirmation confirmation, String provider) {
         RefreshToken refreshToken = new RefreshToken(accessToken, confirmation, provider);
