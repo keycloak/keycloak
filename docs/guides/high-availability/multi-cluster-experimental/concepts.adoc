@@ -2,8 +2,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Concepts for multi-cluster deployments"
-summary="Understand multi-cluster deployment with synchronous replication."
+title="Concepts for multi-cluster deployments (experimental)"
+summary="Understand experimental multi-cluster deployment with synchronous replication without an external {jdgserver_name} cluster."
 tileVisible="false" >
 
 <#include "/templates/experimental-feature.adoc">
