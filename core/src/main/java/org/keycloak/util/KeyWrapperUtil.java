@@ -17,8 +17,26 @@ public class KeyWrapperUtil {
                 return new ECDSASignatureSignerContext(keyWrapper);
             case KeyType.RSA:
             case KeyType.OKP:
+                 return new AsymmetricSignatureSignerContext(keyWrapper);
             case KeyType.AKP:
-                return new AsymmetricSignatureSignerContext(keyWrapper);
+                 return new AsymmetricSignatureSignerContext(keyWrapper) {
+                     @Override
+                     public byte[] sign(byte[] data) throws org.keycloak.crypto.SignatureException {
+                         try {
+                             java.security.Signature signature;
+                             try {
+                                 signature = java.security.Signature.getInstance(org.keycloak.crypto.JavaAlgorithm.getJavaAlgorithm(this.key.getAlgorithmOrDefault(), this.key.getCurve()));
+                             } catch (java.security.NoSuchAlgorithmException e) {
+                                 signature = org.keycloak.common.crypto.CryptoIntegration.getProvider().getSignature(this.key.getAlgorithmOrDefault());
+                             }
+                             signature.initSign((java.security.PrivateKey) this.key.getPrivateKey());
+                             signature.update(data);
+                             return signature.sign();
+                         } catch (Exception e) {
+                             throw new org.keycloak.crypto.SignatureException("Signing failed", e);
+                         }
+                     }
+                 };
             default:
                 throw new IllegalArgumentException("No signer provider for key algorithm type " + keyWrapper.getType());
         }
