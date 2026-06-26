@@ -137,7 +137,7 @@ public class GeneratedMlDsaKeyProviderFactory extends AbstractMlDsaKeyProviderFa
                 if (pubKey != null) {
                     return alg;
                 }
-            } catch (Throwable ignored) {
+            } catch (Exception ignored) {
             }
         }
         throw new ComponentValidationException("Failed to determine ML-DSA algorithm from its public key");
