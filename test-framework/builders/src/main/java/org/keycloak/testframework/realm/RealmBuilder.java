@@ -223,6 +223,12 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder browserSecurityHeader(String name, String value) {
+        rep.setBrowserSecurityHeaders(createIfNull(rep.getBrowserSecurityHeaders(), HashMap::new));
+        rep.getBrowserSecurityHeaders().put(name, value);
+        return this;
+    }
+
     public RealmBuilder setEventsListeners(List<String> eventListeners) {
         rep.setEventsListeners(eventListeners);
         return this;
