@@ -15,7 +15,7 @@ HAProxy operates at Layer 7 (HTTP). Unlike passthrough, end-to-end TLS encryptio
 
 For a general overview of TLS re-encrypt and how it compares to passthrough, see the <@links.server id="reverseproxy"/> {section}.
 
-A ready-to-run example with Docker Compose is available in the link:https://github.com/keycloak/keycloak-quickstarts/tree/main/proxy/haproxy/reencrypt[quickstart repository].
+A ready-to-run example with a Compose file is available in the link:https://github.com/keycloak/keycloak-quickstarts/tree/main/proxy/haproxy/reencrypt[quickstart repository].
 
 [[haproxy-configuration-reencrypt]]
 == HAProxy configuration
@@ -174,6 +174,55 @@ If the number of intermediate certificates in your certificate chain is longer t
 `certificate-chain-length` option to an appropriate value. Otherwise, the provider will discard the request.
 
 See <@links.server id="reverseproxy" /> for more details.
+
+[[admin-dedicated-port-haproxy-reencrypt]]
+== Optional: Admin UI and Admin API on a dedicated hostname and port
+
+By default, the Admin UI and Admin API are served on the same port as the public endpoints, protected only by the source IP filtering (`is_allowed_src`).
+For stricter network-level isolation, you can move them to a dedicated hostname and port so they can be independently firewalled.
+
+Because the admin port and the public port share the same HAProxy frontend, the header filtering and client certificate forwarding described above apply to both automatically.
+
+To enable this, add the configurations outlined in the following subsections.
+
+=== {project_name} configuration
+
+`+--hostname-admin=https://...+`::
+Add the full admin URL with its hostname and the port (if it is a non-standard port) to the {project_name} configuration.
+
+[NOTE]
+====
+Setting `hostname-admin` only changes the URLs {project_name} generates for the Admin Console and Admin API.
+It does not stop the Admin API from also answering on the public frontend URL — restricting administration access to the dedicated port must be enforced at the reverse proxy, which is what the rules below do.
+See the <@links.server id="hostname"/> {section}.
+====
+
+=== HAProxy configuration
+
+TLS certificate::
+If you choose to have a different hostname for the admin API, update your certificate to include the admin hostname as an additional Subject Alternative Name in the certificate, or issue a separate certificate.
+
+`haproxy.cfg`::
+* Add the second `bind *:8444 ...`, which makes the frontend also listen on the admin port.
+If you choose a different port, replace `8444` in the examples below with your chosen port.
+* Replace the default `http-request deny unless is_public_path or is_allowed_src` rule with the three isolation rules:
++
+[source,haproxy]
+----
+acl is_admin_port dst_port 8444
+http-request deny if !is_admin_port !is_public_path
+http-request deny if is_admin_port !is_allowed_src
+----
+
+These rules route by destination port:
+
+* *Public port:* only the public paths (`/realms/`, `/resources/`, `/.well-known/`) are served; any other path, including the Admin Console and Admin API, is denied.
+* *Admin port:* all paths are served, but only to the allowed source IP ranges.
+
+[NOTE]
+====
+With this setup, any request to an admin path on the public port is denied with an HTTP 403 response.
+====
 
 [[graceful-shutdown-considerations-haproxy-reencrypt]]
 == Graceful shutdown considerations

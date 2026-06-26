@@ -38,6 +38,28 @@ endif::[]
 
 = Administration
 
+== Client Admin API v2 (experimental)
+
+{project_name} introduces a new REST API for managing OIDC and SAML clients.
+The new API provides strict validation, support for declarative configuration, and an accurate OpenAPI specification that enables reliable client generation.
+This addresses long-standing limitations of the original Admin REST API.
+This is the first resource in the Admin API v2, with additional resources to follow in future releases.
+
+The API can be consumed through a Java client, an auto-generated JavaScript client, and a CLI.
+The {project_name} Operator uses it to manage clients declaratively via `KeycloakOIDCClient` and `KeycloakSAMLClient` custom resources.
+
+Enabling this feature also enables the OpenAPI specification endpoint on the management interface, which the CLI uses to adapt its commands to the connected server version.
+
+To try it out, enable the `client-admin-api:v2` feature.
+
+For more details, see the https://www.keycloak.org/nightly/admin-api/admin-api-v2[Admin API v2] guide and the https://www.keycloak.org/nightly/operator/managing-clients[Managing Keycloak Clients] operator guide.
+Feedback is welcome in the https://github.com/keycloak/keycloak/discussions/50186[Client Admin API v2] GitHub Discussion.
+
+ifeval::[{project_community}==true]
+Thanks to https://github.com/robson90[Robin Meese] for contributing the OpenAPI endpoint on the management interface and the Java admin client,
+and to https://github.com/sschu[Sebastian Schuster] for his participation in the Admin API working group and the Go client analysis.
+endif::[]
+
 == Delegated administration for organizations
 
 {project_name} now supports delegated organization administration without requiring the broad `manage-realm` role. This is achieved through new dedicated admin roles and Fine-Grained Admin Permissions support for organizations.
@@ -96,6 +118,10 @@ If you enabled this feature using `--features=dynamic-scopes`, update your confi
 Parameterized scopes can now define a parameter type that validates the captured value at request time. Built-in types include `string`, `integer`, `boolean`, `username`, and `custom` (validated against an admin-defined regex). The type is required when creating parameterized scopes with the feature enabled.
 
 For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+== Additional datasources may be excluded from health checks
+
+Read more about it in the link:https://www.keycloak.org/server/db#multiple-datasources[Configure multiple datasources] guide.
 
 = Configuring and Running
 

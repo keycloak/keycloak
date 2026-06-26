@@ -199,6 +199,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     @After
     public void cleanupUsers() {
+        deleteAllCookiesForRealm(bc.consumerRealmName());
         adminClient.realm(bc.consumerRealmName()).remove();
         adminClient.realm(bc.providerRealmName()).remove();
     }

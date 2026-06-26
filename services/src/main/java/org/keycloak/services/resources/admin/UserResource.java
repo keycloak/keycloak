@@ -284,6 +284,7 @@ public class UserResource {
                     case Messages.MISSING_USERNAME -> throw ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
                     case Messages.USERNAME_EXISTS -> throw ErrorResponse.exists("User exists with same username");
                     case Messages.EMAIL_EXISTS -> throw ErrorResponse.exists("User exists with same email");
+                    case Messages.DID_EXISTS -> throw ErrorResponse.exists("User exists with same DID");
                 }
                 errors.add(new ErrorRepresentation(error.getAttribute(), error.getMessage(), error.getMessageParameters()));
             }
@@ -528,6 +529,10 @@ public class UserResource {
         auth.users().requireManage(user);
         if (session.users().getFederatedIdentity(realm, user, provider) != null) {
             throw ErrorResponse.exists("User is already linked with provider");
+        }
+
+        if (!Organizations.resolveHomeBroker(session, user).isEmpty()) {
+            throw ErrorResponse.error("Cannot add identity provider link to a managed organization member.", Status.BAD_REQUEST);
         }
 
         FederatedIdentityModel socialLink = new FederatedIdentityModel(provider, rep.getUserId(), rep.getUserName());

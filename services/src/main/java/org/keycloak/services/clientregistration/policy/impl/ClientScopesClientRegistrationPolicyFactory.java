@@ -105,7 +105,7 @@ public class ClientScopesClientRegistrationPolicyFactory extends AbstractClientR
 
     @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
-        List<String> allowedScopesConfig = config.getConfig().getList(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES);
+        List<String> allowedScopesConfig = config.getConfig().getOrDefault(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES, Collections.emptyList());
         if (!getClientScopes(session).containsAll(allowedScopesConfig)) {
             throw new ComponentValidationException("Client scopes not allowed: " + allowedScopesConfig);
         }

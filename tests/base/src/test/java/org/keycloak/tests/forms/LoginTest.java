@@ -1132,6 +1132,22 @@ public class LoginTest {
         runOnServer.run(session-> assertNotNull(session.authenticationSessions().getRootAuthenticationSession(session.getContext().getRealm(), authSessionId)));
     }
 
+    @Test
+    public void testUserDisabledDuringRequiredAction() {
+        oauth.openLoginForm();
+        loginPage.fillLogin("keycloak-user@localhost", getPassword("keycloak-user@localhost"));
+        loginPage.submit();
+
+        updatePasswordPage.assertCurrent();
+
+        managedRealm.updateUserWithCleanup("keycloak-user@localhost", user -> user.enabled(false));
+
+        updatePasswordPage.changePassword("newPassword123", "newPassword123");
+
+        errorPage.assertCurrent();
+        assertThat(errorPage.getError(), containsString("Account is disabled"));
+    }
+
     static class DynamicScopeServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {

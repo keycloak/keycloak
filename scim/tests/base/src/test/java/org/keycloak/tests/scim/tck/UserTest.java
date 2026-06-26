@@ -15,6 +15,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -244,6 +245,46 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testGetByIdServiceAccount() {
+        String clientId = "service-account-target-" + KeycloakModelUtils.generateId();
+        ClientRepresentation targetClient = ClientBuilder.create()
+                .clientId(clientId)
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        try (Response response = realm.admin().clients().create(targetClient)) {
+            targetClient.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
+
+        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
+        User actual = client.users().get(serviceAccount.getId());
+
+        assertNull(actual);
+    }
+
+    @Test
+    public void testQueryByIdServiceAccount() {
+        String clientId = "service-account-target-" + KeycloakModelUtils.generateId();
+        ClientRepresentation targetClient = ClientBuilder.create()
+                .clientId(clientId)
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        try (Response response = realm.admin().clients().create(targetClient)) {
+            targetClient.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
+
+        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
+        ListResponse<User> response = client.users().getAll(ResourceFilter.filter().eq("id", serviceAccount.getId()).build());
+
+        assertEquals(0, response.getTotalResults());
+    }
+
+    @Test
     public void testGetExisting() {
         UserRepresentation existing = UserBuilder.create()
                 .username(KeycloakModelUtils.generateId())
@@ -375,13 +416,7 @@ public class UserTest extends AbstractScimTest {
 
     @Test
     public void testNoManagePermission() {
-        realm.admin().clients().create(ClientBuilder
-                .create()
-                .clientId("noaccess-scim-client")
-                .secret("secret")
-                .serviceAccountsEnabled(true)
-                .enabled(true)
-                .build()).close();
+        createScimClient("noaccess-scim-client");
 
         try {
             noAccessClient.users().create(createUser());
