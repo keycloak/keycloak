@@ -530,13 +530,19 @@ public abstract class OID4VCIssuerTestBase {
      * non-self-signed leaf certificate, so HAIP-6.1.1 is satisfied across requests.
      */
     protected void ensureHaipCompliantSdJwtSigningConfiguration() {
+        final String providerName = "haip-sdjwt-signing-key-provider";
+        var components = testRealm.admin().components();
+        if (!components.query(testRealm.getId(), KeyProvider.class.getName(), providerName).isEmpty()) {
+            return;
+        }
+
         KeyWrapper signingKey = getRsaKey(KeyUse.SIG, Algorithm.RS256, "haip-sdjwt-signing-key");
         ComponentRepresentation provider = createRsaKeyProviderComponentWithNonSelfSignedLeaf(
                 signingKey,
-                "haip-sdjwt-signing-key-provider",
+                providerName,
                 200
         );
-        testRealm.admin().components().add(provider).close();
+        components.add(provider).close();
     }
 
     protected ClientPolicyRepresentation getClientPolicy(String policyName) {

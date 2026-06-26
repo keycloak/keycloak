@@ -17,13 +17,17 @@
 
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import javax.security.auth.x500.X500Principal;
 
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.models.KeycloakSession;
@@ -95,7 +99,7 @@ public class SdJwtCredentialSigner extends AbstractCredentialSigner<String> {
             // Check if the first certificate (signing certificate) is self-signed
             if (!filteredChain.isEmpty()) {
                 X509Certificate signingCert = filteredChain.get(0);
-                if (signingCert.getSubjectX500Principal().equals(signingCert.getIssuerX500Principal())) {
+                if (isSelfSigned(signingCert)) {
                     throw new CredentialSignerException("HAIP-6.1.1 violation: signing certificate MUST NOT be self-signed.");
                 }
             }
@@ -104,7 +108,7 @@ public class SdJwtCredentialSigner extends AbstractCredentialSigner<String> {
             // Per HAIP-6.1.1: "The X.509 certificate of the trust anchor MUST NOT be included in the x5c JOSE header"
             while (!filteredChain.isEmpty()) {
                 X509Certificate last = filteredChain.get(filteredChain.size() - 1);
-                if (isTrustAnchor(last)) {
+                if (isSelfSigned(last)) {
                     // Last certificate is a trust anchor -> drop it from x5c
                     filteredChain.remove(filteredChain.size() - 1);
                 } else {
@@ -137,16 +141,15 @@ public class SdJwtCredentialSigner extends AbstractCredentialSigner<String> {
         }
     }
 
-    private boolean isTrustAnchor(X509Certificate cert) {
-        boolean isTrustAnchor = false;
+    private boolean isSelfSigned(X509Certificate cert) {
         try {
-            X500Principal issuerPrincipal = cert.getIssuerX500Principal();
-            X500Principal subjectPrincipal = cert.getSubjectX500Principal();
-            // Self-signed certificate (subject == issuer) is a trust anchor
-            isTrustAnchor = subjectPrincipal.equals(issuerPrincipal);
-        } catch (Exception e) {
-            // ignore
+            cert.verify(cert.getPublicKey());
+            return true;
+        } catch (SignatureException | InvalidKeyException e) {
+            return false;
+        } catch (CertificateException | NoSuchAlgorithmException | NoSuchProviderException e) {
+            LOGGER.debugf(e, "Failed to verify whether certificate %s is self-signed", cert.getSubjectX500Principal());
+            return false;
         }
-        return isTrustAnchor;
     }
 }

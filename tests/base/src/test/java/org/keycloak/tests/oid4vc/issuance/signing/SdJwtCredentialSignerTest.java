@@ -269,7 +269,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
 
             for (String certDerB64 : x5c) {
                 X509Certificate cert = decodeDerBase64Certificate(certDerB64);
-                assertTrue(!cert.getSubjectX500Principal().equals(cert.getIssuerX500Principal()),
+                assertFalse(isSelfSigned(cert),
                         "x5c must not contain self-signed trust anchor certificate");
             }
         });
@@ -453,8 +453,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
         List<X509Certificate> existingChain = keyWrapper.getCertificateChain();
         if (existingChain != null && !existingChain.isEmpty()) {
             X509Certificate signingCert = existingChain.get(0);
-            if (signingCert != null
-                    && !signingCert.getSubjectX500Principal().equals(signingCert.getIssuerX500Principal())) {
+            if (signingCert != null && !isSelfSigned(signingCert)) {
                 return;
             }
         }
@@ -531,6 +530,15 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
             return (X509Certificate) certFactory.generateCertificate(new java.io.ByteArrayInputStream(certBytes));
         } catch (Exception e) {
             throw new RuntimeException("Failed to decode x5c certificate", e);
+        }
+    }
+
+    private static boolean isSelfSigned(X509Certificate cert) {
+        try {
+            cert.verify(cert.getPublicKey());
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 }
