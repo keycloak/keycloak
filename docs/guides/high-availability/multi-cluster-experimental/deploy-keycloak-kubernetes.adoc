@@ -24,7 +24,7 @@ These instructions are intended for use with the setup described in the <@links.
 
 . Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
 
-. Optionally, secure the database connection by creating a `ConfigMap` with the database certificate bundle:
+. Secure the database connection by creating a `ConfigMap` with the database certificate bundle:
 +
 [source,bash]
 ----
