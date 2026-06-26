@@ -130,6 +130,7 @@ public class ResourceSetService {
         AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
 
         requireManage();
+        validateUris(resource);
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         ResourceOwnerRepresentation owner = resource.getOwner();
 
@@ -165,6 +166,7 @@ public class ResourceSetService {
     public Response update(@PathParam("resource-id") String id, ResourceRepresentation resource) {
         AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
         requireManage();
+        validateUris(resource);
         resource.setId(id);
         getResource(id);
         toModel(resource, resourceServer, authorization);
@@ -541,5 +543,47 @@ public class ResourceSetService {
         } else {
             adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(resource).success();
         }
+    }
+
+    private static void validateUris(ResourceRepresentation resource) {
+        Set<String> uris = resource.getUris();
+
+        if (uris == null) {
+            return;
+        }
+
+        for (String uri : uris) {
+            boolean inBrace = false;
+            boolean empty = true;
+
+            for (int i = 0; i < uri.length(); i++) {
+                char c = uri.charAt(i);
+
+                if (c == '{') {
+                    if (inBrace) {
+                        throw malformedUri(uri);
+                    }
+                    inBrace = true;
+                    empty = true;
+                } else if (c == '}') {
+                    if (!inBrace || empty) {
+                        throw malformedUri(uri);
+                    }
+                    inBrace = false;
+                } else if (inBrace) {
+                    empty = false;
+                }
+            }
+
+            if (inBrace) {
+                throw malformedUri(uri);
+            }
+        }
+    }
+
+    private static ErrorResponseException malformedUri(String uri) {
+        return new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
+                "URI [" + uri + "] is not a valid template; '{' and '}' must be matched and enclose a parameter name.",
+                Status.BAD_REQUEST);
     }
 }
