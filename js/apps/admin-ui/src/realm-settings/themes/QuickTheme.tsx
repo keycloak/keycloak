@@ -158,6 +158,27 @@ styles=css/login.css css/theme-styles.css
       `:root {
         ${bgimage ? `--keycloak-bg-logo-url: url('../${bgimageName}');` : ""}
         ${logo ? `--keycloak-logo-url: url('../${logoName}');` : ""}
+        ${styles.borderRadiusButton ? `--pf-v5-global--BorderRadius--sm: ${styles.borderRadiusButton};` : ""}
+        ${
+          styles.borderRadiusInput
+            ? `
+          .pf-v5-c-form-control::after {
+              border-radius: ${styles.borderRadiusInput};
+          }
+
+          .pf-v5-c-form-control {
+              border-radius: ${styles.borderRadiusInput};
+              overflow: hidden;
+          }
+          `
+            : ""
+        }
+        ${
+          styles.borderRadiusMain
+            ? `--pf-v5-global--BorderRadius--lg: ${styles.borderRadiusMain};\n
+        --pf-v5-c-button--after--BorderRadius: ${styles.borderRadiusMain}; \n`
+            : ""
+        }
         --keycloak-logo-height: ${realm.logoHeight};
         --keycloak-logo-width: ${realm.logoWidth};
         ${toCss(styles.light)}
