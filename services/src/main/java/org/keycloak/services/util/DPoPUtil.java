@@ -97,6 +97,7 @@ public class DPoPUtil {
 
     public static final int DEFAULT_PROOF_LIFETIME = 10;
     public static final int DEFAULT_ALLOWED_CLOCK_SKEW = 15; // sec;
+    public static final String DPOP_CNF_TYPE = "DPoP";
     public static final String DPOP_TOKEN_TYPE = "DPoP";
     public static final String DPOP_SCHEME = "DPoP";
     public final static String DPOP_SESSION_ATTRIBUTE = "dpop";
@@ -625,13 +626,13 @@ public class DPoPUtil {
             if (bindOnlyRefreshToken) {
                 return super.transformAccessToken(token, mappingModel, session, userSession, clientSessionCtx);
             }
-            AccessToken.Confirmation confirmation = (AccessToken.Confirmation) token.getOtherClaims()
-                    .get(OAuth2Constants.CNF);
-            if (confirmation == null) {
-                confirmation = new AccessToken.Confirmation();
-                token.setConfirmation(confirmation);
+            AccessToken.Confirmation cnf = (AccessToken.Confirmation) token.getOtherClaims().get(OAuth2Constants.CNF);
+            if (cnf == null) {
+                cnf = new AccessToken.Confirmation();
+                token.setConfirmation(cnf);
             }
-            confirmation.setKeyThumbprint(dPoP.getThumbprint());
+            cnf.setKeyThumbprint(dPoP.getThumbprint());
+            cnf.setCnfType(DPOP_CNF_TYPE);
             // make sure that the token-type is set to DPoP. This will be resolved if the AccessTokenResponse is built.
             token.type(DPOP_TOKEN_TYPE);
             return super.transformAccessToken(token, mappingModel, session, userSession, clientSessionCtx);
