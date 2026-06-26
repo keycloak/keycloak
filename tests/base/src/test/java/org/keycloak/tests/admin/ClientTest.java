@@ -1015,7 +1015,7 @@ public class ClientTest {
 
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientProtocolMapperPath(clientDbId, fooMapperId), fooMapper, ResourceType.PROTOCOL_MAPPER);
 
-        mappersResource.getMapperById(fooMapperId);
+        assertNotNull(mappersResource.getMapperById(fooMapperId));
 
         // Remove foo mapper
         mappersResource.delete(fooMapperId);
