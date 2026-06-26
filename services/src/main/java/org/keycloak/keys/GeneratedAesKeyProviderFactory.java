@@ -48,7 +48,7 @@ public class GeneratedAesKeyProviderFactory extends AbstractGeneratedSecretKeyPr
 
     static {
         AES_KEY_SIZE_PROPERTY = new ProviderConfigProperty(Attributes.SECRET_SIZE_KEY, "AES Key size",
-                "Size in bytes for the generated AES Key. Size 16 is for AES-128, Size 24 for AES-192 and Size 32 for AES-256. WARN: Bigger keys then 128 bits are not allowed on some JDK implementations",
+                "Size in bytes for the generated AES Key. Size 16 is for AES-128, Size 24 for AES-192 and Size 32 for AES-256.",
                 LIST_TYPE, String.valueOf(DEFAULT_AES_KEY_SIZE), "16", "24", "32");
     }
 
