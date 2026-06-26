@@ -5,7 +5,6 @@ import jakarta.annotation.Nonnull;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
 import org.keycloak.utils.StringUtil;
 
 /**
@@ -15,13 +14,14 @@ public class UsernameScopeType implements ParameterizedScopeTypeProvider {
 
     public static final String TYPE = "username";
 
-    private UserProvider users;
+    protected final KeycloakSession session;
 
     public UsernameScopeType() {
+        this.session = null;
     }
 
     public UsernameScopeType(KeycloakSession session) {
-        this.users = session.getProvider(UserProvider.class);
+        this.session = session;
     }
 
     @Override
@@ -51,7 +51,7 @@ public class UsernameScopeType implements ParameterizedScopeTypeProvider {
     }
 
     protected UserModel resolveUser(ClientScopeModel scope, String parameter) throws InvalidScopeParameterException {
-        UserModel targetUser = users.getUserByUsername(scope.getRealm(), parameter);
+        UserModel targetUser = session.users().getUserByUsername(scope.getRealm(), parameter);
         if (targetUser == null) {
             throw new InvalidScopeParameterException(String.format("User '%s' not found in realm '%s'", parameter, scope.getRealm().getName()));
         }

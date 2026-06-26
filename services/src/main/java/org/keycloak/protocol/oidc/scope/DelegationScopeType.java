@@ -33,15 +33,11 @@ public class DelegationScopeType extends UsernameScopeType {
 
     public static final String TYPE = "delegation";
 
-    protected final KeycloakSession session;
-
     public DelegationScopeType() {
-        this.session = null;
     }
 
     public DelegationScopeType(KeycloakSession session) {
         super(session);
-        this.session = session;
     }
 
     @Override
