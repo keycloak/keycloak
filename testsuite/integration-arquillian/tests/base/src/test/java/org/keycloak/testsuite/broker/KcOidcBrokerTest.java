@@ -393,22 +393,62 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
     @Test
     public void testIdPForceSyncUserAttributes() {
-        checkUpdatedUserAttributesIdP(true, false);
+        checkUpdatedUserAttributesIdP(true, false, false, false);
     }
 
     @Test
     public void testIdPForceSyncTrustEmailUserAttributes() {
-        checkUpdatedUserAttributesIdP(true, true);
+        checkUpdatedUserAttributesIdP(true, true, false, false);
     }
 
     @Test
     public void testIdPNotForceSyncUserAttributes() {
-        checkUpdatedUserAttributesIdP(false, false);
+        checkUpdatedUserAttributesIdP(false, false, false, false);
     }
 
     @Test
     public void testIdPNotForceSyncTrustEmailUserAttributes() {
-        checkUpdatedUserAttributesIdP(false, true);
+        checkUpdatedUserAttributesIdP(false, true, false, false);
+    }
+
+    @Test
+    public void testIdPForceSyncUserAttributesWithEditUsernameAllowed() {
+        checkUpdatedUserAttributesIdP(true, false, true, false);
+    }
+
+    @Test
+    public void testIdPForceSyncTrustEmailUserAttributesWithEditUsernameAllowed() {
+        checkUpdatedUserAttributesIdP(true, true, true, false);
+    }
+
+    @Test
+    public void testIdPNotForceSyncUserAttributesWithEditUsernameAllowed() {
+        checkUpdatedUserAttributesIdP(false, false, true, false);
+    }
+
+    @Test
+    public void testIdPNotForceSyncTrustEmailUserAttributesWithEditUsernameAllowed() {
+        checkUpdatedUserAttributesIdP(false, true, true, false);
+    }
+
+    @Test
+    public void testIdPForceSyncUserAttributesWithEmailAsUsername() {
+        checkUpdatedUserAttributesIdP(true, false, false, true);
+    }
+
+    @Test
+    public void testIdPForceSyncTrustEmailUserAttributesWithEmailAsUsername() {
+        checkUpdatedUserAttributesIdP(true, true, false, true);
+    }
+
+    @Test
+    public void testIdPNotForceSyncUserAttributesWithEmailAsUsername() {
+        checkUpdatedUserAttributesIdP(false, false, false, true);
+    }
+
+    @Test
+    public void testIdPNotForceSyncTrustEmailUserAttributesWithEmailAsUsername() {
+        checkUpdatedUserAttributesIdP(false, true, false, true);
     }
 
     @Test
@@ -645,7 +685,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat("Claim value didn't change", idProvider.getConfig().get(IdentityProviderModel.CLAIM_FILTER_VALUE), Matchers.equalTo(claimFilterValue));
     }
 
-    private void checkUpdatedUserAttributesIdP(boolean isForceSync, boolean isTrustEmail) {
+    private void checkUpdatedUserAttributesIdP(boolean isForceSync, boolean isTrustEmail, boolean editUsernameAllowed, boolean registrationEmailAsUsername) {
         final String IDP_NAME = getBrokerConfiguration().getIDPAlias();
         final String USERNAME = "demo-user";
         final String PASSWORD = "demo-pwd";
@@ -661,6 +701,30 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
         RealmResource providerRealmResource = realmsResouce().realm(bc.providerRealmName());
         allowUserEdit(providerRealmResource);
+
+        RealmResource consumerRealmResource = realmsResouce().realm(bc.consumerRealmName());
+        if (editUsernameAllowed) {
+            allowUserEdit(consumerRealmResource);
+        }
+        if (registrationEmailAsUsername) {
+            RealmRepresentation consumerRealm = consumerRealmResource.toRepresentation();
+            consumerRealm.setRegistrationEmailAsUsername(true);
+            consumerRealmResource.update(consumerRealm);
+        }
+
+        final String initialConsumerUsername = registrationEmailAsUsername ? EMAIL : USERNAME;
+        final String expectedFinalUsername;
+        if (isForceSync) {
+            if (registrationEmailAsUsername) {
+                expectedFinalUsername = NEW_EMAIL;
+            } else if (editUsernameAllowed) {
+                expectedFinalUsername = NEW_USERNAME;
+            } else {
+                expectedFinalUsername = initialConsumerUsername;
+            }
+        } else {
+            expectedFinalUsername = initialConsumerUsername;
+        }
 
         UsersResource providerUsersResource = providerRealmResource.users();
 
@@ -684,15 +748,16 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             assertThat(driver.getTitle(), Matchers.containsString("Sign in to " + bc.consumerRealmName()));
             logInWithIdp(IDP_NAME, USERNAME, PASSWORD);
 
-            UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(adminClient.realm(bc.providerRealmName()), USERNAME);
+            UserRepresentation userRepresentation = providerUserResource.toRepresentation();
 
             assertThat(userRepresentation.getUsername(), Matchers.equalTo(USERNAME));
             assertThat(userRepresentation.getEmail(), Matchers.equalTo(EMAIL));
             assertThat(userRepresentation.getFirstName(), Matchers.equalTo(FIRST_NAME));
             assertThat(userRepresentation.getLastName(), Matchers.equalTo(LAST_NAME));
 
-            RealmResource consumerRealmResource = realmsResouce().realm(bc.consumerRealmName());
-            List<UserRepresentation> foundUsers = consumerRealmResource.users().searchByUsername(USERNAME, true);
+            List<UserRepresentation> foundUsers = registrationEmailAsUsername 
+                    ? consumerRealmResource.users().searchByEmail(EMAIL, true)
+                    : consumerRealmResource.users().searchByUsername(USERNAME, true);
             assertThat(foundUsers, Matchers.hasSize(1));
             UserRepresentation consumerUser = foundUsers.get(0);
             assertThat(consumerUser, Matchers.notNullValue());
@@ -702,7 +767,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             checkFederatedIdentityLink(consumerUserResource, providerUserID, USERNAME);
             assertThat(consumerUserResource.toRepresentation().isEmailVerified(), Matchers.equalTo(isTrustEmail));
 
-            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), USERNAME);
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), initialConsumerUsername);
             AccountHelper.logout(adminClient.realm(bc.providerRealmName()), USERNAME);
 
             // set email verified to true on the consumer resource
@@ -730,10 +795,10 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             assertThat(driver.getTitle(), Matchers.containsString("Sign in to " + bc.consumerRealmName()));
             logInWithIdp(IDP_NAME, NEW_USERNAME, PASSWORD);
 
-            userRepresentation = AccountHelper.getUserRepresentation(adminClient.realm(bc.consumerRealmName()), USERNAME);
+            userRepresentation = consumerUserResource.toRepresentation();
 
-            // consumer username stays the same, even when sync mode is force
-            assertThat(userRepresentation.getUsername(), Matchers.equalTo(USERNAME));
+            // consumer username is updated when editUsernameAllowed or registrationEmailAsUsername is true and sync mode is force
+            assertThat(userRepresentation.getUsername(), Matchers.equalTo(expectedFinalUsername));
             // other consumer attributes are updated, when sync mode is force
             assertThat(userRepresentation.getEmail(), Matchers.equalTo(isForceSync ? NEW_EMAIL : EMAIL));
             assertThat(userRepresentation.getFirstName(), Matchers.equalTo(isForceSync ? NEW_FIRST_NAME : FIRST_NAME));
@@ -744,6 +809,20 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             // the email verified should be reverted to false if force-sync and not trust-email
             assertThat(consumerUserResource.toRepresentation().isEmailVerified(), Matchers.equalTo(!isForceSync || isTrustEmail));
         } finally {
+            try {
+                if (registrationEmailAsUsername) {
+                    RealmRepresentation consumerRealm = consumerRealmResource.toRepresentation();
+                    consumerRealm.setRegistrationEmailAsUsername(false);
+                    consumerRealmResource.update(consumerRealm);
+                }
+                if (editUsernameAllowed) {
+                    RealmRepresentation consumerRealm = consumerRealmResource.toRepresentation();
+                    consumerRealm.setEditUsernameAllowed(false);
+                    consumerRealmResource.update(consumerRealm);
+                }
+            } catch (Exception e) {
+                // Ignore cleanup errors to avoid masking test failures
+            }
             providerUsersResource.delete(providerUserID).close();
         }
     }
@@ -858,6 +937,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(federatedIdentity.getUserId(), Matchers.equalTo(userID));
         assertThat(federatedIdentity.getUserName(), Matchers.equalTo(username));
     }
+
 
     private void updateIdPSyncMode(IdentityProviderRepresentation idProvider, IdentityProviderResource idProviderResource,
                                    IdentityProviderSyncMode syncMode, Boolean trustEmail) {
