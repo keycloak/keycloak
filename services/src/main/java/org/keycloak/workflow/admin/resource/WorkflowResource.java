@@ -13,6 +13,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.Workflow;
@@ -20,6 +22,7 @@ import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
 
 import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -34,12 +37,16 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class WorkflowResource {
 
+    private final KeycloakSession session;
     private final WorkflowProvider provider;
     private final Workflow workflow;
+    private final AdminEventBuilder adminEvent;
 
-    public WorkflowResource(WorkflowProvider provider, Workflow workflow) {
+    public WorkflowResource(KeycloakSession session, WorkflowProvider provider, Workflow workflow, AdminEventBuilder adminEvent) {
+        this.session = session;
         this.provider = provider;
         this.workflow = workflow;
+        this.adminEvent = adminEvent;
     }
 
     @DELETE
@@ -55,6 +62,9 @@ public class WorkflowResource {
     public void delete() {
         try {
             provider.removeWorkflow(workflow);
+            adminEvent.operation(OperationType.DELETE)
+                    .resourcePath(session.getContext().getUri())
+                    .success();
         } catch (ModelException me) {
             throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
         }
@@ -78,6 +88,10 @@ public class WorkflowResource {
         try {
             rep.setId(workflow.getId());
             provider.updateWorkflow(workflow, rep);
+            adminEvent.operation(OperationType.UPDATE)
+                    .resourcePath(session.getContext().getUri())
+                    .representation(rep)
+                    .success();
         } catch (ModelException me) {
             throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
         }
@@ -152,6 +166,9 @@ public class WorkflowResource {
         }
 
         provider.activate(workflow, type, resourceId);
+        adminEvent.operation(OperationType.ACTION)
+                .resourcePath(session.getContext().getUri())
+                .success();
     }
 
     /**
@@ -185,6 +202,9 @@ public class WorkflowResource {
         }
 
         provider.deactivate(workflow, resourceId);
+        adminEvent.operation(OperationType.ACTION)
+                .resourcePath(session.getContext().getUri())
+                .success();
     }
 
 }
