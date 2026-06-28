@@ -141,7 +141,7 @@ public class RolePolicyProvider implements PolicyProvider, PartialEvaluationPoli
         StoreFactory storeFactory = provider.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(adminPermissionsClient);
         PolicyStore policyStore = storeFactory.getPolicyStore();
-        List<String> roleIds = getDeepUserRoleMappings(session, realm, subject).stream().map(RoleModel::getId).toList();
+        List<String> roleIds = getDeepUserRoleMappings(subject).stream().map(RoleModel::getId).toList();
         Stream<Policy> policies = Stream.of();
 
         return Stream.concat(policies, policyStore.findDependentPolicies(resourceServer, resourceType.getType(), groupResourceType == null ? null : groupResourceType.getType(), RolePolicyProviderFactory.ID, "roles", roleIds));

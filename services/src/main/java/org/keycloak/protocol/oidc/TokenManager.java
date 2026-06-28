@@ -473,18 +473,8 @@ public class TokenManager {
 
 
     public static Set<RoleModel> getAccess(UserModel user, ClientModel client, Stream<ClientScopeModel> clientScopes) {
-        return getAccess(RoleUtils.getDeepUserRoleMappings(user), client, clientScopes,
-                RoleUtils::expandCompositeRolesStream);
-    }
+        Set<RoleModel> roleMappings = RoleUtils.getDeepUserRoleMappings(user);
 
-    public static Set<RoleModel> getAccess(KeycloakSession session, UserModel user, ClientModel client, Stream<ClientScopeModel> clientScopes) {
-        RealmModel realm = client.getRealm();
-        return getAccess(RoleUtils.getDeepUserRoleMappings(session, realm, user), client, clientScopes,
-                scopeMappings -> RoleUtils.expandCompositeRolesStream(session, realm, scopeMappings));
-    }
-
-    private static Set<RoleModel> getAccess(Set<RoleModel> roleMappings, ClientModel client, Stream<ClientScopeModel> clientScopes,
-            Function<Stream<RoleModel>, Stream<RoleModel>> expandScopeMappings) {
         if (client.isFullScopeAllowed()) {
             if (logger.isTraceEnabled()) {
                 logger.tracef("Using full scope for client %s", client.getClientId());
@@ -509,7 +499,7 @@ public class TokenManager {
             scopeMappings = Stream.concat(scopeMappings, clientScopesMappings);
 
             // 3 - Expand scope mappings
-            scopeMappings = expandScopeMappings.apply(scopeMappings);
+            scopeMappings = RoleUtils.expandCompositeRolesStream(scopeMappings);
 
             // Intersection of expanded user roles and expanded scopeMappings
             roleMappings.retainAll(scopeMappings.collect(Collectors.toSet()));
