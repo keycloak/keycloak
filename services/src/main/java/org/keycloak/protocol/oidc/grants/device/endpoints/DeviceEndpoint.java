@@ -24,6 +24,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
@@ -82,6 +83,8 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
     protected static final Logger logger = Logger.getLogger(DeviceEndpoint.class);
 
     public static final String SHORT_VERIFICATION_URI = "shortVerificationUri";
+
+    public static final String USER_CODE_LOCATION = "userCodeLocation";
 
     private final HttpRequest request;
 
@@ -189,7 +192,13 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
             response.setExpiresIn(expiresIn);
             response.setInterval(interval);
             response.setVerificationUri(deviceUrl);
-            response.setVerificationUriComplete(deviceUrl + "?user_code=" + response.getUserCode());
+            UserCodeLocation userCodeLocation = realm.getAttribute(USER_CODE_LOCATION, UserCodeLocation.class, UserCodeLocation.QUERY_PARAM);
+            if (userCodeLocation.equals(UserCodeLocation.QUERY_PARAM)) {
+                response.setVerificationUriComplete(deviceUrl + "?user_code=" + response.getUserCode());
+            }
+            else {
+                response.setVerificationUriComplete(deviceUrl + "/" + response.getUserCode());
+            }
 
             return cors.add(Response.ok(JsonSerialization.writeValueAsBytes(response)).type(MediaType.APPLICATION_JSON_TYPE));
         } catch (Exception e) {
@@ -212,7 +221,23 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
      * @return
      */
     @GET
-    public Response verifyUserCode(@QueryParam("user_code") String userCode) {
+    @Path("/{user_code}")
+    public Response verifyPathUserCode(@PathParam("user_code") String userCode) {
+        return verifyUserCode(userCode);
+    }
+
+    /**
+     * This endpoint is used by end-users to start the flow to authorize a device.
+     *
+     * @param userCode the user code to authorize
+     * @return
+     */
+    @GET
+    public Response verifyQueryUserCode(@QueryParam("user_code") String userCode) {
+        return verifyUserCode(userCode);
+    }
+
+    private Response verifyUserCode(@QueryParam("user_code") String userCode) {
         event.event(EventType.OAUTH2_DEVICE_VERIFY_USER_CODE);
 
         checkSsl();
