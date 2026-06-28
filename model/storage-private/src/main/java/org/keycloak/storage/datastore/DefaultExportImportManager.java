@@ -215,6 +215,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         newRealm.setName(rep.getRealm());
         if (rep.getDisplayName() != null) newRealm.setDisplayName(rep.getDisplayName());
         if (rep.getDisplayNameHtml() != null) newRealm.setDisplayNameHtml(rep.getDisplayNameHtml());
+        if (rep.getDisplayNameShort() != null) newRealm.setDisplayNameShort(rep.getDisplayNameShort());
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
         if (rep.isUserManagedAccessAllowed() != null) newRealm.setUserManagedAccessAllowed(rep.isUserManagedAccessAllowed());
         if (rep.isBruteForceProtected() != null) newRealm.setBruteForceProtected(rep.isBruteForceProtected());
@@ -812,6 +813,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         }
         if (rep.getDisplayName() != null) realm.setDisplayName(rep.getDisplayName());
         if (rep.getDisplayNameHtml() != null) realm.setDisplayNameHtml(rep.getDisplayNameHtml());
+        if (rep.getDisplayNameShort() != null) realm.setDisplayNameShort(rep.getDisplayNameShort());
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
         if (rep.isUserManagedAccessAllowed() != null) realm.setUserManagedAccessAllowed(rep.isUserManagedAccessAllowed());
         if (rep.isBruteForceProtected() != null) realm.setBruteForceProtected(rep.isBruteForceProtected());
