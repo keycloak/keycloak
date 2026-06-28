@@ -24,6 +24,6 @@ For major or minor version upgrades:
 
 == Database upgrades
 
-Follow your database vendor's zero-downtime upgrade procedure, and possibly combine them with a {project_name} upgrade.
+Follow your database vendor's zero-downtime upgrade procedure, and possibly combine it with a {project_name} upgrade.
 
 </@tmpl.guide>

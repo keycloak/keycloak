@@ -29,7 +29,7 @@ The following setup assumes a TLS passthrough setup, though this is not limited 
 Perform the following steps in each {kubernetes} cluster:
 
 . Determine the sizing of the deployment using the <@links.ha id="multi-cluster-concepts-memory-and-cpu-sizing" /> {section}.
-For this setup, you might see approximately two times higher CPU usage and write IOPS on your database, though your results might vary based on your use case.
+For this setup, you might see approximately twice the CPU usage and write IOPS on your database, though your results might vary based on your use case.
 
 . Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
 

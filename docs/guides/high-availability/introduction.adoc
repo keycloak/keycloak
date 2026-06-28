@@ -94,7 +94,7 @@ Disadvantages::
 * Cost:
 ** Additional load-balancer required
 ** Two or more control-planes must be provisioned
-** Higher database load as session data is stored in the database and less data is cached. You might see a two times higher CPU usage and write IOPS on your database, though your results might vary based on your use case.
+** Higher database load as session data is stored in the database and less data is cached. You might see approximately twice the CPU usage and write IOPS on your database, though your results might vary based on your use case.
 </@profile.ifCommunity>
 
 === Next Steps
