@@ -20,7 +20,6 @@ While this blueprint uses {kubernetes}, the concepts are not limited to {kuberne
 * A load balancer in front of the clusters that is probing the root URL of the {project_name} clusters.
 // TODO: Add the lb-check non-blocking endpoint for the probe
 * A highly available database deployed with synchronous replication across sites, reachable from all {project_name} nodes in all clusters. The following example assumes a PostgreSQL database. Any database supported by {project_name} will work.
-If you previously deployed a <@links.ha id="single-cluster-introduction" /> or <@links.ha id="multi-cluster-introduction" /> setup, you might see a two times higher CPU usage and write IOPS on your database, though your results might vary based on your use case.
 * Understanding of a <@links.operator id="basic-deployment" /> of {project_name} with the {project_name} Operator.
 
 The following setup assumes a TLS passthrough setup, though this is not limited to this configuration.
@@ -30,7 +29,7 @@ The following setup assumes a TLS passthrough setup, though this is not limited 
 Perform the following steps in each {kubernetes} cluster:
 
 . Determine the sizing of the deployment using the <@links.ha id="multi-cluster-concepts-memory-and-cpu-sizing" /> {section}.
-For this setup, you might see a two times higher CPU usage and write IOPS on your database compared, though your results might vary based on your use case.
+For this setup, you might see approximately two times higher CPU usage and write IOPS on your database, though your results might vary based on your use case.
 
 . Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
 
