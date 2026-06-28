@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import javax.security.auth.x500.X500Principal;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
@@ -67,6 +68,7 @@ import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.SupportedProofTypeData;
+import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -355,7 +357,7 @@ public class AttestationValidatorUtil {
             List<String> x5cList,
             String alg,
             KeycloakSession keycloakSession) throws VCIssuerException, VerificationException {
-        JWK certJwk = resolveJwkFromValidatedX5c(x5cList, alg);
+        JWK certJwk = resolveJwkFromValidatedX5c(x5cList, alg, keycloakSession);
         return verifierFromResolvedJWK(certJwk, alg, keycloakSession);
     }
 
@@ -363,7 +365,11 @@ public class AttestationValidatorUtil {
      * Validates x5c certificate chain and converts leaf certificate key to JWK.
      * Can be reused by proof validators that accept x5c as proof key source.
      */
-    static JWK resolveJwkFromValidatedX5c(List<String> x5cList, String alg) throws VCIssuerException {
+    static JWK resolveJwkFromValidatedX5c(List<String> x5cList, String alg, KeycloakSession session) throws VCIssuerException {
+        return resolveJwkFromValidatedX5c(x5cList, alg, getTrustAnchors(session));
+    }
+
+    static JWK resolveJwkFromValidatedX5c(List<String> x5cList, String alg, Set<TrustAnchor> trustAnchors) throws VCIssuerException {
 
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -391,7 +397,7 @@ public class AttestationValidatorUtil {
 
             // Validate certificate chain
             CertPathValidator validator = CertPathValidator.getInstance("PKIX");
-            PKIXParameters params = new PKIXParameters(getTrustAnchors());
+            PKIXParameters params = new PKIXParameters(trustAnchors);
             params.setRevocationEnabled(false);
 
             validator.validate(certPath, params);
@@ -400,26 +406,60 @@ public class AttestationValidatorUtil {
             PublicKey publicKey = certChain.get(0).getPublicKey();
             return convertPublicKeyToJWK(publicKey, alg, certChain);
 
+        } catch (VCIssuerException e) {
+            throw e;
         } catch (Exception e) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Failed to validate x5c certificate chain", e);
         }
     }
 
-    private static Set<TrustAnchor> getTrustAnchors() throws Exception {
-        KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        try (InputStream in = new FileInputStream(CACERTS_PATH)) {
-            trustStore.load(in, DEFAULT_TRUSTSTORE_PASSWORD);
-        }
-
+    /**
+     * Resolve the trust anchors used to validate a key attestation x5c chain. The chain must anchor in
+     * the realm's configured truststore, matching how Keycloak validates other X.509 chains (see
+     * CertificateValidator). Only when no truststore is configured does this fall back to the JVM
+     * default truststore, so an attestation cannot be satisfied by an arbitrary publicly-trusted CA
+     * when an operator has narrowed trust to the attestation issuers they accept.
+     */
+    private static Set<TrustAnchor> getTrustAnchors(KeycloakSession session) throws VCIssuerException {
         Set<TrustAnchor> anchors = new HashSet<>();
-        Enumeration<String> aliases = trustStore.aliases();
-        while (aliases.hasMoreElements()) {
-            Certificate cert = trustStore.getCertificate(aliases.nextElement());
-            if (cert instanceof X509Certificate) {
-                anchors.add(new TrustAnchor((X509Certificate) cert, null));
+
+        TruststoreProvider truststoreProvider = session == null ? null : session.getProvider(TruststoreProvider.class);
+        if (truststoreProvider != null && truststoreProvider.getTruststore() != null) {
+            addAnchors(anchors, truststoreProvider.getRootCertificates());
+            addAnchors(anchors, truststoreProvider.getIntermediateCertificates());
+            if (!anchors.isEmpty()) {
+                return anchors;
             }
         }
+
+        try {
+            KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            try (InputStream in = new FileInputStream(CACERTS_PATH)) {
+                trustStore.load(in, DEFAULT_TRUSTSTORE_PASSWORD);
+            }
+
+            Enumeration<String> aliases = trustStore.aliases();
+            while (aliases.hasMoreElements()) {
+                Certificate cert = trustStore.getCertificate(aliases.nextElement());
+                if (cert instanceof X509Certificate) {
+                    anchors.add(new TrustAnchor((X509Certificate) cert, null));
+                }
+            }
+        } catch (Exception e) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Failed to load trust anchors for key attestation", e);
+        }
         return anchors;
+    }
+
+    private static void addAnchors(Set<TrustAnchor> anchors, Map<X500Principal, List<X509Certificate>> certificates) {
+        if (certificates == null) {
+            return;
+        }
+        for (List<X509Certificate> certs : certificates.values()) {
+            for (X509Certificate cert : certs) {
+                anchors.add(new TrustAnchor(cert, null));
+            }
+        }
     }
 
     private static SignatureVerifierContext verifierFromResolvedJWK(
