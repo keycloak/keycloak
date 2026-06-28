@@ -65,10 +65,6 @@ import org.keycloak.util.TokenUtil;
  */
 public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider {
 
-    @Override
-    public int getVersion() {
-        return 2;
-    }
 
     @Override
     public boolean supports(TokenExchangeContext context) {

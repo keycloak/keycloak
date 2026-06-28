@@ -253,7 +253,6 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             } catch (ContextNotActiveException e) {
                 log.debug("No active request, can't make url attribute available to the template");
                 // ignore when running without an active request context such as sending emails from an scheduled task
-                // TODO: make it possible to make the URL available to email templates based on the hostname configured in the realm or at the server level
             }
 
             String subject = new MessageFormat(messages.getProperty(subjectKey, subjectKey), locale).format(subjectAttributes.toArray());
