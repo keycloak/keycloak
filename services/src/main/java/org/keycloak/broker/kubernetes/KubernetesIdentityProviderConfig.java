@@ -1,6 +1,9 @@
 package org.keycloak.broker.kubernetes;
 
 
+import com.google.common.base.Strings;
+
+import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantConfig;
 import org.keycloak.broker.oidc.IssuerValidation;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderType;
@@ -9,8 +12,10 @@ import org.keycloak.util.Strings;
 
 import static org.keycloak.broker.kubernetes.KubernetesConstants.DEFAULT_KUBERNETES_ISSUER_URL;
 
+import static org.keycloak.broker.oidc.OIDCIdentityProviderConfig.USE_JWKS_URL;
 
-public class KubernetesIdentityProviderConfig extends IdentityProviderModel implements IssuerValidation {
+
+public class KubernetesIdentityProviderConfig extends IdentityProviderModel implements IssuerValidation, JWTAuthorizationGrantConfig {
 
     public KubernetesIdentityProviderConfig() {
     }
@@ -51,5 +56,10 @@ public class KubernetesIdentityProviderConfig extends IdentityProviderModel impl
         super.validate(realm);
         getConfig().put(ISSUER, getIssuer());
         validateIssuer(realm, IdentityProviderType.CLIENT_ASSERTION);
+    }
+
+    @Override
+    public boolean isUseJwksUrl() {
+        return !Strings.isNullOrEmpty(getJwksUrl());
     }
 }
