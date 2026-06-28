@@ -72,7 +72,7 @@ spec:
   sessionAffinity: None
 ---
 # Source: keycloak/templates/keycloak.yaml
-# There are several callouts in this YAML marked with `# <1>' etc. See 'multi-cluster-experimental/deploy-keycloak-kubernetes.adoc` for the details.
+# There are several callouts in this YAML marked with `# <1>' etc. See 'multi-cluster-v2/deploy-keycloak-kubernetes.adoc` for the details.
 # tag::keycloak-cacheless[]
 apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak

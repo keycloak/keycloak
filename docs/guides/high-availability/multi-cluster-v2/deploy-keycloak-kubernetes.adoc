@@ -2,23 +2,31 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Deploying {project_name} for HA with the Operator (experimental)"
+title="Deploying {project_name} for HA with the Operator (v2)"
 summary="Deploy {project_name} for experimental multi-cluster HA (cacheless) with the {project_name} Operator as a building block."
 tileVisible="false" >
 
 <#include "/templates/experimental-feature.adoc">
 
-This {section} describes advanced {project_name} configurations for {kubernetes} which are load tested and will recover from single Pod failures.
+This {section} describes advanced {project_name} configurations for {kubernetes} which are load tested and will recover from single Pod failures or site failures.
 
-These instructions are intended for use with the setup described in the <@links.ha id="multi-cluster-experimental-concepts"/> {section}.
+These instructions are intended for use with the setup described in the <@links.ha id="multi-cluster-v2-concepts"/> {section}.
+
+While this blueprint uses {kubernetes}, the concepts do not require to use {kubernetes}.
 
 == Prerequisites
 
-* {kubernetes} cluster running.
+* {kubernetes} clusters running. Each {kubernetes} cluster should have its own internal loadbalancing to leverage the startup, liveness and readiness probes of the {project_name} Pods.
+* A Loadbalancer in front of the clusters that is probing the root URL of the {project_name} clusters.
+// TODO: Add the lb-check non-blocking endpoint for the probe
+* A highly available database deployed with synchronous replication across sites, reachable from all {project_name} nodes in all clusters. The following example assumes it is a PostgreSQL database, still any database that is supported by {project_name} will work.
 * Understanding of a <@links.operator id="basic-deployment" /> of {project_name} with the {project_name} Operator.
-* A database deployed with synchronous replication across sites.
+
+The following setup assumes a TLS passthrough setup, though this is not limited to this configuration.
 
 == Procedure
+
+Perform the following steps in each {kubernetes} cluster:
 
 . Determine the sizing of the deployment using the <@links.ha id="multi-cluster-concepts-memory-and-cpu-sizing" /> {section}.
 
@@ -51,6 +59,8 @@ See the <@links.ha id="multi-cluster-concepts-database-connections" /> {section}
 The Operator will automatically mount the file in the directory `/opt/keycloak/conf/truststores/configmap-<config map name>/<file-name>`.
 
 <#include "/high-availability/partials/building-blocks/verifying-deployment.adoc" />
+
+Afterward, verify that the external loadbalancer routes traffic to both clusters.
 
 <#include "/high-availability/partials/building-blocks/sticky-sessions.adoc" />
 

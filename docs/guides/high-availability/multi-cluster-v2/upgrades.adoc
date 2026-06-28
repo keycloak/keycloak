@@ -1,0 +1,23 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Managing upgrades (v2)"
+summary="How to manage multi-cluster upgrades"
+tileVisible="false" >
+
+== {project_name} upgrades
+
+<#include "/templates/experimental-feature.adoc">
+
+Patch upgrades can be deployed with zero-downtime.
+
+Deploying different {project_name} major/minor versions on each of the sites is not supported.
+
+For major or minor version upgrades:
+
+* Shut down all sites except one.
+* Deploy the new minor or major version in one site and verify the installation.
+* Deploy the new version in all other sites.
+
+</@tmpl.guide>

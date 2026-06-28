@@ -53,7 +53,7 @@ Disadvantages::
 * {kubernetes} cluster is a single point of failure:
 ** Control-plane failures could impact all {project_name} pods
 
-=== Multi-cluster deployments
+=== Multi-cluster deployments (v1)
 
 Connect two {project_name} clusters deployed for example in different {kubernetes} clusters in two availability zones
 or data centers with the required network latency and database configuration using <@links.ha id="multi-cluster-introduction" />.
@@ -75,9 +75,12 @@ Disadvantages::
 * Not supported with three or more availability zones
 
 <@profile.ifCommunity>
-=== Multi-cluster deployments (experimental)
 
-Connect two or more {project_name} clusters without an external {jdgserver_name} cluster using <@links.ha id="multi-cluster-experimental-introduction" />.
+=== Multi-cluster deployments (v2)
+
+<#include "/templates/experimental-feature.adoc">
+
+Connect two or more {project_name} clusters without an external {jdgserver_name} cluster using <@links.ha id="multi-cluster-v2-introduction" />.
 
 Advantages::
 * Tolerate availability-zone failure
@@ -100,7 +103,7 @@ To learn more about the different high-availability architectures and their supp
 <@profile.ifCommunity>
 * <@links.ha id="single-cluster-introduction" />
 * <@links.ha id="multi-cluster-introduction" />
-* <@links.ha id="multi-cluster-experimental-introduction" />
+* <@links.ha id="multi-cluster-v2-introduction" />
 </@profile.ifCommunity>
 
 </@tmpl.guide>

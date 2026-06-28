@@ -2,26 +2,30 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Concepts for multi-cluster deployments (experimental)"
-summary="Understand experimental multi-cluster deployment with synchronous replication without an external {jdgserver_name} cluster."
+title="Concepts for multi-cluster deployments (v2)"
+summary="Understand multi-cluster deployment with synchronous replication without an external {jdgserver_name} cluster. This is an experimental feature."
 tileVisible="false" >
 
 <#include "/templates/experimental-feature.adoc">
 
 This topic describes a highly available multi-cluster setup and the behavior to expect.
 It outlines the requirements of the high availability architecture and describes the benefits and tradeoffs.
+See <@links.ha id="multi-cluster-v2-introduction" /> for the introduction.
 
 == When to use this setup
 
 Use this setup to provide {project_name} deployments that are able to tolerate cluster failures, reducing the likelihood of downtime.
 
-Unlike the standard <@links.ha id="multi-cluster-concepts" />, this setup does not require an external {jdgserver_name} cluster, which simplifies the deployment architecture and removes any requirement for a specific environment.
+Unlike the standard <@links.ha id="multi-cluster-concepts" />, this setup does not require an external {jdgserver_name} cluster.
+This simplifies the deployment architecture and removes the need for an external monitoring solution that reconfigures the external {jdgserver_name} on failover. It also eliminates operational procedures on failback.
 
 == Deployment, data storage and caching
 
-Two or more independent {project_name} deployments running in different sites are connected with a low-latency network connection.
+Two or more independent {project_name} deployments running in different sites.
+
 Users, realms, clients, sessions, and other entities are stored in a database that is replicated synchronously across all sites.
-The realms and other read-intensive data are cached in the {project_name} embedded Infinispan caches as local caches.
+
+The realm data and other read-intensive data are cached in the {project_name} embedded Infinispan caches as local caches.
 When the data is changed in one {project_name} instance, that data is updated in the database, and an invalidation message is sent to the other site using the database.
 
 image::high-availability/active-active-cacheless.dio.svg[]
@@ -32,7 +36,7 @@ While this setup aims for high availability, the following situations can still 
 
 * {project_name} site failure may result in requests failing in the period between the failure and the load balancer detecting it, as requests may still be routed to the failed site.
 
-* Once failures occur in the communication between the sites, manual steps may be necessary depending on the database vendor.
+* Once failures occur in the communication between the sites, manual steps may be necessary depending on the database vendor, for example to promote an instance to be the new writer.
 
 * Degraded setups can lead to service or data loss if additional components fail.
 Monitoring is necessary to detect degraded setups.
@@ -50,37 +54,40 @@ Monitoring is necessary to detect degraded setups.
 
 | {project_name} node
 | Multiple {project_name} instances run in each site.
-If one instance fails, some incoming requests might receive an error message or be delayed for some seconds.
+If one instance fails, some incoming requests might receive an error message or be delayed for some seconds until the loadbalancer takes the node out of rotation.
 | No data loss
-| Less than 30 seconds
+| Seconds to minutes (depending on the loadbalancer)
 
 | Connectivity database
 | If the connectivity between sites is lost, the synchronous replication will fail.
 Some requests might receive an error message or be delayed for a few seconds.
 Manual operations might be necessary depending on the database.
-| No data loss^3^
-| Seconds to minutes (depending on the database)
+{project_name} instances have access to a writable database instance will continue to serve traffic, while other nodes will mark themselves as not ready to the loadbalancer.
+| No data loss
+| Seconds to minutes (depending on the database and loadbalancer)
 
 | Site failure
 | If none of the {project_name} nodes are available, the load balancer will detect the outage and redirect the traffic to the other site.
 Some requests might receive an error message until the load balancer detects the failure.
-| No data loss^3^
-| Less than two minutes
+| No data loss
+| Seconds to minutes (depending on the loadbalancer)
 
 |===
 
 .Table footnotes:
 ^1^ Tested Recovery Point Objective, assuming all parts of the setup were healthy at the time this occurred. +
 ^2^ Maximum Recovery Time observed. +
-^3^ Manual operations may be needed to restore the degraded setup.
 
 The statement "`No data loss`" depends on the setup not being degraded from previous failures, which includes completing any pending manual operations to resynchronize the state between the sites.
+
+To restore the service, restart any failed {project_name} node and restore its database connectivity. No other recovery operations are necessary on the {project_name}.
+A standard loadbalancer configuration should detect the active {project_name} nodes automatically and route traffic to them.
+Recovery operations on the database side might depend on the database vendor.
 
 == Known limitations
 
 Site Failure::
 A successful failover requires a setup not degraded from previous failures.
-All manual operations like a re-synchronization after a previous failure must be complete to prevent data loss.
 Use monitoring to ensure degradations are detected and handled in a timely manner.
 
 == Questions and answers
@@ -103,5 +110,9 @@ This would include:
 --
 +
 Therefore, tradeoffs exist between high availability and consistency. The focus of this topic is to prioritize consistency over availability with {project_name}.
+
+== Next steps
+
+Continue reading the blueprint at <@links.ha id="multi-cluster-v2-deploy-keycloak-kubernetes" />.
 
 </@tmpl.guide>

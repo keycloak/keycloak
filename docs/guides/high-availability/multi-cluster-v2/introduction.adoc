@@ -3,7 +3,7 @@
 <#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
-title="Multi-cluster deployments (experimental)"
+title="Multi-cluster deployments (v2)"
 summary="Connect multiple {project_name} deployments without an external {jdgserver_name} cluster" >
 
 <#include "/templates/experimental-feature.adoc">
@@ -27,7 +27,12 @@ The multi-cluster deployment capabilities of {project_name} are targeted at use 
 * Can accept the impact of periodic outages.
 * Are deployed in data centers with the required network latency and database configuration.
 
-[#multi-cluster-experimental-tested-configuration]
+
+// TODO: Add an automated test, or remove
+////
+<#--
+
+[#multi-cluster-v2-tested-configuration]
 == Tested Configuration
 
 We regularly test {project_name} with the following configuration:
@@ -43,34 +48,45 @@ using ROSA HCP.
 ** Version ${properties["aurora-postgresql.version"]}
 
 * AWS Global Accelerator, sending traffic to both ROSA clusters
+-->
+////
 
-
-[#multi-cluster-experimental-supported-configuration]
+[#multi-cluster-v2-supported-configuration]
 == Supported Configuration
 
 The following configurations are supported:
 
-* Two or more clusters with a low-latency network between them.
-
 * A highly available database with synchronous replication.
+
+* Two or more clusters with a low-latency for read, write and commit to the database.
+A latency of less than 5 ms is suggested and below 10 ms is required.
+
+* A round-trip latency of less than 5 ms is suggested and below 10 ms is required within each cluster.
 
 * An external load balancer to balance requests between the clusters.
 
+Latency and latency spikes amplify in the response time of the service and can lead to queued requests, timeouts, and failed requests.
+Networking problems can cause downtimes until the failure detection isolates problematic nodes.
+
 <#include "/high-availability/partials/configuration-disclaimer.adoc" />
 
-[#multi-cluster-experimental-load]
+////
+<#--
+// TODO: Add an automated test, or remove
+[#multi-cluster-v2-load]
 <#include "/high-availability/partials/tested-load.adoc" />
 
 <@profile.ifCommunity>
 While we did not see a hard limit in our tests with these values, we ask you to test for higher volumes with horizontally and vertically scaled {project_name} instances and databases.
 </@profile.ifCommunity>
+-->
+////
 
-[#multi-cluster-experimental-limitations]
+[#multi-cluster-v2-limitations]
 == Limitations
 
-* During certain failure scenarios, there may be downtime of up to 5 minutes.
+* During certain failure scenarios, there may be downtime of several minutes depending on configuration of the database, the loadbalancer or {project_name}. The default configurations of {project_name} would usually detect a downtime of another node within one minute and isolate it from the cluster, or propagate their state via readiness probes to the loadbalancer.
 * After certain failure scenarios, manual intervention may be required depending on the database vendor.
-* During certain switchover scenarios, there may be downtime of up to 5 minutes.
 
 == Next steps
 
@@ -82,14 +98,17 @@ Additional performance tuning and security hardening are still recommended when 
 
 == Concept and building block overview
 
-* <@links.ha id="multi-cluster-experimental-concepts" />
+* <@links.ha id="multi-cluster-v2-concepts" />
 
-== Blueprints for building blocks
+== Example Blueprint
 
-* <@links.ha id="multi-cluster-experimental-deploy-keycloak-kubernetes" />
+While this blueprint uses {kubernetes}, the concepts do not require to use {kubernetes}.
 
-//
-// == Operational procedures
+* <@links.ha id="multi-cluster-v2-deploy-keycloak-kubernetes" />
+
+== Operational procedures
+
+* <@links.ha id="multi-cluster-v2-upgrades" />
 
 </@profile.ifCommunity>
 
