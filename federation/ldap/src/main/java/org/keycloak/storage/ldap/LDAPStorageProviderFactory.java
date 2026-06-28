@@ -165,7 +165,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .add()
                 .property().name(LDAPConstants.SEARCH_SCOPE)
                 .type(ProviderConfigProperty.STRING_TYPE)
-                .defaultValue("1")
+                .defaultValue("2")
                 .add()
                 .property().name(LDAPConstants.VALIDATE_PASSWORD_POLICY)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
