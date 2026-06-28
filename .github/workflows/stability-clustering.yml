@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+  MAVEN_ARGS: "-B -sun -Daether.connector.http.connectionMaxTtl=25"
 
 defaults:
   run:
