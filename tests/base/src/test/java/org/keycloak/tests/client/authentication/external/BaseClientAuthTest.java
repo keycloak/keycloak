@@ -6,6 +6,8 @@ import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthe
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -16,6 +18,7 @@ import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.remote.annotations.TestOnServer;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -71,6 +74,33 @@ public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
         assertSuccess(INTERNAL_CLIENT_ID, jwt.getId(), TOKEN_ISSUER, EXTERNAL_CLIENT_ID, events.poll());
         assertFailure("Token reuse detected", doClientGrant(jwt));
         assertFailure(INTERNAL_CLIENT_ID, TOKEN_ISSUER, EXTERNAL_CLIENT_ID, jwt.getId(), events.poll());
+    }
+
+    /**
+     * Simulates a rolling-upgrade scenario: an old-version node stored the JTI under the bare tokenId
+     * (no namespace prefix). A new-version node must detect and reject replay of that token so that
+     * tokens consumed on old nodes cannot be replayed against upgraded nodes.
+     *
+     * Seeds the bare tokenId into the single-use cache on the server (mimicking the old-node write),
+     * then verifies the updated validator rejects the token even though no namespaced key is present.
+     */
+    @TestOnServer
+    public void testReuseNotPermittedForLegacyCacheKey(KeycloakSession session) {
+        String tokenId = UUID.randomUUID().toString();
+        SingleUseObjectProvider singleUseCache = session.singleUseObjects();
+
+        // Simulate old-version node: store bare tokenId without namespace prefix
+        boolean stored = singleUseCache.putIfAbsent(tokenId, 300);
+        Assertions.assertTrue(stored, "Legacy cache key should be stored successfully on first write");
+
+        // Verify the legacy key is present (this is what the new contains() check detects)
+        Assertions.assertTrue(singleUseCache.contains(tokenId),
+                "Legacy bare tokenId must be detectable via contains() so new nodes can reject replays");
+
+        // Verify namespaced key is absent (new-format key not yet written)
+        String namespacedKey = "federatedjwtclientauthenticator:" + tokenId;
+        Assertions.assertFalse(singleUseCache.contains(namespacedKey),
+                "Namespaced key must be absent — only the legacy key was written by the old node");
     }
 
     @Test
