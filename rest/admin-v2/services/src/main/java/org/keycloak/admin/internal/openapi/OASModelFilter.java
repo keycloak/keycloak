@@ -12,6 +12,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.keycloak.admin.api.ClientField;
+
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -21,6 +23,7 @@ import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.media.Discriminator;
 import org.eclipse.microprofile.openapi.models.media.Schema;
+import org.eclipse.microprofile.openapi.models.parameters.Parameter;
 import org.eclipse.microprofile.openapi.models.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.models.security.SecurityScheme;
 import org.jboss.jandex.AnnotationInstance;
@@ -34,7 +37,11 @@ import static org.keycloak.utils.StringUtil.isNullOrEmpty;
 
 public class OASModelFilter implements OASFilter {
 
+    private static final String SORT_PARAMETER_NAME = "sort";
+    private static final String ALLOWED_FIELDS_MARKER = " Allowed fields: ";
+
     private final Logger log = Logger.getLogger(OASModelFilter.class);
+    private final IndexView indexView;
     private final Map<String, ClassInfo> simpleNameToClassInfoMap = new HashMap<>();
     private final ValidationAnnotationScanner validationScanner;
 
@@ -42,11 +49,20 @@ public class OASModelFilter implements OASFilter {
 
     public OASModelFilter(IndexView indexView) {
         log.debug("Index size: " + indexView.getKnownClasses().size());
+        this.indexView = indexView;
 
         this.validationScanner = new ValidationAnnotationScanner(indexView);
         indexView.getKnownClasses().forEach(classInfo -> {
             simpleNameToClassInfoMap.put(classInfo.simpleName(), classInfo);
         });
+    }
+
+    @Override
+    public Parameter filterParameter(Parameter parameter) {
+        if (parameter != null && SORT_PARAMETER_NAME.equals(parameter.getName())) {
+            parameter.setDescription(enhanceSortParameterDescription(parameter.getDescription()));
+        }
+        return parameter;
     }
 
     @Override
@@ -83,6 +99,8 @@ public class OASModelFilter implements OASFilter {
 
         addDescriptionsToSchemasProperties(openAPI);
         addSecurityScheme(openAPI);
+
+        addJavaExampleExtensions(openAPI);
     }
 
     /**
@@ -400,4 +418,28 @@ public class OASModelFilter implements OASFilter {
     private static boolean hasNoSchemas(OpenAPI openAPI) {
         return openAPI.getComponents() == null || openAPI.getComponents().getSchemas() == null;
     }
+
+    private void addJavaExampleExtensions(OpenAPI openAPI) {
+        new JavaDocExampleGenerator(indexView).generate(openAPI);
+    }
+
+    private static String enhanceSortParameterDescription(String description) {
+        String base = stripAllowedFieldsSuffix(description);
+        if (isNullOrEmpty(base)) {
+            return "Allowed fields: " + ClientField.allowedApiNames() + ".";
+        }
+        return base + ALLOWED_FIELDS_MARKER + ClientField.allowedApiNames() + ".";
+    }
+
+    private static String stripAllowedFieldsSuffix(String description) {
+        if (isNullOrEmpty(description)) {
+            return description;
+        }
+        int idx = description.indexOf(ALLOWED_FIELDS_MARKER);
+        if (idx >= 0) {
+            return description.substring(0, idx);
+        }
+        return description;
+    }
+
 }

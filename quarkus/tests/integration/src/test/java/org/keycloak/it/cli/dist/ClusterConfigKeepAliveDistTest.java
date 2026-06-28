@@ -122,8 +122,8 @@ public class ClusterConfigKeepAliveDistTest {
 
         for (String cache : caches) {
             Configuration config = getCacheConfiguration(cache);
-            assertEquals(10000, config.expiration().lifespan(),
-                    "Expected 10s default lifespan for cache " + cache);
+            assertEquals(3600000, config.expiration().lifespan(),
+                    "Expected 3600s default lifespan for cache " + cache);
         }
     }
 

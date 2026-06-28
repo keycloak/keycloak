@@ -128,4 +128,12 @@ public class LoginPage extends AbstractLoginPage {
             return Optional.empty();
         }
     }
+
+    public boolean isRememberMeCheckboxPresent() {
+        try {
+            return rememberMe.isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
 }

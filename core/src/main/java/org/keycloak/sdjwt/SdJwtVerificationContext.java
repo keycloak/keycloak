@@ -365,12 +365,19 @@ public class SdJwtVerificationContext {
                         // Mark salt as visited
                         markSaltAsVisited(decodedDisclosure.getSaltValue(), visitedSalts);
 
+                        // If the claim name already exists at the level of the _sd key,
+                        // the SD-JWT MUST be rejected (selective-disclosure-jwt, verification
+                        // of the Issuer-signed JWT). Otherwise a Disclosure could silently
+                        // shadow a claim that is present in plaintext or added by another Disclosure.
+                        String claimName = decodedDisclosure.getClaimName();
+                        if (currentObjectNode.has(claimName)) {
+                            throw new VerificationException(
+                                    "Disclosure claim name already present in the payload: " + claimName);
+                        }
+
                         // Insert, at the level of the _sd key, a new claim using the claim name
                         // and claim value from the Disclosure
-                        currentObjectNode.set(
-                                decodedDisclosure.getClaimName(),
-                                decodedDisclosure.getClaimValue()
-                        );
+                        currentObjectNode.set(claimName, decodedDisclosure.getClaimValue());
                     }
                 }
             }
@@ -423,8 +430,10 @@ public class SdJwtVerificationContext {
                 }
             }
 
-            // Remove all array elements for which the digest was not found in the previous step.
-            indexesToRemove.forEach(currentArrayNode::remove);
+            // Remove in reverse order so that each removal does not shift indices of earlier elements.
+            for (int i = indexesToRemove.size() - 1; i >= 0; i--) {
+                currentArrayNode.remove((int) indexesToRemove.get(i));
+            }
         }
 
         for (JsonNode childNode : currentNode) {

@@ -26,6 +26,8 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
+import org.keycloak.connections.jpa.AsynchronousCommitAllowed;
+
 @NamedQueries({
         @NamedQuery(
                 name = "insertOrOverwriteSingleUseObject",
@@ -65,7 +67,13 @@ import jakarta.persistence.Table;
  */
 @Entity
 @Table(name = "SINGLE_USE_OBJECT")
-public class SingleUseObjectEntity {
+public class SingleUseObjectEntity implements AsynchronousCommitAllowed {
+
+    @Override
+    public boolean isAsyncCommitAllowed(EntityOperationType operationType) {
+        // Removing a single-use token from the store must be committed to be durable to avoid security issues
+        return operationType != EntityOperationType.DELETE;
+    }
 
     @Id
     @Column(name = "ID", length = 255)

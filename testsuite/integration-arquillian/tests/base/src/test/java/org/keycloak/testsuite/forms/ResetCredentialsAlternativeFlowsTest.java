@@ -257,7 +257,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
 
             // Assert user authenticated
             Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } finally {
             revertFlows();
         }
@@ -453,7 +453,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             // Assert user authenticated
             appPage.assertCurrent();
             Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             Assertions.assertTrue(AccountHelper.isTotpPresent(managedRealm.admin(), "bwilson"));
             Assertions.assertTrue(AccountHelper.totpUserLabelComparator(managedRealm.admin(), "bwilson", ""));
@@ -484,7 +484,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             // Assert user authenticated
             appPage.assertCurrent();
             Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             // Verify 2nd OTP credential was successfully created too
             Assertions.assertTrue(AccountHelper.totpUserLabelComparator(managedRealm.admin(), "bwilson", secondOtpLabel));

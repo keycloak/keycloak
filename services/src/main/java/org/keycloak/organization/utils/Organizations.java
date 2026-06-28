@@ -30,6 +30,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
@@ -157,7 +158,7 @@ public class Organizations {
     }
 
     public static boolean isEnabledAndOrganizationsPresent(OrganizationProvider orgProvider) {
-        return orgProvider != null && orgProvider.isEnabled() && orgProvider.count() != 0;
+        return orgProvider != null && orgProvider.isEnabled() && orgProvider.hasOrganizations();
     }
 
     public static boolean isEnabledAndOrganizationsPresent(KeycloakSession session) {
@@ -340,7 +341,7 @@ public class Organizations {
 
         OrganizationProvider provider = getProvider(session);
 
-        if (provider.count() == 0) {
+        if (!provider.hasOrganizations()) {
             return null;
         }
 
@@ -419,14 +420,16 @@ public class Organizations {
 
         var organizationProvider = getProvider(session);
 
-        if (organizationProvider.count() == 0) {
+        if (!organizationProvider.hasOrganizations()) {
             return false;
         }
 
-        // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
-        return organizationProvider.getByMember(delegate)
-                .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
-                        (!organizationProvider.isEnabled() && org.isManaged(delegate)));
+        // disable FGAP filtering for this system-level check to avoid infinite recursion:
+        // getByMember -> applyAuthorizationFilters -> getPredicates -> getUser -> getUserById -> validateUser -> isReadOnlyOrganizationMember -> ...
+        return AdminPermissionsSchema.runWithoutAuthorization(session, () ->
+                organizationProvider.getByMember(delegate)
+                        .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
+                                (!organizationProvider.isEnabled() && org.isManaged(delegate))));
     }
 
     public static OrganizationModel resolveByDomain(List<OrganizationModel> organizations, String domain) {

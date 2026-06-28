@@ -41,12 +41,16 @@ import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.Provider;
 
+import org.keycloak.Config;
+import org.keycloak.Config.Scope;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.config.ProxyOptions;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.http.HttpRequest;
@@ -56,6 +60,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeResourcesParser;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
@@ -217,6 +222,7 @@ public class WelcomeResource {
             map.put("bootstrap", bootstrap);
             map.put("adminConsoleEnabled", adminConsoleEnabled);
             map.put("properties", themeProperties);
+            map.put("themeResources", ThemeResourcesParser.parse(themeProperties));
             map.put("adminUrl", adminUrl);
             map.put("baseUrl", session.getContext().getUri(UrlType.FRONTEND).getBaseUri());
             map.put("productName", Version.NAME);
@@ -283,6 +289,16 @@ public class WelcomeResource {
     }
 
     public static boolean isLocal(KeycloakSession session) {
+        // if proxy-headers and proxy-protocol aren't set, then we can't properly tell if we're behind a local proxy, so don't consider this local
+        Scope rootConfig = Config.scope().root();
+        if (rootConfig.get(ProxyOptions.PROXY_HEADERS.getKey()) == null
+                && !rootConfig.getBoolean(ProxyOptions.PROXY_PROTOCOL_ENABLED.getKey())
+                && "https".equals(session.getContext().getHttpRequest().getUri().getRequestUri().getScheme())
+                && !Environment.isDevMode()) {
+            logger.debugf("proxy-headers, nor proxy-protocol enabled, won't consider the https access local for non-dev mode");
+            return false;
+        }
+
         ClientConnection clientConnection = session.getContext().getConnection();
         String remoteAddress = clientConnection.getRemoteAddr();
         String localAddress = clientConnection.getLocalAddr();

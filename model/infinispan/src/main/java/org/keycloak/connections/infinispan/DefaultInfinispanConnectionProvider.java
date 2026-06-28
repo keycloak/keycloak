@@ -24,6 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.marshall.Marshaller;
 import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.factories.GlobalComponentRegistry;
@@ -97,6 +98,11 @@ public record DefaultInfinispanConnectionProvider(EmbeddedCacheManager cacheMana
     @Override
     public BlockingManager getBlockingManager() {
         return GlobalComponentRegistry.componentOf(cacheManager, BlockingManager.class);
+    }
+
+    @Override
+    public Marshaller getMarshaller() {
+        return GlobalComponentRegistry.of(cacheManager).getComponent(Marshaller.class, KnownComponentNames.USER_MARSHALLER);
     }
 
     @Override

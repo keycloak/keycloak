@@ -11,7 +11,10 @@ import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.exportimport.dir.DirExportProvider;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -136,6 +139,86 @@ public class OID4VCExportImportTest extends OID4VCIssuerTestBase {
                 System.clearProperty(FILE);
             }
         });
+    }
+
+    @Test
+    public void testExportImportIssuedVerifiableCredentials() {
+        assertRealmExists(true);
+
+        UserRepresentation john = testRealm.admin().users().search(TEST_USER).stream()
+                .findFirst().orElseThrow();
+        String userId = john.getId();
+
+        List<UserVerifiableCredentialRepresentation> verifiableCreds =
+            testRealm.admin().users().get(userId).verifiableCredentials().getCredentials();
+        assertNotNull(verifiableCreds);
+
+        // Get the wallet client ID
+        String walletClientId = testRealm.admin().clients().findByClientId(OID4VCI_CLIENT_ID).stream()
+                .findFirst()
+                .orElseThrow()
+                .getId();
+
+        String scope1Id = testRealm.admin().clientScopes().findAll().stream()
+                .filter(s -> jwtTypeCredentialScopeName.equals(s.getName()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Client scope not found: " + jwtTypeCredentialScopeName))
+                .getId();
+
+        String scope2Id = testRealm.admin().clientScopes().findAll().stream()
+                .filter(s -> sdJwtTypeCredentialScopeName.equals(s.getName()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Client scope not found: " + sdJwtTypeCredentialScopeName))
+                .getId();
+
+        // Create issued credentials based on existing verifiable credentials
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(VCTestRealmConfig.TEST_REALM_NAME);
+            session.getContext().setRealm(realm);
+
+            String vc1Id = session.users().getVerifiableCredentialByClientScope(userId, scope1Id).getId();
+            String vc2Id = session.users().getVerifiableCredentialByClientScope(userId, scope2Id).getId();
+
+            IssuedVerifiableCredentialModel issuedCred1 = new IssuedVerifiableCredentialModel(userId, vc1Id, walletClientId);
+            issuedCred1.setRevision("rev-001");
+            issuedCred1.setIssuedAt(System.currentTimeMillis());
+            session.users().addIssuedVerifiableCredential(issuedCred1);
+
+            IssuedVerifiableCredentialModel issuedCred2 = new IssuedVerifiableCredentialModel(userId, vc2Id, walletClientId);
+            issuedCred2.setRevision("rev-002");
+            issuedCred2.setIssuedAt(System.currentTimeMillis());
+            session.users().addIssuedVerifiableCredential(issuedCred2);
+        });
+
+        List<IssuedVerifiableCredentialRepresentation> issuedCreds = testRealm.admin().users().get(userId)
+                .verifiableCredentials().getIssuedCredentials();
+        assertEquals(2, issuedCreds.size());
+
+        // Export realm
+        exportRealm("oid4vc-issued-test-realm.json");
+
+        // Delete realm
+        testRealm.admin().remove();
+        assertRealmExists(false);
+
+        // Import the realm
+        importRealm("oid4vc-issued-test-realm.json");
+        assertRealmExists(true);
+
+        UserRepresentation userAfterImport = testRealm.admin().users().search(TEST_USER).stream().findFirst().orElseThrow();
+        List<IssuedVerifiableCredentialRepresentation> importedIssuedCreds = testRealm.admin().users().get(userAfterImport.getId())
+                .verifiableCredentials().getIssuedCredentials();
+
+        assertEquals(issuedCreds.size(), importedIssuedCreds.size());
+        for (int i = 0; i < issuedCreds.size(); i++) {
+            IssuedVerifiableCredentialRepresentation original = issuedCreds.get(i);
+            IssuedVerifiableCredentialRepresentation imported = importedIssuedCreds.get(i);
+
+            assertEquals(original.getCredentialType(), imported.getCredentialType());
+            assertEquals(original.getRevision(), imported.getRevision());
+            assertEquals(original.getIssuedAt(), imported.getIssuedAt());
+            assertNotNull(imported.getId());
+        }
     }
 
     private void assertRealmExists(boolean expectExists) {

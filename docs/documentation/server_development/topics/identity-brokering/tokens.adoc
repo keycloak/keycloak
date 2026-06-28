@@ -6,7 +6,9 @@
 
 ==== Identity brokering API V1
 
-Version 1 or V1 is the old feature and enabled by default. In a future {project_name} release V1 will be deprecated and substituted by V2.
+WARNING: Identity Brokering API V1 is *deprecated* and will be removed in a future version. Users should migrate to V2.
+
+Version 1 or V1 is the old feature and still enabled by default for backward compatibility.
 
 You can use the `Store Tokens` configuration option in the `Advanced settings` section of the IDP's settings page. Once this option is enabled, when a user authenticates using a external Identity provider, the returned token will be stored inside the database for each user and IDP.
 
@@ -31,11 +33,14 @@ These external tokens can be re-established by either logging in again through t
 
 ==== Identity brokering API V2
 
-:tech_feature_name: Identity Brokering API V2
-:tech_feature_id: identity-brokering-api:v2
-include::../templates/techpreview.adoc[]
+[NOTE]
+====
+Identity Brokering API V2 is *supported* and disabled by default.
 
-Version 2 or V2 is the new feature that is now in preview status. The new feature manages two different configuration options in the same Identity Provider page.
+To enable, start the server with `--features=identity-brokering-api:v2`.
+====
+
+Version 2 or V2 is the new feature that replaces V1. The new feature manages two different configuration options in the same Identity Provider page.
 
 * **Store token in session**: New option that stores the returned token in the user session associated to the login.
 * **Store tokens**: Same option used in V1 and with the same meaning. The store token returned by the external provider is stored in the database after a successful login.
@@ -69,4 +74,36 @@ The endpoint tries to obtain the external token from the user session associated
 
 The response in V2 is always a JSON access token response, in which the parameter `access_token` is present for a successful request, and parameter `error` is added in case of a problem. Version V2 follows OAuth 2.0 specification in this regard.
 
-V2 also applies client policies when calling the external token endpoint. This way, administrators can configure them to enforce extra security to the client and the Identity provider involved in the call.
+[[_identity-brokering-apis-client-policies]]
+==== Integration with client policies
+
+V2 also applies link:{adminguide_link}#_client_policies[clients policies] when calling the external token endpoint. This way, administrators can configure them to enforce extra security to the client and the Identity provider involved in the call.
+
+Client policies can be configured to enforce some more complex requirements. For instance, we may have a requirement that returning external token of identity provider `my-idp` is
+allowed just in case when internal token calling endpoint has specific scope (For example scope `phone`).
+
+For setup such a client policy, it might be possible to do the steps like these:
+
+* Create client profile named for example `reject-profile` with only `reject-request` executor. Such a client profile will always reject the request when it is reached. So now it is just a matter of creating
+client policy with this profile together with the conditions, which targets identity provider `my-idp` and at the same time, the scope `phone` is missing in the token.
+
+* Next step is to create client policy and add profile `reject-profile` from previous step to this policy.
+
+* Once the policy is created, add the condition of type `identity-provider-alias` for the identity provider `my-idp` . Assumption is, that such identity provider exists in the realm.
+
+.Identity provider condition
+image::images/idp-api-client-policy-1_idp-condition.png[Identity provider condition]
+
+* Add another condition of type `client-scopes` and configure it with **Negative logic** and scope `phone`
+
+.Client scopes condition
+image::images/idp-api-client-policy-2_scope-condition.png[Client scopes condition]
+
+* Make sure that client policy is configured with `STRICT` mode. This mode means that both conditions should be achieved in order of the client profile to be triggered.
+
+.Client policy configuration
+image::images/idp-api-client-policy-3_policy.png[Client policy configuration]
+
+Client policies are powerful, but at the same time, they could be tricky to setup. So just a note that when configuring client policy with some more complex requirement
+like above, it is recommended to properly test it and enable logging for client policies to see what is going on. See the link:{adminguide_link}#_client_policies[clients policies]
+for more details.

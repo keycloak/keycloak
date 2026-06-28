@@ -1,8 +1,6 @@
-AuthorizationCodeTest
 AuthorizationTest
 KcOidcBrokerTest
 LDAPUserLoginTest
-LoginTest
 SamlClientTest
 UserProfileTest
 OidcAdvancedClaimToGroupMapperTest

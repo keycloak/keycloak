@@ -74,6 +74,9 @@
         <class>org.keycloak.events.jpa.EventEntity</class>
         <class>org.keycloak.events.jpa.AdminEventEntity</class>
 
+        <!-- Cluster Events -->
+        <class>org.keycloak.cluster.jpa.ClusterEventEntity</class>
+
         <!-- Authorization -->
         <class>org.keycloak.authorization.jpa.entities.ResourceServerEntity</class>
         <class>org.keycloak.authorization.jpa.entities.ResourceEntity</class>
@@ -92,6 +95,8 @@
         <class>org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserRoleMappingEntity</class>
+        <class>org.keycloak.storage.jpa.entity.FederatedUserVerifiableCredentialEntity</class>
+        <class>org.keycloak.storage.jpa.entity.FederatedUserIssuedVerifiableCredentialEntity</class>
 
         <!-- Organization -->
         <class>org.keycloak.models.jpa.entities.OrganizationEntity</class>

@@ -224,7 +224,7 @@ public class FAPI2DPoPTest extends AbstractFAPI2Test {
 
         // without PAR request - should fail
         oauth.openLoginForm();
-        assertBrowserWithError("request_uri not included.");
+        assertBrowserWithError("PAR request_uri not included.");
 
         pkceGenerator = PkceGenerator.s256();
 
@@ -238,8 +238,8 @@ public class FAPI2DPoPTest extends AbstractFAPI2Test {
                 .nonce(nonce)
                 .send();
 
-        assertEquals(401, pResp.getStatusCode());
-        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, pResp.getError());
+        assertEquals(400, pResp.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
 
         // an additional parameter in an authorization request that does not exist in a PAR request - should fail
         pResp = oauth
@@ -253,11 +253,11 @@ public class FAPI2DPoPTest extends AbstractFAPI2Test {
                 .send();
         assertEquals(201, pResp.getStatusCode());
         oauth.loginForm().requestUri(pResp.getRequestUri()).param("custom", "value").open();
-        assertBrowserWithError("PAR request did not include necessary parameters");
+        assertBrowserWithError("PAR request did not include query parameter");
 
         // duplicated usage of a PAR request - should fail
         oauth.loginForm().requestUri(pResp.getRequestUri()).open();
-        assertBrowserWithError("PAR not found. not issued or used multiple times.");
+        assertBrowserWithError("PAR not found, not issued or used multiple times.");
 
         // send a pushed authorization request
         // use RSA key for DPoP proof but not send dpop_jkt

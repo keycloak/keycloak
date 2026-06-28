@@ -30,6 +30,8 @@ import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeResources;
+import org.keycloak.theme.ThemeResourcesParser;
 import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageBean;
@@ -202,10 +204,12 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         try {
             Properties properties = theme.getProperties();
             attributes.put("properties", properties);
+            attributes.put("themeResources", ThemeResourcesParser.parse(properties));
             attributes.put("darkMode", "true".equals(properties.getProperty("darkMode"))
                     && realm.getAttribute("darkMode", true));
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.warn("Failed to load theme properties", e);
+            attributes.put("themeResources", ThemeResources.empty());
         }
 
         return attributes;

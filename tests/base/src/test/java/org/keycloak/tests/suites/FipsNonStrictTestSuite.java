@@ -11,6 +11,8 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.admin.ServerInfoTest;
 import org.keycloak.tests.admin.client.CredentialsTest;
 import org.keycloak.tests.client.MutualTLSClientTest;
+import org.keycloak.tests.forms.LoginSSLTest;
+import org.keycloak.tests.forms.LoginTest;
 import org.keycloak.tests.keys.JavaKeystoreKeyProviderTest;
 import org.keycloak.tests.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest;
 
@@ -25,7 +27,9 @@ import org.junit.platform.suite.api.Suite;
         JavaKeystoreKeyProviderTest.class,
         ServerInfoTest.class,
         OID4VCSdJwtIssuingEndpointTest.class,
-        MutualTLSClientTest.class
+        MutualTLSClientTest.class,
+        LoginTest.class,
+        LoginSSLTest.class
 })
 public class FipsNonStrictTestSuite {
 
