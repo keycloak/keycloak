@@ -25,10 +25,31 @@ Two or more independent {project_name} deployments running in different sites.
 
 Users, realms, clients, sessions, and other entities are stored in a database that is replicated synchronously across all sites.
 
-The realm data and other read-intensive data are cached in the {project_name} embedded Infinispan caches as local caches.
-When the data is changed in one {project_name} instance, that data is updated in the database, and an invalidation message is sent to the other site using the database.
+The realm data including clients and groups are cached in the {project_name} embedded Infinispan caches as local caches.
 
 image::high-availability/active-active-cacheless.dio.svg[]
+
+=== Background jobs
+
+Background jobs will run only in one of the active clusters and will be automatically redistributed to another cluster on a cluster failure.
+
+=== Update to realm data and cache invalidation
+
+When this data is changed in one {project_name} instance, that data is updated in the database.
+The instance sends a cache invalidation message to the other site using the database leveraging the outbox pattern via a queuing table.
+The other clusters retrieve the message via polling.
+The polling interval is configurable and set to 100ms by default.
+The sender waits for five times the polling interval for the messages to be consumed by the receiver before returning to the caller.
+This allows callers in regular operations to ensure that all nodes have received the update of the realm data.
+
+Updates to realm data in these multi-cluster setups are slower than in single-cluster setups as it adds a delay of up to 100 ms to calls that modify realm related data.
+
+
+When planning for large batch updates of realm data, consider shutting down all clusters except for one to avoid the delay, and start-up the other clusters once the update is complete.
+
+Invalidation messages are queued for up to 60 seconds, which is in-line with the cluster membership mechanism which updates its information in the database every 30-45 seconds.
+
+To handle edge cases and to avoid permanently out-of-sync caches, any cached realm information expires by default after one hour and is then fetched again from the database on the next call that requires that data.
 
 == Causes of data and service loss
 

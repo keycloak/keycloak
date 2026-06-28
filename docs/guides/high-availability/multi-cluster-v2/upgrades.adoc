@@ -13,11 +13,17 @@ tileVisible="false" >
 Patch upgrades can be deployed with zero-downtime.
 
 Deploying different {project_name} major/minor versions on each of the sites is not supported.
+It is technically possible for upgrades to be rolled out to both sites simultaneously, however we recommend that upgrades be rolled out to one site at a time in order to simplify monitoring and debugging.
+Rollouts in the different sites should be done timely to avoid older sites writing data that other sites assume to be already migrated.
 
 For major or minor version upgrades:
 
 * Shut down all sites except one.
 * Deploy the new minor or major version in one site and verify the installation.
 * Deploy the new version in all other sites.
+
+== Database upgrades
+
+Follow your database vendor's zero-downtime upgrade procedure, and possibly combine them with a {project_name} upgrade.
 
 </@tmpl.guide>
