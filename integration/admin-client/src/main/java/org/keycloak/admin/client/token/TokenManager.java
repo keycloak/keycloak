@@ -18,6 +18,7 @@
 package org.keycloak.admin.client.token;
 
 import java.security.KeyPair;
+import java.util.function.Supplier;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.client.Client;
@@ -32,6 +33,8 @@ import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.representations.AccessTokenResponse;
 
+import static org.keycloak.OAuth2Constants.CLIENT_ASSERTION;
+import static org.keycloak.OAuth2Constants.CLIENT_ASSERTION_TYPE;
 import static org.keycloak.OAuth2Constants.CLIENT_ID;
 import static org.keycloak.OAuth2Constants.GRANT_TYPE;
 import static org.keycloak.OAuth2Constants.PASSWORD;
@@ -57,7 +60,7 @@ public class TokenManager {
     public TokenManager(Config config, Client client) {
         this.config = config;
         WebTarget target = client.target(config.getServerUrl());
-        if (!config.isPublicClient()) {
+        if (!config.isPublicClient() && config.getClientAssertionSupplier() == null) {
             target.register(new BasicAuthFilter(config.getClientId(), config.getClientSecret()));
         }
 
@@ -96,9 +99,7 @@ public class TokenManager {
             form.param(SCOPE, config.getScope());
         }
 
-        if (config.isPublicClient()) {
-            form.param(CLIENT_ID, config.getClientId());
-        }
+        addClientAuthentication(form);
 
         int requestTime = Time.currentTime();
         synchronized (this) {
@@ -117,9 +118,7 @@ public class TokenManager {
         Form form = new Form().param(GRANT_TYPE, REFRESH_TOKEN)
                               .param(REFRESH_TOKEN, currentToken.getRefreshToken());
 
-        if (config.isPublicClient()) {
-            form.param(CLIENT_ID, config.getClientId());
-        }
+        addClientAuthentication(form);
 
         try {
             int requestTime = Time.currentTime();
@@ -139,9 +138,7 @@ public class TokenManager {
 
         Form form = new Form().param(REFRESH_TOKEN, currentToken.getRefreshToken());
 
-        if (config.isPublicClient()) {
-            form.param(CLIENT_ID, config.getClientId());
-        }
+        addClientAuthentication(form);
 
         tokenService.logout(config.getRealm(), form.asMap());
         currentToken = null;
@@ -156,6 +153,17 @@ public class TokenManager {
     }
 
     private synchronized boolean refreshTokenExpired() { return (Time.currentTime() + minTokenValidity) >= refreshExpirationTime; }
+
+    private void addClientAuthentication(Form form) {
+        Supplier<ClientAssertion> clientAssertionSupplier = config.getClientAssertionSupplier();
+        if (clientAssertionSupplier != null) {
+            ClientAssertion clientAssertion = clientAssertionSupplier.get();
+            form.param(CLIENT_ASSERTION_TYPE, clientAssertion.getType());
+            form.param(CLIENT_ASSERTION, clientAssertion.getValue());
+        } else if (config.isPublicClient()) {
+            form.param(CLIENT_ID, config.getClientId());
+        }
+    }
 
     /**
      * Invalidates the current token, but only when it is equal to the token passed as an argument.
