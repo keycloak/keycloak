@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,6 +51,7 @@ import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.infinispan.entities.CachedClient;
 import org.keycloak.models.cache.infinispan.entities.CachedClientRole;
 import org.keycloak.models.cache.infinispan.entities.CachedClientScope;
+import org.keycloak.models.cache.infinispan.entities.CachedCompositeRoles;
 import org.keycloak.models.cache.infinispan.entities.CachedGroup;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.models.cache.infinispan.entities.CachedRealmRole;
@@ -1505,6 +1507,49 @@ public class RealmCacheSession implements CacheRealmProvider {
         listInvalidations.add(realm.getId());
         cache.clientScopeRemoval(realm.getId(), invalidations);
         invalidationEvents.add(ClientScopeRemovedEvent.create(clientScope.getId(), realm.getId()));
+    }
+
+    public Stream<RoleModel> getCompositeRolesStream(RealmModel realm, Set<String> parentRoleIds) {
+        String id = parentRoleIds.stream().sorted().toList().toString();
+        CachedCompositeRoles cached = cache.get(id, CachedCompositeRoles.class);
+        if (cached != null && !cached.getRealm().equals(realm.getId())) {
+            cached = null;
+        }
+        if (cached != null) {
+            for (String compositeId : cached.getCompositeIds()) {
+                if (invalidations.contains(compositeId)) {
+                    // If this composite role has been invalidated, it might be faster to fetch it and others from the DB as a batch
+                    cached = null;
+                    break;
+                }
+                if (managedRoles.containsKey(compositeId)) {
+                    // If this composite role is already managed, continue
+                    continue;
+                }
+                if (getCachedRole(realm, compositeId) == null) {
+                    // If this composite role is not cached, it might be faster to fetch it and others from the DB as a batch
+                    cached = null;
+                    break;
+                }
+            }
+        }
+        if (cached != null) {
+            for (String parentId : cached.getParentIds()) {
+                if (cache.get(parentId, CachedRole.class).getRevision() > cached.getRevision()) {
+                    // The parent has been modified, cache is invalid
+                    cached = null;
+                    break;
+                }
+            }
+        }
+        if (cached != null) {
+            return cached.getCompositeIds().stream().map(s -> getRoleById(realm, s)).filter(Objects::nonNull);
+        }
+        List<RoleModel> compositeRoles = getRoleDelegate().getCompositeRolesStream(realm, parentRoleIds).toList();
+        long loaded = cache.getCurrentRevision(id);
+        cached = new CachedCompositeRoles(loaded, id, new HashSet<>(parentRoleIds), compositeRoles.stream().map(RoleModel::getId).toList(), realm);
+        cache.addRevisioned(cached, startupRevision);
+        return compositeRoles.stream();
     }
 
     // Don't cache ClientInitialAccessModel for now
