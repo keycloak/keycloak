@@ -244,8 +244,11 @@ export const PartialImportDialog = (props: PartialImportProps) => {
 
     if (resourcesToImport["users"]) jsonToImport.users = targetRealm.users;
     if (resourcesToImport["groups"]) jsonToImport.groups = targetRealm.groups;
-    if (resourcesToImport["identityProviders"])
+    if (resourcesToImport["identityProviders"]) {
       jsonToImport.identityProviders = targetRealm.identityProviders;
+      jsonToImport.identityProviderMappers =
+        targetRealm.identityProviderMappers;
+    }
     if (resourcesToImport["clients"])
       jsonToImport.clients = targetRealm.clients;
     if (resourcesToImport["realmRoles"] || resourcesToImport["clientRoles"]) {
