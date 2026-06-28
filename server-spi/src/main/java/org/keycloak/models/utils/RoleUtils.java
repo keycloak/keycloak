@@ -17,8 +17,6 @@
 
 package org.keycloak.models.utils;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -33,6 +31,7 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -130,70 +129,20 @@ public class RoleUtils {
     }
 
     /**
-     * Recursively expands composite roles into their composite.
-     * @param role
-     * @param visited Track roles, which were already visited. Those will be ignored and won't be added to the stream. Besides that,
-     *                the "visited" set itself will be updated as a result of this method call and all the tracked roles will be added to it
-     * @return Stream of containing all of the composite roles and their components. Never returns {@code null}.
-     */
-    private static Stream<RoleModel> expandCompositeRolesStream(RoleModel role, Set<RoleModel> visited) {
-        Stream.Builder<RoleModel> sb = Stream.builder();
-
-        if (!visited.contains(role)) {
-            Deque<RoleModel> stack = new ArrayDeque<>();
-            stack.add(role);
-
-            while (!stack.isEmpty()) {
-                RoleModel current = stack.pop();
-                sb.add(current);
-
-                // Fetch the composites directly rather than gating on isComposite() first.
-                // On the JPA (cache-miss) path isComposite() runs its own getChildRoles query --
-                // and the FlushMode.AUTO flush before it -- immediately before getCompositesStream()
-                // runs another, doubling the per-node round-trips while expanding the tree.
-                // getCompositesStream() already yields an empty stream for non-composite roles,
-                // so the pre-check is redundant.
-                current.getCompositesStream()
-                        .filter(r -> !visited.contains(r))
-                        .forEach(r -> {
-                            visited.add(r);
-                            stack.add(r);
-                        });
-            }
-        }
-
-        return sb.build();
-    }
-
-
-    /**
      * @param roles
      * @return new set with composite roles expanded
      */
     public static Set<RoleModel> expandCompositeRoles(Set<RoleModel> roles) {
-        Set<RoleModel> visited = new HashSet<>();
+        if (roles.isEmpty()) {
+            return roles;
+        }
 
-        return roles.stream()
-                .flatMap(roleModel -> RoleUtils.expandCompositeRolesStream(roleModel, visited))
-                .collect(Collectors.toSet());
-    }
-
-    /**
-     * Bulk variant of {@link #expandCompositeRoles(Set)}. Expands the composite-role tree one
-     * breadth-first level at a time using {@code session.roles().getCompositeRolesStream}, issuing a
-     * single child lookup per level instead of one per role. Storage-backed providers batch that
-     * lookup, so this avoids the per-node N+1 on a cache miss.
-     *
-     * @param session Keycloak session.
-     * @param realm Realm the roles belong to.
-     * @param roles Roles to expand.
-     * @return new set with composite roles expanded
-     */
-    public static Set<RoleModel> expandCompositeRoles(KeycloakSession session, RealmModel realm, Set<RoleModel> roles) {
         Set<RoleModel> result = new HashSet<>();
         Set<String> enqueued = new HashSet<>();
         Set<RoleModel> frontier = roles;
 
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+        RealmModel realm = realmOf(roles.iterator().next());
         while (!frontier.isEmpty()) {
             result.addAll(frontier);
 
@@ -220,19 +169,8 @@ public class RoleUtils {
      * @return stream with composite roles expanded
      */
     public static Stream<RoleModel> expandCompositeRolesStream(Stream<RoleModel> roles) {
-        Set<RoleModel> visited = new HashSet<>();
-
-        return roles.flatMap(roleModel -> RoleUtils.expandCompositeRolesStream(roleModel, visited));
+        return RoleUtils.expandCompositeRoles(roles.collect(Collectors.toSet())).stream();
     }
-
-    /**
-     * Bulk variant of {@link #expandCompositeRolesStream(Stream)} backed by
-     * {@link #expandCompositeRoles(KeycloakSession, RealmModel, Set)}.
-     */
-    public static Stream<RoleModel> expandCompositeRolesStream(KeycloakSession session, RealmModel realm, Stream<RoleModel> roles) {
-        return expandCompositeRoles(session, realm, roles.collect(Collectors.toSet())).stream();
-    }
-
 
     /**
      * @param roleMapper
@@ -262,21 +200,18 @@ public class RoleUtils {
         return expandCompositeRoles(roleMappings);
     }
 
-    /**
-     * Bulk variant of {@link #getDeepUserRoleMappings(UserModel)} that expands composite roles with
-     * a single child lookup per breadth-first level instead of one per role on a cache miss.
-     */
-    public static Set<RoleModel> getDeepUserRoleMappings(KeycloakSession session, RealmModel realm, UserModel user) {
-        Set<RoleModel> roleMappings = user.getRoleMappingsStream().collect(Collectors.toSet());
-        user.getGroupsStream().forEach(group -> addGroupRoles(group, roleMappings));
-        return expandCompositeRoles(session, realm, roleMappings);
-    }
-
-
     private static void addGroupRoles(GroupModel group, Set<RoleModel> roleMappings) {
         roleMappings.addAll(group.getRoleMappingsStream().collect(Collectors.toSet()));
         if (group.getParentId() == null) return;
         addGroupRoles(group.getParent(), roleMappings);
+    }
+
+    private static RealmModel realmOf(RoleModel role) {
+        RoleContainerModel container = role.getContainer();
+        if (container instanceof RealmModel realmModel) {
+            return realmModel;
+        }
+        return ((ClientModel) container).getRealm();
     }
 
     public static boolean isRealmRole(RoleModel r) {

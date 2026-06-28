@@ -347,7 +347,7 @@ public class AccountConsole implements AccountResourceProvider {
         AccountRoleChecker(KeycloakSession session, RealmModel realm, UserModel user) {
             this.accountClient = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
             ClientModel accountConsoleClient = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
-            this.scopeResolvedRoles = TokenManager.getAccess(session, user, accountConsoleClient, TokenManager.getRequestedClientScopes(session, null, accountConsoleClient, user));
+            this.scopeResolvedRoles = TokenManager.getAccess(user, accountConsoleClient, TokenManager.getRequestedClientScopes(session, null, accountConsoleClient, user));
         }
 
         boolean hasRole(String roleName) {
