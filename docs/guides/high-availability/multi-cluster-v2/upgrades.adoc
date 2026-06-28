@@ -6,9 +6,9 @@ title="Managing upgrades (v2)"
 summary="How to manage multi-cluster upgrades"
 tileVisible="false" >
 
-== {project_name} upgrades
-
 <#include "/templates/experimental-feature.adoc">
+
+== {project_name} upgrades
 
 Patch upgrades can be deployed with zero-downtime.
 

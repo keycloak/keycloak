@@ -25,7 +25,7 @@ The multi-cluster deployment capabilities of {project_name} are targeted at use 
 * Permit planned outages for maintenance.
 * Fit within a defined user and request count.
 * Can accept the impact of periodic outages.
-* Are deployed in data centers with the required network latency and database configuration.
+* Provide data centers with the appropriate network latency and database configuration.
 
 
 // TODO: Add an automated test, or remove
@@ -58,10 +58,10 @@ The following configurations are supported:
 
 * A highly available database with synchronous replication.
 
-* Two or more clusters with a low-latency for read, write and commit to the database.
-A latency of less than 5 ms is suggested and below 10 ms is required.
+* Two or more clusters with low latency for read, write, and commit operations to the database.
+A latency of less than 5 ms is suggested, and below 10 ms is required.
 
-* A round-trip latency of less than 5 ms is suggested and below 10 ms is required within each cluster.
+* A round-trip latency below 5 ms is suggested, and below 10 ms is required, within each cluster.
 
 * An external load balancer to balance requests between the clusters.
 
@@ -85,7 +85,7 @@ While we did not see a hard limit in our tests with these values, we ask you to 
 [#multi-cluster-v2-limitations]
 == Limitations
 
-* During certain failure scenarios, there may be downtime of several minutes depending on configuration of the database, the loadbalancer or {project_name}. The default configurations of {project_name} would usually detect a downtime of another node within one minute and isolate it from the cluster, or propagate their state via readiness probes to the loadbalancer.
+* During certain failure scenarios, there may be downtime of several minutes depending on the configuration of the database, the load balancer, or {project_name}. By default, {project_name} detects the failure of another node within one minute and either isolates it from the cluster or propagates its state via readiness probes to the load balancer.
 * After certain failure scenarios, manual intervention may be required depending on the database vendor.
 
 == Next steps
@@ -100,9 +100,9 @@ Additional performance tuning and security hardening are still recommended when 
 
 * <@links.ha id="multi-cluster-v2-concepts" />
 
-== Example Blueprint
+== Example blueprint
 
-While this blueprint uses {kubernetes}, the concepts do not require to use {kubernetes}.
+While this blueprint uses {kubernetes}, the concepts are not limited to {kubernetes}.
 
 * <@links.ha id="multi-cluster-v2-deploy-keycloak-kubernetes" />
 

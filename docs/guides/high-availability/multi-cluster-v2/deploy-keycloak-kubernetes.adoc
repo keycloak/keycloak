@@ -12,14 +12,14 @@ This {section} describes advanced {project_name} configurations for {kubernetes}
 
 These instructions are intended for use with the setup described in the <@links.ha id="multi-cluster-v2-concepts"/> {section}.
 
-While this blueprint uses {kubernetes}, the concepts do not require to use {kubernetes}.
+While this blueprint uses {kubernetes}, the concepts are not limited to {kubernetes}.
 
 == Prerequisites
 
-* {kubernetes} clusters running. Each {kubernetes} cluster should have its own internal loadbalancing to leverage the startup, liveness and readiness probes of the {project_name} Pods.
-* A Loadbalancer in front of the clusters that is probing the root URL of the {project_name} clusters.
+* {kubernetes} clusters running. Each {kubernetes} cluster should have its own internal load balancing to leverage the startup, liveness and readiness probes of the {project_name} Pods.
+* A load balancer in front of the clusters that is probing the root URL of the {project_name} clusters.
 // TODO: Add the lb-check non-blocking endpoint for the probe
-* A highly available database deployed with synchronous replication across sites, reachable from all {project_name} nodes in all clusters. The following example assumes it is a PostgreSQL database, still any database that is supported by {project_name} will work.
+* A highly available database deployed with synchronous replication across sites, reachable from all {project_name} nodes in all clusters. The following example assumes a PostgreSQL database. Any database supported by {project_name} will work.
 * Understanding of a <@links.operator id="basic-deployment" /> of {project_name} with the {project_name} Operator.
 
 The following setup assumes a TLS passthrough setup, though this is not limited to this configuration.
@@ -60,7 +60,7 @@ The Operator will automatically mount the file in the directory `/opt/keycloak/c
 
 <#include "/high-availability/partials/building-blocks/verifying-deployment.adoc" />
 
-Afterward, verify that the external loadbalancer routes traffic to both clusters.
+Afterward, verify that the external load balancer routes traffic to both clusters.
 
 <#include "/high-availability/partials/building-blocks/sticky-sessions.adoc" />
 

@@ -54,34 +54,34 @@ Monitoring is necessary to detect degraded setups.
 
 | {project_name} node
 | Multiple {project_name} instances run in each site.
-If one instance fails, some incoming requests might receive an error message or be delayed for some seconds until the loadbalancer takes the node out of rotation.
+If one instance fails, some incoming requests might receive an error message or be delayed for some seconds until the load balancer takes the node out of rotation.
 | No data loss
-| Seconds to minutes (depending on the loadbalancer)
+| Seconds to minutes (depending on the load balancer)
 
-| Connectivity database
+| Database connectivity loss
 | If the connectivity between sites is lost, the synchronous replication will fail.
 Some requests might receive an error message or be delayed for a few seconds.
 Manual operations might be necessary depending on the database.
-{project_name} instances have access to a writable database instance will continue to serve traffic, while other nodes will mark themselves as not ready to the loadbalancer.
+{project_name} instances that have access to a writable database instance will continue to serve traffic, while other nodes will mark themselves as not ready to the load balancer.
 | No data loss
-| Seconds to minutes (depending on the database and loadbalancer)
+| Seconds to minutes (depending on the database and load balancer)
 
 | Site failure
 | If none of the {project_name} nodes are available, the load balancer will detect the outage and redirect the traffic to the other site.
 Some requests might receive an error message until the load balancer detects the failure.
 | No data loss
-| Seconds to minutes (depending on the loadbalancer)
+| Seconds to minutes (depending on the load balancer)
 
 |===
 
 .Table footnotes:
 ^1^ Tested Recovery Point Objective, assuming all parts of the setup were healthy at the time this occurred. +
-^2^ Maximum Recovery Time observed. +
+^2^ Estimated Recovery Time. +
 
 The statement "`No data loss`" depends on the setup not being degraded from previous failures, which includes completing any pending manual operations to resynchronize the state between the sites.
 
-To restore the service, restart any failed {project_name} node and restore its database connectivity. No other recovery operations are necessary on the {project_name}.
-A standard loadbalancer configuration should detect the active {project_name} nodes automatically and route traffic to them.
+To restore the service, restart any failed {project_name} node and restore its database connectivity. No other recovery operations are necessary for {project_name}.
+A standard load balancer configuration should detect the active {project_name} nodes automatically and route traffic to them.
 Recovery operations on the database side might depend on the database vendor.
 
 == Known limitations
