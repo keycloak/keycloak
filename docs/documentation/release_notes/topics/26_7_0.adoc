@@ -41,6 +41,7 @@ This work involves the introduction of the dedicated {project_name} experimental
 * Management of verifiable credentials for individual users. This involves the ability for an administrator to create a verifiable credential for a user
 to indicate that this user can retrieve a verifiable credential, as well as the ability for users to start issuance of a verifiable credential from the {project_name} account console.
 * https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-pre-authorized-code-flow[Pre-authorized code grant] support is still experimental and was moved to the dedicated experimental feature `oid4vc-vci-preauth-code`
+* Support for credential refresh interval. Administrators can now configure a separate refresh interval (`vc.refresh_interval_in_seconds`) that controls how often wallets must refresh the credential, independent of the credential lifetime. When not explicitly set, defaults to 7 days or the credential lifetime, whichever is smaller. This enables regular credential rotation for enhanced security while maintaining user convenience through automatic refresh using the refresh token.
 * Documentation updated and improved
 
 ifeval::[{project_community}==true]
