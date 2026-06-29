@@ -81,7 +81,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation();
 
             error.setError(getErrorCode(throwable));
-            if (throwable.getCause() instanceof ModelException) {
+            if (throwable instanceof ModelValidationException || throwable.getCause() instanceof ModelException) {
                 error.setErrorDescription(throwable.getMessage());
             } if (throwable instanceof ModelDuplicateException) {
                 error.setErrorDescription(throwable.getMessage());
@@ -146,6 +146,10 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
         if (cause instanceof ModelDuplicateException || throwable instanceof ModelDuplicateException) {
             return "conflict";
+        }
+
+        if (throwable instanceof ModelValidationException) {
+            return OAuthErrorException.INVALID_REQUEST;
         }
 
         if (throwable instanceof WebApplicationException && throwable.getMessage() != null) {

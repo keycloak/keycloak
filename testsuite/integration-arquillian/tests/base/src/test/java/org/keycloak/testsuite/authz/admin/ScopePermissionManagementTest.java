@@ -16,19 +16,23 @@
  */
 package org.keycloak.testsuite.authz.admin;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ScopePermissionResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import org.junit.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -143,6 +147,62 @@ public class ScopePermissionManagementTest extends AbstractPolicyManagementTest 
 
         try (Response response = permissions.create(permission2)) {
             assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void failCreateWithScopeNotAssociatedWithResource() {
+        AuthorizationResource authorization = getClient().authorization();
+
+        // a scope that exists in the resource server but is not associated with "Resource A"
+        authorization.scopes().create(new ScopeRepresentation("delete")).close();
+
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
+
+        representation.setName("Invalid Scope Permission");
+        representation.addResource("Resource A");
+        representation.addScope("delete");
+        representation.addPolicy("Only Marta Policy");
+
+        ScopePermissionsResource permissions = authorization.permissions().scope();
+
+        try (Response response = permissions.create(representation)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+
+            // the validation error must be surfaced to the client instead of an opaque unknown_error
+            OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
+            assertEquals("invalid_request", error.getError());
+            assertTrue(error.getErrorDescription() != null && error.getErrorDescription().contains("delete"),
+                    "Expected the offending scope name in the error description");
+        }
+    }
+
+    @Test
+    public void failUpdateWithScopeNotAssociatedWithResource() {
+        AuthorizationResource authorization = getClient().authorization();
+
+        // a scope that exists in the resource server but is not associated with "Resource A"
+        authorization.scopes().create(new ScopeRepresentation("delete")).close();
+
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
+
+        representation.setName("Update To Invalid Scope Permission");
+        representation.addResource("Resource A");
+        representation.addScope("read");
+        representation.addPolicy("Only Marta Policy");
+
+        assertCreated(authorization, representation);
+
+        representation.getScopes().clear();
+        representation.addScope("delete");
+
+        ScopePermissionsResource permissions = authorization.permissions().scope();
+        ScopePermissionResource permission = permissions.findById(representation.getId());
+
+        try {
+            permission.update(representation);
+            fail("Expected a Bad Request for a scope not associated with the resource");
+        } catch (BadRequestException expected) {
         }
     }
 
