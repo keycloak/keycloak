@@ -45,6 +45,11 @@ ifeval::[{project_community}==true]
 Many thanks to https://github.com/bucchi[Yutaka Obuchi] for the contribution of this feature!
 endif::[]
 
+== SCIM API technology preview support
+
+In this release, the SCIM API is being promoted to a technology preview feature.
+
+For more details, see the link:{adminguide_link}#_managing_scim[Managing users and groups through SCIM] documentation.
 
 = Administration
 
