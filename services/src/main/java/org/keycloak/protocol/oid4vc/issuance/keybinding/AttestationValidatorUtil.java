@@ -427,9 +427,14 @@ public class AttestationValidatorUtil {
         if (truststoreProvider != null && truststoreProvider.getTruststore() != null) {
             addAnchors(anchors, truststoreProvider.getRootCertificates());
             addAnchors(anchors, truststoreProvider.getIntermediateCertificates());
-            if (!anchors.isEmpty()) {
-                return anchors;
+            // A truststore is configured, so it is the authority for attestation trust. Do not fall back to
+            // the JVM default here: an empty configured truststore must reject the chain rather than silently
+            // re-broaden trust to every publicly-trusted CA.
+            if (anchors.isEmpty()) {
+                throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                        "Configured truststore contains no certificates to anchor the key attestation x5c chain");
             }
+            return anchors;
         }
 
         try {
