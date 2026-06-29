@@ -10,10 +10,7 @@ if [[ ! -f "${DOCKERFILE}" ]]; then
   exit 1
 fi
 
-UBI9_IMAGE=$(grep -m1 '^FROM registry.access.redhat.com/ubi9@' "${DOCKERFILE}" | awk '{print $2}')
-if [[ -z "${UBI9_IMAGE}" ]]; then
-  echo "No pinned ubi9 base image found in ${DOCKERFILE}" >&2
-  exit 1
+UBI9_IMAGE=$(awk '$1 == "FROM" && $2 ~ /^registry\.access\.redhat\.com\/ubi9@/ { print $2; exit }' "${DOCKERFILE}")
 fi
 if [[ "${UBI9_IMAGE}" != registry.access.redhat.com/ubi9@sha256:* ]]; then
   echo "Expected registry.access.redhat.com/ubi9@sha256:... from ${DOCKERFILE}, got: ${UBI9_IMAGE}" >&2
