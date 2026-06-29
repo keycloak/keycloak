@@ -192,8 +192,7 @@ jobs:
         run: |
           for file in ../target/kubernetes/*k8s.keycloak.org-v1.yml; do
             name=$(basename "$file" -v1.yml)
-            kubectl wait --for=create crd/${name} --timeout=120s
-            kubectl wait --for condition=Established crd/${name} --timeout=120s
+            ./check-crd-installed.sh ${name}
           done
           ./deploy-examples.sh
           
@@ -291,6 +290,31 @@ jobs:
           eval $(minikube -p minikube docker-env)
           (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
           
+      - name: Arrange kustomize test installation for own namespace
+        run: |
+          kubectl create ns keycloak-own
+        
+          eval $(minikube -p minikube docker-env)
+          ./mvnw install -Poperator -pl :keycloak-operator -am \
+              -Dquarkus.container-image.build=true \
+              -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
+              -Dkc.operator.keycloak.image=keycloak:${{ env.version_remote }} \
+              -Dquarkus.kubernetes.env.vars.kc-operator-keycloak-image-pull-policy=Never \
+              --no-transfer-progress -DskipTests -Dkustomize.namespace=keycloak-own
+        
+          kubectl apply -k operator/target/kubernetes
+          
+      - name: Deploy an example Keycloak and wait for it to be ready
+        working-directory: operator/scripts
+        run: |
+          for file in ../target/kubernetes/*k8s.keycloak.org-v1.yml; do
+            name=$(basename "$file" -v1.yml)
+            ./check-crd-installed.sh ${name}
+          done
+          ./deploy-examples.sh keycloak-own
+          ./undeploy-examples.sh keycloak-own
+          kubectl delete ns keycloak-own
+          
       - name: Arrange kustomize test installation for all namespaces
         run: |
           kubectl create ns keycloak-operator
@@ -310,8 +334,7 @@ jobs:
         run: |
           for file in ../target/kubernetes/*k8s.keycloak.org-v1.yml; do
             name=$(basename "$file" -v1.yml)
-            kubectl wait --for=create crd/${name} --timeout=120s
-            kubectl wait --for condition=Established crd/${name} --timeout=120s
+            ./check-crd-installed.sh ${name}
           done
           kubectl create ns keycloak
           ./deploy-examples.sh keycloak
