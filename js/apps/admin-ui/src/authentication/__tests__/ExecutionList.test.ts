@@ -226,6 +226,206 @@ describe("ExecutionList", () => {
     ]);
   });
 
+  describe("getChange", () => {
+    const list2Data = [
+      { id: "1", index: 0, level: 0 },
+      { id: "2", index: 1, level: 0 },
+      { id: "3", index: 0, level: 1 },
+      { id: "4", index: 1, level: 1 },
+      { id: "5", index: 0, level: 2 },
+      { id: "6", index: 1, level: 2 },
+      { id: "7", index: 2, level: 0 },
+    ];
+
+    const findInTree = (
+      nodes: ExecutionList["expandableList"],
+      id: string,
+    ): (typeof nodes)[number] | undefined => {
+      for (const node of nodes) {
+        if (node.id === id) {
+          return node;
+        }
+        if (node.executionList) {
+          const found = findInTree(node.executionList, id);
+          if (found) {
+            return found;
+          }
+        }
+      }
+      return undefined;
+    };
+
+    it("LevelChange oldIndex should be target parent child count, not 0", () => {
+      const list = new ExecutionList(list2Data);
+      const parent4 = findInTree(list.expandableList, "4")!;
+
+      const diff = list.getChange({ id: "1" }, [
+        "2",
+        "3",
+        "4",
+        "5",
+        "1",
+        "6",
+        "7",
+      ]);
+
+      expect(diff).toBeInstanceOf(LevelChange);
+      const levelChange = diff as LevelChange;
+      expect(levelChange.parent?.id).toBe("4");
+      expect(levelChange.oldIndex).toBe(parent4.executionList!.length);
+      expect(levelChange.newIndex).toBe(1);
+    });
+
+    it("LevelChange oldIndex after moving up a level uses sibling count", () => {
+      const list = new ExecutionList(list2Data);
+      const parent2 = findInTree(list.expandableList, "2")!;
+
+      const diff = list.getChange({ id: "6" }, [
+        "1",
+        "2",
+        "6",
+        "3",
+        "4",
+        "5",
+        "7",
+      ]);
+
+      expect(diff).toBeInstanceOf(LevelChange);
+      const levelChange = diff as LevelChange;
+      expect(levelChange.parent?.id).toBe("2");
+      expect(levelChange.oldIndex).toBe(parent2.executionList!.length);
+      expect(levelChange.newIndex).toBe(0);
+    });
+
+    it("LevelChange parent should come from the tree, not the flat list", () => {
+      const list = new ExecutionList(list2Data);
+
+      const diff = list.getChange({ id: "1" }, [
+        "2",
+        "3",
+        "4",
+        "5",
+        "1",
+        "6",
+        "7",
+      ]);
+
+      const levelChange = diff as LevelChange;
+      const treeParent = findInTree(list.expandableList, "4")!;
+
+      expect(levelChange.parent?.executionList?.map((c) => c.id)).toEqual(
+        treeParent.executionList?.map((c) => c.id),
+      );
+    });
+
+    it("does not throw when the moved execution is hidden by collapse", () => {
+      const list = new ExecutionList(list2Data);
+      findInTree(list.expandableList, "2")!.isCollapsed = true;
+
+      const diff = list.getChange({ id: "3" }, ["1", "3", "2", "7"]);
+
+      expect(diff).toBeDefined();
+      expect(diff).toBeInstanceOf(IndexChange);
+    });
+
+    it("uses visual order for parent lookup when a subflow is collapsed", () => {
+      const list = new ExecutionList(list2Data);
+      findInTree(list.expandableList, "4")!.isCollapsed = true;
+
+      const diff = list.getChange({ id: "3" }, ["1", "2", "4", "7", "3"]);
+
+      expect(diff).toBeInstanceOf(IndexChange);
+      expect((diff as IndexChange).oldIndex).toBe(0);
+      expect((diff as IndexChange).newIndex).toBe(1);
+    });
+  });
+
+  describe("resolveDropTarget", () => {
+    const list2Data = [
+      { id: "1", index: 0, level: 0 },
+      {
+        id: "2",
+        index: 1,
+        level: 0,
+        authenticationFlow: true,
+        displayName: "Subflow 2",
+      },
+      { id: "3", index: 0, level: 1 },
+      {
+        id: "4",
+        index: 1,
+        level: 1,
+        authenticationFlow: true,
+        displayName: "Subflow 4",
+      },
+      { id: "5", index: 0, level: 2 },
+      { id: "6", index: 1, level: 2 },
+      { id: "7", index: 2, level: 0 },
+    ];
+
+    it("nests into subflow via into vertical", () => {
+      const list = new ExecutionList(list2Data);
+      const resolved = list.resolveDropTarget("1", "2", "into", 1);
+
+      expect(resolved).not.toBeNull();
+      expect(resolved!.kind).toBe("level-change");
+      expect(resolved!.change).toBeInstanceOf(LevelChange);
+      const levelChange = resolved!.change as LevelChange;
+      expect(levelChange.parent?.id).toBe("2");
+      expect(resolved!.preview.mode).toBe("drop-into");
+      expect(resolved!.preview.targetLevel).toBe(1);
+      expect(resolved!.preview.targetParentId).toBe("2");
+    });
+
+    it("moves out to parent level when dropping after subflow with level 1 indent", () => {
+      const list = new ExecutionList(list2Data);
+      const resolved = list.resolveDropTarget("6", "7", "before", 1);
+
+      expect(resolved).not.toBeNull();
+      expect(resolved!.preview.mode).toBe("reorder-before");
+      expect(resolved!.preview.targetLevel).toBe(1);
+      expect(resolved!.preview.targetParentId).toBe("2");
+      expect(resolved!.kind).toBe("level-change");
+    });
+
+    it("reorders at same level without level change", () => {
+      const list = new ExecutionList(list2Data);
+      const resolved = list.resolveDropTarget("7", "1", "after", 0);
+
+      expect(resolved).not.toBeNull();
+      expect(resolved!.kind).toBe("reorder");
+      expect(resolved!.change).toBeInstanceOf(IndexChange);
+      expect(resolved!.preview.targetLevel).toBe(0);
+      expect(resolved!.preview.targetParentId).toBeNull();
+    });
+
+    it("nests deeper when targetLevel is hoverLevel + 1", () => {
+      const list = new ExecutionList(list2Data);
+      const resolved = list.resolveDropTarget("1", "4", "after", 2);
+
+      expect(resolved).not.toBeNull();
+      expect(resolved!.kind).toBe("level-change");
+      expect((resolved!.change as LevelChange).parent?.id).toBe("4");
+      expect(resolved!.preview.targetLevel).toBe(2);
+      expect(resolved!.preview.targetParentId).toBe("4");
+    });
+
+    it("preview insertIndex is before hover row for reorder-before", () => {
+      const list = new ExecutionList(list2Data);
+      const visualOrder = list.order();
+      const hoverIndex = visualOrder.findIndex((ex) => ex.id === "7");
+      const resolved = list.resolveDropTarget("1", "7", "before", 0);
+
+      expect(resolved!.preview.insertIndex).toBe(hoverIndex);
+      expect(resolved!.preview.mode).toBe("reorder-before");
+    });
+
+    it("returns null for into on non-subflow", () => {
+      const list = new ExecutionList(list2Data);
+      expect(list.resolveDropTarget("1", "1", "into", 1)).toBeNull();
+    });
+  });
+
   it("find item by index", () => {
     //given
     const list = [

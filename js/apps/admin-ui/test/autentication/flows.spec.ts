@@ -194,22 +194,99 @@ test.describe("Authentication flow details", () => {
 
     await clickTableRowItem(page, flowName);
 
-    const sourceBox = await page
-      .getByText("Identity Provider Redirector")
-      .boundingBox();
-    const targetBox = await page.getByText("Kerberos").boundingBox();
+    // dnd-kit only activates drags from the grip handle (PointerSensor + activation distance).
+    // Drop target hit-testing uses the row rect; the middle of a non-subflow row maps to
+    // "reorder-after", which is a no-op when moving an item from below onto that row — use the
+    // top band for "reorder-before" so the order actually changes.
+    const sourceRow = page.getByRole("row", {
+      name: /Identity Provider Redirector/,
+    });
+    const sourceHandle = sourceRow.locator(
+      ".keycloak__authentication__drag-handle",
+    );
+    const targetRow = page.getByRole("row", { name: /Kerberos/ }).first();
+    const targetBox = await targetRow.boundingBox();
+    expect(targetBox).not.toBeNull();
 
-    await page.mouse.move(
-      sourceBox!.x + sourceBox!.width / 2,
-      sourceBox!.y + sourceBox!.height / 2,
+    await sourceHandle.dragTo(targetRow, {
+      steps: 20,
+      targetPosition: {
+        x: targetBox!.width / 2,
+        y: Math.max(8, targetBox!.height * 0.12),
+      },
+    });
+
+    await assertNotificationMessage(page, "Flow successfully updated");
+  });
+
+  test("drags execution into subflow using horizontal indent", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed();
+
+    await adminClient.copyFlow("browser", flowName, testBed.realm);
+    await login(page, { to: toAuthentication({ realm: testBed.realm }) });
+
+    await clickTableRowItem(page, flowName);
+
+    const sourceRow = page.getByRole("row", { name: /\bCookie\b/ }).first();
+    const sourceHandle = sourceRow.locator(
+      ".keycloak__authentication__drag-handle",
     );
-    await page.mouse.down();
-    await page.mouse.move(
-      targetBox!.x + targetBox!.width / 2,
-      targetBox!.y + targetBox!.height / 2,
-      { steps: 10 },
-    );
-    await page.mouse.up();
+    const subflowRow = page.getByRole("row", { name: /forms/i }).first();
+    const targetPosition = await subflowRow.evaluate((row) => {
+      const rows = document.querySelectorAll("tr[data-execution-id]");
+      let level0Left: number | undefined;
+      let level1Left: number | undefined;
+
+      for (const item of rows) {
+        const level = Number.parseInt(
+          item.getAttribute("data-level") || "0",
+          10,
+        );
+        const executionId = item.getAttribute("data-execution-id");
+        if (!executionId) {
+          continue;
+        }
+
+        const title = document.querySelector(`[data-id="${executionId}"]`);
+        if (!title) {
+          continue;
+        }
+
+        const left = title.getBoundingClientRect().left;
+        if (level === 0) {
+          level0Left =
+            level0Left === undefined ? left : Math.min(level0Left, left);
+        } else if (level === 1) {
+          level1Left =
+            level1Left === undefined ? left : Math.min(level1Left, left);
+        }
+      }
+
+      const baseLeft = level0Left ?? 0;
+      const indentStep =
+        level0Left !== undefined && level1Left !== undefined
+          ? Math.max(16, level1Left - level0Left)
+          : 24;
+
+      const rowLevel = Number.parseInt(
+        row.getAttribute("data-level") || "0",
+        10,
+      );
+      const rect = row.getBoundingClientRect();
+      const targetClientX = baseLeft + indentStep * (rowLevel + 1);
+
+      return {
+        x: Math.min(Math.max(targetClientX - rect.left, 24), rect.width - 24),
+        y: rect.height * 0.5,
+      };
+    });
+
+    await sourceHandle.dragTo(subflowRow, {
+      steps: 25,
+      targetPosition,
+    });
 
     await assertNotificationMessage(page, "Flow successfully updated");
   });

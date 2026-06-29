@@ -1,14 +1,23 @@
 import AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import AuthenticatorConfigRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
+import {
+  DndContext,
+  DragEndEvent,
+  DragMoveEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
+  Alert,
   AlertVariant,
   Button,
   ButtonVariant,
-  DragDrop,
   DropdownItem,
-  Droppable,
   Label,
   PageSection,
   ToggleGroup,
@@ -17,9 +26,15 @@ import {
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { DomainIcon, TableIcon } from "@patternfly/react-icons";
+import {
+  CodeBranchIcon,
+  CogIcon,
+  DomainIcon,
+  GripVerticalIcon,
+  TableIcon,
+} from "@patternfly/react-icons";
 import { Table, Tbody } from "@patternfly/react-table";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
@@ -39,6 +54,8 @@ import { FlowRow } from "./components/FlowRow";
 import { AddStepModal } from "./components/modals/AddStepModal";
 import { AddSubFlowModal, Flow } from "./components/modals/AddSubFlowModal";
 import {
+  DropInfo,
+  DropVertical,
   ExecutionList,
   ExpandableExecution,
   IndexChange,
@@ -50,6 +67,93 @@ import { toFlow, type FlowParams } from "./routes/Flow";
 export const providerConditionFilter = (
   value: AuthenticationProviderRepresentation,
 ) => value.displayName?.startsWith("Condition ");
+
+const DEFAULT_INDENT_STEP = 24;
+
+const emptyDropInfo = (): DropInfo => ({
+  targetId: null,
+  mode: "reorder",
+  targetLevel: 0,
+  targetParentId: null,
+  insertIndex: -1,
+});
+
+const measureIndentMetrics = () => {
+  const rows = document.querySelectorAll("tr[data-execution-id]");
+  let level0Left: number | undefined;
+  let level1Left: number | undefined;
+
+  for (const row of rows) {
+    const level = Number.parseInt(row.getAttribute("data-level") || "0", 10);
+    const executionId = row.getAttribute("data-execution-id");
+    if (!executionId) {
+      continue;
+    }
+    const title = document.querySelector(`[data-id="${executionId}"]`);
+    if (!title) {
+      continue;
+    }
+    const left = title.getBoundingClientRect().left;
+    if (level === 0) {
+      level0Left = level0Left === undefined ? left : Math.min(level0Left, left);
+    }
+    if (level === 1) {
+      level1Left = level1Left === undefined ? left : Math.min(level1Left, left);
+    }
+  }
+
+  const baseLeft = level0Left ?? 0;
+  const indentStep =
+    level0Left !== undefined && level1Left !== undefined
+      ? Math.max(16, level1Left - level0Left)
+      : DEFAULT_INDENT_STEP;
+
+  return { baseLeft, indentStep };
+};
+
+const targetLevelFromPointerX = (pointerX: number) => {
+  const { baseLeft, indentStep } = measureIndentMetrics();
+  return Math.max(0, Math.round((pointerX - baseLeft) / indentStep));
+};
+
+const dropModeToVertical = (mode: DropInfo["mode"]): DropVertical => {
+  if (mode === "reorder-before") {
+    return "before";
+  }
+  if (mode === "drop-into") {
+    return "into";
+  }
+  return "after";
+};
+
+const DragOverlayContent = ({
+  execution,
+  targetParentName,
+}: {
+  execution: ExpandableExecution;
+  targetParentName?: string;
+}) => {
+  const { t } = useTranslation();
+  const isSubflow = execution.authenticationFlow;
+  return (
+    <div className="keycloak__authentication__drag-overlay">
+      <span className="keycloak__authentication__drag-overlay-handle">
+        <GripVerticalIcon />
+      </span>
+      <span className="keycloak__authentication__drag-overlay-icon">
+        {isSubflow ? <CodeBranchIcon /> : <CogIcon />}
+      </span>
+      <div className="keycloak__authentication__drag-overlay-text">
+        {targetParentName
+          ? t("onDragMoveIntoSubflow", {
+              item: execution.displayName,
+              subflow: targetParentName,
+            })
+          : execution.displayName}
+      </div>
+    </div>
+  );
+};
 
 export default function FlowDetails() {
   const { adminClient } = useAdminClient();
@@ -75,6 +179,201 @@ export default function FlowDetails() {
   const [open, toggleOpen, setOpen] = useToggle();
   const [edit, setEdit] = useState(false);
   const [bindFlowOpen, toggleBindFlow] = useToggle();
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [dropInfo, setDropInfo] = useState<DropInfo>(emptyDropInfo());
+  const [indentStep, setIndentStep] = useState(DEFAULT_INDENT_STEP);
+
+  const visualIndexById = useMemo(() => {
+    const map = new Map<string, number>();
+    executionList?.order().forEach((ex, index) => {
+      if (ex.id) {
+        map.set(ex.id, index);
+      }
+    });
+    return map;
+  }, [executionList]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+  );
+
+  const findExecutionById = useCallback(
+    (
+      id: string,
+      list?: ExpandableExecution[],
+    ): ExpandableExecution | undefined => {
+      const searchList = list || executionList?.expandableList || [];
+      for (const ex of searchList) {
+        if (ex.id === id) {
+          return ex;
+        }
+        if (ex.executionList) {
+          const found = findExecutionById(id, ex.executionList);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    },
+    [executionList],
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    setActiveId(active.id as string);
+
+    const item = findExecutionById(active.id as string);
+    if (item) {
+      setLiveText(t("onDragStart", { item: item.displayName }));
+      setIndentStep(measureIndentMetrics().indentStep);
+      if (!item.isCollapsed && item.executionList?.length) {
+        item.isCollapsed = true;
+        setExecutionList(executionList!.clone());
+      }
+    }
+  };
+
+  const handleDragMove = (event: DragMoveEvent) => {
+    const { activatorEvent, active } = event;
+    const pointerEvent = activatorEvent as PointerEvent;
+
+    if (!executionList) {
+      return;
+    }
+
+    const rows = document.querySelectorAll("tr[data-execution-id]");
+    let hoverId: string | null = null;
+    let vertical: DropVertical = "after";
+    let isSubflow = false;
+    let hoverLevel = 0;
+
+    const pointerX = pointerEvent.clientX + event.delta.x;
+    const pointerY = pointerEvent.clientY + event.delta.y;
+    const targetLevelFromX = targetLevelFromPointerX(pointerX);
+    setIndentStep(measureIndentMetrics().indentStep);
+
+    for (const row of rows) {
+      const rect = row.getBoundingClientRect();
+      if (
+        pointerX >= rect.left &&
+        pointerX <= rect.right &&
+        pointerY >= rect.top &&
+        pointerY <= rect.bottom
+      ) {
+        const executionId = row.getAttribute("data-execution-id");
+        isSubflow = row.getAttribute("data-is-subflow") === "true";
+        hoverLevel = Number.parseInt(row.getAttribute("data-level") || "0", 10);
+
+        if (executionId && executionId !== active.id) {
+          hoverId = executionId;
+          const rowHeight = rect.height;
+          const relativeY = pointerY - rect.top;
+          const edgeZone = rowHeight * 0.25;
+
+          if (relativeY < edgeZone) {
+            vertical = "before";
+          } else if (relativeY > rowHeight - edgeZone) {
+            vertical = "after";
+          } else if (
+            isSubflow &&
+            Math.abs(targetLevelFromX - (hoverLevel + 1)) <= 1
+          ) {
+            vertical = "into";
+          } else {
+            vertical = "after";
+          }
+        }
+        break;
+      }
+    }
+
+    const dragged = findExecutionById(active.id as string);
+
+    if (hoverId) {
+      const resolved = executionList.resolveDropTarget(
+        active.id as string,
+        hoverId,
+        vertical,
+        targetLevelFromX,
+      );
+      if (resolved) {
+        setDropInfo(resolved.preview);
+        if (dragged) {
+          const parent = resolved.preview.targetParentId
+            ? findExecutionById(resolved.preview.targetParentId)
+            : undefined;
+          setLiveText(
+            parent
+              ? t("onDragMoveIntoSubflow", {
+                  item: dragged.displayName,
+                  subflow: parent.displayName,
+                })
+              : t("onDragMove", { item: dragged.displayName }),
+          );
+        }
+      }
+    } else {
+      setDropInfo(emptyDropInfo());
+      if (dragged) {
+        setLiveText(t("onDragMove", { item: dragged.displayName }));
+      }
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active } = event;
+    setActiveId(null);
+
+    const currentDropInfo = dropInfo;
+    setDropInfo(emptyDropInfo());
+
+    if (!executionList) {
+      setLiveText(t("onDragCancel"));
+      return;
+    }
+
+    const activeId = active.id as string;
+    const dragged = findExecutionById(activeId);
+
+    if (!dragged) {
+      setLiveText(t("onDragCancel"));
+      return;
+    }
+
+    if (!currentDropInfo.targetId) {
+      setLiveText(t("onDragCancel"));
+      return;
+    }
+
+    const resolved = executionList.resolveDropTarget(
+      activeId,
+      currentDropInfo.targetId,
+      dropModeToVertical(currentDropInfo.mode),
+      currentDropInfo.targetLevel,
+    );
+
+    if (!resolved) {
+      setLiveText(t("onDragCancel"));
+      return;
+    }
+
+    const { change } = resolved;
+    const isNoOp =
+      change instanceof IndexChange &&
+      change.oldIndex === change.newIndex &&
+      resolved.kind === "reorder";
+
+    if (isNoOp) {
+      setLiveText(t("onDragCancel"));
+      return;
+    }
+
+    setLiveText(t("onDragFinish", { list: dragged.displayName }));
+    void executeChange(dragged, change);
+  };
 
   useFetch(
     async () => {
@@ -409,74 +708,65 @@ export default function FlowDetails() {
             </Toolbar>
             <DeleteConfirm />
             {tableView && (
-              <DragDrop
-                onDrag={({ index }) => {
-                  const item = executionList.findExecution(index)!;
-                  setLiveText(t("onDragStart", { item: item.displayName }));
-                  if (!item.isCollapsed) {
-                    item.isCollapsed = true;
-                    setExecutionList(executionList.clone());
-                  }
-                  return true;
-                }}
-                onDragMove={({ index }) => {
-                  const dragged = executionList.findExecution(index);
-                  setLiveText(t("onDragMove", { item: dragged?.displayName }));
-                }}
-                onDrop={(source, dest) => {
-                  if (dest) {
-                    if (source.index === dest.index) {
-                      return false;
-                    }
-
-                    const dragged = executionList.findExecution(source.index)!;
-                    const order = executionList.order().map((ex) => ex.id!);
-                    setLiveText(
-                      t("onDragFinish", { list: dragged.displayName }),
-                    );
-
-                    const [removed] = order.splice(source.index, 1);
-                    order.splice(dest.index, 0, removed);
-                    const change = executionList.getChange(dragged, order);
-                    void executeChange(dragged, change);
-                    return true;
-                  } else {
-                    setLiveText(t("onDragCancel"));
-                    return false;
-                  }
-                }}
+              <DndContext
+                sensors={sensors}
+                onDragStart={handleDragStart}
+                onDragMove={handleDragMove}
+                onDragEnd={handleDragEnd}
               >
-                <Droppable hasNoWrapper>
-                  <Table aria-label={t("flows")} isTreeTable>
-                    <FlowHeader />
-                    <>
-                      {executionList.expandableList.map((execution) => (
-                        <Tbody draggable key={execution.id}>
-                          <FlowRow
-                            builtIn={!!builtIn}
-                            execution={execution}
-                            onRowClick={(execution) => {
-                              execution.isCollapsed = !execution.isCollapsed;
-                              setExecutionList(executionList.clone());
-                            }}
-                            onRowChange={update}
-                            onAddExecution={(execution, type) =>
-                              addExecution(execution.displayName!, type)
-                            }
-                            onAddFlow={(execution, flow) =>
-                              addFlow(execution.displayName!, flow)
-                            }
-                            onDelete={(execution) => {
-                              setSelectedExecution(execution);
-                              toggleDeleteDialog();
-                            }}
-                          />
-                        </Tbody>
-                      ))}
-                    </>
-                  </Table>
-                </Droppable>
-              </DragDrop>
+                <Alert
+                  isInline
+                  variant="info"
+                  title={t("executionDragInstructions")}
+                />
+                <Table aria-label={t("flows")} isTreeTable>
+                  <FlowHeader />
+                  <>
+                    {executionList.expandableList.map((execution) => (
+                      <Tbody key={execution.id}>
+                        <FlowRow
+                          builtIn={!!builtIn}
+                          execution={execution}
+                          dropInfo={dropInfo}
+                          visualIndexById={visualIndexById}
+                          indentStep={indentStep}
+                          activeId={activeId}
+                          onRowClick={(execution) => {
+                            execution.isCollapsed = !execution.isCollapsed;
+                            setExecutionList(executionList.clone());
+                          }}
+                          onRowChange={update}
+                          onAddExecution={(execution, type) =>
+                            addExecution(execution.displayName!, type)
+                          }
+                          onAddFlow={(execution, flow) =>
+                            addFlow(execution.displayName!, flow)
+                          }
+                          onDelete={(execution) => {
+                            setSelectedExecution(execution);
+                            toggleDeleteDialog();
+                          }}
+                        />
+                      </Tbody>
+                    ))}
+                  </>
+                </Table>
+                <DragOverlay dropAnimation={null}>
+                  {activeId ? (
+                    <DragOverlayContent
+                      execution={
+                        executionList.order().find((ex) => ex.id === activeId)!
+                      }
+                      targetParentName={
+                        dropInfo.targetParentId
+                          ? findExecutionById(dropInfo.targetParentId)
+                              ?.displayName
+                          : undefined
+                      }
+                    />
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
             )}
             {flow && (
               <>
