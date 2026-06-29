@@ -17,6 +17,8 @@
 
 package org.keycloak.models.utils;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -137,11 +139,20 @@ public class RoleUtils {
             return roles;
         }
 
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+        if (session == null) {
+            // Outside a Resteasy/session-bound thread there is no KeycloakSession available.
+            // Fall back to per-role expansion, which works without a session context.
+            Set<RoleModel> visited = new HashSet<>();
+            return roles.stream()
+                    .flatMap(role -> expandCompositeRolesWithoutSession(role, visited))
+                    .collect(Collectors.toSet());
+        }
+
         Set<RoleModel> result = new HashSet<>();
         Set<String> enqueued = new HashSet<>();
         Set<RoleModel> frontier = roles;
 
-        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
         RealmModel realm = realmOf(roles.iterator().next());
         while (!frontier.isEmpty()) {
             result.addAll(frontier);
@@ -162,6 +173,31 @@ public class RoleUtils {
         }
 
         return result;
+    }
+
+    private static Stream<RoleModel> expandCompositeRolesWithoutSession(RoleModel role, Set<RoleModel> visited) {
+        Stream.Builder<RoleModel> sb = Stream.builder();
+
+        if (!visited.contains(role)) {
+            Deque<RoleModel> stack = new ArrayDeque<>();
+            stack.add(role);
+
+            while (!stack.isEmpty()) {
+                RoleModel current = stack.pop();
+                sb.add(current);
+
+                if (current.isComposite()) {
+                    current.getCompositesStream()
+                            .filter(r -> !visited.contains(r))
+                            .forEach(r -> {
+                                visited.add(r);
+                                stack.add(r);
+                            });
+                }
+            }
+        }
+
+        return sb.build();
     }
 
     /**
