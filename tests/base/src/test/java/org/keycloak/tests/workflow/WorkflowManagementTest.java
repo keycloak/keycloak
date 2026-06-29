@@ -794,6 +794,34 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                 .operationType(OperationType.ACTION)
                 .resourceType(org.keycloak.events.admin.ResourceType.WORKFLOW);
 
+        // MIGRATE - create a second workflow to migrate to
+        WorkflowRepresentation rep2 = WorkflowRepresentation.withName("migrate-target-workflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build())
+                .build();
+
+        String targetWorkflowId;
+        try (Response response = workflows.create(rep2)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            targetWorkflowId = ApiUtil.getCreatedId(response);
+        }
+        adminEvents.poll(); // consume CREATE event for second workflow
+
+        WorkflowRepresentation sourceWorkflow = workflows.workflow(workflowId).toRepresentation();
+        WorkflowRepresentation targetWorkflow = workflows.workflow(targetWorkflowId).toRepresentation();
+        String fromStepId = sourceWorkflow.getSteps().get(0).getId();
+        String toStepId = targetWorkflow.getSteps().get(0).getId();
+
+        workflows.migrate(fromStepId, toStepId).close();
+
+        event = adminEvents.poll();
+        AdminEventAssertion.assertSuccess(event)
+                .operationType(OperationType.ACTION)
+                .resourceType(org.keycloak.events.admin.ResourceType.WORKFLOW);
+
         // DEACTIVATE
         workflows.workflow(workflowId).deactivate(ResourceType.USERS.name(), userAlice.getId());
 
@@ -809,6 +837,9 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         AdminEventAssertion.assertSuccess(event)
                 .operationType(OperationType.DELETE)
                 .resourceType(org.keycloak.events.admin.ResourceType.WORKFLOW);
+
+        workflows.workflow(targetWorkflowId).delete().close();
+        adminEvents.poll(); // consume DELETE event for second workflow
     }
 
     private static class DefaultUserConfig implements UserConfig {
