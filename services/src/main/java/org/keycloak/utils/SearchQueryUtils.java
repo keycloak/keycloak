@@ -87,6 +87,7 @@ public class SearchQueryUtils {
             String name = "";
             while (i < chars.length && chars[i] != ':') {
                 if (chars[i] == '\\') {
+                    if (i + 1 >= chars.length) break;
                     if (chars[i+1] == '\"') {
                         i++;
                     }
@@ -114,7 +115,7 @@ public class SearchQueryUtils {
                 name += chars[i];
                 i++;
             }
-            if(i == chars.length || chars[i] == ' ') {
+            if(i == chars.length || chars[i] == ' ' || chars[i] == '\\') {
                 continue;
             }
             i++;
@@ -123,6 +124,7 @@ public class SearchQueryUtils {
             String value = "";
             while (i < chars.length) {
                 if (chars[i] == '\\') {
+                    if (i + 1 >= chars.length) break;
                     if (chars[i+1] == '\"') {
                         i++;
                     }
