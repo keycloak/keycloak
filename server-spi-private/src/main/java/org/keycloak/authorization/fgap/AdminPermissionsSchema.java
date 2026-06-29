@@ -69,8 +69,10 @@ import org.keycloak.representations.idm.authorization.ResourceType;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
-public class AdminPermissionsSchema extends AuthorizationSchema {
+import org.jboss.logging.Logger;
 
+public class AdminPermissionsSchema extends AuthorizationSchema {
+    private static final Logger LOGGER = Logger.getLogger(AdminPermissionsSchema.class);
     public static final String REALMS_RESOURCE_TYPE = "Realms";
 
     public static final String CLIENTS_RESOURCE_TYPE = "Clients";
@@ -567,6 +569,14 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             return;
         }
 
+        ResourceStore resourceStore = storeFactory.getResourceStore();
+        Resource resourceTypeResource = resourceStore.findByName(resourceServer, resourceType);
+
+        if (resourceTypeResource == null) {
+            LOGGER.warnf("Scope creation skipped, because resource type '%s' not found!", resourceType);
+            return;
+        }
+
         ScopeStore scopeStore = storeFactory.getScopeStore();
         Scope newScope = scopeStore.findByName(resourceServer, scopeName);
 
@@ -574,8 +584,6 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             newScope = scopeStore.create(resourceServer, scopeName);
         }
 
-        ResourceStore resourceStore = storeFactory.getResourceStore();
-        Resource resourceTypeResource = resourceStore.findByName(resourceServer, resourceType);
         Set<Scope> newScopes = new HashSet<>(resourceTypeResource.getScopes());
 
         newScopes.add(newScope);
