@@ -375,7 +375,6 @@
         </preConditions>
         <addColumn tableName="CLIENT">
             <column name="CREATED_TIMESTAMP" type="BIGINT"/>
-            <column name="LAST_MODIFIED_TIMESTAMP" type="BIGINT"/>
         </addColumn>
     </changeSet>
 

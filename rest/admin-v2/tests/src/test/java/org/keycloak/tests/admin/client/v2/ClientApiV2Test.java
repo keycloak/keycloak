@@ -76,7 +76,6 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyOrNullString;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
@@ -259,20 +258,20 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         assertThat(created.getCreatedTimestamp() >= beforeCreate, is(true));
         assertThat(created.getCreatedTimestamp() <= afterCreate, is(true));
 
-        long deadline = Time.currentTimeMillis() + 1000;
-        while (Time.currentTimeMillis() <= created.getUpdatedTimestamp() && Time.currentTimeMillis() < deadline) {
-            Thread.onSpinWait();
-        }
-        assertThat(Time.currentTimeMillis(), greaterThan(created.getUpdatedTimestamp()));
+        try {
+            Time.setOffset(1);
 
-        OIDCClientRepresentation patch = new OIDCClientRepresentation();
-        patch.setDescription("Updated description");
-        BaseClientRepresentation updated = getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
-        assertThat(updated.getDescription(), is("Updated description"));
-        assertThat(updated.getCreatedTimestamp(), is(created.getCreatedTimestamp()));
-        assertThat(updated.getUpdatedTimestamp(), notNullValue());
-        assertThat(updated.getUpdatedTimestamp() >= updated.getCreatedTimestamp(), is(true));
-        assertThat(updated.getUpdatedTimestamp() > created.getUpdatedTimestamp(), is(true));
+            OIDCClientRepresentation patch = new OIDCClientRepresentation();
+            patch.setDescription("Updated description");
+            BaseClientRepresentation updated = getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
+            assertThat(updated.getDescription(), is("Updated description"));
+            assertThat(updated.getCreatedTimestamp(), is(created.getCreatedTimestamp()));
+            assertThat(updated.getUpdatedTimestamp(), notNullValue());
+            assertThat(updated.getUpdatedTimestamp() >= updated.getCreatedTimestamp(), is(true));
+            assertThat(updated.getUpdatedTimestamp() > created.getUpdatedTimestamp(), is(true));
+        } finally {
+            Time.setOffset(0);
+        }
     }
 
     @Test
