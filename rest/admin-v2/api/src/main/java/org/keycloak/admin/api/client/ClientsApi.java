@@ -36,7 +36,8 @@ public interface ClientsApi {
     @Operation(summary = "Get all clients", description = "Returns a list of clients in the realm, optionally filtered by a query expression. "
             + "Results are paginated using offset (0-based, default 0) and limit (default 100).")
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = BaseClientRepresentation.class)))
+            @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = BaseClientRepresentation.class))),
+            @APIResponse(responseCode = "400", description = "Invalid sort parameter")
     })
     Stream<BaseClientRepresentation> getClients(@BeanParam ListOptions params);
 

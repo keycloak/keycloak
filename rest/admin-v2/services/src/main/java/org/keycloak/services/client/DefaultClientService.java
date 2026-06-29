@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -23,7 +24,6 @@ import org.keycloak.events.admin.v2.AdminEventV2Builder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -117,9 +117,9 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public Stream<BaseClientRepresentation> getClients(@Nonnull RealmModel realm,
-                                                       ClientProjectionOptions projectionOptions,
+                                                       @Nonnull ClientProjectionOptions projectionOptions,
                                                        ClientSearchOptions searchOptions,
-                                                       ClientSortAndSliceOptions sortAndSliceOptions) {
+                                                       @Nonnull ClientSortAndSliceOptions sortAndSliceOptions) {
         permissions.clients().requireList();
 
         // TODO: this check is weak
@@ -141,6 +141,7 @@ public class DefaultClientService implements ClientService {
         int offset = sortAndSliceOptions.offset();
         int limit = sortAndSliceOptions.limit();
 
+        Comparator<BaseClientRepresentation> sortComparator = sortAndSliceOptions.getSortComparator();
         try {
             Stream<ClientModel> clientModels = useJpaPagination
                     ? realm.getClientsStream(offset, limit)
@@ -152,13 +153,12 @@ public class DefaultClientService implements ClientService {
                     .map(client -> getMapper(client.getProtocol()).fromModel(client))
                     .filter(Objects::nonNull);
 
-            stream = applySearchFilter(stream, searchOptions);
-
+            stream = applySearchFilter(stream, searchOptions).sorted(sortComparator);
             if (!useJpaPagination) {
                 stream = paginatedStream(stream, offset, limit);
             }
-
             return applyProjection(stream, projectionOptions);
+
         } catch (ModelException e) {
             throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
         }
@@ -200,10 +200,7 @@ public class DefaultClientService implements ClientService {
 
         permissions.clients().requireManage(client);
         try {
-            AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
             session.clientPolicy().triggerOnEvent(new AdminClientUnregisterContext(client, permissions.adminAuth()));
-        } catch (ModelValidationException e) {
-            throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
         } catch (ClientPolicyException e) {
             throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
