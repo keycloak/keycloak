@@ -114,7 +114,7 @@ Preview support is available for installing the Operator cluster-wide when using
 
 To install the Operator cluster-wide, use the `cluster-wide` kustomization:
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
 kubectl create namespace keycloak-operator
 kubectl apply -k 'github.com/keycloak/keycloak-k8s-resources/cluster-wide?ref={version}'
