@@ -6,21 +6,19 @@ import {
   useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import {
-  ClientRegistrationTab,
-  toClientRegistration,
-} from "../routes/ClientRegistration";
+import { toClientRegistration } from "../routes/ClientRegistration";
 import { ClientRegistrationList } from "./ClientRegistrationList";
 
 export const ClientRegistration = () => {
   const { t } = useTranslation();
   const { realm } = useRealm();
 
-  const useTab = (subTab: ClientRegistrationTab) =>
-    useRoutableTab(toClientRegistration({ realm, subTab }));
-
-  const anonymousTab = useTab("anonymous");
-  const authenticatedTab = useTab("authenticated");
+  const anonymousTab = useRoutableTab(
+    toClientRegistration({ realm, subTab: "anonymous" }),
+  );
+  const authenticatedTab = useRoutableTab(
+    toClientRegistration({ realm, subTab: "authenticated" }),
+  );
 
   return (
     <RoutableTabs

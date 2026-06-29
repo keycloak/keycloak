@@ -3,7 +3,7 @@ import { FormGroup, InputGroup } from "@patternfly/react-core";
 import { TFunction } from "i18next";
 import { get } from "lodash-es";
 import { PropsWithChildren, ReactNode } from "react";
-import { UseFormReturn, type FieldError } from "react-hook-form";
+import { UseFormReturn, useFormState, type FieldError } from "react-hook-form";
 
 import { FormErrorText } from "../controls/FormErrorText";
 import { HelpItem } from "../controls/HelpItem";
@@ -29,13 +29,12 @@ export const UserProfileGroup = ({
   renderer,
   children,
 }: PropsWithChildren<UserProfileGroupProps>) => {
+  "use no memo";
   const helpText = label(
     t,
     attribute.annotations?.["inputHelperTextBefore"] as string,
   );
-  const {
-    formState: { errors },
-  } = form;
+  const { errors } = useFormState({ control: form.control });
 
   const component = renderer?.(attribute);
   const error = get(errors, fieldName(attribute.name)) as

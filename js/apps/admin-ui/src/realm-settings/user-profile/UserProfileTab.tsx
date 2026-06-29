@@ -6,10 +6,7 @@ import {
   useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import {
-  toUserProfile,
-  UserProfileTab as IUserProfileTab,
-} from "../routes/UserProfile";
+import { toUserProfile } from "../routes/UserProfile";
 import { AttributesGroupTab } from "./AttributesGroupTab";
 import { AttributesTab } from "./AttributesTab";
 import { JsonEditorTab } from "./JsonEditorTab";
@@ -25,12 +22,15 @@ export const UserProfileTab = ({ setTableData }: UserProfileTabProps) => {
   const { realm } = useRealm();
   const { t } = useTranslation();
 
-  const useTab = (tab: IUserProfileTab) =>
-    useRoutableTab(toUserProfile({ realm, tab }));
-
-  const attributesTab = useTab("attributes");
-  const attributesGroupTab = useTab("attributes-group");
-  const jsonEditorTab = useTab("json-editor");
+  const attributesTab = useRoutableTab(
+    toUserProfile({ realm, tab: "attributes" }),
+  );
+  const attributesGroupTab = useRoutableTab(
+    toUserProfile({ realm, tab: "attributes-group" }),
+  );
+  const jsonEditorTab = useRoutableTab(
+    toUserProfile({ realm, tab: "json-editor" }),
+  );
 
   return (
     <UserProfileProvider>

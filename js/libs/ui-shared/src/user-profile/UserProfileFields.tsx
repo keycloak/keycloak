@@ -6,7 +6,7 @@ import {
 import { Text } from "@patternfly/react-core";
 import { TFunction } from "i18next";
 import { ReactNode, useMemo, type JSX } from "react";
-import { FieldPath, UseFormReturn } from "react-hook-form";
+import { FieldPath, UseFormReturn, useWatch } from "react-hook-form";
 
 import { ScrollForm } from "../main";
 import { LocaleSelector } from "./LocaleSelector";
@@ -183,9 +183,10 @@ const FormField = ({
   currentLocale,
   attribute,
 }: FormFieldProps) => {
-  const value = form.watch(
-    fieldName(attribute.name) as FieldPath<UserFormFields>,
-  );
+  const value = useWatch({
+    control: form.control,
+    name: fieldName(attribute.name) as FieldPath<UserFormFields>,
+  });
   const inputType = useMemo(() => determineInputType(attribute), [attribute]);
 
   const Component =

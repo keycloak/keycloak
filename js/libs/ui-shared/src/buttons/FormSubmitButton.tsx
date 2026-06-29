@@ -31,6 +31,7 @@ export const FormSubmitButton = ({
   children,
   ...rest
 }: PropsWithChildren<FormSubmitButtonProps>) => {
+  "use no memo";
   return (
     <Button
       variant="primary"
