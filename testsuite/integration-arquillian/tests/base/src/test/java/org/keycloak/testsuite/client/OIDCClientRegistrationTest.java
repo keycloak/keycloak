@@ -160,7 +160,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertNotNull(response.getClientIdIssuedAt());
         assertNotNull(response.getClientId());
         assertNotNull(response.getClientSecret());
-        assertEquals(0, response.getClientSecretExpiresAt().longValue());
+        assertEquals(0, response.getClientSecretExpiresAt().intValue());
         assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + response.getClientId(), response.getRegistrationClientUri());
         assertEquals("RegistrationAccessTokenTest", response.getClientName());
         assertEquals("http://root", response.getClientUri());
@@ -185,7 +185,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertTrue(CollectionUtil.collectionEquals(Arrays.asList("code", "none"), response.getResponseTypes()));
         assertTrue(CollectionUtil.collectionEquals(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.REFRESH_TOKEN), response.getGrantTypes()));
         assertNotNull(response.getClientSecret());
-        assertEquals(0, response.getClientSecretExpiresAt().longValue());
+        assertEquals(0, response.getClientSecretExpiresAt().intValue());
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, response.getTokenEndpointAuthMethod());
         assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + response.getClientId(), response.getRegistrationClientUri());
     }
@@ -225,7 +225,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertNotNull(response.getClientIdIssuedAt());
         assertNotNull(response.getClientId());
         assertNotNull(response.getClientSecret());
-        assertEquals(0, response.getClientSecretExpiresAt().longValue());
+        assertEquals(0, response.getClientSecretExpiresAt().intValue());
         assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + response.getClientId(), response.getRegistrationClientUri());
         assertEquals("RegistrationAccessTokenTest", response.getClientName());
         assertEquals("http://root", response.getClientUri());
