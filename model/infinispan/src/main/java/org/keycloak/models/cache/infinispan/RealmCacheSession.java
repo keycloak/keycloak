@@ -1510,7 +1510,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     public Stream<RoleModel> getCompositeRolesStream(RealmModel realm, Set<String> parentRoleIds) {
-        String id = parentRoleIds.stream().sorted().toList().toString();
+        String id = realm.getId() + "::" + String.join(",", parentRoleIds.stream().sorted().collect(Collectors.toList()));
         CachedCompositeRoles cached = cache.get(id, CachedCompositeRoles.class);
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
             cached = null;
@@ -1535,8 +1535,9 @@ public class RealmCacheSession implements CacheRealmProvider {
         }
         if (cached != null) {
             for (String parentId : cached.getParentIds()) {
-                if (cache.get(parentId, CachedRole.class).getRevision() > cached.getRevision()) {
-                    // The parent has been modified, cache is invalid
+                CachedRole cachedParent = cache.get(parentId, CachedRole.class);
+                if (cachedParent == null || cachedParent.getRevision() > cached.getRevision()) {
+                    // The parent has been modified or evicted, cache is invalid
                     cached = null;
                     break;
                 }

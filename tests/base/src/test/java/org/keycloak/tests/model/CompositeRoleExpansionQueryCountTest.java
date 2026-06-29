@@ -37,7 +37,7 @@ public class CompositeRoleExpansionQueryCountTest {
     ManagedRealm realm;
 
     @TestOnServer
-    public void droppingIsCompositePreQueryHalvesGetChildRolesOnCompositeNodes(KeycloakSession session) {
+    public void chainWalkIssuesOneQueryPerBreadthFirstLevel(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         RoleModel root = session.roles().getRealmRole(realm, "chain-0");
         long currentCount = countQueries(session, () -> RoleUtils.expandCompositeRoles(Set.of(root)));
@@ -65,10 +65,13 @@ public class CompositeRoleExpansionQueryCountTest {
                 .getEntityManagerFactory()
                 .unwrap(SessionFactory.class)
                 .getStatistics();
+        boolean wasEnabled = stats.isStatisticsEnabled();
         stats.setStatisticsEnabled(true);
         stats.clear();
         walk.run();
-        return stats.getPrepareStatementCount();
+        long count = stats.getPrepareStatementCount();
+        stats.setStatisticsEnabled(wasEnabled);
+        return count;
     }
 
     private static class CompositeRoleExpansionRealmConfig implements RealmConfig {

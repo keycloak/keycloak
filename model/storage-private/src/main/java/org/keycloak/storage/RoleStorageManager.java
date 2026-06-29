@@ -18,6 +18,7 @@ package org.keycloak.storage;
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.common.util.reflections.Types;
@@ -164,7 +165,28 @@ public class RoleStorageManager implements RoleProvider {
 
     @Override
     public Stream<RoleModel> getCompositeRolesStream(RealmModel realm, Set<String> parentRoleIds) {
-        return localStorage().getCompositeRolesStream(realm, parentRoleIds);
+        if (parentRoleIds == null || parentRoleIds.isEmpty()) {
+            return Stream.empty();
+        }
+        // Split local and external IDs. Local IDs are handled by a single batched query; external
+        // (federated) IDs are resolved individually via getRoleById and then expanded per-role.
+        Set<String> localIds = parentRoleIds.stream()
+                .filter(StorageId::isLocalStorage)
+                .collect(Collectors.toSet());
+        Set<String> externalIds = parentRoleIds.stream()
+                .filter(id -> !StorageId.isLocalStorage(id))
+                .collect(Collectors.toSet());
+
+        Stream<RoleModel> localComposites = localIds.isEmpty()
+                ? Stream.empty()
+                : localStorage().getCompositeRolesStream(realm, localIds);
+
+        Stream<RoleModel> externalComposites = externalIds.stream()
+                .map(id -> getRoleById(realm, id))
+                .filter(Objects::nonNull)
+                .flatMap(RoleModel::getCompositesStream);
+
+        return Stream.concat(localComposites, externalComposites).distinct();
     }
 
     /**
