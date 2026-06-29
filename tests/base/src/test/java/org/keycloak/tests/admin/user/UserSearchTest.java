@@ -351,6 +351,46 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
+    public void searchStacksWithOtherFilters() {
+        // The 'search' query param must combine with the other filters instead of overriding them, see
+        // https://github.com/keycloak/keycloak/issues/49995
+        UserRepresentation alice = new UserRepresentation();
+        alice.setUsername("stackalice");
+        alice.setEmail("alice@stackbug.test");
+        alice.setFirstName("Alice");
+        alice.setLastName("Stackbugcommon");
+        alice.setEmailVerified(true);
+        alice.setRequiredActions(Collections.emptyList());
+        alice.setEnabled(true);
+        createUser(alice);
+
+        UserRepresentation bob = new UserRepresentation();
+        bob.setUsername("stackbob");
+        bob.setEmail("bob@stackbug.test");
+        bob.setFirstName("Bob");
+        bob.setLastName("Stackbugcommon");
+        bob.setEmailVerified(true);
+        bob.setRequiredActions(Collections.emptyList());
+        bob.setEnabled(true);
+        createUser(bob);
+
+        // sanity check: the search term on its own matches both users via their last name
+        List<UserRepresentation> bySearchOnly = managedRealm.admin().users().search("Stackbugcommon", null, null, null, true, null, null, null);
+        assertThat(bySearchOnly, hasSize(2));
+
+        // search combined with username must narrow down to a single user, not ignore the username filter
+        List<UserRepresentation> bySearchAndUsername = managedRealm.admin().users().search("Stackbugcommon", null, null, null, true, "stackalice", null, null);
+        assertThat(bySearchAndUsername, hasSize(1));
+        assertEquals("stackalice", bySearchAndUsername.get(0).getUsername());
+
+        // search combined with email must narrow down as well
+        List<UserRepresentation> bySearchAndEmail = managedRealm.admin().users().search("Stackbugcommon", null, null, "bob@stackbug.test", true, null, null, null);
+        assertThat(bySearchAndEmail, hasSize(1));
+        assertEquals("stackbob", bySearchAndEmail.get(0).getUsername());
+    }
+
+    @Test
     public void searchWithFilterAndEnabledAttribute() {
         createUser();
 
