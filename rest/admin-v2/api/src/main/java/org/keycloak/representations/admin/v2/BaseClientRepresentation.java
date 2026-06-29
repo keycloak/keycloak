@@ -76,6 +76,14 @@ public class BaseClientRepresentation extends BaseRepresentation implements Repr
     @JsonPropertyDescription("Client protocol")
     protected String protocol;
 
+    @JsonPropertyDescription("Timestamp when the client was created")
+    @Schema(description = "Timestamp when the client was created", readOnly = true)
+    private Long createdTimestamp;
+
+    @JsonPropertyDescription("Timestamp when the client was last updated")
+    @Schema(description = "Timestamp when the client was last updated", readOnly = true)
+    private Long updatedTimestamp;
+
     @Override
     public String getUuid() {
         return uuid;
@@ -145,6 +153,22 @@ public class BaseClientRepresentation extends BaseRepresentation implements Repr
         return protocol;
     }
 
+    public Long getCreatedTimestamp() {
+        return createdTimestamp;
+    }
+
+    public void setCreatedTimestamp(Long createdTimestamp) {
+        this.createdTimestamp = createdTimestamp;
+    }
+
+    public Long getUpdatedTimestamp() {
+        return updatedTimestamp;
+    }
+
+    public void setUpdatedTimestamp(Long updatedTimestamp) {
+        this.updatedTimestamp = updatedTimestamp;
+    }
+
     public void setProtocol(String protocol) {
         this.protocol = protocol;
     }
@@ -161,5 +185,20 @@ public class BaseClientRepresentation extends BaseRepresentation implements Repr
     @Override
     public int hashCode() {
         return Objects.hash(uuid, clientId, displayName, description, enabled, appUrl, redirectUris, roles, protocol);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" + "protocol=" + getProtocol()
+        + ", uuid=" + uuid
+        + ", clientId=" + clientId
+        + ", displayName=" + displayName
+        + ", description=" + description
+        + ", enabled=" + enabled
+        + ", appUrl=" + appUrl
+        + ", redirectUris=" + redirectUris
+        + ", roles=" + roles
+        + ", updatedTimestamp=" + updatedTimestamp
+        + ", createdTimestamp=" + createdTimestamp + "}";
     }
 }
