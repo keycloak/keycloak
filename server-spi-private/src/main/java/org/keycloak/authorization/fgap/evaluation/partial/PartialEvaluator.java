@@ -58,6 +58,12 @@ public final class PartialEvaluator {
             return storage == null ? List.of() : storage.getFilters(new PartialEvaluationContext(storage, builder, queryBuilder, path));
         }
 
+        // check before getUser() to avoid infinite recursion when called from a runWithoutAuthorization block
+        // (e.g. isReadOnlyOrganizationMember -> getByMember -> applyAuthorizationFilters -> getPredicates -> getUser -> getUserById -> validateUser -> isReadOnlyOrganizationMember -> ...)
+        if (isSkipEvaluation(session)) {
+            return List.of();
+        }
+
         UserModel adminUser = session.getContext().getUser();
 
         if (shouldSkipPartialEvaluation(session, adminUser, resourceType)) {
