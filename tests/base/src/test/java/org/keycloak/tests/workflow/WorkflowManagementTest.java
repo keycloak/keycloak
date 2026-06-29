@@ -81,6 +81,7 @@ import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -787,12 +788,14 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                 .resourceType(org.keycloak.events.admin.ResourceType.WORKFLOW);
 
         // ACTIVATE
-        workflows.workflow(workflowId).activate(ResourceType.USERS.name(), userAlice.getId());
+        workflows.workflow(workflowId).activate(ResourceType.USERS.name(), userAlice.getId(), "30");
 
         event = adminEvents.poll();
         AdminEventAssertion.assertSuccess(event)
                 .operationType(OperationType.ACTION)
                 .resourceType(org.keycloak.events.admin.ResourceType.WORKFLOW);
+        assertThat(event.getRepresentation(), containsString("\"notBefore\""));
+        assertThat(event.getRepresentation(), containsString("30"));
 
         // MIGRATE - create a second workflow to migrate to
         WorkflowRepresentation rep2 = WorkflowRepresentation.withName("migrate-target-workflow")
@@ -821,6 +824,8 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         AdminEventAssertion.assertSuccess(event)
                 .operationType(OperationType.ACTION)
                 .resourceType(org.keycloak.events.admin.ResourceType.WORKFLOW);
+        assertThat(event.getRepresentation(), containsString(fromStepId));
+        assertThat(event.getRepresentation(), containsString(toStepId));
 
         // DEACTIVATE
         workflows.workflow(workflowId).deactivate(ResourceType.USERS.name(), userAlice.getId());

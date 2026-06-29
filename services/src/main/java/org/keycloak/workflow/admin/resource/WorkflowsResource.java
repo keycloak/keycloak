@@ -1,6 +1,7 @@
 package org.keycloak.workflow.admin.resource;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import jakarta.ws.rs.Consumes;
@@ -72,6 +73,7 @@ public class WorkflowsResource {
     public Response create(WorkflowRepresentation rep) {
         try {
             Workflow workflow = provider.toModel(rep);
+            rep.setId(workflow.getId());
             adminEvent.operation(OperationType.CREATE)
                     .resourcePath(session.getContext().getUri(), workflow.getId())
                     .representation(rep)
@@ -176,6 +178,7 @@ public class WorkflowsResource {
             provider.migrateScheduledResources(stepIdFrom, stepIdTo);
             adminEvent.operation(OperationType.ACTION)
                     .resourcePath(session.getContext().getUri())
+                    .representation(Map.of("from", stepIdFrom, "to", stepIdTo))
                     .success();
             return Response.noContent().build();
         } catch (ModelException me) {

@@ -1,5 +1,7 @@
 package org.keycloak.workflow.admin.resource;
 
+import java.util.Map;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -166,9 +168,12 @@ public class WorkflowResource {
         }
 
         provider.activate(workflow, type, resourceId);
-        adminEvent.operation(OperationType.ACTION)
-                .resourcePath(session.getContext().getUri())
-                .success();
+        AdminEventBuilder event = adminEvent.operation(OperationType.ACTION)
+                .resourcePath(session.getContext().getUri());
+        if (notBefore != null) {
+            event.representation(Map.of("notBefore", notBefore));
+        }
+        event.success();
     }
 
     /**
