@@ -225,6 +225,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
                     // parse
                     authenticationData = webAuthnAuthenticationManager.parse(context.getAuthenticationRequest());
+
                     // validate
                     AuthenticationParameters authenticationParameters = new AuthenticationParameters(
                             context.getAuthenticationParameters().getServerProperty(),
@@ -242,9 +243,15 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                     // update authenticator counter
                     // counters are an optional feature of the spec - if an authenticator does not support them, it
                     // will always send zero. MacOS/iOS does this for keys stored in the secure enclave (TouchID/FaceID)
-                    long count = auth.getCount();
-                    if (count > 0) {
-                        webAuthnCredModel.updateCounter(count + 1);
+                    final long storedCounter = auth.getCount();
+                    final long clientCounter = authenticationData.getAuthenticatorData().getSignCount();
+                    if (storedCounter > 0 || clientCounter > 0) {
+                        if (clientCounter <= storedCounter) {
+                            logger.debugf("Invalid client counter, authenticator may have been cloned");
+                            return false;
+                        }
+
+                        webAuthnCredModel.updateCounter(clientCounter);
                         user.credentialManager().updateStoredCredential(webAuthnCredModel);
                     }
 
