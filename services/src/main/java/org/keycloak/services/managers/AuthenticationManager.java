@@ -91,7 +91,6 @@ import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionExpirationUtils;
@@ -987,7 +986,6 @@ public class AuthenticationManager {
         logSuccess(session, authSession);
 
         return protocol.authenticated(authSession, userSession, clientSessionCtx);
-
     }
 
     /**
@@ -1737,7 +1735,7 @@ public class AuthenticationManager {
                         user,
                         session.getContext().getConnection(),
                         session.getContext().getHttpRequest().getUri(),
-                        AuthenticatorUtil.getAuthnCredentials(authSession).contains(OTPCredentialModel.TYPE) ? OTPCredentialModel.TYPE : null
+                        Set.copyOf(AuthenticatorUtil.getAuthnCredentials(authSession))
                 );
             }
         }
