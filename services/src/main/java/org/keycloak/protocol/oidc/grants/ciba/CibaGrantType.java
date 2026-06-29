@@ -74,6 +74,11 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
 
     private static final Logger logger = Logger.getLogger(CibaGrantType.class);
 
+    @Override
+    public boolean isConfidentialOnlyGrantType() {
+        return true;
+    }
+
     public static final String IS_CONSENT_REQUIRED = "is_consent_required";
     public static final String LOGIN_HINT = "login_hint";
     public static final String LOGIN_HINT_TOKEN = "login_hint_token";

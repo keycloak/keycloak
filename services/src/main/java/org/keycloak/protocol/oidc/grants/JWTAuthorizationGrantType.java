@@ -58,6 +58,12 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
     @Override
+    public boolean isConfidentialOnlyGrantType() {
+        // According to Section 2.1 of RFC 7523, the client authentication is optional. But keycloak requires client authentication for this grant type.
+        return true;
+    }
+
+    @Override
     public Response process(Context context) {
         setContext(context);
 
