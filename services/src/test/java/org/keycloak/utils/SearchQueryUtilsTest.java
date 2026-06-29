@@ -65,6 +65,11 @@ public class SearchQueryUtilsTest {
         testParseQuery("key:val\\",
                 "key", "val");
 
+        testParseQuery("key\\");
+
+        testParseQuery("key:\"val\\",
+                "key", "val");
+
     }
 
     private void testParseQuery(String query, String... expectedStr) {
