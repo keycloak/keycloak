@@ -72,6 +72,7 @@ public class WorkflowsResource {
     public Response create(WorkflowRepresentation rep) {
         try {
             Workflow workflow = provider.toModel(rep);
+            rep.setId(workflow.getId());
             adminEvent.operation(OperationType.CREATE)
                     .resourcePath(session.getContext().getUri(), workflow.getId())
                     .representation(rep)
