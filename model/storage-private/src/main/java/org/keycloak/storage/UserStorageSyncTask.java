@@ -101,15 +101,13 @@ final class UserStorageSyncTask implements ScheduledTask {
             return;
         }
 
-        UserStorageProviderModel provider = getStorageModel(session);
-
-        logger.debugf("Cancelling any running user periodic sync task '%s' for user storage provider provider '%s' in realm '%s'", getTaskName(), provider.getName(), realmId);
+        logger.debugf("Cancelling any running user periodic sync task '%s' for user storage provider provider '%s' in realm '%s'", getTaskName(), providerId, realmId);
 
         TimerTaskContext existingTask = timer.cancelTask(getTaskName());
 
         if (existingTask != null) {
-            logger.debugf("Cancelled periodic sync task with task-name '%s' for provider with id '%s' and name '%s'",
-                    getTaskName(), provider.getId(), provider.getName());
+            logger.debugf("Cancelled periodic sync task with task-name '%s' for provider with id '%s'",
+                    getTaskName(), providerId);
         }
     }
 
