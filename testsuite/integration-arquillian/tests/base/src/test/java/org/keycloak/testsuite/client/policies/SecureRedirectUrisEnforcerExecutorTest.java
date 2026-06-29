@@ -668,6 +668,14 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         clientRepp = reg.oidc().get(clientId);
         Assertions.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getRedirectUris());
         Assertions.assertEquals(List.of("https://oauth.redirect/some-post-logout"), clientRepp.getPostLogoutRedirectUris());
+
+        // Success - update with empty post-logout redirect uris (should be treated like "+")
+        updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> {
+            clientRep.setRedirectUris(List.of("https://oauth.redirect/some"));
+            clientRep.setPostLogoutRedirectUris(List.of(""));
+        });
+        clientRepp = reg.oidc().get(clientId);
+        Assertions.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getRedirectUris());
     }
 
     @Test

@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -239,8 +240,14 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
         if (postLogoutRedirectUris == null || postLogoutRedirectUris.isEmpty()) {
             return;
         }
+        List<String> filtered = postLogoutRedirectUris.stream()
+                .filter(uri -> uri != null && !uri.isEmpty())
+                .collect(Collectors.toList());
+        if (filtered.isEmpty()) {
+            return;
+        }
         logger.tracef("Verifying post-logout redirect uris. Target client: %s, Effective post-logout uris: %s", client.getClientId(), postLogoutRedirectUris);
-        verifyRedirectUris(client.getRootUrl(), postLogoutRedirectUris);
+        verifyRedirectUris(client.getRootUrl(), filtered);
     }
 
     void verifyRedirectUris(String rootUri, List<String> redirectUris) throws ClientPolicyException {
