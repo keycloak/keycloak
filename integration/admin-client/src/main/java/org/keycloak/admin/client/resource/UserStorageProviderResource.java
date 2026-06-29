@@ -85,5 +85,13 @@ public interface UserStorageProviderResource {
     @Produces(MediaType.APPLICATION_JSON)
     SynchronizationResultRepresentation syncMapperData(@PathParam("componentId") String componentId, @PathParam("mapperId") String mapperId, @QueryParam("direction") String direction);
 
-
+    /**
+     * Tests the connection for the specified storage provider.
+     *
+     * @param componentId the identifier of the configuration component
+     */
+    @POST
+    @Path("{componentId}/test-connection")
+    @Produces(MediaType.APPLICATION_JSON)
+    void testConnection(@PathParam("componentId") String componentId);
 }
