@@ -185,6 +185,7 @@ This improves security by ensuring that only trusted, pre-registered hosts can b
 === Default AES key size increased to 256 bits
 
 The default key size for newly generated AES key providers (aes-generated) has been increased from 128 bits to 256 bits for improved security.
+CNSA 2.0 requires AES-256 for national security systems. AES-128 is not approved for classified data in the post-quantum era.
 Existing realms are not affected - only newly created key providers use the new default.
 
 To migrate an existing realm, add a new aes-generated key provider with key size 32 and a higher priority.
