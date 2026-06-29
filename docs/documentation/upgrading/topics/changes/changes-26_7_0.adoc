@@ -209,6 +209,12 @@ Existing realms are not affected - only newly created key providers use the new 
 To migrate an existing realm, add a new aes-generated key provider with key size 32 and a higher priority.
 The old provider can be removed once all sessions using the old key have expired.
 
+=== Session cookies now use SHA-384
+
+The `KC_AUTH_SESSION_HASH` and `KEYCLOAK_SESSION` cookies are now hashed with SHA-384 instead of SHA-256. Although SHA-256 is still safe, CNSA 2.0 specifies SHA-384 as the minimum required hashing algorithm for national security systems.
+
+No configuration change is required, and active sessions are not affected. After upgrading, an old `KEYCLOAK_SESSION` cookie no longer matches the new format and is silently replaced on the user's next request. Users with a valid session stay logged in; only users whose session has already expired have to log in again, as they normally would.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

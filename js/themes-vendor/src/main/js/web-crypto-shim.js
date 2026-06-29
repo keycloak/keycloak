@@ -1,4 +1,4 @@
-import { sha256 } from "@noble/hashes/sha2.js";
+import { sha256, sha384 } from "@noble/hashes/sha2.js";
 import { v4 as uuidv4 } from "uuid";
 
 // Shim for Web Crypto API specifically for Keycloak JS, as this API can sometimes be missing, for example in an insecure context:
@@ -14,6 +14,10 @@ if (typeof crypto.subtle === "undefined") {
       digest: async (algorithm, data) => {
         if (algorithm === "SHA-256") {
           return sha256(data);
+        }
+
+        if (algorithm === "SHA-384") {
+          return sha384(data);
         }
 
         throw new Error("Unsupported algorithm");
