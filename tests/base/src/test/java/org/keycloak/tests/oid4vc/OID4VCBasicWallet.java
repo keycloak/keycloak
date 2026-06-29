@@ -21,6 +21,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ClientAttestationPoPJwt;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
+import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWK;
@@ -45,6 +46,7 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.tests.oid4vc.abca.OIDCClientAttester;
 import org.keycloak.tests.oid4vc.abca.OIDCMockClientAttester;
@@ -65,6 +67,8 @@ import org.keycloak.testsuite.util.oauth.oid4vc.PreAuthorizedCodeGrantRequest;
 import org.keycloak.util.DPoPGenerator;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import static org.keycloak.OAuth2Constants.DPOP_JWT_HEADER_TYPE;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE;
@@ -264,6 +268,19 @@ public class OID4VCBasicWallet {
         return Proofs.create(ProofType.JWT, proofValues);
     }
 
+    /**
+     * Builds an OID4VP presentation of an issued SD-JWT VC: it discloses every claim and adds a key
+     * binding JWT signed by {@code holderKey} and bound to the verifier ({@code audience}, {@code nonce}).
+     */
+    public String present(String sdJwtVc, KeyWrapper holderKey, String audience, String nonce) {
+        ObjectNode keyBindingClaims = JsonSerialization.mapper.createObjectNode();
+        keyBindingClaims.put("aud", audience);
+        keyBindingClaims.put("nonce", nonce);
+        keyBindingClaims.put("iat", Time.currentTimeSeconds());
+        return SdJwtVP.of(sdJwtVc)
+                .present(null, true, keyBindingClaims, new ECDSASignatureSignerContext(holderKey));
+    }
+
     public KeyWrapper getECKeyPair(OID4VCTestContext ctx) {
         return getECKeyPair(ctx, null);
     }
@@ -316,7 +333,7 @@ public class OID4VCBasicWallet {
                 UUID.randomUUID().toString(),
                 HttpMethod.POST,
                 htu,
-                (long) Time.currentTime(),
+                Time.currentTimeSeconds(),
                 jwsEcHeader, ecKey, accessToken);
     }
 

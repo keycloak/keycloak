@@ -108,9 +108,10 @@ public class SdJwtVerificationContext {
      * @param issuerSignedJwtVerificationOpts Options to parameterize the Issuer-Signed JWT verification.
      * @param presentationRequirements        If set, the presentation requirements will be enforced upon fully
      *                                        disclosing the Issuer-signed JWT during the verification.
+     * @return the disclosed payload
      * @throws VerificationException if verification failed
      */
-    public void verifyIssuance(List<SignatureVerifierContext> issuerVerifyingKeys,
+    public JsonNode verifyIssuance(List<SignatureVerifierContext> issuerVerifyingKeys,
                                IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
                                PresentationRequirements presentationRequirements)
             throws VerificationException
@@ -131,6 +132,8 @@ public class SdJwtVerificationContext {
         if (presentationRequirements != null) {
             presentationRequirements.checkIfSatisfiedBy(disclosedPayload);
         }
+
+        return disclosedPayload;
     }
 
     /**
@@ -150,9 +153,10 @@ public class SdJwtVerificationContext {
      *                                        to check Key Binding.
      * @param presentationRequirements        If set, the presentation requirements will be enforced upon fully
      *                                        disclosing the Issuer-signed JWT during the verification.
+     * @return the fully disclosed Issuer-signed payload
      * @throws VerificationException if verification failed
      */
-    public void verifyPresentation(List<SignatureVerifierContext> issuerVerifyingKeys,
+    public JsonNode verifyPresentation(List<SignatureVerifierContext> issuerVerifyingKeys,
                                    IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
                                    KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts,
                                    PresentationRequirements presentationRequirements)
@@ -165,12 +169,15 @@ public class SdJwtVerificationContext {
         }
 
         // Upon receiving a Presentation, in addition to the checks in {@link #verifyIssuance}...
-        verifyIssuance(issuerVerifyingKeys, issuerSignedJwtVerificationOpts, presentationRequirements);
+        JsonNode disclosedPayload =
+                verifyIssuance(issuerVerifyingKeys, issuerSignedJwtVerificationOpts, presentationRequirements);
 
         // Validate Key Binding JWT if required
         if (keyBindingJwtVerificationOpts.isKeyBindingRequired()) {
             validateKeyBindingJwt(keyBindingJwtVerificationOpts);
         }
+
+        return disclosedPayload;
     }
 
     /**
