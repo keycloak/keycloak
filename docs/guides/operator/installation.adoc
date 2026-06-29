@@ -175,11 +175,6 @@ Install the cluster-wide Operator in a dedicated namespace rather than convertin
 *Preview support*
 
 Cluster-wide installation is supported for common scenarios, but it is still considered in preview.
-
-* Limitations apply; see <<cluster_wide_limitations>>.
-<@profile.ifCommunity>
-* For non-OLM installations, cluster-wide setup requires additional RBAC configuration.
-</@profile.ifCommunity>
 ====
 
 [[cluster_wide_limitations]]
@@ -189,6 +184,7 @@ When the Operator watches all namespaces:
 
 * `spec.podTemplate.spec.serviceAccountName` cannot be used on a `Keycloak` custom resource. The Operator ignores this field and reports a warning.
 * The Operator does not support reconciling multiple {project_name} versions in one cluster. A single Operator version supports a single matching {project_name} version.
+* You need cluster-admin permissions, or equivalent permissions.
 
 ==== Installing with OLM
 
