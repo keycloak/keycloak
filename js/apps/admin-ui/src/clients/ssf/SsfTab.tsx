@@ -13,13 +13,10 @@ import { EventSearchTab } from "./tabs/EventSearchTab";
 import { ReceiverTab } from "./tabs/ReceiverTab";
 import { StreamTab, type SsfClientStream } from "./tabs/StreamTab";
 import { SubjectsTab } from "./tabs/SubjectsTab";
+import { isPollDeliveryMethod } from "./utils";
 
 const FALLBACK_DEFAULT_SUPPORTED_EVENTS =
   "CaepCredentialChange,CaepSessionRevoked";
-
-const isPollDeliveryMethod = (method: string | undefined): boolean =>
-  method === "urn:ietf:rfc:8936" ||
-  method === "https://schemas.openid.net/secevent/risc/delivery-method/poll";
 
 const FALLBACK_DEFAULT_PUSH_CONNECT_TIMEOUT_MILLIS = 1000;
 const FALLBACK_DEFAULT_PUSH_SOCKET_TIMEOUT_MILLIS = 1000;
