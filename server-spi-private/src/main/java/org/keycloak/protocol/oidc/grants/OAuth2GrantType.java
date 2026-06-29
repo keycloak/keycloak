@@ -73,6 +73,13 @@ public interface OAuth2GrantType extends Provider {
     Set<String> getTokenParameterNames();
 
     /**
+     * @return true if the grant type is intended to be used only by confidential clients.
+     */
+    default boolean isConfidentialOnlyGrantType() {
+        return false;
+    }
+
+    /**
      * Pre-process client policies for the given grant
      */
     default void preProcess(KeycloakSession session, MultivaluedMap<String, String> formParams) throws ClientPolicyException {

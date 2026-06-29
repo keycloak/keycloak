@@ -47,6 +47,11 @@ public class TokenExchangeGrantType extends OAuth2GrantTypeBase {
     private static final Set<String> SUPPORTED_DUPLICATED_PARAMETERS = Set.of(OAuth2Constants.AUDIENCE, OAuth2Constants.RESOURCE);
 
     @Override
+    public boolean isConfidentialOnlyGrantType() {
+        return true;
+    }
+
+    @Override
     public Response process(Context context) {
         setContext(context);
 
