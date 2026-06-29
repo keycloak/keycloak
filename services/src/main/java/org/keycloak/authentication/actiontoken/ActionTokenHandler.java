@@ -117,4 +117,11 @@ public interface ActionTokenHandler<T extends JsonWebToken> extends Provider {
      * @return see above
      */
     boolean canUseTokenRepeatedly(T token, ActionTokenContext<T> tokenContext);
+
+    /**
+     * Returns {@code true} when a validity check needs to be performed before invoking the action, {@code false} when 
+     * the check is not needed.
+     * @return see above
+     */
+    boolean checkIsUserValid(T token, ActionTokenContext<T> tokenContext);
 }

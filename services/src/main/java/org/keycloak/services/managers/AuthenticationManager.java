@@ -87,6 +87,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.SingleUseObjectKeyModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -1075,6 +1076,15 @@ public class AuthenticationManager {
         return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, errorMessage == null ? Messages.INVALID_CODE : errorMessage);
     }
 
+    /**
+     * Invalidates the action token by putting a revoked entry into the single use object provider. This is used to prevent replay of the same action token.
+     * @return true if the token was successfully invalidated, false if it was already invalidated
+     */
+    public static boolean invalidateActionToken(KeycloakSession session, String actionTokenKeyToInvalidate, long skewSeconds) {
+        SingleUseObjectKeyModel actionTokenKey = DefaultActionTokenKey.from(actionTokenKeyToInvalidate);
+        SingleUseObjectProvider singleUseObjectProvider = session.singleUseObjects();
+        return singleUseObjectProvider.putIfAbsent(actionTokenKeyToInvalidate + SingleUseObjectProvider.REVOKED_KEY, actionTokenKey.getExp() - Time.currentTime() + skewSeconds);
+    }
 
     public static Response finishedRequiredActions(KeycloakSession session, AuthenticationSessionModel authSession, UserSessionModel userSession,
                                                    ClientConnection clientConnection, HttpRequest request, UriInfo uriInfo, EventBuilder event) {
