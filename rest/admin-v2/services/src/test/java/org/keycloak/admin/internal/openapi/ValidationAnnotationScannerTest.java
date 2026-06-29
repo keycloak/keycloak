@@ -40,7 +40,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.validation.ClientSecretNotBlank;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
-import org.keycloak.representations.admin.v2.validation.ProtocolUnmodified;
 import org.keycloak.representations.admin.v2.validation.PutClient;
 import org.keycloak.representations.admin.v2.validation.ServerManagedFieldUnmodified;
 import org.keycloak.validation.jakarta.ValidationContext;
@@ -92,7 +91,6 @@ public class ValidationAnnotationScannerTest {
                 TestWithClassLevelConstraintAndMessage.class,
                 TestWithServerManagedFieldUnmodified.class,
                 TestWithRepeatableServerManagedFieldUnmodified.class,
-                TestWithProtocolUnmodifiedDefault.class,
                 ValidationContext.class,
                 KeycloakSession.class,
                 RealmModel.class,
@@ -113,8 +111,7 @@ public class ValidationAnnotationScannerTest {
                 Range.class,
                 URL.class,
                 ClientSecretNotBlank.class,
-                ServerManagedFieldUnmodified.class,
-                ProtocolUnmodified.class
+                ServerManagedFieldUnmodified.class
         );
         scanner = new ValidationAnnotationScanner(index);
     }
@@ -470,18 +467,6 @@ public class ValidationAnnotationScannerTest {
         assertEquals("protocol cannot be changed for an existing client", descriptions.get("protocol"));
     }
 
-    @Test
-    public void buildClassLevelDescriptions_protocolUnmodifiedUsesDefaultAffectedFieldNames() {
-        ClassInfo classInfo = index.getClassByName(TestWithProtocolUnmodifiedDefault.class);
-
-        Map<String, String> descriptions = scanner.buildClassLevelDescriptions(classInfo);
-
-        assertNotNull(descriptions);
-        assertEquals(1, descriptions.size());
-        assertTrue(descriptions.containsKey("protocol"));
-        assertEquals("protocol cannot be changed for an existing client", descriptions.get("protocol"));
-    }
-
     private Index createIndex(Class<?>... classes) throws IOException {
         Indexer indexer = new Indexer();
         for (Class<?> clazz : classes) {
@@ -598,12 +583,6 @@ public class ValidationAnnotationScannerTest {
     @SuppressWarnings("unused")
     public static class TestWithRepeatableServerManagedFieldUnmodified {
         private String uuid;
-        private String protocol;
-    }
-
-    @ProtocolUnmodified
-    @SuppressWarnings("unused")
-    public static class TestWithProtocolUnmodifiedDefault {
         private String protocol;
     }
 }

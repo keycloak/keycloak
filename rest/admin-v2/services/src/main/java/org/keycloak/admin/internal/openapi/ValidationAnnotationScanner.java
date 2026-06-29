@@ -349,7 +349,7 @@ public class ValidationAnnotationScanner {
             }
             if (isRepeatableContainer(annotation)) {
                 AnnotationValue value = annotation.value();
-                if (value != null) {
+                if (value != null && value.kind() == AnnotationValue.Kind.ARRAY) {
                     for (AnnotationInstance nested : value.asNestedArray()) {
                         if (isConstraintAnnotation(nested.name())) {
                             constraints.add(nested);
