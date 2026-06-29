@@ -1,5 +1,6 @@
 package org.keycloak.models.mapper;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -47,7 +48,11 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
     }
  
     final Map<String, MappedField<BaseClientRepresentation>> fields = new LinkedHashMap<String, MappedField<BaseClientRepresentation>>();
-    
+
+    public Set<String> getFieldNames() {
+        return Collections.unmodifiableSet(fields.keySet());
+    }
+
     protected <F> void addMapping(String name, Function<T, F> repGetter, BiConsumer<T, F> repSetter, Function<ClientModel, F> modelGetter, BiConsumer<ClientModel, F> modelSetter) {
         MappedField prop = new MappedField<>();
         prop.repGetter = repGetter;
