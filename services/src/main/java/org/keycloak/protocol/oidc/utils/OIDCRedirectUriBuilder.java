@@ -240,14 +240,14 @@ public abstract class OIDCRedirectUriBuilder {
         }
 
         private Response buildQueryResponse() {
-            uriBuilder.queryParam("response", session.tokens().encodeAndEncrypt(responseJWT));
+            uriBuilder.queryParam(OAuth2Constants.RESPONSE, session.tokens().encodeAndEncrypt(responseJWT));
             URI redirectUri = uriBuilder.build();
             Response.ResponseBuilder location = Response.status(302).location(redirectUri);
             return location.build();
         }
 
         private Response buildFragmentResponse() {
-            uriBuilder.encodedFragment("response=" + Encode.encodeQueryParamAsIs(session.tokens().encodeAndEncrypt(responseJWT)));
+            uriBuilder.encodedFragment(OAuth2Constants.RESPONSE + "=" + Encode.encodeQueryParamAsIs(session.tokens().encodeAndEncrypt(responseJWT)));
             URI redirectUri = uriBuilder.build();
             Response.ResponseBuilder location = Response.status(302).location(redirectUri);
             return location.build();
@@ -267,7 +267,9 @@ public abstract class OIDCRedirectUriBuilder {
                     .append(HtmlUtils.escapeAttribute(redirectUri.toString()))
                     .append("\">");
 
-            builder.append("  <INPUT TYPE=\"HIDDEN\" NAME=\"response\" VALUE=\"")
+            builder.append("  <INPUT TYPE=\"HIDDEN\" NAME=\"")
+                    .append(OAuth2Constants.RESPONSE)
+                    .append("\" VALUE=\"")
                     .append(HtmlUtils.escapeAttribute(session.tokens().encodeAndEncrypt(responseJWT)))
                     .append("\" />");
 
