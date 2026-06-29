@@ -214,6 +214,24 @@ The old provider can be removed once all sessions using the old key have expired
 
 The following sections provide details on deprecated features.
 
+=== Twitter Identity Broker deprecated for removal
+
+In this release, the Twitter Identity Broker is deprecated for removal.
+It relies on Twitter's legacy OAuth 1.0a endpoints.
+
+As X (formerly Twitter) now supports OAuth 2.0, it is recommended to use the generic *OAuth v2* identity provider configured against the X OAuth 2.0 endpoints instead.
+For the migration steps, see the link:{adminguide_link}#_twitter[Twitter] section in the {adminguide_name}.
+
+The broker remains enabled by default for backward compatibility. If you no longer use it, you can disable the
+`twitter-broker` feature using the `features-disabled` server option:
+
+[source]
+----
+--features-disabled=twitter-broker
+----
+
+The `twitter-broker` feature is planned for removal in a future release.
+
 === Identity Brokering API V1 is deprecated
 
 The Identity Brokering API V1 is now deprecated but remains enabled by default for backward compatibility. See the link:{releasenotes_link}[Release Notes] for more details.
