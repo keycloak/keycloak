@@ -51,6 +51,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
@@ -459,7 +460,8 @@ public class ClientTest {
 
     @Test
     public void removeInternalClientExpectingBadRequestException() {
-        defaultClients.stream().filter(Predicate.not(REALM_MANAGEMENT_CLIENT_ID::equals)).forEach(defaultClient -> {
+        Set<String> excluded = Set.of(REALM_MANAGEMENT_CLIENT_ID, Constants.ADMIN_PERMISSIONS_CLIENT_ID, SystemClientUtil.SYSTEM_CLIENT_ID);
+        defaultClients.stream().filter(Predicate.not(excluded::contains)).forEach(defaultClient -> {
             final String defaultClientId = AdminApiUtil.findClientByClientId(managedRealm.admin(), defaultClient)
                     .toRepresentation().getId();
 
@@ -483,6 +485,32 @@ public class ClientTest {
                             .toRepresentation().getId();
                     managedRealm.admin().clients().get(testRealmClientId).remove();
                 });
+    }
+
+    @Test
+    public void removeSystemClientExpectingBadRequestException() {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setClientId(SystemClientUtil.SYSTEM_CLIENT_ID);
+        rep.setEnabled(true);
+
+        String id;
+        try (Response response = managedRealm.admin().clients().create(rep)) {
+            id = ApiUtil.getCreatedId(response);
+        }
+
+        try {
+            BadRequestException ex = assertThrows(BadRequestException.class, () -> managedRealm.admin().clients().get(id).remove());
+            OAuth2ErrorRepresentation error = ex.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+            assertThat(error.getError(), is("invalid_request"));
+            assertThat(error.getErrorDescription(), is("Could not delete client"));
+        } finally {
+            // rename away from the protected clientId so the test can clean up after itself
+            ClientResource clientResource = managedRealm.admin().clients().get(id);
+            ClientRepresentation created = clientResource.toRepresentation();
+            created.setClientId("system-cleanup-" + id);
+            clientResource.update(created);
+            clientResource.remove();
+        }
     }
 
     @Test
