@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriBuilderException;
 
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
@@ -29,12 +28,10 @@ import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakUrls;
-import org.keycloak.tests.utils.SamlClient;
 
 import org.junit.jupiter.api.BeforeEach;
 
@@ -48,14 +45,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public abstract class AbstractSamlTest {
 
-    @InjectRealm(fromJson = "/adapter-test/keycloak-saml/testsaml.json")
+    @InjectRealm(fromJson = "testsaml.json")
     protected ManagedRealm samlRealm;
 
     @InjectKeycloakUrls
     protected KeycloakUrls keycloakUrls;
-
-    @InjectAdminClient
-    protected Keycloak adminClient;
 
     public static final String REALM_NAME = "demo";
 
