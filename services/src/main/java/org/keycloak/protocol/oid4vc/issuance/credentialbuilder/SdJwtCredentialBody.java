@@ -48,8 +48,9 @@ public class SdJwtCredentialBody implements CredentialBody {
         ObjectNode keyBindingNode = JsonSerialization.mapper.createObjectNode();
         keyBindingNode.set(CLAIM_NAME_JWK, jwkNode);
 
-        issuerSignedJWT.getDisclosureClaims().add(
-                new VisibleSdJwtClaim(SdJwtClaimName.of(CLAIM_NAME_CNF), keyBindingNode));
+        SdJwtClaimName cnfName = SdJwtClaimName.of(CLAIM_NAME_CNF);
+        issuerSignedJWT.getDisclosureClaims().removeIf(claim -> claim != null && cnfName.equals(claim.getClaimName()));
+        issuerSignedJWT.getDisclosureClaims().add(new VisibleSdJwtClaim(cnfName, keyBindingNode));
     }
 
     public IssuerSignedJWT getIssuerSignedJWT() {
