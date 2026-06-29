@@ -22,15 +22,21 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -67,10 +73,14 @@ import io.fabric8.kubernetes.api.model.MicroTime;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionSpec;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.events.v1.Event;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
@@ -81,6 +91,7 @@ import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.fabric8.kubernetes.client.dsl.Loggable;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.ResourceDefinitionContext;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.fabric8.openshift.api.model.monitoring.v1.ServiceMonitor;
 import io.javaoperatorsdk.operator.Operator;
@@ -163,11 +174,14 @@ public enum OperatorDeployment {local_apiserver,local,remote}
   private static Operator operator;
   private static BaseOperatorTestConfigurationService config;
   protected static boolean isOpenShift;
+  private static boolean watchAllNamespaces;
 
   private static ApiServerHelper kubeApi;
 
+  private static List<HasMetadata> resources;
+
   @BeforeAll
-  public static void before(TestInfo testInfo) throws FileNotFoundException {
+  public static void before(TestInfo testInfo) throws IOException {
     configuration = CDI.current().select(QuarkusConfigurationService.class).get();
     operatorDeployment = ConfigProvider.getConfig().getOptionalValue(OPERATOR_DEPLOYMENT_PROP, OperatorDeployment.class).orElse(OperatorDeployment.local_apiserver);
     if (testInfo.getTestClass().map(m -> m.getAnnotation(DisabledIfApiServerTest.class)).isPresent()) {
@@ -193,6 +207,8 @@ public enum OperatorDeployment {local_apiserver,local,remote}
     Log.info("Creating CRDs");
     createCRDs(k8sclient);
     isOpenShift = isOpenShift(k8sclient);
+    
+    watchAllNamespaces = testInfo.getTestClass().map(m -> m.getAnnotation(ClusterWide.class)).isPresent();
 
     if (operatorDeployment == OperatorDeployment.remote) {
       createRBACresourcesAndOperatorDeployment();
@@ -202,7 +218,7 @@ public enum OperatorDeployment {local_apiserver,local,remote}
 
     if (operatorDeployment == OperatorDeployment.local_apiserver) {
       deployDBSecret();
-    } else {
+    } else if (!watchAllNamespaces) {
       deployDB();
     }
   }
@@ -230,38 +246,76 @@ public enum OperatorDeployment {local_apiserver,local,remote}
       k8sclient.resource(new NamespaceBuilder().withNewMetadata().addToLabels("app","keycloak-test").withName(namespace).endMetadata().build()).create();
   }
 
-  private static void createRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
+  protected static void createRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
     Log.info("Creating RBAC and Deployment into Namespace " + namespace);
-    K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"), obj -> {
+
+    resources = K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"), obj -> {
+        if (obj instanceof Role && watchAllNamespaces) {
+            Map<String, Object> map = k8sclient.getKubernetesSerialization().convertValue(obj, Map.class);
+            map.put("kind", "ClusterRole");
+            return k8sclient.getKubernetesSerialization().convertValue(map, ClusterRole.class);
+        }
+        if (obj instanceof RoleBinding) {
+            if ("keycloak-operator-view".equals(obj.getMetadata().getName())) {
+                return null; // exclude this role since it's not present in olm
+            }
+            if (watchAllNamespaces) {
+                obj.getMetadata().setNamespace(null);
+                ((RoleBinding)obj).getRoleRef().setKind("ClusterRole");
+                Map<String, Object> map = k8sclient.getKubernetesSerialization().convertValue(obj, Map.class);
+                map.put("kind", "ClusterRoleBinding");
+                obj = k8sclient.getKubernetesSerialization().convertValue(map, ClusterRoleBinding.class);
+            }
+        }
         if (obj instanceof ClusterRoleBinding) {
             ((ClusterRoleBinding)obj).getSubjects().forEach(s -> s.setNamespace(namespace));
-        } else if (obj instanceof RoleBinding && "keycloak-operator-view".equals(obj.getMetadata().getName())) {
-            return null; // exclude this role since it's not present in olm
         } else if (obj instanceof Deployment) {
             // set values useful for testing - TODO: could drive this in some way from the test/resource/application.properties
-            ((Deployment)obj).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar("KC_OPERATOR_KEYCLOAK_UPDATE_POD_DEADLINE_SECONDS", "60", null));
+            List<EnvVar> env = ((Deployment)obj).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+            env.add(new EnvVar("KC_OPERATOR_KEYCLOAK_UPDATE_POD_DEADLINE_SECONDS", "60", null));
+            
+            if (watchAllNamespaces) {
+                env.stream().forEach(envVar -> {
+                            if (io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE.equals(envVar.getValue())) {
+                                envVar.setValue(io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACES);
+                            }
+                        });
+            }
         }
         return obj;
     });
   }
 
   private static void cleanRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
-    Log.info("Deleting RBAC from Namespace " + namespace);
-    k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER +deploymentTarget+".yml"))
-            .inNamespace(namespace).delete();
+    Log.info("Deleting from Namespace " + namespace);
+    if (resources != null) {
+        resources.forEach(resource -> k8sclient.resource(resource).delete());
+    }
   }
 
-  public static void createCRDs(KubernetesClient client) throws FileNotFoundException {
-    K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.k8s.keycloak.org-v1.yml"));
-    K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.k8s.keycloak.org-v1.yml"));
-    K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakoidcclients.k8s.keycloak.org-v1.yml"));
-    K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaksamlclients.k8s.keycloak.org-v1.yml"));
+  public static void createCRDs(KubernetesClient client) throws IOException {
+    Path folder = Paths.get(TARGET_KUBERNETES_GENERATED_YML_FOLDER);
+    List<ResourceDefinitionContext> rdcs = new ArrayList<>();
+    try (var files = Files.newDirectoryStream(folder, entry -> entry.getFileName().toString().endsWith("k8s.keycloak.org-v1.yml"))) {
+      for (Path file : files) {
+        K8sUtils.set(client, new FileInputStream(file.toFile()), obj -> {
+            if (obj instanceof CustomResourceDefinition crd) {
+                CustomResourceDefinitionSpec spec = crd.getSpec();
+                spec.getVersions().forEach(crdv -> {
+                    rdcs.add(new ResourceDefinitionContext.Builder().withGroup(spec.getGroup())
+                            .withKind(spec.getNames().getKind()).withNamespaced("Namespaced".equals(spec.getScope()))
+                            .withPlural(spec.getNames().getPlural()).withVersion(crdv.getName()).build());
+                });
+            }
+            return obj;
+        });
+      }
+    }
+
     K8sUtils.set(client, BaseOperatorTest.class.getResourceAsStream("/service-monitor-crds.yml"));
 
-    Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(Keycloak.class).list());
-    Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(KeycloakRealmImport.class).list());
-    Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(KeycloakOIDCClient.class).list());
-    Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(KeycloakSAMLClient.class).list());
+    rdcs.forEach(rdc -> Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS)
+            .untilAsserted(() -> client.genericKubernetesResources(rdc).list()));
     Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(ServiceMonitor.class).list());
   }
 
@@ -270,13 +324,18 @@ public enum OperatorDeployment {local_apiserver,local,remote}
     // to be replaced later with full cdi construction or test mechanics from quarkus operator sdk
     config = new BaseOperatorTestConfigurationService(k8sclient);
     operator = new Operator(config);
-    Log.info("Registering reconcilers for operator : " + operator + " [" + operatorDeployment + "]");
+    Log.info("Registering reconcilers for operator : " + operator + " [" + operatorDeployment + "]"
+        + (watchAllNamespaces ? " (watching all namespaces)" : ""));
 
     Instance<Reconciler<? extends HasMetadata>> reconcilers = CDI.current().select(new TypeLiteral<>() {});
 
     for (Reconciler<?> reconciler : reconcilers) {
       Log.info("Register and apply : " + reconciler.getClass().getName());
-      operator.register(reconciler, overrider -> overrider.settingNamespace(k8sclient.getNamespace()));
+      if (watchAllNamespaces) {
+        operator.register(reconciler, overrider -> overrider.watchingAllNamespaces());
+      } else {
+        operator.register(reconciler, overrider -> overrider.settingNamespace(k8sclient.getNamespace()));
+      }
     }
     operator.start();
   }
