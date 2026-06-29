@@ -50,9 +50,13 @@ public final class LDAPContextManager implements AutoCloseable {
         var tracing = session.getProvider(TracingProvider.class);
         tracing.startSpan(LDAPContextManager.class, "createLdapContext");
         try {
-            // Create the LDAP context without setting the security principal and credentials yet.
-            // This avoids triggering an automatic bind request, allowing us to send an optional StartTLS request before binding.
             Hashtable<Object, Object> connProp = getNonAuthConnectionProperties(ldapConfig);
+
+            // Without StartTLS, bind via the initial env so the pooled connection is reused, not re-bound per operation
+            // With StartTLS the bind is deferred until after the negotiation
+            if (!ldapConfig.isStartTls()) {
+                setAuthConnectionProperties(connProp, ldapConfig, getBindPassword());
+            }
 
             if (ldapConfig.isConnectionTrace()) {
                 connProp.put(LDAPConstants.CONNECTION_TRACE_BER, System.err);
@@ -74,6 +78,9 @@ public final class LDAPContextManager implements AutoCloseable {
                 if (tlsResponse == null) {
                     throw new NamingException("Wasn't able to establish LDAP connection through StartTLS");
                 }
+
+                // StartTLS must complete before authenticating, so bind only now.
+                setAdminConnectionAuthProperties(ldapContext);
             }
         } catch (NamingException e) {
             tracing.error(e);
@@ -81,8 +88,6 @@ public final class LDAPContextManager implements AutoCloseable {
         } finally {
             tracing.endSpan();
         }
-
-        setAdminConnectionAuthProperties(ldapContext);
 
         // Bind will be automatically called when operations are executed on the context,
         // or it can be explicitly called by invoking the reconnect() method (e.g., authentication test in LDAPServerCapabilitiesManager.testLDAP()).
@@ -116,6 +121,27 @@ public final class LDAPContextManager implements AutoCloseable {
         return tls;
     }
 
+    // Fill auth properties into the initial connection env so the bound connection can be pooled and reused.
+    static void setAuthConnectionProperties(Hashtable<Object, Object> connProp, LDAPConfig ldapConfig, String bindPassword) {
+        String authType = ldapConfig.getAuthType();
+        if (authType != null) {
+            connProp.put(Context.SECURITY_AUTHENTICATION, authType);
+        }
+
+        if (!LDAPConstants.AUTH_TYPE_NONE.equals(authType)) {
+            String bindDN = ldapConfig.getBindDN();
+            if (bindDN != null) {
+                connProp.put(Context.SECURITY_PRINCIPAL, bindDN);
+            }
+
+            if (bindPassword != null) {
+                connProp.put(SECURITY_CREDENTIALS, bindPassword);
+            }
+        }
+
+        logConnectionProperties(connProp);
+    }
+
     // Fill in the connection properties to authenticate as admin.
     private void setAdminConnectionAuthProperties(LdapContext ldapContext) throws NamingException {
         String authType = ldapConfig.getAuthType();
@@ -123,18 +149,25 @@ public final class LDAPContextManager implements AutoCloseable {
             ldapContext.addToEnvironment(Context.SECURITY_AUTHENTICATION, authType);
         }
 
-        String bindPassword = getBindPassword();
-        if (bindPassword != null) {
-            ldapContext.addToEnvironment(SECURITY_CREDENTIALS, bindPassword);
+        if (!LDAPConstants.AUTH_TYPE_NONE.equals(authType)) {
+            String bindDN = ldapConfig.getBindDN();
+            if (bindDN != null) {
+                ldapContext.addToEnvironment(Context.SECURITY_PRINCIPAL, bindDN);
+            }
+
+            String bindPassword = getBindPassword();
+            if (bindPassword != null) {
+                ldapContext.addToEnvironment(SECURITY_CREDENTIALS, bindPassword);
+            }
         }
 
-        String bindDN = ldapConfig.getBindDN();
-        if (bindDN != null) {
-            ldapContext.addToEnvironment(Context.SECURITY_PRINCIPAL, bindDN);
-        }
+        logConnectionProperties(ldapContext.getEnvironment());
+    }
 
+    // Log the connection environment with the bind credentials masked.
+    private static void logConnectionProperties(Map<?, ?> env) {
         if (logger.isDebugEnabled()) {
-            Map<Object, Object> copyEnv = new Hashtable<>(ldapContext.getEnvironment());
+            Map<Object, Object> copyEnv = new Hashtable<>(env);
             if (copyEnv.containsKey(Context.SECURITY_CREDENTIALS)) {
                 copyEnv.put(Context.SECURITY_CREDENTIALS, "**************************************");
             }
@@ -159,6 +192,11 @@ public final class LDAPContextManager implements AutoCloseable {
         String url = ldapConfig.getConnectionUrl();
 
         if (url != null) {
+            if (url.contains(",")) {
+                logger.warnf("LDAP connection URL contains commas, which are not supported as URL separators. "
+                        + "Use spaces to separate multiple LDAP URLs for failover (e.g. \"ldap://host1:389 ldap://host2:389\"). "
+                        + "Current URL: %s", url);
+            }
             env.put(Context.PROVIDER_URL, url);
         } else {
             logger.warn("LDAP URL is null. LDAPOperationManager won't work correctly");

@@ -62,9 +62,13 @@ public class KcAdmV2CachedDescriptorHelpTest {
 
     @Test
     public void helpShowsCachedResource() {
-        String help = createCli().getUsageMessage();
-        assertTrue("'widget' not found in: " + help, help.contains("widget"));
-        assertFalse("bundled 'client' should not appear in: " + help, help.contains("client"));
+        CommandLine cli = createCli();
+        String help = cli.getUsageMessage();
+        assertTrue("'widget' not found in help: " + help, help.contains("widget"));
+        assertTrue("'widget' should be a subcommand, but found: " + cli.getSubcommands().keySet(),
+                cli.getSubcommands().containsKey("widget"));
+        assertFalse("bundled 'client' should be replaced by cached resource",
+                cli.getSubcommands().containsKey("client"));
     }
 
     @Test

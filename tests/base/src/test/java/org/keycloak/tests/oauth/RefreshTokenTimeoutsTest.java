@@ -27,7 +27,6 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.representations.info.FeatureRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -36,7 +35,6 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
@@ -49,6 +47,7 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.common.TestRealmUserConfig;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -77,7 +76,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test for the scenarios related to refresh-token and involving userSession and clientSession timeouts (idle-timeout, max session timeout etc).
  */
 @KeycloakIntegrationTest
-@DatabaseTest
 public class RefreshTokenTimeoutsTest {
 
     @InjectOAuthClient
@@ -104,16 +102,17 @@ public class RefreshTokenTimeoutsTest {
     @InjectUser(config = TestRealmUserConfig.class)
     protected ManagedUser user;
 
-    @InjectClient(attachTo = "test-app")
-    ManagedClient managedClient;
+    ClientResource testAppClient;
 
     @BeforeEach
     public void before() {
+        testAppClient = AdminApiUtil.findClientByClientId(realm.admin(), "test-app");
         enableRefreshTokenEvents(realm);
         AccountHelper.logout(realm.admin(), user.getUsername());
     }
 
     @Test
+    @DatabaseTest
     public void testUserSessionRefreshAndIdle() {
         oauth.doLogin("test-user@localhost", "password");
 
@@ -199,6 +198,7 @@ public class RefreshTokenTimeoutsTest {
     }
 
     @Test
+    @DatabaseTest
     public void testUserSessionRefreshAndIdleRememberMe() {
         realm.updateWithCleanup(r -> r
                 .setRememberMe(true)
@@ -318,6 +318,7 @@ public class RefreshTokenTimeoutsTest {
     }
 
     @Test
+    @DatabaseTest
     public void refreshTokenUserClientMaxLifespanSmallerThanSession() {
         realm.updateWithCleanup(r ->
                 r.ssoSessionMaxLifespan(3600)
@@ -566,6 +567,7 @@ public class RefreshTokenTimeoutsTest {
      * KEYCLOAK-1267
      */
     @Test
+    @DatabaseTest
     public void refreshTokenUserSessionMaxLifespanWithRememberMe() {
         realm.updateWithCleanup(r -> r
                 .setRememberMe(true)
@@ -605,15 +607,14 @@ public class RefreshTokenTimeoutsTest {
         RealmRepresentation rep = realm.toRepresentation();
         Integer originalSsoSessionMaxLifespan = rep.getSsoSessionMaxLifespan();
 
-        ClientResource client = managedClient.admin();
-        ClientRepresentation clientRepresentation = client.toRepresentation();
+        ClientRepresentation clientRepresentation = testAppClient.toRepresentation();
 
         try {
             rep.setSsoSessionMaxLifespan(1000);
             realm.update(rep);
 
             clientRepresentation.getAttributes().put(CLIENT_SESSION_MAX_LIFESPAN, "500");
-            client.update(clientRepresentation);
+            testAppClient.update(clientRepresentation);
 
             oauth.doLogin("test-user@localhost", "password");
 
@@ -661,7 +662,7 @@ public class RefreshTokenTimeoutsTest {
             rep.setSsoSessionMaxLifespan(originalSsoSessionMaxLifespan);
             realm.update(rep);
             clientRepresentation.getAttributes().put(CLIENT_SESSION_MAX_LIFESPAN, null);
-            client.update(clientRepresentation);
+            testAppClient.update(clientRepresentation);
         }
     }
 
@@ -677,11 +678,10 @@ public class RefreshTokenTimeoutsTest {
 
         RealmResource realm = this.realm.admin();
 
-        ClientResource client = managedClient.admin();
-        ClientRepresentation clientRepresentation = client.toRepresentation();
+        ClientRepresentation clientRepresentation = testAppClient.toRepresentation();
 
         // Duplicate the primary client to have two clients to test with
-        ClientRepresentation clientRepresentation2 = client.toRepresentation();
+        ClientRepresentation clientRepresentation2 = testAppClient.toRepresentation();
         clientRepresentation2.setClientId("test-app2");
         clientRepresentation2.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT, "500");
         clientRepresentation2.setId(null);
@@ -707,7 +707,7 @@ public class RefreshTokenTimeoutsTest {
 
             // Reduce the idle time so that the originally issued refresh token is valid, but it will be considered invalid due to the client configuration
             clientRepresentation.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT, "500");
-            client.update(clientRepresentation);
+            testAppClient.update(clientRepresentation);
 
             oauth.client("test-app2", origClientSecret);
 
@@ -729,8 +729,8 @@ public class RefreshTokenTimeoutsTest {
             runOnServer.run(session -> {
                 InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
                 if (connections != null) {
-                    Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache = connections.getCache(USER_SESSION_CACHE_NAME);
-                    Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(CLIENT_SESSION_CACHE_NAME);
+                    Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache = connections.getCache(USER_SESSION_CACHE_NAME, false);
+                    Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(CLIENT_SESSION_CACHE_NAME, false);
                     if (sessionCache != null) {
                         sessionCache.clear();
                     }
@@ -753,7 +753,7 @@ public class RefreshTokenTimeoutsTest {
             expectRefreshEventError();
         } finally {
             clientRepresentation.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT, "");
-            client.update(clientRepresentation);
+            testAppClient.update(clientRepresentation);
             Response ignored = realm.clients().delete(clientUUID);
             ignored.close();
         }
@@ -762,8 +762,7 @@ public class RefreshTokenTimeoutsTest {
 
     @Test
     public void testClientSessionMaxLifespan() {
-        ClientResource client = managedClient.admin();
-        ClientRepresentation clientRepresentation = client.toRepresentation();
+        ClientRepresentation clientRepresentation = testAppClient.toRepresentation();
 
         RealmResource realm = this.realm.admin();
         RealmRepresentation rep = realm.toRepresentation();
@@ -791,7 +790,7 @@ public class RefreshTokenTimeoutsTest {
 
             clientRepresentation.getAttributes().put(CLIENT_SESSION_MAX_LIFESPAN,
                     Integer.toString(ssoSessionMaxLifespan - 200));
-            client.update(clientRepresentation);
+            testAppClient.update(clientRepresentation);
 
             refreshToken = response.getRefreshToken();
             response = oauth.doRefreshTokenRequest(refreshToken);
@@ -802,14 +801,13 @@ public class RefreshTokenTimeoutsTest {
             rep.setClientSessionMaxLifespan(originalClientSessionMaxLifespan);
             realm.update(rep);
             clientRepresentation.getAttributes().put(CLIENT_SESSION_MAX_LIFESPAN, "");
-            client.update(clientRepresentation);
+            testAppClient.update(clientRepresentation);
         }
     }
 
     @Test
     public void testClientSessionIdleTimeout() {
-        ClientResource client = managedClient.admin();
-        ClientRepresentation clientRepresentation = client.toRepresentation();
+        ClientRepresentation clientRepresentation = testAppClient.toRepresentation();
 
         RealmResource realm = this.realm.admin();
         RealmRepresentation rep = realm.toRepresentation();
@@ -833,7 +831,7 @@ public class RefreshTokenTimeoutsTest {
 
             clientRepresentation.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT,
                     Integer.toString(ssoSessionIdleTimeout - 200));
-            client.update(clientRepresentation);
+            testAppClient.update(clientRepresentation);
 
             refreshToken = response.getRefreshToken();
             response = oauth.doRefreshTokenRequest(refreshToken);
@@ -843,7 +841,7 @@ public class RefreshTokenTimeoutsTest {
             rep.setClientSessionIdleTimeout(originalClientSessionIdleTimeout);
             realm.update(rep);
             clientRepresentation.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT, "");
-            client.update(clientRepresentation);
+            testAppClient.update(clientRepresentation);
         }
     }
 
@@ -854,11 +852,10 @@ public class RefreshTokenTimeoutsTest {
                 .ssoSessionMaxLifespan(86313600) // 999 Days
         );
 
-        ClientResource client = managedClient.admin();
-        ClientRepresentation clientRepresentation = client.toRepresentation();
+        ClientRepresentation clientRepresentation = testAppClient.toRepresentation();
         clientRepresentation.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT, "60"); // 1 minute
         clientRepresentation.getAttributes().put(CLIENT_SESSION_MAX_LIFESPAN, "65"); // 1 minute 5 seconds
-        client.update(clientRepresentation);
+        testAppClient.update(clientRepresentation);
 
         try {
             oauth.doLogin("test-user@localhost", "password");
@@ -876,7 +873,7 @@ public class RefreshTokenTimeoutsTest {
         } finally {
             clientRepresentation.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT, "");
             clientRepresentation.getAttributes().put(CLIENT_SESSION_MAX_LIFESPAN, "");
-            client.update(clientRepresentation);
+            testAppClient.update(clientRepresentation);
         }
     }
 

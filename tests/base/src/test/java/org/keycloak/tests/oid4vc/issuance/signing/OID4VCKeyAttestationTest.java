@@ -1,26 +1,35 @@
 package org.keycloak.tests.oid4vc.issuance.signing;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.net.ssl.TrustManagerFactory;
+import java.util.Objects;
 
 import org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels;
 import org.keycloak.VCFormat;
+import org.keycloak.broker.trust.DefaultTrustIdentityProviderConfig;
+import org.keycloak.broker.trust.DefaultTrustIdentityProviderFactory;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.constants.OID4VCIConstants;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.config.TruststoreOptions;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.def.DefaultCryptoProvider;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
@@ -46,15 +55,22 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCProofTestUtils;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.keycloak.protocol.oid4vc.model.ProofType.ATTESTATION;
 import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
+import static org.keycloak.protocol.oidc.utils.JWKSServerUtils.toJwk;
+import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.toJwks;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -66,19 +82,73 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Migrated OID4VCKeyAttestationTest to the new test framework.
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCKeyAttestationTest.ServerConfig.class)
 public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCKeyAttestationTest.class);
 
     private static final TimeProvider TIME_PROVIDER = new OID4VCIssuerTestBase.StaticTimeProvider(1000);
+    private static final X5cTestCertificateChain X5C_TEST_CERTIFICATE_CHAIN = X5cTestCertificateChain.create();
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
 
+    public static class ServerConfig extends OID4VCIssuerTestBase.VCTestServerConfig implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return super.configure(config)
+                    .option(TruststoreOptions.TRUSTSTORE_PATHS.getKey(), X5C_TEST_CERTIFICATE_CHAIN.caCertificatePath());
+        }
+    }
+
+    private record X5cTestCertificateChain(String caCertificatePem, String leafCertificatePem,
+                                           String leafPrivateKeyPem, String caCertificatePath) {
+
+        private static X5cTestCertificateChain create() {
+            try {
+                if (!CryptoIntegration.isInitialised()) {
+                    CryptoIntegration.setProvider(new DefaultCryptoProvider());
+                }
+
+                KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
+                keyGen.initialize(new ECGenParameterSpec("secp256r1"));
+                KeyPair caKeyPair = keyGen.generateKeyPair();
+                KeyPair leafKeyPair = keyGen.generateKeyPair();
+
+                X509Certificate caCertificate = CertificateUtils.generateV1SelfSignedCertificate(caKeyPair,
+                        "OID4VC Test CA");
+                X509Certificate leafCertificate = CertificateUtils.generateV3Certificate(leafKeyPair,
+                        caKeyPair.getPrivate(), caCertificate, "OID4VC Test Leaf");
+
+                String caCertificatePem = PemUtils.addCertificateBeginEnd(PemUtils.encodeCertificate(caCertificate));
+                String leafCertificatePem = PemUtils.addCertificateBeginEnd(PemUtils.encodeCertificate(leafCertificate));
+                String leafPrivateKeyPem = Base64.encodeBytes(leafKeyPair.getPrivate().getEncoded());
+                Path caCertificatePath = Files.createTempFile("oid4vc-x5c-test-ca", ".pem");
+                Files.writeString(caCertificatePath, caCertificatePem, StandardCharsets.UTF_8);
+                caCertificatePath.toFile().deleteOnExit();
+
+                return new X5cTestCertificateChain(caCertificatePem, leafCertificatePem, leafPrivateKeyPem,
+                        caCertificatePath.toString());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to create x5c test certificate chain", e);
+            }
+        }
+    }
+
     private static void setupSessionContext(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(OID4VCIssuerTestBase.VCTestRealmConfig.TEST_REALM_NAME);
         session.getContext().setRealm(realm);
+
+        ClientModel client = session.clients().getClientByClientId(realm, OID4VCI_PUBLIC_CLIENT_ID);
+        session.getContext().setClient(client);
+    }
+
+    @AfterEach
+    public void cleanup() {
+        runOnServer.run(session -> {
+            // Remove all trusted keys config
+            session.identityProviders().remove(OID4VCI_ATTESTER_DEFAULT_TRUST_IDP_ALIAS);
+        });
     }
 
     @Test
@@ -145,9 +215,11 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
     @Test
     public void testValidX5cJwtProofWithoutAttestation() {
         String cNonce = getCNonce();
+        String leafCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.leafCertificatePem();
+        String leafPrivateKeyPem = X5C_TEST_CERTIFICATE_CHAIN.leafPrivateKeyPem();
         runOnServer.run(session -> {
             setupSessionContext(session);
-            runValidX5cJwtProofWithoutAttestationTest(session, cNonce);
+            runValidX5cJwtProofWithoutAttestationTest(session, cNonce, leafCertificatePem, leafPrivateKeyPem);
         });
     }
 
@@ -173,28 +245,12 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         });
     }
 
-    /**
-     * Kid-only JWT proof: trusted public JWK is configured on the realm and resolved via JwtProofValidatorFactory.
-     */
-    @Test
-    public void testValidJwtProofWithKidOnly() {
-        String cNonce = getCNonce();
-        runOnServer.run(session -> {
-            setupSessionContext(session);
-            runValidJwtProofWithKidOnlyTest(session, cNonce);
-        });
-    }
-
     @Test
     public void testInvalidAttestationSignature() {
         String cNonce = getCNonce();
         runOnServer.run(session -> {
             setupSessionContext(session);
-            try {
-                runInvalidAttestationSignatureTest(session, cNonce);
-            } catch (Exception e) {
-                fail("Unexpected exception: " + e.getMessage());
-            }
+            runInvalidAttestationSignatureTest(session, cNonce);
         });
     }
 
@@ -216,11 +272,22 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testAttestationWithX5cCertificateChain() {
+    public void testAttestationWithSelfSignedX5cCertificateChainIsRejected() {
         String cNonce = getCNonce();
         runOnServer.run(session -> {
             setupSessionContext(session);
-            runAttestationWithX5cCertificateChain(session, cNonce);
+            runAttestationWithSelfSignedX5cCertificateChainIsRejected(session, cNonce);
+        });
+    }
+
+    @Test
+    public void testAttestationWithX5cCertificateChain() {
+        String cNonce = getCNonce();
+        String leafCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.leafCertificatePem();
+        String leafPrivateKeyPem = X5C_TEST_CERTIFICATE_CHAIN.leafPrivateKeyPem();
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            runAttestationWithX5cCertificateChain(session, cNonce, leafCertificatePem, leafPrivateKeyPem);
         });
     }
 
@@ -254,51 +321,68 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         });
     }
 
-    @Test
-    public void testAttestationProofAcceptsLegacyTyp() {
+    @ParameterizedTest
+    @ValueSource(strings = {
+            AttestationValidatorUtil.ATTESTATION_JWT_TYP,
+            AttestationValidatorUtil.LEGACY_ATTESTATION_JWT_TYP
+    })
+    public void testAttestationProofWithIdPConfiguredTrustedKeys(String typ) {
         String cNonce = getCNonce();
+
         runOnServer.run(session -> {
-            setupSessionContext(session);
-            runAttestationProofAcceptsLegacyTypTest(session, cNonce);
+                setupSessionContext(session);
+
+                // Configure trusted attestation keys
+                KeyWrapper attestationKey = getECKey("attestationKey");
+                KeyWrapper attestationKeyAlt1 = getECKey("attestationKeyAlt1");
+                KeyWrapper attestationKeyAlt2 = getRSAKey("attestationKeyAlt2");
+                String attestationJwks = JsonSerialization.valueAsString(
+                        toJwks(attestationKey, attestationKeyAlt1, attestationKeyAlt2));
+
+                RealmModel realm = session.getContext().getRealm();
+                configureTrustIdentityProvider(realm, OID4VCI_ATTESTER_DEFAULT_TRUST_IDP_ALIAS,
+                        DefaultTrustIdentityProviderFactory.PROVIDER_ID,
+                        Map.of(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS, attestationJwks));
+
+                KeyWrapper proofKey = getECKey("proofKey");
+                JWK proofKeyJwk = Objects.requireNonNull(toJwk(proofKey));
+                String attestationJwt = createValidAttestationJwt(attestationKey, List.of(proofKeyJwk), cNonce, typ);
+                List<JWK> attestedKeys = runAttestationProofValidationWithDefaultKeyResolver(session, attestationJwt);
+
+                assertEquals(1, attestedKeys.size());
+                assertEquals("proofKey", attestedKeys.get(0).getKeyId());
+
+                // With attestation embedded in Jwt proof
+                String jwtProof = generateJwtProofWithKeyAttestation(session, proofKey, attestationJwt, cNonce);
+                attestedKeys = runJwtAttestationProofValidationWithDefaultKeyResolver(session, jwtProof);
+
+                assertEquals(1, attestedKeys.size());
+                assertEquals("proofKey", attestedKeys.get(0).getKeyId());
         });
     }
 
     @Test
-    public void testAttestationProofWithRealmAttributeTrustedKeys() {
+    public void testAttestationProofWithNonMatchingIdPConfiguredTrustedKeys() {
         String cNonce = getCNonce();
-        runOnServer.run(session -> {
-            setupSessionContext(session);
-            runAttestationProofWithRealmAttributeTrustedKeysTest(session, cNonce);
-        });
-    }
 
-    @Test
-    public void testAttestationProofWithInvalidTrustedKey() {
-        String cNonce = getCNonce();
+        KeyWrapper attestationKey = getECKey("attestationKey");
+        String attestationJwks = JsonSerialization.valueAsString(toJwks(attestationKey));
+
+        KeyWrapper unrelatedAttestationKey = getECKey("unrelatedAttestationKey");
+        KeyWrapper proofKey = getECKey("proofKey");
+        String attestationJwt = createValidAttestationJwt(unrelatedAttestationKey, toJwk(proofKey), cNonce);
+
         runOnServer.run(session -> {
             setupSessionContext(session);
+            RealmModel realm = session.getContext().getRealm();
+            configureTrustIdentityProvider(realm, OID4VCI_ATTESTER_DEFAULT_TRUST_IDP_ALIAS,
+                    DefaultTrustIdentityProviderFactory.PROVIDER_ID,
+                    Map.of(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS, attestationJwks));
+
             VCIssuerException e = assertThrows(VCIssuerException.class,
-                    () -> runAttestationProofWithInvalidTrustedKeyTest(session, cNonce));
-            assertTrue(e.getMessage().contains("not found in trusted key registry"),
-                    "Expected trusted key registry resolution error but got: " + e.getMessage());
-        });
-    }
+                    () -> runAttestationProofValidationWithDefaultKeyResolver(session, attestationJwt));
 
-    @Test
-    public void testAttestationProofExtractsAttestedKeysFromPayload() {
-        String cNonce = getCNonce();
-        runOnServer.run(session -> {
-            setupSessionContext(session);
-            runAttestationProofExtractsAttestedKeysFromPayloadTest(session, cNonce);
-        });
-    }
-
-    @Test
-    public void testAttestationProofWithMultipleTrustedKeys() {
-        String cNonce = getCNonce();
-        runOnServer.run(session -> {
-            setupSessionContext(session);
-            runAttestationProofWithMultipleTrustedKeysTest(session, cNonce);
+            assertEquals("Key with kid 'unrelatedAttestationKey' not found in trusted key registry", e.getMessage());
         });
     }
 
@@ -374,6 +458,10 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         return OID4VCProofTestUtils.createEcKeyPair(keyId);
     }
 
+    private static KeyWrapper getRSAKey(String keyId) {
+        return OID4VCProofTestUtils.createRsaKeyPair(keyId);
+    }
+
     private static VCIssuanceContext createVCIssuanceContext(KeycloakSession session) {
         VCIssuanceContext context = new VCIssuanceContext();
         KeyAttestationsRequired keyAttestationsRequired = new KeyAttestationsRequired();
@@ -395,16 +483,14 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         return context;
     }
 
-    private static String createValidAttestationJwt(KeycloakSession session,
-                                                    KeyWrapper attestationKey,
+    private static String createValidAttestationJwt(KeyWrapper attestationKey,
                                                     JWK proofJwk,
                                                     String cNonce) {
-        return createValidAttestationJwt(session, attestationKey, List.of(proofJwk), cNonce,
+        return createValidAttestationJwt(attestationKey, List.of(proofJwk), cNonce,
                 AttestationValidatorUtil.ATTESTATION_JWT_TYP);
     }
 
-    private static String createValidAttestationJwt(KeycloakSession session,
-                                                    KeyWrapper attestationKey,
+    private static String createValidAttestationJwt(KeyWrapper attestationKey,
                                                     List<JWK> proofJwks,
                                                     String cNonce,
                                                     String typ) {
@@ -507,25 +593,8 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         }
     }
 
-    private static String generateJwtProofWithKidNoAttestation(KeycloakSession session, KeyWrapper proofKey, String cNonce) {
-        try {
-            AccessToken token = new AccessToken();
-            String credentialIssuer = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
-            token.addAudience(credentialIssuer);
-            token.setNonce(cNonce);
-            token.issuedNow();
-
-            return new JWSBuilder()
-                    .type(JwtProofValidator.PROOF_JWT_TYP)
-                    .kid(proofKey.getKid())
-                    .jsonContent(token)
-                    .sign(new ECDSASignatureSignerContext(proofKey));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to generate kid-only JWT proof", e);
-        }
-    }
-
-    private static String generateJwtProofWithX5c(KeycloakSession session, KeyWrapper proofKey, X509Certificate cert, String cNonce) {
+    private static String generateJwtProofWithX5c(KeycloakSession session, KeyWrapper proofKey,
+            X509Certificate cert, String cNonce) {
         try {
             AccessToken token = new AccessToken();
             String credentialIssuer = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
@@ -563,19 +632,6 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
             JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
             proofJwk.setKeyId(proofKey.getKid());
             proofJwk.setAlgorithm(proofKey.getAlgorithm());
-
-            KeyAttestationJwtBody payload = new KeyAttestationJwtBody();
-            payload.setIat((long) TIME_PROVIDER.currentTimeSeconds());
-            payload.setNonce(cNonce);
-            payload.setAttestedKeys(List.of(proofJwk));
-            payload.setKeyStorage(List.of(
-                    KeyAttestationResistanceLevels.HIGH,
-                    KeyAttestationResistanceLevels.MODERATE
-            ));
-            payload.setUserAuthentication(List.of(
-                    KeyAttestationResistanceLevels.ENHANCED_BASIC,
-                    KeyAttestationResistanceLevels.BASIC
-            ));
 
             String attestationJwt = OID4VCProofTestUtils.generateAttestationProof(
                     attestationKey,
@@ -642,7 +698,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         proofJwk.setKeyId(proofKey.getKid());
         proofJwk.setAlgorithm(proofKey.getAlgorithm());
 
-        String attestationJwt = createValidAttestationJwt(session, attestationKey, proofJwk, cNonce);
+        String attestationJwt = createValidAttestationJwt(attestationKey, proofJwk, cNonce);
         String jwtProof = generateJwtProofWithKeyAttestation(session, proofKey, attestationJwt, cNonce);
         VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
         vcIssuanceContext.getCredentialRequest().setProofs(new Proofs().setJwt(List.of(jwtProof)));
@@ -685,7 +741,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         proofJwk.setKeyId(proofKey.getKid());
         proofJwk.setAlgorithm(proofKey.getAlgorithm());
 
-        String attestationJwt = createValidAttestationJwt(session, attestationKey, proofJwk, cNonce);
+        String attestationJwt = createValidAttestationJwt(attestationKey, proofJwk, cNonce);
         String jwtProof = generateJwtProofWithKeyAttestation(session, proofKey, attestationJwt, cNonce);
 
         VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
@@ -723,7 +779,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         proofJwk.setKeyId(proofKey.getKid());
         proofJwk.setAlgorithm(proofKey.getAlgorithm());
 
-        String attestationJwt = createValidAttestationJwt(session, attestationKey, proofJwk, cNonce);
+        String attestationJwt = createValidAttestationJwt(attestationKey, proofJwk, cNonce);
         String jwtProof = generateJwtProofWithKeyAttestation(session, proofKey, attestationJwt, cNonce, true);
 
         VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
@@ -740,45 +796,6 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         assertEquals(proofKey.getKid(), validatedKeys.get(0).getKeyId());
     }
 
-    private static void runValidJwtProofWithKidOnlyTest(KeycloakSession session, String cNonce) {
-        RealmModel realm = session.getContext().getRealm();
-        String previousTrustedKeys = realm.getAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-        String previousTrustedKeyIds = realm.getAttribute(OID4VCIConstants.TRUSTED_KEY_IDS_REALM_ATTR);
-        try {
-            KeyWrapper walletKey = getECKey("kidOnlyTrustedKeysE2e");
-            JWK trustedPublicJwk = JWKBuilder.create().ec(walletKey.getPublicKey());
-            trustedPublicJwk.setKeyId(walletKey.getKid());
-            trustedPublicJwk.setAlgorithm(walletKey.getAlgorithm());
-
-            realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR,
-                    JsonSerialization.writeValueAsString(List.of(trustedPublicJwk)));
-            realm.removeAttribute(OID4VCIConstants.TRUSTED_KEY_IDS_REALM_ATTR);
-            session.getContext().setRealm(realm);
-
-            JwtProofValidator validator = (JwtProofValidator) new JwtProofValidatorFactory().create(session);
-
-            String jwtProof = generateJwtProofWithKidNoAttestation(session, walletKey, cNonce);
-            VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
-            vcIssuanceContext.setCredentialRequest(new CredentialRequest().setProofs(new Proofs().setJwt(List.of(jwtProof))));
-
-            List<JWK> validatedKeys = validator.validateProof(vcIssuanceContext);
-            assertNotNull(validatedKeys);
-            assertEquals(1, validatedKeys.size());
-            assertEquals(walletKey.getKid(), validatedKeys.get(0).getKeyId());
-        } catch (Exception e) {
-            throw new RuntimeException("Kid-only JWT proof with realm trusted_keys failed", e);
-        } finally {
-            RealmModel toRestore = session.realms().getRealm(realm.getId());
-            toRestore.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR, previousTrustedKeys);
-            if (previousTrustedKeyIds != null) {
-                toRestore.setAttribute(OID4VCIConstants.TRUSTED_KEY_IDS_REALM_ATTR, previousTrustedKeyIds);
-            } else {
-                toRestore.removeAttribute(OID4VCIConstants.TRUSTED_KEY_IDS_REALM_ATTR);
-            }
-            session.getContext().setRealm(toRestore);
-        }
-    }
-
     private static void runJwtProofWithKeyAttestationMustContainProofKeyTest(KeycloakSession session, String cNonce) {
         KeyWrapper attestationKey = getECKey("attestationKey");
         KeyWrapper proofKey = getECKey("proofKey");
@@ -788,7 +805,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         differentJwk.setKeyId(differentKey.getKid());
         differentJwk.setAlgorithm(differentKey.getAlgorithm());
 
-        String attestationJwt = createValidAttestationJwt(session, attestationKey, differentJwk, cNonce);
+        String attestationJwt = createValidAttestationJwt(attestationKey, differentJwk, cNonce);
         String jwtProof = generateJwtProofWithKeyAttestation(session, proofKey, attestationJwt, cNonce);
 
         VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
@@ -822,22 +839,20 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                 "Expected mutual exclusivity validation error but got: " + e.getMessage());
     }
 
-    private static void runValidX5cJwtProofWithoutAttestationTest(KeycloakSession session, String cNonce) {
+    private static void runValidX5cJwtProofWithoutAttestationTest(KeycloakSession session, String cNonce,
+            String leafCertificatePem, String leafPrivateKeyPem) {
         try {
-            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
-            keyGen.initialize(new ECGenParameterSpec("secp256r1"));
-            KeyPair keyPair = keyGen.generateKeyPair();
-            X509Certificate cert = CertificateUtils.generateV1SelfSignedCertificate(keyPair, "Proof Certificate");
+            X509Certificate leafCert = PemUtils.decodeCertificate(leafCertificatePem);
 
             KeyWrapper proofKey = new KeyWrapper();
-            proofKey.setPrivateKey(keyPair.getPrivate());
-            proofKey.setPublicKey(keyPair.getPublic());
+            proofKey.setPrivateKey(PemUtils.decodePrivateKey(leafPrivateKeyPem));
+            proofKey.setPublicKey(leafCert.getPublicKey());
             proofKey.setAlgorithm("ES256");
             proofKey.setType(KeyType.EC);
             // Keep kid unset for this test so header contains only x5c (mutual exclusivity with kid/jwk).
             proofKey.setKid(null);
 
-            String jwtProof = generateJwtProofWithX5c(session, proofKey, cert, cNonce);
+            String jwtProof = generateJwtProofWithX5c(session, proofKey, leafCert, cNonce);
 
             VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
             vcIssuanceContext.getCredentialRequest().setProofs(new Proofs().setJwt(List.of(jwtProof)));
@@ -955,7 +970,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         assertThrows(VCIssuerException.class, () -> validator.validateProof(context));
     }
 
-    private static void runInvalidAttestationSignatureTest(KeycloakSession session, String cNonce) throws Exception {
+    private static void runInvalidAttestationSignatureTest(KeycloakSession session, String cNonce) {
         KeyWrapper attestationKey = getECKey("attestationKey");
         KeyWrapper proofKey = getECKey("proofKey");
         JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
@@ -1043,7 +1058,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         }
     }
 
-    private static void runAttestationWithX5cCertificateChain(KeycloakSession session, String cNonce) {
+    private static void runAttestationWithSelfSignedX5cCertificateChainIsRejected(KeycloakSession session, String cNonce) {
         try {
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
             keyGen.initialize(new ECGenParameterSpec("secp256r1"));
@@ -1077,22 +1092,54 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                     .jsonContent(payload)
                     .sign(new ECDSASignatureSignerContext(signerKey));
 
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-            ks.load(null);
-            ks.setCertificateEntry("test-cert", cert);
-            tmf.init(ks);
+            VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
+            vcIssuanceContext.getCredentialRequest().setProofs(new Proofs().setAttestation(List.of(attestationJwt)));
 
-            JWK certJwk = JWKBuilder.create().ec(signerKey.getPublicKey());
-            certJwk.setKeyId(signerKey.getKid());
-            AttestationKeyResolver keyResolver = new StaticAttestationKeyResolver(
-                    Map.of(signerKey.getKid(), certJwk)
-            );
+            AttestationKeyResolver keyResolver = new StaticAttestationKeyResolver(Map.of());
+            AttestationProofValidator validator = new AttestationProofValidator(session, keyResolver);
+            assertThrows(VCIssuerException.class, () -> validator.validateProof(vcIssuanceContext),
+                    "Expected self-signed x5c key attestation to be rejected");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void runAttestationWithX5cCertificateChain(KeycloakSession session, String cNonce,
+            String leafCertificatePem, String leafPrivateKeyPem) {
+        try {
+            X509Certificate leafCert = PemUtils.decodeCertificate(leafCertificatePem);
+
+            KeyWrapper signerKey = new KeyWrapper();
+            signerKey.setPrivateKey(PemUtils.decodePrivateKey(leafPrivateKeyPem));
+            signerKey.setPublicKey(leafCert.getPublicKey());
+            signerKey.setAlgorithm("ES256");
+            signerKey.setType(KeyType.EC);
+            signerKey.setKid("test-cert-key");
+
+            KeyWrapper proofKey = getECKey("proofKey");
+            JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
+            proofJwk.setKeyId(proofKey.getKid());
+            proofJwk.setAlgorithm(proofKey.getAlgorithm());
+
+            KeyAttestationJwtBody payload = new KeyAttestationJwtBody();
+            payload.setNonce(cNonce);
+            payload.setIat((long) TIME_PROVIDER.currentTimeSeconds());
+            payload.setAttestedKeys(List.of(proofJwk));
+            payload.setKeyStorage(List.of(KeyAttestationResistanceLevels.HIGH));
+            payload.setUserAuthentication(List.of(KeyAttestationResistanceLevels.HIGH));
+
+            String attestationJwt = new JWSBuilder()
+                    .type(AttestationValidatorUtil.ATTESTATION_JWT_TYP)
+                    .kid(signerKey.getKid())
+                    .x5c(List.of(leafCert))
+                    .jsonContent(payload)
+                    .sign(new ECDSASignatureSignerContext(signerKey));
 
             VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
             vcIssuanceContext.getCredentialRequest().setProofs(new Proofs().setAttestation(List.of(attestationJwt)));
 
-            AttestationProofValidator validator = new AttestationProofValidator(session, keyResolver);
+            AttestationProofValidator validator = new AttestationProofValidator(session,
+                    new StaticAttestationKeyResolver(Map.of()));
             List<JWK> attestedKeys = validator.validateProof(vcIssuanceContext);
 
             assertNotNull(attestedKeys, "Attested keys should not be null");
@@ -1100,7 +1147,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
             assertEquals(proofKey.getKid(), attestedKeys.get(0).getKeyId(),
                     "Attested key ID should match proof key ID");
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("x5c key attestation trusted chain test failed", e);
         }
     }
 
@@ -1171,203 +1218,21 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         }
     }
 
-    private static void runAttestationProofAcceptsLegacyTypTest(KeycloakSession session, String cNonce) {
-        RealmModel realm = session.getContext().getRealm();
-        String previousTrustedKeys = realm.getAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-        try {
-            KeyWrapper attestationKey = getECKey("legacyAttestationKey");
-            KeyWrapper proofKey = getECKey("legacyProofKey");
+    private static List<JWK> runAttestationProofValidationWithDefaultKeyResolver(
+            KeycloakSession session, String attestationJwt) {
+        VCIssuanceContext context = createVCIssuanceContext(session);
+        context.getCredentialRequest().setProofs(new Proofs().setAttestation(List.of(attestationJwt)));
 
-            JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
-            proofJwk.setKeyId(proofKey.getKid());
-            proofJwk.setAlgorithm(proofKey.getAlgorithm());
-
-            String attestationJwt = createValidAttestationJwt(
-                    session,
-                    attestationKey,
-                    List.of(proofJwk),
-                    cNonce,
-                    AttestationValidatorUtil.LEGACY_ATTESTATION_JWT_TYP);
-
-            JWK attestationJwk = JWKBuilder.create().ec(attestationKey.getPublicKey());
-            attestationJwk.setKeyId(attestationKey.getKid());
-            attestationJwk.setAlgorithm(attestationKey.getAlgorithm());
-            realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR,
-                    JsonSerialization.writeValueAsString(List.of(attestationJwk)));
-
-            VCIssuanceContext context = createVCIssuanceContext(session);
-            context.getCredentialRequest().setProofs(new Proofs().setAttestation(List.of(attestationJwt)));
-
-            AttestationProofValidator validator = (AttestationProofValidator) new AttestationProofValidatorFactory().create(session);
-            List<JWK> attestedKeys = validator.validateProof(context);
-
-            assertNotNull(attestedKeys);
-            assertEquals(1, attestedKeys.size());
-            assertEquals(proofKey.getKid(), attestedKeys.get(0).getKeyId());
-        } catch (Exception e) {
-            throw new RuntimeException("Legacy typ attestation proof should be accepted", e);
-        } finally {
-            if (previousTrustedKeys != null) {
-                realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR, previousTrustedKeys);
-            } else {
-                realm.removeAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-            }
-        }
+        AttestationProofValidator validator = new AttestationProofValidatorFactory().create(session);
+        return validator.validateProof(context);
     }
 
-    private static void runAttestationProofWithRealmAttributeTrustedKeysTest(KeycloakSession session, String cNonce) {
-        RealmModel realm = session.getContext().getRealm();
-        String previousTrustedKeys = realm.getAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-        try {
-            KeyWrapper attestationKey = getECKey("attestationKey");
-            KeyWrapper proofKey = getECKey("proofKey");
+    private static List<JWK> runJwtAttestationProofValidationWithDefaultKeyResolver(
+            KeycloakSession session, String jwtProof) {
+        VCIssuanceContext context = createVCIssuanceContext(session);
+        context.getCredentialRequest().setProofs(new Proofs().setJwt(List.of(jwtProof)));
 
-            JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
-            proofJwk.setKeyId(proofKey.getKid());
-            proofJwk.setAlgorithm(proofKey.getAlgorithm());
-            String attestationJwt = createValidAttestationJwt(session, attestationKey, proofJwk, cNonce);
-
-            JWK attestationJwk = JWKBuilder.create().ec(attestationKey.getPublicKey());
-            attestationJwk.setKeyId(attestationKey.getKid());
-            attestationJwk.setAlgorithm(attestationKey.getAlgorithm());
-            realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR,
-                    JsonSerialization.writeValueAsString(List.of(attestationJwk)));
-
-            VCIssuanceContext context = createVCIssuanceContext(session);
-            context.getCredentialRequest().setProofs(new Proofs().setAttestation(List.of(attestationJwt)));
-
-            AttestationProofValidator validator = (AttestationProofValidator) new AttestationProofValidatorFactory().create(session);
-            List<JWK> attestedKeys = validator.validateProof(context);
-
-            assertNotNull(attestedKeys);
-            assertEquals(1, attestedKeys.size());
-            assertEquals(proofKey.getKid(), attestedKeys.get(0).getKeyId());
-        } catch (Exception e) {
-            throw new RuntimeException("Attestation proof with realm trusted keys failed", e);
-        } finally {
-            if (previousTrustedKeys != null) {
-                realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR, previousTrustedKeys);
-            } else {
-                realm.removeAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-            }
-        }
-    }
-
-    private static void runAttestationProofWithInvalidTrustedKeyTest(KeycloakSession session, String cNonce) throws VCIssuerException {
-        RealmModel realm = session.getContext().getRealm();
-        String previousTrustedKeys = realm.getAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-        try {
-            KeyWrapper attestationKey = getECKey("attestationKey");
-            KeyWrapper proofKey = getECKey("proofKey");
-            KeyWrapper unrelatedKey = getECKey("unrelatedKey");
-
-            JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
-            proofJwk.setKeyId(proofKey.getKid());
-            proofJwk.setAlgorithm(proofKey.getAlgorithm());
-            String attestationJwt = createValidAttestationJwt(session, attestationKey, proofJwk, cNonce);
-
-            JWK unrelatedJwk = JWKBuilder.create().ec(unrelatedKey.getPublicKey());
-            unrelatedJwk.setKeyId(unrelatedKey.getKid());
-            unrelatedJwk.setAlgorithm(unrelatedKey.getAlgorithm());
-            realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR,
-                    JsonSerialization.writeValueAsString(List.of(unrelatedJwk)));
-
-            VCIssuanceContext context = createVCIssuanceContext(session);
-            context.getCredentialRequest().setProofs(new Proofs().setAttestation(List.of(attestationJwt)));
-
-            AttestationProofValidator validator = (AttestationProofValidator) new AttestationProofValidatorFactory().create(session);
-            validator.validateProof(context);
-        } catch (VCIssuerException e) {
-            throw e;
-        } catch (Exception e) {
-            fail("Unexpected exception: " + e.getMessage());
-        } finally {
-            if (previousTrustedKeys != null) {
-                realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR, previousTrustedKeys);
-            } else {
-                realm.removeAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-            }
-        }
-    }
-
-    private static void runAttestationProofExtractsAttestedKeysFromPayloadTest(KeycloakSession session, String cNonce) {
-        RealmModel realm = session.getContext().getRealm();
-        String previousTrustedKeys = realm.getAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-        try {
-            KeyWrapper attestationKey = getECKey("attestationKey");
-            KeyWrapper proofKey = getECKey("proofKey");
-
-            JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
-            proofJwk.setKeyId(proofKey.getKid());
-            proofJwk.setAlgorithm(proofKey.getAlgorithm());
-
-            String attestationJwt = createValidAttestationJwt(session, attestationKey, proofJwk, cNonce);
-
-            JWK attestationJwk = JWKBuilder.create().ec(attestationKey.getPublicKey());
-            attestationJwk.setKeyId(attestationKey.getKid());
-            attestationJwk.setAlgorithm(attestationKey.getAlgorithm());
-            realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR,
-                    JsonSerialization.writeValueAsString(List.of(attestationJwk)));
-
-            VCIssuanceContext context = createVCIssuanceContext(session);
-            context.getCredentialRequest().setProofs(new Proofs().setAttestation(List.of(attestationJwt)));
-
-            AttestationProofValidator validator = (AttestationProofValidator) new AttestationProofValidatorFactory().create(session);
-            List<JWK> attestedKeys = validator.validateProof(context);
-
-            assertNotNull(attestedKeys);
-            assertEquals(1, attestedKeys.size());
-            assertEquals(proofKey.getKid(), attestedKeys.get(0).getKeyId());
-        } catch (Exception e) {
-            throw new RuntimeException("Attested keys should be extracted from payload", e);
-        } finally {
-            if (previousTrustedKeys != null) {
-                realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR, previousTrustedKeys);
-            } else {
-                realm.removeAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-            }
-        }
-    }
-
-    private static void runAttestationProofWithMultipleTrustedKeysTest(KeycloakSession session, String cNonce) {
-        RealmModel realm = session.getContext().getRealm();
-        String previousTrustedKeys = realm.getAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-        try {
-            KeyWrapper attestationKey1 = getECKey("attestationKey1");
-            KeyWrapper attestationKey2 = getECKey("attestationKey2");
-            KeyWrapper proofKey = getECKey("proofKey");
-
-            JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
-            proofJwk.setKeyId(proofKey.getKid());
-            proofJwk.setAlgorithm(proofKey.getAlgorithm());
-            String attestationJwt = createValidAttestationJwt(session, attestationKey1, proofJwk, cNonce);
-
-            JWK attestationJwk1 = JWKBuilder.create().ec(attestationKey1.getPublicKey());
-            attestationJwk1.setKeyId(attestationKey1.getKid());
-            attestationJwk1.setAlgorithm(attestationKey1.getAlgorithm());
-            JWK attestationJwk2 = JWKBuilder.create().ec(attestationKey2.getPublicKey());
-            attestationJwk2.setKeyId(attestationKey2.getKid());
-            attestationJwk2.setAlgorithm(attestationKey2.getAlgorithm());
-            realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR,
-                    JsonSerialization.writeValueAsString(List.of(attestationJwk1, attestationJwk2)));
-
-            VCIssuanceContext context = createVCIssuanceContext(session);
-            context.getCredentialRequest().setProofs(new Proofs().setAttestation(List.of(attestationJwt)));
-
-            AttestationProofValidator validator = (AttestationProofValidator) new AttestationProofValidatorFactory().create(session);
-            List<JWK> attestedKeys = validator.validateProof(context);
-
-            assertNotNull(attestedKeys);
-            assertEquals(1, attestedKeys.size());
-            assertEquals(proofKey.getKid(), attestedKeys.get(0).getKeyId());
-        } catch (Exception e) {
-            throw new RuntimeException("Attestation should validate with multiple trusted keys configured", e);
-        } finally {
-            if (previousTrustedKeys != null) {
-                realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR, previousTrustedKeys);
-            } else {
-                realm.removeAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-            }
-        }
+        JwtProofValidator validator = new JwtProofValidatorFactory().create(session);
+        return validator.validateProof(context);
     }
 }

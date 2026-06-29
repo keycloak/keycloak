@@ -16,7 +16,7 @@ The TLS handshake occurs between the client and {project_name}, preserving end-t
 
 For a general overview of TLS passthrough and how it compares to re-encrypt, see the <@links.server id="reverseproxy"/> {section}.
 
-A ready-to-run example with Docker Compose is available in the link:https://github.com/keycloak/keycloak-quickstarts/tree/main/proxy/haproxy/passthrough[quickstart repository].
+A ready-to-run example with a Compose file is available in the link:https://github.com/keycloak/keycloak-quickstarts/tree/main/proxy/haproxy/passthrough[quickstart repository].
 
 [[haproxy-configuration-passthrough]]
 == HAProxy configuration
@@ -49,8 +49,8 @@ backend keycloak_back
     balance roundrobin # <4>
     option httpchk GET /health/ready # <5>
     http-check expect status 200
-    server keycloak1 keycloak1:8443 send-proxy-v2 check port 9000 check-ssl verify none inter 5s fall 3 rise 2 # <6>
-    server keycloak2 keycloak2:8443 send-proxy-v2 check port 9000 check-ssl verify none inter 5s fall 3 rise 2
+    server keycloak1 keycloak1:8443 send-proxy-v2 check port 9000 check-ssl verify none inter 5s fall 3 rise 2 slowstart 60s # <6>
+    server keycloak2 keycloak2:8443 send-proxy-v2 check port 9000 check-ssl verify none inter 5s fall 3 rise 2 slowstart 60s
 ----
 
 <1> The port HAProxy listens on for incoming TLS connections.
@@ -84,6 +84,10 @@ The management port is separate from the main application port (`8443`), as desc
 Configures the link:https://docs.haproxy.org/3.2/configuration.html#5.2-inter[health check frequency]:
 poll every 5 seconds, mark a server as down after 3 consecutive failures, and mark it as up again after 2 consecutive successes.
 These values affect how quickly HAProxy detects that a {project_name} instance is shutting down (see <<graceful-shutdown-considerations-haproxy-passthrough>>).
+
+`slowstart 60s`::
+Gradually increases the server's weight from 0 to its full value over 60 seconds after the server becomes available.
+This gives {project_name} and the JVM time to warm up (JIT compilation, class loading, cache population) before receiving full traffic, preventing performance degradation and timeouts during the warmup phase.
 
 [[keycloak-configuration-haproxy-passthrough]]
 == {project_name} configuration

@@ -4,14 +4,16 @@ import JSZip from "jszip";
 import { joinPath } from "../../utils/joinPath";
 import { LogoContext } from "./LogoContext";
 import { ThemeColors } from "./ThemeColors";
+import { BackgroundContext } from "./BackgroundContext";
+import type { Environment } from "../../environment-types";
 
 export type ThemeRealmRepresentation = RealmRepresentation & {
   themeName?: string;
   themeDescription?: string;
   fileName?: string;
   favicon?: File;
-  logo?: File;
-  bgimage?: File;
+  logo?: File | string;
+  bgimage?: File | string;
   logoWidth?: string;
   logoHeight?: string;
 };
@@ -22,7 +24,7 @@ type QuickThemeProps = {
 };
 
 export const QuickTheme = ({ realm, theme }: QuickThemeProps) => {
-  const { environment } = useEnvironment();
+  const { environment } = useEnvironment<Environment>();
 
   const saveTheme = async (realm: ThemeRealmRepresentation) => {
     const zip = new JSZip();
@@ -31,9 +33,13 @@ export const QuickTheme = ({ realm, theme }: QuickThemeProps) => {
     const { favicon, logo, bgimage, fileName } = realm;
 
     const logoName =
-      "img/logo" + logo?.name.substring(logo.name.lastIndexOf("."));
+      logo &&
+      typeof logo !== "string" &&
+      "img/logo" + logo.name.substring(logo.name.lastIndexOf("."));
     const bgimageName =
-      "img/bgimage" + bgimage?.name.substring(bgimage.name.lastIndexOf("."));
+      bgimage &&
+      typeof bgimage !== "string" &&
+      "img/bgimage" + bgimage.name.substring(bgimage.name.lastIndexOf("."));
 
     const themeNameClean =
       (realm.themeName ?? "quick-theme")
@@ -51,10 +57,10 @@ export const QuickTheme = ({ realm, theme }: QuickThemeProps) => {
         favicon,
       );
     }
-    if (logo) {
+    if (logo && typeof logo !== "string") {
       zip.file(`theme/${themeNameClean}/common/resources/${logoName}`, logo);
     }
-    if (bgimage) {
+    if (bgimage && typeof bgimage !== "string") {
       zip.file(
         `theme/${themeNameClean}/common/resources/${bgimageName}`,
         bgimage,
@@ -101,7 +107,7 @@ styles=css/theme-styles.css
 parent=keycloak.v2
 import=common/${themeNameClean}
 
-styles=css/login.css css/theme-styles.css
+styles=css/styles.css css/theme-styles.css
 `,
     );
 
@@ -142,7 +148,13 @@ styles=css/login.css css/theme-styles.css
         .join("\n");
 
     const loginCss = (
-      await fetch(joinPath(environment.resourceUrl, "/theme/login.css"))
+      await fetch(
+        joinPath(
+          "/resources/",
+          environment.resourceVersion,
+          "/login/keycloak.v2/css/styles.css",
+        ),
+      )
     ).text();
     zip.file(
       `theme/${themeNameClean}/common/resources/css/styles.css`,
@@ -175,7 +187,9 @@ styles=css/login.css css/theme-styles.css
 
   return (
     <LogoContext>
-      <ThemeColors realm={realm} save={saveTheme} theme={theme} />
+      <BackgroundContext>
+        <ThemeColors realm={realm} save={saveTheme} theme={theme} />
+      </BackgroundContext>
     </LogoContext>
   );
 };

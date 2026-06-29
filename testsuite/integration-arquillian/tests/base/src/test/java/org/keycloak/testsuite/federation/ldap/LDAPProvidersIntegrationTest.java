@@ -80,6 +80,7 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.runonserver.LdapHelper;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -511,7 +512,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         grantPage.accept();
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         ComponentRepresentation ldapRep = managedRealm.admin().components().component(ldapModelId).toRepresentation();
         managedRealm.admin().components().component(ldapModelId).remove();
@@ -525,7 +526,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
         // Re-add LDAP provider
         Map<String, String> cfg = getLDAPRule().getConfig();
-        ldapModelId = testingClient.testing().ldap(TEST_REALM_NAME).createLDAPProvider(cfg, isImportEnabled());
+        ldapModelId = runOnServer.fetchString(LdapHelper.createLDAPProvider(cfg, isImportEnabled())).replace("\"", "");
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -545,7 +546,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         loginPage.login("marykeycloak", "password-app");
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
     }
 
@@ -555,7 +556,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         loginPage.login("johnkeycloak", "Password1");
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(managedRealm.admin(), "johnkeycloak");
 
@@ -580,7 +581,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         loginPage.login("john@email.org", "Password1");
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test

@@ -66,6 +66,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService.AUTHN_REQUEST_CANNOT_BE_PROCESSED;
 import static org.keycloak.testsuite.util.Matchers.isSamlLogoutRequest;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 import static org.keycloak.testsuite.util.Matchers.isSamlStatusResponse;
@@ -344,7 +345,7 @@ public class LogoutTest extends AbstractSamlTest {
                 // exception expected since the request is not signed
                 if (ex.getCause() instanceof SOAPFaultException) {
                     SOAPFaultException sfe = (SOAPFaultException) ex.getCause();
-                    assertThat(sfe.getFault().getFaultString(), is("invalidRequesterMessage"));
+                    assertThat(sfe.getFault().getFaultString(), is(AUTHN_REQUEST_CANNOT_BE_PROCESSED));
                 }
             }
             assertSoapLogoutErrorEvent(SAML_CLIENT_ID_SALES_POST_SIG);

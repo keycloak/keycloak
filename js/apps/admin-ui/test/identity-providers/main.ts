@@ -1,4 +1,5 @@
 import { type Page, expect } from "@playwright/test";
+import { assertNotificationMessage } from "../utils/masthead.ts";
 
 const SERVER_URL = "http://localhost:8080";
 const discoveryUrl = `${SERVER_URL}/realms/master/.well-known/openid-configuration`;
@@ -85,6 +86,29 @@ export async function createJwtAuthorizationGrantProviderKey(
   await page.getByTestId("config.publicKeySignatureVerifierKeyId").fill(keyId);
   await page.getByTestId("config.publicKeySignatureVerifier").fill(key);
   await clickAddButton(page);
+}
+
+export async function createDefaultTrustProvider(
+  page: Page,
+  alias: string,
+  jwksUrl: string,
+) {
+  const realm =
+    (await page.getByTestId("currentRealm").textContent()) ?? "master";
+
+  await page.goto(
+    `${SERVER_URL}/admin/master/console/#/${realm}/identity-providers/default-trust/add`,
+  );
+
+  await page.getByTestId("alias").fill(alias);
+  await expect(page.getByTestId("config.useJwksUrl")).toBeChecked();
+  await page.getByTestId("config.jwksUrl").fill(jwksUrl);
+  await clickAddButton(page);
+
+  await assertNotificationMessage(
+    page,
+    "Identity provider successfully created",
+  );
 }
 
 export async function createKubernetesProvider(

@@ -25,7 +25,8 @@
     "build": {
       "command": "tsc --pretty",
       "dependencies": [
-        "generate:openapi"
+        "generate:openapi",
+        "generate:doc-examples"
       ],
       "files": [
         "src",
@@ -35,10 +36,25 @@
         "lib"
       ]
     },
-    "generate:openapi": {
-      "command": "kiota generate -l typescript -d openapi.yaml -c AdminClient -n ApiSdk -o ./src/generated --clean-output",
+    "generate:doc-examples": {
+      "command": "node --loader ts-node/esm scripts/generate-doc-examples.ts && tsc -p src/generated/doc-examples/tsconfig.doc-check.json",
+      "dependencies": [
+        "generate:openapi"
+      ],
       "files": [
-        "openapi.yaml"
+        "scripts/generate-doc-examples.ts"
+      ],
+      "output": [
+        "src/generated/doc-examples"
+      ]
+    },
+    "generate:openapi": {
+      "command": "kiota generate -l typescript -d openapi.json -c AdminClient -n ApiSdk -o ./src/generated --clean-output",
+      "env": {
+        "KIOTA_VERSION": "v1.31.1"
+      },
+      "files": [
+        "openapi.json"
       ],
       "output": [
         "src/generated"
@@ -48,7 +64,10 @@
       "command": "eslint ."
     },
     "test": {
-      "command": "TS_NODE_PROJECT=tsconfig.test.json mocha --recursive \"test/**/*.spec.ts\" --timeout 10000"
+      "command": "TS_NODE_PROJECT=tsconfig.test.json mocha --recursive \"test/**/*.spec.ts\" --timeout 10000",
+      "dependencies": [
+        "build"
+      ]
     }
   },
   "dependencies": {

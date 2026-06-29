@@ -68,6 +68,7 @@ import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -91,6 +92,7 @@ import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerException;
 import org.keycloak.protocol.oid4vc.model.AttestationProof;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer.BatchCredentialIssuance;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
@@ -137,6 +139,7 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+import static org.keycloak.constants.OID4VCIConstants.BATCH_CREDENTIAL_ISSUANCE_DEFAULT_MAX_BATCH_SIZE;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.getSupportedCredentials;
 import static org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant.AUTH_CODE_GRANT_TYPE;
@@ -178,7 +181,11 @@ public class OID4VCIssuerEndpoint {
     private AuthenticationManager.AuthResult cachedAuthResult;
 
     public static final String CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY = "credentialOfferLifespanS";
-    public static final int DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S = 30;
+
+    /**
+     * Default credential-offer lifespan is same as default "User-Initiated Action Lifespan" (5 minutes)
+     */
+    public static final int DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S = Constants.DEFAULT_ACCESS_CODE_LIFESPAN_USER_ACTION;
 
     public static final String DEFLATE_COMPRESSION = "DEF";
     public static final String NONCE_PATH = "nonce";
@@ -733,6 +740,21 @@ public class OID4VCIssuerEndpoint {
         }
     }
 
+    private void checkUserHasIssuedVerifiableCredential(UserModel user, CredentialScopeModel requestedCredential, String issuedCredentialId, ClientModel client, EventBuilder event) {
+        try {
+            OID4VCUtil.checkIssuedVerifiableCredential(session, user, issuedCredentialId, requestedCredential, client);
+        } catch (IllegalStateException ise) {
+            String errorMessage = String.format("User '%s' does not have valid requested issued verifiable credential with ID '%s'. Details: %s",
+                    user.getUsername(), issuedCredentialId, ise.getMessage());
+            LOGGER.debugf(errorMessage);
+            event.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+            throw new CorsErrorResponseException(cors,
+                    ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(),
+                    errorMessage,
+                    Response.Status.BAD_REQUEST);
+        }
+    }
+
     /**
      * Returns a verifiable credential
      */
@@ -908,7 +930,7 @@ public class OID4VCIssuerEndpoint {
 
         // Validate that authorization_details from the token matches the offer state
         // This ensures the correct access token is being used for the credential request
-        if (offerState != null && !List.of(tokenAuthDetail).equals(offerState.getAuthorizationDetails())) {
+        if (offerState != null && !offerState.matchAuthorizationDetails(List.of(tokenAuthDetail))) {
             var errorMessage = "Authorization details in access token do not match the credential offer state. " +
                     "The access token may not be the one issued for this credential offer.";
             LOGGER.debug(errorMessage);
@@ -970,6 +992,7 @@ public class OID4VCIssuerEndpoint {
 
         checkScope(authorizedCredentialScope);
         checkUserHasVerifiableCredential(userModel, authorizedCredentialScope, eventBuilder);
+        checkUserHasIssuedVerifiableCredential(userModel, authorizedCredentialScope, tokenAuthDetail.getIssuedCredentialId(), clientModel, eventBuilder);
 
         SupportedCredentialConfiguration supportedCredential =
                 OID4VCIssuerWellKnownProvider.toSupportedCredentialConfiguration(session, authorizedCredentialScope);
@@ -978,6 +1001,8 @@ public class OID4VCIssuerEndpoint {
 
         // Get the list of all proofs (handles single proof, multiple proofs, or none)
         List<String> allProofs = getAllProofs(credentialRequest);
+        if (allProofs.stream().anyMatch(p -> p == null || p.isBlank()))
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF, "Proof values must not be null or blank"));
 
         // Generate credential response
         CredentialResponse responseVO = new CredentialResponse();
@@ -991,6 +1016,16 @@ public class OID4VCIssuerEndpoint {
             Proofs originalProofs = credentialRequest.getProofs();
             // Determine the proof type from the original proofs
             String proofType = originalProofs.getProofType();
+
+            if (allProofs.size() > 1) {
+                Integer maxBatchSize = Optional.ofNullable(issuerMetadata.getBatchCredentialIssuance())
+                        .map(BatchCredentialIssuance::getBatchSize)
+                        .orElse(BATCH_CREDENTIAL_ISSUANCE_DEFAULT_MAX_BATCH_SIZE);
+                if (allProofs.size() > maxBatchSize) {
+                    LOGGER.warnf("Reducing credential batch size to: %d", maxBatchSize);
+                    allProofs = allProofs.subList(0, maxBatchSize);
+                }
+            }
 
             for (String currentProof : allProofs) {
                 Proofs proofForIteration = Proofs.create(proofType, currentProof);
@@ -1022,6 +1057,7 @@ public class OID4VCIssuerEndpoint {
         eventBuilder.detail(Details.SCOPE, supportedCredential.getScope())
                 .detail(Details.VERIFIABLE_CREDENTIAL_FORMAT, supportedCredential.getFormat())
                 .detail(Details.VERIFIABLE_CREDENTIALS_ISSUED, String.valueOf(responseVO.getCredentials().size()));
+
         eventBuilder.success();
 
         // Clean up offer state after successful credential issuance

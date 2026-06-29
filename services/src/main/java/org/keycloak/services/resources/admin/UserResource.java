@@ -284,6 +284,7 @@ public class UserResource {
                     case Messages.MISSING_USERNAME -> throw ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
                     case Messages.USERNAME_EXISTS -> throw ErrorResponse.exists("User exists with same username");
                     case Messages.EMAIL_EXISTS -> throw ErrorResponse.exists("User exists with same email");
+                    case Messages.DID_EXISTS -> throw ErrorResponse.exists("User exists with same DID");
                 }
                 errors.add(new ErrorRepresentation(error.getAttribute(), error.getMessage(), error.getMessageParameters()));
             }
@@ -528,6 +529,10 @@ public class UserResource {
         auth.users().requireManage(user);
         if (session.users().getFederatedIdentity(realm, user, provider) != null) {
             throw ErrorResponse.exists("User is already linked with provider");
+        }
+
+        if (!Organizations.resolveHomeBroker(session, user).isEmpty()) {
+            throw ErrorResponse.error("Cannot add identity provider link to a managed organization member.", Status.BAD_REQUEST);
         }
 
         FederatedIdentityModel socialLink = new FederatedIdentityModel(provider, rep.getUserId(), rep.getUserName());
@@ -1289,6 +1294,11 @@ public class UserResource {
     }
 
     private SendEmailParams verifySendEmailParams(String redirectUri, String clientId, Integer lifespan) {
+        return verifySendEmailParams(session, realm, user, redirectUri, clientId, lifespan);
+    }
+
+    public static SendEmailParams verifySendEmailParams(KeycloakSession session, RealmModel realm, UserModel user,
+                                                        String redirectUri, String clientId, Integer lifespan) {
         if (user.getEmail() == null) {
             throw ErrorResponse.error("User email missing", Status.BAD_REQUEST);
         }
@@ -1326,15 +1336,27 @@ public class UserResource {
         return new SendEmailParams(redirectUri, client.getClientId(), lifespan);
     }
 
-    private static class SendEmailParams {
-        final String redirectUri;
-        final String clientId;
-        final int lifespan;
+    public static class SendEmailParams {
+        private final String redirectUri;
+        private final String clientId;
+        private final int lifespan;
 
         public SendEmailParams(String redirectUri, String clientId, Integer lifespan) {
             this.redirectUri = redirectUri;
             this.clientId = clientId;
             this.lifespan = lifespan;
+        }
+
+        public String getRedirectUri() {
+            return redirectUri;
+        }
+
+        public String getClientId() {
+            return clientId;
+        }
+
+        public int getLifespan() {
+            return lifespan;
         }
     }
 }

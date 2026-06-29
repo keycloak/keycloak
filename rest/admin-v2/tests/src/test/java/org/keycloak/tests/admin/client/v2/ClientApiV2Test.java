@@ -19,7 +19,10 @@ package org.keycloak.tests.admin.client.v2;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -30,8 +33,11 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
+import org.keycloak.admin.api.ClientField;
 import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.PatchTypeNames;
+import org.keycloak.admin.api.SortOption;
+import org.keycloak.admin.api.SortOrder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
@@ -47,6 +53,7 @@ import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -58,6 +65,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
@@ -75,7 +83,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -93,13 +100,10 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     @InjectRealm(config = NoAccessRealmConfig.class, ref = "testRealm")
     ManagedRealm testRealm;
 
-    @InjectRealm(attachTo = "master", ref = "master")
-    ManagedRealm masterRealm;
-
     @InjectAdminClient(ref = "noAccessClient", realmRef = "testRealm", client = "myclient", mode = InjectAdminClient.Mode.MANAGED_REALM)
     Keycloak noAccessAdminClient;
 
-    @InjectClient(realmRef = "testRealm")
+    @InjectClient(realmRef = "testRealm", config = TestClientConfig.class)
     ManagedClient testClient;
 
     @Override
@@ -270,13 +274,14 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         oidcRep.setDescription("OIDC client for mixed protocol test");
         // OIDC-specific fields
         oidcRep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.STANDARD, OIDCClientRepresentation.Flow.DIRECT_GRANT));
+        oidcRep.setRedirectUris(Set.of("http://localhost:3000/callback"));
         oidcRep.setWebOrigins(Set.of("http://localhost:3000", "http://localhost:4000"));
 
         try (var response = getClientsApi().createClient(oidcRep)) {
             assertEquals(201, response.getStatus());
             OIDCClientRepresentation created = response.readEntity(OIDCClientRepresentation.class);
             assertThat(created, notNullValue());
-            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
 
         // Create a SAML client with SAML-specific fields
@@ -285,7 +290,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         samlRep.setClientId("mixed-test-saml");
         samlRep.setDescription("SAML client for mixed protocol test");
         // SAML-specific fields
-        samlRep.setNameIdFormat("email");
+        samlRep.setNameIdFormat(SAMLClientRepresentation.NameIdFormat.EMAIL);
         samlRep.setSignDocuments(true);
         samlRep.setSignAssertions(true);
         samlRep.setForcePostBinding(true);
@@ -295,7 +300,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(201, response.getStatus());
             SAMLClientRepresentation created = response.readEntity(SAMLClientRepresentation.class);
             assertThat(created, notNullValue());
-            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
 
         // Get all clients - this should work with mixed protocols
@@ -323,7 +328,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
             assertThat("SAML client should be in the list", foundSaml, is(notNullValue()));
             assertThat(foundSaml.getDescription(), notNullValue());
-            assertThat(foundSaml.getNameIdFormat(), is("email"));
+            assertThat(foundSaml.getNameIdFormat(), is(SAMLClientRepresentation.NameIdFormat.EMAIL));
             assertThat(foundSaml.getSignDocuments(), is(true));
             assertThat(foundSaml.getSignAssertions(), is(true));
             assertThat(foundSaml.getForcePostBinding(), is(true));
@@ -341,7 +346,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         SAMLClientRepresentation samlClient = (SAMLClientRepresentation) getClientsApi().client(samlRep.getClientId()).getClient();
         assertEquals("mixed-test-saml", samlClient.getClientId());
         assertEquals("SAML client for mixed protocol test", samlClient.getDescription());
-        assertThat(samlClient.getNameIdFormat(), is("email"));
+        assertThat(samlClient.getNameIdFormat(), is(SAMLClientRepresentation.NameIdFormat.EMAIL));
         assertThat(samlClient.getSignDocuments(), is(true));
         assertThat(samlClient.getSignAssertions(), is(true));
         assertThat(samlClient.getForcePostBinding(), is(true));
@@ -367,6 +372,107 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     public void invalidFieldProjection() {
         BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(new ListOptions().fields(Set.of("unknown!"))));
         assertEquals("{\"error\":\"unknown! is an unknown field\"}", e.getResponse().readEntity(String.class));
+        
+        // ensure that multiple fields are interpreted correctly
+        e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(new ListOptions().fields(new LinkedHashSet<>(List.of("clientId","unknown!")))));
+        assertEquals("{\"error\":\"unknown! is an unknown field\"}", e.getResponse().readEntity(String.class));
+    }
+
+    @Test
+    public void getClientsSortByMultipleFields() {
+        createSortTestClient("sort-b", "B", "beta");
+        createSortTestClient("sort-a", "A", "alpha");
+        createSortTestClient("sort-c", "A", "gamma");
+
+        ListOptions listOptions = new ListOptions();
+        listOptions.setFields(Set.of("clientId", "displayName"));
+        listOptions.setSort(List.of(SortOption.of(ClientField.DISPLAY_NAME), SortOption.of(ClientField.CLIENT_ID)));
+
+        try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
+            List<String> sortTestClientIds = clients
+                    .map(BaseClientRepresentation::getClientId)
+                    .filter(id -> id.startsWith("sort-"))
+                    .toList();
+            assertThat(sortTestClientIds, is(List.of("sort-a", "sort-c", "sort-b")));
+        }
+    }
+
+    @Test
+    public void getClientsSortByMultipleFieldsDesc() {
+        createSortTestClient("sort-b", "B", "beta");
+        createSortTestClient("sort-a", "A", "alpha");
+        createSortTestClient("sort-c", "A", "gamma");
+
+        ListOptions listOptions = new ListOptions();
+        listOptions.setFields(Set.of("clientId", "displayName"));
+        listOptions.setSort(List.of(SortOption.of(ClientField.DISPLAY_NAME, SortOrder.DESC), SortOption.of(ClientField.CLIENT_ID, SortOrder.DESC)));
+
+        try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
+            List<String> sortTestClientIds = clients
+                    .map(BaseClientRepresentation::getClientId)
+                    .filter(id -> id.startsWith("sort-"))
+                    .toList();
+            assertThat(sortTestClientIds, is(List.of("sort-b", "sort-c", "sort-a")));
+        }
+    }
+
+    @Test
+    public void getClientsSortByInvalidField() throws IOException, URISyntaxException {
+        URI uri = new URIBuilder(getClientsApiUrl()).addParameter("fields", "clientId")
+                .addParameter("sort", "displayName|desc,unknown").build();
+        HttpGet request = new HttpGet(uri);
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            assertThat(EntityUtils.toString(response.getEntity()), containsString("unknown is not a sortable field"));
+        }
+    }
+
+    @Test
+    public void getClientsSortByMultipleFieldsViaHttp() throws IOException {
+        createSortTestClient("sort-b", "B", "beta");
+        createSortTestClient("sort-a", "A", "alpha");
+        createSortTestClient("sort-c", "A", "gamma");
+
+        HttpGet request = new HttpGet(getClientsApiUrl() + "?fields=clientId,displayName&sort=displayName,clientId");
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            String responseBody = EntityUtils.toString(response.getEntity());
+            assertEquals(200, response.getStatusLine().getStatusCode(), "Response body: " + responseBody);
+            List<BaseClientRepresentation> clients = mapper.readValue(
+                    responseBody,
+                    mapper.getTypeFactory().constructCollectionType(List.class, BaseClientRepresentation.class));
+            List<String> sortTestClientIds = clients.stream()
+                    .map(BaseClientRepresentation::getClientId)
+                    .filter(id -> id.startsWith("sort-"))
+                    .toList();
+            assertThat(sortTestClientIds, is(List.of("sort-a", "sort-c", "sort-b")));
+        }
+    }
+
+    @Test
+    public void getClientsInvalidSortDirectionReturns400() throws IOException, URISyntaxException {
+        URI uri = new URIBuilder(getClientsApiUrl()).addParameter("sort", "clientId|what").build();
+
+        HttpGet request = new HttpGet(uri);
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            assertThat(EntityUtils.toString(response.getEntity()), containsString("sort direction must be asc or desc"));
+        }
+    }
+
+    private void createSortTestClient(String clientId, String displayName, String description) {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setDisplayName(displayName);
+        rep.setDescription(description);
+        try (var response = getClientsApi().createClient(rep)) {
+            assertEquals(201, response.getStatus());
+            BaseClientRepresentation created = response.readEntity(BaseClientRepresentation.class);
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+        }
     }
 
     @Test
@@ -382,7 +488,6 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             var body = response.readEntity(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
             var violations = body.violations();
-            assertThat(violations, hasSize(2));
             assertThat(violations, hasItem("clientId: must not be blank"));
             assertThat(violations, hasItem("appUrl: must be a valid URL"));
         }
@@ -401,8 +506,8 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             var body = response.readEntity(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
             var violations = body.violations();
-            assertThat(violations.size(), is(1));
-            assertThat(violations.iterator().next(), is("appUrl: must be a valid URL"));
+            assertThat(violations, hasItem("appUrl: must be a valid URL"));
+            assertThat(violations, hasItem(containsString("valid client authenticator type is required")));
         }
     }
 
@@ -493,6 +598,10 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
 
         rep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT));
+        var auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod("client-secret");
+        auth.setSecret("test-sa-secret");
+        rep.setAuth(auth);
         rep.setServiceAccountRoles(Set.of(defaultRealmRoles, "offline_access"));
 
         try (var response = getClientsApi().createClient(rep)) {
@@ -821,7 +930,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod(authenticationMethod);
-        auth.setSecret("shush");
+        auth.setSecret("shushy");
 
         OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfigPost(auth, clientId);
         assertThat(createdAuth, notNullValue());
@@ -843,7 +952,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod(authenticationMethod);
-        auth.setSecret("shush");
+        auth.setSecret("shushy");
 
         OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfigPost(auth, clientId);
         assertThat(createdAuth, notNullValue());
@@ -859,7 +968,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod(ClientIdAndSecretAuthenticator.PROVIDER_ID);
-        auth.setSecret("shush");
+        auth.setSecret("shushy");
 
         OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfigPost(auth, clientId);
         assertThat(createdAuth, notNullValue());
@@ -884,7 +993,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         String clientId = authenticationMethod + "-patched-other-fields";
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod(authenticationMethod);
-        auth.setSecret("shush");
+        auth.setSecret("shushy");
 
         OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfigPost(auth, clientId);
         assertThat(createdAuth, notNullValue());
@@ -988,6 +1097,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId(clientId);
         rep.setDescription("I'm OIDC Client");
+        rep.setRedirectUris(Set.of("http://localhost/callback"));
         rep.setAuth(auth);
 
         if (additionalFields.length % 2 != 0) {
@@ -1046,7 +1156,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertThat(response.getStatus(), is(201));
             BaseClientRepresentation created = response.readEntity(BaseClientRepresentation.class);
             assertThat(created, notNullValue());
-            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
 
         // Now try to update with invalid data
@@ -1100,6 +1210,13 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
                     .secret("mysecret")
                     .serviceAccountsEnabled(true));
             return realm;
+        }
+    }
+
+    public static class TestClientConfig implements ClientConfig {
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.redirectUris("http://localhost/callback");
         }
     }
 }

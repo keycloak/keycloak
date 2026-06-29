@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -47,6 +48,9 @@ import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
+import org.keycloak.broker.provider.TrustMaterialIdentityProvider;
+import org.keycloak.broker.provider.TrustMaterialRequest;
+import org.keycloak.broker.trust.TrustKeyUtil;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
@@ -65,6 +69,7 @@ import org.keycloak.jose.JOSE;
 import org.keycloak.jose.JOSEParser;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
@@ -79,7 +84,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.TokenExchangeContext;
+import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
@@ -92,6 +97,7 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.Strings;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.vault.VaultStringSecret;
 
@@ -101,7 +107,7 @@ import org.jboss.logging.Logger;
 /**
  * @author Pedro Igor
  */
-public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> implements ExchangeExternalToken, ClientAssertionIdentityProvider<OIDCIdentityProviderConfig>, JWTAuthorizationGrantProvider<OIDCIdentityProviderConfig> {
+public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> implements ExchangeExternalToken, ClientAssertionIdentityProvider<OIDCIdentityProviderConfig>, JWTAuthorizationGrantProvider<OIDCIdentityProviderConfig>, TrustMaterialIdentityProvider<OIDCIdentityProviderConfig> {
     protected static final Logger logger = Logger.getLogger(OIDCIdentityProvider.class);
 
     public static final String SCOPE_OPENID = "openid";
@@ -1003,7 +1009,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
-    protected BrokeredIdentityContext exchangeExternalTokenV1Impl(EventBuilder event, MultivaluedMap<String, String> params) {
+    protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
         if (!supportsExternalExchange()) return null;
         String subjectToken = params.getFirst(OAuth2Constants.SUBJECT_TOKEN);
         if (subjectToken == null) {
@@ -1024,14 +1030,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             event.error(Errors.INVALID_TOKEN_TYPE);
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token type", Response.Status.BAD_REQUEST);
         }
-    }
-
-    @Override
-    protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
-        // Supporting only introspection-endpoint validation for now
-        validateExternalTokenWithIntrospectionEndpoint(tokenExchangeContext);
-
-        return exchangeExternalUserInfoValidationOnly(tokenExchangeContext.getEvent(), tokenExchangeContext.getFormParams());
     }
 
     @Override
@@ -1087,6 +1085,18 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
+    public Stream<JWK> resolveKeys(TrustMaterialRequest request) {
+        if (!matchesTrustMaterialIssuer(request)) {
+            return Stream.empty();
+        }
+
+        Stream<KeyWrapper> keys = Stream.ofNullable(PublicKeyStorageManager.getIdentityProviderKeyWrapper(session,
+                session.getContext().getRealm(), getConfig(), request.getKid(), request.getAlgorithm()));
+
+        return TrustKeyUtil.filterKeys(keys.map(JWKSServerUtils::toJwk), request);
+    }
+
+    @Override
     protected void setEmailVerified(UserModel user, BrokeredIdentityContext context) {
         OIDCIdentityProviderConfig config = getConfig();
         Map<String, Object> contextData = context.getContextData();
@@ -1101,6 +1111,14 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
 
         user.setEmailVerified(emailVerified);
+    }
+
+    private boolean matchesTrustMaterialIssuer(TrustMaterialRequest request) {
+        if (Strings.isEmpty(request.getIssuer()) || Strings.isEmpty(getConfig().getIssuer())) {
+            return true;
+        }
+
+        return Objects.equals(request.getIssuer(), getConfig().getIssuer());
     }
 
     private Boolean getEmailVerifiedClaim(JsonWebToken token) {

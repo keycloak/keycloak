@@ -52,6 +52,7 @@ import org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
+import org.keycloak.protocol.oidc.scope.DelegationScopeType;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.IDToken;
@@ -67,7 +68,9 @@ import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_R
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_NUMBER;
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_OVERALL_SIZE;
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_SIZE;
+import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_REQ_TOKEN_PARAMS_FAIL_FAST;
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE;
+import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -115,6 +118,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String MICROPROFILE_JWT_SCOPE = "microprofile-jwt";
     public static final String ACR_SCOPE = "acr";
     public static final String BASIC_SCOPE = "basic";
+    public static final String DELEGATION_SCOPE = "delegation";
 
     public static final String PROFILE_SCOPE_CONSENT_TEXT = "${profileScopeConsentText}";
     public static final String EMAIL_SCOPE_CONSENT_TEXT = "${emailScopeConsentText}";
@@ -125,11 +129,13 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String ORGANIZATION_SCOPE_CONSENT_TEXT = "${organizationScopeConsentText}";
 
     public static final String CONFIG_OIDC_REQ_PARAMS_DEFAULT_MAX_SIZE = "req-params-default-max-size";
+    public static final String CONFIG_OIDC_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE = "req-token-params-default-max-size";
     public static final String CONFIG_OIDC_REQ_PARAMS_MAX_SIZE_PREFIX = "req-params-max-size";
     public static final String CONFIG_OIDC_ADD_REQ_PARAMS_MAX_NUMBER = "add-req-params-max-number";
     public static final String CONFIG_OIDC_ADD_REQ_PARAMS_MAX_SIZE = "add-req-params-max-size";
     public static final String CONFIG_OIDC_ADD_REQ_PARAMS_MAX_OVERALL_SIZE = "add-req-params-max-overall-size";
     public static final String CONFIG_OIDC_ADD_REQ_PARAMS_FAIL_FAST = "add-req-params-fail-fast";
+    public static final String CONFIG_OIDC_ADD_REQ_TOKEN_PARAMS_FAIL_FAST = "add-req-token-params-fail-fast";
 
     /**
      * @deprecated To be removed in Keycloak 27
@@ -362,6 +368,18 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             organizationScope.setProtocol(getId());
             organizationScope.addProtocolMapper(OrganizationMembershipMapper.create(ORGANIZATION, true, true, true));
             newRealm.addDefaultClientScope(organizationScope, false);
+        }
+
+        if (Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_DELEGATION)) {
+            ClientScopeModel delegationScope = newRealm.addClientScope(DELEGATION_SCOPE);
+            delegationScope.setDescription("Delegation scope to add the 'may_act' claim to the access token using parameters");
+            delegationScope.setIsParameterizedScope(true);
+            delegationScope.setDisplayOnConsentScreen(true);
+            delegationScope.setAttribute(ClientScopeModel.IS_ALWAYS_CONSENT, Boolean.TRUE.toString());
+            delegationScope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, DelegationScopeType.TYPE);
+            delegationScope.setIncludeInTokenScope(true);
+            delegationScope.setProtocol(getId());
+            delegationScope.setConsentScreenText("${delegationScopeConsentText}");
         }
     }
 
@@ -601,6 +619,13 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                             "'. It is needed to add the name of the parameter after this prefix into the configuration. In this example, the '" + OIDCLoginProtocol.LOGIN_HINT_PARAM + "' parameter is used, but this format is supported for any known standard OIDC/OAuth2 parameter.")
                     .add()
                 .property()
+                    .name(CONFIG_OIDC_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE)
+                    .type("int")
+                    .helpText("Maximum default length of the 'token' parameter sent to the OIDC token endpoint. As 'token' parameter is considered a parameter containing possibly long token (for example big JWT or SAML assertion) with unbounded data (For example possibly big amount of roles inside JWT). " +
+                            "Example of such parameter is for example 'subject_token' parameter case of token exchange grant.")
+                    .defaultValue(DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE)
+                    .add()
+                .property()
                     .name(CONFIG_OIDC_ADD_REQ_PARAMS_MAX_NUMBER)
                     .type("int")
                     .helpText("Maximum number of additional request parameters sent to the OIDC authentication or token endpoints. As 'additional request parameter' is meant some custom parameter not directly treated as standard OIDC/OAuth2 protocol parameter. Additional parameters might be useful for example to add custom claims to the OIDC token (in case that also particular protocol mappers are configured).")
@@ -624,6 +649,15 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     .helpText("Whether the fail-fast strategy should be enforced in case if the limit for some standard OIDC parameter or additional OIDC parameter is not met for the parameters sent to the OIDC authentication or token endpoints." +
                             " If false, then all additional request parameters to not meet the configuration are silently ignored. If true, an exception will be raised and request to the OIDC authentication or token endpoints will not be allowed.")
                     .defaultValue(DEFAULT_ADDITIONAL_REQ_PARAMS_FAIL_FAST)
+                    .add()
+                .property()
+                    .name(CONFIG_OIDC_ADD_REQ_TOKEN_PARAMS_FAIL_FAST)
+                    .type("boolean")
+                    .helpText("Whether the fail-fast strategy should be enforced in case if the limit for some 'token' parameter is not met for the parameters sent to the OIDC token endpoint." +
+                            " If false, then all additional request parameters to not meet the configuration are silently ignored. If true, an exception will be raised and request to the OIDC token endpoints will not be allowed. " +
+                            "As 'token' parameter is considered a parameter containing possibly long token (for example big JWT or SAML assertion) with unbounded data (For example possibly big amount of roles inside JWT). " +
+                            "Example of such parameter is for example 'subject_token' parameter case of token exchange grant.")
+                    .defaultValue(DEFAULT_ADDITIONAL_REQ_TOKEN_PARAMS_FAIL_FAST)
                     .add()
                 .property()
                     .name(CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK)

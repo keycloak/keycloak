@@ -1,5 +1,12 @@
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import type UserVerifiableCredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userVerifiableCredentialRepresentation";
-import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
+import {
+  AlertVariant,
+  Button,
+  ButtonVariant,
+  Modal,
+  ModalVariant,
+} from "@patternfly/react-core";
 import { CubesIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
 import { sortBy } from "lodash-es";
@@ -12,16 +19,19 @@ import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { emptyFormatter } from "../util";
 import useFormatDate from "../utils/useFormatDate";
-import { CreateVerifiableCredentialModal } from "./CreateVerifiableCredentialModal";
-import { UserAttributesDialog } from "./UserAttributesDialog";
+import { CreateVerifiableCredentialModal } from "./verifiable-credentials/CreateVerifiableCredentialModal";
+import { UserAttributesDialog } from "./verifiable-credentials/UserAttributesDialog";
+import { IssuedCredentialsDetailCell } from "./verifiable-credentials/IssuedCredentialsDetailCell";
+import { UserVerifiableCredentialOfferDialog } from "./verifiable-credentials/UserVerifiableCredentialOfferDialog";
 
 type UserVerifiableCredentialsProps = {
-  userId: string;
+  user: UserRepresentation;
 };
 
 export const UserVerifiableCredentials = ({
-  userId,
+  user,
 }: UserVerifiableCredentialsProps) => {
+  const userId = user.id!;
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
@@ -30,7 +40,11 @@ export const UserVerifiableCredentials = ({
   const [selectedCredential, setSelectedCredential] =
     useState<UserVerifiableCredentialRepresentation>();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [credentialOfferDialogCredential, setCredentialOfferDialogCredential] =
+    useState<UserVerifiableCredentialRepresentation>();
   const [attributesDialogCredential, setAttributesDialogCredential] =
+    useState<UserVerifiableCredentialRepresentation>();
+  const [issuedCredentialsModalOpen, setIssuedCredentialsModalOpen] =
     useState<UserVerifiableCredentialRepresentation>();
 
   const refresh = () => setKey(new Date().getTime());
@@ -84,6 +98,44 @@ export const UserVerifiableCredentials = ({
     },
   });
 
+  const verifiableCredentialActions: Action<UserVerifiableCredentialRepresentation>[] =
+    [
+      {
+        title: t("credentialViewAttributes"),
+        onRowClick: (credential) => {
+          setAttributesDialogCredential(credential);
+        },
+      },
+      {
+        title: t("viewIssuedCredentials"),
+        onRowClick: (credential) => {
+          setIssuedCredentialsModalOpen(credential);
+        },
+      },
+      {
+        title: t("updateCredential"),
+        onRowClick: (credential) => {
+          setSelectedCredential(credential);
+          toggleUpdateDialog();
+        },
+      },
+      {
+        title: t("revoke"),
+        onRowClick: (credential) => {
+          setSelectedCredential(credential);
+          toggleDeleteDialog();
+        },
+      },
+    ];
+  if (user.email) {
+    verifiableCredentialActions.push({
+      title: t("credentialOfferSend"),
+      onRowClick: (credential) => {
+        setCredentialOfferDialogCredential(credential);
+      },
+    });
+  }
+
   return (
     <>
       <DeleteConfirm />
@@ -108,6 +160,30 @@ export const UserVerifiableCredentials = ({
           }}
         />
       )}
+      {issuedCredentialsModalOpen && (
+        <Modal
+          variant={ModalVariant.large}
+          title={t("issuedCredentials")}
+          isOpen={true}
+          onClose={() => setIssuedCredentialsModalOpen(undefined)}
+          width="90%"
+        >
+          <IssuedCredentialsDetailCell
+            userId={userId}
+            credentialScopeName={
+              issuedCredentialsModalOpen.credentialScopeName!
+            }
+            parentRevision={issuedCredentialsModalOpen.revision}
+          />
+        </Modal>
+      )}
+      {credentialOfferDialogCredential && (
+        <UserVerifiableCredentialOfferDialog
+          userId={userId}
+          credential={credentialOfferDialogCredential}
+          onClose={() => setCredentialOfferDialogCredential(undefined)}
+        />
+      )}
       <KeycloakDataTable
         loader={loader}
         key={key}
@@ -123,7 +199,7 @@ export const UserVerifiableCredentials = ({
             name: "credentialScopeName",
             displayKey: "credentialScopeName",
             cellFormatters: [emptyFormatter()],
-            transforms: [cellWidth(25)],
+            transforms: [cellWidth(30)],
           },
           {
             name: "revision",
@@ -134,52 +210,19 @@ export const UserVerifiableCredentials = ({
           {
             name: "createdDate",
             displayKey: "created",
-            transforms: [cellWidth(20)],
+            transforms: [cellWidth(15)],
             cellRenderer: ({ createdDate }) =>
               createdDate ? formatDate(new Date(createdDate)) : "—",
           },
           {
-            name: "userAttributes",
-            displayKey: "userAttributes",
-            transforms: [cellWidth(40)],
-            cellRenderer: (credential) => {
-              if (
-                !credential.userAttributes ||
-                Object.keys(credential.userAttributes).length === 0
-              ) {
-                return (
-                  <span className="pf-v5-u-color-200">
-                    {t("credentialNoUserAttributes")}
-                  </span>
-                );
-              }
-              return (
-                <Button
-                  variant="link"
-                  onClick={() => setAttributesDialogCredential(credential)}
-                >
-                  {t("credentialViewAttributes")}
-                </Button>
-              );
-            },
+            name: "updatedDate",
+            displayKey: "updatedAt",
+            transforms: [cellWidth(15)],
+            cellRenderer: ({ updatedDate }) =>
+              updatedDate ? formatDate(new Date(updatedDate)) : "—",
           },
         ]}
-        actions={[
-          {
-            title: t("updateCredential"),
-            onRowClick: (credential) => {
-              setSelectedCredential(credential);
-              toggleUpdateDialog();
-            },
-          } as Action<UserVerifiableCredentialRepresentation>,
-          {
-            title: t("revoke"),
-            onRowClick: (credential) => {
-              setSelectedCredential(credential);
-              toggleDeleteDialog();
-            },
-          } as Action<UserVerifiableCredentialRepresentation>,
-        ]}
+        actions={verifiableCredentialActions}
         emptyState={
           <ListEmptyState
             hasIcon={true}

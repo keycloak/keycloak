@@ -76,22 +76,34 @@ public class AuthorizationDetails implements Serializable {
     }
 
     /**
-     * Returns whether the current {@link AuthorizationDetails} object is a dynamic scope
+     * Returns whether the current {@link AuthorizationDetails} object is a parameterized scope.
      * @return see description
      */
-    public boolean isDynamicScope() {
-        return this.source.equals(AuthorizationRequestSource.SCOPE) && this.getClientScope().isDynamicScope();
+    public boolean isParameterizedScope() {
+        return this.source.equals(AuthorizationRequestSource.SCOPE) && this.getClientScope().isParameterizedScope();
     }
 
     /**
-     * Returns the Dynamic Scope parameter from the underlying {@link AuthorizationDetailsJSONRepresentation} representation
+     * Returns the parameterized scope parameter from the underlying {@link AuthorizationDetailsJSONRepresentation} representation.
      * @return see description
      */
-    public String getDynamicScopeParam() {
-        if (authorizationDetails != null && isDynamicScope()) {
-            return authorizationDetails.getDynamicScopeParamFromCustomData();
+    public String getParameterizedScopeParam() {
+        if (authorizationDetails != null && isParameterizedScope()) {
+            return authorizationDetails.getParameterizedScopeParamFromCustomData();
         }
         return null;
+    }
+
+    /** @deprecated Use {@link #isParameterizedScope()} instead. */
+    @Deprecated
+    public boolean isDynamicScope() {
+        return isParameterizedScope();
+    }
+
+    /** @deprecated Use {@link #getParameterizedScopeParam()} instead. */
+    @Deprecated
+    public String getDynamicScopeParam() {
+        return getParameterizedScopeParam();
     }
 
     @Override

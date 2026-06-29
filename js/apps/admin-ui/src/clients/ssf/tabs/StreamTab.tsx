@@ -3,7 +3,6 @@ import {
   HelpItem,
   KeycloakSelect,
   ListEmptyState,
-  NumberControl,
   PasswordInput,
   SelectVariant,
   useAlerts,
@@ -36,7 +35,7 @@ import {
   SyncAltIcon,
   TimesCircleIcon,
 } from "@patternfly/react-icons";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -48,7 +47,7 @@ import { useRealm } from "../../../context/realm-context/RealmContext";
 import { addTrailingSlash, convertAttributeNameToForm } from "../../../util";
 import { getAuthorizationHeaders } from "../../../utils/getAuthorizationHeaders";
 import useFormatDate from "../../../utils/useFormatDate";
-import type { FormFields, SaveOptions } from "../../ClientDetails";
+import type { FormFields } from "../../ClientDetails";
 
 const DELIVERY_METHOD_PUSH_URI = "urn:ietf:rfc:8935";
 const DELIVERY_METHOD_POLL_URI = "urn:ietf:rfc:8936";
@@ -57,8 +56,21 @@ const isPollDeliveryMethod = (method: string | undefined): boolean =>
   method === DELIVERY_METHOD_POLL_URI ||
   method === "https://schemas.openid.net/secevent/risc/delivery-method/poll";
 
-const noop = () => {
-  // no-op handler for the read-only Events Delivered KeycloakSelect
+/**
+ * Order-insensitive equality for the events_requested /
+ * events_delivered string lists. Used to drive the "dirty" indicator
+ * on the admin-side stream edit form so toggling a multi-select item
+ * back to its original state doesn't keep the Save button enabled.
+ */
+const arraysEqualUnordered = (a: string[], b: string[]): boolean => {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  const aSorted = [...a].sort();
+  const bSorted = [...b].sort();
+  for (let i = 0; i < aSorted.length; i++) {
+    if (aSorted[i] !== bSorted[i]) return false;
+  }
+  return true;
 };
 
 /**
@@ -81,11 +93,37 @@ const isValidPushEndpointUrl = (value: string): boolean => {
   }
 };
 
+/**
+ * Builds a human-readable message from a failed SSF endpoint response.
+ * The transmitter returns OAuth2-style error bodies
+ * ({ error, error_description }), so surface error_description
+ * rather than the raw JSON. Falls back to the raw body, then to the HTTP status line.
+ */
+const ssfErrorMessage = async (response: Response): Promise<string> => {
+  const text = await response.text();
+  if (text) {
+    try {
+      const body = JSON.parse(text) as {
+        error_description?: string;
+        error?: string;
+      };
+      const message = body.error_description || body.error;
+      if (message) return message;
+    } catch {
+      // Body wasn't JSON — fall through to the raw text.
+    }
+    return text;
+  }
+  return `${response.status} ${response.statusText || "Request failed"}`;
+};
+
 type SsfClientStreamDelivery = {
   method?: string;
   endpoint_url?: string;
   authorization_header?: string;
 };
+
+export type SsfStreamManagedBy = "RECEIVER" | "KEYCLOAK";
 
 export type SsfClientStream = {
   streamId?: string;
@@ -100,6 +138,7 @@ export type SsfClientStream = {
   createdAt?: number;
   updatedAt?: number;
   lastVerifiedAt?: number;
+  managedBy?: SsfStreamManagedBy;
 };
 
 export type StreamTabProps = {
@@ -108,10 +147,6 @@ export type StreamTabProps = {
   setClientStream: (stream: SsfClientStream | null) => void;
   defaultSupportedEvents: string;
   nativelyEmittedEvents: string[];
-  defaultPushConnectTimeoutMillis: number;
-  defaultPushSocketTimeoutMillis: number;
-  save: (options?: SaveOptions) => void;
-  reset: () => void;
   refresh: () => void;
 };
 
@@ -121,10 +156,6 @@ export const StreamTab = ({
   setClientStream,
   defaultSupportedEvents,
   nativelyEmittedEvents,
-  defaultPushConnectTimeoutMillis,
-  defaultPushSocketTimeoutMillis,
-  save,
-  reset,
   refresh,
 }: StreamTabProps) => {
   const { t } = useTranslation();
@@ -133,15 +164,6 @@ export const StreamTab = ({
   const { control, setValue } = useFormContext<FormFields>();
   const { addAlert, addError } = useAlerts();
   const formatDate = useFormatDate();
-
-  // Watch the delivery method via useWatch so the controlled context
-  // hook plays nicely with this child component.
-  const ssfDelivery = useWatch({
-    control,
-    name: convertAttributeNameToForm<FormFields>(
-      "attributes.ssf.delivery",
-    ) as never,
-  }) as string | undefined;
 
   // The Events Requested dropdown on the create-stream form should
   // surface only events the receiver has marked as Supported, not the
@@ -168,7 +190,6 @@ export const StreamTab = ({
   // when no stream is registered yet. Kept as plain useState because the
   // surrounding react-hook-form context is bound to the client
   // representation's attributes, not to stream-create parameters.
-  const [createStreamAudience, setCreateStreamAudience] = useState("");
   const [createStreamMethod, setCreateStreamMethod] = useState<"PUSH" | "POLL">(
     "PUSH",
   );
@@ -185,6 +206,133 @@ export const StreamTab = ({
   const [createStreamFormOpen, setCreateStreamFormOpen] = useState(false);
 
   const [statusActionLoading, setStatusActionLoading] = useState(false);
+
+  // ---- admin-side stream edit state ---------------------------------
+  // Tracks pending edits on the registered stream's admin-editable
+  // fields. Initialised from the loaded stream and reset when the
+  // stream refreshes so a refresh-without-save discards local edits.
+  const [editStreamDescription, setEditStreamDescription] = useState("");
+  const [editStreamEventsRequested, setEditStreamEventsRequested] = useState<
+    string[]
+  >([]);
+  const [editStreamEventsDelivered, setEditStreamEventsDelivered] = useState<
+    string[]
+  >([]);
+  const [editEventsRequestedOpen, setEditEventsRequestedOpen] = useState(false);
+  const [editEventsDeliveredOpen, setEditEventsDeliveredOpen] = useState(false);
+  const [streamEditSubmitting, setStreamEditSubmitting] = useState(false);
+
+  // Description / events_requested / events_delivered are receiver-
+  // owned for streams the receiver registered itself (via the
+  // standard SSF /streams endpoint). We surface them as read-only on
+  // the admin Stream tab in that mode so an admin save can't silently
+  // overwrite the receiver's contract; the server PATCH endpoint
+  // stays open for operators who need to override out-of-band, but
+  // the UI keeps that out of the happy path.
+  const canEditStream = clientStream?.managedBy === "KEYCLOAK";
+
+  const streamEditDirty =
+    canEditStream &&
+    ((clientStream.description ?? "") !== editStreamDescription ||
+      !arraysEqualUnordered(
+        clientStream.eventsRequested ?? [],
+        editStreamEventsRequested,
+      ) ||
+      !arraysEqualUnordered(
+        clientStream.eventsDelivered ?? [],
+        editStreamEventsDelivered,
+      ));
+
+  // Tracks the streamId the edit fields were last seeded from, so we can
+  // tell "a different stream just loaded" (always re-seed) apart from "the
+  // admin is editing the stream that's already loaded" (don't clobber).
+  const seededStreamIdRef = useRef<string | undefined>(undefined);
+
+  // Re-seed edit state when the loaded stream changes — but never clobber
+  // unsaved admin edits to the stream that's already loaded.
+  //
+  // The dirty guard alone deadlocks on first load of a KEYCLOAK-managed
+  // stream: the edit fields start empty, so the moment the stream loads with
+  // a non-empty description / events the state looks "dirty" against that
+  // empty seed and the guard refuses to seed it — leaving the fields blank
+  // forever. Gating the guard on "same stream as last seeded" breaks the
+  // cycle: a freshly created / newly loaded stream has no local edits to
+  // protect, so it always seeds.
+  useEffect(() => {
+    const loadedStreamId = clientStream?.streamId;
+    const sameStream = seededStreamIdRef.current === loadedStreamId;
+    if (sameStream && streamEditDirty) {
+      return;
+    }
+    seededStreamIdRef.current = loadedStreamId;
+    setEditStreamDescription(clientStream?.description ?? "");
+    setEditStreamEventsRequested(clientStream?.eventsRequested ?? []);
+    setEditStreamEventsDelivered(clientStream?.eventsDelivered ?? []);
+  }, [
+    clientStream?.streamId,
+    clientStream?.description,
+    clientStream?.eventsRequested,
+    clientStream?.eventsDelivered,
+    streamEditDirty,
+  ]);
+
+  const submitStreamEdit = async () => {
+    if (!client.clientId || !clientStream || !streamEditDirty) {
+      return;
+    }
+    setStreamEditSubmitting(true);
+    try {
+      const body: Record<string, unknown> = {};
+      if ((clientStream.description ?? "") !== editStreamDescription) {
+        body.description = editStreamDescription;
+      }
+      if (
+        !arraysEqualUnordered(
+          clientStream.eventsRequested ?? [],
+          editStreamEventsRequested,
+        )
+      ) {
+        body.events_requested = editStreamEventsRequested;
+      }
+      if (
+        !arraysEqualUnordered(
+          clientStream.eventsDelivered ?? [],
+          editStreamEventsDelivered,
+        )
+      ) {
+        body.events_delivered = editStreamEventsDelivered;
+      }
+
+      const response = await fetch(
+        `${addTrailingSlash(
+          adminClient.baseUrl,
+        )}admin/realms/${realm}/ssf/clients/${client.clientId}/stream`,
+        {
+          method: "PATCH",
+          headers: {
+            ...getAuthorizationHeaders(await adminClient.getAccessToken()),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+        },
+      );
+      if (!response.ok) {
+        throw new Error(await ssfErrorMessage(response));
+      }
+      addAlert(t("ssfStreamUpdateSuccess"), AlertVariant.success);
+      refresh();
+    } catch (error) {
+      addError("ssfStreamUpdateError", error);
+    } finally {
+      setStreamEditSubmitting(false);
+    }
+  };
+
+  const discardStreamEdit = () => {
+    setEditStreamDescription(clientStream?.description ?? "");
+    setEditStreamEventsRequested(clientStream?.eventsRequested ?? []);
+    setEditStreamEventsDelivered(clientStream?.eventsDelivered ?? []);
+  };
 
   /**
    * Drives the admin stream-status endpoint
@@ -219,18 +367,14 @@ export const StreamTab = ({
         },
       );
       if (!response.ok) {
-        const text = await response.text();
-        throw new Error(
-          text ||
-            `${response.status} ${response.statusText || "Request failed"}`,
-        );
+        throw new Error(await ssfErrorMessage(response));
       }
       // Keep the form-bound status field in sync immediately so a
       // subsequent generic Save doesn't clobber the just-applied
       // backend status with a stale form value (the parent's
       // useFetch refresh below is async and races the click).
       setValue(
-        convertAttributeNameToForm<FormFields>("attributes.ssf.status"),
+        convertAttributeNameToForm<FormFields>("attributes.ssf.stream.status"),
         targetStatus,
         { shouldDirty: false },
       );
@@ -274,7 +418,6 @@ export const StreamTab = ({
   };
 
   const resetCreateStreamForm = () => {
-    setCreateStreamAudience("");
     setCreateStreamEndpointUrl("");
     setCreateStreamAuthHeader("");
     setCreateStreamEvents([]);
@@ -358,9 +501,6 @@ export const StreamTab = ({
         }
       }
       const body: Record<string, unknown> = { delivery };
-      if (createStreamAudience.trim()) {
-        body.aud = [createStreamAudience.trim()];
-      }
       if (createStreamEvents.length > 0) {
         body.events_requested = createStreamEvents;
       }
@@ -382,11 +522,7 @@ export const StreamTab = ({
         },
       );
       if (!response.ok) {
-        const text = await response.text();
-        throw new Error(
-          text ||
-            `${response.status} ${response.statusText || "Request failed"}`,
-        );
+        throw new Error(await ssfErrorMessage(response));
       }
       addAlert(t("ssfCreateStreamSuccess"), AlertVariant.success);
       resetCreateStreamForm();
@@ -438,16 +574,21 @@ export const StreamTab = ({
     <>
       <DeleteStreamConfirm />
       <Card isFlat className="pf-v5-u-mt-md">
-        <CardHeader>
-          <CardTitle>{t("ssfStream")}</CardTitle>
-        </CardHeader>
+        {clientStream && (
+          <>
+            <CardHeader>
+              <CardTitle>{t("ssfStream")}</CardTitle>
+            </CardHeader>
+
+            <CardBody>
+              <TextContent>
+                <Text>{t("ssfStreamHelp")}</Text>
+              </TextContent>
+            </CardBody>
+          </>
+        )}
         <CardBody>
-          <TextContent>
-            <Text>{t("ssfStreamHelp")}</Text>
-          </TextContent>
-        </CardBody>
-        <CardBody>
-          {!createStreamFormOpen && (
+          {clientStream && (
             <ActionGroup className="pf-v5-u-pb-md">
               <Button variant="link" onClick={refresh} data-testid="ssfRefresh">
                 <SyncAltIcon /> {t("refresh")}
@@ -470,23 +611,6 @@ export const StreamTab = ({
                   fineGrainedAccess={client.access?.configure}
                   isHorizontal
                 >
-                  <FormGroup
-                    label={t("ssfCreateStreamAudience")}
-                    fieldId="ssfCreateStreamAudience"
-                    labelIcon={
-                      <HelpItem
-                        helpText={t("ssfCreateStreamAudienceHelp")}
-                        fieldLabelId="ssfCreateStreamAudience"
-                      />
-                    }
-                  >
-                    <TextInput
-                      id="ssfCreateStreamAudience"
-                      data-testid="ssfCreateStreamAudience"
-                      value={createStreamAudience}
-                      onChange={(_e, value) => setCreateStreamAudience(value)}
-                    />
-                  </FormGroup>
                   <FormGroup
                     label={t("ssfProfile")}
                     fieldId="ssfCreateStreamProfile"
@@ -750,25 +874,50 @@ export const StreamTab = ({
                   </InputGroupItem>
                 </InputGroup>
               </FormGroup>
-              {clientStream.description && (
-                <FormGroup
-                  label={t("ssfStreamDescription")}
-                  fieldId="ssfStreamDescription"
-                  labelIcon={
-                    <HelpItem
-                      helpText={t("ssfStreamDescriptionHelp")}
-                      fieldLabelId="ssfStreamDescription"
-                    />
+              <FormGroup
+                label={t("ssfStreamManagedBy")}
+                fieldId="ssfStreamManagedBy"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("ssfStreamManagedByHelp")}
+                    fieldLabelId="ssfStreamManagedBy"
+                  />
+                }
+              >
+                <Label
+                  data-testid="ssfStreamManagedBy"
+                  color={
+                    clientStream.managedBy === "KEYCLOAK" ? "blue" : "grey"
                   }
                 >
-                  <TextInput
-                    id="ssfStreamDescription"
-                    data-testid="ssfStreamDescription"
-                    readOnlyVariant="default"
-                    value={clientStream.description}
+                  {clientStream.managedBy === "KEYCLOAK"
+                    ? t("ssfStreamManagedByKeycloak")
+                    : t("ssfStreamManagedByReceiver")}
+                </Label>
+              </FormGroup>
+              <FormGroup
+                label={t("ssfStreamDescription")}
+                fieldId="ssfStreamDescription"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("ssfStreamDescriptionHelp")}
+                    fieldLabelId="ssfStreamDescription"
                   />
-                </FormGroup>
-              )}
+                }
+              >
+                <TextInput
+                  id="ssfStreamDescription"
+                  data-testid="ssfStreamDescription"
+                  readOnlyVariant={canEditStream ? undefined : "default"}
+                  value={editStreamDescription}
+                  onChange={
+                    canEditStream
+                      ? (_event, value) => setEditStreamDescription(value)
+                      : undefined
+                  }
+                />
+              </FormGroup>
+
               {clientStream.createdAt && (
                 <FormGroup
                   label={t("ssfStreamCreatedAt")}
@@ -1059,38 +1208,40 @@ export const StreamTab = ({
                   />
                 }
               >
-                {clientStream.eventsRequested &&
-                clientStream.eventsRequested.length > 0 ? (
-                  <KeycloakSelect
-                    toggleId="ssfEventsRequested"
-                    data-testid="ssfEventsRequested"
-                    variant={SelectVariant.typeaheadMulti}
-                    isDisabled
-                    chipGroupProps={{
-                      numChips: 5,
-                      expandedText: t("hide"),
-                      collapsedText: t("showRemaining"),
-                    }}
-                    typeAheadAriaLabel={t("ssfEventsRequested")}
-                    onToggle={noop}
-                    isOpen={false}
-                    selections={clientStream.eventsRequested}
-                    onSelect={noop}
-                  >
-                    {clientStream.eventsRequested.map((event) => (
-                      <SelectOption key={event} value={event}>
-                        {event}
-                      </SelectOption>
-                    ))}
-                  </KeycloakSelect>
-                ) : (
-                  <TextInput
-                    id="ssfEventsRequested"
-                    data-testid="ssfEventsRequested"
-                    readOnlyVariant="default"
-                    value={t("ssfEventsRequestedEmpty")}
-                  />
-                )}
+                <KeycloakSelect
+                  toggleId="ssfEventsRequested"
+                  data-testid="ssfEventsRequested"
+                  variant={SelectVariant.typeaheadMulti}
+                  isDisabled={!canEditStream}
+                  chipGroupProps={{
+                    numChips: 5,
+                    expandedText: t("hide"),
+                    collapsedText: t("showRemaining"),
+                  }}
+                  typeAheadAriaLabel={t("ssfEventsRequested")}
+                  onToggle={(open) => setEditEventsRequestedOpen(open)}
+                  isOpen={editEventsRequestedOpen}
+                  selections={editStreamEventsRequested}
+                  onSelect={(value) => {
+                    const event = value as string;
+                    setEditStreamEventsRequested((prev) =>
+                      prev.includes(event)
+                        ? prev.filter((e) => e !== event)
+                        : [...prev, event],
+                    );
+                  }}
+                  onClear={
+                    canEditStream
+                      ? () => setEditStreamEventsRequested([])
+                      : undefined
+                  }
+                >
+                  {receiverSupportedEvents.map((event) => (
+                    <SelectOption key={event} value={event}>
+                      {event}
+                    </SelectOption>
+                  ))}
+                </KeycloakSelect>
               </FormGroup>
               <FormGroup
                 label={t("ssfEventsDelivered")}
@@ -1102,89 +1253,65 @@ export const StreamTab = ({
                   />
                 }
               >
-                {clientStream.eventsDelivered &&
-                clientStream.eventsDelivered.length > 0 ? (
-                  <KeycloakSelect
-                    toggleId="ssfEventsDelivered"
-                    data-testid="ssfEventsDelivered"
-                    variant={SelectVariant.typeaheadMulti}
-                    isDisabled
-                    chipGroupProps={{
-                      numChips: 5,
-                      expandedText: t("hide"),
-                      collapsedText: t("showRemaining"),
-                    }}
-                    typeAheadAriaLabel={t("ssfEventsDelivered")}
-                    onToggle={noop}
-                    isOpen={false}
-                    selections={clientStream.eventsDelivered}
-                    onSelect={noop}
-                  >
-                    {clientStream.eventsDelivered.map((event) => (
-                      <SelectOption key={event} value={event}>
-                        {event}
-                      </SelectOption>
-                    ))}
-                  </KeycloakSelect>
-                ) : (
-                  <TextInput
-                    id="ssfEventsDelivered"
-                    data-testid="ssfEventsDelivered"
-                    readOnlyVariant="default"
-                    value={t("ssfEventsDeliveredEmpty")}
-                  />
-                )}
+                <KeycloakSelect
+                  toggleId="ssfEventsDelivered"
+                  data-testid="ssfEventsDelivered"
+                  variant={SelectVariant.typeaheadMulti}
+                  isDisabled={!canEditStream}
+                  chipGroupProps={{
+                    numChips: 5,
+                    expandedText: t("hide"),
+                    collapsedText: t("showRemaining"),
+                  }}
+                  typeAheadAriaLabel={t("ssfEventsDelivered")}
+                  onToggle={(open) => setEditEventsDeliveredOpen(open)}
+                  isOpen={editEventsDeliveredOpen}
+                  selections={editStreamEventsDelivered}
+                  onSelect={(value) => {
+                    const event = value as string;
+                    setEditStreamEventsDelivered((prev) =>
+                      prev.includes(event)
+                        ? prev.filter((e) => e !== event)
+                        : [...prev, event],
+                    );
+                  }}
+                  onClear={
+                    canEditStream
+                      ? () => setEditStreamEventsDelivered([])
+                      : undefined
+                  }
+                >
+                  {receiverSupportedEvents.map((event) => (
+                    <SelectOption key={event} value={event}>
+                      {event}
+                    </SelectOption>
+                  ))}
+                </KeycloakSelect>
               </FormGroup>
-              {/* Push timeouts only apply when Keycloak makes outbound
-                HTTP push requests. POLL is inbound (receivers call
-                the transmitter), so the timeout knobs have no effect
-                and we hide them to avoid suggesting otherwise. */}
-              {(ssfDelivery === "PUSH" || !ssfDelivery) &&
-                !isPollDeliveryMethod(clientStream.delivery?.method) && (
+              <ActionGroup>
+                {canEditStream && (
                   <>
-                    <NumberControl
-                      name={convertAttributeNameToForm<FormFields>(
-                        "attributes.ssf.pushEndpointConnectTimeoutMillis",
-                      )}
-                      label={t("ssfPushEndpointConnectTimeout")}
-                      labelIcon={t("ssfPushEndpointConnectTimeoutHelp")}
-                      controller={{
-                        defaultValue: defaultPushConnectTimeoutMillis,
-                        rules: {
-                          min: 0,
-                        },
-                      }}
-                    />
-                    <NumberControl
-                      name={convertAttributeNameToForm<FormFields>(
-                        "attributes.ssf.pushEndpointSocketTimeoutMillis",
-                      )}
-                      label={t("ssfPushEndpointSocketTimeout")}
-                      labelIcon={t("ssfPushEndpointSocketTimeoutHelp")}
-                      controller={{
-                        defaultValue: defaultPushSocketTimeoutMillis,
-                        rules: {
-                          min: 0,
-                        },
-                      }}
-                    />
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={() => submitStreamEdit()}
+                      isDisabled={!streamEditDirty || streamEditSubmitting}
+                      isLoading={streamEditSubmitting}
+                      data-testid="ssfStreamSave"
+                    >
+                      {t("save")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="link"
+                      onClick={() => discardStreamEdit()}
+                      isDisabled={!streamEditDirty || streamEditSubmitting}
+                      data-testid="ssfStreamRevert"
+                    >
+                      {t("revert")}
+                    </Button>
                   </>
                 )}
-              <ActionGroup>
-                <Button
-                  variant="secondary"
-                  onClick={() => save()}
-                  data-testid="ssfStreamSave"
-                >
-                  {t("save")}
-                </Button>
-                <Button
-                  variant="link"
-                  onClick={reset}
-                  data-testid="ssfStreamRevert"
-                >
-                  {t("revert")}
-                </Button>
                 <Button
                   variant="tertiary"
                   onClick={triggerVerifyStream}

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -x
 
-JAVA_VERSION=21
+JAVA_VERSION=25
 
 rm -f /etc/system-fips
 dnf install -y "java-${JAVA_VERSION}-openjdk-devel"

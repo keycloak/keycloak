@@ -57,6 +57,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.C
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_MAX_COUNT_CACHES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_MAX_COUNT_CACHES;
+import static org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator.addExpirationConfiguration;
 import static org.keycloak.spi.infinispan.impl.embedded.JGroupsConfigurator.createJGroupsProperties;
 
 /**
@@ -84,6 +85,7 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
     public static final String SITE_NAME = "siteName";
     public static final String MACHINE_NAME = "machineName";
     public static final String RACK_NAME = "rackName";
+    public static final String CLUSTER_NAME = "clusterName";
 
     private volatile Config.Scope keycloakConfig;
 
@@ -127,12 +129,13 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
         Arrays.stream(CLUSTERED_CACHE_NUM_OWNERS)
                 .forEach(name -> builder.property()
                         .name(CacheConfigurator.numOwnerConfigKey(name))
-                        .helpText("Sets the number of owners for the %s distributed cache. It defines the number of copies of your data in the cluster.".formatted(name))
+                        .helpText("Sets the number of owners for the %s distributed cache. Each entry is replicated to this many nodes in the cluster.".formatted(name))
                         .label("owners")
                         .type(ProviderConfigProperty.INTEGER_TYPE)
                         .add());
         createTopologyProperties(builder);
         createJGroupsProperties(builder);
+        addExpirationConfiguration(builder);
         return builder.build();
     }
 
@@ -211,6 +214,7 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
         if (JGroupsConfigurator.isClustered(holder)) {
             KeycloakModelUtils.runJobInTransaction(factory, session -> JGroupsConfigurator.configureJGroups(config, holder, session));
         }
+        CacheConfigurator.configureLocalCachesExpiration(holder, config);
         configureMetrics(config, holder);
     }
 
@@ -235,26 +239,33 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
 
     private static void createTopologyProperties(ProviderConfigurationBuilder builder) {
         builder.property()
+                .name(CLUSTER_NAME)
+                .helpText("Defines the name of the cluster. Only nodes with the same cluster name can discover each other and form a cluster. As invalidation of caches between clusters will not work, this will usually lead to stale data and incorrect behavior. Use only together with the experimental `cacheless` feature. (experimental)")
+                .label("name")
+                .defaultValue("ISPN")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add();
+        builder.property()
                 .name(NODE_NAME)
-                .helpText("Sets the name of the current node. This is a friendly name to make logs, etc. make more sense.")
+                .helpText("Sets a human-readable name for this node, used in log messages and management tools.")
                 .label("name")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add();
         builder.property()
                 .name(SITE_NAME)
-                .helpText("The name of the site (availability zone) where this instance runs. It can be set if running Keycloak in different availability zones. Infinispan takes into consideration this value to keep the backup data spread between different sites.")
+                .helpText("Identifies the site or availability zone of this instance. When set, Infinispan distributes data replicas across different sites to improve fault tolerance.")
                 .label("name")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add();
         builder.property()
                 .name(MACHINE_NAME)
-                .helpText("The name of the physical machine where this instance runs. It can be set if multiple Keycloak instances are running in the same physical machines. Infinispan takes into consideration this value to keep the backup data spread between different machines.")
+                .helpText("Identifies the physical machine of this instance. When set, Infinispan distributes data replicas across different machines to improve fault tolerance.")
                 .label("name")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add();
         builder.property()
                 .name(RACK_NAME)
-                .helpText("The name of the rack where this instance runs. It can be set if multiple Keycloak instances are running in the same physical rack. Infinispan takes into consideration this value to keep the backup data spread between different racks.")
+                .helpText("Identifies the rack of this instance. When set, Infinispan distributes data replicas across different racks to improve fault tolerance.")
                 .label("name")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add();

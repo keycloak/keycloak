@@ -45,11 +45,12 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.client.resources.TestingCacheResource;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.runonserver.CacheHelper;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -250,7 +251,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
     }
 
     @Test
-    public void testSignatureVerificationHardcodedPublicKeyHS512() throws Exception {
+    public void testSignatureVerificationHardcodedPublicKeyHS512NotAllowed() throws Exception {
         IdentityProviderRepresentation idpRep = getIdentityProvider();
         OIDCIdentityProviderConfigRep cfg = new OIDCIdentityProviderConfigRep(idpRep);
         cfg.setValidateSignature(true);
@@ -267,12 +268,8 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
                 .setAttribute(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG, Algorithm.HS512)
                 .update()) {
 
-            logInAsUserInIDPForFirstTime();
-            appPage.assertCurrent();
-            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
-
             logInAsUserInIDP();
-            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+            assertErrorPage("Unexpected error when authenticating with identity provider");
         }
     }
 
@@ -416,7 +413,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
 
     @Test
-    public void testClearKeysCache() throws Exception {
+    public void testClearKeysCache() {
         // Configure OIDC identity provider with JWKS URL
         updateIdentityProviderWithJwksUrl();
 
@@ -429,13 +426,13 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         // Check that key is cached
         IdentityProviderRepresentation idpRep = getIdentityProvider();
         String expectedCacheKey = PublicKeyStorageUtils.getIdpModelCacheKey(consumerRealm().toRepresentation().getId(), idpRep.getInternalId());
-        TestingCacheResource cache = testingClient.testing(bc.consumerRealmName()).cache(InfinispanConnectionProvider.KEYS_CACHE_NAME);
-        Assertions.assertTrue(cache.contains(expectedCacheKey));
+        KeycloakTestingClient.Server runOnServerConsumer = testingClient.server(bc.consumerRealmName());
+        Assertions.assertTrue(runOnServerConsumer.fetch(CacheHelper.contains(InfinispanConnectionProvider.KEYS_CACHE_NAME, expectedCacheKey)));
 
         // Clear cache and check nothing cached
         consumerRealm().clearKeysCache();
-        Assertions.assertFalse(cache.contains(expectedCacheKey));
-        Assertions.assertEquals(cache.size(), 0);
+        Assertions.assertFalse(runOnServerConsumer.fetch(CacheHelper.contains(InfinispanConnectionProvider.KEYS_CACHE_NAME, expectedCacheKey)));
+        Assertions.assertEquals(0, runOnServerConsumer.fetch(CacheHelper.size(InfinispanConnectionProvider.KEYS_CACHE_NAME)));
     }
 
 
@@ -454,8 +451,8 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         // Check that key is cached
         IdentityProviderRepresentation idpRep = getIdentityProvider();
         String expectedCacheKey = PublicKeyStorageUtils.getIdpModelCacheKey(consumerRealm().toRepresentation().getId(), idpRep.getInternalId());
-        TestingCacheResource cache = testingClient.testing(bc.consumerRealmName()).cache(InfinispanConnectionProvider.KEYS_CACHE_NAME);
-        Assertions.assertTrue(cache.contains(expectedCacheKey));
+        KeycloakTestingClient.Server runOnServerConsumer = testingClient.server(bc.consumerRealmName());
+        Assertions.assertTrue(runOnServerConsumer.fetch(CacheHelper.contains(InfinispanConnectionProvider.KEYS_CACHE_NAME, expectedCacheKey)));
 
         // Update identityProvider to some bad JWKS_URL
         OIDCIdentityProviderConfigRep cfg = new OIDCIdentityProviderConfigRep(idpRep);
@@ -463,7 +460,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         updateIdentityProvider(idpRep);
 
         // Check that key is not cached anymore
-        Assertions.assertFalse(cache.contains(expectedCacheKey));
+        Assertions.assertFalse(runOnServerConsumer.fetch(CacheHelper.contains(InfinispanConnectionProvider.KEYS_CACHE_NAME, expectedCacheKey)));
 
         // Check that user is not able to login with IDP
         timeOffSet.set(20);

@@ -49,7 +49,7 @@ public class JpaKeycloakTransaction implements KeycloakTransaction {
             logger.trace("Committing transaction");
             em.getTransaction().commit();
         } catch (PersistenceException e) {
-            throw PersistenceExceptionConverter.convert(e.getCause() != null ? e.getCause() : e);
+            throw PersistenceExceptionConverter.convert(e);
         }
     }
 

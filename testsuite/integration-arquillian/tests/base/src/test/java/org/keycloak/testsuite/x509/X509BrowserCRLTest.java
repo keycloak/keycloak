@@ -323,7 +323,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         loginPage.login("test-user@localhost", "password");
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll())
                 .userId(userId)

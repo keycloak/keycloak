@@ -141,14 +141,12 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testOrgGroupRoleMappingsIgnored() {
+    public void testOrgGroupRepresentationIncludesEmptyRoleMappings() {
         OrganizationRepresentation orgRep = createOrganization();
         OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
-        // Create group with role mappings
         GroupRepresentation groupRep = new GroupRepresentation();
         groupRep.setName("test-group");
-        groupRep.setRealmRoles(List.of("admin", "user"));
 
         String groupId;
         try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
@@ -156,11 +154,12 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
             groupId = ApiUtil.getCreatedId(response);
         }
 
-        // Retrieve and verify role mappings are null
         GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation(false);
         assertThat(retrieved, notNullValue());
-        assertThat(retrieved.getRealmRoles(), nullValue());
-        assertThat(retrieved.getClientRoles(), nullValue());
+        assertThat(retrieved.getRealmRoles(), notNullValue());
+        assertThat(retrieved.getRealmRoles(), hasSize(0));
+        assertThat(retrieved.getClientRoles(), notNullValue());
+        assertThat(retrieved.getClientRoles().size(), is(0));
     }
 
     @Test

@@ -39,7 +39,6 @@ import org.jboss.logging.Logger;
 public class RemoteStickySessionEncoderProviderFactory implements StickySessionEncoderProviderFactory, EnvironmentDependentProviderFactory, StickySessionEncoderProvider {
 
     private static final Logger log = Logger.getLogger(MethodHandles.lookup().lookupClass());
-    private static final char SEPARATOR = '.';
 
     private volatile boolean shouldAttachRoute;
     private volatile String route;
@@ -107,17 +106,7 @@ public class RemoteStickySessionEncoderProviderFactory implements StickySessionE
     @Override
     public String encodeSessionId(String message, String ignored) {
         Objects.requireNonNull(message);
-        return shouldAttachRoute ? message + SEPARATOR + route : message;
-    }
-
-    @Override
-    public SessionIdAndRoute decodeSessionIdAndRoute(String encodedSessionId) {
-        int index = encodedSessionId.indexOf('.');
-        if (index == -1) {
-            //route not present
-            return new SessionIdAndRoute(encodedSessionId, null);
-        }
-        return new SessionIdAndRoute(encodedSessionId.substring(0, index), encodedSessionId.substring(index, encodedSessionId.length() - 1));
+        return shouldAttachRoute ? message + DEFAULT_SEPARATOR + route : message;
     }
 
     @Override

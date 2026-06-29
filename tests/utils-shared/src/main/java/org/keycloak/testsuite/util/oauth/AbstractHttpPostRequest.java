@@ -148,6 +148,9 @@ public abstract class AbstractHttpPostRequest<T, R> {
         if (clientAssertion != null && clientAssertionType != null) {
             parameter("client_assertion_type", clientAssertionType);
             parameter("client_assertion", clientAssertion);
+            if (this.clientId != null) {
+                parameter("client_id", this.clientId);
+            }
         } else if (tokenType != null && tokenValue != null) {
             header("Authorization", tokenType + " " + tokenValue);
         } else if (clientSecret != null) {

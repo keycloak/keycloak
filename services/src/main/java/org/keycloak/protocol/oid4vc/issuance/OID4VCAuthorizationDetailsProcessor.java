@@ -24,11 +24,18 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.Time;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
@@ -52,6 +59,8 @@ import static org.keycloak.OAuth2Constants.ISSUER_STATE;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIALS_OFFER_ID_ATTR;
+import static org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail.ISSUED_CREDENTIAL_ID;
+import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 import static org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils.findCredentialScopeModelByConfigurationId;
 import static org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils.findCredentialScopeModelByName;
 import static org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX;
@@ -130,6 +139,12 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             throw getInvalidRequestException("credential_identifiers not allowed");
         }
 
+        // Issued credential ID not allowed
+        if (requestAuthDetail.getIssuedCredentialId() != null) {
+            logger.warnf("Property '%s' not allowed in authorization_details", ISSUED_CREDENTIAL_ID);
+            throw getInvalidRequestException("Issued credential ID not allowed in authorization details");
+        }
+
         // Validate credential_configuration_id
         SupportedCredentialConfiguration credConfig = supportedCredentials.get(credentialConfigurationId);
         if (credConfig == null) {
@@ -143,6 +158,16 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         }
 
         return requestAuthDetail;
+    }
+
+    @Override
+    public OID4VCAuthorizationDetail sanitizeBeforeSendingTokenResponse(OID4VCAuthorizationDetail authzDetail) {
+        // Remove non-standard properties before sending authorization_details in the Token Response
+        // https://github.com/keycloak/keycloak/pull/49958
+        OID4VCAuthorizationDetail cloned = authzDetail.clone();
+        cloned.setIssuedCredentialId(null);
+        cloned.setCredentialsOfferId(null);
+        return cloned;
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
@@ -303,6 +328,26 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
     }
 
     @Override
+    public void afterAuthorizationDetailsProcessed(UserSessionModel userSession, ClientSessionContext clientSessionCtx, OID4VCAuthorizationDetail oid4vcAuthzDetailResponse) {
+        String credentialConfigId = oid4vcAuthzDetailResponse.getCredentialConfigurationId();
+        CredentialScopeModel credentialScope = findCredentialScopeModelByConfigurationId(session.getContext().getRealm(), clientSessionCtx::getClientScopesStream, credentialConfigId);
+
+        if (credentialScope == null && Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI_PREAUTH_CODE) && PRE_AUTH_GRANT_TYPE.equals(clientSessionCtx.getAttribute(Constants.GRANT_TYPE, String.class))) {
+            // For now, for pre-authorized grant we allow fallback to all client scopes of the realm, but this needs to be double-check before pre-authorization grant
+            // is going to be supported feature. Details: https://github.com/keycloak/keycloak/issues/49965
+            credentialScope = findCredentialScopeModelByConfigurationId(session.getContext().getRealm(), session.getContext().getRealm()::getClientScopesStream, credentialConfigId);
+        }
+
+        if (credentialScope == null) {
+            throw new InvalidAuthorizationDetailsException("Cannot find credential scope for credential configuration ID: " + credentialConfigId);
+        }
+
+        // Create issued-credential and set its ID in authorization_details
+        IssuedVerifiableCredentialModel issuedCredential = createIssuedVerifiableCredential(userSession.getUser(), clientSessionCtx.getClientSession().getClient(), credentialScope);
+        oid4vcAuthzDetailResponse.setIssuedCredentialId(issuedCredential.getId());
+    }
+
+    @Override
     public void close() {
         // No cleanup needed
     }
@@ -333,6 +378,30 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         authDetail.setCredentialIdentifiers(List.of(credIdentifier));
 
         return authDetail;
+    }
+
+    protected IssuedVerifiableCredentialModel createIssuedVerifiableCredential(UserModel userModel, ClientModel clientModel, CredentialScopeModel credentialScope) {
+        String credentialScopeName = credentialScope.getName();
+        try {
+            // Lookup the UserVerifiableCredential by client scope ID to get its ID
+            UserVerifiableCredentialModel verifiableCredential = session.users()
+                    .getVerifiableCredentialByClientScope(userModel.getId(), credentialScope.getId());
+            if (verifiableCredential == null) {
+                throw new ModelException("User verifiable credential not found for scope: " + credentialScopeName);
+            }
+
+            IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(userModel.getId(), verifiableCredential.getId(), clientModel.getId());
+
+            long issuedAt = Time.currentTimeMillis();
+            model.setIssuedAt(issuedAt);
+            model.setExpiresAt(issuedAt + (credentialScope.getExpiryInSeconds() * 1000L));
+
+            logger.debugf("Created VC issuance: user=%s, client=%s, type=%s", userModel.getUsername(), clientModel.getClientId(), credentialScopeName);
+
+            return session.users().addIssuedVerifiableCredential(model);
+        } catch (Exception e) {
+            throw new ModelException(String.format("Failed to create VC issuance for user=%s, client=%s, type=%s", userModel.getUsername(), clientModel.getClientId(), credentialScopeName), e);
+        }
     }
 
     // Private ---------------------------------------------------------------------------------------------------------

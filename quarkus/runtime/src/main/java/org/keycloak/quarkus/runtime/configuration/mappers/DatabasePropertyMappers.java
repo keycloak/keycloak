@@ -53,6 +53,7 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     private static final Option<String> SYNTHETIC_RUNTIME_DB_OPTION = DB.toBuilder().synthetic().buildTime(false).build();
     public static final String PG_TARGET_SERVER_TYPE = "quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType";
+    public static final String PG_LOG_SERVER_ERROR_DETAIL = "quarkus.datasource.jdbc.additional-jdbc-properties.logServerErrorDetail";
     public static final String MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = "quarkus.datasource.jdbc.additional-jdbc-properties.sendStringParametersAsUnicode";
     public static final String CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
     public static final String SOCKET_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.socketTimeout";
@@ -255,6 +256,9 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .transformer(DatabasePropertyMappers::toDatabaseKind)
                         .paramLabel("vendor")
                         .build(),
+                fromOption(DatabaseOptions.DB_HEALTH_EXCLUDE)
+                        .to("quarkus.datasource.\"<datasource>\".health-exclude")
+                        .build(),
                 fromOption(DatabaseOptions.DB_POOL_MAX_LIFETIME)
                         .to("quarkus.datasource.jdbc.max-lifetime")
                         .mapFrom(DB, DatabasePropertyMappers::transformPoolMaxLifetime)
@@ -266,6 +270,10 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "primary")
                         .to(PG_TARGET_SERVER_TYPE)
                         .isEnabled(DatabasePropertyMappers::isPostgresqlTargetServerTypeEnabled)
+                        .build(),
+                fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "false")
+                        .to(PG_LOG_SERVER_ERROR_DETAIL)
+                        .isEnabled(DatabasePropertyMappers::isPostgresqlLogServerErrorDetailEnabled)
                         .build(),
                 fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "false")
                         .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
@@ -311,6 +319,19 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         }
         // targetServerType already set to same or different value in db-url, ignore
         return dbUrl == null || !dbUrl.contains("targetServerType");
+    }
+
+    public static boolean isPostgresqlLogServerErrorDetailEnabled() {
+        String db = Configuration.getConfigValue(DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElse(null);
+        if (vendor != Database.Vendor.POSTGRES) {
+            return false;
+        }
+
+        String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValue();
+
+        // logServerErrorDetail already set to same or different value in db-url, ignore
+        return dbUrl == null || !dbUrl.contains("logServerErrorDetail");
     }
 
     public static boolean isMssqlSendStringParametersAsUnicode() {
@@ -405,7 +426,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         return String.valueOf(DurationConverter.parseDuration(value).toSeconds());
     }
 
-    private static String getDatabaseUrl(String name, String value, ConfigSourceInterceptorContext c) {        
+    private static String getDatabaseUrl(String name, String value, ConfigSourceInterceptorContext c) {
         return Database.getDefaultUrl(option -> getDatasourceOptionValue(option, name).orElse(null), name, value).orElse(null);
     }
 

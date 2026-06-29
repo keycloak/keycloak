@@ -632,8 +632,8 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         assertMessageError(response,clientId,responseError,eventError);
     }
 
-    protected void assertError(AccessTokenResponse response, int erroCode, String clientId, String responseError, String eventError) {
-        assertEquals(erroCode, response.getStatusCode());
+    protected void assertError(AccessTokenResponse response, int errorCode, String clientId, String responseError, String eventError) {
+        assertEquals(errorCode, response.getStatusCode());
         assertMessageError(response, clientId, responseError, eventError);
     }
 

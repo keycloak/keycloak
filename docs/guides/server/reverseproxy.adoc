@@ -90,6 +90,30 @@ Mitigate this risk, for example, by restricting network access.
 
 * Allow a longer `--shutdown-delay` (for example, 10–30 seconds) to give keepalive connections time to drain during shutdown, since the proxy cannot signal a connection close at the HTTP connection level.
 
+=== Backchannel access considerations
+
+If private backchannel access to {project_name} is requested, using a proxy might be challenging:
+
+* When the PROXY protocol is used for TLS passthrough, clients cannot connect directly to {project_name} without the PROXY protocol. Any direct connection would also allow spoofing of IP source addresses.
+
+* When using TLS re-encrypt, it might be impossible to restrict proxy traffic to specific source IP addresses when the proxy's IP addresses are dynamic. Not restricting the proxy traffic would allow clients to spoof proxy headers.
+
+In these setups, it might be better to stick with a single proxy and no backchannel access, or to deploy an internal proxy in addition to the external proxy.
+
+When deploying a second proxy, there are additional considerations:
+
+* Restrict network access so that {project_name} accepts connections only from the two proxies, for example, by adding network filtering.
+
+* Both proxies need to use the same mode.
+Either both need to use TLS passthrough, or both need to use TLS re-encrypt.
+
+* If using TLS passthrough mode, both proxies can forward requests using the PROXY protocol.
+As {project_name} presents a single TLS certificate for both paths, it needs to include a subject alternative name (SAN) for the second path so callers can validate TLS on both paths.
+Note that this SAN will be visible on both paths.
+While this is not a technical problem, it still leaks an internal hostname on the public path.
+
+* If using TLS re-encrypt mode, both proxies would filter incoming HTTP headers, and add trusted HTTP headers.
+
 == Port to be proxied
 
 {project_name} runs on the following ports by default:
@@ -422,13 +446,58 @@ Common options for configuring providers are:
 | The prefix of the headers holding additional certificates in the chain and used to retrieve individual
 certificates according to the length of the chain. For instance, a value `CERT_CHAIN` will tell the server
 to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if `certificate-chain-length` is set to `10`.
-| `apache`, `haproxy`, `nginx`
+| `apache`, `nginx`
+
+|ssl-cert-chain
+| The name of the header holding the full certificate chain as a single value.
+All chain certificates are contained in one header rather than split across indexed headers.
+| `haproxy`, `rfc9440`
 
 |certificate-chain-length
 | The maximum length of the certificate chain beyond the client certificate
 | all but `envoy` (defaults to 1)
 
 |===
+
+==== Configuring the HAProxy provider
+
+HAProxy can forward client certificates as base64-encoded DER using its `ssl_c_der,base64` and `ssl_c_chain_der,base64` sample fetches.
+The `haproxy` provider reads the client certificate from the `ssl-client-cert` header and the certificate chain from the `ssl-cert-chain` header.
+
+The options and defaults specific to `haproxy` are as follows:
+
+[%autowidth]
+|===
+|Option|Description|Default
+
+|ssl-client-cert
+| The name of the header holding the client certificate.
+| (none)
+
+|ssl-cert-chain
+| The name of the header holding the full certificate chain as a single base64-encoded DER value. HAProxy's `ssl_c_chain_der,base64` produces the concatenated DER encoding of all CA certificates in one value.
+| (none)
+
+|certificate-chain-length
+| The maximum number of certificates to load from the chain header.
+| 1
+
+|===
+
+Example HAProxy configuration:
+
+[source]
+----
+http-request set-header Client-Cert %[ssl_c_der,base64] if { ssl_c_used } { ssl_c_verify 0 }
+http-request set-header Client-Cert-Chain %[ssl_c_chain_der,base64] if { ssl_c_used } { ssl_c_verify 0 }
+----
+
+Corresponding {project_name} configuration:
+
+<@kc.start parameters="--spi-x509cert-lookup--provider=haproxy --spi-x509cert-lookup--haproxy--ssl-client-cert=Client-Cert --spi-x509cert-lookup--haproxy--ssl-cert-chain=Client-Cert-Chain --spi-x509cert-lookup--haproxy--certificate-chain-length=2"/>
+
+If the number of intermediate certificates in your certificate chain is longer than the default, you must set the
+`certificate-chain-length` option to an appropriate value. Otherwise, the provider will discard the request.
 
 ==== Configuring the NGINX provider
 
@@ -471,8 +540,8 @@ The options and defaults specific to `rfc9440` are as follows:
 
 |===
 
-If your certificate chain is longer than the default, you must set the `certificate-chain-length` option to an appropriate value.
-Otherwise, the provider will discard the request.
+If the number of intermediate certificates in your certificate chain is longer than the default, you must set the
+`certificate-chain-length` option to an appropriate value. Otherwise, the provider will discard the request.
 
 ==== Configuring the Traefik provider
 

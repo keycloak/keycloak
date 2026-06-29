@@ -109,6 +109,10 @@ public class SsfSubjectManagementResource {
             case FORMAT_UNSUPPORTED -> Response.status(Response.Status.BAD_REQUEST)
                     .entity(new SsfErrorRepresentation("invalid_request", "unsupported subject format"))
                     .build();
+            case SUBJECT_READ_ONLY -> Response.status(Response.Status.CONFLICT)
+                    .entity(new SsfErrorRepresentation("subject_read_only",
+                            "subject is backed by a read-only user store and cannot be persisted"))
+                    .build();
             default -> okEmptyJson();
         };
     }
@@ -175,6 +179,10 @@ public class SsfSubjectManagementResource {
             case SUBJECT_NOT_FOUND -> Response.noContent().build();
             case FORMAT_UNSUPPORTED -> Response.status(Response.Status.BAD_REQUEST)
                     .entity(new SsfErrorRepresentation("invalid_request", "unsupported subject format"))
+                    .build();
+            case SUBJECT_READ_ONLY -> Response.status(Response.Status.CONFLICT)
+                    .entity(new SsfErrorRepresentation("subject_read_only",
+                            "subject is backed by a read-only user store and cannot be persisted"))
                     .build();
             default -> Response.noContent().build();
         };

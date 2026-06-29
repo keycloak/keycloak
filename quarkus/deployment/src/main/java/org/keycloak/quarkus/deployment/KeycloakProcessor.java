@@ -343,6 +343,7 @@ class KeycloakProcessor {
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     @Consume(ConfigBuildItem.class)
+    @Consume(CryptoProviderInitBuildItem.class) // ensures the Providers are loaded prior to handle the keystore #49359
     void configureTruststore(KeycloakRecorder recorder) {
         recorder.configureTruststore();
     }
@@ -629,6 +630,10 @@ class KeycloakProcessor {
         if (getOptionalBooleanKcValue(DatabaseOptions.DB_SQL_JPA_DEBUG.getKey()).orElse(false)) {
             unitProperties.put(AvailableSettings.USE_SQL_COMMENTS, "true");
         }
+
+        // SqlExceptionHelper should not log-and-throw error messages.
+        // As those messages might later be caught and handled, this is an antipattern so we prevent logging them.
+        unitProperties.put(JdbcSettings.LOG_JDBC_ERRORS, "false");
 
         getOptionalKcValue(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES.getKey())
                 .ifPresent(v -> unitProperties.put(AvailableSettings.LOG_SLOW_QUERY, v));

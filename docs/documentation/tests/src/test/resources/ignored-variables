@@ -26,6 +26,7 @@ keycloak.access_token['/preferred_username']
 keycloak.access_token['/custom_claim']
 resource_id
 alias
+clientId
 user_id
 ticket_id
 $evaluation.grant()
@@ -35,6 +36,14 @@ $evaluation.grant()
 {$v
 location.origin
 keycloak.token
+server
+realm
+groupId
+groupIdA
+groupIdB
+userId
+userId1
+userId2
 11
 1
 2

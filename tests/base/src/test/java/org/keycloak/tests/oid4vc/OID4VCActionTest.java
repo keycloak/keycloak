@@ -6,9 +6,9 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oid4vc.issuance.requiredactions.VerifiableCredentialOfferAction;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.representations.idm.oid4vc.VerifiableCredentialOfferActionConfig;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -46,6 +46,7 @@ import static org.keycloak.protocol.oid4vc.model.ErrorType.UNKNOWN_CREDENTIAL_CO
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
@@ -67,7 +68,7 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
 
     public static String getKcActionParameter(String clientId, String credentialConfigId, boolean preAuthorized) {
         try {
-            VerifiableCredentialOfferAction.CredentialOfferActionConfig cfg = new VerifiableCredentialOfferAction.CredentialOfferActionConfig();
+            VerifiableCredentialOfferActionConfig cfg = new VerifiableCredentialOfferActionConfig();
             cfg.setCredentialConfigurationId(credentialConfigId);
             cfg.setPreAuthorized(preAuthorized);
             cfg.setClientId(clientId);
@@ -110,6 +111,9 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
                 .details(Details.VERIFIABLE_CREDENTIAL_TARGET_USER_ID, user.getId())
                 .details(Details.VERIFIABLE_CREDENTIAL_TARGET_CLIENT_ID, client.getClientId())
                 .type(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER);
+
+        // Wait 2 minutes (just to test that credential-offer with default expiration (5 minutes) will not expire)
+        timeOffSet.set(120);
 
         // Refresh screen. Should be still same credential-offer as before and test that there are not new events
         driver.navigate().refresh();
@@ -269,6 +273,7 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
         oauth.fillLoginForm(user.getUsername(), TEST_PASSWORD);
 
         credentialOfferPage.assertCurrent();
+        assertTrue(credentialOfferPage.isCancelDisplayed());
         String credentialOfferUri = credentialOfferPage.getCredentialOfferUri();
         String credentialOfferNonce = getNonceFromCredentialOfferUri(credentialOfferUri);
         events.clear();

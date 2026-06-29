@@ -108,6 +108,7 @@ export const AdvancedSettings = ({
   isSAML,
   isOAuth2,
 }: AdvancedSettingsProps) => {
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation();
   const {
     control,
@@ -127,6 +128,9 @@ export const AdvancedSettings = ({
     Feature.ClientAuthFederated,
   );
   const jwtAuthorizationGrant = isFeatureEnabled(Feature.JWTAuthorizationGrant);
+  const isIdentityBrokeringAPIV1Enabled = isFeatureEnabled(
+    Feature.IdentityBrokeringAPIV1,
+  );
   const transientUsers = useWatch({
     control,
     name: "config.doNotStoreUsers",
@@ -141,6 +145,29 @@ export const AdvancedSettings = ({
     control,
     name: "config.supportsClientAssertions",
   });
+
+  const [hasBrokerReadTokenRole, setHasBrokerReadTokenRole] = useState(false);
+
+  useFetch(
+    async () => {
+      const brokerClient = (await adminClient.clients.find()).find(
+        (client) => client.clientId === "broker",
+      );
+      if (!brokerClient?.id) {
+        return false;
+      }
+      const role = await adminClient.clients.findRole({
+        id: brokerClient.id,
+        roleName: "read-token",
+      });
+      return !!role;
+    },
+    (hasRole) => {
+      setHasBrokerReadTokenRole(hasRole);
+    },
+    [],
+  );
+
   return (
     <>
       {!isOIDC && !isSAML && !isOAuth2 && (
@@ -155,13 +182,15 @@ export const AdvancedSettings = ({
         />
       )}
       <SwitchField field="storeToken" label="storeTokens" fieldType="boolean" />
-      {(isSAML || isOIDC || isOAuth2) && (
-        <SwitchField
-          field="addReadTokenRoleOnCreate"
-          label="storedTokensReadable"
-          fieldType="boolean"
-        />
-      )}
+      {(isSAML || isOIDC || isOAuth2) &&
+        isIdentityBrokeringAPIV1Enabled &&
+        hasBrokerReadTokenRole && (
+          <SwitchField
+            field="addReadTokenRoleOnCreate"
+            label="storedTokensReadable"
+            fieldType="boolean"
+          />
+        )}
       {!isOIDC && !isSAML && !isOAuth2 && (
         <>
           <SwitchField

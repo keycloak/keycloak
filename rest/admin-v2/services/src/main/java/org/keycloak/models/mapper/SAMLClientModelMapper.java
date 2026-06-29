@@ -56,7 +56,11 @@ public class SAMLClientModelMapper extends BaseClientModelMapper<SAMLClientRepre
     
     public SAMLClientModelMapper() {
         // Name ID settings
-        addAttributeMapping("nameIdFormat", SAML_NAME_ID_FORMAT, SAMLClientRepresentation::getNameIdFormat, SAMLClientRepresentation::setNameIdFormat);
+        addMapping("nameIdFormat",
+                rep -> rep.getNameIdFormat() != null ? rep.getNameIdFormat().toJson() : null,
+                (rep, value) -> rep.setNameIdFormat(SAMLClientRepresentation.NameIdFormat.fromJson(value)),
+                model -> model.getAttribute(SAML_NAME_ID_FORMAT),
+                (model, value) -> setAttributeIfNotNull(model, SAML_NAME_ID_FORMAT, value));
         addBooleanAttributeMapping("forceNameIdFormat", SAML_FORCE_NAME_ID_FORMAT, SAMLClientRepresentation::getForceNameIdFormat, SAMLClientRepresentation::setForceNameIdFormat);
         
         // Signature settings
@@ -64,7 +68,11 @@ public class SAMLClientModelMapper extends BaseClientModelMapper<SAMLClientRepre
         addBooleanAttributeMapping("signDocuments", SAML_SERVER_SIGNATURE, SAMLClientRepresentation::getSignDocuments, SAMLClientRepresentation::setSignDocuments);
         addBooleanAttributeMapping("signAssertions", SAML_ASSERTION_SIGNATURE, SAMLClientRepresentation::getSignAssertions, SAMLClientRepresentation::setSignAssertions);
         addBooleanAttributeMapping("clientSignatureRequired", SAML_CLIENT_SIGNATURE, SAMLClientRepresentation::getClientSignatureRequired, SAMLClientRepresentation::setClientSignatureRequired);
-        addAttributeMapping("signatureAlgorithm", SAML_SIGNATURE_ALGORITHM, SAMLClientRepresentation::getSignatureAlgorithm, SAMLClientRepresentation::setSignatureAlgorithm);
+        addMapping("signatureAlgorithm",
+                rep -> rep.getSignatureAlgorithm() != null ? rep.getSignatureAlgorithm().name() : null,
+                (rep, value) -> rep.setSignatureAlgorithm(SAMLClientRepresentation.SignatureAlgorithm.fromJson(value)),
+                model -> model.getAttribute(SAML_SIGNATURE_ALGORITHM),
+                (model, value) -> setAttributeIfNotNull(model, SAML_SIGNATURE_ALGORITHM, value));
         addAttributeMapping("signatureCanonicalizationMethod", SAML_SIGNATURE_CANONICALIZATION, SAMLClientRepresentation::getSignatureCanonicalizationMethod, SAMLClientRepresentation::setSignatureCanonicalizationMethod);
         addAttributeMapping("signingCertificate", SAML_SIGNING_CERTIFICATE, SAMLClientRepresentation::getSigningCertificate, SAMLClientRepresentation::setSigningCertificate);
 

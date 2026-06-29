@@ -17,12 +17,14 @@
 
 package org.keycloak.tests.organization.authz.fgap;
 
+import java.util.List;
 import java.util.Set;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -33,20 +35,21 @@ import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.admin.authz.fgap.PermissionTestUtils;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.ORGANIZATIONS_RESOURCE_TYPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -62,17 +65,17 @@ public class OrganizationResourceTypeEvaluationTest {
     @InjectRealm(config = OrganizationFgapConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;
 
-    @InjectClient(attachTo = Constants.ADMIN_PERMISSIONS_CLIENT_ID)
-    ManagedClient client;
-
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
     Keycloak realmAdminClient;
+    
+    private ClientResource clientResource;
 
     private String orgAId;
     private String orgBId;
 
     @BeforeEach
     public void setup() {
+        clientResource = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
         orgAId = createOrg("orgA", "orga.org");
         orgBId = createOrg("orgB", "orgb.org");
     }
@@ -90,7 +93,7 @@ public class OrganizationResourceTypeEvaluationTest {
     @Test
     public void testViewSpecificOrganization() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        PermissionTestUtils.createPermission(clientResource, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
 
         OrganizationRepresentation orgA = realmAdminClient.realm(realm.getName()).organizations().get(orgAId).toRepresentation();
         assertNotNull(orgA);
@@ -107,7 +110,7 @@ public class OrganizationResourceTypeEvaluationTest {
     @Test
     public void testManageSpecificOrganization() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), policy);
+        PermissionTestUtils.createPermission(clientResource, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), policy);
 
         OrganizationResource orgAResource = realmAdminClient.realm(realm.getName()).organizations().get(orgAId);
         OrganizationRepresentation orgARep = orgAResource.toRepresentation();
@@ -126,7 +129,7 @@ public class OrganizationResourceTypeEvaluationTest {
     @Test
     public void testDeleteSpecificOrganization() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), policy);
+        PermissionTestUtils.createPermission(clientResource, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), policy);
 
         try (Response response = realmAdminClient.realm(realm.getName()).organizations().get(orgAId).delete()) {
             assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
@@ -140,7 +143,7 @@ public class OrganizationResourceTypeEvaluationTest {
     @Test
     public void testViewAllOrganizations() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createAllPermission(client, ORGANIZATIONS_RESOURCE_TYPE, policy, Set.of(VIEW));
+        PermissionTestUtils.createAllPermission(clientResource, ORGANIZATIONS_RESOURCE_TYPE, policy, Set.of(VIEW));
 
         OrganizationRepresentation orgA = realmAdminClient.realm(realm.getName()).organizations().get(orgAId).toRepresentation();
         assertNotNull(orgA);
@@ -151,7 +154,7 @@ public class OrganizationResourceTypeEvaluationTest {
     @Test
     public void testManageAllOrganizations() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createAllPermission(client, ORGANIZATIONS_RESOURCE_TYPE, policy, Set.of(VIEW, MANAGE));
+        PermissionTestUtils.createAllPermission(clientResource, ORGANIZATIONS_RESOURCE_TYPE, policy, Set.of(VIEW, MANAGE));
 
         OrganizationResource orgAResource = realmAdminClient.realm(realm.getName()).organizations().get(orgAId);
         OrganizationRepresentation orgARep = orgAResource.toRepresentation();
@@ -171,14 +174,14 @@ public class OrganizationResourceTypeEvaluationTest {
     @Test
     public void testDenyOverridesAllowAll() {
         UserPolicyRepresentation allowPolicy = createAdminPolicy();
-        PermissionTestUtils.createAllPermission(client, ORGANIZATIONS_RESOURCE_TYPE, allowPolicy, Set.of(VIEW, MANAGE));
+        PermissionTestUtils.createAllPermission(clientResource, ORGANIZATIONS_RESOURCE_TYPE, allowPolicy, Set.of(VIEW, MANAGE));
 
         OrganizationRepresentation orgARep = realmAdminClient.realm(realm.getName()).organizations().get(orgAId).toRepresentation();
         assertNotNull(orgARep);
 
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        UserPolicyRepresentation denyPolicy = PermissionTestUtils.createUserPolicy(Logic.NEGATIVE, realm, client, "Deny Admin " + KeycloakModelUtils.generateId(), myadmin.getId());
-        PermissionTestUtils.createPermission(client, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), denyPolicy);
+        UserPolicyRepresentation denyPolicy = PermissionTestUtils.createUserPolicy(Logic.NEGATIVE, realm, clientResource, "Deny Admin " + KeycloakModelUtils.generateId(), myadmin.getId());
+        PermissionTestUtils.createPermission(clientResource, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), denyPolicy);
 
         try {
             realmAdminClient.realm(realm.getName()).organizations().get(orgAId).toRepresentation();
@@ -194,7 +197,7 @@ public class OrganizationResourceTypeEvaluationTest {
     @Test
     public void testViewDoesNotGrantManage() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        PermissionTestUtils.createPermission(clientResource, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
 
         OrganizationRepresentation orgARep = realmAdminClient.realm(realm.getName()).organizations().get(orgAId).toRepresentation();
         assertNotNull(orgARep);
@@ -208,7 +211,7 @@ public class OrganizationResourceTypeEvaluationTest {
     @Test
     public void testCreateRequiresGlobalManage() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createAllPermission(client, ORGANIZATIONS_RESOURCE_TYPE, policy, Set.of(VIEW, MANAGE));
+        PermissionTestUtils.createAllPermission(clientResource, ORGANIZATIONS_RESOURCE_TYPE, policy, Set.of(VIEW, MANAGE));
 
         OrganizationRepresentation newOrg = new OrganizationRepresentation();
         newOrg.setName("orgC");
@@ -225,7 +228,7 @@ public class OrganizationResourceTypeEvaluationTest {
     @Test
     public void testAllResourcePermissionScopeChange() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        ScopePermissionRepresentation allPerm = PermissionTestUtils.createAllPermission(client, ORGANIZATIONS_RESOURCE_TYPE, policy, Set.of(VIEW, MANAGE));
+        ScopePermissionRepresentation allPerm = PermissionTestUtils.createAllPermission(clientResource, ORGANIZATIONS_RESOURCE_TYPE, policy, Set.of(VIEW, MANAGE));
 
         realmAdminClient.realm(realm.getName()).organizations().get(orgAId).toRepresentation();
         OrganizationRepresentation orgARep = realmAdminClient.realm(realm.getName()).organizations().get(orgAId).toRepresentation();
@@ -234,9 +237,9 @@ public class OrganizationResourceTypeEvaluationTest {
             assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
 
-        allPerm = client.admin().authorization().permissions().scope().findByName(allPerm.getName());
+        allPerm = clientResource.authorization().permissions().scope().findByName(allPerm.getName());
         allPerm.setScopes(Set.of(VIEW));
-        client.admin().authorization().permissions().scope().findById(allPerm.getId()).update(allPerm);
+        clientResource.authorization().permissions().scope().findById(allPerm.getId()).update(allPerm);
 
         realmAdminClient.realm(realm.getName()).organizations().get(orgAId).toRepresentation();
         orgARep = realmAdminClient.realm(realm.getName()).organizations().get(orgAId).toRepresentation();
@@ -244,6 +247,40 @@ public class OrganizationResourceTypeEvaluationTest {
         try (Response response = realmAdminClient.realm(realm.getName()).organizations().get(orgAId).update(orgARep)) {
             assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
         }
+    }
+
+    @Test
+    public void testMemberOrganizationsFilteredByFgapViewPermission() {
+        UserPolicyRepresentation policy = createAdminPolicy();
+        // grant view on orgA only
+        PermissionTestUtils.createPermission(clientResource, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        // grant view on all users so auth.users().requireView(member) passes
+        PermissionTestUtils.createAllPermission(clientResource, USERS_RESOURCE_TYPE, policy, Set.of(VIEW));
+
+        // create a user who is a member of both orgs
+        UserRepresentation userRep = UserBuilder.create()
+                .username("multi-org-user")
+                .email("multi-org-user@orga.org")
+                .build();
+        String userId;
+        try (Response response = realm.admin().users().create(userRep)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            userId = ApiUtil.getCreatedId(response);
+        }
+        try (Response response = realm.admin().organizations().get(orgAId).members().addMember(userId)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+        try (Response response = realm.admin().organizations().get(orgBId).members().addMember(userId)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+
+        // myadmin has FGAP view on orgA only — should see only orgA in the member's organizations
+        List<OrganizationRepresentation> orgs = realmAdminClient.realm(realm.getName())
+                .organizations().get(orgAId).members().member(userId).getOrganizations();
+
+        Set<String> orgNames = orgs.stream().map(OrganizationRepresentation::getName).collect(java.util.stream.Collectors.toSet());
+        assertThat(orgNames.contains("orgA"), equalTo(true));
+        assertThat(orgNames.contains("orgB"), equalTo(false));
     }
 
     // -- helpers --
@@ -264,6 +301,6 @@ public class OrganizationResourceTypeEvaluationTest {
 
     private UserPolicyRepresentation createAdminPolicy() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        return PermissionTestUtils.createUserPolicy(realm, client, "Allow My Admin " + KeycloakModelUtils.generateId(), myadmin.getId());
+        return PermissionTestUtils.createUserPolicy(realm, clientResource, "Allow My Admin " + KeycloakModelUtils.generateId(), myadmin.getId());
     }
 }
