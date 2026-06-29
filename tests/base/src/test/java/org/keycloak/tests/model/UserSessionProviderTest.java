@@ -64,6 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -884,6 +885,30 @@ public class UserSessionProviderTest {
             user1.setSingleAttribute("customAttribute", "value1");
         });
         runOnServer.run(UserSessionProviderTest::testOnUserRemovedLazyUserAttributesAreLoaded);
+    }
+
+    @TestOnServer
+    public void testReadOnlyStreamsWithDeletedUser(KeycloakSession session) {
+        KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), UserSessionProviderTest::createSessions);
+
+        // Remove user1 directly via UserProvider (bypassing UserManager) to simulate a federated user
+        // deleted from the external store. This leaves orphaned sessions in the database.
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> {
+            RealmModel realm = kcSession.realms().getRealmByName("test");
+            kcSession.getContext().setRealm(realm);
+            UserModel user1 = kcSession.users().getUserByUsername(realm, "user1");
+            kcSession.users().removeUser(realm, user1);
+        });
+
+        // Orphaned sessions must be filtered out
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> {
+            RealmModel realm = kcSession.realms().getRealmByName("test");
+            kcSession.getContext().setRealm(realm);
+
+            List<UserSessionModel> readOnlySessionList = kcSession.sessions().readOnlyStreamUserSessions(realm).toList();
+            assertEquals(1, readOnlySessionList.size());
+            assertNotNull(readOnlySessionList.get(0).getUser().getUsername());
+        });
     }
 
     @TestOnServer
