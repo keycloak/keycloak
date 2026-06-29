@@ -32,7 +32,7 @@ import org.keycloak.storage.datastore.PeriodicEventInvalidation;
 public class JpaEventStoreProviderFactory implements EventStoreProviderFactory, InvalidationHandler {
 
     public static final String ID = "jpa";
-    private static final int PROVIDER_PRIORITY = 1;
+    private static final int PROVIDER_PRIORITY = 10;
 
     @Override
     public EventStoreProvider create(KeycloakSession session) {
