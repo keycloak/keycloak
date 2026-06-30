@@ -483,7 +483,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             BrokeredIdentityContext identity = extractIdentity(tokenResponse, accessToken, idToken);
 
             if (!identityMatchesIdToken(identity, idToken)) {
-                throw new IdentityBrokerException("Mismatch between the subject in the id_token and the subject from the user_info endpoint");
+                throw new IdentityBrokerException("Mismatch between the id_token and the user_info endpoint identity");
             }
 
             if (getConfig().isFilteredByClaims()) {
