@@ -22,15 +22,65 @@ import java.net.URL;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.crypto.CryptoProvider;
+import org.keycloak.common.util.KeystoreUtil.TruststoreFormat;
+import org.keycloak.crypto.def.DefaultCryptoProvider;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class TruststoreBuilderTest {
+
+    private static final String CERT_PROTECTION_ALGORITHM_KEY = "keystore.pkcs12.certProtectionAlgorithm";
+    private static final String[] SYSTEM_PROPERTY_KEYS = {
+            TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY,
+            TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY,
+            TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY,
+            TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY + ".orig",
+            TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY + ".orig",
+            TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY + ".orig",
+            CERT_PROTECTION_ALGORITHM_KEY
+    };
+
+    private final Map<String, String> originalSystemProperties = new HashMap<>();
+    private CryptoProvider originalCryptoProvider;
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    @Before
+    public void before() {
+        originalCryptoProvider = CryptoIntegration.isInitialised() ? CryptoIntegration.getProvider() : null;
+        for (String key : SYSTEM_PROPERTY_KEYS) {
+            originalSystemProperties.put(key, System.getProperty(key));
+        }
+    }
+
+    @After
+    public void after() {
+        for (String key : SYSTEM_PROPERTY_KEYS) {
+            String value = originalSystemProperties.get(key);
+            if (value == null) {
+                System.getProperties().remove(key);
+            } else {
+                System.setProperty(key, value);
+            }
+        }
+        CryptoIntegration.setProvider(originalCryptoProvider);
+    }
 
     @Test
     public void testMergedTrustStore() throws Exception {
@@ -47,10 +97,60 @@ public class TruststoreBuilderTest {
         assertTrue(storeWithDefaultsAliases.containsAll(storeWithoutDefaultsAliases));
 
         // saving / loading should provide the certs even without a password
-        File saved = TruststoreBuilder.saveTruststore(storeWithDefaults, "target", null);
+        File saved = TruststoreBuilder.saveTruststore(storeWithDefaults, temporaryFolder.getRoot().getAbsolutePath(), null);
 
         KeyStore savedLoaded = TruststoreBuilder.loadStore(saved.getAbsolutePath(), TruststoreBuilder.PKCS12, null);
         assertEquals(certs, Collections.list(savedLoaded.aliases()).size());
+    }
+
+    @Test
+    public void testSetSystemTruststoreUsesPkcs12ByDefault() throws Exception {
+        URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
+        File dataDir = temporaryFolder.newFolder();
+
+        TruststoreBuilder.setSystemTruststore(new String[] { url.getPath() }, false, dataDir.getAbsolutePath());
+
+        File generated = new File(dataDir, "keycloak-truststore.p12");
+        assertEquals(generated.getAbsolutePath(), System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY));
+        assertEquals(TruststoreBuilder.PKCS12, System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY));
+        assertEquals(TruststoreBuilder.DUMMY_PASSWORD, System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY));
+        assertTrue(generated.exists());
+        assertFalse(new File(dataDir, "keycloak-truststore.bcfks").exists());
+    }
+
+    @Test
+    public void testSetSystemTruststoreUsesPreferredBcfksType() throws Exception {
+        URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
+        File dataDir = temporaryFolder.newFolder();
+        CryptoIntegration.setProvider(new DefaultCryptoProvider() {
+            @Override
+            public TruststoreFormat getPreferredGeneratedTrustStoreType() {
+                return TruststoreFormat.BCFKS;
+            }
+        });
+
+        TruststoreBuilder.setSystemTruststore(new String[] { url.getPath() }, false, dataDir.getAbsolutePath());
+
+        File generated = new File(dataDir, "keycloak-truststore.bcfks");
+        assertEquals(generated.getAbsolutePath(), System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY));
+        assertEquals(TruststoreFormat.BCFKS.name(), System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY));
+        assertEquals(TruststoreBuilder.DUMMY_PASSWORD, System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY));
+        assertTrue(generated.exists());
+        assertFalse(new File(dataDir, "keycloak-truststore.p12").exists());
+
+        KeyStore savedLoaded = TruststoreBuilder.loadStore(generated.getAbsolutePath(), TruststoreFormat.BCFKS.name(),
+                TruststoreBuilder.DUMMY_PASSWORD);
+        assertEquals(2, Collections.list(savedLoaded.aliases()).size());
+    }
+
+    @Test
+    public void testSaveTruststoreRestoresPkcs12CertProtectionAlgorithm() throws Exception {
+        System.setProperty(CERT_PROTECTION_ALGORITHM_KEY, "OLD");
+        KeyStore truststore = TruststoreBuilder.createPkcs12KeyStore();
+
+        TruststoreBuilder.saveTruststore(truststore, temporaryFolder.getRoot().getAbsolutePath(), null);
+
+        assertEquals("OLD", System.getProperty(CERT_PROTECTION_ALGORITHM_KEY));
     }
 
     @Test

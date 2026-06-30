@@ -15,6 +15,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.spec.ECParameterSpec;
+import java.util.Comparator;
 import java.util.stream.Stream;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -22,6 +23,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
+import org.keycloak.common.util.KeystoreUtil.TruststoreFormat;
 
 /**
  * Abstraction to handle differences between the APIs for non-fips and fips mode
@@ -98,6 +100,17 @@ public interface CryptoProvider {
     KeyStore getKeyStore(KeystoreFormat format) throws KeyStoreException, NoSuchProviderException;
 
     /**
+     * Get a Java KeyStore backed truststore for the given format.
+     * PEM is an input certificate format, not a generated Java KeyStore format.
+     */
+    default KeyStore getTrustStore(TruststoreFormat format) throws KeyStoreException, NoSuchProviderException {
+        if (!format.isJavaTrustStore()) {
+            throw new KeyStoreException("PEM is not a Java KeyStore truststore format");
+        }
+        return getKeyStore(KeystoreFormat.valueOf(format.name()));
+    }
+
+    /**
      * @return Keystore types/algorithms supported by this CryptoProvider
      */
     default Stream<KeystoreFormat> getSupportedKeyStoreTypes() {
@@ -110,6 +123,31 @@ public interface CryptoProvider {
                         return false;
                     }
                 });
+    }
+
+    /**
+     * @return Java KeyStore backed truststore types supported by this CryptoProvider for generated truststores.
+     */
+    default Stream<TruststoreFormat> getSupportedTrustStoreTypes() {
+        return Stream.of(TruststoreFormat.values())
+                .filter(TruststoreFormat::isJavaTrustStore)
+                .filter(format -> {
+                    try {
+                        getTrustStore(format);
+                        return true;
+                    } catch (KeyStoreException | NoSuchProviderException ex) {
+                        return false;
+                    }
+                });
+    }
+
+    /**
+     * @return Preferred format for a generated system truststore.
+     */
+    default TruststoreFormat getPreferredGeneratedTrustStoreType() {
+        return getSupportedTrustStoreTypes()
+                .min(Comparator.comparingInt(TruststoreFormat::getPreference))
+                .orElseThrow(() -> new IllegalStateException("No Java KeyStore backed truststore types are supported"));
     }
 
     CertificateFactory getX509CertFactory() throws CertificateException, NoSuchProviderException;
