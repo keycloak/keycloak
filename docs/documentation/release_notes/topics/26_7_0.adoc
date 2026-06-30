@@ -125,9 +125,15 @@ Read more about it in the link:https://www.keycloak.org/server/db#multiple-datas
 
 = Configuring and Running
 
+== {project_name} Operator kustomize installation
+
+The {project_name} Operator can now be installed on vanilla Kubernetes clusters using kustomize instead of applying individual manifest files.
+
 == Cluster-wide install mode for the {project_name} Operator (preview)
 
 The {project_name} Operator now exposes `AllNamespaces` as a supported OLM install mode, allowing a single Operator instance to reconcile `Keycloak` custom resources across all namespaces in the cluster.
+
+For non-OLM installations, cluster-wide deployment is available through the `cluster-wide` kustomization overlay.
 
 Cluster-wide installation is in preview. For installation instructions and limitations, see the link:{operatorguide_link}[{operatorguide_name}].
 
