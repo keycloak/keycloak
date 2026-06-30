@@ -6,6 +6,7 @@ This release features new capabilities for users and administrators of {project_
 = Security and Standards
 
 == Stronger security for the Identity Brokering API
+// https://github.com/keycloak/keycloak/issues/47339
 
 The Identity Brokering API allows applications to retrieve tokens obtained from external identity providers during federated login. Version 2 of this API replaces the legacy V1 with a more secure and standards-compliant design:
 
@@ -19,6 +20,7 @@ V2 is now supported but disabled by default. V1 is deprecated but still enabled 
 For more information, see the link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] chapter in the {developerguide_name}.
 
 == Progress on Verifiable Credentials (OID4VCI) (experimental)
+// https://github.com/keycloak/keycloak/issues/50035
 
 https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OID4VCI] still remains experimental feature. However there is big progress on this feature with lots of contributions from the {project_name} community members as well
 as from the {project_name} core team. Some highlights include:
@@ -42,6 +44,7 @@ https://github.com/Vitalisn4[Palpable] for the contributions!
 endif::[]
 
 == Cross-domain token exchange with Identity Assertion JWT Grant (experimental)
+// https://github.com/keycloak/keycloak/issues/50437
 
 {project_name} has experimental support for https://datatracker.ietf.org/doc/html/draft-ietf-oauth-identity-assertion-authz-grant[Identity Assertion JWT Authorization Grant (ID-JAG)].
 For now, {project_name} can act in the role of receiver, which receives ID-JAG and sends back access token, which works as a part of token endpoint. But there is the aim to extend on
@@ -51,6 +54,7 @@ Many thanks to https://github.com/bucchi[Yutaka Obuchi] for the contribution of 
 endif::[]
 
 == Automate user provisioning with the SCIM API (preview)
+// https://github.com/keycloak/keycloak/issues/47590
 
 https://datatracker.ietf.org/doc/html/rfc7644[SCIM] (System for Cross-domain Identity Management) is a standard protocol for reading and writing identity resources such as users and groups across multiple systems. It enables organizations to automate user provisioning and deprovisioning using widely available tooling — for example, integrating with identity governance platforms, HR systems, or other identity providers.
 
@@ -60,9 +64,50 @@ In this release, the SCIM API is being promoted to a preview feature. In the def
 
 For more details, see the link:{adminguide_link}#_managing_scim[Managing users and groups through SCIM] documentation.
 
+== Real-time security signals to downstream applications (experimental)
+// https://github.com/keycloak/keycloak/issues/48901
+
+When a user logs out, changes credentials, or gets disabled in {project_name}, downstream applications typically don't learn about it until the next token refresh — leaving a window where stale sessions remain active. The https://openid.net/specs/openid-sharedsignals-framework-1_0-final.html[OpenID Shared Signals Framework (SSF)] closes this gap by letting identity providers push security events to relying parties in near real time.
+
+{project_name} can now act as an SSF Transmitter, delivering signed https://www.rfc-editor.org/rfc/rfc8417[Security Event Tokens (SETs)] to registered receivers. It supports https://openid.net/specs/openid-caep-1_0-final.html[CAEP 1.0] and https://openid.net/specs/openid-risc-1_0-final.html[RISC 1.0] event profiles with both push (https://www.rfc-editor.org/rfc/rfc8935[RFC 8935]) and poll (https://www.rfc-editor.org/rfc/rfc8936[RFC 8936]) delivery methods. Events are persisted to a durable outbox so that no signal is lost across restarts, and a cluster-aware background drainer handles retries and exponential backoff. Each realm can opt in individually, and streams, subjects, and event types are managed through the admin console and REST API.
+
+To enable SSF, start {project_name} with `--features=ssf`.
+
+For more details, see the link:{securing_apps_base_link}/ssf-support[Shared Signals Framework] guide.
+
+== Standardized authorization decisions with AuthZen (experimental)
+// https://github.com/keycloak/keycloak/issues/47629
+
+Applications that need fine-grained authorization typically call {project_name}'s proprietary authorization API, coupling them to its internal model. The https://openid.net/specs/authorization-api-1_0.html[OpenID AuthZEN Authorization API 1.0] defines a vendor-neutral protocol between Policy Decision Points (PDPs) and Policy Enforcement Points (PEPs), enabling applications to request authorization decisions through a standard interface.
+
+{project_name} now implements the AuthZEN Evaluation API as a PDP. Applications send evaluation requests describing a subject, resource, and action, and {project_name} returns a permit or deny decision based on its configured authorization policies. Both single evaluation and batch evaluations endpoints are supported.
+
+To enable AuthZen, start {project_name} with `--features=authzen`.
+
+For more details, see the link:{securing_apps_base_link}/authzen-authorization[AuthZen Authorization] guide.
+
+== Authorize AI tools and MCP servers
+// https://github.com/keycloak/keycloak/issues/50261
+
+The https://modelcontextprotocol.io/[Model Context Protocol (MCP)] is becoming the standard way for AI applications to connect to external tools and data sources. As MCP adoption grows, securing these connections with proper OAuth 2.0 authorization is critical.
+
+{project_name} continues to improve its MCP authorization server capabilities. This release adds integration documentation for https://claude.com/product/claude-code/[Claude Code] as an MCP client, alongside the existing Visual Studio Code integration. Both use OAuth Client ID Metadata Document (CIMD) for dynamic client registration with PKCE-secured public client flows and localhost callbacks.
+
+For setup instructions, see the link:{securing_apps_base_link}/mcp-authz-server[Integrating with Model Context Protocol (MCP)] guide.
+
+== Delegate access across services with Token Exchange Delegation (experimental)
+// https://github.com/keycloak/keycloak/issues/49954
+
+In multi-service architectures, a backend service sometimes needs to act on behalf of a user at another service — for example, when a gateway delegates work to a downstream API. Standard Token Exchange handles client-to-client token swaps, but verifying that the requester is authorized to impersonate a specific user requires additional checks.
+
+{project_name} introduces token exchange delegation as an experimental feature. It adds a new `delegation` parameterized scope type that validates whether the requesting user is authorized to act on behalf of the target user before the exchange is granted. The delegation scope requires user consent and is automatically reassessed on token refresh, so revoked impersonation rights take effect immediately.
+
+To enable token exchange delegation, start {project_name} with `--features=token-exchange-delegation`.
+
 = Administration
 
 == Declarative client management with Admin API v2 (experimental)
+// https://github.com/keycloak/keycloak/discussions/50186
 
 {project_name} introduces a new REST API for managing OIDC and SAML clients.
 The new API provides strict validation, support for declarative configuration, and an accurate OpenAPI specification that enables reliable client generation.
@@ -85,6 +130,7 @@ and to https://github.com/sschu[Sebastian Schuster] for his participation in the
 endif::[]
 
 == Fine-grained delegation for organization administration
+// https://github.com/keycloak/keycloak/issues/45497
 
 {project_name} now supports delegated organization administration without requiring the broad `manage-realm` role. This is achieved through new dedicated admin roles and Fine-Grained Admin Permissions support for organizations.
 
@@ -99,12 +145,14 @@ The `manage-realm` role continues to implicitly grant full organization manageme
 For per-organization granularity, organizations are now a first-class resource type in Fine-Grained Admin Permissions. Administrators can create permissions to control which specific organizations a delegated administrator can view or manage — for example, granting access to manage one organization without giving access to all organizations in the realm. When Fine-Grained Admin Permissions is enabled, organization member queries also respect user-level permissions, returning only members the administrator is permitted to view.
 
 == Automatic role inheritance through organization groups
+// https://github.com/keycloak/keycloak/issues/47327
 
 Organization groups now support realm and client role assignments. Roles assigned to organization groups are automatically included in `realm_access` and `resource_access` token claims for group members. Additionally, the *Organization Group Membership* protocol mapper (OIDC and SAML) can optionally include these roles within the `organization` claim, organized per organization, by enabling the *Add group role mappings* configuration option.
 
 For more details, see the link:{adminguide_link}#pass:a[_managing_groups_][Managing organization groups] guide.
 
 == Better passkey compatibility with new WebAuthn policy options
+// https://github.com/keycloak/keycloak/issues/42513
 
 The WebAuthn Policy and WebAuthn Passwordless Policy provide a new `Discoverable credential` option that follows the current WebAuthn specification.
 In addition to requiring or discouraging discoverable credentials (passkeys), it supports the `preferred` value, which was not possible with the previous Yes/No option.
@@ -112,10 +160,19 @@ The new option is sent to the browser as `authenticatorSelection.residentKey` wh
 The previous `Require Discoverable Credential` option is now deprecated, and it is planned to be removed in future.
 
 == Easier realm discovery by display name search
+// https://github.com/keycloak/keycloak/issues/45292
 
 When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.
 
-== Type-safe validation for parameterized scopes
+== Cluster-wide Keycloak Operator installation (preview)
+// https://github.com/keycloak/keycloak/issues/46981
+
+Organizations running multiple {project_name} instances across different Kubernetes namespaces previously needed to install a separate operator in each namespace. This release adds preview support for installing the {project_name} Operator at cluster scope via `kubectl`, allowing a single operator instance to manage {project_name} deployments across all namespaces.
+
+For installation instructions, see the https://www.keycloak.org/operator/installation[Operator Installation] guide.
+
+== Type-safe validation for parameterized scopes (experimental)
+// https://github.com/keycloak/keycloak/issues/49532
 
 Parameterized scopes can now define a parameter type that validates the captured value at request time. Built-in types include `string`, `integer`, `boolean`, `username`, and `custom` (validated against an admin-defined regex). The type is required when creating parameterized scopes with the feature enabled.
 
