@@ -46,6 +46,7 @@ import javax.naming.ldap.PagedResultsResponseControl;
 import javax.naming.ldap.StartTlsResponse;
 import javax.net.ssl.SSLSocketFactory;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -63,6 +64,9 @@ import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import org.keycloak.tracing.TracingProvider;
 import org.keycloak.truststore.TruststoreProvider;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Metrics;
 import org.jboss.logging.Logger;
 
 /**
@@ -77,12 +81,24 @@ public class LDAPOperationManager {
 
     private static final Logger perfLogger = Logger.getLogger(LDAPOperationManager.class, "perf");
 
+    private static final String LDAP_REQUESTS_METER_NAME = "keycloak.ldap";
+    private static final Meter.MeterProvider<Counter> LDAP_REQUESTS = Counter.builder(LDAP_REQUESTS_METER_NAME)
+            .description("Number of LDAP requests sent to the LDAP server")
+            .baseUnit("requests")
+            .withRegistry(Metrics.globalRegistry);
+
     private final KeycloakSession session;
     private final LDAPConfig config;
 
     public LDAPOperationManager(KeycloakSession session, LDAPConfig config) {
         this.session = session;
         this.config = config;
+    }
+
+    private static void recordLdapRequest(String operation, boolean success) {
+        if (Profile.isFeatureEnabled(Profile.Feature.LDAP_METRICS)) {
+            LDAP_REQUESTS.withTags("operation", operation, "outcome", success ? "success" : "error").increment();
+        }
     }
 
     /**
@@ -495,6 +511,8 @@ public class LDAPOperationManager {
         var tracing = session.getProvider(TracingProvider.class);
         tracing.startSpan(LDAPOperationManager.class, "authenticate");
 
+        boolean success = false;
+
         try {
             Hashtable<Object, Object> env = LDAPContextManager.getNonAuthConnectionProperties(config);
 
@@ -545,6 +563,7 @@ public class LDAPOperationManager {
                     }
                 }
             }
+            success = true;
 
         } catch (AuthenticationException ae) {
             if (logger.isDebugEnabled()) {
@@ -578,6 +597,7 @@ public class LDAPOperationManager {
                     e.printStackTrace();
                 }
             }
+            recordLdapRequest("authenticate", success);
             tracing.endSpan();
         }
     }
@@ -764,6 +784,7 @@ public class LDAPOperationManager {
 
         var tracing = session.getProvider(TracingProvider.class);
         var span = tracing.startSpan(LDAPOperationManager.class, "execute");
+        boolean success = false;
 
         try {
             if (span.isRecording()) {
@@ -775,11 +796,15 @@ public class LDAPOperationManager {
                 decorator.beforeLDAPOperation(context, operation);
             }
 
-            return operation.execute(context);
+            // return operation.execute(context);
+            R result = operation.execute(context);
+            success = true;
+            return result;
         } catch (NamingException e) {
             tracing.error(e);
             throw e;
         } finally {
+            recordLdapRequest("execute", success);
             tracing.endSpan();
             if (perfLogger.isDebugEnabled()) {
                 long took = Time.currentTimeMillis() - start;
