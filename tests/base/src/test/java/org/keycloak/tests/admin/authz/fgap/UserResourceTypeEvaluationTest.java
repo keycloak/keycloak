@@ -386,8 +386,9 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         // with manage permission it is NOT possible to manage group membership
+        GroupRepresentation testGroup = createGroup("test-no-transitive");
         try {
-            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup("no-such");
+            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup(testGroup.getId());
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(ForbiddenException.class));
