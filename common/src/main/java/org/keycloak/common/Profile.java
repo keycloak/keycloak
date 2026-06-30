@@ -189,7 +189,7 @@ public class Profile {
 
         RESOURCE_INDICATORS("Resource Indicators for OAuth 2.0", Type.EXPERIMENTAL),
 
-        IDENTITY_BROKERING_API_V1("Identity Brokering API V1", Type.DEFAULT, 1, true, null, null),
+        IDENTITY_BROKERING_API_V1("Identity Brokering API V1", Type.DEFAULT, 1, true, true, null, null),
         IDENTITY_BROKERING_API_V2("Identity Brokering API V2", Type.DISABLED_BY_DEFAULT, 2);
 
         private final Type type;
@@ -200,33 +200,39 @@ public class Profile {
         private final FeatureUpdatePolicy updatePolicy;
         private final Set<Feature> dependencies;
         private final boolean deprecated;
+        private final boolean suppressStartupWarning;
         private final int version;
 
         Feature(String label, Type type, Feature... dependencies) {
-            this(label, type, 1, type == Type.DEPRECATED, null, null, dependencies);
+            this(label, type, 1, type == Type.DEPRECATED, false, null, null, dependencies);
         }
 
         Feature(String label, Type type, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
-            this(label, type, 1, type == Type.DEPRECATED, null, updatePolicy, dependencies);
+            this(label, type, 1, type == Type.DEPRECATED, false, null, updatePolicy, dependencies);
         }
 
         Feature(String label, Type type, int version, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
-            this(label, type, version, type == Type.DEPRECATED, null, updatePolicy, dependencies);
+            this(label, type, version, type == Type.DEPRECATED, false, null, updatePolicy, dependencies);
         }
 
         Feature(String label, Type type, int version, Feature... dependencies) {
-            this(label, type, version, type == Type.DEPRECATED, null, null, dependencies);
+            this(label, type, version, type == Type.DEPRECATED, false, null, null, dependencies);
         }
 
         Feature(String label, Type type, int version, BooleanSupplier isAvailable, Feature... dependencies) {
-            this(label, type, version, type == Type.DEPRECATED, isAvailable, null, dependencies);
+            this(label, type, version, type == Type.DEPRECATED, false, isAvailable, null, dependencies);
         }
 
         Feature(String label, Type type, int version, boolean deprecated, BooleanSupplier isAvailable, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
+            this(label, type, version, deprecated, false, isAvailable, updatePolicy, dependencies);
+        }
+
+        Feature(String label, Type type, int version, boolean deprecated, boolean suppressStartupWarning, BooleanSupplier isAvailable, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
             this.label = label;
             this.type = type;
             this.version = version;
             this.deprecated = type == Type.DEPRECATED || deprecated;
+            this.suppressStartupWarning = suppressStartupWarning;
             this.isAvailable = isAvailable;
             this.updatePolicy = updatePolicy == null ? FeatureUpdatePolicy.ROLLING : updatePolicy;
             this.key = name().toLowerCase().replaceAll("_", "-");
@@ -283,6 +289,17 @@ public class Profile {
 
         public boolean isDeprecated() {
             return deprecated;
+        }
+
+        /**
+         * Returns whether the deprecated feature should be excluded from the standard
+         * "Deprecated features enabled: ..." startup warning. Used for features that are
+         * deprecated but still enabled by default for backward compatibility, where a startup
+         * warning would be misleading because the user did not opt-in. The deprecation should
+         * still be communicated when the feature is actually used.
+         */
+        public boolean isSuppressStartupWarning() {
+            return suppressStartupWarning;
         }
 
         public boolean isAvailable() {
@@ -585,6 +602,10 @@ public class Profile {
     private void logUnsupportedFeatures(Feature.Type type, Set<Feature> checkedFeatures, Logger.Level level) {
         String enabledFeaturesOfType = features.entrySet().stream()
                 .filter(e -> e.getValue() && checkedFeatures.contains(e.getKey()))
+                // Some deprecated features (e.g. those still enabled by default for backwards
+                // compatibility) opt-out of the startup warning. They will instead emit a warning
+                // when actually used, so users still notice the deprecation.
+                .filter(e -> !(type == Feature.Type.DEPRECATED && e.getKey().isSuppressStartupWarning()))
                 .map(e -> e.getKey().getVersionedKey()).sorted().collect(Collectors.joining(", "));
 
         if (!enabledFeaturesOfType.isEmpty()) {

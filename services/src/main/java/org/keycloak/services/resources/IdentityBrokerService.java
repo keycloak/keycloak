@@ -484,6 +484,14 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
     @NoCache
     @Path("{provider_alias}/token")
     public Response retrieveTokenV1(@PathParam("provider_alias") String providerAlias) {
+        // The identity-brokering-api:v1 feature is deprecated and is currently still enabled by
+        // default for backward compatibility. We don't warn at startup (see Profile#logUnsupportedFeatures
+        // and Feature#isSuppressStartupWarning), so warn here when the deprecated v1 endpoint is
+        // actually used. See https://github.com/keycloak/keycloak/issues/50054.
+        logger.warnf("The %s feature is deprecated and will be removed in a future release. " +
+                "Please migrate to %s.",
+                Profile.Feature.IDENTITY_BROKERING_API_V1.getVersionedKey(),
+                Profile.Feature.IDENTITY_BROKERING_API_V2.getVersionedKey());
         return getTokenV1(providerAlias);
     }
 

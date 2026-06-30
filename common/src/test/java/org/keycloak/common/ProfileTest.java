@@ -19,6 +19,7 @@ import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -248,6 +249,40 @@ public class ProfileTest {
 
         Assertions.assertTrue(Profile.isFeatureEnabled(DISABLED_BY_DEFAULT_FEATURE));
         Assertions.assertTrue(Profile.isFeatureEnabled(PREVIEW_FEATURE));
+    }
+
+    @Test
+    public void identityBrokeringApiV1SuppressesStartupWarning() {
+        // Regression test for https://github.com/keycloak/keycloak/issues/50054
+        //
+        // identity-brokering-api:v1 is deprecated but still enabled by default for backward
+        // compatibility. To avoid a misleading startup warning that users cannot avoid, the
+        // feature opts out of the deprecated startup warning. The warning is instead emitted
+        // when the deprecated v1 endpoint is actually used (in IdentityBrokerService.retrieveTokenV1).
+        Assertions.assertTrue(Profile.Feature.IDENTITY_BROKERING_API_V1.isDeprecated(),
+                "IDENTITY_BROKERING_API_V1 must be marked deprecated");
+        Assertions.assertTrue(Profile.Feature.IDENTITY_BROKERING_API_V1.isSuppressStartupWarning(),
+                "IDENTITY_BROKERING_API_V1 must opt out of the deprecated startup warning");
+    }
+
+    @Test
+    public void otherDeprecatedFeaturesStillWarnAtStartup() {
+        // Sanity check that suppressStartupWarning is not the default - other deprecated
+        // features should still produce a startup warning so users notice the deprecation.
+        // Skip if no other deprecated feature is available in this build profile.
+        Profile.Feature otherDeprecated = null;
+        for (Profile.Feature f : Profile.Feature.values()) {
+            if (f != Profile.Feature.IDENTITY_BROKERING_API_V1 && f.isDeprecated() && f.isAvailable()) {
+                otherDeprecated = f;
+                break;
+            }
+        }
+        Assumptions.assumeTrue(otherDeprecated != null,
+                "No other available deprecated feature in this build profile - skipping");
+
+        Assertions.assertFalse(otherDeprecated.isSuppressStartupWarning(),
+                "Deprecated feature " + otherDeprecated.getVersionedKey()
+                        + " should NOT suppress the startup warning unless explicitly opted-in");
     }
 
     @Test
