@@ -101,10 +101,7 @@ After installation, any upgrade will require manual approval through the OLM int
 [[installing_with_kubectl]]
 === Installing by using kubectl without Operator Lifecycle Manager
 
-You can install the Operator on a vanilla Kubernetes cluster by using `kubectl` commands:
-
-. Install the {project_name} Operator in the `keycloak` namespace by executing the following commands:
-+
+Install the {project_name} Operator in the `keycloak` namespace by executing the following commands:
 [source,bash,subs="attributes+"]
 ----
 kubectl create namespace keycloak
@@ -114,7 +111,6 @@ kubectl apply -k 'github.com/keycloak/keycloak-k8s-resources/kubernetes?ref={ver
 The Operator will watch the namespace where it is installed.
 
 To use a different installation namespace, create an overlay with the desired namespace:
-+
 [source,bash,subs="attributes+"]
 ----
 kubectl create namespace custom-namespace
@@ -232,9 +228,8 @@ Approve the install plan, then verify that the Operator pod is running.
 <@profile.ifCommunity>
 ==== Installing with kubectl
 
-. Install the Operator cluster-wide by using the `cluster-wide` kustomization:
+Install the Operator cluster-wide by using the `cluster-wide` kustomization:
 
-+
 [source,bash,subs="attributes+"]
 ----
 kubectl create namespace keycloak-operator
@@ -245,7 +240,6 @@ This installs the Operator into the `keycloak-operator` namespace and configures
 
 To use a different installation namespace, create an overlay with the `cluster-wide` kustomization:
 
-+
 [source,bash,subs="attributes+"]
 ----
 kubectl create namespace custom-namespace
@@ -263,7 +257,7 @@ EOF
 kubectl apply -k ./
 ----
 
-. Create `Keycloak` custom resources in any namespace. The Operator reconciles resources cluster-wide.
+You can now create `Keycloak` custom resources in any namespace. The Operator reconciles resources cluster-wide.
 </@profile.ifCommunity>
 
 === Installing Multiple Operators
