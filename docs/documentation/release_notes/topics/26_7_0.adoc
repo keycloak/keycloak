@@ -72,7 +72,7 @@ When a user logs out, changes credentials, or gets disabled in {project_name}, d
 
 {project_name} can now act as an SSF Transmitter, delivering signed https://www.rfc-editor.org/rfc/rfc8417[Security Event Tokens (SETs)] to registered receivers. It supports https://openid.net/specs/openid-caep-1_0-final.html[CAEP 1.0] and https://openid.net/specs/openid-risc-1_0-final.html[RISC 1.0] event profiles with both push (https://www.rfc-editor.org/rfc/rfc8935[RFC 8935]) and poll (https://www.rfc-editor.org/rfc/rfc8936[RFC 8936]) delivery methods. Events are persisted to a durable outbox so that no signal is lost across restarts, and a cluster-aware background drainer handles retries and exponential backoff. Each realm can opt in individually, and streams, subjects, and event types are managed through the admin console and REST API.
 
-To enable SSF, start {project_name} with `--features=ssf`.
+To enable SSF, start {project_name} with the feature `ssf` enabled.
 
 For more details, see the link:{securing_apps_base_link}/ssf-support[Shared Signals Framework] guide.
 
@@ -83,7 +83,7 @@ Applications that need fine-grained authorization typically call {project_name}'
 
 {project_name} now implements the AuthZEN Evaluation API as a PDP. Applications send evaluation requests describing a subject, resource, and action, and {project_name} returns a permit or deny decision based on its configured authorization policies. Both single and batch evaluation endpoints are available.
 
-To enable AuthZen, start {project_name} with `--features=authzen`.
+To enable AuthZen, start {project_name} with the feature `authzen` enabled.
 
 For more details, see the link:{securing_apps_base_link}/authzen-authorization[AuthZen Authorization] guide.
 
@@ -103,7 +103,7 @@ In multi-service architectures, a backend service sometimes needs to act on beha
 
 {project_name} introduces token exchange delegation as an experimental feature. It adds a new `delegation` parameterized scope type that validates whether the requesting user is authorized to act on behalf of the target user before the exchange is granted. The delegation scope requires user consent and is automatically reassessed on token refresh, so revoked impersonation rights take effect immediately.
 
-To enable token exchange delegation, start {project_name} with `--features=token-exchange-delegation`.
+To enable token exchange delegation, start {project_name} with the feature `token-exchange-delegation` enabled.
 
 = Administration
 
@@ -185,19 +185,42 @@ Parameterized scopes can now define a parameter type that validates the captured
 For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
 == Additional datasources may be excluded from health checks
+// https://github.com/keycloak/keycloak/issues/49248
+
+When using multiple datasources, a failing non-critical datasource can cause the health check endpoint to report the entire deployment as unhealthy. Individual datasources can now be excluded from health checks, so optional or secondary datasources do not trigger unnecessary alerts or affect load balancer routing.
 
 Read more about it in the link:https://www.keycloak.org/server/db#multiple-datasources[Configure multiple datasources] guide.
 
 = Configuring and Running
 
-== {project_name} Operator kustomize installation
+== Production-ready reverse proxy guides for HAProxy and Traefik
+// https://github.com/keycloak/keycloak/issues/48002
 
-The {project_name} Operator can now be installed on vanilla Kubernetes clusters using kustomize instead of applying individual manifest files.
+Running {project_name} in production requires a reverse proxy, but configuring TLS termination, certificate forwarding, and admin API security correctly across different proxies is error-prone.
+
+The reverse proxy documentation has been significantly expanded with dedicated step-by-step guides for HAProxy and Traefik covering both TLS passthrough and re-encrypt modes, and also explain the concepts so they can be applied for other proxies as well.
+
+For more details, see the link:https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] guide.
+
+== Simplified multi-cluster high availability without external caches (experimental)
+// https://github.com/keycloak/keycloak/issues/49469
+
+The existing multi-cluster setup for {project_name} requires deploying and managing an external {jdgserver_name} cluster for cross-site session replication, along with vendor-specific fencing infrastructure for automated failover. This adds significant operational complexity and limits deployments to specific environments.
+
+Multi-cluster v2 removes the external {jdgserver_name} requirement entirely. {project_name} instances connect directly to each other using embedded Infinispan caches and rely on the synchronously replicated database as the single source of truth. Cache invalidation across sites is handled through a database-backed outbox pattern. The load balancer can detect the downtime of a site without requiring external fencing infrastructure.
+
+To enable this setup, start {project_name} with the feature `cacheless`. For architecture details and a deployment blueprint, see the link:https://www.keycloak.org/high-availability/multi-cluster-v2/introduction[Multi-cluster deployments (v2)] guide.
+
+== {project_name} Operator kustomize installation
+// https://github.com/keycloak/keycloak/issues/46981
+
+Installing the {project_name} Operator on vanilla Kubernetes clusters previously required downloading and applying individual manifest files, making upgrades and customization harder to manage. The Operator can now be installed using kustomize, providing a declarative and reproducible installation method.
+
+For installation instructions, see the link:{operatorguide_link}[{operatorguide_name}].
 
 == Cluster-wide install mode for the {project_name} Operator (preview)
+// https://github.com/keycloak/keycloak/issues/49037
 
-The {project_name} Operator now exposes `AllNamespaces` as a supported OLM install mode, allowing a single Operator instance to reconcile `Keycloak` custom resources across all namespaces in the cluster.
-
-For non-OLM installations, cluster-wide deployment is available through the `cluster-wide` kustomization overlay.
+Organizations running multiple {project_name} instances across different Kubernetes namespaces previously needed to install a separate Operator in each namespace. The {project_name} Operator now exposes `AllNamespaces` as a supported OLM install mode, allowing a single Operator instance to reconcile `Keycloak` custom resources across all namespaces in the cluster. For non-OLM installations, cluster-wide deployment is available through the `cluster-wide` kustomization overlay.
 
 Cluster-wide installation is in preview. For installation instructions and limitations, see the link:{operatorguide_link}[{operatorguide_name}].
