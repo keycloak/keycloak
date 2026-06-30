@@ -116,6 +116,7 @@ import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.saml.processing.api.util.DeflateUtil;
 import org.keycloak.services.CorsErrorResponseException;
@@ -998,19 +999,22 @@ public class OID4VCIssuerEndpoint {
                 OID4VCIssuerWellKnownProvider.toSupportedCredentialConfiguration(session, authorizedCredentialScope);
 
         enforceProofContractForCredential(supportedCredential, credentialRequest.getProofs());
+        Map<String, JsonWebToken> verifiedProofCNonces = new HashMap<>();
 
         // Get the list of all proofs (handles single proof, multiple proofs, or none)
         List<String> allProofs = getAllProofs(credentialRequest);
-        if (allProofs.stream().anyMatch(p -> p == null || p.isBlank()))
+        if (allProofs.stream().anyMatch(p -> p == null || p.isBlank())) {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF, "Proof values must not be null or blank"));
+        }
 
-        // Generate credential response
-        CredentialResponse responseVO = new CredentialResponse();
+        // Prepare credential bodies and validate key binding proofs before consuming the nonce.
+        List<VCIssuanceContext> vcIssuanceContexts = new ArrayList<>();
 
         if (allProofs.isEmpty()) {
             // Single issuance without proof
-            Object theCredential = getCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder);
-            responseVO.addCredential(theCredential);
+            VCIssuanceContext vcIssuanceContext = prepareCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder);
+            vcIssuanceContexts.add(vcIssuanceContext);
+            verifiedProofCNonces.putAll(vcIssuanceContext.getVerifiedCNonces());
         } else {
             // Issue credentials for each proof
             Proofs originalProofs = credentialRequest.getProofs();
@@ -1027,14 +1031,28 @@ public class OID4VCIssuerEndpoint {
                 }
             }
 
-            for (String currentProof : allProofs) {
-                Proofs proofForIteration = Proofs.create(proofType, currentProof);
-                // Creating credential with keybinding to the current proof
-                credentialRequest.setProofs(proofForIteration);
-                Object theCredential = getCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder);
-                responseVO.addCredential(theCredential);
+            try {
+                for (String currentProof : allProofs) {
+                    Proofs proofForIteration = Proofs.create(proofType, currentProof);
+                    // Creating credential with keybinding to the current proof
+                    credentialRequest.setProofs(proofForIteration);
+                    VCIssuanceContext vcIssuanceContext = prepareCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder);
+                    vcIssuanceContexts.add(vcIssuanceContext);
+                    verifiedProofCNonces.putAll(vcIssuanceContext.getVerifiedCNonces());
+                }
+            } finally {
+                credentialRequest.setProofs(originalProofs);
             }
-            credentialRequest.setProofs(originalProofs);
+        }
+
+        // Fail-fast if any cnonce already consumed without consuming it
+        rejectConsumedProofCNonce(verifiedProofCNonces);
+
+        // Generate credential response before consuming the nonce, so server-side signing/encryption failures do not
+        // burn an otherwise valid proof nonce.
+        CredentialResponse responseVO = new CredentialResponse();
+        for (VCIssuanceContext vcIssuanceContext : vcIssuanceContexts) {
+            responseVO.addCredential(signCredential(supportedCredential, vcIssuanceContext, eventBuilder));
         }
 
         // Encrypt all responses if encryption parameters are provided, except for error credential responses
@@ -1052,6 +1070,9 @@ public class OID4VCIssuerEndpoint {
                     .entity(responseVO)
                     .build();
         }
+
+        // Consume cnonce to prevent replay
+        consumeProofCNonce(verifiedProofCNonces);
 
         // Mark event as successful
         eventBuilder.detail(Details.SCOPE, supportedCredential.getScope())
@@ -1349,6 +1370,52 @@ public class OID4VCIssuerEndpoint {
         return proofs.getAllProofs();
     }
 
+    private CNonceHandler getCNonceHandlerForProofValidation() {
+        CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
+
+        if (cNonceHandler == null) {
+            throw new ErrorResponseException(INVALID_PROOF.getValue(), "CNonce handler not configured", Response.Status.BAD_REQUEST);
+        }
+
+        if (!cNonceHandler.supportsCNonceConsumption()) {
+            throw new ErrorResponseException(INVALID_PROOF.getValue(), "CNonce handler does not support nonce consumption", Response.Status.BAD_REQUEST);
+        }
+
+        return  cNonceHandler;
+    }
+
+    private void rejectConsumedProofCNonce(Map<String, JsonWebToken> verifiedCNonces) {
+        if (verifiedCNonces.isEmpty()) {
+            return;
+        }
+
+        CNonceHandler cNonceHandler = getCNonceHandlerForProofValidation();
+
+        for (Map.Entry<String, JsonWebToken> cNonce : verifiedCNonces.entrySet()) {
+            try {
+                cNonceHandler.ensureCNonceNotYetConsumed(cNonce.getKey());
+            } catch (VerificationException e) {
+                throw new ErrorResponseException(INVALID_NONCE.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);
+            }
+        }
+    }
+
+    private void consumeProofCNonce(Map<String, JsonWebToken> verifiedCNonces) {
+        if (verifiedCNonces.isEmpty()) {
+            return;
+        }
+
+        CNonceHandler cNonceHandler = getCNonceHandlerForProofValidation();
+
+        for (Map.Entry<String, JsonWebToken> cNonce : verifiedCNonces.entrySet()) {
+            try {
+                cNonceHandler.consumeCNonce(cNonce.getKey(), cNonce.getValue());
+            } catch (VerificationException e) {
+                throw new ErrorResponseException(INVALID_NONCE.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);
+            }
+        }
+    }
+
     private void enforceProofContractForCredential(SupportedCredentialConfiguration credentialConfiguration, Proofs proofs) {
         boolean proofConfigured = credentialConfiguration != null
                 && credentialConfiguration.getProofTypesSupported() != null
@@ -1605,20 +1672,13 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
-     * Get a signed credential
-     *
-     * @param authResult          authResult containing the userSession to create the credential for
-     * @param credentialConfig    the supported credential configuration
-     * @param authDetail          Parsed OID4VC authorization_detail
-     * @param credentialRequestVO the credential request
-     * @param eventBuilder        the event builder for logging events
-     * @return the signed credential
+     * Prepare an unsigned credential and validate any key binding proof before signing.
      */
-    private Object getCredential(AuthenticationManager.AuthResult authResult,
-                                 SupportedCredentialConfiguration credentialConfig,
-                                 OID4VCAuthorizationDetail authDetail,
-                                 CredentialRequest credentialRequestVO,
-                                 EventBuilder eventBuilder
+    private VCIssuanceContext prepareCredential(AuthenticationManager.AuthResult authResult,
+                                                SupportedCredentialConfiguration credentialConfig,
+                                                OID4VCAuthorizationDetail authDetail,
+                                                CredentialRequest credentialRequestVO,
+                                                EventBuilder eventBuilder
     ) {
 
         // Get the client scope model from the credential configuration
@@ -1645,6 +1705,12 @@ public class OID4VCIssuerEndpoint {
         // Enforce key binding prior to signing if necessary
         enforceKeyBindingIfProofProvided(vcIssuanceContext);
 
+        return vcIssuanceContext;
+    }
+
+    private Object signCredential(SupportedCredentialConfiguration credentialConfig,
+                                  VCIssuanceContext vcIssuanceContext,
+                                  EventBuilder eventBuilder) {
         // Retrieve matching credential signer
         CredentialSigner<?> credentialSigner = session.getProvider(CredentialSigner.class,
                 credentialConfig.getFormat());

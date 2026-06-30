@@ -755,6 +755,8 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         List<JWK> attestedKeys = validator.validateProof(vcIssuanceContext);
         assertNotNull(attestedKeys);
         assertFalse(attestedKeys.isEmpty());
+        assertEquals(1, vcIssuanceContext.getVerifiedCNonces().size());
+        assertTrue(vcIssuanceContext.getVerifiedCNonces().containsKey(cNonce));
     }
 
     private static void runInvalidJwtProofWithKeyAttestationTest(KeycloakSession session) throws VCIssuerException {

@@ -456,11 +456,17 @@ public class JwtProofValidator extends AbstractProofValidator {
         if (cNonceHandler == null) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "CNonce handler not configured");
         }
+        if (!cNonceHandler.supportsCNonceTokenRetrieval()) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "CNonce handler does not support token retrieval");
+        }
         try {
-            cNonceHandler.verifyCNonce(proofPayload.getNonce(),
-                    List.of(OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(keycloakContext)),
-                    Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
-                            OID4VCIssuerWellKnownProvider.getNonceEndpoint(keycloakContext)));
+            vcIssuanceContext.addVerifiedCNonce(
+                    proofPayload.getNonce(),
+                    cNonceHandler.verifyCNonceAndGetToken(
+                            proofPayload.getNonce(),
+                            List.of(OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(keycloakContext)),
+                            Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
+                                    OID4VCIssuerWellKnownProvider.getNonceEndpoint(keycloakContext))));
         } catch (VerificationException e) {
             throw new VCIssuerException(ErrorType.INVALID_NONCE, e.getMessage());
         }
