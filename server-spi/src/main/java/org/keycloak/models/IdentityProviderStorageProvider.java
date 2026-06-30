@@ -270,7 +270,7 @@ public interface IdentityProviderStorageProvider extends Provider {
          * satisfies the associated filter condition based on a standard context.
          * <p>
          * This method is deprecated and may be removed in future versions. Consider
-         * using {@link #getLoginFilter()) that returns a BiPredicate<IdentityProviderModel, Context> instead.
+         * using {@link #getLoginPredicate(Context)} instead for more explicit context handling.
          *
          * @return a {@link Predicate} applied to an {@link IdentityProviderModel} using the standard context.
          * @deprecated Use {@link #getLoginPredicate(Context)} instead for more explicit context handling.
