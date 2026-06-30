@@ -70,7 +70,7 @@ For more details, see the link:{adminguide_link}#_managing_scim[Managing users a
 
 When a user logs out, changes credentials, or gets disabled in {project_name}, downstream applications typically don't learn about it until the next token refresh — leaving a window where stale sessions remain active. The https://openid.net/specs/openid-sharedsignals-framework-1_0-final.html[OpenID Shared Signals Framework (SSF)] closes this gap by letting identity providers push security events to relying parties in near real time.
 
-{project_name} can now act as an SSF Transmitter, delivering signed https://www.rfc-editor.org/rfc/rfc8417[Security Event Tokens (SETs)] to registered receivers. It supports https://openid.net/specs/openid-caep-1_0-final.html[CAEP 1.0] and https://openid.net/specs/openid-risc-1_0-final.html[RISC 1.0] event profiles with both push (https://www.rfc-editor.org/rfc/rfc8935[RFC 8935]) and poll (https://www.rfc-editor.org/rfc/rfc8936[RFC 8936]) delivery methods. Events are persisted to a durable outbox so that no signal is lost across restarts, and a cluster-aware background drainer handles retries and exponential backoff. Each realm can opt in individually, and streams, subjects, and event types are managed through the admin console and REST API.
+{project_name} can now act as an SSF Transmitter, delivering signed https://www.rfc-editor.org/info/rfc8417/[Security Event Tokens (SETs)] to registered receivers. It supports https://openid.net/specs/openid-caep-1_0-final.html[CAEP 1.0] and https://openid.net/specs/openid-risc-1_0-final.html[RISC 1.0] event profiles with both push (https://www.rfc-editor.org/info/rfc8935/[RFC 8935]) and poll (https://www.rfc-editor.org/info/rfc8936/[RFC 8936]) delivery methods. Events are persisted to a durable outbox so that no signal is lost across restarts, and a cluster-aware background drainer handles retries and exponential backoff. Each realm can opt in individually, and streams, subjects, and event types are managed through the admin console and REST API.
 
 To enable SSF, start {project_name} with the feature `ssf` enabled.
 
@@ -90,9 +90,9 @@ For more details, see the link:{securing_apps_base_link}/authzen-authorization[A
 == Authorize AI tools and MCP servers
 // https://github.com/keycloak/keycloak/issues/50261
 
-The https://modelcontextprotocol.io/[Model Context Protocol (MCP)] is becoming the standard way for AI applications to connect to external tools and data sources. As MCP adoption grows, securing these connections with proper OAuth 2.0 authorization is critical.
+The Model Context Protocol (MCP) is becoming the standard way for AI applications to connect to external tools and data sources. As MCP adoption grows, securing these connections with proper OAuth 2.0 authorization is critical.
 
-{project_name} continues to improve its MCP authorization server capabilities. This release adds integration documentation for https://claude.com/product/claude-code/[Claude Code] as an MCP client, alongside the existing Visual Studio Code integration. Both use OAuth Client ID Metadata Document (CIMD) for dynamic client registration with PKCE-secured public client flows and localhost callbacks.
+{project_name} continues to improve its MCP authorization server capabilities. This release adds integration documentation for Claude Code as an MCP client, alongside the existing Visual Studio Code integration. Both use OAuth Client ID Metadata Document (CIMD) for dynamic client registration with PKCE-secured public client flows and localhost callbacks.
 
 For setup instructions, see the link:{securing_apps_base_link}/mcp-authz-server[Integrating with Model Context Protocol (MCP)] guide.
 
