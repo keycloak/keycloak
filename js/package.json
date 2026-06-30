@@ -64,7 +64,10 @@
       "minimatch@^10": "^10.2.5",
       "rollup@^4": "^4.59.0",
       "@isaacs/brace-expansion@^5": "^5.0.1",
-      "serialize-javascript": "^7.0.3"
+      "serialize-javascript": "^7.0.3",
+      "jquery@>=1.0.3 <3.5.0": ">=3.5.0",
+      "mdast-util-to-hast@>=13.0.0 <13.2.1": ">=13.2.1",
+      "react-router@>=6.7.0 <6.30.4": ">=6.30.4 <7"
     }
   }
 }
