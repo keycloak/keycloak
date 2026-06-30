@@ -45,6 +45,15 @@ ifeval::[{project_community}==true]
 Many thanks to https://github.com/bucchi[Yutaka Obuchi] for the contribution of this feature!
 endif::[]
 
+== Stricter admin role assignment
+
+Assigning admin roles (such as `manage-users`, `manage-clients`, `manage-realm`, or any other role defined on the `realm-management` client or the master admin client) now requires `realm-admin` or server `admin` privileges. Previously, a delegated administrator holding an individual admin role such as `manage-users` could grant that same role to other users. With this change, only full realm administrators can assign any admin role.
+
+This restriction applies uniformly across all authorization modes (standard RBAC, Fine-Grained Admin Permissions V1 and V2). It also applies to group membership: adding a user to a group that has admin roles assigned (directly or through a parent group) now requires `realm-admin` privileges.
+
+Realm creators are not affected by this change — they are automatically granted `realm-admin` on the master admin client when they create a realm.
+
+For more details, see link:{adminguide_link}#_master_realm_access_control[Dedicated admin console access control] in the {adminguide_name}.
 
 = Administration
 

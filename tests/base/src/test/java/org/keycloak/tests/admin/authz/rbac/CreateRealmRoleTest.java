@@ -76,16 +76,15 @@ public class CreateRealmRoleTest extends AbstractAdminRBACTest {
     }
 
     @Test
-    public void testForbiddenGrantAdminRoleFGAPEnabled() {
+    public void testAllowMapAdminRoleFGAPEnabled() {
         runAs(masterRealm.getName(), masterUser.getUsername(), client -> {
             RealmResource realm = createRealm(client, "myrealm");
             RealmRepresentation rep = realm.toRepresentation();
             rep.setAdminPermissionsEnabled(true);
             realm.update(rep);
             UserRepresentation user = createUser(realm, "myadmin");
-            // create-realm role does not allow users to map admin roles if FGAP is enabled
-            assertForbidden("Should not be able to map admin roles because user is not a server/realm admin",
-                    () -> grantRealmManagementRole(realm, user.getUsername(), AdminRoles.MANAGE_USERS));
+            // realm creator gets realm-admin, so they can map admin roles even with FGAP enabled
+            grantRealmManagementRole(realm, user.getUsername(), AdminRoles.MANAGE_USERS);
         });
     }
 
@@ -103,13 +102,12 @@ public class CreateRealmRoleTest extends AbstractAdminRBACTest {
     }
 
     @Test
-    public void testMapRealmAdminRoleForbidden() {
+    public void testMapRealmAdminRoleAllowed() {
         runAs(masterRealm.getName(), masterUser.getUsername(), client -> {
             RealmResource realm = createRealm(client, "myrealm");
             UserRepresentation user = createUser(realm, "myadmin");
-            // create-realm role does not allow users to map realm-admin role
-            assertForbidden("Should not be able to map realm-admin role",
-                    () -> grantRealmManagementRole(realm, user.getUsername(), AdminRoles.REALM_ADMIN));
+            // realm creator gets realm-admin, so they can map realm-admin to other users
+            grantRealmManagementRole(realm, user.getUsername(), AdminRoles.REALM_ADMIN);
         });
     }
 

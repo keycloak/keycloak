@@ -116,7 +116,7 @@ public class DefaultPermissions implements Permissions {
     public boolean isAdminUser(UserModel user) {
         // Direct role mappings (with composite resolution)
         if (user.getRoleMappingsStream()
-                .anyMatch(AdminRoles::isAdminRoleOrComposite)) {
+                .anyMatch(AdminRoles::containsAdminRole)) {
             return true;
         }
         // Group-inherited roles

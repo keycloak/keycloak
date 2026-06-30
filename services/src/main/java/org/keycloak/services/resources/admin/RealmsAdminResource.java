@@ -18,7 +18,6 @@ package org.keycloak.services.resources.admin;
 
 import java.io.InputStream;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -46,6 +45,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -195,9 +195,8 @@ public class RealmsAdminResource {
         }
 
         ClientModel realmAdminApp = realm.getMasterAdminClient();
-        Arrays.stream(AdminRoles.ALL_REALM_ROLES)
-                .map(realmAdminApp::getRole)
-                .forEach(auth.getUser()::grantRole);
+        RoleModel realmAdminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
+        auth.getUser().grantRole(realmAdminRole);
     }
 
     /**

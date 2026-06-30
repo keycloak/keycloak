@@ -54,7 +54,7 @@ The roles available are:
 
 Assign the roles you want to your users and they will only be able to use that specific part of the administration console.
 
-IMPORTANT: Admins with the `manage-users` role will only be able to assign admin roles to users that they themselves have.  So, if an admin has the `manage-users` role but doesn't have the `manage-realm` role, they will not be able to assign this role.
+IMPORTANT: Only server administrators (with the `admin` role in the master realm) or realm administrators (with the `realm-admin` role) can assign admin roles to other users. Delegated administrators with individual admin roles such as `manage-users` cannot grant any admin roles, even the ones they hold themselves. Similarly, adding a user to a group that has admin roles assigned requires `realm-admin` or `admin` privileges.
 
 
 

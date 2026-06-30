@@ -26,6 +26,39 @@ Additionally, some methods where updated for consistency across the builders:
 * `RealmBuilder` method `identityProviderMapper` renamed to `identityProviderMappers`
 * `RealmBuilder` method `requiredAction` renamed to `requiredActions`
 
+=== Admin role assignment restricted to realm administrators
+
+Assigning admin roles — any role defined on the `realm-management` client or the master admin client (such as `manage-users`, `manage-clients`, `view-users`, `query-users`, and others) — now requires the caller to hold `realm-admin` or the server-level `admin` role.
+
+Previously, a delegated administrator holding an individual admin role (for example, `manage-users`) could grant that same role to other users. This created a privilege propagation risk where any user with a single admin role could distribute that role without restriction.
+
+This restriction applies uniformly across all authorization modes: standard RBAC, Fine-Grained Admin Permissions V1 (deprecated), and Fine-Grained Admin Permissions V2. It also extends to group membership — adding a user to a group that has admin roles assigned (directly or through a parent group) now requires `realm-admin` or `admin` privileges.
+
+New realms created after this upgrade are not affected — realm creators are now automatically granted `realm-admin` on the master admin client instead of individual roles.
+
+==== Action required for existing realm creators
+
+Realms created before this upgrade are affected. In previous versions, the `grantPermissionsToRealmCreator` logic granted 20 individual admin roles (such as `manage-users`, `manage-clients`, `manage-realm`, etc.) on the master admin client, but did not grant `realm-admin`. After upgrading, these users will no longer be able to assign admin roles to other users, even though they retain all other administrative capabilities.
+
+There is no automatic migration for this scenario because {project_name} cannot reliably distinguish realm creators (who should receive `realm-admin`) from users who were intentionally given a subset of admin roles and should not be promoted.
+
+To restore full administrative capabilities for existing realm creators, a server administrator must manually grant the `realm-admin` role on the appropriate master admin client. For each affected realm:
+
+. Log in to the master realm administration console as a server administrator (a user with the `admin` role).
+. Identify the master admin client for the target realm — it is named `__<realm-name>__-realm` (for example, `myrealm-realm` for a realm called `myrealm`).
+. Navigate to the user who originally created the realm.
+. Under **Role mappings**, add the `realm-admin` role from the `__<realm-name>__-realm` client.
+
+Alternatively, you can use the Admin REST API to assign the `realm-admin` role programmatically, which may be more practical when many users are affected. For example, to grant `realm-admin` on the `myrealm-realm` client to a user, use the role mapping endpoint:
+
+[source]
+----
+POST /admin/realms/master/users/{userId}/role-mappings/clients/{myrealm-realm-client-uuid}
+[{"id": "{realm-admin-role-uuid}", "name": "realm-admin"}]
+----
+
+If you have delegated administrators who rely on granting admin roles to other users but are not realm creators, you will also need to grant them `realm-admin` to restore this capability.
+
 === Identity Provider alias is now immutable
 
 The alias of an Identity Provider can no longer be changed after creation via the Admin REST API. Attempts to update the alias will result in a `400 Bad Request` error.

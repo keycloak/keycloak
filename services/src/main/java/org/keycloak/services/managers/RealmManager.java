@@ -402,6 +402,15 @@ public class RealmManager {
             adminRole.addCompositeRole(role);
         }
         addQueryCompositeRoles(realmAdminApp);
+
+        if (!realm.getName().equals(Config.getAdminRealm())) {
+            RoleModel realmAdminRole = realmAdminApp.addRole(AdminRoles.REALM_ADMIN);
+            realmAdminRole.setDescription("${role_" + AdminRoles.REALM_ADMIN + "}");
+            for (String r : AdminRoles.ALL_REALM_ROLES) {
+                realmAdminRole.addCompositeRole(realmAdminApp.getRole(r));
+            }
+            adminRole.addCompositeRole(realmAdminRole);
+        }
     }
 
     private void checkMasterAdminManagementRoles(RealmModel realm) {
@@ -416,6 +425,21 @@ public class RealmManager {
             }
         }
         addQueryCompositeRoles(masterAdminClient);
+
+        if (!realm.getName().equals(Config.getAdminRealm())) {
+            RoleModel realmAdminRole = masterAdminClient.getRole(AdminRoles.REALM_ADMIN);
+            if (realmAdminRole == null) {
+                realmAdminRole = masterAdminClient.addRole(AdminRoles.REALM_ADMIN);
+                realmAdminRole.setDescription("${role_" + AdminRoles.REALM_ADMIN + "}");
+                for (String r : AdminRoles.ALL_REALM_ROLES) {
+                    RoleModel role = masterAdminClient.getRole(r);
+                    if (role != null) {
+                        realmAdminRole.addCompositeRole(role);
+                    }
+                }
+                adminRole.addCompositeRole(realmAdminRole);
+            }
+        }
     }
 
 

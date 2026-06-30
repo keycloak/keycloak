@@ -16,6 +16,7 @@ request.body
 user-uuid
 group-uuid
 role-uuid
+realm-admin-role-uuid
 target-group-uuid
 admins-group-uuid
 permission-id

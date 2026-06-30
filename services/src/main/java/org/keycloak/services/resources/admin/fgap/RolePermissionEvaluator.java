@@ -45,12 +45,13 @@ public interface RolePermissionEvaluator {
 
 
     /**
-     * Returns {@code true} if the caller has {@link org.keycloak.models.AdminRoles#MANAGE_USERS} role and
-     * {@link RolePermissions#checkAdminRoles(RoleModel)} returns {@code true}.
+     * Returns {@code false} if the role contains admin roles (directly or through composites) and the caller is not a realm admin.
+     * <p/>
+     * Otherwise returns {@code true} if the caller has {@link org.keycloak.models.AdminRoles#MANAGE_USERS} role.
      * <p/>
      * Or if the role is a client role and {@link ClientPermissions#canMapRoles(ClientModel)} returns {@code true}.
      * <p/>
-     * Or if the caller has permission to {@link RolePermissionManagement#MAP_ROLE_SCOPE} and {@link RolePermissions#checkAdminRoles(RoleModel)} returns {@code true}.
+     * Or if the caller has permission to {@link RolePermissionManagement#MAP_ROLE_SCOPE}.
      * <p/>
      * For V2 only: Also if the caller has a permission to {@link RolePermissionManagement#MAP_ROLE_SCOPE} all roles.
      */
@@ -102,11 +103,13 @@ public interface RolePermissionEvaluator {
     void requireMapClientScope(RoleModel role);
 
     /**
-     * Returns {@code true} if {@link RolePermissions#canManageDefault(RoleModel)} and {@link RolePermissions#checkAdminRoles(RoleModel)} returns {@code true}.
+     * Returns {@code false} if the role contains admin roles (directly or through composites) and the caller is not a realm admin.
+     * <p/>
+     * Otherwise returns {@code true} if {@link RolePermissions#canManageDefault(RoleModel)} returns {@code true}.
      * <p/>
      * Or if the role is a client role and {@link ClientPermissions#canMapCompositeRoles(ClientModel)} returns {@code true}.
      * <p/>
-     * Or if the caller has permission to {@link RolePermissionManagement#MAP_ROLE_COMPOSITE_SCOPE} and {@link RolePermissions#checkAdminRoles(RoleModel)} returns {@code true}.
+     * Or if the caller has permission to {@link RolePermissionManagement#MAP_ROLE_COMPOSITE_SCOPE}.
      * <p/>
      * For V2 only: Also if the caller has a permission to {@link RolePermissionManagement#MAP_ROLE_COMPOSITE_SCOPE} all roles.
      */

@@ -56,27 +56,19 @@ public class RealmAdminMasterRealmTest extends AbstractAdminRBACTest {
     }
 
     @Test
-    public void testGrantRealmManagementRoleIfGrantedInMasterRealmClient() {
+    public void testIndividualAdminRolesCannotMapAdminRoles() {
         RealmRepresentation realm = RealmBuilder.create().name("myrealm").build();
         adminClient.realms().create(realm);
 
-        runAs(masterRealm.getName(), masterUser.getUsername(), client -> {
-            RealmResource realmApi = client.realm(realm.getRealm());
-            // user not allowed to list events
-            assertForbidden("Should not be able to list events in realm", () -> realmApi.getEvents());
-        });
-
         grantMasterRealmManagementRole(realm.getRealm(), masterUser.getUsername(), AdminRoles.MANAGE_USERS);
+        grantMasterRealmManagementRole(realm.getRealm(), masterUser.getUsername(), AdminRoles.MANAGE_EVENTS);
         grantMasterRealmManagementRole(realm.getRealm(), masterUser.getUsername(), AdminRoles.VIEW_CLIENTS);
 
         String newUserName = "myuser";
 
         runAs(masterRealm.getName(), masterUser.getUsername(), client -> {
             RealmResource realmApi = client.realm(realm.getRealm());
-            // user not allowed to list events
-            assertForbidden("Should not be able to list events in realm", () -> realmApi.getEvents());
 
-            // user can create a new user
             realmApi.users().create(UserBuilder.create()
                             .username(newUserName)
                             .password("password")
@@ -88,26 +80,34 @@ public class RealmAdminMasterRealmTest extends AbstractAdminRBACTest {
                     .close();
             List<UserRepresentation> users = realmApi.users().search(newUserName);
             assertFalse(users.isEmpty());
-            UserRepresentation user = users.get(0);
 
-            // master realm user not allowed to grant manage-events role in the new realm via realm-management client
-            assertForbidden("Should not be able to grant role the user does not have",
-                    () -> grantRealmManagementRole(realmApi, user.getUsername(), AdminRoles.MANAGE_EVENTS));
+            assertForbidden("Individual admin roles should not allow mapping admin roles without realm-admin",
+                    () -> grantRealmManagementRole(realmApi, newUserName, AdminRoles.MANAGE_EVENTS));
         });
+    }
 
-        // grant manage-events role in the new realm to master realm admin via master realm
-        grantMasterRealmManagementRole(realm.getRealm(), masterUser.getUsername(), AdminRoles.MANAGE_EVENTS);
+    @Test
+    public void testRealmAdminOnMasterClientCanMapAdminRoles() {
+        RealmRepresentation realm = RealmBuilder.create().name("myrealm").build();
+        adminClient.realms().create(realm);
 
-        runAs(realm.getRealm(), newUserName, (client) -> {
-            // master user is not allowed to list events
-            assertForbidden("Should not be able to list events in realm", () -> client.realm(realm.getRealm()).getEvents());
-        });
+        grantMasterRealmManagementRole(realm.getRealm(), masterUser.getUsername(), AdminRoles.REALM_ADMIN);
+
+        String newUserName = "myuser";
 
         runAs(masterRealm.getName(), masterUser.getUsername(), client -> {
             RealmResource realmApi = client.realm(realm.getRealm());
-            // master realm user can now list events
-            realmApi.getEvents();
-            // now grant manage-events role to the master user
+
+            realmApi.users().create(UserBuilder.create()
+                            .username(newUserName)
+                            .password("password")
+                            .email("myuser@keycloak.org")
+                            .firstName("f")
+                            .lastName("l")
+                            .enabled(true)
+                            .build())
+                    .close();
+
             grantRealmManagementRole(realmApi, newUserName, AdminRoles.MANAGE_EVENTS);
         });
 
