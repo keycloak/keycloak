@@ -170,6 +170,22 @@ public class OrganizationInvitationResource {
             throw ErrorResponse.error("User does not have an email address", Status.BAD_REQUEST);
         }
 
+        if (organization.isMember(user)) {
+            throw ErrorResponse.error("User already a member of the organization", Status.CONFLICT);
+        }
+
+        OrganizationProvider invitationProvider = session.getProvider(OrganizationProvider.class);
+        InvitationManager invitationManager = invitationProvider.getInvitationManager();
+        OrganizationInvitationModel existingInvitation = invitationManager.getByEmail(organization, user.getEmail());
+
+        if (existingInvitation != null) {
+            if (!existingInvitation.isExpired()) {
+                throw ErrorResponse.error("User already has a pending invitation", Status.CONFLICT);
+            } else {
+                invitationManager.remove(existingInvitation.getId());
+            }
+        }
+
         return sendInvitation(user);
     }
 
