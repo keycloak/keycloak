@@ -43,6 +43,7 @@ import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthen
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Time;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
@@ -237,6 +238,46 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         try (var response = getClientsApi().createClient(rep)) {
             assertThat(response.getStatus(), is(409));
+        }
+    }
+
+    @Test
+    public void clientTimestamps() throws JsonProcessingException {
+        var clientId = "timestamp-client";
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setDescription("Timestamp test client");
+
+        long beforeCreate = Time.currentTimeMillis();
+        OIDCClientRepresentation created;
+        try (var response = getClientsApi().createClient(rep)) {
+            assertThat(response.getStatus(), is(201));
+            created = response.readEntity(OIDCClientRepresentation.class);
+        }
+        long afterCreate = Time.currentTimeMillis();
+
+        assertThat(created.getCreatedTimestamp(), notNullValue());
+        assertThat(created.getUpdatedTimestamp(), notNullValue());
+        // During initial create the entity can be persisted and then updated again (e.g. for filling
+        // additional fields), which may bump updatedTimestamp slightly above createdTimestamp.
+        assertThat(created.getUpdatedTimestamp() >= created.getCreatedTimestamp(), is(true));
+        assertThat(created.getCreatedTimestamp() >= beforeCreate, is(true));
+        assertThat(created.getCreatedTimestamp() <= afterCreate, is(true));
+
+        try {
+            Time.setOffset(1);
+
+            OIDCClientRepresentation patch = new OIDCClientRepresentation();
+            patch.setDescription("Updated description");
+            BaseClientRepresentation updated = getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
+            assertThat(updated.getDescription(), is("Updated description"));
+            assertThat(updated.getCreatedTimestamp(), is(created.getCreatedTimestamp()));
+            assertThat(updated.getUpdatedTimestamp(), notNullValue());
+            assertThat(updated.getUpdatedTimestamp() >= updated.getCreatedTimestamp(), is(true));
+            assertThat(updated.getUpdatedTimestamp() > created.getUpdatedTimestamp(), is(true));
+        } finally {
+            Time.setOffset(0);
         }
     }
 

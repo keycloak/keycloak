@@ -9,7 +9,7 @@
           "method" : {
             "type" : "string",
             "pattern" : "\\S",
-            "description" : "Which authentication method is used for this client. Validation: must not be blank; valid client authenticator type is required"
+            "description" : "Client authentication method (e.g. `client-secret`, `client-secret-jwt`). Validation: must not be blank; valid client authenticator type is required"
           },
           "secret" : {
             "type" : "string",
@@ -85,6 +85,18 @@
           "protocol" : {
             "type" : "string",
             "description" : "Client protocol. Validation: on update/on patch: protocol cannot be changed for an existing client"
+          },
+          "createdTimestamp" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Timestamp when the client was created",
+            "readOnly" : true
+          },
+          "updatedTimestamp" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Timestamp when the client was last updated",
+            "readOnly" : true
           }
         },
         "required" : [ "clientId" ],

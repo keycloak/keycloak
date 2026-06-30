@@ -869,7 +869,7 @@ public class AuthenticationManager {
         }
         keycloakSession.getProvider(CookieProvider.class).set(CookieType.IDENTITY, encoded, maxAge);
 
-        String sessionCookieValue = sha256UrlEncodedHash(session.getId());
+        String sessionCookieValue = sha384UrlEncodedHash(session.getId());
 
         // THIS SHOULD NOT BE A HTTPONLY COOKIE!  It is used for OpenID Connect Iframe Session support!
         // Max age should be set to the max lifespan of the session as it's used to invalidate old-sessions on re-login
@@ -1008,7 +1008,7 @@ public class AuthenticationManager {
             return false;
         }
 
-        if (cookie.equals(sha256UrlEncodedHash(sessionId))) return true;
+        if (cookie.equals(sha384UrlEncodedHash(sessionId))) return true;
 
         // Backwards compatibility
         String[] split = cookie.split("/");
@@ -1776,8 +1776,8 @@ public class AuthenticationManager {
         return null;
     }
 
-    public static String sha256UrlEncodedHash(String input) {
-        return HashUtils.sha256UrlEncodedHash(input, StandardCharsets.ISO_8859_1);
+    public static String sha384UrlEncodedHash(String input) {
+        return HashUtils.sha384UrlEncodedHash(input, StandardCharsets.ISO_8859_1);
     }
 
     public static String getRequestedScopes(KeycloakSession session) {
