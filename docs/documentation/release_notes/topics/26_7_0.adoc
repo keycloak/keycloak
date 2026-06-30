@@ -99,14 +99,6 @@ Organization groups now support realm and client role assignments. Roles assigne
 
 For more details, see the link:{adminguide_link}#pass:a[_managing_groups_][Managing organization groups] guide.
 
-== Passkey authenticator icons in login and account console
-
-The login page and account console now display vendor-specific icons for registered passkeys and security keys.
-When a user wants to authenticate with Passkeys, {project_name} shows the authenticator's icon alongside its label, making it easier to identify the correct device.
-
-As part of this change, the passkey authentication page in the login theme and the signing-in page in the account console were updated.
-If you use a custom theme that overrides these pages, verify that your customizations work as expected with this release.
-
 == New `Discoverable credential` option in the WebAuthn policies
 
 The WebAuthn Policy and WebAuthn Passwordless Policy provide a new `Discoverable credential` option that follows the current WebAuthn specification.
@@ -114,23 +106,9 @@ In addition to requiring or discouraging discoverable credentials (passkeys), it
 The new option is sent to the browser as `authenticatorSelection.residentKey` when registering WebAuthn credentials, which improves compatibility with passkey providers.
 The previous `Require Discoverable Credential` option is now deprecated, and it is planned to be removed in future.
 
-== Unified button layout in login theme
-
-Action buttons across login theme pages now use a consistent horizontal layout. If you use a custom theme that overrides these pages, verify that your customizations work as expected with this release.
-
 == Realm search now matches by display name
 
 When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.
-
-As part of this change, the `displayName` attribute has been promoted from a realm attribute to a dedicated column on the realm entity.
-
-Before migrating, check the current value of the `displayName` attribute for your realms. If the current value of `displayName` attribute
-exceeds 255 characters, it will be truncated during migration.
-
-== Dynamic Scopes feature renamed to Parameterized Scopes
-
-The experimental feature previously known as `dynamic-scopes` has been renamed to `parameterized-scopes` to better describe its purpose.
-If you enabled this feature using `--features=dynamic-scopes`, update your configuration to use `--features=parameterized-scopes`.
 
 == Typed parameters for parameterized scopes
 
