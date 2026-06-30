@@ -1,0 +1,38 @@
+name: Pre-triage Pull Request
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize]
+    branches:
+      - main 
+
+jobs:
+  pre-triage:
+    env:
+      GH_TOKEN: ${{ github.token }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+      pull-requests: write
+    steps:
+      - name: Wait for DCO
+        id: check-dco
+        uses: lewagon/wait-on-check-action@96d9100b431964d10e0136aff8b9ccb92470505e # v1.8.0
+        continue-on-error: true
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          check-name: "DCO"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+      - name: Check linked issues
+        uses: nearform-actions/github-action-check-linked-issues@7140e2e01aa0c18b8ac61bddf5e89abde1ca760e # v1.8.3
+        id: check-linked-issues
+        continue-on-error: true
+        with:
+          custom-body-comment: Thank you for contributing this PR. Please link this PR to an issue as outlined in CONTRIBUTING.md
+      - name: Add label
+        if: steps.check-dco.outcome == 'failure' || steps.check-linked-issues.outcome == 'failure' 
+        run: gh pr edit "${{ github.event.pull_request.number }}" -R "$GITHUB_REPOSITORY" --add-label "action/waiting-for-author"
+      - name: Remove label
+        if: steps.check-dco.outcome != 'failure' && steps.check-linked-issues.outcome != 'failure' 
+        run: gh pr edit "${{ github.event.pull_request.number }}" -R "$GITHUB_REPOSITORY" --remove-label "action/waiting-for-author"
