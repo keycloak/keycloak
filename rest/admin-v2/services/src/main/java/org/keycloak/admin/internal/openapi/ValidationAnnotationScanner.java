@@ -1,5 +1,6 @@
 package org.keycloak.admin.internal.openapi;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -320,7 +321,7 @@ public class ValidationAnnotationScanner {
 
         for (AnnotationInstance annotation : classLevelConstraintAnnotations(classInfo)) {
             String context = getGroupContext(annotation);
-            String message = buildConstraintDescription(annotation);
+            String messageTemplate = buildConstraintDescription(annotation);
 
             String[] affectedFields = resolveAffectedFieldNames(annotation);
             if (affectedFields == null || affectedFields.length == 0) {
@@ -328,6 +329,7 @@ public class ValidationAnnotationScanner {
             }
 
             for (String affected : affectedFields) {
+                String message = MessageFormat.format(messageTemplate, affected);
                 collected.computeIfAbsent(affected, k -> new ArrayList<>()).add(context + message);
             }
         }

@@ -19,12 +19,9 @@ public class ClientPersistedFieldResolver implements PersistedFieldResolver {
     @Override
     public String getProvidedValue(Object representation, String fieldName) {
         BaseClientRepresentation client = (BaseClientRepresentation) representation;
-        return switch (fieldName) {
-            case "uuid" -> client.getUuid();
-            case "protocol" -> client.getProtocol();
-            default -> throw new AssertionError("Unsupported field: " + fieldName);
-        };
+        return fieldValue(fieldName, client, BaseClientRepresentation.class);
     }
+
 
     @Override
     public String getPersistedValue(ValidationContext context, Object representation, String fieldName) {
@@ -33,11 +30,7 @@ public class ClientPersistedFieldResolver implements PersistedFieldResolver {
         if (persistedClient == null) {
             return null;
         }
-        return switch (fieldName) {
-            case "uuid" -> persistedClient.getId();
-            case "protocol" -> persistedClient.getProtocol();
-            default -> throw new AssertionError("Unsupported field: " + fieldName);
-        };
+        return fieldValue(fieldName, persistedClient, ClientModel.class);
     }
 
     @Override
@@ -46,5 +39,15 @@ public class ClientPersistedFieldResolver implements PersistedFieldResolver {
             case "uuid" -> Optional.ofNullable(context.realm().getClientById(value)).isPresent();
             default -> false;
         };
+    }
+
+    private String fieldValue(String fieldName, Object client, Class<?> clazz) throws AssertionError {
+        try {
+            var accessor = clazz.getDeclaredField(fieldName);
+            accessor.setAccessible(true);
+            return (String) accessor.get(client);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new AssertionError("Unsupported field:" + fieldName, e);
+        }
     }
 }
