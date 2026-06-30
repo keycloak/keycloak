@@ -82,6 +82,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
 import org.hibernate.Session;
+import org.hibernate.query.criteria.HibernateCriteriaBuilder;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
@@ -1052,6 +1053,17 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                         builder.function("substr", Integer.class, builder.literal(value), builder.literal(1), builder.literal(255)));
                 Predicate attrValuePredicate2 =  builder.equal(attributeJoin.get("value"), value);
                 predicates.add(builder.and(attrNamePredicate, attrValuePredicate1, attrValuePredicate2));
+            } else if (dbProductName.equals("Microsoft SQL Server")) {
+                // MSSQL cannot index NTEXT/NVARCHAR(MAX) columns directly, so CLIENT_ATTRIBUTES has a persisted computed
+                // column VALUE_PREFIX defined as CAST(VALUE AS NVARCHAR(255)). We replicate that expression here via
+                // hcb.sql() so the optimizer matches it to the computed column and uses the index. This also ensures
+                // each join gets its own qualified alias (e.g. a1_0.VALUE, a2_0.VALUE) when searching multiple attributes.
+                HibernateCriteriaBuilder hcb = (HibernateCriteriaBuilder) builder;
+                Predicate prefixPredicate = builder.equal(
+                        hcb.sql("CAST(? AS NVARCHAR(255))", String.class, attributeJoin.get("value")),
+                        value.length() > 255 ? value.substring(0, 255) : value);
+                Predicate fullPredicate = builder.equal(attributeJoin.get("value"), value);
+                predicates.add(builder.and(attrNamePredicate, prefixPredicate, fullPredicate));
             } else {
                 Predicate attrValuePredicate = builder.equal(attributeJoin.get("value"), value);
                 predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
