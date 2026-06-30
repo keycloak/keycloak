@@ -1,5 +1,7 @@
 package org.keycloak.representations.admin.v2.validators;
 
+import java.text.MessageFormat;
+
 import jakarta.validation.ConstraintValidatorContext;
 
 import org.keycloak.validation.jakarta.ValidationContext;
@@ -46,7 +48,8 @@ final class ServerManagedFieldValidation {
         }
 
         context.disableDefaultConstraintViolation();
-        context.buildConstraintViolationWithTemplate(context.getDefaultConstraintMessageTemplate())
+        String template = context.getDefaultConstraintMessageTemplate();
+        context.buildConstraintViolationWithTemplate(MessageFormat.format(template, field))
                 .addPropertyNode(field)
                 .addConstraintViolation();
         return false;

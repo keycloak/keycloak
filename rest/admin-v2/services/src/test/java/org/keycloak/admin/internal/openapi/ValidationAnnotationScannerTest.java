@@ -462,8 +462,9 @@ public class ValidationAnnotationScannerTest {
         Map<String, String> descriptions = scanner.buildClassLevelDescriptions(classInfo);
 
         assertNotNull(descriptions);
-        assertEquals(2, descriptions.size());
-        assertEquals("UUID is server-managed and must not be user-specified", descriptions.get("uuid"));
+        assertEquals(3, descriptions.size());
+        assertEquals("uuid is server-managed and must not be user-specified", descriptions.get("uuid"));
+        assertEquals("createdTimestamp is server-managed and must not be user-specified", descriptions.get("createdTimestamp"));
         assertEquals("protocol cannot be changed for an existing client", descriptions.get("protocol"));
     }
 
@@ -575,8 +576,8 @@ public class ValidationAnnotationScannerTest {
     }
 
     @ServerManagedFieldUnmodified(
-            affectedFieldNames = {"uuid"},
-            message = "UUID is server-managed and must not be user-specified")
+            affectedFieldNames = {"uuid", "createdTimestamp"},
+            message = "{0} is server-managed and must not be user-specified")
     @ServerManagedFieldUnmodified(
             affectedFieldNames = {"protocol"},
             message = "protocol cannot be changed for an existing client")
@@ -584,5 +585,6 @@ public class ValidationAnnotationScannerTest {
     public static class TestWithRepeatableServerManagedFieldUnmodified {
         private String uuid;
         private String protocol;
+        private Long createdTimestamp;
     }
 }

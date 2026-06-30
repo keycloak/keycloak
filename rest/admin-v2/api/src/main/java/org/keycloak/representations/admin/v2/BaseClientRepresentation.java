@@ -32,8 +32,8 @@ import org.hibernate.validator.constraints.URL;
     @JsonSubTypes.Type(value = SAMLClientRepresentation.class, name = SAMLClientRepresentation.PROTOCOL)
 })
 @ServerManagedFieldUnmodified(
-        affectedFieldNames = {"uuid"},
-        message = "UUID is server-managed and must not be user-specified",
+        affectedFieldNames = {"uuid", "createdTimestamp", "updatedTimestamp"},
+        message = "{0} is server-managed and must not be user-specified",
         groups = {PutClient.class, PatchClient.class},
         rejectExistingValueOnCreate = true)
 @ServerManagedFieldUnmodified(
