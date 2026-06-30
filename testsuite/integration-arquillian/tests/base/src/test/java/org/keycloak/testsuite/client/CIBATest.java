@@ -2520,6 +2520,182 @@ public class CIBATest extends AbstractClientPoliciesTest {
         }
     }
 
+    @Test
+    public void testBackchannelAuthnReqWithBruteForceProtectedUser() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        RealmRepresentation realmRep = null;
+        RealmRepresentation backupRealm = null;
+        Boolean originalDirectAccessGrantsEnabled = null;
+        try {
+            final String username = "nutzername-gelb";
+
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+
+            // Enable direct access grants for password grant to work
+            originalDirectAccessGrantsEnabled = clientRep.isDirectAccessGrantsEnabled();
+            clientRep.setDirectAccessGrantsEnabled(true);
+            clientResource.update(clientRep);
+
+            prepareCIBASettings(clientResource, clientRep);
+            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+
+            // Enable brute force protection on realm
+            realmRep = adminClient.realm(TEST_REALM_NAME).toRepresentation();
+            backupRealm = new RealmRepresentation();
+            backupRealm.setBruteForceProtected(realmRep.isBruteForceProtected());
+            backupRealm.setFailureFactor(realmRep.getFailureFactor());
+            backupRealm.setMaxDeltaTimeSeconds(realmRep.getMaxDeltaTimeSeconds());
+
+            realmRep.setBruteForceProtected(true);
+            realmRep.setFailureFactor(2);
+            realmRep.setMaxDeltaTimeSeconds(60);
+            adminClient.realm(TEST_REALM_NAME).update(realmRep);
+
+            List<UserRepresentation> users = adminClient.realm(TEST_REALM_NAME).users().search(username);
+            assertThat(users.size(), is(1));
+            UserRepresentation user = users.get(0);
+
+            // Trigger brute force lockout with failed login attempts
+            for (int i = 0; i < 3; i++) {
+                oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+                oauth.passwordGrantRequest(username, "wrongpassword").send();
+            }
+
+            // Verify user is actually locked by checking brute force status
+            Map<String, Object> userAttackInfo = adminClient.realm(TEST_REALM_NAME).attackDetection().bruteForceUserStatus(user.getId());
+            assertThat((Boolean) userAttackInfo.get("disabled"), is(true));
+            // numFailures should be at least failureFactor (2), 3rd attempt after lock may not increment counter
+            assertThat((Integer) userAttackInfo.get("numFailures"), is(equalTo(2)));
+
+            // Verify user is temporarily disabled due to brute force
+            // Backchannel Authentication Request should fail
+            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).send();
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getErrorDescription(), is("invalid_user"));
+
+            // Clear brute force lockout
+            adminClient.realm(TEST_REALM_NAME).attackDetection().clearBruteForceForUser(user.getId());
+
+            // Verify CIBA works after clearing lockout
+            response = oauth.ciba().backchannelAuthenticationRequest(username).send();
+            assertThat(response.getStatusCode(), is(equalTo(200)));
+            assertThat(response.getAuthReqId(), notNullValue());
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
+            // Restore direct access grants setting
+            if (clientResource != null && clientRep != null && originalDirectAccessGrantsEnabled != null) {
+                clientRep.setDirectAccessGrantsEnabled(originalDirectAccessGrantsEnabled);
+                clientResource.update(clientRep);
+            }
+            // Restore realm brute force settings
+            if (realmRep != null && backupRealm != null) {
+                realmRep.setBruteForceProtected(backupRealm.isBruteForceProtected());
+                realmRep.setFailureFactor(backupRealm.getFailureFactor());
+                realmRep.setMaxDeltaTimeSeconds(backupRealm.getMaxDeltaTimeSeconds());
+                adminClient.realm(TEST_REALM_NAME).update(realmRep);
+            }
+        }
+    }
+
+    @Test
+    public void testBackchannelAuthnReqWithPermanentlyLockedUser() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        RealmRepresentation realmRep = null;
+        RealmRepresentation backupRealm = null;
+        Boolean originalDirectAccessGrantsEnabled = null;
+        try {
+            final String username = "nutzername-schwarz";
+
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+
+            // Enable direct access grants for password grant to work
+            originalDirectAccessGrantsEnabled = clientRep.isDirectAccessGrantsEnabled();
+            clientRep.setDirectAccessGrantsEnabled(true);
+            clientResource.update(clientRep);
+
+            prepareCIBASettings(clientResource, clientRep);
+            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+
+            realmRep = adminClient.realm(TEST_REALM_NAME).toRepresentation();
+            backupRealm = new RealmRepresentation();
+            backupRealm.setBruteForceProtected(realmRep.isBruteForceProtected());
+            backupRealm.setFailureFactor(realmRep.getFailureFactor());
+            backupRealm.setMaxDeltaTimeSeconds(realmRep.getMaxDeltaTimeSeconds());
+            backupRealm.setPermanentLockout(realmRep.isPermanentLockout());
+            backupRealm.setMaxTemporaryLockouts(realmRep.getMaxTemporaryLockouts());
+
+            realmRep.setBruteForceProtected(true);
+            realmRep.setFailureFactor(2);
+            realmRep.setMaxDeltaTimeSeconds(60);
+            realmRep.setPermanentLockout(true);
+            // Enable permanent lockout brute force protection on realm
+            realmRep.setMaxTemporaryLockouts(0);
+            adminClient.realm(TEST_REALM_NAME).update(realmRep);
+
+            List<UserRepresentation> users = adminClient.realm(TEST_REALM_NAME).users().search(username);
+            assertThat(users.size(), is(1));
+            UserRepresentation user = users.get(0);
+
+            // Trigger permanent brute force lockout with failed login attempts
+            for (int i = 0; i < 3; i++) {
+                oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+                oauth.passwordGrantRequest(username, "wrongpassword").send();
+            }
+
+            // Verify user is actually locked by checking brute force status
+            Map<String, Object> userAttackInfo = adminClient.realm(TEST_REALM_NAME).attackDetection().bruteForceUserStatus(user.getId());
+            assertThat((Boolean) userAttackInfo.get("disabled"), is(true));
+            // numFailures should be at least failureFactor (2), 3rd attempt after lock may not increment counter
+            assertThat((Integer) userAttackInfo.get("numFailures"), is(equalTo(2)));
+
+            // Verify user is permanently locked
+            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).send();
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getErrorDescription(), is("invalid_user"));
+
+            // Clear brute force lockout and re-enable user (permanent lockout disables the account)
+            adminClient.realm(TEST_REALM_NAME).attackDetection().clearBruteForceForUser(user.getId());
+            user.setEnabled(true);
+            adminClient.realm(TEST_REALM_NAME).users().get(user.getId()).update(user);
+
+            // Verify CIBA works after clearing permanent lockout and re-enabling user
+            response = oauth.ciba().backchannelAuthenticationRequest(username).send();
+            assertThat(response.getStatusCode(), is(equalTo(200)));
+            assertThat(response.getAuthReqId(), notNullValue());
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
+            // Restore direct access grants setting
+            if (clientResource != null && clientRep != null && originalDirectAccessGrantsEnabled != null) {
+                clientRep.setDirectAccessGrantsEnabled(originalDirectAccessGrantsEnabled);
+                clientResource.update(clientRep);
+            }
+            // Re-enable user if permanently locked (permanent lockout disables the account)
+            List<UserRepresentation> users = adminClient.realm(TEST_REALM_NAME).users().search("nutzername-gelb");
+            if (!users.isEmpty()) {
+                UserRepresentation userToRestore = users.get(0);
+                userToRestore.setEnabled(true);
+                adminClient.realm(TEST_REALM_NAME).users().get(userToRestore.getId()).update(userToRestore);
+            }
+            // Restore realm brute force settings
+            if (realmRep != null && backupRealm != null) {
+                realmRep.setBruteForceProtected(backupRealm.isBruteForceProtected());
+                realmRep.setFailureFactor(backupRealm.getFailureFactor());
+                realmRep.setMaxDeltaTimeSeconds(backupRealm.getMaxDeltaTimeSeconds());
+                realmRep.setPermanentLockout(backupRealm.isPermanentLockout());
+                realmRep.setMaxTemporaryLockouts(backupRealm.getMaxTemporaryLockouts());
+                adminClient.realm(TEST_REALM_NAME).update(realmRep);
+            }
+        }
+    }
+
     private void testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthentication(String clientName, boolean useRequestUri, String requestedSigAlg, String sigAlg, int statusCode, String errorDescription) throws Exception {
         String clientId = createClientDynamically(clientName, (OIDCClientRepresentation clientRep) -> {
             List<String> grantTypes = Optional.ofNullable(clientRep.getGrantTypes()).orElse(new ArrayList<>());
