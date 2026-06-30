@@ -1,0 +1,10 @@
+{
+  "themes": [
+    {
+      "name": "provider-with-resources-theme",
+      "types": [
+        "account"
+      ]
+    }
+  ]
+}
