@@ -84,7 +84,7 @@ public class EventMetricsProviderWithTagsTest {
             MatcherAssert.assertThat("Searching for login error metric",
                     Metrics.globalRegistry.counter("keycloak.user", "event", "login", "error", "ERROR", "realm", realmName, "client.id", CLIENT_ID, "idp", "IDENTITY_PROVIDER").count() == 1);
             MatcherAssert.assertThat("Searching for refresh with unknown client",
-                    Metrics.globalRegistry.counter("keycloak.user", "event", "refresh_token", "error", "client_not_found", "realm", realmName, "client.id", "unknown", "idp", "").count() == 1);
+                    Metrics.globalRegistry.counter("keycloak.user", "event", "refresh_token", "error", "client_not_found", "realm", realmName, "client.id", "none", "idp", "").count() == 1);
         });
     }
 
