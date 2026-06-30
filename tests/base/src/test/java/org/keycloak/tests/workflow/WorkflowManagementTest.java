@@ -702,7 +702,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
             RealmResource realmB = bootstrapAdmin.realm("realm-b-test");
 
             String userIdB;
-            try (Response response = realmB.users().create(UserBuilder.create()
+            try (Response response = realmB.users().create(UserConfigBuilder.create()
                     .username("bob").email("bob@example.com").build())) {
                 userIdB = ApiUtil.getCreatedId(response);
             }
