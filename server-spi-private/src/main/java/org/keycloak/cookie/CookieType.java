@@ -52,6 +52,10 @@ public final class CookieType {
             .defaultMaxAge(300)
             .build();
 
+    public static final CookieType TRUSTED_DEVICE = CookieType.create("KEYCLOAK_TRUSTED_DEVICE")
+            .scope(CookieScope.FEDERATION)
+            .build();
+
     private final String name;
     private final CookiePath path;
     private final CookieScope scope;
