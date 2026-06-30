@@ -22,8 +22,9 @@ For more information, see the link:{developerguide_link}#_identity-brokering-api
 == Progress on Verifiable Credentials (OID4VCI) (experimental)
 // https://github.com/keycloak/keycloak/issues/50035
 
-https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OID4VCI] still remains experimental feature. However there is big progress on this feature with lots of contributions from the {project_name} community members as well
-as from the {project_name} core team. Some highlights include:
+https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[Verifiable Credentials (OID4VCI)] allow organizations to issue tamper-proof, cryptographically signed credentials — such as employee badges, academic diplomas, or professional certifications — that users can store in a digital wallet and present to third parties without involving the issuer.
+
+OID4VCI remains an experimental feature in {project_name}, but this release brings substantial improvements from both the core team and the community:
 
 * Polishing of existing functionality and improving configuration. Everything configurable in admin UI now in addition to admin REST API
 * Lots of bugs fixed. Improved specification compliance
@@ -46,9 +47,9 @@ endif::[]
 == Cross-domain token exchange with Identity Assertion JWT Grant (experimental)
 // https://github.com/keycloak/keycloak/issues/50437
 
-{project_name} has experimental support for https://datatracker.ietf.org/doc/html/draft-ietf-oauth-identity-assertion-authz-grant[Identity Assertion JWT Authorization Grant (ID-JAG)].
-For now, {project_name} can act in the role of receiver, which receives ID-JAG and sends back access token, which works as a part of token endpoint. But there is the aim to extend on
-this in the upcoming {project_name} releases with further capabilities. Right now, functionality is available with the use of running {project_name} with the `identity-assertion-jwt` experimental feature.
+When two organizations each run their own authorization server, users often need to re-authenticate when crossing between them — even though their identity was already verified. The https://datatracker.ietf.org/doc/html/draft-ietf-oauth-identity-assertion-authz-grant[Identity Assertion JWT Authorization Grant (ID-JAG)] solves this by allowing one authorization server to present a signed identity assertion to another, which then issues an access token without requiring the user to log in again.
+
+{project_name} now supports this flow as an experimental feature. It can act as the receiving authorization server, accepting ID-JAG assertions at the token endpoint and issuing access tokens in return. Further capabilities are planned for upcoming releases. To try it out, start {project_name} with the `identity-assertion-jwt` experimental feature.
 ifeval::[{project_community}==true]
 Many thanks to https://github.com/bucchi[Yutaka Obuchi] for the contribution of this feature!
 endif::[]
@@ -80,7 +81,7 @@ For more details, see the link:{securing_apps_base_link}/ssf-support[Shared Sign
 
 Applications that need fine-grained authorization typically call {project_name}'s proprietary authorization API, coupling them to its internal model. The https://openid.net/specs/authorization-api-1_0.html[OpenID AuthZEN Authorization API 1.0] defines a vendor-neutral protocol between Policy Decision Points (PDPs) and Policy Enforcement Points (PEPs), enabling applications to request authorization decisions through a standard interface.
 
-{project_name} now implements the AuthZEN Evaluation API as a PDP. Applications send evaluation requests describing a subject, resource, and action, and {project_name} returns a permit or deny decision based on its configured authorization policies. Both single evaluation and batch evaluations endpoints are supported.
+{project_name} now implements the AuthZEN Evaluation API as a PDP. Applications send evaluation requests describing a subject, resource, and action, and {project_name} returns a permit or deny decision based on its configured authorization policies. Both single evaluation and batch evaluations endpoints are available.
 
 To enable AuthZen, start {project_name} with `--features=authzen`.
 
@@ -132,7 +133,7 @@ endif::[]
 == Fine-grained delegation for organization administration
 // https://github.com/keycloak/keycloak/issues/45497
 
-{project_name} now supports delegated organization administration without requiring the broad `manage-realm` role. This is achieved through new dedicated admin roles and Fine-Grained Admin Permissions support for organizations.
+Managing organizations in {project_name} previously required the `manage-realm` role — a high-privilege role that grants far more access than most organization administrators need. This release introduces dedicated admin roles and Fine-Grained Admin Permissions for organizations, allowing administrators to delegate organization management without over-provisioning access.
 
 New realm admin roles provide coarse-grained delegation:
 
@@ -147,22 +148,25 @@ For per-organization granularity, organizations are now a first-class resource t
 == Automatic role inheritance through organization groups
 // https://github.com/keycloak/keycloak/issues/47327
 
-Organization groups now support realm and client role assignments. Roles assigned to organization groups are automatically included in `realm_access` and `resource_access` token claims for group members. Additionally, the *Organization Group Membership* protocol mapper (OIDC and SAML) can optionally include these roles within the `organization` claim, organized per organization, by enabling the *Add group role mappings* configuration option.
+Assigning roles to individual organization members does not scale well when an organization has hundreds of users who all need the same permissions. Organization groups now support realm and client role assignments, so administrators can assign a role once to the organization group and have it automatically appear in `realm_access` and `resource_access` token claims for all group members.
+
+Additionally, the *Organization Group Membership* protocol mapper (OIDC and SAML) can include these roles within the `organization` claim, organized per organization, by enabling the *Add group role mappings* configuration option.
 
 For more details, see the link:{adminguide_link}#pass:a[_managing_groups_][Managing organization groups] guide.
 
 == Better passkey compatibility with new WebAuthn policy options
 // https://github.com/keycloak/keycloak/issues/42513
 
-The WebAuthn Policy and WebAuthn Passwordless Policy provide a new `Discoverable credential` option that follows the current WebAuthn specification.
-In addition to requiring or discouraging discoverable credentials (passkeys), it supports the `preferred` value, which was not possible with the previous Yes/No option.
-The new option is sent to the browser as `authenticatorSelection.residentKey` when registering WebAuthn credentials, which improves compatibility with passkey providers.
-The previous `Require Discoverable Credential` option is now deprecated, and it is planned to be removed in future.
+Passkeys let users sign in with biometrics or a security key instead of a password. To work correctly, the server must tell the browser whether it prefers a discoverable credential (a passkey stored on the device) or not — and the previous Yes/No option could not express the increasingly common `preferred` value.
+
+The WebAuthn Policy and WebAuthn Passwordless Policy now provide a `Discoverable credential` option that follows the current https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-residentkey[WebAuthn specification], supporting `required`, `preferred`, and `discouraged` values. This improves compatibility with passkey providers such as iCloud Keychain, Google Password Manager, and 1Password. The previous `Require Discoverable Credential` option is now deprecated and planned for removal in a future release.
 
 == Easier realm discovery by display name search
 // https://github.com/keycloak/keycloak/issues/45292
 
-When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.
+Administrators often give realms short technical names (like `acme-prod`) but set a human-readable display name (like `Acme Corporation`). Previously, the admin console search only matched against the technical realm name, making it harder to find realms in large multi-tenant deployments.
+
+Realm search now matches against the display name in addition to the realm name, so administrators can find realms by whichever name they remember.
 
 == Cluster-wide Keycloak Operator installation (preview)
 // https://github.com/keycloak/keycloak/issues/46981
@@ -174,7 +178,9 @@ For installation instructions, see the https://www.keycloak.org/operator/install
 == Type-safe validation for parameterized scopes (experimental)
 // https://github.com/keycloak/keycloak/issues/49532
 
-Parameterized scopes can now define a parameter type that validates the captured value at request time. Built-in types include `string`, `integer`, `boolean`, `username`, and `custom` (validated against an admin-defined regex). The type is required when creating parameterized scopes with the feature enabled.
+Parameterized scopes allow OAuth clients to request context-specific access — for example, `project:12345` to request access to a particular project, or `account:savings` to scope a token to a specific bank account. Previously, the parameter value was validated only by an optional regex, making it easy to pass invalid or unexpected values.
+
+Parameterized scopes can now define a parameter type that validates the captured value at request time. Built-in types include `string`, `integer`, `boolean`, `username`, and `custom` (validated against an admin-defined regex). The type is required when creating parameterized scopes with the feature enabled, ensuring that tokens always carry well-formed scope parameters.
 
 For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
