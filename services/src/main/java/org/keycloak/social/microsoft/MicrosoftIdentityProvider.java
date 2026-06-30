@@ -98,7 +98,7 @@ public class MicrosoftIdentityProvider extends OIDCIdentityProvider implements S
         if (scope == null || scope.isBlank()) {
             return true;
         }
-        return scope.contains(SCOPE_OPENID);
+        return Arrays.stream(scope.split("\\s+")).anyMatch(SCOPE_OPENID::equals);
     }
 
     private static void restoreScopeWithoutOpenId(MicrosoftIdentityProviderConfig config) {
