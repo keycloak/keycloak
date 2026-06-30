@@ -45,9 +45,13 @@ ifeval::[{project_community}==true]
 Many thanks to https://github.com/bucchi[Yutaka Obuchi] for the contribution of this feature!
 endif::[]
 
-== SCIM API technology preview support
+== Manage users and groups with the SCIM API (preview)
 
-In this release, the SCIM API is being promoted to a technology preview feature.
+https://datatracker.ietf.org/doc/html/rfc7644[SCIM] (System for Cross-domain Identity Management) is a standard protocol for reading and writing identity resources such as users and groups across multiple systems. It enables organizations to automate user provisioning and deprovisioning using widely available tooling — for example, integrating with identity governance platforms, HR systems, or other identity providers.
+
+{project_name} has SCIM APIs for managing users and groups within a realm. The implementation covers full CRUD and PATCH operations, filtering and pagination, schema extensions including the Enterprise User extension, and schema discovery endpoints.
+
+In this release, the SCIM API is being promoted to a preview feature. In the default profile it is disabled by default; to try it out, enable the `scim-api` feature.
 
 For more details, see the link:{adminguide_link}#_managing_scim[Managing users and groups through SCIM] documentation.
 
