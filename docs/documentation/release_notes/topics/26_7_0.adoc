@@ -5,15 +5,20 @@ This release features new capabilities for users and administrators of {project_
 
 = Security and Standards
 
-== Identity Brokering API: V2 promoted to supported, V1 deprecated
+== Stronger security for the Identity Brokering API
 
-The Identity Brokering API, which allows applications to retrieve tokens from external identity providers, now has V2 *supported but disabled by default* and V1 *deprecated but still enabled by default* for backward compatibility.
+The Identity Brokering API allows applications to retrieve tokens obtained from external identity providers during federated login. Version 2 of this API replaces the legacy V1 with a more secure and standards-compliant design:
 
-In a future release, V1 will be removed and V2 will become the default. Users are encouraged to migrate to V2 now.
+* *Client-level authorization* — access to external tokens is controlled per client using dedicated settings (*Allow retrieve external tokens* and an identity provider allow list) instead of assigning broker roles to individual users.
+* *Confidential clients only* — public clients are rejected, ensuring that only authenticated clients can retrieve external tokens.
+* *OAuth 2.0 compliant* — the endpoint uses `POST` and returns standard JSON responses with `access_token`, `error`, and `error_description` fields.
+* *Session-based token storage* — a new *Store token in session* option keeps tokens in the user session for faster access, with automatic cleanup on session expiry. Database storage remains available for persistence across sessions.
+
+V2 is now supported but disabled by default. V1 is deprecated but still enabled by default for backward compatibility. In a future release, V1 will be removed and V2 will become the default.
 
 For more information, see the link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] chapter in the {developerguide_name}.
 
-== OID4VCI Improvements
+== Progress on Verifiable Credentials (OID4VCI) (experimental)
 
 https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OID4VCI] still remains experimental feature. However there is big progress on this feature with lots of contributions from the {project_name} community members as well
 as from the {project_name} core team. Some highlights include:
@@ -36,7 +41,7 @@ https://github.com/pulsastrix[Hugo Hakim Damer], https://github.com/rameshkumark
 https://github.com/Vitalisn4[Palpable] for the contributions!
 endif::[]
 
-== Identity Assertion JWT Authorization Grant experimental support
+== Cross-domain token exchange with Identity Assertion JWT Grant (experimental)
 
 {project_name} has experimental support for https://datatracker.ietf.org/doc/html/draft-ietf-oauth-identity-assertion-authz-grant[Identity Assertion JWT Authorization Grant (ID-JAG)].
 For now, {project_name} can act in the role of receiver, which receives ID-JAG and sends back access token, which works as a part of token endpoint. But there is the aim to extend on
@@ -45,7 +50,7 @@ ifeval::[{project_community}==true]
 Many thanks to https://github.com/bucchi[Yutaka Obuchi] for the contribution of this feature!
 endif::[]
 
-== Manage users and groups with the SCIM API (preview)
+== Automate user provisioning with the SCIM API (preview)
 
 https://datatracker.ietf.org/doc/html/rfc7644[SCIM] (System for Cross-domain Identity Management) is a standard protocol for reading and writing identity resources such as users and groups across multiple systems. It enables organizations to automate user provisioning and deprovisioning using widely available tooling — for example, integrating with identity governance platforms, HR systems, or other identity providers.
 
@@ -57,7 +62,7 @@ For more details, see the link:{adminguide_link}#_managing_scim[Managing users a
 
 = Administration
 
-== Client Admin API v2 (experimental)
+== Declarative client management with Admin API v2 (experimental)
 
 {project_name} introduces a new REST API for managing OIDC and SAML clients.
 The new API provides strict validation, support for declarative configuration, and an accurate OpenAPI specification that enables reliable client generation.
@@ -79,7 +84,7 @@ Thanks to https://github.com/robson90[Robin Meese] for contributing the OpenAPI 
 and to https://github.com/sschu[Sebastian Schuster] for his participation in the Admin API working group and the Go client analysis.
 endif::[]
 
-== Delegated administration for organizations
+== Fine-grained delegation for organization administration
 
 {project_name} now supports delegated organization administration without requiring the broad `manage-realm` role. This is achieved through new dedicated admin roles and Fine-Grained Admin Permissions support for organizations.
 
@@ -93,24 +98,24 @@ The `manage-realm` role continues to implicitly grant full organization manageme
 
 For per-organization granularity, organizations are now a first-class resource type in Fine-Grained Admin Permissions. Administrators can create permissions to control which specific organizations a delegated administrator can view or manage — for example, granting access to manage one organization without giving access to all organizations in the realm. When Fine-Grained Admin Permissions is enabled, organization member queries also respect user-level permissions, returning only members the administrator is permitted to view.
 
-== Role mappings on organization groups
+== Automatic role inheritance through organization groups
 
 Organization groups now support realm and client role assignments. Roles assigned to organization groups are automatically included in `realm_access` and `resource_access` token claims for group members. Additionally, the *Organization Group Membership* protocol mapper (OIDC and SAML) can optionally include these roles within the `organization` claim, organized per organization, by enabling the *Add group role mappings* configuration option.
 
 For more details, see the link:{adminguide_link}#pass:a[_managing_groups_][Managing organization groups] guide.
 
-== New `Discoverable credential` option in the WebAuthn policies
+== Better passkey compatibility with new WebAuthn policy options
 
 The WebAuthn Policy and WebAuthn Passwordless Policy provide a new `Discoverable credential` option that follows the current WebAuthn specification.
 In addition to requiring or discouraging discoverable credentials (passkeys), it supports the `preferred` value, which was not possible with the previous Yes/No option.
 The new option is sent to the browser as `authenticatorSelection.residentKey` when registering WebAuthn credentials, which improves compatibility with passkey providers.
 The previous `Require Discoverable Credential` option is now deprecated, and it is planned to be removed in future.
 
-== Realm search now matches by display name
+== Easier realm discovery by display name search
 
 When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.
 
-== Typed parameters for parameterized scopes
+== Type-safe validation for parameterized scopes
 
 Parameterized scopes can now define a parameter type that validates the captured value at request time. Built-in types include `string`, `integer`, `boolean`, `username`, and `custom` (validated against an admin-defined regex). The type is required when creating parameterized scopes with the feature enabled.
 
