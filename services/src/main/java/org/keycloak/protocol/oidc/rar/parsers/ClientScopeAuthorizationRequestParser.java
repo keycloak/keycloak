@@ -31,9 +31,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
 import org.keycloak.protocol.oidc.rar.model.IntermediaryScopeRepresentation;
+import org.keycloak.protocol.oidc.scope.DefaultScopeType;
 import org.keycloak.protocol.oidc.scope.InvalidScopeParameterException;
 import org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeProvider;
-import org.keycloak.protocol.oidc.scope.StringScopeType;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.rar.AuthorizationRequestSource;
@@ -162,8 +162,8 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
     private ParameterizedScopeTypeProvider resolveType(ClientScopeModel clientScopeModel) {
         String typeId = clientScopeModel.getAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE);
         if (StringUtil.isNullOrEmpty(typeId)) {
-            logger.warnf("Parameterized scope '%s' has no type set, defaulting to '%s'", clientScopeModel.getName(), StringScopeType.TYPE);
-            typeId = StringScopeType.TYPE;
+            logger.warnf("Parameterized scope '%s' has no type set, defaulting to '%s'", clientScopeModel.getName(), DefaultScopeType.TYPE);
+            typeId = DefaultScopeType.TYPE;
         }
         ParameterizedScopeTypeProvider provider = session.getProvider(ParameterizedScopeTypeProvider.class, typeId);
         if (provider == null) {

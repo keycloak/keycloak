@@ -105,6 +105,8 @@ import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.protocol.oidc.refresh.InitialRefreshTokenContext;
 import org.keycloak.protocol.oidc.refresh.RefreshTokenException;
 import org.keycloak.protocol.oidc.refresh.RefreshTokenProvider;
+import org.keycloak.protocol.oidc.scope.DefaultScopeType;
+import org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeProvider;
 import org.keycloak.protocol.oidc.token.TokenPostProcessor;
 import org.keycloak.protocol.oidc.token.TokenPostProcessorContext;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
@@ -696,6 +698,10 @@ public class TokenManager {
             }
         }
 
+        // Track seen parameterized scope base names to enforce repeatability constraints.
+        boolean parameterizedScopesEnabled = Profile.isFeatureEnabled(Feature.PARAMETERIZED_SCOPES);
+        Set<String> seenParameterized = new HashSet<>();
+
         for (String requestedScope : rawScopes) {
             // we also check parameterized scopes in case the client is from a provider that dynamically provides scopes to their clients
             ClientScopeModel clientScope = clientScopes.get(requestedScope);
@@ -708,13 +714,40 @@ public class TokenManager {
                 if (Organizations.isEnabled(session) || OrganizationScope.valueOfScope(session, requestedScope) == null) {
                     return false;
                 }
-            } else if (!client.isConsentRequired() && clientScope.isAlwaysConsent()) {
+                continue;
+            }
+
+            if (!client.isConsentRequired() && clientScope.isAlwaysConsent()) {
                 logger.warnf("Requesting always consent scope '%s' in a non consent client '%s'", clientScope.getName(), client.getClientId());
+                return false;
+            }
+
+            // Non-repeatable parameterized scopes must not appear with multiple different
+            // parameter values in a single request (e.g. "delegation:user1 delegation:user2")
+            if (!parameterizedScopesEnabled || !clientScope.isParameterizedScope()) {
+                continue;
+            }
+            String scopeName = clientScope.getName();
+            if (!seenParameterized.add(scopeName) && !isRepeatableScope(session, clientScope)) {
+                logger.warnf("Parameterized scope '%s' does not allow multiple parameter values", scopeName);
                 return false;
             }
         }
 
         return true;
+    }
+
+    private static boolean isRepeatableScope(KeycloakSession session, ClientScopeModel clientScope) {
+        String attr = clientScope.getAttribute(ClientScopeModel.IS_REPEATABLE_SCOPE);
+        if (attr != null) {
+            return Boolean.parseBoolean(attr);
+        }
+        String typeId = clientScope.getAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE);
+        if (typeId == null || typeId.isEmpty()) {
+            typeId = DefaultScopeType.TYPE;
+        }
+        ParameterizedScopeTypeProvider provider = session.getProvider(ParameterizedScopeTypeProvider.class, typeId);
+        return provider != null ? provider.isRepeatable() : true;
     }
 
     public static boolean isValidScope(KeycloakSession session, String scopes, ClientModel client) {
