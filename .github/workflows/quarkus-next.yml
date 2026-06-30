@@ -17,19 +17,30 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # Quarkus branch to build snapshots from. Update when quarkus-next should track a different release stream.
+  QUARKUS_BRANCH: 3.x
+
 jobs:
   build-quarkus-snapshot:
     name: Build Quarkus snapshot
     if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     outputs:
+      quarkus-version: ${{ steps.quarkus-version.outputs.version }}
       qosdk-version: ${{ steps.qosdk-version.outputs.version }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           repository: quarkusio/quarkus
-          ref: main
+          ref: ${{ env.QUARKUS_BRANCH }}
           path: quarkus
+
+      - name: Extract Quarkus snapshot version
+        id: quarkus-version
+        run: |
+          version=$(grep -m1 '<version>' quarkus/pom.xml | sed 's/.*<version>\(.*\)<\/version>.*/\1/')
+          echo "version=$version" >> $GITHUB_OUTPUT
 
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -55,7 +66,7 @@ jobs:
           path: |
             ~/.m2/repository/io/quarkus
             ~/.m2/repository/io/quarkiverse/operatorsdk
-          key: quarkus-snapshot-${{ steps.cache-key.outputs.date }}
+          key: quarkus-snapshot-${{ env.QUARKUS_BRANCH }}-${{ steps.cache-key.outputs.date }}
           enableCrossOsArchive: true
 
       - name: Build Quarkus snapshot
@@ -72,7 +83,7 @@ jobs:
           cd quarkus-operator-sdk
           ./mvnw -B -e --no-transfer-progress \
             clean install -DskipTests -DskipITs -DskipDocs \
-            -Dquarkus.version=999-SNAPSHOT
+            -Dquarkus.version=${{ steps.quarkus-version.outputs.version }}
 
       - name: Extract QOSDK version
         id: qosdk-version
@@ -105,6 +116,7 @@ jobs:
 
       - name: Cherry-pick additional commits in quarkus-next
         env:
+          QUARKUS_VERSION: ${{ needs.build-quarkus-snapshot.outputs.quarkus-version }}
           QOSDK_VERSION: ${{ needs.build-quarkus-snapshot.outputs.qosdk-version }}
         run: |
           ${GITHUB_WORKSPACE}/.github/scripts/prepare-quarkus-next.sh
