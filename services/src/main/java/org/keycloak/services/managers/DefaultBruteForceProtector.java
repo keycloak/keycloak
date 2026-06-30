@@ -80,12 +80,11 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         this.factory = factory;
     }
 
-    protected void failure(KeycloakSession session, RealmModel realm, String userId, String remoteAddr, long failureTime, Set<String> categories) {
+    public void failure(KeycloakSession session, RealmModel realm, String userId, String remoteAddr, long failureTime, Set<String> categories) {
         UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, userId);
         if (userLoginFailure == null) {
             userLoginFailure = session.loginFailures().addUserLoginFailure(realm, userId);
         }
-        userLoginFailure.setLastIPFailure(remoteAddr);
         long last = userLoginFailure.getLastFailure();
         long deltaTime = 0;
         if (last > 0) {
@@ -94,10 +93,11 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
 
         if (!(realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0) && deltaTime > 0) {
             // if last failure was more than MAX_DELTA clear failures
-            if (deltaTime > (long) realm.getMaxDeltaTimeSeconds() * 1000L) {
+            if (deltaTime > realm.getMaxDeltaTimeSeconds() * 1000L) {
                 userLoginFailure.clearFailures();
             }
         }
+        userLoginFailure.setLastIPFailure(remoteAddr);
         userLoginFailure.setLastFailure(failureTime);
         userLoginFailure.incrementFailures();
         logger.debugf("new num failures: %s", userLoginFailure.getNumFailures());
@@ -105,9 +105,9 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         long waitSeconds = 0L;
         if (!(realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0)) {
             if (RealmRepresentation.BruteForceStrategy.MULTIPLE.equals(realm.getBruteForceStrategy())) {
-                waitSeconds = (long) realm.getWaitIncrementSeconds() *  ((long) userLoginFailure.getNumFailures() / realm.getFailureFactor());
+                waitSeconds = realm.getWaitIncrementSeconds() *  ((long) userLoginFailure.getNumFailures() / realm.getFailureFactor());
             } else {
-                waitSeconds = (long) realm.getWaitIncrementSeconds() * ((long) 1 + userLoginFailure.getNumFailures() - realm.getFailureFactor());
+                waitSeconds = realm.getWaitIncrementSeconds() * ((long) 1 + userLoginFailure.getNumFailures() - realm.getFailureFactor());
             }
         }
 

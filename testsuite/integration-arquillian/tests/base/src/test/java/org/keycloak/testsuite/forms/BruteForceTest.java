@@ -42,6 +42,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.managers.DefaultBruteForceProtector;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
@@ -554,12 +555,12 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void testRepeatedFailureResetForTemporaryLockout() {
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         try {
             // Using a large maxDeltaTimeSeconds to prevent cache expiration happening due to
             // Infinispan cache expiration in dev environment, between the two failure() calls inside the server lambda.
             realm.setMaxDeltaTimeSeconds(3600);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             UserRepresentation user = findUser("test-user@localhost");
             String userId = user.getId();
@@ -571,57 +572,35 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             testingClient.server().run(session -> {
 
                 RealmModel realmModel = session.realms().getRealm(realmId);
-                BruteForceProtector protector = session.getProvider(BruteForceProtector.class);
-
-                // Find the protected failure() method via reflection, 
-                // trying to cover cases where the method is declared in a parent class.
-                java.lang.reflect.Method failureMethod = null;
-                for (Class<?> clazz = protector.getClass(); clazz != null; clazz = clazz.getSuperclass()) {
-                    try {
-                        failureMethod = clazz.getDeclaredMethod("failure",
-                                org.keycloak.models.KeycloakSession.class,
-                                RealmModel.class, String.class, String.class, long.class, String.class);
-                        failureMethod.setAccessible(true);
-                        break;
-                    } catch (NoSuchMethodException e) {
-                        // Trying parent class in next iterations
-                    }
-                }
-                Assert.assertNotNull("Could not find failure() method via reflection", failureMethod);
+                DefaultBruteForceProtector protector = (DefaultBruteForceProtector)session.getProvider(BruteForceProtector.class);
 
                 // Now attempting Failure 1
                 long T1 = org.keycloak.common.util.Time.currentTimeMillis();
-                try {
-                    failureMethod.invoke(protector, session, realmModel, userId, "127.0.0.1", T1, null);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                protector.failure(session, realmModel, userId, "127.0.0.1", T1, null);
                 UserLoginFailureModel lf = session.loginFailures()
                         .getUserLoginFailure(realmModel, userId);
-                Assert.assertNotNull(lf);
-                Assert.assertEquals(1, lf.getNumFailures());
+                Assertions.assertNotNull(lf);
+                Assertions.assertEquals(1, lf.getNumFailures());
 
                 // Now attempting Failure 2 with delta > maxDeltaTimeSeconds (3600s)
                 long T2 = T1 + 3601 * 1000L;
-                try {
-                    failureMethod.invoke(protector, session, realmModel, userId, "127.0.0.1", T2, null);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                protector.failure(session, realmModel, userId, "127.0.0.1", T2, null);
                 lf = session.loginFailures().getUserLoginFailure(realmModel, userId);
 
                 // Counter should have been cleared then re-incremented
-                Assert.assertEquals("numFailures should be 1 after counter reset", 1, lf.getNumFailures());
+                Assertions.assertEquals(1, lf.getNumFailures(), "numFailures should be 1 after counter reset");
+                
+                Assertions.assertEquals("127.0.0.1", lf.getLastIPFailure(), "last ip should be retained");
 
                 // The Core Test Assertion: setLastFailure must run AFTER clearFailures so lastFailure is not wiped to 0.
                 // If setLastFailure runs before clearFailures (the behavior causing the bug), clearFailures() sets lastFailure to 0, 
                 // then subsequent failures lose the ability to compute the correct delta time.
-                Assert.assertTrue("lastFailure must be preserved after counter reset, got: "
-                        + lf.getLastFailure(), lf.getLastFailure() > 0);
+                Assertions.assertTrue(lf.getLastFailure() > 0, "lastFailure must be preserved after counter reset, got: "
+                        + lf.getLastFailure());
             });
         } finally {
             realm.setMaxDeltaTimeSeconds(20);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
         }
     }
 
