@@ -36,6 +36,16 @@ https://github.com/pulsastrix[Hugo Hakim Damer], https://github.com/rameshkumark
 https://github.com/Vitalisn4[Palpable] for the contributions!
 endif::[]
 
+== Identity Assertion JWT Authorization Grant experimental support
+
+{project_name} has experimental support for https://datatracker.ietf.org/doc/html/draft-ietf-oauth-identity-assertion-authz-grant[Identity Assertion JWT Authorization Grant (ID-JAG)].
+For now, {project_name} can act in the role of receiver, which receives ID-JAG and sends back access token, which works as a part of token endpoint. But there is the aim to extend on
+this in the upcoming {project_name} releases with further capabilities. Right now, functionality is available with the use of running {project_name} with the `identity-assertion-jwt` experimental feature.
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/bucchi[Yutaka Obuchi] for the contribution of this feature!
+endif::[]
+
+
 = Administration
 
 == Client Admin API v2 (experimental)
