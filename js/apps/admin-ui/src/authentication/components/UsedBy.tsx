@@ -9,14 +9,46 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 import { CheckCircleIcon } from "@patternfly/react-icons";
+import { Fragment, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
-import { fetchUsedBy } from "../../components/role-mapping/resource";
+import {
+  fetchUsedBy,
+  type UsedByClientRef,
+  type UsedByReference as FlowUsedByRow,
+} from "../../components/role-mapping/resource";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { toClient } from "../../clients/routes/Client";
 import useToggle from "../../utils/useToggle";
 import { AuthenticationType, REALM_FLOWS } from "../constants";
 
 import style from "./used-by.module.css";
+
+const ClientUsedByLink = ({
+  id,
+  clientId,
+}: {
+  id?: string;
+  clientId: string;
+}) => {
+  const { realm } = useRealm();
+  const label = <strong>{clientId}</strong>;
+  if (!id) {
+    return label;
+  }
+  return (
+    <Link
+      to={toClient({
+        realm,
+        clientId: id,
+        tab: "settings",
+      })}
+    >
+      {label}
+    </Link>
+  );
+};
 
 type UsedByProps = {
   authType: AuthenticationType;
@@ -43,15 +75,14 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
     first?: number,
     max?: number,
     search?: string,
-  ): Promise<{ name: string }[]> => {
-    const result = await fetchUsedBy(adminClient, {
+  ): Promise<FlowUsedByRow[]> => {
+    return fetchUsedBy(adminClient, {
       id,
       type: isSpecificClient ? "clients" : "idp",
       first: first || 0,
       max: max || 10,
       search,
     });
-    return result.map((p) => ({ name: p }));
   };
 
   return (
@@ -86,9 +117,23 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
         ariaLabelKey="usedBy"
         searchPlaceholderKey="search"
         columns={[
-          {
-            name: "name",
-          },
+          isSpecificClient
+            ? {
+                name: "name",
+                displayKey: "name",
+                cellRenderer: (row: FlowUsedByRow) => (
+                  <ClientUsedByLink
+                    id={row.id ?? undefined}
+                    clientId={row.label}
+                  />
+                ),
+              }
+            : {
+                name: "name",
+                cellRenderer: (row: FlowUsedByRow) => (
+                  <strong>{row.label}</strong>
+                ),
+              },
         ]}
       />
     </Modal>
@@ -99,6 +144,17 @@ export const UsedBy = ({ authType: { id, usedBy } }: UsedByProps) => {
   const { t } = useTranslation();
   const { realmRepresentation: realm } = useRealm();
   const [open, toggle] = useToggle();
+
+  const clientRefs = usedBy?.clientRefs;
+  const clientsOrFallback: UsedByClientRef[] = useMemo(() => {
+    if (!usedBy || usedBy.type !== "SPECIFIC_CLIENTS") {
+      return [];
+    }
+    if (clientRefs && clientRefs.length > 0) {
+      return clientRefs;
+    }
+    return usedBy.values.map((clientId) => ({ clientId }));
+  }, [usedBy, clientRefs]);
 
   const key = Object.entries(realm!).find(
     (e) => e[1] === usedBy?.values[0],
@@ -127,12 +183,22 @@ export const UsedBy = ({ authType: { id, usedBy } }: UsedByProps) => {
                       ? "Clients"
                       : "Providers"),
                 )}{" "}
-                {usedBy.values.map((used, index) => (
-                  <>
-                    <strong>{used}</strong>
-                    {index < usedBy.values.length - 1 ? ", " : ""}
-                  </>
-                ))}
+                {usedBy.type === "SPECIFIC_CLIENTS"
+                  ? clientsOrFallback.map((ref, index) => (
+                      <Fragment key={`${id}-used-${ref.clientId}-${index}`}>
+                        <ClientUsedByLink
+                          id={ref.id ?? undefined}
+                          clientId={ref.clientId}
+                        />
+                        {index < clientsOrFallback.length - 1 ? ", " : ""}
+                      </Fragment>
+                    ))
+                  : usedBy.values.map((used, index) => (
+                      <Fragment key={`${id}-used-${used}-${index}`}>
+                        <strong>{used}</strong>
+                        {index < usedBy.values.length - 1 ? ", " : ""}
+                      </Fragment>
+                    ))}
               </div>
             }
           >
