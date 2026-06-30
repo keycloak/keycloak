@@ -71,12 +71,12 @@
     }
   },
   "dependencies": {
-    "@microsoft/kiota-abstractions": "^1.0.0-preview.86",
-    "@microsoft/kiota-http-fetchlibrary": "^1.0.0-preview.80",
-    "@microsoft/kiota-serialization-form": "^1.0.0-preview.74",
-    "@microsoft/kiota-serialization-json": "^1.0.0-preview.86",
-    "@microsoft/kiota-serialization-multipart": "^1.0.0-preview.67",
-    "@microsoft/kiota-serialization-text": "^1.0.0-preview.79",
+    "@microsoft/kiota-abstractions": "1.0.0-preview.102",
+    "@microsoft/kiota-http-fetchlibrary": "1.0.0-preview.102",
+    "@microsoft/kiota-serialization-form": "1.0.0-preview.102",
+    "@microsoft/kiota-serialization-json": "1.0.0-preview.102",
+    "@microsoft/kiota-serialization-multipart": "1.0.0-preview.102",
+    "@microsoft/kiota-serialization-text": "1.0.0-preview.102",
     "camelize-ts": "^3.0.0",
     "url-template": "^3.1.1"
   },
