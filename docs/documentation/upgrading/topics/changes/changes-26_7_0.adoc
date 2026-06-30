@@ -31,13 +31,6 @@ Additionally, some methods where updated for consistency across the builders:
 The alias of an Identity Provider can no longer be changed after creation via the Admin REST API. Attempts to update the alias will result in a `400 Bad Request` error.
 Previously, although the admin console UI already treated the alias as read-only, the REST API still allowed alias changes.
 
-=== User profile metadata no longer returned on user search
-
-When searching for users using the Admin REST API, the user profile metadata is no longer included for each user in the search results.
-
-This change was made to improve performance of user search operations, as fetching user profile metadata for each user can be resource-intensive.
-The user profile metadata can still be retrieved when fetching a specific user by their identifier.
-
 === Organization member query returns brief user representation by default
 
 When querying organization members using the Admin REST API (`GET /admin/realms/\{realm}/organizations/\{id}/members`), a brief user representation is now returned by default.
@@ -56,6 +49,21 @@ For the link:https://www.keycloak.org/securing-apps/client-registration[client r
 
 In general, all this new configuration requires {project_name} to always revalidate the trusted anchors for the client certificate. This feature can be problematic in certain configurations (for example if a proxy is configured as a TLS termination and the certificates are passed to {project_name} using headers). The trust-store or mTLS store in {project_name} should always be configured correctly to validate the client certificate chain. Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] and link:https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS], for more information if you are using a TLS termination proxy and X509 client authentication.
 
+=== The `view-system` admin role no longer exists
+
+Since version 26.5.4, when introduced, the `view-system` admin role was marked as deprecated. In this release, the role
+has been removed for security reasons.
+
+Access to full server information is now restricted to users in the `master` realm holding the `manage-realm` role.
+
+If you are still relying on the `view-system` role, you should consider accessing the full server information using a user
+(or service account) from the `master` realm and granted with `manage-realm` admin roles.
+
+Before upgrading, you should check if any of your users, service accounts, or groups are still relying on the
+`view-system` role and review their access controls to ensure they have the necessary permissions to access the server
+information after the upgrade. The `manage-realm` admin role is a high-privileged role and should only be granted to
+highly-trusted accounts.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
@@ -64,7 +72,7 @@ It also lists significant changes to internal APIs.
 
 === Organization invitation filters use exact matching
 
-The `email`, `firstName`, and `lastName` query parameters on the organization invitations list endpoint (`GET /admin/realms/{realm}/orgs/{orgId}/invitations`) now use case-insensitive exact matching instead of substring matching.
+The `email`, `firstName`, and `lastName` query parameters on the organization invitations list endpoint (`+GET /admin/realms/{realm}/orgs/{orgId}/invitations+`) now use case-insensitive exact matching instead of substring matching.
 
 If you rely on partial matching for these fields, use the `search` query parameter instead, which performs case-insensitive substring matching across email, firstName, and lastName fields.
 
@@ -194,11 +202,29 @@ The `KeycloakContext` provided by `KeycloakSession` for async work will typicall
 `ContextNotActiveException` is thrown, and some of the logic is now tolerant to returning values even if no request is active. Please review places where you are
 catching `ContextNotActiveException` in your extension logic against the new JavaDocs.
 
-=== Validation of client_session_host parameter
-The `client_session_host` parameter is now validated against the client's registered nodes and management URL.
-This parameter is sent by clients during token refresh and is used when the `${application.session.host}` placeholder is present in a client's backchannel logout URL configuration.
-It was primarily used by legacy adapters that have been removed.
-This improves security by ensuring that only trusted, pre-registered hosts can be used in backchannel logout URLs.
+=== Service accounts excluded from user queries by ID
+
+When querying users by ID through the Admin REST API, service accounts are no longer included in the results. Service accounts are internal to their associated clients and should not be exposed through general user queries. This aligns with the existing behavior for user search operations. If you need to access a service account, use the dedicated client service account endpoints.
+
+=== FreeMarker configuration upgraded to version 2.3.32
+
+The FreeMarker template engine now uses `VERSION_2_3_32` defaults instead of the legacy `2.3.0` defaults. This brings improved security defaults and correctness fixes from newer FreeMarker versions. Custom themes that rely on legacy FreeMarker behavior — such as deprecated directives, undocumented template syntax, or accessing Java internals via `?api` — may be affected. Test your custom themes after upgrading.
+
+=== Client secret generation now generates longer secrets
+
+Newly generated client secrets always use 86 characters to provide enough entropy for HS512 regardless of the configured token endpoint signing algorithm. Previously, the secret length varied based on the signing algorithm, which could result in secrets with insufficient cryptographic strength for some use cases. This increases the minimum length of generated secrets. Existing client secrets are not affected — only secrets generated after upgrading use the new length. If your application imposes a maximum length on stored client secrets, you may need to increase it. See https://github.com/keycloak/keycloak/issues/49793[#49793] for more details.
+
+=== Token post-processors now respect ProviderFactory order
+
+Custom `OIDCAccessTokenResponseMapperProvider` implementations are now invoked in the order defined by their `ProviderFactory#order()` method when processing token responses. Previously, the invocation order was undefined due to a bug, which could cause incorrect results when multiple post-processors depend on each other. If your deployment uses multiple custom token post-processors, verify that their `order()` values produce the expected sequence.
+
+=== Custom provider changesets included in manual migration exports
+
+When using `--spi-connections-jpa--quarkus--migration-strategy=manual`, the generated SQL file now includes changesets from custom internal `JpaEntityProvider` implementations. Previously, only {project_name}'s built-in changesets were exported. This change ensures that manual migration scripts contain all required database changes for custom providers.
+
+=== RefreshTokenProvider SPI introduced
+
+The refresh token processing logic has been extracted from `TokenManager` into a dedicated internal `RefreshTokenProvider` SPI. This refactoring makes refresh token handling pluggable, allowing custom extensions to override the default behavior through the standard SPI mechanism. Custom extensions that previously overrode or intercepted refresh token handling through `TokenManager` should be reviewed for compatibility. The default implementation (`DefaultRefreshTokenProvider`) preserves the previous behavior.
 
 === Default AES key size increased to 256 bits
 
@@ -270,6 +296,10 @@ The corresponding realm representation attributes `webAuthnPolicyRequireResident
 == Removed features
 
 The following features have been removed from this release.
+
+=== Experimental `token-exchange-external-internal:v2` feature removed
+
+The experimental and undocumented feature `token-exchange-external-internal:v2` has been removed. This feature was superseded by the standard Token Exchange, which provides the same functionality. If you enabled this feature via `--features=token-exchange-external-internal:v2`, remove this configuration option and use the standard Token Exchange feature instead.
 
 === Batching option for persistent user sessions removed
 
