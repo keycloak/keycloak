@@ -26,17 +26,17 @@ https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[Verifi
 
 OID4VCI remains an experimental feature in {project_name}, but this release brings substantial improvements from both the core team and the community:
 
-* Polishing of existing functionality and improving configuration. Everything configurable in admin UI now in addition to admin REST API
-* Lots of bugs fixed. Improved specification compliance
+* Polishing of existing functionality and improving configuration. Everything is now configurable in the admin UI in addition to the admin REST API.
+* Lots of bugs fixed. Improved specification compliance.
 * Conformance with the https://openid.net/specs/openid4vc-high-assurance-interoperability-profile-1_0.html[OpenID4VC High Assurance Interoperability Profile (HAIP)].
-This work involves introduction of the dedicated {project_name} experimental feature `client-auth-abca` for https://datatracker.ietf.org/doc/html/draft-ietf-oauth-attestation-based-client-auth-07[Attestation based client authentication (ABCA)]
-* Management of verifiable credentials for individual users. This involves ability for administrator to create verifiable credential for user
-to indicate that this user can retrieve verifiable credential as well as ability for users to start issuance of verifiable credential from the {project_name} account console
+This work involves the introduction of the dedicated {project_name} experimental feature `client-auth-abca` for https://datatracker.ietf.org/doc/html/draft-ietf-oauth-attestation-based-client-auth-07[Attestation based client authentication (ABCA)].
+* Management of verifiable credentials for individual users. This involves the ability for an administrator to create a verifiable credential for a user
+to indicate that this user can retrieve a verifiable credential, as well as the ability for users to start issuance of a verifiable credential from the {project_name} account console.
 * https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-pre-authorized-code-flow[Pre-authorized code grant] support is still experimental and was moved to the dedicated experimental feature `oid4vc-vci-preauth-code`
 * Documentation updated and improved
 
 ifeval::[{project_community}==true]
-Lots of community members was involved in the related development. Many thanks to https://github.com/Awambeng[Awambeng],
+Many community members were involved in the development. Many thanks to https://github.com/Awambeng[Awambeng],
 https://github.com/Captain-P-Goldfish[Pascal Knüppel], https://github.com/dominikschlosser[Dominik Schlosser], https://github.com/forkimenjeckayang[forkimenjeckayang],
 https://github.com/IngridPuppet[Ingrid Kamga], https://github.com/keshavprashantdeshpande[Keshav Deshpande], https://github.com/namanONcode[Naman Jain],
 https://github.com/officialasishkumar[Asish Kumar], https://github.com/Ogenbertrand[Ogen Bertrand], https://github.com/Oluwatobi-Mustapha[Oluwatobi Mustapha],
@@ -81,7 +81,7 @@ For more details, see the link:{securing_apps_base_link}/ssf-support[Shared Sign
 
 Applications that need fine-grained authorization typically call {project_name}'s proprietary authorization API, coupling them to its internal model. The https://openid.net/specs/authorization-api-1_0.html[OpenID AuthZEN Authorization API 1.0] defines a vendor-neutral protocol between Policy Decision Points (PDPs) and Policy Enforcement Points (PEPs), enabling applications to request authorization decisions through a standard interface.
 
-{project_name} now implements the AuthZEN Evaluation API as a PDP. Applications send evaluation requests describing a subject, resource, and action, and {project_name} returns a permit or deny decision based on its configured authorization policies. Both single evaluation and batch evaluations endpoints are available.
+{project_name} now implements the AuthZEN Evaluation API as a PDP. Applications send evaluation requests describing a subject, resource, and action, and {project_name} returns a permit or deny decision based on its configured authorization policies. Both single and batch evaluation endpoints are available.
 
 To enable AuthZen, start {project_name} with `--features=authzen`.
 
@@ -201,13 +201,3 @@ The {project_name} Operator now exposes `AllNamespaces` as a supported OLM insta
 For non-OLM installations, cluster-wide deployment is available through the `cluster-wide` kustomization overlay.
 
 Cluster-wide installation is in preview. For installation instructions and limitations, see the link:{operatorguide_link}[{operatorguide_name}].
-
-== Deprecation of SHA1 hashing functions in {project_name} 27
-
-NIST is going to fully https://www.nist.gov/news-events/news/2022/12/nist-retires-sha-1-cryptographic-algorithm[retire] SHA1 hashing function in 2030. {project_name} will remove all uses of SHA1 in version 27.
-
-[NOTE]
-====
-Consider SHA1 hashing retired in all uses within {project_name}. Users should configure other secure hashing functions as soon as possible (for example SHA2, SHA3).
-====
-

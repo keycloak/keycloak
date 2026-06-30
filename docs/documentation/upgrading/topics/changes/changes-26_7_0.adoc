@@ -10,9 +10,9 @@ The test framework provides a number of builders to simplify creating representa
 but are also used by `RealmConfig`, `ClientConfig` and `UserConfig` implementations.
 
 Some builders had the suffix `ConfigBuilder`, while others had the shorter syntax `Builder`. They are all now renamed to use
-the shorter suffix `Builder` to keep things consistently.
+the shorter suffix `Builder` to keep things consistent.
 
-Additionally, some methods where updated for consistency across the builders:
+Additionally, some methods were updated for consistency across the builders:
 
 * `RoleBuilder` method `setSingleAttribute` renamed to `attribute`
 * `UserBuilder` method `roles` renamed to `realmRoles`
@@ -39,19 +39,19 @@ The single-member endpoint (`GET /admin/realms/\{realm}/organizations/\{id}/memb
 
 === X509 client authentication requires CA Subject DN
 
-Since this release, the X509 client authentication, that allows a client authenticate presenting a certificate in the mutual TLS (mTLS) handshake, requires to configure a new option called **Certificate Authority subject DN** to identify the trusted anchor CA for the client certificate. As the {project_name}'s trust-store (or mTLS store) is shared for all the realms, the new option allows to identify the correct CA of the certificate and avoids interferences with other unrelated CAs.
+Since this release, the X509 client authentication, which allows a client to authenticate by presenting a certificate in the mutual TLS (mTLS) handshake, requires configuring a new option called **Certificate Authority subject DN** to identify the trusted anchor CA for the client certificate. As the {project_name}'s trust-store (or mTLS store) is shared for all the realms, the new option allows identifying the correct CA of the certificate and avoids interference with other unrelated CAs.
 
-The new option is compulsory in the administration console when configuring X509 credentials for the client. For the moment, previous configurations without the CA subject DN still work to maintain backwards compatibility. In the next major version, the validation will be present at the server side, making any update, creation or import invalid if the new configuration option is not present. Please, if you use the X509 authenticator for clients ensure you add this new attribute to avoid issues in the future.
+The new option is compulsory in the administration console when configuring X509 credentials for the client. Currently, previous configurations without the CA subject DN still work to maintain backward compatibility. In the next major version, the validation will be present at the server side, making any update, creation, or import invalid if the new configuration option is not present. If you use the X509 authenticator for clients, ensure you add this new attribute to avoid issues in the future.
 
-Besides, the option **Allow regex pattern comparison** is deprecated. This option allows to configure a regexp instead of the exact DN of the client certificate. It is now deprecated and it will be removed in a future version. The certificate for the client should be unambiguously identified.
+Additionally, the option **Allow regex pattern comparison** is deprecated. This option allows configuring a regexp instead of the exact DN of the client certificate. It is now deprecated and will be removed in a future version. The certificate for the client should be unambiguously identified.
 
 For the link:https://www.keycloak.org/securing-apps/client-registration[client registration service], there is a new link:{adminguide_link}#_client_policies[client policy executor] named `tls-client-auth-ca-subject-dn` which can be used to assign a default CA subject DN. The executor can also enforce the configured CA DN to reject unwanted CAs.
 
-In general, all this new configuration requires {project_name} to always revalidate the trusted anchors for the client certificate. This feature can be problematic in certain configurations (for example if a proxy is configured as a TLS termination and the certificates are passed to {project_name} using headers). The trust-store or mTLS store in {project_name} should always be configured correctly to validate the client certificate chain. Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] and link:https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS], for more information if you are using a TLS termination proxy and X509 client authentication.
+In general, all this new configuration requires {project_name} to always revalidate the trusted anchors for the client certificate. This feature can be problematic in certain configurations (for example if a proxy is configured for TLS termination and the certificates are passed to {project_name} using headers). The trust-store or mTLS store in {project_name} should always be configured correctly to validate the client certificate chain. Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] and link:https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS], for more information if you are using a TLS termination proxy and X509 client authentication.
 
 === The `view-system` admin role no longer exists
 
-Since version 26.5.4, when introduced, the `view-system` admin role was marked as deprecated. In this release, the role
+The `view-system` admin role, introduced in version 26.5.4, was immediately marked as deprecated. In this release, the role
 has been removed for security reasons.
 
 Access to full server information is now restricted to users in the `master` realm holding the `manage-realm` role.
@@ -103,11 +103,11 @@ No manual action is required — the migration ensures existing scopes continue 
 
 === Verify email required before credentials setup during user self-registration
 
-When user self-registration is enabled for the realm together with *Verify Email*, then users will not see password by default
-on the registration screen. After registration of user's profile, user would be required to verify email and then he can setup password
-(or eventually other credentials like OTP or Passkey) as a subsequent step. It is possible to disable and stick to the old behavior by
-enable switch *Always set password on register form* on the realm registration flow on the *Password validation* authenticator. Note
-that this option is deprecated and exists mostly for the backwards compatibility. It may be removed in the future.
+When user self-registration is enabled for the realm together with *Verify Email*, users will not see a password field by default
+on the registration screen. After registering their profile, the user is required to verify their email and then can set up a password
+(or optionally other credentials like OTP or Passkey) as a subsequent step. It is possible to disable this and keep the old behavior by
+enabling the switch *Always set password on register form* in the realm registration flow, on the *Password validation* authenticator. Note
+that this option is deprecated and exists mostly for backward compatibility. It may be removed in the future.
 
 For the details, see the link:{adminguide_link}[{adminguide_name}].
 
@@ -117,8 +117,8 @@ For all database connections, {project_name} now sets a socket read timeout matc
 
 === Configure TOTP and Update password required actions moved after Verify Email
 
-In relation to the previous point, the required actions *Configure OTP* and *Update password* are moved in the order of required actions after *Verify Email*
-required action. This is done automatically for new realm or during server update. If you prefer the old order, you can manually move required actions per your preference.
+In relation to the previous point, the required actions *Configure OTP* and *Update password* have been reordered to appear after *Verify Email*.
+This is done automatically for new realms or during a server update. If you prefer the old order, you can manually reorder them.
 
 === Shutdown timeout extended
 
@@ -127,7 +127,7 @@ Previous versions waited for one second for HTTP requests to finish during the s
 The current version extends the timeout to ten seconds by default. In setups that use distributed caches, it now also waits for caches to rebalance before shutting down, preventing a possible data loss.
 When there are no ongoing HTTP requests, and caches are already rebalanced, the shutdown will finish immediately as before. With that, we expect most customers to not observe a change in the behavior of {project_name}.
 
-As before, for any rolling update or scaling up or down, we require to do this one node at a time for all clustered setups of {project_name}.
+As before, for any rolling update or scaling up or down, this must be done one node at a time for all clustered setups of {project_name}.
 
 Use the `shutdown-timeout` option to adjust the timeout to your environment. Restore the original behavior by setting it to `1s`.
 
@@ -194,7 +194,7 @@ See the link:{client_certificate_lookup_link}[Reverse Proxy guide] for more deta
 
 === Async Custom REST Endpoints should not be used
 
-Async custom REST endpoints using `AsyncResponse` or returning an async type such as `CompletableFuture` or `CompletionState` should not be used. If you are using them, be aware that the `KeycloakSession` used to initial the request will be immediately closed - it will not remain open for the entire lifespan of the request - and that you are fully responsible for transaction management in the async work.
+Async custom REST endpoints using `AsyncResponse` or returning an async type such as `CompletableFuture` or `CompletionState` should not be used. If you are using them, be aware that the `KeycloakSession` used to initiate the request will be immediately closed - it will not remain open for the entire lifespan of the request - and that you are fully responsible for transaction management in the async work.
 
 === `KeycloakContext` refinements when no request is active
 
@@ -293,7 +293,7 @@ future, this will not be possible anymore.
 
 === Option Allow regex pattern comparison is deprecated for the X509 client authenticator
 
-The option **Allow regex pattern comparison** is deprecated for the X509 client authenticator. This option allows to configure a Java regular expression instead of the exact DN for the client certificate subject DN. As previously commented in the breaking changes section, this option is now deprecated and it will be removed in a future version. The certificate for the client should be unambiguously identified because of security reasons.
+The option **Allow regex pattern comparison** is deprecated for the X509 client authenticator. This option allows configuring a Java regular expression instead of the exact DN for the client certificate subject DN. As noted in the breaking changes section, this option is now deprecated and will be removed in a future version. The certificate for the client should be unambiguously identified for security reasons.
 
 === Deprecation of SHA1 hashing functions in {project_name} 27
 
