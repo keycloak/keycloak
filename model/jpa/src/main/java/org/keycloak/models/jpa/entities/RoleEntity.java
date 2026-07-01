@@ -36,6 +36,7 @@ import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Nationalized;
+import org.keycloak.models.RoleModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -48,16 +49,22 @@ import org.hibernate.annotations.Nationalized;
         @UniqueConstraint(columnNames = { "NAME", "CLIENT_REALM_CONSTRAINT" })
 })
 @NamedQueries({
-        @NamedQuery(name="getClientRoles", query="select role from RoleEntity role where role.clientId = :client order by role.name"),
-        @NamedQuery(name="getClientRoleIds", query="select role.id from RoleEntity role where role.clientId = :client"),
-        @NamedQuery(name="getClientRoleByName", query="select role from RoleEntity role where role.name = :name and role.clientId = :client"),
-        @NamedQuery(name="getClientRoleIdByName", query="select role.id from RoleEntity role where role.name = :name and role.clientId = :client"),
-        @NamedQuery(name="searchForClientRoles", query="select role from RoleEntity role where role.clientId = :client and ( lower(role.name) like :search or lower(role.description) like :search ) order by role.name"),
-        @NamedQuery(name="getRealmRoles", query="select role from RoleEntity role where role.clientRole = false and role.realmId = :realm order by role.name"),
-        @NamedQuery(name="getRealmRoleIds", query="select role.id from RoleEntity role where role.clientRole = false and role.realmId = :realm"),
-        @NamedQuery(name="getRealmRoleByName", query="select role from RoleEntity role where role.clientRole = false and role.name = :name and role.realmId = :realm"),
-        @NamedQuery(name="getRealmRoleIdByName", query="select role.id from RoleEntity role where role.clientRole = false and role.name = :name and role.realmId = :realm"),
-        @NamedQuery(name="searchForRealmRoles", query="select role from RoleEntity role where role.clientRole = false and role.realmId = :realm and ( lower(role.name) like :search or lower(role.description) like :search ) order by role.name"),
+        @NamedQuery(name="getClientRoles", query="select role from RoleEntity role where role.type = 'CLIENT' and role.clientId = :client order by role.name"),
+        @NamedQuery(name="getClientRoleIds", query="select role.id from RoleEntity role where role.type = 'CLIENT' and role.clientId = :client"),
+        @NamedQuery(name="getClientRoleByName", query="select role from RoleEntity role where role.type = 'CLIENT' and role.name = :name and role.clientId = :client"),
+        @NamedQuery(name="getClientRoleIdByName", query="select role.id from RoleEntity role where role.type = 'CLIENT' and role.name = :name and role.clientId = :client"),
+        @NamedQuery(name="searchForClientRoles", query="select role from RoleEntity role where role.type = 'CLIENT' and role.clientId = :client and ( lower(role.name) like :search or lower(role.description) like :search ) order by role.name"),
+        @NamedQuery(name="getRealmRoles", query="select role from RoleEntity role where role.type = 'REALM' and role.realmId = :realm order by role.name"),
+        @NamedQuery(name="getRealmRoleIds", query="select role.id from RoleEntity role where role.type = 'REALM' and role.realmId = :realm"),
+        @NamedQuery(name="getRealmRoleByName", query="select role from RoleEntity role where role.type = 'REALM' and role.name = :name and role.realmId = :realm"),
+        @NamedQuery(name="getRealmRoleIdByName", query="select role.id from RoleEntity role where role.type = 'REALM' and role.name = :name and role.realmId = :realm"),
+        @NamedQuery(name="searchForRealmRoles", query="select role from RoleEntity role where role.type = 'REALM' and role.realmId = :realm and ( lower(role.name) like :search or lower(role.description) like :search ) order by role.name"),
+        @NamedQuery(name="getOrganizationRoles", query="select role from RoleEntity role where role.type = 'ORGANIZATION' and role.organizationId = :organization order by role.name"),
+        @NamedQuery(name="getOrganizationRoleIdsByRealm", query="select role.id from RoleEntity role where role.type = 'ORGANIZATION' and role.realmId = :realm"),
+        @NamedQuery(name="getOrganizationRoleIdByName", query="select role.id from RoleEntity role where role.type = 'ORGANIZATION' and role.name = :name and role.organizationId = :organization"),
+        @NamedQuery(name="searchForOrganizationRoles", query="select role from RoleEntity role where role.type = 'ORGANIZATION' and role.organizationId = :organization and ( lower(role.name) like :search or lower(role.description) like :search ) order by role.name"),
+        @NamedQuery(name="getOrganizationRolesCount", query="select count(role) from RoleEntity role where role.type = 'ORGANIZATION' and role.organizationId = :organization"),
+        @NamedQuery(name="searchForOrganizationRolesCount", query="select count(role) from RoleEntity role where role.type = 'ORGANIZATION' and role.organizationId = :organization and ( lower(role.name) like :search or lower(role.description) like :search )"),
         @NamedQuery(name="getRoleIdsFromIdList", query="select role.id from RoleEntity role where role.realmId = :realm and role.id in :ids order by role.name ASC"),
         @NamedQuery(name="getRoleIdsByNameContainingFromIdList", query="select role.id from RoleEntity role where role.realmId = :realm and lower(role.name) like lower(concat('%',:search,'%')) and role.id in :ids order by role.name ASC"),
         @NamedQuery(name="getChildRoles", query="select r from RoleEntity r join CompositeRoleEntity c on r.id = c.childRole.id where c.parentRole.id = :parentRoleId"),
@@ -84,8 +91,14 @@ public class RoleEntity {
     @Column(name="CLIENT_ROLE")
     private boolean clientRole;
 
+    @Column(name="TYPE", length = 32)
+    private String type = RoleModel.Type.REALM.name();
+
     @Column(name="CLIENT")
     private String clientId;
+
+    @Column(name="ORG_ID")
+    private String organizationId;
 
     // Hack to ensure that either name+client or name+realm are unique. Needed due to MS-SQL as it don't allow multiple NULL values in the column, which is part of constraint
     @Column(name="CLIENT_REALM_CONSTRAINT", length = 36)
@@ -151,6 +164,14 @@ public class RoleEntity {
         this.clientRole = clientRole;
     }
 
+    public RoleModel.Type getType() {
+        return type == null ? RoleModel.Type.REALM : RoleModel.Type.valueOf(type);
+    }
+
+    public void setType(RoleModel.Type type) {
+        this.type = type == null ? null : type.name();
+    }
+
     public String getClientId() {
         return clientId;
     }
@@ -158,6 +179,15 @@ public class RoleEntity {
     public void setClientId(String clientId) {
         this.clientId = clientId;
         this.clientRealmConstraint = clientId;
+    }
+
+    public String getOrganizationId() {
+        return organizationId;
+    }
+
+    public void setOrganizationId(String organizationId) {
+        this.organizationId = organizationId;
+        this.clientRealmConstraint = organizationId;
     }
 
     public String getClientRealmConstraint() {

@@ -523,4 +523,42 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.7.0-40585-organization-roles-schema">
+        <addColumn tableName="KEYCLOAK_ROLE">
+            <column name="TYPE" type="VARCHAR(32)"/>
+            <column name="ORG_ID" type="VARCHAR(255)"/>
+        </addColumn>
+        <addColumn tableName="ORG">
+            <column name="DEFAULT_ROLE_ID" type="VARCHAR(36)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-40585-organization-roles-migrate-data">
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_7_0_OrganizationRoles"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-40585-organization-roles-constraints">
+        <addNotNullConstraint tableName="KEYCLOAK_ROLE" columnName="TYPE" columnDataType="VARCHAR(32)"/>
+
+        <addForeignKeyConstraint baseTableName="KEYCLOAK_ROLE"
+                                 baseColumnNames="ORG_ID"
+                                 constraintName="FK_KEYCLOAK_ROLE_ORG"
+                                 referencedTableName="ORG"
+                                 referencedColumnNames="ID"/>
+
+        <addForeignKeyConstraint baseTableName="ORG"
+                                 baseColumnNames="DEFAULT_ROLE_ID"
+                                 constraintName="FK_ORG_DEFAULT_ROLE"
+                                 referencedTableName="KEYCLOAK_ROLE"
+                                 referencedColumnNames="ID"/>
+
+        <createIndex tableName="KEYCLOAK_ROLE" indexName="IDX_KEYCLOAK_ROLE_ORG_ID">
+            <column name="ORG_ID"/>
+        </createIndex>
+
+        <createIndex tableName="KEYCLOAK_ROLE" indexName="IDX_KEYCLOAK_ROLE_TYPE">
+            <column name="TYPE"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

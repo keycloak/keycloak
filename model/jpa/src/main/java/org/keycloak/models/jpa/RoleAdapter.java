@@ -30,13 +30,17 @@ import jakarta.persistence.Query;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.jpa.entities.CompositeRoleEntity;
 import org.keycloak.models.jpa.entities.RoleAttributeEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.jpa.OrganizationAdapter;
 import org.keycloak.utils.StreamsUtil;
 
 import static java.util.Optional.ofNullable;
@@ -107,9 +111,13 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public void addCompositeRole(RoleModel role) {
-        if (em.find(CompositeRoleEntity.class, new CompositeRoleEntity.Key(getEntity(), toRoleEntity(role))) == null) {
-            CompositeRoleEntity compositeRoleEntity = new CompositeRoleEntity(getEntity(), toRoleEntity(role));
+        RoleEntity parent = em.getReference(RoleEntity.class, getId());
+        RoleEntity child = em.getReference(RoleEntity.class, role.getId());
+        if (em.find(CompositeRoleEntity.class, new CompositeRoleEntity.Key(parent, child)) == null) {
+            CompositeRoleEntity compositeRoleEntity = new CompositeRoleEntity(parent, child);
             em.persist(compositeRoleEntity);
+            em.flush();
+            em.detach(compositeRoleEntity);
         }
     }
 
@@ -227,18 +235,31 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public boolean isClientRole() {
-        return role.isClientRole();
+        return getType() == Type.CLIENT;
+    }
+
+    @Override
+    public Type getType() {
+        return role.getType();
     }
 
     @Override
     public String getContainerId() {
-        return isClientRole() ? role.getClientId() : role.getRealmId();
+        return switch (getType()) {
+            case CLIENT -> role.getClientId();
+            case ORGANIZATION -> role.getOrganizationId();
+            case REALM -> role.getRealmId();
+        };
     }
 
 
     @Override
     public RoleContainerModel getContainer() {
-        return isClientRole() ? realm.getClientById(role.getClientId()) : realm;
+        return switch (getType()) {
+            case CLIENT -> realm.getClientById(role.getClientId());
+            case ORGANIZATION -> getOrganizationContainer();
+            case REALM -> realm;
+        };
     }
 
     @Override
@@ -260,5 +281,13 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
             return ((RoleAdapter) model).getEntity();
         }
         return em.getReference(RoleEntity.class, model.getId());
+    }
+
+    private OrganizationModel getOrganizationContainer() {
+        OrganizationEntity entity = em.find(OrganizationEntity.class, role.getOrganizationId());
+        if (entity == null || !realm.getId().equals(entity.getRealmId())) {
+            return null;
+        }
+        return new OrganizationAdapter(session, realm, entity, session.getProvider(OrganizationProvider.class));
     }
 }
