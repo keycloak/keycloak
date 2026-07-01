@@ -445,4 +445,21 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         ResourcesResource resources = getClientResource().authorization().resources();
         resources.resource(resource.getId()).remove();
     }
+
+    @Test
+    public void failCreateWithMalformedUriTemplate() {
+        ResourceRepresentation newResource = new ResourceRepresentation();
+
+        newResource.setName("Malformed URI Template Resource");
+        newResource.setUris(new HashSet<>(Arrays.asList("/api/{clientId")));
+
+        try {
+            doCreateResource(newResource);
+            fail("Can not create a resource with a malformed URI template");
+        } catch (Exception e) {
+            assertEquals(HttpResponseException.class, e.getCause().getClass());
+            assertEquals(400, HttpResponseException.class.cast(e.getCause()).getStatusCode());
+        }
+    }
+
 }
