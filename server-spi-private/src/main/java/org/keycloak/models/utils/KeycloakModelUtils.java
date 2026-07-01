@@ -1237,7 +1237,7 @@ public final class KeycloakModelUtils {
 
         if (clientScope == null) {
             // as fallback we try to resolve parameterized scopes
-            clientScope = client.getDynamicClientScope(clientScopeId);
+            clientScope = client.getParameterizedClientScope(clientScopeId);
         }
 
         if (clientScope != null) {

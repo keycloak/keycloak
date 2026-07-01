@@ -446,6 +446,11 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
+    public ClientScopeModel getParameterizedClientScope(String scope) {
+        return getDelegate().getParameterizedClientScope(scope);
+    }
+
+    @Override
     public int getNotBefore() {
         return getDelegate().getNotBefore();
     }
