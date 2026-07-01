@@ -19,6 +19,7 @@ package org.keycloak.models.sessions.infinispan;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
@@ -135,6 +136,9 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     @Override
     public RootAuthenticationSessionModel getRootAuthenticationSession(RealmModel realm, String authenticationSessionId) {
         RootAuthenticationSessionEntity entity = getRootAuthenticationSessionEntity(authenticationSessionId);
+        if (entity != null && !Objects.equals(realm.getId(), entity.getRealmId())) {
+            return null;
+        }
         return wrap(realm, entity);
     }
 
