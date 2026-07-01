@@ -34,13 +34,14 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.jpa.entities.CompositeRoleEntity;
+import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.jpa.entities.RoleAttributeEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.jpa.OrganizationAdapter;
+import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.utils.StreamsUtil;
 
 import static java.util.Optional.ofNullable;
@@ -111,6 +112,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public void addCompositeRole(RoleModel role) {
+        OrganizationsValidation.validateOrganizationRoleComposite(this, role);
         RoleEntity parent = em.getReference(RoleEntity.class, getId());
         RoleEntity child = em.getReference(RoleEntity.class, role.getId());
         if (em.find(CompositeRoleEntity.class, new CompositeRoleEntity.Key(parent, child)) == null) {

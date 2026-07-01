@@ -109,7 +109,7 @@ public class RoleByIdResource extends RoleResource {
 
     protected RoleModel getRoleModel(String id) {
         RoleModel roleModel = realm.getRoleById(id);
-        if (roleModel == null) {
+        if (roleModel == null || roleModel.isOrganizationRole()) {
             throw new NotFoundException("Could not find role with id");
         }
        return roleModel;
