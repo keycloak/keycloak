@@ -26,7 +26,11 @@ import jakarta.persistence.EntityManager;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -40,6 +44,7 @@ import org.keycloak.models.jpa.JpaRealmProvider;
 import org.keycloak.models.jpa.RoleAdapter;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
@@ -53,9 +58,12 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assume.assumeNotNull;
 
 @RequireProvider(RealmProvider.class)
 @RequireProvider(ClientProvider.class)
+@RequireProvider(ClientScopeProvider.class)
+@RequireProvider(GroupProvider.class)
 @RequireProvider(RoleProvider.class)
 @RequireProvider(value = OrganizationProvider.class, only = "jpa")
 public class OrganizationRoleModelTest extends KeycloakModelTest {
@@ -187,6 +195,113 @@ public class OrganizationRoleModelTest extends KeycloakModelTest {
     }
 
     @Test
+    public void shouldRejectOrganizationRoleMappingsForNonMembers() {
+        withRealm(realmId, (session, realm) -> {
+            OrganizationProvider organizations = session.getProvider(OrganizationProvider.class);
+            OrganizationModel acme = getOrganization(session, ACME_ID);
+            OrganizationModel other = getOrganization(session, OTHER_ID);
+            UserModel user = session.users().addUser(realm, "not-an-organization-member");
+            RoleModel acmeRole = acme.addRole("member-only-role");
+            RoleModel otherRole = other.addRole("other-member-only-role");
+
+            assertThrows(ModelException.class, () -> user.grantRole(acmeRole));
+            assertThat(user.hasDirectRole(acmeRole), is(false));
+
+            organizations.addMember(acme, user);
+            assertThrows(ModelException.class, () -> user.grantRole(otherRole));
+            assertThat(user.hasDirectRole(otherRole), is(false));
+
+            user.grantRole(acmeRole);
+            assertThat(user.hasDirectRole(acmeRole), is(true));
+
+            return null;
+        });
+    }
+
+    @Test
+    public void shouldValidateDirectFederatedRoleMappings() {
+        withRealm(realmId, (session, realm) -> {
+            UserFederatedStorageProvider federatedStorage = session.getProvider(UserFederatedStorageProvider.class);
+            assumeNotNull(federatedStorage);
+
+            OrganizationProvider organizations = session.getProvider(OrganizationProvider.class);
+            OrganizationModel organization = getOrganization(session, ACME_ID);
+            UserModel user = session.users().addUser(realm, "federated-role-member");
+            RoleModel role = organization.addRole("federated-role");
+
+            assertThrows(ModelException.class, () -> federatedStorage.grantRole(realm, user.getId(), role));
+
+            organizations.addMember(organization, user);
+            federatedStorage.grantRole(realm, user.getId(), role);
+            assertThat(roleIds(federatedStorage.getRoleMappingsStream(realm, user.getId())), contains(role.getId()));
+
+            return null;
+        });
+    }
+
+    @Test
+    public void shouldRejectOrganizationRoleMappingsForGroups() {
+        withRealm(realmId, (session, realm) -> {
+            OrganizationModel organization = getOrganization(session, ACME_ID);
+            GroupModel group = session.groups().createGroup(realm, "organization-role-group");
+            RoleModel role = organization.addRole("group-only-role");
+            RoleModel realmRole = session.roles().addRealmRole(realm, "realm-group-role");
+
+            assertThrows(ModelException.class, () -> group.grantRole(role));
+            assertThat(group.hasDirectRole(role), is(false));
+            group.grantRole(realmRole);
+            assertThat(group.hasDirectRole(realmRole), is(true));
+
+            return null;
+        });
+    }
+
+    @Test
+    public void shouldValidateOrganizationRoleComposites() {
+        withRealm(realmId, (session, realm) -> {
+            OrganizationModel acme = getOrganization(session, ACME_ID);
+            OrganizationModel other = getOrganization(session, OTHER_ID);
+            ClientModel client = session.clients().getClientByClientId(realm, CLIENT_ID);
+            RoleModel parent = acme.addRole("composite-parent");
+            RoleModel child = acme.addRole("composite-child");
+            RoleModel otherRole = other.addRole("composite-child");
+            RoleModel realmRole = session.roles().addRealmRole(realm, "composite-realm-role");
+            RoleModel clientRole = session.roles().addClientRole(client, "composite-client-role");
+
+            parent.addCompositeRole(child);
+            parent.addCompositeRole(realmRole);
+            parent.addCompositeRole(clientRole);
+
+            assertThat(roleIds(parent.getCompositesStream()), containsInAnyOrder(child.getId(), realmRole.getId(), clientRole.getId()));
+            assertThrows(ModelException.class, () -> parent.addCompositeRole(otherRole));
+            assertThrows(ModelException.class, () -> realmRole.addCompositeRole(child));
+            assertThrows(ModelException.class, () -> clientRole.addCompositeRole(child));
+
+            return null;
+        });
+    }
+
+    @Test
+    public void shouldRejectOrganizationRolesInScopeMappings() {
+        withRealm(realmId, (session, realm) -> {
+            OrganizationModel organization = getOrganization(session, ACME_ID);
+            ClientModel client = session.clients().getClientByClientId(realm, CLIENT_ID);
+            ClientScopeModel clientScope = session.clientScopes().addClientScope(realm, "organization-role-client-scope");
+            RoleModel role = organization.addRole("scope-only-role");
+            RoleModel realmRole = session.roles().addRealmRole(realm, "realm-scope-role");
+
+            assertThrows(ModelException.class, () -> client.addScopeMapping(role));
+            assertThrows(ModelException.class, () -> clientScope.addScopeMapping(role));
+            client.addScopeMapping(realmRole);
+            clientScope.addScopeMapping(realmRole);
+            assertThat(client.hasDirectScope(realmRole), is(true));
+            assertThat(clientScope.hasDirectScope(realmRole), is(true));
+
+            return null;
+        });
+    }
+
+    @Test
     public void shouldProtectDefaultRoleAndRemoveRolesWithOrganization() {
         String[] roleIds = withRealm(realmId, (session, realm) -> {
             OrganizationProvider organizations = session.getProvider(OrganizationProvider.class);
@@ -266,6 +381,10 @@ public class OrganizationRoleModelTest extends KeycloakModelTest {
 
     private List<String> roleNames(java.util.stream.Stream<RoleModel> roles) {
         return roles.map(RoleModel::getName).collect(Collectors.toList());
+    }
+
+    private List<String> roleIds(java.util.stream.Stream<RoleModel> roles) {
+        return roles.map(RoleModel::getId).collect(Collectors.toList());
     }
 
     private RoleModel roleWithoutContainer() {
