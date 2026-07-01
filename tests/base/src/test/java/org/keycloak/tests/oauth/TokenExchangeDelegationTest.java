@@ -19,6 +19,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantTypeFactory;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
@@ -52,6 +53,9 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.keycloak.representations.IDToken.MAY_ACT;
+import static org.keycloak.representations.JsonWebToken.SUBJECT;
 
 /**
  *
@@ -104,6 +108,7 @@ public class TokenExchangeDelegationTest {
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
         assertScopeNotContains(res.getScope(), scope);
+        assertMayActNotPresent(oauth.verifyToken(res.getAccessToken()));
 
         // logout
         LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
@@ -138,17 +143,20 @@ public class TokenExchangeDelegationTest {
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
         assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), administrator.getId());
 
         // refresh the token
         res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
         Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
         assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), administrator.getId());
 
         // remove the impersonation and refresh the token
         administrator.admin().roles().clientLevel(clientUUID).remove(List.of(impersonation));
         res = oauth.doRefreshTokenRequest(res.getRefreshToken());
         Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
         assertScopeNotContains(res.getScope(), scope);
+        assertMayActNotPresent(oauth.verifyToken(res.getAccessToken()));
 
         // logout
         LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
@@ -215,21 +223,35 @@ public class TokenExchangeDelegationTest {
                 .details(Details.USERNAME, USERNAME)
                 .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), administrator.getId());
 
         // refresh the token
         res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
         Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
         assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), administrator.getId());
 
         // remove the impersonation and refresh the token
         administrator.admin().roles().clientLevel(clientUUID).remove(List.of(impersonation));
         res = oauth.doRefreshTokenRequest(res.getRefreshToken());
         Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
         assertScopeNotContains(res.getScope(), scope);
+        assertMayActNotPresent(oauth.verifyToken(res.getAccessToken()));
 
         // logout
         LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
         Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void assertMayActPresent(AccessToken token, String expectedActorId) {
+        Map<String, Object> mayAct = (Map<String, Object>) token.getOtherClaims().get(MAY_ACT);
+        Assertions.assertNotNull(mayAct, "may_act claim should be present");
+        Assertions.assertEquals(expectedActorId, mayAct.get(SUBJECT), "may_act.sub should contain the actor user ID");
+    }
+
+    private static void assertMayActNotPresent(AccessToken token) {
+        Assertions.assertNull(token.getOtherClaims().get(MAY_ACT), "may_act claim should not be present");
     }
 
     private static void assertScopeContains(String scopeString, String expectedScope) {
@@ -283,4 +305,5 @@ public class TokenExchangeDelegationTest {
                     .email("administrator@localhost").firstName("Administrator").lastName("User");
         }
     }
+
 }
