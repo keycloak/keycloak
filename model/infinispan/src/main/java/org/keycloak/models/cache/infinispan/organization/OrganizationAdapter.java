@@ -26,6 +26,8 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.infinispan.LazyModel;
 import org.keycloak.organization.OrganizationProvider;
@@ -77,6 +79,55 @@ public class OrganizationAdapter implements OrganizationModel {
     public String getId() {
         if (isUpdated()) return updated.getId();
         return cached.getId();
+    }
+
+    @Override
+    public RealmModel getRealm() {
+        if (isUpdated()) return updated.getRealm();
+        return session.realms().getRealm(cached.getRealm());
+    }
+
+    @Override
+    public RoleModel getDefaultRole() {
+        if (isUpdated()) return updated.getDefaultRole();
+        String defaultRoleId = cached.getDefaultRoleId();
+        return defaultRoleId == null ? null : session.roles().getRoleById(this, defaultRoleId);
+    }
+
+    @Override
+    public void setDefaultRole(RoleModel role) {
+        getDelegateForUpdate();
+        updated.setDefaultRole(role);
+    }
+
+    @Override
+    public RoleModel getRole(String name) {
+        return session.roles().getOrganizationRole(this, name);
+    }
+
+    @Override
+    public RoleModel addRole(String id, String name) {
+        return session.roles().addOrganizationRole(this, id, name);
+    }
+
+    @Override
+    public boolean removeRole(RoleModel role) {
+        return session.roles().removeRole(role);
+    }
+
+    @Override
+    public Stream<RoleModel> getRolesStream() {
+        return session.roles().getOrganizationRolesStream(this);
+    }
+
+    @Override
+    public Stream<RoleModel> getRolesStream(Integer firstResult, Integer maxResults) {
+        return session.roles().getOrganizationRolesStream(this, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
+        return session.roles().searchForOrganizationRolesStream(this, search, first, max);
     }
 
     @Override
