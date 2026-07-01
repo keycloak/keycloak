@@ -19,11 +19,12 @@ package org.keycloak.storage.role;
 import java.util.stream.Stream;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
 /**
- * Abstraction interface for lookup of both realm roles and client roles by id, name and description.
+ * Abstraction interface for lookup of realm, client and organization roles by id, name and description.
  */
 public interface RoleLookupProvider {
 
@@ -97,4 +98,39 @@ public interface RoleLookupProvider {
      * Never returns {@code null}.
      */
     Stream<RoleModel> searchForClientRolesStream(RealmModel realm, String search, Stream<String> excludedIds, Integer first, Integer max);
+
+    /**
+     * Returns an organization role by name within the given organization.
+     *
+     * @param organization Organization that owns the role.
+     * @param name Role name.
+     * @return Model of the role, or {@code null} if no role is found.
+     */
+    default RoleModel getOrganizationRole(OrganizationModel organization, String name) {
+        throw new UnsupportedOperationException("Organization roles are not supported by this provider");
+    }
+
+    /**
+     * Returns an organization role by internal ID within the given organization.
+     *
+     * @param organization Organization that owns the role.
+     * @param id Internal role ID.
+     * @return Model of the role, or {@code null} if no role is found in the organization.
+     */
+    default RoleModel getRoleById(OrganizationModel organization, String id) {
+        throw new UnsupportedOperationException("Organization roles are not supported by this provider");
+    }
+
+    /**
+     * Searches organization roles by name or description within the given organization.
+     *
+     * @param organization Organization that owns the roles.
+     * @param search Case-insensitive substring to search for. Ignored if {@code null}.
+     * @param first Index of the first result. Ignored if negative or {@code null}.
+     * @param max Maximum number of results. Ignored if negative or {@code null}.
+     * @return Stream of matching roles. Never returns {@code null}.
+     */
+    default Stream<RoleModel> searchForOrganizationRolesStream(OrganizationModel organization, String search, Integer first, Integer max) {
+        throw new UnsupportedOperationException("Organization roles are not supported by this provider");
+    }
 }

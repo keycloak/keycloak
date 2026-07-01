@@ -29,6 +29,12 @@ import org.keycloak.provider.ProviderEvent;
  */
 public interface RoleModel {
 
+    enum Type {
+        REALM,
+        CLIENT,
+        ORGANIZATION
+    }
+
     interface RoleNameChangeEvent extends ProviderEvent {
         RealmModel getRealm();
         String getNewName();
@@ -138,6 +144,31 @@ public interface RoleModel {
     Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max);
 
     boolean isClientRole();
+
+    /**
+     * Returns the scope that owns this role. The default implementation preserves compatibility
+     * with role providers that only implement {@link #isClientRole()} while recognizing an
+     * {@link OrganizationModel} container as an organization role.
+     *
+     * @return the role type
+     */
+    default Type getType() {
+        if (isClientRole()) {
+            return Type.CLIENT;
+        }
+        if (getContainer() instanceof OrganizationModel) {
+            return Type.ORGANIZATION;
+        }
+        return Type.REALM;
+    }
+
+    default boolean isRealmRole() {
+        return getType() == Type.REALM;
+    }
+
+    default boolean isOrganizationRole() {
+        return getType() == Type.ORGANIZATION;
+    }
 
     String getContainerId();
 
