@@ -258,6 +258,56 @@ kubectl apply -k ./
 ----
 
 You can now create `Keycloak` custom resources in any namespace. The Operator reconciles resources cluster-wide.
+
+=== Installing by using Helm
+
+The Operator Helm chart is published as an OCI artifact to Quay alongside each Operator release. It installs the Operator cluster-wide, deploying the same resources as the `kubectl` install path above, with values that let you tune image, resources, and CRD management.
+
+Install the Operator into the `keycloak` namespace:
+
+[source,bash,subs="attributes+"]
+----
+helm install keycloak-operator oci://quay.io/keycloak/keycloak-operator-helm \
+  --namespace keycloak --create-namespace
+----
+
+By default, the chart installs the Operator CRDs (for example `Keycloak`, `KeycloakRealmImport`, `KeycloakOIDCClient`, `KeycloakSAMLClient`) as part of the release. If your CRDs are managed out-of-band (for example, applied separately as part of a cluster bootstrap), disable CRD installation with `--set crds.enabled=false`.
+
+==== Tuning the install
+
+Common values you may want to override:
+
+[cols="1,2",options="header"]
+|===
+| Value | Description
+| `operator.image` | Operator image reference. Defaults to the image published for this release.
+| `operator.resources.limits.cpu` / `operator.resources.limits.memory` | Container CPU/memory limits.
+| `operator.resources.requests.cpu` / `operator.resources.requests.memory` | Container CPU/memory requests.
+| `crds.enabled` | Whether to install the CRDs as part of this release. Defaults to `true`.
+|===
+
+Run `helm show values oci://quay.io/keycloak/keycloak-operator-helm` for the full list.
+
+==== Migrating from the kubectl install path
+
+The Helm chart deploys the same Kubernetes resources as the kustomize install above (same `ServiceAccount`, `ClusterRole`, `ClusterRoleBinding`, `Service`, `Deployment` names). Migration steps:
+
+. Delete the existing operator install, **keeping** the CRDs (do not delete the `keycloaks.k8s.keycloak.org` or `keycloakrealmimports.k8s.keycloak.org` CRDs — that would garbage-collect every `Keycloak` and `KeycloakRealmImport` resource in the cluster).
++
+[source,bash,subs="attributes+"]
+----
+kubectl delete -k 'github.com/keycloak/keycloak-k8s-resources/cluster-wide?ref={version}'
+----
+
+. Install via Helm with `crds.enabled=false` so Helm does not try to re-create the CRDs Helm did not originally install:
++
+[source,bash,subs="attributes+"]
+----
+helm install keycloak-operator oci://quay.io/keycloak/keycloak-operator-helm \
+  --namespace keycloak --set crds.enabled=false
+----
+
+After the chart is installed and the operator is healthy, you can leave CRD management as-is (out-of-band) or transfer ownership to the chart on the next upgrade by setting the `helm.sh/resource-policy: keep` annotation on the existing CRDs and re-installing with `crds.enabled=true`.
 </@profile.ifCommunity>
 
 === Installing Multiple Operators
