@@ -352,7 +352,6 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               helpText={t("targetAudienceHelp")}
               defaultValue={[]}
               variant="typeaheadMulti"
-              placeholderText={t("targetAudiencePlaceHolder")}
             />
           </FormProvider>
         </Form>
