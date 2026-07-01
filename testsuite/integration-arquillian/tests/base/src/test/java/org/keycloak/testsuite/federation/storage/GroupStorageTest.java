@@ -19,6 +19,7 @@ package org.keycloak.testsuite.federation.storage;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.time.Duration;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
@@ -133,6 +134,7 @@ public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
     public void testNoCache() {
         testIsCached();
 
+        String providerId = this.providerId;
         try {
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName("test");
@@ -144,6 +146,36 @@ public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
             testNotCached();
             testNotCached();
         } finally {
+            setDefaultCachePolicy();
+        }
+
+        testIsCached();
+    }
+
+    @Test
+    public void testMaxLifespan() {
+        testIsCached();
+
+        String providerId = this.providerId;
+        try {
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName("test");
+                GroupStorageProviderModel model = new GroupStorageProviderModel(realm.getComponent(providerId));
+                model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.MAX_LIFESPAN);
+                model.setMaxLifespan(Duration.ofHours(1).toMillis());
+                realm.updateComponent(model);
+            });
+
+            testIsCached();
+
+            timeOffSet.set(Math.toIntExact(Duration.ofMinutes(30).toSeconds()));
+            testIsCached();
+
+            timeOffSet.set(Math.toIntExact(Duration.ofHours(2).toSeconds()));
+            testNotCached();
+            testIsCached();
+        } finally {
+            timeOffSet.set(0);
             setDefaultCachePolicy();
         }
 
@@ -162,6 +194,7 @@ public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void testIsCached() {
+        String providerId = this.providerId;
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             GroupModel hardcoded = session.groups().getGroupById(realm, new StorageId(providerId, "hardcoded-group").getId());
@@ -171,6 +204,7 @@ public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void setDefaultCachePolicy() {
+        String providerId = this.providerId;
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             GroupStorageProviderModel model = new GroupStorageProviderModel(realm.getComponent(providerId));
