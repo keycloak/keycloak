@@ -95,7 +95,7 @@ public class AuthnContextClassRefMapper extends AbstractSAMLProtocolMapper imple
         Map<String, Integer> acrLoaMap = AcrUtils.getUriLoaMap(clientSessionCtx.getClientSession().getClient());
         if (acrValue == null) {
             // no acr explicitly request in SAML, check if we have a specific name for this loa level
-            acrValue = acrLoaMap.entrySet().stream().filter(e -> loa == e.getValue()).map(Map.Entry::getKey).findAny().orElse(null);
+            acrValue = acrLoaMap.entrySet().stream().filter(e -> loa == e.getValue()).map(Map.Entry::getKey).sorted().findFirst().orElse(null);
         } else {
             // check the requested level was indeed achieved by the authentication flow, if not unspecified
             Integer requestedLevel = acrLoaMap.get(acrValue);
