@@ -700,7 +700,7 @@ public class TokenManager {
             // we also check parameterized scopes in case the client is from a provider that dynamically provides scopes to their clients
             ClientScopeModel clientScope = clientScopes.get(requestedScope);
             if (clientScope == null) {
-                clientScope = client.getDynamicClientScope(requestedScope);
+                clientScope = client.getParameterizedClientScope(requestedScope);
             }
             if (clientScope == null) {
                 // when organizations are disabled at realm level, silently ignore organization scopes
