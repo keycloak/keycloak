@@ -32,11 +32,12 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import org.keycloak.models.RoleModel;
+
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Nationalized;
-import org.keycloak.models.RoleModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -34,7 +34,6 @@ import liquibase.exception.CustomChangeException;
 import liquibase.sql.Sql;
 import liquibase.sqlgenerator.SqlGeneratorFactory;
 import liquibase.statement.SqlStatement;
-
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
