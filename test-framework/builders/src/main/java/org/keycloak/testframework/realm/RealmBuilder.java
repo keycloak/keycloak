@@ -641,8 +641,8 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
-    public RealmBuilder maxTemporaryLockouts(int maxTemporaryLockout) {
-        rep.setMaxTemporaryLockouts(maxTemporaryLockout);
+    public RealmBuilder maxTemporaryLockouts(int maxTemporaryLockouts) {
+        rep.setMaxTemporaryLockouts(maxTemporaryLockouts);
         return this;
     }
 

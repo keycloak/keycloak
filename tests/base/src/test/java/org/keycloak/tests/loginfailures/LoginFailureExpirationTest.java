@@ -56,11 +56,10 @@ public class LoginFailureExpirationTest {
 
     private static final int MAX_DELTA_TIME_SECONDS = 60; // 1 minute
 
-    // not important, just big enough to prevent negative values
-    // all the API receive the current time as parameter, and we avoid using Time.currentTimeSeconds() in testing
+    // Not important, just large enough to keep test timestamps positive. All APIs take the current time as a parameter,
+    // so we avoid calling Time.currentTimeSeconds() in this test.
     private static final int CURRENT_TIME_SECONDS = 60 * 60 * 5;
-    private static final int CURRENT_TIME_MILLIS = CURRENT_TIME_SECONDS * 1000;
-
+    private static final long CURRENT_TIME_MILLIS = (long) CURRENT_TIME_SECONDS * 1000L;
     @InjectRealm(config = ConfigureMaxDeltaTimeout.class)
     ManagedRealm realm;
 
