@@ -88,6 +88,9 @@ public class CredentialBuildConfig {
     // Needs to fit the provided signing key.
     private String ldpProofType;
 
+    // Defines additional issuer key resolution requirements. Null keeps regular OID4VCI issuance behavior.
+    private String issuerKeyResolutionStrategy;
+
     public static CredentialBuildConfig parse(KeycloakSession keycloakSession,
                                               SupportedCredentialConfiguration credentialConfiguration,
                                               CredentialScopeModel credentialModel) {
@@ -115,6 +118,7 @@ public class CredentialBuildConfig {
                                           .setNumberOfDecoys(credentialModel.getSdJwtNumberOfDecoys())
                                           .setSigningKeyId(credentialModel.getSigningKeyId())
                                           .setSigningAlgorithm(signingAlg)
+                                          .setIssuerKeyResolutionStrategy(credentialModel.getIssuerKeyResolutionStrategy())
                                           .setHashAlgorithm(credentialModel.getBuildConfigHashAlgorithm())
                                           .setSdJwtVisibleClaims(credentialModel.getBuildConfigSdJwtVisibleClaims());
     }
@@ -218,6 +222,15 @@ public class CredentialBuildConfig {
         return this;
     }
 
+    public String getIssuerKeyResolutionStrategy() {
+        return issuerKeyResolutionStrategy;
+    }
+
+    public CredentialBuildConfig setIssuerKeyResolutionStrategy(String issuerKeyResolutionStrategy) {
+        this.issuerKeyResolutionStrategy = issuerKeyResolutionStrategy;
+        return this;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -237,7 +250,9 @@ public class CredentialBuildConfig {
                 that.numberOfDecoys) && Objects.equals(signingKeyId, that.signingKeyId) && Objects.equals(overrideKeyId,
                                                                                                           that.overrideKeyId) && Objects.equals(
                 signingAlgorithm,
-                that.signingAlgorithm) && Objects.equals(ldpProofType, that.ldpProofType);
+                that.signingAlgorithm) && Objects.equals(ldpProofType, that.ldpProofType) && Objects.equals(
+                issuerKeyResolutionStrategy,
+                that.issuerKeyResolutionStrategy);
     }
 
     @Override
@@ -251,6 +266,7 @@ public class CredentialBuildConfig {
                             signingKeyId,
                             overrideKeyId,
                             signingAlgorithm,
-                            ldpProofType);
+                            ldpProofType,
+                            issuerKeyResolutionStrategy);
     }
 }
