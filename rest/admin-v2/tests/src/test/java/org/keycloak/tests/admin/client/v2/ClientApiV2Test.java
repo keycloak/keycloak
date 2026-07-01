@@ -439,6 +439,65 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
+    public void getClientsSortByCreatedTimestamp() {
+        try {
+            Time.setOffset(0);
+            createSortTestClient("sort-created-a", "A", "alpha");
+            Time.setOffset(1);
+            createSortTestClient("sort-created-b", "B", "beta");
+            Time.setOffset(2);
+            createSortTestClient("sort-created-c", "C", "gamma");
+
+            ListOptions listOptions = new ListOptions();
+            listOptions.setFields(Set.of("clientId"));
+            listOptions.setSort(List.of(SortOption.of(ClientField.CREATED_TIMESTAMP)));
+
+            try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
+                List<String> sortTestClientIds = clients
+                        .map(BaseClientRepresentation::getClientId)
+                        .filter(id -> id.startsWith("sort-created-"))
+                        .toList();
+                assertThat(sortTestClientIds, is(List.of("sort-created-a", "sort-created-b", "sort-created-c")));
+            }
+        } finally {
+            Time.setOffset(0);
+        }
+    }
+
+    @Test
+    public void getClientsSortByUpdatedTimestamp() throws JsonProcessingException {
+        try {
+            Time.setOffset(0);
+            createSortTestClient("sort-updated-a", "A", "alpha");
+            Time.setOffset(1);
+            createSortTestClient("sort-updated-b", "B", "beta");
+            Time.setOffset(2);
+            createSortTestClient("sort-updated-c", "C", "gamma");
+
+            Time.setOffset(10);
+            patchSortTestClient("sort-updated-c", "gamma updated");
+            Time.setOffset(11);
+            patchSortTestClient("sort-updated-a", "alpha updated");
+            Time.setOffset(12);
+            patchSortTestClient("sort-updated-b", "beta updated");
+
+            ListOptions listOptions = new ListOptions();
+            listOptions.setFields(Set.of("clientId"));
+            listOptions.setSort(List.of(SortOption.of(ClientField.UPDATED_TIMESTAMP)));
+
+            try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
+                List<String> sortTestClientIds = clients
+                        .map(BaseClientRepresentation::getClientId)
+                        .filter(id -> id.startsWith("sort-updated-"))
+                        .toList();
+                assertThat(sortTestClientIds, is(List.of("sort-updated-c", "sort-updated-a", "sort-updated-b")));
+            }
+        } finally {
+            Time.setOffset(0);
+        }
+    }
+
+    @Test
     public void getClientsSortByMultipleFieldsDesc() {
         createSortTestClient("sort-b", "B", "beta");
         createSortTestClient("sort-a", "A", "alpha");
@@ -514,6 +573,12 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             BaseClientRepresentation created = response.readEntity(BaseClientRepresentation.class);
             testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
+    }
+
+    private void patchSortTestClient(String clientId, String description) throws JsonProcessingException {
+        OIDCClientRepresentation patch = new OIDCClientRepresentation();
+        patch.setDescription(description);
+        getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
     }
 
     @Test
