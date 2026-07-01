@@ -25,6 +25,8 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -60,6 +62,8 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         OrganizationRepresentation orgRep = createOrganization("test-org", "test-org.com");
         organizationId = orgRep.getId();
         organization = managedRealm.admin().organizations().get(organizationId);
+
+        assertAdminEvents.clear();
     }
 
     @Override
@@ -100,13 +104,24 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
     public void testGetInvitationById() {
         // Create invitation
         sendInvitation("user@test-org.com", "Test", "User");
-        
+
         // Get invitations list
         List<OrganizationInvitationRepresentation> invitations = organization.invitations().list();
         assertThat(invitations, hasSize(1));
-        
+
         String invitationId = invitations.get(0).getId();
-        
+
+        assertAdminEvents.expect()
+                .realmId(TEST_REALM_NAME)
+                .operationType(OperationType.ACTION)
+                .resourceType(ResourceType.ORGANIZATION_MEMBERSHIP)
+                .resourcePath("organizations/" + organizationId + "/members/invite-user")
+                .representation(Map.of(
+                        "id", invitationId,
+                        "email", "user@test-org.com",
+                        "organizationId", organizationId))
+                .assertEvent();
+
         // Get invitation by ID
         OrganizationInvitationRepresentation invitation = organization.invitations().get(invitationId);
         
@@ -158,15 +173,37 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
     public void testDeleteInvitation() {
         // Create invitation
         sendInvitation("user@test-org.com", "Test", "User");
-        
+
         List<OrganizationInvitationRepresentation> invitations = organization.invitations().list();
         String invitationId = invitations.get(0).getId();
-        
+
+        assertAdminEvents.expect()
+                .realmId(TEST_REALM_NAME)
+                .operationType(OperationType.ACTION)
+                .resourceType(ResourceType.ORGANIZATION_MEMBERSHIP)
+                .resourcePath("organizations/" + organizationId + "/members/invite-user")
+                .representation(Map.of(
+                        "id", invitationId,
+                        "email", "user@test-org.com",
+                        "organizationId", organizationId))
+                .assertEvent();
+
         // Delete invitation
         try (Response response = organization.invitations().delete(invitationId)) {
             assertThat(response.getStatus(), equalTo(204));
         }
-        
+
+        assertAdminEvents.expect()
+                .realmId(TEST_REALM_NAME)
+                .operationType(OperationType.DELETE)
+                .resourceType(ResourceType.ORGANIZATION_MEMBERSHIP)
+                .resourcePath("organizations/" + organizationId + "/invitations/" + invitationId)
+                .representation(Map.of(
+                        "id", invitationId,
+                        "email", "user@test-org.com",
+                        "organizationId", organizationId))
+                .assertEvent();
+
         // Verify invitation is deleted
         try {
             OrganizationInvitationRepresentation invitation = organization.invitations().get(invitationId);
@@ -175,7 +212,7 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
             // Expected - invitation should not be found
             assertThat(e.getMessage(), containsString("404"));
         }
-        
+
         // Verify it's not in the list
         List<OrganizationInvitationRepresentation> updatedInvitations = organization.invitations().list();
         assertThat(updatedInvitations, empty());

@@ -158,6 +158,14 @@ public final class SsfPushUrlValidator {
                 String r = idx == -1 ? pushUrl : pushUrl.substring(0, idx);
                 int length = validUrl.length() - 1;
                 String trimmed = validUrl.substring(0, length);
+                // When the '*' is attached directly to the authority (no path
+                // separator after scheme://), a bare prefix match would also
+                // accept hosts that merely start with the allow-listed host.
+                int schemeIdx = trimmed.indexOf("://");
+                if (schemeIdx >= 0 && trimmed.indexOf('/', schemeIdx + 3) == -1
+                        && !trimmed.equals(r) && !r.startsWith(trimmed + "/")) {
+                    continue;
+                }
                 if (r.startsWith(trimmed)) {
                     return trimmed;
                 }

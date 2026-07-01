@@ -1,5 +1,6 @@
 package org.keycloak.models.mapper;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -47,7 +48,11 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
     }
  
     final Map<String, MappedField<BaseClientRepresentation>> fields = new LinkedHashMap<String, MappedField<BaseClientRepresentation>>();
-    
+
+    public Set<String> getFieldNames() {
+        return Collections.unmodifiableSet(fields.keySet());
+    }
+
     protected <F> void addMapping(String name, Function<T, F> repGetter, BiConsumer<T, F> repSetter, Function<ClientModel, F> modelGetter, BiConsumer<ClientModel, F> modelSetter) {
         MappedField prop = new MappedField<>();
         prop.repGetter = repGetter;
@@ -68,6 +73,8 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
         // TODO: consider built-in logic for copying collections
         this.addMapping("redirectUris", BaseClientRepresentation::getRedirectUris, BaseClientRepresentation::setRedirectUris, model -> new LinkedHashSet<>(model.getRedirectUris()), (model, uris) -> model.setRedirectUris(new LinkedHashSet<>(uris)));
         this.addMapping("roles", BaseClientRepresentation::getRoles, BaseClientRepresentation::setRoles, model -> model.getRolesStream().map(RoleModel::getName).collect(Collectors.toSet()), null);
+        this.addMapping("createdTimestamp", BaseClientRepresentation::getCreatedTimestamp, BaseClientRepresentation::setCreatedTimestamp, ClientModel::getCreatedTimestamp, null);
+        this.addMapping("updatedTimestamp", BaseClientRepresentation::getUpdatedTimestamp, BaseClientRepresentation::setUpdatedTimestamp, ClientModel::getLastModifiedTimestamp, null);
     }
     
     @Override

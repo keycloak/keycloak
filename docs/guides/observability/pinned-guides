@@ -16,3 +16,4 @@ metrics-for-troubleshooting-external-infinispan-multi-cluster
 tracing
 grafana-dashboards
 exemplars
+thread-dumps

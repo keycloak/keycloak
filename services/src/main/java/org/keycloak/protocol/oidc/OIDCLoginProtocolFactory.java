@@ -52,6 +52,7 @@ import org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
+import org.keycloak.protocol.oidc.scope.DelegationScopeType;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.IDToken;
@@ -117,6 +118,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String MICROPROFILE_JWT_SCOPE = "microprofile-jwt";
     public static final String ACR_SCOPE = "acr";
     public static final String BASIC_SCOPE = "basic";
+    public static final String DELEGATION_SCOPE = "delegation";
 
     public static final String PROFILE_SCOPE_CONSENT_TEXT = "${profileScopeConsentText}";
     public static final String EMAIL_SCOPE_CONSENT_TEXT = "${emailScopeConsentText}";
@@ -367,6 +369,18 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             organizationScope.addProtocolMapper(OrganizationMembershipMapper.create(ORGANIZATION, true, true, true));
             newRealm.addDefaultClientScope(organizationScope, false);
         }
+
+        if (Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_DELEGATION)) {
+            ClientScopeModel delegationScope = newRealm.addClientScope(DELEGATION_SCOPE);
+            delegationScope.setDescription("Delegation scope to add the 'may_act' claim to the access token using parameters");
+            delegationScope.setIsParameterizedScope(true);
+            delegationScope.setDisplayOnConsentScreen(true);
+            delegationScope.setAttribute(ClientScopeModel.IS_ALWAYS_CONSENT, Boolean.TRUE.toString());
+            delegationScope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, DelegationScopeType.TYPE);
+            delegationScope.setIncludeInTokenScope(true);
+            delegationScope.setProtocol(getId());
+            delegationScope.setConsentScreenText("${delegationScopeConsentText}");
+        }
     }
 
 
@@ -554,7 +568,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             }
         }
         if (rep.isBearerOnly() == null) newClient.setBearerOnly(false);
-        if (rep.getAdminUrl() == null && rep.getRootUrl() != null) {
+        if (rep.getAdminUrl() == null && rep.getRootUrl() != null && !rep.getRootUrl().equals(Constants.AUTH_ADMIN_URL_PROP) && !rep.getRootUrl().equals(Constants.AUTH_BASE_URL_PROP)) {
             newClient.setManagementUrl(rep.getRootUrl());
         }
 

@@ -1,0 +1,182 @@
+---
+# Source: keycloak/templates/keycloak-db-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: keycloak-db-secret
+  namespace: keycloak
+type: Opaque
+data:
+  username: a2V5Y2xvYWs= # keycloak
+  password: c2VjcmV0OTk= # secret99
+---
+# Source: keycloak/templates/keycloak-initial-admin-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak-preconfigured-admin
+  namespace: keycloak
+type: kubernetes.io/basic-auth
+data:
+  password: YWRtaW4= # admin by default
+  username: YWRtaW4= # admin
+---
+# Source: keycloak/templates/keycloak-tls-secret.yaml
+apiVersion: v1
+data:
+  tls.crt: ...
+  tls.key: ...
+kind: Secret
+metadata:
+  name: keycloak-tls-secret
+  namespace: keycloak
+type: kubernetes.io/tls
+---
+# Source: keycloak/templates/keycloak-db-rootcert.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-db-rootcert
+  namespace: keycloak
+binaryData:
+  db-ca.pem: ...
+---
+# Source: keycloak/templates/keycloak-providers-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-providers
+  namespace: keycloak
+binaryData:
+  keycloak-benchmark-dataset-999.0.0-SNAPSHOT.jar: ...
+---
+# Source: keycloak/templates/keycloak-jvmdebug-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak-jvmdebug
+  namespace: keycloak
+spec:
+  type: NodePort
+  ports:
+    - name: jvmdebug
+      port: 8787
+      protocol: TCP
+      nodePort: 30012
+  selector:
+    app: keycloak
+  sessionAffinity: None
+---
+# Source: keycloak/templates/keycloak.yaml
+# There are several callouts in this YAML marked with `# <1>' etc. See 'multi-cluster-v2/deploy-keycloak-kubernetes.adoc` for the details.
+# tag::keycloak-cacheless[]
+apiVersion: k8s.keycloak.org/v2beta1
+kind: Keycloak
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak
+  namespace: keycloak
+spec:
+  hostname:
+    hostname: <KEYCLOAK_URL_HERE>
+  resources:
+    requests:
+      cpu: "2"
+      memory: "1250M"
+    limits:
+      cpu: "6"
+      memory: "2250M"
+  db:
+    vendor: postgres
+    url: jdbc:postgresql://<DATABASE_URL_HERE>:5432/keycloak # <1>
+    poolMinSize: 30 # <2>
+    poolInitialSize: 30
+    poolMaxSize: 30
+    usernameSecret:
+      name: keycloak-db-secret
+      key: username
+    passwordSecret:
+      name: keycloak-db-secret
+      key: password
+  image: <KEYCLOAK_IMAGE_HERE> # <3>
+  startOptimized: false # <3>
+  update:
+    strategy: Auto
+  features:
+    enabled:
+      - cacheless # <4>
+  additionalOptions:
+    # end::keycloak-cacheless[]
+    - name: http-metrics-histograms-enabled
+      value: 'true'
+    - name: http-metrics-slos
+      value: '5,10,25,50,250,500'
+    # tag::keycloak-cacheless[]
+    # end::keycloak-cacheless[]
+    # tag::keycloak-cacheless-queue-size[]
+    - name: http-max-queued-requests
+      value: "1000"
+    # end::keycloak-cacheless-queue-size[]
+    # tag::keycloak-cacheless[]
+    - name: spi-cache-embedded--default--cluster-name
+      value: <CLUSTER_NAME_HERE> # <5>
+    - name: log-console-output
+      value: json
+    - name: metrics-enabled # <6>
+      value: 'true'
+    - name: event-metrics-user-enabled
+      value: 'true'
+    - name: db-tls-mode # <7>
+      value: verify-server
+  http:
+    tlsSecret: keycloak-tls-secret
+  instances: 3
+  # end::keycloak-cacheless[]
+  serviceMonitor:
+    enabled: true
+  # tag::keycloak-cacheless[]
+  truststores:
+    db:
+      configMap:
+        name: keycloak-db-rootcert # <8>
+  # end::keycloak-cacheless[]
+  unsupported:
+    podTemplate:
+      metadata:
+        annotations:
+          checksum/config: 9a64736b87fb375f9d49ccd588c92d7ceca493d025339a849ef7000135147efc-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+      spec:
+        containers:
+          - env:
+              # We want to have an externally provided username and password, therefore, we override those two environment variables
+              - name: KC_BOOTSTRAP_ADMIN_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: keycloak-preconfigured-admin
+                    key: username
+                    optional: false
+              - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: keycloak-preconfigured-admin
+                    key: password
+                    optional: false
+              - name: JAVA_OPTS_APPEND
+                value: >
+                  -Djdk.tracePinnedThreads=full
+
+            ports:
+            volumeMounts:
+              - name: keycloak-providers
+                mountPath: /opt/keycloak/providers/keycloak-benchmark-dataset-999.0.0-SNAPSHOT.jar
+                subPath: keycloak-benchmark-dataset-999.0.0-SNAPSHOT.jar
+                readOnly: true
+        volumes:
+          - name: keycloak-providers
+            configMap:
+              name: keycloak-providers

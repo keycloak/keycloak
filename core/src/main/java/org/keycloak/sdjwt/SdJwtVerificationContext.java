@@ -365,12 +365,19 @@ public class SdJwtVerificationContext {
                         // Mark salt as visited
                         markSaltAsVisited(decodedDisclosure.getSaltValue(), visitedSalts);
 
+                        // If the claim name already exists at the level of the _sd key,
+                        // the SD-JWT MUST be rejected (selective-disclosure-jwt, verification
+                        // of the Issuer-signed JWT). Otherwise a Disclosure could silently
+                        // shadow a claim that is present in plaintext or added by another Disclosure.
+                        String claimName = decodedDisclosure.getClaimName();
+                        if (currentObjectNode.has(claimName)) {
+                            throw new VerificationException(
+                                    "Disclosure claim name already present in the payload: " + claimName);
+                        }
+
                         // Insert, at the level of the _sd key, a new claim using the claim name
                         // and claim value from the Disclosure
-                        currentObjectNode.set(
-                                decodedDisclosure.getClaimName(),
-                                decodedDisclosure.getClaimValue()
-                        );
+                        currentObjectNode.set(claimName, decodedDisclosure.getClaimValue());
                     }
                 }
             }
