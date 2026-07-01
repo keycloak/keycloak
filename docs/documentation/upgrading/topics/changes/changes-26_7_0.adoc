@@ -4,6 +4,12 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Default Reset Credentials flow now requires existing OTP
+
+When a realm is created with the built-in default authentication flows, the *Reset - Conditional OTP* subflow inside the *Reset Credentials* flow now contains the `auth-otp-form` authenticator instead of `reset-otp`. The new default requires a user who has an OTP credential enrolled to enter that OTP before completing a password reset, which prevents an attacker who can read the user's password-reset email from rotating the OTP under their control. See link:https://github.com/keycloak/keycloak/issues/12759[GitHub issue #12759] for the prior discussion.
+
+Only realms created in this release or later use the new default. Existing realms keep their persisted Reset Credentials flow unchanged, so this is not an automatic upgrade. Built-in flows cannot be edited in place, so realm administrators who want the new behavior on an existing realm need to duplicate the *Reset Credentials* flow, replace the `Reset OTP` execution with `OTP Form` in the copy, and then bind the copy as the realm's Reset Credentials flow via the action menu in the admin console. Realm administrators who explicitly prefer the previous recovery model can keep the built-in flow as-is or configure a copy to use the `reset-otp` authenticator, which is still shipped and unchanged.
+
 === Test Framework representation builders
 
 The test framework provides a number of builders to simplify creating representations. These can be used on their own,
