@@ -505,6 +505,38 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
     }
 
 
+    @Test
+    public void testClientScopesPolicyWithAddDefaultScopes() throws Exception {
+        setTrustedHost("localhost");
+
+        // Add some clientScope through Admin REST
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName("foo");
+        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        Response response = managedRealm.admin().clientScopes().create(clientScope);
+        String clientScopeId = ApiUtil.getCreatedId(response);
+        response.close();
+        managedRealm.admin().addDefaultDefaultClientScope(clientScopeId);
+
+        ComponentRepresentation clientScopesPolicyRep = findPolicyByProviderAndAuth(ClientScopesClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
+        clientScopesPolicyRep.getConfig().putSingle(ClientScopesClientRegistrationPolicyFactory.ADD_DEFAULT_SCOPES, "true");
+        managedRealm.admin().components().component(clientScopesPolicyRep.getId()).update(clientScopesPolicyRep);
+
+        // Check that I can register client now and contains foo scope
+        ClientRepresentation clientRep = createRep("test-app");
+        clientRep.setDefaultClientScopes(Collections.singletonList("address"));
+        ClientRepresentation registeredClient = reg.create(clientRep);
+        Assertions.assertNotNull(registeredClient.getRegistrationAccessToken());
+        var clientResource = AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), "test-app");
+        Assertions.assertTrue(clientResource.getDefaultClientScopes().stream().anyMatch(x -> clientScopeId.equals(x.getId())), "Client should contain 'foo' as a default client scope");
+
+        // Revert client scope
+        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), "test-app").remove();
+        managedRealm.admin().clientScopes().get(clientScopeId).remove();
+        clientScopesPolicyRep.getConfig().putSingle(ClientScopesClientRegistrationPolicyFactory.ADD_DEFAULT_SCOPES, "false");
+        managedRealm.admin().components().component(clientScopesPolicyRep.getId()).update(clientScopesPolicyRep);
+    }
+
     // PROTOCOL MAPPERS
 
     @Test
