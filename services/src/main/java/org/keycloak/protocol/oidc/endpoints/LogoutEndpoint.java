@@ -83,6 +83,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LogoutSessionCodeChecks;
 import org.keycloak.services.resources.SessionCodeChecks;
 import org.keycloak.services.util.LocaleUtil;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -505,6 +506,10 @@ public class LogoutEndpoint {
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
+
+        // Parse and validate the DPoP proof from the request header (if present),
+        // so that DPoP-bound refresh tokens can be verified in verifyRefreshToken.
+        DPoPUtil.handleDPoPHeader(session, event, cors, OIDCAdvancedConfigWrapper.fromClientModel(client));
 
         RefreshToken token = null;
         try {
