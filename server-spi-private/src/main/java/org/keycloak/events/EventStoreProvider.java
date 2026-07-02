@@ -52,6 +52,7 @@ public interface EventStoreProvider extends EventListenerProvider {
      *
      * @deprecated Unused method. Currently, used only in the testsuite
      */
+    @Deprecated(forRemoval = true, since = "26.6")
     void clear();
 
     /**
@@ -84,6 +85,7 @@ public interface EventStoreProvider extends EventListenerProvider {
      *
      * @deprecated Unused method. Currently, used only in the testsuite
      */
+    @Deprecated(forRemoval = true, since = "26.6")
     void clearAdmin();
 
     /**
