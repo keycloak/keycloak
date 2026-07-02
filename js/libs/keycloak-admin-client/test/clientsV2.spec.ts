@@ -91,6 +91,78 @@ describe("Clients V2 API", () => {
     );
   });
 
+  it("should filter and sort clients", async () => {
+    const clientId1 = faker.internet.username();
+    const clientId2 = faker.internet.username();
+
+    // Create two clients using v2 API
+    await kcAdminClient.clients.v2().post({
+      clientId: clientId1,
+      protocol: "openid-connect",
+      enabled: true,
+    });
+
+    await kcAdminClient.clients.v2().post({
+      clientId: clientId2,
+      protocol: "openid-connect",
+      enabled: true,
+    });
+
+    // Verify we can get them via v2 API
+    const clients = await kcAdminClient.clients.v2().get();
+    expect(clients).to.be.ok;
+    expect(clients).to.be.an("array");
+
+    const client1 = clients!.find(
+      (c) => (c as OIDCClientRepresentation).clientId === clientId1,
+    );
+    expect(client1).to.be.ok;
+
+    const client2 = clients!.find(
+      (c) => (c as OIDCClientRepresentation).clientId === clientId2,
+    );
+    expect(client2).to.be.ok;
+
+    // Sort by clientId
+    const sortedClients = await kcAdminClient.clients.v2().get({
+      queryParameters: {
+        sort: "clientId",
+      },
+    });
+    expect(sortedClients).to.be.ok;
+    expect(sortedClients).to.be.an("array");
+    const clientIds = sortedClients!.map(
+      (c) => (c as OIDCClientRepresentation).clientId,
+    );
+    expect(clientIds.toSorted()).to.deep.equal(clientIds);
+
+    const sortedClient1 = sortedClients!.find(
+      (c) => (c as OIDCClientRepresentation).clientId === clientId1,
+    );
+    expect(sortedClient1).to.be.ok;
+
+    const sortedClient2 = sortedClients!.find(
+      (c) => (c as OIDCClientRepresentation).clientId === clientId2,
+    );
+    expect(sortedClient2).to.be.ok;
+
+    // Filter by clientId
+    const filteredClients = await kcAdminClient.clients.v2().get({
+      queryParameters: {
+        fields: ["clientId"],
+        q: `clientId eq "${clientId1}"`,
+      },
+    });
+    expect(filteredClients).to.be.ok;
+    expect(filteredClients).to.be.an("array");
+    expect(filteredClients!.length).to.equal(1);
+
+    const filteredClient1 = filteredClients!.find(
+      (c) => (c as OIDCClientRepresentation).clientId === clientId1,
+    );
+    expect(filteredClient1).to.be.ok;
+  });
+
   it("should create and delete a client", async () => {
     const clientId = faker.internet.username();
 
