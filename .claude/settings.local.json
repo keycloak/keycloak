@@ -1,0 +1,56 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh :*)",
+      "Bash(gh pr:*)",
+      "Bash(python3:*)",
+      "WebFetch(domain:mitre.org)",
+      "WebFetch(domain:keycloak.org)",
+      "WebFetch(domain:github.com)",
+      "Read(//tmp/**)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(./mvnw:*)",
+      "Bash(git:*)",
+      "WebFetch(domain:services.nvd.nist.gov)",
+      "Bash(xargs ls -la)",
+      "Bash(mvn compile *)",
+      "Bash(xargs cat)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(awk '/^```mermaid$/,/^```$/' .agents/reference_keycloak_dataflow_diagrams.md)",
+      "Bash(awk 'BEGIN{n=0} /^```mermaid$/{n++; nodes=0; edges=0; name=\"diagram \"n} /\\\\[.*\\\\]/{nodes++} /-->/{edges++} /^```$/ && n>0{print name\": \"nodes\" nodes, \"edges\" edges\"}')",
+      "Bash(head -353 .agents/reference_keycloak_dataflow_diagrams.md)",
+      "Bash(mv /tmp/dfd_index_trimmed.md .agents/reference_keycloak_dataflow_diagrams.md)",
+      "Bash(gh api *)",
+      "Bash(awk '{print $2}')",
+      "Bash(awk '/GroupResourceTypeProvider.java/,/^diff --git/' /tmp/pr-49892.diff)",
+      "Bash(awk '/^From 5b0de64b3d/,0')",
+      "WebFetch(domain:owasp.org)",
+      "Bash(awk '/^## Assets/,/^## Threat/' /pedroigor/development/workspace/redhat/keycloak/keycloak/.agents/core-iam/dfd/scim.md)",
+      "Bash(awk '/^## Threat Targets/,/^## Components/' /pedroigor/development/workspace/redhat/keycloak/keycloak/.agents/core-iam/dfd/scim.md)",
+      "Bash(awk '/^## Component-to-File Mapping/,0' /pedroigor/development/workspace/redhat/keycloak/keycloak/.agents/core-iam/core-iam-reference-architecture.md)",
+      "Bash(chmod +x /home/pedroigor/bin/mvn)",
+      "Read(//pedroigor/development/tools/maven/current/bin/**)",
+      "Bash(/pedroigor/development/tools/maven/current/bin/mvn -pl scim/tests/base -am compile test-compile -DskipTests -Denforcer.skip=true -q)",
+      "Bash(bash /pedroigor/development/workspace/redhat/keycloak/keycloak/mvnw -pl scim/tests/base -am compile test-compile -DskipTests -Denforcer.skip=true -q)",
+      "Bash(bash /pedroigor/development/workspace/redhat/keycloak/keycloak/mvnw -pl scim/tests/base -am compile test-compile -DskipTests -Denforcer.skip=true)",
+      "WebFetch(domain:datatracker.ietf.org)",
+      "Bash(echo \"exit: $?\")"
+    ]
+  },
+  "hooks": {
+    "PostToolUseFailure": [
+      {
+        "matcher": "Read|Write|Edit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/nono-hook.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "autoMemoryEnabled": true,
+  "autoMemoryDirectory": ".agents/memory"
+}
