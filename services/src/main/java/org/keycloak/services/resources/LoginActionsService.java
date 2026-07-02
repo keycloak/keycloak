@@ -684,9 +684,9 @@ public class LoginActionsService {
 
                 authSession = handler.startFreshAuthenticationSession(token, tokenContext);
                 tokenContext.setAuthenticationSession(authSession, true);
-
-                processLocaleParam(authSession);
             }
+
+            processLocaleParam(authSession);
 
             sessionContext.setAuthenticationSession(authSession);
             initLoginEvent(authSession);
