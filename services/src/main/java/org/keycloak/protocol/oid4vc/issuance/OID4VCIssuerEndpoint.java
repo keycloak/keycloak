@@ -79,6 +79,7 @@ import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderException;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderFactory;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
@@ -1638,6 +1639,7 @@ public class OID4VCIssuerEndpoint {
                     return null;
                 })
                 .filter(Objects::nonNull)
+                .filter(mapper -> mapper.supportsCredentialFormat(credentialScopeModel.getFormat()))
                 .toList();
 
         VCIssuanceContext vcIssuanceContext = getVCToSign(protocolMappers, credentialConfig, authResult, authDetail, credentialRequestVO, credentialScopeModel, eventBuilder);
@@ -1729,26 +1731,49 @@ public class OID4VCIssuerEndpoint {
                 .setType(credentialScopeModel.getSupportedCredentialTypes());
 
         Map<String, Object> subjectClaims = new HashMap<>();
-        protocolMappers.forEach(mapper -> mapper.setClaim(subjectClaims, authResult.session()));
-
         Map<String, Object> subjectClaimsWithMetadataPrefix = new HashMap<>();
-        protocolMappers
-                .forEach(mapper -> mapper.setClaimWithMetadataPrefix(subjectClaims, subjectClaimsWithMetadataPrefix));
+
+        if (VCFormat.MSO_MDOC.equals(credentialConfig.getFormat())) {
+            // mDoc data element identifiers may repeat across namespaces while sharing one raw claim key, so each
+            // mapper writes into its own scratch map. A shared map would let a mapper without a value pick up the
+            // claim of a previous mapper with the same name and copy it into the wrong namespace.
+            protocolMappers.forEach(mapper -> {
+                Map<String, Object> mapperClaims = new HashMap<>();
+                mapper.setClaim(mapperClaims, authResult.session());
+                mapper.setClaimWithMetadataPrefix(mapperClaims, subjectClaimsWithMetadataPrefix);
+            });
+        } else {
+            protocolMappers.forEach(mapper -> mapper.setClaim(subjectClaims, authResult.session()));
+            protocolMappers
+                    .forEach(mapper -> mapper.setClaimWithMetadataPrefix(subjectClaims, subjectClaimsWithMetadataPrefix));
+        }
 
         // Validate that requested claims from authorization_details are present
         String credentialConfigId = credentialConfig.getId();
         validateRequestedClaimsArePresent(subjectClaimsWithMetadataPrefix, credentialConfig, authResult.user(), authDetail, credentialConfigId, eventBuilder);
 
+        // OID4VCI 1.0 Appendix C.2 gives ISO mdoc paths namespace/data-element semantics. The metadata-prefixed
+        // claim map already has that namespace -> data element layout; JSON-based formats keep credentialSubject.
+        Map<String, Object> credentialSubjectClaims = VCFormat.MSO_MDOC.equals(credentialConfig.getFormat())
+                ? subjectClaimsWithMetadataPrefix
+                : subjectClaims;
+
         // Include all available claims
-        subjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
+        credentialSubjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
 
         protocolMappers.forEach(mapper -> mapper.setClaim(vc, authResult.session()));
 
         LOGGER.debugf("The credential to sign is: %s", vc);
 
         // Build format-specific credential
-        CredentialBody credentialBody = this.findCredentialBuilder(credentialConfig)
-                .buildCredentialBody(vc, credentialConfig.getCredentialBuildConfig());
+        CredentialBody credentialBody;
+        try {
+            credentialBody = this.findCredentialBuilder(credentialConfig)
+                    .buildCredentialBody(vc, credentialConfig.getCredentialBuildConfig());
+        } catch (CredentialBuilderException e) {
+            throw badRequestException(ErrorType.INVALID_CREDENTIAL_REQUEST,
+                    "Could not build credential: " + e.getMessage(), eventBuilder);
+        }
 
         return new VCIssuanceContext()
                 .setAuthResult(authResult)

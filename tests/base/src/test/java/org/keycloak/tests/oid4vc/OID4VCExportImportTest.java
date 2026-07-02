@@ -68,7 +68,7 @@ public class OID4VCExportImportTest extends OID4VCIssuerTestBase {
         List<UserVerifiableCredentialRepresentation> verifiableCreds = testRealm.admin().users().get(john.getId()).verifiableCredentials().getCredentials();
         Map<String, List<String>> userAttributes = john.getRawAttributes();
         assertNotNull(userAttributes);
-        assertUserCredentials(verifiableCreds, userAttributes, jwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, jwtTypeNaturalPersonScopeName, sdJwtTypeNaturalPersonScopeName);
+        assertUserCredentials(verifiableCreds, userAttributes, jwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, mdocTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, jwtTypeNaturalPersonScopeName, sdJwtTypeNaturalPersonScopeName);
 
         // Export realm
         exportRealm("oid4vc-test-realm.json");
@@ -88,7 +88,7 @@ public class OID4VCExportImportTest extends OID4VCIssuerTestBase {
         assertEquals(verifiableCreds, importedVerifiableCreds);
 
         // Verify each credential's userAttributes are preserved
-        assertUserCredentials(importedVerifiableCreds, userAttributes, jwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, jwtTypeNaturalPersonScopeName, sdJwtTypeNaturalPersonScopeName);
+        assertUserCredentials(importedVerifiableCreds, userAttributes, jwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, mdocTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, jwtTypeNaturalPersonScopeName, sdJwtTypeNaturalPersonScopeName);
 
     }
 

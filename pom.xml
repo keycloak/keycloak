@@ -1328,7 +1328,6 @@
                 <artifactId>rdf-urdna</artifactId>
                 <version>${io.setl.rdf-urdna.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-core</artifactId>

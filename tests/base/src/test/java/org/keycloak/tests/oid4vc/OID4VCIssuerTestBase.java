@@ -56,6 +56,7 @@ import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsParser;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
@@ -74,6 +75,7 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.DPoPBindEnforcerExecutorFactory;
@@ -124,6 +126,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS;
@@ -160,6 +163,7 @@ public abstract class OID4VCIssuerTestBase {
 
     public static final String jwtTypeNaturalPersonScopeName = "oid4vc_natural_person_jwt";
     public static final String sdJwtTypeNaturalPersonScopeName = "oid4vc_natural_person_sd";
+    public static final String mdocTypeNaturalPersonScopeName = "oid4vc_natural_person_mdoc";
 
     public static final String sdJwtTypeCredentialScopeName = "sd-jwt-credential";
     public static final String sdJwtTypeCredentialConfigurationIdName = "sd-jwt-credential-config-id";
@@ -169,6 +173,10 @@ public abstract class OID4VCIssuerTestBase {
     public static final String jwtTypeCredentialConfigurationIdName = "jwt-credential-config-id";
     public static final String minimalJwtTypeCredentialScopeName = "vc-with-minimal-config";
     public static final String minimalJwtTypeCredentialConfigurationIdName = "vc-with-minimal-config-id";
+
+    public static final String mdocTypeCredentialScopeName = "mdoc-credential";
+    public static final String mdocTypeCredentialConfigurationIdName = "mdoc-credential-config-id";
+    public static final String mdocTypeCredentialDocType = "org.iso.18013.5.1.mDL";
 
     public static final String CONTEXT_URL = "https://www.w3.org/2018/credentials/v1";
     public static final List<String> TEST_TYPES = List.of("VerifiableCredential");
@@ -220,9 +228,11 @@ public abstract class OID4VCIssuerTestBase {
 
     protected CredentialScopeRepresentation jwtTypeCredentialScope;
     protected CredentialScopeRepresentation sdJwtTypeCredentialScope;
+    protected CredentialScopeRepresentation mdocTypeCredentialScope;
     protected CredentialScopeRepresentation minimalJwtTypeCredentialScope;
     protected CredentialScopeRepresentation jwtNaturalPersonCredentialScope;
     protected CredentialScopeRepresentation sdJwtNaturalPersonCredentialScope;
+    protected CredentialScopeRepresentation mdocNaturalPersonCredentialScope;
 
     protected ClientRepresentation client;
     protected ClientRepresentation abcaClient;
@@ -246,6 +256,27 @@ public abstract class OID4VCIssuerTestBase {
             });
         });
 
+        // The natural person mdoc scope is created automatically on servers with the mdoc feature enabled. Since the
+        // realm representation cannot reference it upfront, attach it to the wallet clients and test users here.
+        boolean isMdocEnabled = runOnServer.fetch(session -> Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI_MDOC), Boolean.class);
+        if (isMdocEnabled) {
+            CredentialScopeRepresentation mdocNaturalPerson = requireExistingCredentialScope(mdocTypeNaturalPersonScopeName);
+            for (String clientId : List.of(OID4VCI_CLIENT_ID, OID4VCI_ABCA_CLIENT_ID, OID4VCI_PUBLIC_CLIENT_ID)) {
+                ClientRepresentation clientRep = realmResource.clients().findByClientId(clientId).get(0);
+                realmResource.clients().get(clientRep.getId()).addOptionalClientScope(mdocNaturalPerson.getId());
+            }
+            for (String username : List.of("john", "alice")) {
+                var credentialsResource = realmResource.users().get(requireExistingUser(username).getId()).verifiableCredentials();
+                boolean alreadyPresent = credentialsResource.getCredentials().stream()
+                        .anyMatch(cred -> mdocTypeNaturalPersonScopeName.equals(cred.getCredentialScopeName()));
+                if (!alreadyPresent) {
+                    UserVerifiableCredentialRepresentation cred = new UserVerifiableCredentialRepresentation();
+                    cred.setCredentialScopeName(mdocTypeNaturalPersonScopeName);
+                    credentialsResource.createCredential(cred);
+                }
+            }
+        }
+
         AuthorizationDetailsParser.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsParser());
 
         boolean isRestCredentialEnabled = runOnServer.fetch(session -> Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER), Boolean.class);
@@ -267,9 +298,12 @@ public abstract class OID4VCIssuerTestBase {
 
         jwtTypeCredentialScope = requireExistingCredentialScope(jwtTypeCredentialScopeName);
         sdJwtTypeCredentialScope = requireExistingCredentialScope(sdJwtTypeCredentialScopeName);
+        mdocTypeCredentialScope = requireExistingCredentialScope(mdocTypeCredentialScopeName);
         minimalJwtTypeCredentialScope = requireExistingCredentialScope(minimalJwtTypeCredentialScopeName);
         jwtNaturalPersonCredentialScope = requireExistingCredentialScope(jwtTypeNaturalPersonScopeName);
         sdJwtNaturalPersonCredentialScope = requireExistingCredentialScope(sdJwtTypeNaturalPersonScopeName);
+        // created automatically by the server, so it exists only when the mdoc feature is enabled
+        mdocNaturalPersonCredentialScope = getCredentialScope(mdocTypeNaturalPersonScopeName);
 
         oauth.client(client.getClientId(), client.getSecret());
         enableVerifiableCredentialEvents();
@@ -414,6 +448,14 @@ public abstract class OID4VCIssuerTestBase {
         )));
 
         return component;
+    }
+
+    protected void ensureEcSigningKeyProvider(String keyName, String ellipticCurve, String algorithm, int priority) {
+        boolean alreadyPresent = testRealm.admin().components().query(null, KeyProvider.class.getName()).stream()
+                .anyMatch(component -> keyName.equals(component.getName()));
+        if (!alreadyPresent) {
+            testRealm.admin().components().add(getEcKeyProvider(keyName, ellipticCurve, algorithm, priority)).close();
+        }
     }
 
     protected String getBearerToken(OAuthClient oauthClient) {
@@ -567,6 +609,24 @@ public abstract class OID4VCIssuerTestBase {
         return component;
     }
 
+    private static ComponentRepresentation getEcKeyProvider(String keyName, String ellipticCurve, String algorithm, int priority) {
+        ComponentRepresentation component = new ComponentRepresentation();
+        component.setProviderType(KeyProvider.class.getName());
+        component.setName(keyName);
+        component.setId(UUID.randomUUID().toString());
+        component.setProviderId("ecdsa-generated");
+        component.setConfig(new MultivaluedHashMap<>(Map.of(
+                "active", List.of("true"),
+                "priority", List.of(String.valueOf(priority)),
+                "enabled", List.of("true"),
+                "algorithm", List.of(algorithm),
+                "keyUse", List.of(KeyUse.SIG.name()),
+                "ecdsaEllipticCurveKey", List.of(ellipticCurve),
+                "ecGenerateCertificate", List.of("true")
+        )));
+        return component;
+    }
+
     private void enableVerifiableCredentialEvents() {
         RealmEventsConfigRepresentation realmEventsConfig = testRealm.admin().getRealmEventsConfig();
         List<String> enabledEventTypes = realmEventsConfig.getEnabledEventTypes();
@@ -669,6 +729,8 @@ public abstract class OID4VCIssuerTestBase {
                     null,
                     null
             ));
+
+            realm.clientScopes(createMdocCredentialScope());
 
             realm.users(createUser("John Doe", Map.of("did", "did:key:1234"), List.of(), Collections.emptyMap()));
             realm.users(createUser("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
@@ -898,6 +960,31 @@ public abstract class OID4VCIssuerTestBase {
             return cs;
         }
 
+        private CredentialScopeRepresentation createMdocCredentialScope() {
+            CredentialScopeRepresentation cs = new CredentialScopeRepresentation(mdocTypeCredentialScopeName)
+                    .setIncludeInTokenScope(true)
+                    .setExpiryInSeconds(15)
+                    .setCredentialConfigurationId(mdocTypeCredentialConfigurationIdName)
+                    .setCredentialIdentifier(mdocTypeCredentialScopeName)
+                    .setFormat(VCFormat.MSO_MDOC)
+                    .setVct(mdocTypeCredentialDocType)
+                    .setSigningAlg("ES256")
+                    .setCryptographicBindingMethods(List.of(CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY));
+            cs.setProtocolMappers(List.of(
+                    ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.iso.18013.5.1"),
+                    ProtocolMapperUtils.getUserAttributeMapper("family_name", "lastName", "org.iso.18013.5.1"),
+                    ProtocolMapperUtils.getSubjectIdMapper("id", UserModel.DID, "org.iso.18013.5.1")
+            ));
+
+            Map<String, String> attrs = Optional.ofNullable(cs.getAttributes()).orElseGet(HashMap::new);
+            attrs.put(VC_BINDING_REQUIRED, "true");
+            attrs.put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
+            attrs.put(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY);
+            cs.setAttributes(attrs);
+
+            return cs;
+        }
+
         private UserRepresentation createUser(
                 String fullName,
                 Map<String, String> attributes,
@@ -925,7 +1012,8 @@ public abstract class OID4VCIssuerTestBase {
                     .verifiableCredential(sdJwtTypeCredentialScopeName)
                     .verifiableCredential(minimalJwtTypeCredentialScopeName)
                     .verifiableCredential(jwtTypeNaturalPersonScopeName)
-                    .verifiableCredential(sdJwtTypeNaturalPersonScopeName);
+                    .verifiableCredential(sdJwtTypeNaturalPersonScopeName)
+                    .verifiableCredential(mdocTypeCredentialScopeName);
 
             attributes.forEach(userBuilder::attribute);
 
@@ -960,6 +1048,7 @@ public abstract class OID4VCIssuerTestBase {
                     minimalJwtTypeCredentialScopeName,
                     jwtTypeNaturalPersonScopeName,
                     sdJwtTypeNaturalPersonScopeName,
+                    mdocTypeCredentialScopeName,
                     "email"
             };
             client.clientId(OID4VCI_ABCA_CLIENT_ID)
@@ -986,6 +1075,7 @@ public abstract class OID4VCIssuerTestBase {
                     minimalJwtTypeCredentialScopeName,
                     jwtTypeNaturalPersonScopeName,
                     sdJwtTypeNaturalPersonScopeName,
+                    mdocTypeCredentialScopeName,
                     "email"
             };
             client.clientId(OID4VCI_CLIENT_ID)
@@ -1010,6 +1100,7 @@ public abstract class OID4VCIssuerTestBase {
                     minimalJwtTypeCredentialScopeName,
                     jwtTypeNaturalPersonScopeName,
                     sdJwtTypeNaturalPersonScopeName,
+                    mdocTypeCredentialScopeName,
                     "email"
             };
             client.clientId(OID4VCI_PUBLIC_CLIENT_ID)
@@ -1094,6 +1185,14 @@ public abstract class OID4VCIssuerTestBase {
             return protocolMapperRepresentation;
         }
 
+        static ProtocolMapperRepresentation getSubjectIdMapper(String subjectProperty, String attributeName, String mdocNamespace) {
+            ProtocolMapperRepresentation protocolMapperRepresentation = getSubjectIdMapper(subjectProperty, attributeName);
+            Map<String, String> config = new HashMap<>(protocolMapperRepresentation.getConfig());
+            config.put(OID4VCMapper.MDOC_NAMESPACE, mdocNamespace);
+            protocolMapperRepresentation.setConfig(config);
+            return protocolMapperRepresentation;
+        }
+
         static ProtocolMapperRepresentation getUserAttributeMapper(String subjectProperty, String attributeName) {
             ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
             protocolMapperRepresentation.setName(attributeName + "-mapper");
@@ -1105,6 +1204,14 @@ public abstract class OID4VCIssuerTestBase {
                             "claim.name", subjectProperty,
                             "userAttribute", attributeName)
             );
+            return protocolMapperRepresentation;
+        }
+
+        static ProtocolMapperRepresentation getUserAttributeMapper(String subjectProperty, String attributeName, String mdocNamespace) {
+            ProtocolMapperRepresentation protocolMapperRepresentation = getUserAttributeMapper(subjectProperty, attributeName);
+            Map<String, String> config = new HashMap<>(protocolMapperRepresentation.getConfig());
+            config.put(OID4VCMapper.MDOC_NAMESPACE, mdocNamespace);
+            protocolMapperRepresentation.setConfig(config);
             return protocolMapperRepresentation;
         }
 

@@ -42,12 +42,14 @@ import { removeEmptyOid4vcAttributes } from "./oid4vciAttributes";
 const OID4VC_PROTOCOL = "oid4vc";
 const VC_FORMAT_JWT_VC = "jwt_vc_json";
 const VC_FORMAT_SD_JWT = "dc+sd-jwt";
+const VC_FORMAT_MSO_MDOC = "mso_mdoc";
 const VC_FORMAT_JWT_VC_TYP = "vc+jwt";
 const VC_FORMAT_SD_JWT_TYP = "dc+sd-jwt";
 
 // Allowed values for OID4VCI cryptographic binding methods and proof types.
 // Keep these in sync with server-side support in CredentialScopeModel / ProofType.
-const ALLOWED_CRYPTO_BINDING_METHODS = ["jwk"] as const;
+const ALLOWED_CRYPTO_BINDING_METHODS_JSON = ["jwk"] as const;
+const ALLOWED_CRYPTO_BINDING_METHODS_MDOC = ["cose_key"] as const;
 const ALLOWED_PROOF_TYPES = ["jwt", "attestation"] as const;
 
 // Validation function for comma-separated lists
@@ -206,6 +208,11 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const isOid4vcEnabled =
     isFeatureEnabled(Feature.OpenId4VCI) &&
     realmRepresentation.verifiableCredentialsEnabled;
+  const isMdocEnabled = isFeatureEnabled(Feature.OpenId4VCIMdoc);
+  const allowedCryptoBindingMethods: readonly string[] =
+    selectedFormat === VC_FORMAT_MSO_MDOC
+      ? ALLOWED_CRYPTO_BINDING_METHODS_MDOC
+      : ALLOWED_CRYPTO_BINDING_METHODS_JSON;
   const isNotSaml = selectedProtocol != "saml";
   const recommendedTokenJwsType =
     selectedFormat === VC_FORMAT_SD_JWT
@@ -553,6 +560,14 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                   key: VC_FORMAT_JWT_VC,
                   value: `JWT VC (${VC_FORMAT_JWT_VC})`,
                 },
+                ...(isMdocEnabled
+                  ? [
+                      {
+                        key: VC_FORMAT_MSO_MDOC,
+                        value: `ISO mDoc (${VC_FORMAT_MSO_MDOC})`,
+                      },
+                    ]
+                  : []),
               ]}
             />
             <TextControl
@@ -663,9 +678,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                       const entries = value.split(",");
                       const invalid = entries.filter(
                         (entry) =>
-                          !ALLOWED_CRYPTO_BINDING_METHODS.includes(
-                            entry.trim() as (typeof ALLOWED_CRYPTO_BINDING_METHODS)[number],
-                          ),
+                          !allowedCryptoBindingMethods.includes(entry.trim()),
                       );
                       if (invalid.length > 0) {
                         return t(
@@ -749,31 +762,32 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                 }}
               />
             )}
+            {(selectedFormat === VC_FORMAT_SD_JWT ||
+              selectedFormat === VC_FORMAT_MSO_MDOC) && (
+              <TextControl
+                name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                  "attributes.vc.verifiable_credential_type",
+                )}
+                label={t("verifiableCredentialType")}
+                labelIcon={t("verifiableCredentialTypeHelp")}
+              />
+            )}
             {selectedFormat === VC_FORMAT_SD_JWT && (
-              <>
-                <TextControl
-                  name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                    "attributes.vc.verifiable_credential_type",
-                  )}
-                  label={t("verifiableCredentialType")}
-                  labelIcon={t("verifiableCredentialTypeHelp")}
-                />
-                <TextControl
-                  name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                    "attributes.vc.credential_build_config.sd_jwt.visible_claims",
-                  )}
-                  label={t("visibleClaims")}
-                  labelIcon={t("visibleClaimsHelp")}
-                  defaultValue={
-                    clientScope?.attributes?.[
-                      "vc.credential_build_config.sd_jwt.visible_claims"
-                    ] ?? "id,iat,nbf,exp,jti"
-                  }
-                  rules={{
-                    validate: validateCommaSeparatedList,
-                  }}
-                />
-              </>
+              <TextControl
+                name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                  "attributes.vc.credential_build_config.sd_jwt.visible_claims",
+                )}
+                label={t("visibleClaims")}
+                labelIcon={t("visibleClaimsHelp")}
+                defaultValue={
+                  clientScope?.attributes?.[
+                    "vc.credential_build_config.sd_jwt.visible_claims"
+                  ] ?? "id,iat,nbf,exp,jti"
+                }
+                rules={{
+                  validate: validateCommaSeparatedList,
+                }}
+              />
             )}
           </>
         )}
