@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.oid4vc.issuance.credentialbuilder;
 
+import java.security.KeyPairGenerator;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -24,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
@@ -38,9 +41,13 @@ import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
 import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
@@ -109,6 +116,41 @@ public class JwtCredentialBuilderTest extends CredentialBuilderTest {
 
         assertEquals(CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE, credentialTypes.get(0).asText());
         assertEquals("oid4vc_natural_person", credentialTypes.get(1).asText());
+    }
+
+    @Test
+    public void shouldBindHolderKeyWithCnfClaim() throws Exception {
+        VerifiableCredential verifiableCredential = getTestCredential(exampleCredentialClaims());
+        CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig().setTokenJwsType("JWT");
+
+        // Build credential body
+        JwtCredentialBody jwtCredentialBody = builder
+                .buildCredentialBody(verifiableCredential, credentialBuildConfig);
+
+        // Generate a holder key and bind it
+        var holderKeyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        JWK holderJwk = JWKBuilder.create().kid("holder-key-1").rs256(holderKeyPair.getPublic());
+        jwtCredentialBody.addKeyBinding(holderJwk);
+
+        // Sign and parse JWS string
+        String jws = jwtCredentialBody.sign(exampleSigner());
+        JWSInput jwsInput = new JWSInput(jws);
+        JsonNode payload = jwsInput.readJsonContent(JsonNode.class);
+
+        // Assert cnf claim is present and contains the holder's JWK
+        JsonNode cnfNode = payload.get(CLAIM_NAME_CNF);
+        assertNotNull(cnfNode, "The cnf claim must be present in the JWT payload");
+
+        JsonNode jwkNode = cnfNode.get(CLAIM_NAME_JWK);
+        assertNotNull(jwkNode, "The cnf claim must contain a jwk field");
+        assertEquals("holder-key-1", jwkNode.get("kid").asText(),
+                "The bound JWK must have the holder's key ID");
+        assertTrue(jwkNode.has("n"), "The bound JWK must contain the RSA modulus");
+        assertTrue(jwkNode.has("e"), "The bound JWK must contain the RSA exponent");
+
+        // Verify the rest of the credential is intact
+        JsonNode credentialSubject = payload.get("vc").get(CREDENTIAL_SUBJECT);
+        assertEquals("randomValue", credentialSubject.get("randomKey").asText());
     }
 
     private JsonNode parseCredentialSubject(JWSInput jwsInput) throws JWSInputException {
