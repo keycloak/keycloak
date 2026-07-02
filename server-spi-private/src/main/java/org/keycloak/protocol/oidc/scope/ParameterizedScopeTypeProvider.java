@@ -24,6 +24,16 @@ public interface ParameterizedScopeTypeProvider extends Provider, ProviderFactor
     String getTypeName();
 
     /**
+     * Whether this scope type allows the same parameterized scope to appear multiple times
+     * in a single request with different parameter values (e.g., {@code scope:val1 scope:val2}).
+     *
+     * @return {@code true} if multiple parameter values are allowed, {@code false} otherwise
+     */
+    default boolean isRepeatable() {
+        return true;
+    }
+
+    /**
      * Validates the captured parameter value at request time (no authenticated user yet).
      * Implementations should normalize the parameter before validation (e.g. lowercase usernames,
      * strip leading zeros from numbers).
