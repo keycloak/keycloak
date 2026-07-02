@@ -33,7 +33,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 public interface EmailTemplateProvider extends Provider {
 
     String IDENTITY_PROVIDER_BROKER_CONTEXT = "identityProviderBrokerCtx";
-    
+
     EmailTemplateProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 
     EmailTemplateProvider setRealm(RealmModel realm);
@@ -77,6 +77,18 @@ public interface EmailTemplateProvider extends Provider {
     void sendExecuteActions(String link, long expirationInMinutes) throws EmailException;
 
     void sendVerifiableCredentialOffer(String link, long expirationInMinutes) throws EmailException;
+
+    /**
+     * Invitation email driving the recipient through required actions; worded as a welcome
+     * rather than as a request from an administrator like {@link #sendExecuteActions}.
+     *
+     * @param link
+     * @param expirationInMinutes
+     * @throws EmailException
+     */
+    default void sendInviteUserEmail(String link, long expirationInMinutes) throws EmailException {
+        sendExecuteActions(link, expirationInMinutes);
+    }
 
     void sendVerifyEmail(String link, long expirationInMinutes) throws EmailException;
 
