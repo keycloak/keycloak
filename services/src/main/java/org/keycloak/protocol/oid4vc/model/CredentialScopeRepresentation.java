@@ -30,6 +30,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_IDENTIFIER;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_ISSUER_DID;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_ISSUER_KEY_RESOLUTION_STRATEGY;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_USER_AUTH;
@@ -157,6 +158,16 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
 
     public CredentialScopeRepresentation setSigningKeyId(String signingKeyId) {
         return setAttribute(VC_SIGNING_KEY_ID, signingKeyId);
+    }
+
+    public String getIssuerKeyResolutionStrategy() {
+        return Optional.ofNullable(getAttribute(VC_ISSUER_KEY_RESOLUTION_STRATEGY))
+                .filter(value -> !value.isBlank())
+                .orElse(null);
+    }
+
+    public CredentialScopeRepresentation setIssuerKeyResolutionStrategy(String issuerKeyResolutionStrategy) {
+        return setAttribute(VC_ISSUER_KEY_RESOLUTION_STRATEGY, issuerKeyResolutionStrategy);
     }
 
     public String getBuildConfigHashAlgorithm() {
