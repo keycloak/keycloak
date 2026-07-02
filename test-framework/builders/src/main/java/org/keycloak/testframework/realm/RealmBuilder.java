@@ -158,6 +158,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder loginWithEmailAllowed(boolean loginWithEmailAllowed) {
+        rep.setLoginWithEmailAllowed(loginWithEmailAllowed);
+        return this;
+    }
+
     public RealmBuilder registrationEmailAsUsername(boolean registrationEmailAsUsername) {
         rep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
         return this;
