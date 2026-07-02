@@ -304,6 +304,7 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
             });
         } finally {
             inComittedTransaction(s -> {
+                s.getContext().setRealm(s.realms().getRealm(realmBId));
                 s.realms().removeRealm(realmBId);
             });
         }
