@@ -45,7 +45,6 @@ import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.authorization.util.Tokens;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -53,6 +52,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.util.JsonSerialization;
 
 public class AuthZenResource {
@@ -75,10 +76,7 @@ public class AuthZenResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response evaluate(AuthZen.EvaluationRequest request) {
-        AccessToken token = Tokens.getAccessToken(session);
-        if (token == null) {
-            throw new NotAuthorizedException("Bearer");
-        }
+        AccessToken token = authenticateClient();
         return Response.ok(evaluateSingle(request, token)).build();
     }
 
@@ -87,10 +85,7 @@ public class AuthZenResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response evaluations(AuthZen.EvaluationsRequest request) {
-        AccessToken token = Tokens.getAccessToken(session);
-        if (token == null) {
-            throw new NotAuthorizedException("Bearer");
-        }
+        AccessToken token = authenticateClient();
 
         if (request.evaluations() == null || request.evaluations().isEmpty()) {
             // AuthZen 1.0 Section 7.1
@@ -131,6 +126,17 @@ public class AuthZenResource {
         AuthZen.Action action = item.action() != null ? item.action() : defaults.action();
         Map<String, Object> context = item.context() != null ? item.context() : defaults.context();
         return new AuthZen.EvaluationRequest(subject, resource, action, context);
+    }
+
+    private AccessToken authenticateClient() {
+        AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session).authenticate();
+        if (authResult == null) {
+            throw new NotAuthorizedException("Bearer");
+        }
+        if (authResult.user().getServiceAccountClientLink() == null) {
+            throw new NotAuthorizedException("Bearer");
+        }
+        return authResult.token();
     }
 
     private AuthZen.EvaluationResponse evaluateSingle(AuthZen.EvaluationRequest request, AccessToken token) {
