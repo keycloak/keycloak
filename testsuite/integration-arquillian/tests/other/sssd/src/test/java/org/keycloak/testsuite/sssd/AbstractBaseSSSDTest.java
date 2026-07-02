@@ -27,7 +27,6 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -48,9 +47,6 @@ public abstract class AbstractBaseSSSDTest extends AbstractTestRealmKeycloakTest
 
     @Page
     protected LoginPage loginPage;
-
-    @Page
-    protected AppPage appPage;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -84,11 +80,11 @@ public abstract class AbstractBaseSSSDTest extends AbstractTestRealmKeycloakTest
 
     protected void testLoginSuccess(String username) {
         oauth.doLogin(username, getPassword(username));
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).hasUserId()
                 .details(Details.USERNAME, username).getEvent();
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
-        appPage.logout(tokenResponse.getIdToken());
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
         EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(loginEvent.getUserId());
     }
 

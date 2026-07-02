@@ -52,7 +52,6 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AdminClientUtil;
@@ -82,10 +81,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
-    @Page
-    protected AppPage appPage;
-
-    @Page
+       @Page 
     protected LoginPage loginPage;
 
     @Page
@@ -215,7 +211,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
 
         // Fill username+password. I am successfully authenticated
         oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll()).clientId("test-app-flow").details(Details.USERNAME, "test-user@localhost");
     }
@@ -247,7 +243,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
 
         // Fill username+password. I am successfully authenticated
         oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId).details(Details.USERNAME, "test-user@localhost");
     }

@@ -40,8 +40,9 @@ public class VerifyEmailPage extends AbstractPage {
     @FindBy(className = "kc-feedback-text")
     private WebElement feedbackText;
 
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Email verification");
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-verify-email";
     }
 
     public void clickResendEmail() {

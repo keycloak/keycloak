@@ -33,7 +33,6 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupMapperConfig;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -131,7 +130,6 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
 
         // Success login as username exactly match
         loginPage.login("jamees,key*cložak)ppp", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
@@ -223,7 +221,6 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
 
             // Success login as username exactly match
             loginPage.login("jamees,key*cložak)ppp", "Password1");
-            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } finally {
             // Revert config changes to be back to previous UUID attribute

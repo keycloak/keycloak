@@ -36,7 +36,6 @@ import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
@@ -48,9 +47,7 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Abstract test for various values of response_type
@@ -62,10 +59,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
-    @Page
-    protected AppPage appPage;
-
-    @Page
+       @Page 
     protected LoginPage loginPage;
 
     @Override
@@ -115,8 +109,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
     protected void validateNonceNotUsedErrorExpected() {
         oauth.loginForm().nonce(null).open();
 
-        assertFalse(loginPage.isCurrent());
-        assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isError());
 
         // Assert error response was sent because not logged in
         AuthorizationEndpointResponse resp = oauth.parseLoginResponse();
@@ -169,7 +162,8 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(driver.getCurrentUrl().startsWith(oauth.getRedirectUri()));
+        Assertions.assertTrue(oauth.parseLoginResponse().getState().equals("somestate"));
 
         EventRepresentation eventRep = events.poll();
         EventAssertion.expectLoginSuccess(eventRep).details(Details.USERNAME, "test-user@localhost");
@@ -185,7 +179,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation eventRep = events.poll();
         EventAssertion.expectLoginSuccess(eventRep)

@@ -33,8 +33,6 @@ import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -58,10 +56,7 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
     @Page
     private RegisterPage registerPage;
 
-    @Page
-    private AppPage appPage;
-
-    private UserResource user;
+        private UserResource user;
 
     private void setPasswordAgePolicy(String passwordAge) {
         log.info(String.format("Setting %s", passwordAge));
@@ -318,7 +313,7 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
 
             registerPage.register("firstName", "lastName", "registration-user@localhost", "registration-user", "password", "password");
 
-            Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             AuthorizationEndpointResponse response = oauth.parseLoginResponse();
             Assertions.assertNull(response.getError());
             Assertions.assertNotNull(response.getCode());

@@ -50,7 +50,6 @@ import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttribu
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 
@@ -792,7 +791,8 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     private void loginViaNonOrgIdP(String idpAlias) {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         assertTrue(loginPage.isPasswordInputPresent());
         assertTrue(loginPage.isSocialButtonPresent(idpAlias));
@@ -813,8 +813,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
 
-        appPage.assertCurrent();
-        assertThat(appPage.getRequestType(), equalTo(AppPage.RequestType.AUTH_RESPONSE));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     private UserRepresentation getUserRepFromMemberRep(MemberRepresentation member) {

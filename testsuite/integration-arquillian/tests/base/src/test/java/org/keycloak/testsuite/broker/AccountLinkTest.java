@@ -41,7 +41,6 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProvider;
 import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProviderFactory;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -76,10 +75,7 @@ public class AccountLinkTest extends AbstractKeycloakTest {
     @Page
     protected LoginPage loginPage;
 
-    @Page
-    protected AppPage appPage;
-
-    @Override
+        @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = new RealmRepresentation();
         realm.setRealm(CHILD_IDP);

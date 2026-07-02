@@ -47,6 +47,7 @@ import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.URLUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
@@ -98,7 +99,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
     @Page
     protected OneTimeCode oneTimeCodePage;
 
-    @Rule
+        @Rule
     public AssertEvents events = new AssertEvents(this);
 
     private void importTestRealm(Consumer<RealmRepresentation> realmUpdater) {
@@ -132,9 +133,8 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
     @Test
     public void testUserWithoutAdditionalFactorConnection() {
         provideUsernamePassword("test-user@localhost");
-        Assertions.assertFalse(loginPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         Assertions.assertFalse(oneTimeCodePage.isOtpLabelPresent());
-        Assertions.assertFalse(loginTotpPage.isCurrent());
         loginTotpPage.assertOtpCredentialSelectorAvailability(false);
     }
 
@@ -159,7 +159,8 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         loginTotpPage.assertOtpCredentialSelectorAvailability(false);
 
         oneTimeCodePage.sendCode(getOtpCode(USER_WITH_ONE_OTP_OTP_SECRET));
-        Assertions.assertFalse(loginPage.isCurrent());
+        WaitUtils.waitForPageToLoad();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         Assertions.assertFalse(oneTimeCodePage.isOtpLabelPresent());
     }
 
@@ -240,7 +241,8 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginUsernameOnlyPage.login(username);
 
-        return passwordPage.isCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        return true;
     }
 
     // A conditional flow without conditional authenticator should automatically be disabled
@@ -249,12 +251,16 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
     public void testFlowDisabledWhenConditionalAuthenticatorIsMissing() {
         try {
             configureBrowserFlowWithConditionalSubFlowHavingConditionalAuthenticator("browser - non missing conditional authenticator", true);
-            Assertions.assertTrue(needsPassword("user-with-two-configured-otp"));
+            oauth.openLoginForm();
+            loginUsernameOnlyPage.login("user-with-two-configured-otp");
+            passwordPage.assertCurrent();
 
             configureBrowserFlowWithConditionalSubFlowHavingConditionalAuthenticator("browser - missing conditional authenticator", false);
-            // Flow is conditional but it is missing a conditional authentication executor
+            // Flow is conditional, but it is missing a conditional authentication executor
             // The whole flow is disabled
-            Assertions.assertFalse(needsPassword("user-with-two-configured-otp"));
+            oauth.openLoginForm();
+            loginUsernameOnlyPage.login("user-with-two-configured-otp");
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } finally {
             revertFlows("browser - non missing conditional authenticator");
         }
@@ -285,9 +291,11 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
     public void testFlowDisabledWhenConditionalAuthenticatorIsDisabled() {
         try {
             configureBrowserFlowWithConditionalSubFlowHavingDisabledConditionalAuthenticator("browser - disabled conditional authenticator");
-            // Flow is conditional but it is missing a conditional authentication executor
+            // Flow is conditional, but it is missing a conditional authentication executor
             // The whole flow is disabled
-            Assertions.assertFalse(needsPassword("user-with-two-configured-otp"));
+            oauth.openLoginForm();
+            loginUsernameOnlyPage.login("user-with-two-configured-otp");
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } finally {
             revertFlows("browser - disabled conditional authenticator");
         }
@@ -373,7 +381,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             // user-with-one-configured-otp has not configured role. He should not be asked for an OTP code
             provideUsernamePassword("user-with-one-configured-otp");
             Assertions.assertFalse(oneTimeCodePage.isOtpLabelPresent());
-            Assertions.assertFalse(loginTotpPage.isCurrent());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } finally {
             revertFlows("browser - rule");
         }
@@ -418,7 +426,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             // user-with-one-configured-otp doesn't have the role. He should not be asked for an OTP code
             provideUsernamePassword("user-with-one-configured-otp");
             Assertions.assertFalse(oneTimeCodePage.isOtpLabelPresent());
-            Assertions.assertFalse(loginTotpPage.isCurrent());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } finally {
             managedRealm.admin().roles().deleteRole(childRealmRoleName);
             managedRealm.admin().roles().deleteRole(compositeRealmRoleName);
@@ -468,7 +476,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             // user-with-one-configured-otp doesn't have the role. He should not be asked for an OTP code
             provideUsernamePassword("user-with-one-configured-otp");
             Assertions.assertFalse(oneTimeCodePage.isOtpLabelPresent());
-            Assertions.assertFalse(loginTotpPage.isCurrent());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } finally {
             managedRealm.admin().clients().get(testClient.getId()).roles().deleteRole(childClientRoleName);
             managedRealm.admin().clients().get(testClient.getId()).roles().deleteRole(compositeClientRoleName);
@@ -716,7 +724,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             loginTotpPage.assertOtpCredentialSelectorAvailability(false);
 
             loginTotpPage.login(getOtpCode(USER_WITH_ONE_OTP_OTP_SECRET));
-            Assertions.assertFalse(loginTotpPage.isCurrent());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             EventAssertion.expectLoginSuccess(events.poll()).userId(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
                     .details(Details.USERNAME, "user-with-one-configured-otp");
 
@@ -783,7 +791,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             loginTotpPage.assertOtpCredentialSelectorAvailability(true);
 
             loginTotpPage.login(getOtpCode(USER_WITH_TWO_OTPS_OTP1_SECRET));
-            Assertions.assertFalse(loginTotpPage.isCurrent());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "user-with-two-configured-otp");
         } finally {
             revertFlows("browser - copy 1");
@@ -808,7 +816,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
                     .withoutDetails(Details.CONSENT);
             // Assert not on otp page now
             Assertions.assertFalse(oneTimeCodePage.isOtpLabelPresent());
-            Assertions.assertFalse(loginTotpPage.isCurrent());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "user-with-one-configured-otp");
 
         } finally {
@@ -1055,7 +1063,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.assertCurrent();
         loginPage.login(user.getUsername(), getPassword("test-user@localhost"));
 
-        Assertions.assertFalse(loginPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll())
                 .userId(user.getId())
                 .details(Details.USERNAME, "test-user@localhost");
@@ -1099,8 +1107,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             events.clear();
             passwordPage.login(getPassword(user.getUsername()));
 
-            Assertions.assertFalse(loginUsernameOnlyPage.isCurrent());
-            Assertions.assertFalse(passwordPage.isCurrent());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             EventAssertion.expectLoginSuccess(events.poll())
                     .userId(user.getId())
@@ -1188,7 +1195,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             passwordPage.assertTryAnotherWayLinkAvailability(true);
             passwordPage.login(getPassword("user-with-one-configured-otp"));
 
-            Assertions.assertFalse(loginPage.isCurrent());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             Assertions.assertFalse(oneTimeCodePage.isOtpLabelPresent());
             EventAssertion.expectLoginSuccess(events.poll()).userId(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
                     .details(Details.USERNAME, "user-with-one-configured-otp");

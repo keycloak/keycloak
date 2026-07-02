@@ -1190,7 +1190,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         inputPortalPage.execute("hello");
 
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
-        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        testRealmLoginPage.login("bburke@redhat.com", "password");
         assertThat(URI.create(driver.getCurrentUrl()).getPath(), endsWith("secured/post"));
         waitUntilElement(By.xpath("//body")).text().contains("parameter=hello");
 
@@ -1988,7 +1988,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
                     UIUtils.getTextFromElement(driver.findElement(By.cssSelector("div[class^='pf-v5-c-alert'], div[class^='alert-error']"))));
 
             // login successfully in tab2 after the error
-            loginPage.form().login(bburkeUser);
+            loginPage.login(bburkeUser.getUsername(), "password");
             waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
 
             // Go back to tab1 and it should automatically log into the app with retry
@@ -2014,12 +2014,12 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10, null));
 
         BasicCookieStore cookieStore = new BasicCookieStore();
-        try (Keycloak client = KeycloakBuilder.builder().serverUrl(loginPage.getAuthRoot()).realm(SAMLSERVLETDEMO)
+        try (Keycloak client = KeycloakBuilder.builder().serverUrl(oauth.getBaseUrl() + "/admin/realms/" + SAMLSERVLETDEMO)
                 .username(admin).password(adminPassword).clientId(Constants.ADMIN_CLI_CLIENT_ID)
                 .resteasyClient(AdminClientUtil.createResteasyClient()).build();
                 CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build()) {
             HttpUriRequest req = RequestBuilder.post()
-                    .setUri(loginPage.getAuthRoot() + "/admin/realms/" + SAMLSERVLETDEMO + "/users/" + userId + "/impersonation")
+                    .setUri(oauth.getBaseUrl() + "/admin/realms/" + SAMLSERVLETDEMO + "/users/" + userId + "/impersonation")
                     .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + client.tokenManager().getAccessTokenString())
                     .build();
             HttpResponse res = httpClient.execute(req);

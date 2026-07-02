@@ -27,7 +27,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 
 import org.jboss.arquillian.container.test.api.ContainerController;
@@ -51,10 +50,7 @@ public class BrokenUserStorageTest extends AbstractTestRealmKeycloakTest {
     @Page
     protected LoginPage loginPage;
 
-    @Page
-    protected AppPage appPage;
-
-    @Override
+        @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
     }
 
@@ -62,7 +58,6 @@ public class BrokenUserStorageTest extends AbstractTestRealmKeycloakTest {
     private void loginSuccessAndLogout(String username, String password) {
         oauth.openLoginForm();
         loginPage.login(username, password);
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         oauth.openLogoutForm();
     }

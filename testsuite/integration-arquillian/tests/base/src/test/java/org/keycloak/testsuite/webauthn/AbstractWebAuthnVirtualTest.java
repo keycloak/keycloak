@@ -44,7 +44,6 @@ import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -67,6 +66,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -110,10 +110,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     @Page
     protected WebAuthnLoginPage webAuthnLoginPage;
 
-    @Page
-    protected AppPage appPage;
-
-    @Page
+       @Page 
     protected LogoutConfirmPage logoutConfirmPage;
 
     @Page
@@ -302,7 +299,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
 
     protected void authenticateUser(String username, String password, boolean shouldSuccess) {
         oauth.openLoginForm();
-        loginPage.assertCurrent(TEST_REALM_NAME);
+        loginPage.assertCurrent();
         loginPage.login(username, password);
 
         waitForPageToLoad();
@@ -312,19 +309,10 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
 
         if (shouldSuccess) {
             waitForPageToLoad();
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } else {
-            displayErrorMessageIfPresent();
+            webAuthnErrorPage.assertCurrent();
         }
-    }
-
-    protected String displayErrorMessageIfPresent() {
-        if (webAuthnErrorPage.isCurrent()) {
-            final String msg = webAuthnErrorPage.getError();
-            log.info("Error message from Error Page: " + msg);
-            return msg;
-        }
-        return null;
     }
 
     protected Credential getDefaultResidentKeyCredential() {

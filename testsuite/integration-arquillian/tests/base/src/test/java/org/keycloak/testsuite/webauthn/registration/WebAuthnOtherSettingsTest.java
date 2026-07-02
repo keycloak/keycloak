@@ -32,7 +32,6 @@ import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnDataWrapper;
@@ -43,8 +42,8 @@ import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.attestation.statement.COSEAlgorithmIdentifier;
 import com.webauthn4j.data.attestation.statement.COSEKeyType;
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
@@ -63,8 +62,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
-    @Page
-    protected AppPage appPage;
 
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
@@ -72,7 +69,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
         registerDefaultUser("webauthn");
 
         WaitUtils.waitForPageToLoad();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         final String userId = Optional.ofNullable(userResource().toRepresentation())
                 .map(UserRepresentation::getId)
@@ -154,7 +151,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
             webAuthnRegisterPage.assertCurrent();
             webAuthnRegisterPage.clickRegister();
 
-            assertThat(webAuthnErrorPage.isCurrent(), is(false));
+            webAuthnErrorPage.assertCurrent();
         }
     }
 
@@ -205,7 +202,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
             registerDefaultUser();
 
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } finally {
             testingClient.testing().reenableTruststoreSpi();
         }
