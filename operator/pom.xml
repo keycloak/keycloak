@@ -68,6 +68,20 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Helm chart generation -->
+        <dependency>
+            <groupId>io.quarkiverse.helm</groupId>
+            <artifactId>quarkus-helm</artifactId>
+            <version>1.2.7</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkiverse.operatorsdk</groupId>
+            <artifactId>quarkus-operator-sdk-helm</artifactId>
+            <version>7.4.0</version>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkiverse.operatorsdk</groupId>
@@ -339,6 +353,28 @@
                     </systemPropertyVariables>
                     <groups>${kc.quarkus.tests.groups}</groups>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <!-- Post-process the chart emitted by quarkus-helm: wrap the
+                         generated CRDs in a {{ if .Values.crds.enabled }} guard. -->
+                    <execution>
+                        <id>post-process-helm-chart</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${basedir}/scripts/post-process-helm-chart.sh</executable>
+                            <arguments>
+                                <argument>${project.build.directory}/helm/kubernetes/keycloak-operator</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>
