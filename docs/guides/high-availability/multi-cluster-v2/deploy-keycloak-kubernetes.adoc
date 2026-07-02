@@ -17,8 +17,7 @@ While this blueprint uses {kubernetes}, the concepts are not limited to {kuberne
 == Prerequisites
 
 * {kubernetes} clusters running. Each {kubernetes} cluster should have its own internal load balancing to leverage the startup, liveness and readiness probes of the {project_name} Pods.
-* A load balancer in front of the clusters that is probing the root URL of the {project_name} clusters.
-// TODO: Add the lb-check non-blocking endpoint for the probe
+* A load balancer in front of the clusters that is probing the URL `/lb-check` of the {project_name} clusters.
 * A highly available database deployed with synchronous replication across sites, reachable from all {project_name} nodes in all clusters. The following example assumes a PostgreSQL database. Any database supported by {project_name} will work.
 * Understanding of a <@links.operator id="basic-deployment" /> of {project_name} with the {project_name} Operator.
 

@@ -880,7 +880,7 @@ class KeycloakProcessor {
                     AdminRoot.class.getName())), false));
         }
 
-        if (!MultiSiteUtils.isMultiSiteEnabled()) {
+        if (!MultiSiteUtils.isMultiSiteEnabled() && !Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
             buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
                     LoadBalancerResource.class.getName())), false));
         }
