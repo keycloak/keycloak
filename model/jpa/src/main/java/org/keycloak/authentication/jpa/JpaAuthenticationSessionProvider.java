@@ -84,10 +84,14 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
         if (entity == null) {
             throw new ModelException("Unable to create or find root authentication session with id '" + id + "'");
         }
+        if (!Objects.equals(realm.getId(), entity.getRealmId())) {
+            throw new ModelException("Another root authentication session with id '" + id + "' already exists in other realm");
+        }
         var lifespan = SessionExpiration.getAuthSessionLifespan(realm);
         if (entity.getTimestamp() + lifespan < Time.currentTimeSeconds()) {
             logger.debugf("Root authentication session with id '%s' is expired.", id);
-            return null;
+            // let's restart it
+            entity.setTimestamp(Time.currentTimeSeconds());
         }
         return RootAuthenticationSessionAdapter.wrapEntity(session, realm,  entity, authSessionsLimit);
     }
