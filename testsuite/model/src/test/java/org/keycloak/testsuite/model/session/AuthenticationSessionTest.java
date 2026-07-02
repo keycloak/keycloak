@@ -232,6 +232,8 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
             rootAuthSession.createAuthenticationSession(client);
             rootAuthSessionId.set(rootAuthSession.getId());
 
+            setTimeOffset(0);
+
             return null;
         });
     }
