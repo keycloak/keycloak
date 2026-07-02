@@ -290,10 +290,11 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
                     .addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode("test-code"))
                     .setCredentialConfigurationIds(List.of(jwtTypeCredentialConfigurationIdName));
 
-            CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
             // Create offer with expiration time just 1 second in the past
             // This ensures it's still findable in storage but marked as expired
-            CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, Time.currentTime() - 1, null);
+            long expiresAt = Time.currentTimeSeconds() - 1;
+            CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+            CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, expiresAt, false, null);
             offerStorage.putOfferState(offerState);
             return offerState.getNonce();
         });
