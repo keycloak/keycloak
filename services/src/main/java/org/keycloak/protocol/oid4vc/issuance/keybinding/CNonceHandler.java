@@ -25,6 +25,7 @@ import jakarta.annotation.Nullable;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.provider.Provider;
+import org.keycloak.representations.JsonWebToken;
 
 /**
  * @author Pascal Knüppel
@@ -49,8 +50,65 @@ public interface CNonceHandler extends Provider {
      * @param audiences         the expected audiences for jwt-based cNonces
      * @param additionalDetails additional attributes that might be required to build the cNonce and that are handler
      *                          specific
+     * @throws VerificationException if the cNonce cannot be verified
      */
     public void verifyCNonce(String cNonce, List<String> audiences, @Nullable Map<String, Object> additionalDetails) throws VerificationException;
+
+    /**
+     * Verifies the validity of a cNonce value and returns its verified token representation.
+     *
+     * @param cNonce            the cNonce to validate
+     * @param audiences         the expected audiences for jwt-based cNonces
+     * @param additionalDetails additional attributes that might be required to build the cNonce and that are handler
+     *                          specific
+     * @return the verified cNonce token representation
+     * @throws VerificationException if the cNonce cannot be verified
+     */
+    public default JsonWebToken verifyCNonceAndGetToken(String cNonce, List<String> audiences, @Nullable Map<String, Object> additionalDetails)
+            throws VerificationException {
+        throw new VerificationException("c_nonce token retrieval is not supported");
+    }
+
+    /**
+     * @return {@code true} if this handler can return the verified cNonce token representation.
+     */
+    public default boolean supportsCNonceTokenRetrieval() {
+        return false;
+    }
+
+    /**
+     * Marks a verified cNonce value as consumed.
+     *
+     * @param cNonce the cNonce to consume
+     */
+    public default void consumeCNonce(String cNonce) throws VerificationException {
+        throw new VerificationException("c_nonce consumption is not supported");
+    }
+
+    /**
+     * Marks a verified cNonce value as consumed.
+     *
+     * @param cNonce      the cNonce to consume
+     * @param cNonceToken the already verified cNonce token
+     */
+    public default void consumeCNonce(String cNonce, JsonWebToken cNonceToken) throws VerificationException {
+        consumeCNonce(cNonce);
+    }
+
+    /**
+     * @return {@code true} if this handler can mark cNonce values as consumed.
+     */
+    public default boolean supportsCNonceConsumption() {
+        return false;
+    }
+
+    /**
+     * Checks if {@code cNonce} is so far not yet consumed (without consuming it) for fail-fast purposes.
+     * @throws VerificationException if already consumed or check not supported.
+     */
+    default void ensureCNonceNotYetConsumed(String cNonce) throws VerificationException {
+        throw new VerificationException("c_nonce consumption check is not supported");
+    }
 
     @Override
     default void close() {

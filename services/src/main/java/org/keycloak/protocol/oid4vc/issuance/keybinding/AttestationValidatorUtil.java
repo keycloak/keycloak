@@ -196,24 +196,29 @@ public class AttestationValidatorUtil {
 
         KeycloakContext keycloakContext = keycloakSession.getContext();
         CNonceHandler cNonceHandler = keycloakSession.getProvider(CNonceHandler.class);
+        if (cNonceHandler == null) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "CNonce handler not configured");
+        }
+        if (!cNonceHandler.supportsCNonceTokenRetrieval()) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "CNonce handler does not support token retrieval");
+        }
 
-        if (attestationBody.getNonce() == null) {
+        String nonce = attestationBody.getNonce();
+        if (nonce == null) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing 'nonce' in attestation");
         }
 
-        // Validate nonce if present. If provided, it must correspond to a nonce value provided by Keycloak.
-        if (attestationBody.getNonce() != null) {
-            try {
-                cNonceHandler.verifyCNonce(
-                        attestationBody.getNonce(),
-                        List.of(OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(keycloakContext)),
-                        Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
-                                OID4VCIssuerWellKnownProvider.getNonceEndpoint(keycloakContext))
-                );
-            } catch (VerificationException e) {
-                throw new VCIssuerException(ErrorType.INVALID_NONCE,
-                        "The key attestation uses an invalid nonce", e);
-            }
+        try {
+            vcIssuanceContext.addVerifiedCNonce(
+                    nonce,
+                    cNonceHandler.verifyCNonceAndGetToken(
+                            nonce,
+                            List.of(OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(keycloakContext)),
+                            Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
+                                    OID4VCIssuerWellKnownProvider.getNonceEndpoint(keycloakContext))));
+        } catch (VerificationException e) {
+            throw new VCIssuerException(ErrorType.INVALID_NONCE,
+                    "The key attestation uses an invalid nonce", e);
         }
 
         // Store attested keys in context for later use
