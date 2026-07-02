@@ -28,7 +28,6 @@ import java.util.Optional;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
-import org.keycloak.common.Profile;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnContextClassRefType;
 import org.keycloak.dom.saml.v2.assertion.AuthnContextType;
@@ -44,7 +43,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.admin.Users;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.LevelOfAssuranceFlowTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -72,7 +70,6 @@ import org.junit.jupiter.api.Assertions;
  *
  * @author rmartinc
  */
-@EnableFeature(value = Profile.Feature.STEP_UP_AUTHENTICATION_SAML)
 public class LevelOfAssuranceFlowSamlTest extends AbstractSamlTest {
 
     UserRepresentation otpUser;

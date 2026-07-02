@@ -105,6 +105,11 @@ In multi-service architectures, a backend service sometimes needs to act on beha
 
 To enable token exchange delegation, start {project_name} with the feature `token-exchange-delegation` enabled.
 
+== Step-up authentication for SAML (supported)
+// https://github.com/keycloak/keycloak/issues/46543
+
+The feature `step-up-authentication-saml` extends the step-up authentication to include the SAML protocol and clients. This feature is now promoted to supported. For more information, see the link:{adminguide_link}#_step-up-authentication-saml[{adminguide_name}].
+
 = Administration
 
 == Declarative client management with Admin API v2 (experimental)
