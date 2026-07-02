@@ -99,8 +99,8 @@ public class AuthnContextClassRefMapper extends AbstractSAMLProtocolMapper imple
         } else {
             // check the requested level was indeed achieved by the authentication flow, if not unspecified
             Integer requestedLevel = acrLoaMap.get(acrValue);
-            if (requestedLevel == null || requestedLevel != loa) {
-                logger.warnf("Requested level '%s' (%d) was not reached after authentication flow, current level %d",
+            if (requestedLevel == null || requestedLevel > loa) {
+                logger.warnf("Requested level '%s' (%s) was not reached after authentication flow, current level %d",
                         acrValue, requestedLevel, loa);
                 acrValue = null;
             }
