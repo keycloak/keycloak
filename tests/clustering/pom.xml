@@ -52,5 +52,13 @@
             <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-ui</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+        </dependency>
     </dependencies>
 </project>

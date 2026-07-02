@@ -17,11 +17,15 @@
 
 package org.keycloak.testframework.server;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
+import org.keycloak.common.Profile;
 import org.keycloak.it.utils.DockerKeycloakDistribution;
 import org.keycloak.testframework.clustering.LoadBalancer;
 import org.keycloak.testframework.infinispan.CacheType;
@@ -42,34 +46,54 @@ public class ClusteredKeycloakServer implements KeycloakServer {
     private final DockerKeycloakDistribution[] containers;
     private final String images;
     private final long startTimeout;
+    private final boolean cacheless;
 
     private static LazyFuture<String> defaultImage() {
         return DockerKeycloakDistribution.createImage(true);
     }
 
-    public ClusteredKeycloakServer(int mumServers, String images, long startTimeout) {
+    public ClusteredKeycloakServer(int mumServers, String images, long startTimeout, boolean cacheless) {
         containers = new DockerKeycloakDistribution[mumServers];
         this.images = images;
         this.startTimeout = startTimeout;
+        this.cacheless = cacheless;
     }
 
     @Override
     public void start(KeycloakServerConfigBuilder configBuilder, boolean tlsEnabled) {
         int numServers = containers.length;
-        CountdownLatchLoggingConsumer clusterLatch = new CountdownLatchLoggingConsumer(numServers, String.format(CLUSTER_VIEW_REGEX, numServers));
+
         String[] imagePeServer = null;
+        Supplier<CountdownLatchLoggingConsumer> latchSupplier;
+        List<CountdownLatchLoggingConsumer> consumers = new ArrayList<>(numServers);
 
         // Infinispan clustered cache
         configBuilder.cache(CacheType.ISPN);
+        if (cacheless) {
+            configBuilder.features(Profile.Feature.CACHELESS);
+            latchSupplier = () -> {
+                var clusterLatch = new CountdownLatchLoggingConsumer(1, String.format(CLUSTER_VIEW_REGEX, 1));
+                consumers.add(clusterLatch);
+                return clusterLatch;
+            };
+        } else {
+            var clusterLatch = new CountdownLatchLoggingConsumer(numServers, String.format(CLUSTER_VIEW_REGEX, numServers));
+            latchSupplier = () -> clusterLatch;
+            consumers.add(clusterLatch);
+        }
 
         if (images == null || images.isEmpty() || (imagePeServer = images.split(",")).length == 1) {
-            startContainersWithSameImage(configBuilder, imagePeServer == null ? SNAPSHOT_IMAGE : imagePeServer[0], clusterLatch);
+            startContainersWithSameImage(configBuilder, imagePeServer == null ? SNAPSHOT_IMAGE : imagePeServer[0], latchSupplier);
         } else {
-            startContainersWithMixedImage(configBuilder, imagePeServer, clusterLatch);
+            startContainersWithMixedImage(configBuilder, imagePeServer, latchSupplier);
         }
 
         try {
-            clusterLatch.await((long) numServers * DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            long perLatchTimeout = cacheless ? DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS : (long) numServers * DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS;
+            for (var clusterLatch : consumers) {
+                clusterLatch.await(perLatchTimeout, TimeUnit.SECONDS);
+            }
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -79,7 +103,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         ReadinessProbe.waitUntilReady(this::getBaseUrl, numServers, startTimeout);
     }
 
-    private void startContainersWithMixedImage(KeycloakServerConfigBuilder configBuilder, String[] imagePeServer, CountdownLatchLoggingConsumer clusterLatch) {
+    private void startContainersWithMixedImage(KeycloakServerConfigBuilder configBuilder, String[] imagePeServer, Supplier<CountdownLatchLoggingConsumer> clusterLatch) {
         assert imagePeServer != null;
         if (containers.length != imagePeServer.length) {
             throw new IllegalArgumentException("The number of containers and the number of images must match");
@@ -104,12 +128,13 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
             copyProvidersAndConfigs(container, configBuilder);
 
-            configureLogConsumers(container, i, clusterLatch);
+            configureLogConsumers(container, i, clusterLatch.get());
+            configureClusterNameIfCachelessEnabled(configBuilder, i);
             container.runKc(configBuilder.toArgs());
         }
     }
 
-    private void startContainersWithSameImage(KeycloakServerConfigBuilder configBuilder, String image, CountdownLatchLoggingConsumer clusterLatch) {
+    private void startContainersWithSameImage(KeycloakServerConfigBuilder configBuilder, String image, Supplier<CountdownLatchLoggingConsumer> clusterLatch) {
         int[] exposedPorts = new int[]{REQUEST_PORT, MANAGEMENT_PORT};
         LazyFuture<String> imageFuture = image == null || SNAPSHOT_IMAGE.equals(image) ?
                 defaultImage() :
@@ -119,7 +144,8 @@ public class ClusteredKeycloakServer implements KeycloakServer {
             containers[i] = container;
 
             copyProvidersAndConfigs(container, configBuilder);
-            configureLogConsumers(container, i, clusterLatch);
+            configureLogConsumers(container, i, clusterLatch.get());
+            configureClusterNameIfCachelessEnabled(configBuilder, i);
             container.runKc(configBuilder.toArgs());
         }
     }
@@ -166,5 +192,12 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
     public int clusterSize() {
         return containers.length;
+    }
+
+    private void configureClusterNameIfCachelessEnabled(KeycloakServerConfigBuilder configBuilder, int id) {
+        if (!cacheless) {
+            return;
+        }
+        configBuilder.spiOption("cache-embedded", "default", "cluster-name", "cluster-" + id);
     }
 }
