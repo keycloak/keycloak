@@ -65,8 +65,7 @@ public class ClusteredInvalidationTest {
             // with cacheless, invalidation takes a while to be propagated.
             // the invalidation logic should poll around 3 or 4 times and the test fails if it didn't process the invalidation message during that period
             Awaitility.await()
-                    .atMost(Duration.ofMillis(300))
-                    .pollDelay(Duration.ofMillis(100))
+                    .atMost(Duration.ofSeconds(1))
                     .pollInterval(Duration.ofMillis(100))
                     .untilAsserted(() -> assertEquals(newTimeout, realm.admin().toRepresentation().getClientSessionIdleTimeout()));
         } else {

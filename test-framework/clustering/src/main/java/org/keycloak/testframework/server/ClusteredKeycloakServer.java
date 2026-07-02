@@ -52,8 +52,8 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         return DockerKeycloakDistribution.createImage(true);
     }
 
-    public ClusteredKeycloakServer(int mumServers, String images, long startTimeout, boolean cacheless) {
-        containers = new DockerKeycloakDistribution[mumServers];
+    public ClusteredKeycloakServer(int numServers, String images, long startTimeout, boolean cacheless) {
+        containers = new DockerKeycloakDistribution[numServers];
         this.images = images;
         this.startTimeout = startTimeout;
         this.cacheless = cacheless;
