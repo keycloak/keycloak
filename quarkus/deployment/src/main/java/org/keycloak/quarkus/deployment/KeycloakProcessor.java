@@ -299,6 +299,11 @@ class KeycloakProcessor {
         if (filter != null) {
             filters.produce(new FilterBuildItem(filter, SecurityHandlerPriorities.CORS + 1));
         }
+
+        var misdirectedRequestFilter = recorder.getMisdirectedRequestFilter();
+        if (misdirectedRequestFilter != null) {
+            filters.produce(new FilterBuildItem(misdirectedRequestFilter, SecurityHandlerPriorities.CORS + 2));
+        }
     }
 
     @Record(ExecutionTime.STATIC_INIT)

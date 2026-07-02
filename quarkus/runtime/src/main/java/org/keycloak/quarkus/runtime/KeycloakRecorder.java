@@ -19,10 +19,13 @@ package org.keycloak.quarkus.runtime;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,10 +41,13 @@ import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
+import org.keycloak.config.HostnameV2Options;
 import org.keycloak.config.HttpAccessLogOptions;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.OpenApiOptions;
+import org.keycloak.config.Option;
+import org.keycloak.config.ProxyOptions;
 import org.keycloak.config.TruststoreOptions;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.provider.Provider;
@@ -49,7 +55,9 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.services.MisdirectedFilter;
 import org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -129,7 +137,26 @@ public class KeycloakRecorder {
     public Handler<RoutingContext> getRejectNonNormalizedPathFilter() {
         return !Configuration.isTrue(HttpOptions.HTTP_ACCEPT_NON_NORMALIZED_PATHS) ? new RejectNonNormalizedPathFilter() : null;
     }
-
+    
+    public Handler<RoutingContext> getMisdirectedRequestFilter() {
+        // not checking for http/2 enablement - it is enabled by default and not exposed as a supported configuration option
+        if (!Configuration.isTrue(HttpPropertyMappers.QUARKUS_HTTPS_SNI) || !HttpPropertyMappers.isHttpsEnabled() || Configuration.getConfigValue(ProxyOptions.PROXY_HEADERS).getValue() != null) {
+            return null;
+        }
+        
+        String adminHostnameOrUrl = Configuration.getConfigValue(HostnameV2Options.HOSTNAME_ADMIN).getValue();
+        String adminHostname = null;
+        if (adminHostnameOrUrl != null) {
+            if (adminHostnameOrUrl.startsWith("http://") || adminHostnameOrUrl.startsWith("https://")) {
+                adminHostname = URI.create(adminHostnameOrUrl).getHost(); 
+            } else {
+                adminHostname = adminHostnameOrUrl;
+            }
+        }
+        boolean isStrict = Configuration.getConfigValue(HostnameV2Options.HOSTNAME).getValue() != null;
+        return new MisdirectedFilter(isStrict, adminHostname);
+    }
+    
     public void configureTruststore() {
         List<String> truststores = new ArrayList<>();
         Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
