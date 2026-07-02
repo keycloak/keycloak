@@ -1,6 +1,7 @@
 import type OrganizationDomainRepresentation from "./organizationDomainRepresentation.js";
 import type IdentityProviderRepresentation from "./identityProviderRepresentation.js";
 import type MemberRepresentation from "./memberRepresentation.js";
+import type RoleRepresentation from "./roleRepresentation.js";
 
 export default interface OrganizationRepresentation {
   id?: string;
@@ -13,4 +14,6 @@ export default interface OrganizationRepresentation {
   domains?: OrganizationDomainRepresentation[];
   members?: MemberRepresentation[];
   identityProviders?: IdentityProviderRepresentation[];
+  defaultRole?: RoleRepresentation;
+  roles?: RoleRepresentation[];
 }

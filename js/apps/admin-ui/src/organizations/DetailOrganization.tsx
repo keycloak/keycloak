@@ -40,6 +40,7 @@ import {
 import { useAccess } from "../context/access/Access";
 import { AdminEvents } from "../events/AdminEvents";
 import { useState } from "react";
+import { OrganizationRoles } from "./OrganizationRoles";
 
 export default function DetailOrganization() {
   const { adminClient } = useAdminClient();
@@ -92,6 +93,7 @@ export default function DetailOrganization() {
   const settingsTab = useTab("settings");
   const attributesTab = useTab("attributes");
   const membersTab = useTab("members");
+  const rolesTab = useTab("roles");
   const groupsTab = useTab("groups");
   const identityProvidersTab = useTab("identityProviders");
   const eventsTab = useTab("events");
@@ -166,6 +168,14 @@ export default function DetailOrganization() {
             {...membersTab}
           >
             <MembersSection />
+          </Tab>
+          <Tab
+            id="roles"
+            data-testid="rolesTab"
+            title={<TabTitleText>{t("roles")}</TabTitleText>}
+            {...rolesTab}
+          >
+            <OrganizationRoles />
           </Tab>
           <Tab
             id="groups"

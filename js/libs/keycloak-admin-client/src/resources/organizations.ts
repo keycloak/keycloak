@@ -6,6 +6,7 @@ import UserRepresentation from "../defs/userRepresentation.js";
 import Resource from "./resource.js";
 import { Groups } from "./groups.js";
 import OrganizationMemberRepresentation from "../defs/organizationMemberRepresentation.js";
+import RoleRepresentation from "../defs/roleRepresentation.js";
 
 interface PaginatedQuery {
   first?: number; // The position of the first result to be processed (pagination offset)
@@ -29,6 +30,16 @@ interface InvitationQuery extends PaginatedQuery {
   search?: string; //Search across email, firstName, and lastName
   firstName?: string; //Filter by first name
   lastName?: string; //Filter by last name
+}
+
+export interface OrganizationRoleQuery extends PaginatedQuery {
+  orgId: string;
+  briefRepresentation?: boolean;
+}
+
+interface OrganizationRoleParams {
+  orgId: string;
+  roleId: string;
 }
 
 export class Organizations extends Resource<{ realm?: string }> {
@@ -166,6 +177,150 @@ export class Organizations extends Resource<{ realm?: string }> {
       urlParamKeys: ["orgId", "alias"],
     },
   );
+
+  public listRoles = this.makeRequest<
+    OrganizationRoleQuery,
+    RoleRepresentation[]
+  >({
+    method: "GET",
+    path: "/{orgId}/roles",
+    urlParamKeys: ["orgId"],
+  });
+
+  public countRoles = this.makeRequest<
+    Pick<OrganizationRoleQuery, "orgId" | "search">,
+    number
+  >({
+    method: "GET",
+    path: "/{orgId}/roles/count",
+    urlParamKeys: ["orgId"],
+  });
+
+  public createRole = this.makeRequest<
+    RoleRepresentation & { orgId: string },
+    { id: string }
+  >({
+    method: "POST",
+    path: "/{orgId}/roles",
+    urlParamKeys: ["orgId"],
+    returnResourceIdInLocationHeader: { field: "id" },
+  });
+
+  public findRole = this.makeRequest<
+    OrganizationRoleParams,
+    RoleRepresentation | null
+  >({
+    method: "GET",
+    path: "/{orgId}/roles/{roleId}",
+    urlParamKeys: ["orgId", "roleId"],
+    catchNotFound: true,
+  });
+
+  public findDefaultRole = this.makeRequest<
+    { orgId: string },
+    RoleRepresentation | null
+  >({
+    method: "GET",
+    path: "/{orgId}/roles/default",
+    urlParamKeys: ["orgId"],
+    catchNotFound: true,
+  });
+
+  public updateRole = this.makeUpdateRequest<
+    OrganizationRoleParams,
+    RoleRepresentation,
+    void
+  >({
+    method: "PUT",
+    path: "/{orgId}/roles/{roleId}",
+    urlParamKeys: ["orgId", "roleId"],
+  });
+
+  public delRole = this.makeRequest<OrganizationRoleParams, void>({
+    method: "DELETE",
+    path: "/{orgId}/roles/{roleId}",
+    urlParamKeys: ["orgId", "roleId"],
+  });
+
+  public listRoleComposites = this.makeRequest<
+    OrganizationRoleParams & PaginatedQuery,
+    RoleRepresentation[]
+  >({
+    method: "GET",
+    path: "/{orgId}/roles/{roleId}/composites",
+    urlParamKeys: ["orgId", "roleId"],
+  });
+
+  public listRealmRoleComposites = this.makeRequest<
+    OrganizationRoleParams,
+    RoleRepresentation[]
+  >({
+    method: "GET",
+    path: "/{orgId}/roles/{roleId}/composites/realm",
+    urlParamKeys: ["orgId", "roleId"],
+  });
+
+  public listClientRoleComposites = this.makeRequest<
+    OrganizationRoleParams & { clientId: string },
+    RoleRepresentation[]
+  >({
+    method: "GET",
+    path: "/{orgId}/roles/{roleId}/composites/clients/{clientId}",
+    urlParamKeys: ["orgId", "roleId", "clientId"],
+  });
+
+  public addRoleComposites = this.makeUpdateRequest<
+    OrganizationRoleParams,
+    RoleRepresentation[],
+    void
+  >({
+    method: "POST",
+    path: "/{orgId}/roles/{roleId}/composites",
+    urlParamKeys: ["orgId", "roleId"],
+  });
+
+  public delRoleComposites = this.makeUpdateRequest<
+    OrganizationRoleParams,
+    RoleRepresentation[],
+    void
+  >({
+    method: "DELETE",
+    path: "/{orgId}/roles/{roleId}/composites",
+    urlParamKeys: ["orgId", "roleId"],
+  });
+
+  public listRoleUsers = this.makeRequest<
+    OrganizationRoleParams & {
+      briefRepresentation?: boolean;
+      first?: number;
+      max?: number;
+    },
+    UserRepresentation[]
+  >({
+    method: "GET",
+    path: "/{orgId}/roles/{roleId}/users",
+    urlParamKeys: ["orgId", "roleId"],
+  });
+
+  public addRoleUsers = this.makeUpdateRequest<
+    OrganizationRoleParams,
+    UserRepresentation[],
+    void
+  >({
+    method: "POST",
+    path: "/{orgId}/roles/{roleId}/users",
+    urlParamKeys: ["orgId", "roleId"],
+  });
+
+  public delRoleUsers = this.makeUpdateRequest<
+    OrganizationRoleParams,
+    UserRepresentation[],
+    void
+  >({
+    method: "DELETE",
+    path: "/{orgId}/roles/{roleId}/users",
+    urlParamKeys: ["orgId", "roleId"],
+  });
 
   // Organization Invitations Management
   public listInvitations = this.makeRequest<
