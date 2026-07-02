@@ -275,6 +275,37 @@ With this setup, any request to an admin path on the public port (8443 in our ex
 Admin paths on this port will return a 404.
 ====
 
+[[isolating-master-realm-traefik-reencrypt]]
+== Isolating the master realm from the public internet
+
+As a security best practice, prevent logins to the administrative `master` realm from public IP addresses.
+Use the following steps to allow access to these URLs only from allowed internal IP addresses.
+
+=== Traefik configuration
+
+The `keycloak-master` router isolates the default management realm from custom application realms.
+
+[source,yaml]
+----
+  routers:
+    keycloak-master:
+      entryPoints:
+        - keycloak
+      rule: "PathRegexp(`^/realms/master(/|$)`)"
+      priority: 100
+      middlewares:
+        - filter-headers
+        - pass-client-cert
+        - ip-allowlist
+      tls: { }
+      service: keycloak
+----
+
+This router targets requests matching the regular expression `^/realms/master(/|$)`.
+This rule matches core management traffic (such as token requests, logins, or console lookups inside the master realm) while letting other user realm paths pass through unhindered.
+
+The explicit use of `priority: 100` on the master router ensures it is evaluated before the `keycloak-public` router.
+
 [[graceful-shutdown-considerations-traefik-reencrypt]]
 == Graceful shutdown considerations
 
