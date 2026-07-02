@@ -25,7 +25,6 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -83,7 +82,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
             String token = response.getToken();
 
             JWSHeader header = new JWSInput(token).getHeader();
-            assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, header.getAlgorithm().name());
+            assertEquals(Algorithm.ES256, header.getAlgorithm().name());
 
             ClientRepresentation rep = new ClientRepresentation();
             ClientRepresentation created = reg.create(rep);

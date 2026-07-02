@@ -21,7 +21,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -69,7 +68,9 @@ public class FallbackKeyProviderTest {
         Assertions.assertTrue(response.isSuccess());
 
         providers = realm.admin().components().query(realmId, "org.keycloak.keys.KeyProvider");
-        Assert.assertNames(providers, "fallback-RS256", "fallback-AES", "fallback-" + Constants.INTERNAL_SIGNATURE_ALGORITHM);
+        // Internal cookies/tokens now use the realm default signature algorithm (RS256), so no HS512
+        // fallback key is generated during a basic login + token flow.
+        Assert.assertNames(providers, "fallback-RS256", "fallback-AES");
     }
 
     @Test

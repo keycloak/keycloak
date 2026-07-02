@@ -200,6 +200,18 @@ This parameter is sent by clients during token refresh and is used when the `${a
 It was primarily used by legacy adapters that have been removed.
 This improves security by ensuring that only trusted, pre-registered hosts can be used in backchannel logout URLs.
 
+=== Internal cookies and tokens now use the realm Default Signature Algorithm
+
+Internal cookies (such as `KC_RESTART`, `KEYCLOAK_IDENTITY` and `AUTH_SESSION_ID`) and internal tokens (refresh tokens, offline tokens, client registration / initial access tokens, the CIBA `auth_req_id` and OID4VC pre-authorized codes) are now signed with the realm's *Default Signature Algorithm* (`RS256` by default) instead of the previously hard-coded `HS512`.
+
+Previously these were always signed with a symmetric `HS512` key regardless of the realm configuration. Now they follow the same *Default Signature Algorithm* realm setting that already governed other tokens, so a single realm setting controls the signature algorithm of all tokens.
+
+No action is required on upgrade:
+
+* Existing refresh and offline tokens carry their algorithm in the token header and continue to be verified using the existing `HS512` key, which is retained.
+* Existing `AUTH_SESSION_ID` cookies are verified with a fallback to `HS512` so logins in progress are not interrupted.
+
+New tokens and cookies are signed with the realm Default Signature Algorithm. Because the default (`RS256`) is asymmetric, signing and verification are more expensive than `HS512` and signatures are larger. Realms that prefer the previous behavior can set the *Default Signature Algorithm* to an `HS*` algorithm (for example `HS512`) in the realm keys settings.
 === Default AES key size increased to 256 bits
 
 The default key size for newly generated AES key providers (aes-generated) has been increased from 128 bits to 256 bits for improved security.

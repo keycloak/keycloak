@@ -34,7 +34,6 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
@@ -378,7 +377,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
     @Test
     public void clientCredentialsAuthRequest_ClientES256_RealmPS256() throws Exception {
-        conductClientCredentialsAuthRequestWithRefreshToken(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES256, Algorithm.PS256);
+        conductClientCredentialsAuthRequestWithRefreshToken(Algorithm.PS256, Algorithm.ES256, Algorithm.PS256);
     }
 
     @Test

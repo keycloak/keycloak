@@ -59,7 +59,6 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.keys.GeneratedEddsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
@@ -272,7 +271,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getRefreshToken()).getHeader();
-        assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, header.getAlgorithm().name());
+        assertEquals(Algorithm.RS256, header.getAlgorithm().name());
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
@@ -1394,52 +1393,52 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void accessTokenRequest_ClientPS384_RealmRS256() throws Exception {
-        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS384, Algorithm.RS256);
+        conductAccessTokenRequest(Algorithm.RS256, Algorithm.PS384, Algorithm.RS256);
     }
 
     @Test
     public void accessTokenRequest_ClientPS256_RealmPS256() throws Exception {
-        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS256, Algorithm.PS256);
+        conductAccessTokenRequest(Algorithm.PS256, Algorithm.PS256, Algorithm.PS256);
     }
 
     @Test
     public void accessTokenRequest_ClientPS512_RealmPS256() throws Exception {
-        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS512, Algorithm.PS256);
+        conductAccessTokenRequest(Algorithm.PS256, Algorithm.PS512, Algorithm.PS256);
     }
 
     @Test
     public void accessTokenRequest_ClientRS384_RealmRS256() throws Exception {
-        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.RS384, Algorithm.RS256);
+        conductAccessTokenRequest(Algorithm.RS256, Algorithm.RS384, Algorithm.RS256);
     }
 
     @Test
     public void accessTokenRequest_ClientRS512_RealmRS512() throws Exception {
-        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.RS512, Algorithm.RS512);
+        conductAccessTokenRequest(Algorithm.RS512, Algorithm.RS512, Algorithm.RS512);
     }
 
     @Test
     public void accessTokenRequest_ClientES256_RealmPS256() throws Exception {
-        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES256, Algorithm.PS256);
+        conductAccessTokenRequest(Algorithm.PS256, Algorithm.ES256, Algorithm.PS256);
     }
 
     @Test
     public void accessTokenRequest_ClientES384_RealmES384() throws Exception {
-        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES384, Algorithm.ES384);
+        conductAccessTokenRequest(Algorithm.ES384, Algorithm.ES384, Algorithm.ES384);
     }
 
     @Test
     public void accessTokenRequest_ClientES512_RealmRS256() throws Exception {
-        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES512, Algorithm.RS256);
+        conductAccessTokenRequest(Algorithm.RS256, Algorithm.ES512, Algorithm.RS256);
     }
 
     @Test
     public void accessTokenRequest_ClientEdDSA_RealmES256() throws Exception {
-        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.EdDSA, Algorithm.ES256);
+        conductAccessTokenRequest(Algorithm.ES256, Algorithm.EdDSA, Algorithm.ES256);
     }
 
     @Test
     public void accessTokenRequest_ClientEdDSA_RealmEdDSA() throws Exception {
-        conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.EdDSA, Algorithm.EdDSA);
+        conductAccessTokenRequest(Algorithm.EdDSA, Algorithm.EdDSA, Algorithm.EdDSA);
     }
 
     @Test
@@ -1458,7 +1457,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         try (Response response = realm.components().add(comp)) {
             assertEquals(201, response.getStatus());
             compId = ApiUtil.getCreatedId(response);
-            conductAccessTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.EdDSA, Algorithm.EdDSA, JavaAlgorithm.Ed448);
+            conductAccessTokenRequest(Algorithm.EdDSA, Algorithm.EdDSA, Algorithm.EdDSA, JavaAlgorithm.Ed448);
         } finally {
             if (compId != null) {
                 realm.components().removeComponent(compId);
