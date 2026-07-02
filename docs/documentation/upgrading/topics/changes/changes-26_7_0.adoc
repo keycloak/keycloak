@@ -92,7 +92,7 @@ Inspect the `+uris+` field of each resource and verify that:
 * Wildcards (`+*+`) appear only at the end of the URI as `+/*+` or as a suffix pattern like `+/*.html+`.
 
 Resources with malformed URI templates should be corrected before upgrading.
-After the upgrade, existing resources with malformed templates will continue to be stored but will not match any request URI during authorization evaluation.
+After the upgrade, existing resources with malformed templates will continue to be stored, but they may not match request URIs as intended.
 Any update to such a resource will require fixing the URI template at the same time, as the stricter validation applies to all create and update operations.
 
 // ------------------------ Notable changes ------------------------ //
