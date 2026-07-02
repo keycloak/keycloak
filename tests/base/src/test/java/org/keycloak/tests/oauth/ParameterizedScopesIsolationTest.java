@@ -1,12 +1,8 @@
 package org.keycloak.tests.oauth;
 
-import java.util.HashMap;
-
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -124,13 +120,9 @@ public class ParameterizedScopesIsolationTest {
     }
 
     private void createAndAssignParameterizedScope(String name, String type) {
-        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
-        scopeRep.setName(name);
-        scopeRep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        scopeRep.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, type);
-        }});
+        ClientScopeRepresentation scopeRep = ParameterizedScopeBuilder.create(name)
+                .parameterizedScopeType(type)
+                .build();
 
         String scopeId;
         try (Response response = realm.admin().clientScopes().create(scopeRep)) {

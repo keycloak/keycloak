@@ -34,10 +34,8 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.BrowserSecurityHeaders;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel.RequiredAction;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -73,6 +71,7 @@ import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.oauth.ParameterizedScopeBuilder;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -1056,14 +1055,10 @@ public class LoginTest {
     @Test
     @DatabaseTest
     public void loginSuccessfulWithDynamicScope() {
-        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
-        clientScope.setName("dynamic");
-        clientScope.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic:*");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
-        }});
-        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        ClientScopeRepresentation clientScope = ParameterizedScopeBuilder.create("dynamic")
+                .parameterizedScopeType("string")
+                .regexp("dynamic:*")
+                .build();
         Response response = managedRealm.admin().clientScopes().create(clientScope);
         String scopeId = ApiUtil.getCreatedId(response);
         response.close();

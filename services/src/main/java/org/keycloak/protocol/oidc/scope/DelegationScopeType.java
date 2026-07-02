@@ -46,6 +46,11 @@ public class DelegationScopeType extends UsernameScopeType {
     }
 
     @Override
+    public boolean isRepeatable() {
+        return false;
+    }
+
+    @Override
     public ParameterizedScopeTypeProvider create(KeycloakSession session) {
         return new DelegationScopeType(session);
     }
