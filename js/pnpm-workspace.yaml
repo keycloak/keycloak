@@ -38,3 +38,5 @@ overrides:
 allowBuilds:
   '@swc/core': true
   esbuild: true
+minimumReleaseAgeExclude:
+  - '@types/node@26.1.0'
