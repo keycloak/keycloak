@@ -323,6 +323,7 @@ public class UsersResource {
                     attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
                 }
                 addCreatedTimestampConditions(attributes, createdAfter, createdBefore);
+                attributes.putAll(searchAttributes);
 
                 return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
                         maxResults, false);
@@ -455,6 +456,7 @@ public class UsersResource {
                 parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
             }
             addCreatedTimestampConditions(parameters, createdAfter, createdBefore);
+            parameters.putAll(searchAttributes);
             // search /users equivalent to this doesn't include service-accounts so counting shouldn't as well
             parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "false");
             if (userPermissionEvaluator.canView()) {
