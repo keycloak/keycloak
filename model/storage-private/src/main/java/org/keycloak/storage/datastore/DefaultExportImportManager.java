@@ -1014,7 +1014,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         }
         createCredentials(userRep, session, newRealm, user, false);
         createFederatedIdentities(userRep, session, newRealm, user);
-        createRoleMappings(userRep, user, newRealm);
+        createRoleMappings(session, userRep, user, newRealm);
         if (userRep.getClientConsents() != null) {
             for (UserConsentRepresentation consentRep : userRep.getClientConsents()) {
                 UserConsentModel consentModel = RepresentationToModel.toModel(newRealm, consentRep, session);
