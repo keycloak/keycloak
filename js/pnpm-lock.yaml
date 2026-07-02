@@ -292,7 +292,7 @@ importers:
         version: 4.5.4(@types/node@25.9.3)(rollup@4.62.0)(typescript@5.9.3)(vite@7.3.5(@types/node@25.9.3)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3))
       vitest:
         specifier: ^4.0.16
-        version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@25.9.3)(jsdom@27.4.0)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3)
+        version: 4.0.16(@opentelemetry/api@1.9.1)(@types/node@25.9.3)(jsdom@27.4.0)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3)
 
   apps/create-keycloak-theme:
     dependencies:
@@ -333,23 +333,23 @@ importers:
   libs/keycloak-admin-client:
     dependencies:
       '@microsoft/kiota-abstractions':
-        specifier: ^1.0.0-preview.86
-        version: 1.0.0-preview.99
+        specifier: 1.0.0-preview.102
+        version: 1.0.0-preview.102
       '@microsoft/kiota-http-fetchlibrary':
-        specifier: ^1.0.0-preview.80
-        version: 1.0.0-preview.99
+        specifier: 1.0.0-preview.102
+        version: 1.0.0-preview.102
       '@microsoft/kiota-serialization-form':
-        specifier: ^1.0.0-preview.74
-        version: 1.0.0-preview.99
+        specifier: 1.0.0-preview.102
+        version: 1.0.0-preview.102
       '@microsoft/kiota-serialization-json':
-        specifier: ^1.0.0-preview.86
-        version: 1.0.0-preview.99
+        specifier: 1.0.0-preview.102
+        version: 1.0.0-preview.102
       '@microsoft/kiota-serialization-multipart':
-        specifier: ^1.0.0-preview.67
-        version: 1.0.0-preview.99
+        specifier: 1.0.0-preview.102
+        version: 1.0.0-preview.102
       '@microsoft/kiota-serialization-text':
-        specifier: ^1.0.0-preview.79
-        version: 1.0.0-preview.99
+        specifier: 1.0.0-preview.102
+        version: 1.0.0-preview.102
       camelize-ts:
         specifier: ^3.0.0
         version: 3.0.0
@@ -456,7 +456,7 @@ importers:
         version: 2.2.2(vite@7.3.5(@types/node@25.9.3)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3))
       vitest:
         specifier: ^4.0.16
-        version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@25.9.3)(jsdom@27.4.0)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3)
+        version: 4.0.16(@opentelemetry/api@1.9.1)(@types/node@25.9.3)(jsdom@27.4.0)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3)
 
   themes-vendor:
     dependencies:
@@ -1068,23 +1068,23 @@ packages:
     resolution: {integrity: sha512-yK6OycD46gIzLRpj6ueVUWPk1ACSpkN1LBo05gY1qPTylbWyUCanXfH7+VgkI5LJrJoRSQR5F04XuCffCXLOBw==}
     hasBin: true
 
-  '@microsoft/kiota-abstractions@1.0.0-preview.99':
-    resolution: {integrity: sha512-6qrlwGCO3DbvpA7tszqk7JNQPFPDg8gv5NGMTziwdtHqaQrUALKusm3vdJGPVGrbNiZL6/lBaY5NSUvLtlhRCg==}
+  '@microsoft/kiota-abstractions@1.0.0-preview.102':
+    resolution: {integrity: sha512-WL+S7X+W6zpDO6vFk+FClb5hoUJMV1ZcMHo1H52r2Q49xTuYx9esJqmwh/0EXsftmxKwOOIOoPfO7+Tp5QAddw==}
 
-  '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.99':
-    resolution: {integrity: sha512-lIruiYf8L7DPG0Fm92QN5YK4zx4sh76EtTONUAqBCxt5AtEJ7KQceBajaXQsjfcndUAp9LmDVdqR44o8sc9/mA==}
+  '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.102':
+    resolution: {integrity: sha512-oXfrPOWkIR2/Gs700n00EY3VDc+Qgz6y7ZiA/f8FHJsnwSjZ017xcWFw2PLzJItczVsad0pq/N5DYnoF6Co11Q==}
 
-  '@microsoft/kiota-serialization-form@1.0.0-preview.99':
-    resolution: {integrity: sha512-BdXxqNfy+5yWTyxpBguqJYy6E9RRotrDClRcUO89okFcR5N6s6xenjsvGw++q9KWNi7qcHrqaG8xlRz1TLk81Q==}
+  '@microsoft/kiota-serialization-form@1.0.0-preview.102':
+    resolution: {integrity: sha512-1w70XAA/F4RgbyNbRAaZCjLAOiKQjdiQDYlNZC9x8g7xgd7tNqYqowt/auQS1A9SZOrT626q6+Gr2xKKyW3wOg==}
 
-  '@microsoft/kiota-serialization-json@1.0.0-preview.99':
-    resolution: {integrity: sha512-kDmMYmB7XkRprlLviEynRPDkE45JDxqiuUopfBRMvNK4qhzFiJTXGLihZ2FG6fdVu9LbV3/W0QxbeGP35kDK6A==}
+  '@microsoft/kiota-serialization-json@1.0.0-preview.102':
+    resolution: {integrity: sha512-YpIt5pXNX13ND736oJFf0wBYPAafCv+CAE17Fa1HcS1drCdXx8ELPQ5GxGDbQG7J5LIMDgUtBOUmf5R/FrMQ6A==}
 
-  '@microsoft/kiota-serialization-multipart@1.0.0-preview.99':
-    resolution: {integrity: sha512-cfviCAVTlZPD+MUgdTIgsX/IfHND+gKQhem3vJeo7l5Qqz2rvvVFXOHwECI19umO9Un1QFKe1V5wg+M+aj90+g==}
+  '@microsoft/kiota-serialization-multipart@1.0.0-preview.102':
+    resolution: {integrity: sha512-tjwt0m+8+OqZizZU6gBARTcA8suPYS0onD9IUbhKsvRrAJpBIyp07hnyOTXBgE+gurGGbeT3TTl9AUK2ic6DiA==}
 
-  '@microsoft/kiota-serialization-text@1.0.0-preview.99':
-    resolution: {integrity: sha512-gcBffQRI1soHVAiS4YjfMr3SQ9fC8xVUGMfarTTszU4PjpxyFOknaWoFdt/0rvMeavI9jOtbyvDKAf77cZyYIQ==}
+  '@microsoft/kiota-serialization-text@1.0.0-preview.102':
+    resolution: {integrity: sha512-ZCihyrXKYGfTz/frqNQvwKsD+EgjhjfclB5/XDrSGNXduisL/f1MbyvjsgmrZnLmtCwX8/v+Mc3vlz716KWYbg==}
 
   '@microsoft/tsdoc-config@0.18.1':
     resolution: {integrity: sha512-9brPoVdfN9k9g0dcWkFeA7IH9bbcttzDJlXvkf8b2OBzd5MueR1V2wkKBL0abn0otvmkHJC6aapBOTJDDeMCZg==}
@@ -1160,8 +1160,8 @@ packages:
   '@octokit/types@16.0.0':
     resolution: {integrity: sha512-sKq+9r1Mm4efXW1FCk7hFSeJo4QKreL/tTbR0rz/qx/r1Oa2VV83LTA/H/MuCOX7uCIJmQVRKBcbmWoySjAnSg==}
 
-  '@opentelemetry/api@1.9.0':
-    resolution: {integrity: sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==}
+  '@opentelemetry/api@1.9.1':
+    resolution: {integrity: sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q==}
     engines: {node: '>=8.0.0'}
 
   '@patternfly/patternfly@4.224.5':
@@ -1619,8 +1619,8 @@ packages:
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
-  '@std-uritemplate/std-uritemplate@2.0.8':
-    resolution: {integrity: sha512-8oj7jKksoTRxjdPkWKX9FyOKDS8ORBm+ZfTSHm0f3eYha8cI0O1d57gyduOIAX7Y2uUukNDNlxlvGb+FFkE7yQ==}
+  '@std-uritemplate/std-uritemplate@2.0.10':
+    resolution: {integrity: sha512-EGxlaZDK+CcvMYzxLWKgQlhNiyGIoznEi/CVnzM1DCiQQh/EwSH0ThvseXJ4g6btu1hvlUZ70SrZD6ahsglXcw==}
 
   '@swc/core-darwin-arm64@1.15.8':
     resolution: {integrity: sha512-M9cK5GwyWWRkRGwwCbREuj6r8jKdES/haCZ3Xckgkl8MUQJZA3XB7IXXK1IXRNeLjg6m7cnoMICpXv1v1hlJOg==}
@@ -5414,37 +5414,37 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@microsoft/kiota-abstractions@1.0.0-preview.99':
+  '@microsoft/kiota-abstractions@1.0.0-preview.102':
     dependencies:
-      '@opentelemetry/api': 1.9.0
-      '@std-uritemplate/std-uritemplate': 2.0.8
+      '@opentelemetry/api': 1.9.1
+      '@std-uritemplate/std-uritemplate': 2.0.10
       tinyduration: 3.4.1
       tslib: 2.8.1
 
-  '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.99':
+  '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.102':
     dependencies:
-      '@microsoft/kiota-abstractions': 1.0.0-preview.99
-      '@opentelemetry/api': 1.9.0
+      '@microsoft/kiota-abstractions': 1.0.0-preview.102
+      '@opentelemetry/api': 1.9.1
       tslib: 2.8.1
 
-  '@microsoft/kiota-serialization-form@1.0.0-preview.99':
+  '@microsoft/kiota-serialization-form@1.0.0-preview.102':
     dependencies:
-      '@microsoft/kiota-abstractions': 1.0.0-preview.99
+      '@microsoft/kiota-abstractions': 1.0.0-preview.102
       tslib: 2.8.1
 
-  '@microsoft/kiota-serialization-json@1.0.0-preview.99':
+  '@microsoft/kiota-serialization-json@1.0.0-preview.102':
     dependencies:
-      '@microsoft/kiota-abstractions': 1.0.0-preview.99
+      '@microsoft/kiota-abstractions': 1.0.0-preview.102
       tslib: 2.8.1
 
-  '@microsoft/kiota-serialization-multipart@1.0.0-preview.99':
+  '@microsoft/kiota-serialization-multipart@1.0.0-preview.102':
     dependencies:
-      '@microsoft/kiota-abstractions': 1.0.0-preview.99
+      '@microsoft/kiota-abstractions': 1.0.0-preview.102
       tslib: 2.8.1
 
-  '@microsoft/kiota-serialization-text@1.0.0-preview.99':
+  '@microsoft/kiota-serialization-text@1.0.0-preview.102':
     dependencies:
-      '@microsoft/kiota-abstractions': 1.0.0-preview.99
+      '@microsoft/kiota-abstractions': 1.0.0-preview.102
       tslib: 2.8.1
 
   '@microsoft/tsdoc-config@0.18.1':
@@ -5532,7 +5532,7 @@ snapshots:
     dependencies:
       '@octokit/openapi-types': 27.0.0
 
-  '@opentelemetry/api@1.9.0': {}
+  '@opentelemetry/api@1.9.1': {}
 
   '@patternfly/patternfly@4.224.5': {}
 
@@ -5910,7 +5910,7 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
-  '@std-uritemplate/std-uritemplate@2.0.8': {}
+  '@std-uritemplate/std-uritemplate@2.0.10': {}
 
   '@swc/core-darwin-arm64@1.15.8':
     optional: true
@@ -9253,7 +9253,7 @@ snapshots:
       terser: 5.43.1
       yaml: 2.8.3
 
-  vitest@4.0.16(@opentelemetry/api@1.9.0)(@types/node@25.9.3)(jsdom@27.4.0)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3):
+  vitest@4.0.16(@opentelemetry/api@1.9.1)(@types/node@25.9.3)(jsdom@27.4.0)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3):
     dependencies:
       '@vitest/expect': 4.0.16
       '@vitest/mocker': 4.0.16(vite@7.3.5(@types/node@25.9.3)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3))
@@ -9276,7 +9276,7 @@ snapshots:
       vite: 7.3.5(@types/node@25.9.3)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.3)
       why-is-node-running: 2.3.0
     optionalDependencies:
-      '@opentelemetry/api': 1.9.0
+      '@opentelemetry/api': 1.9.1
       '@types/node': 25.9.3
       jsdom: 27.4.0
     transitivePeerDependencies:

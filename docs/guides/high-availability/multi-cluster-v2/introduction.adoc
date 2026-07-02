@@ -8,7 +8,7 @@ summary="Connect multiple {project_name} deployments without an external {jdgser
 
 <#include "/templates/experimental-feature.adoc">
 
-{project_name} supports deployments that consist of multiple {project_name} instances that connect to each other using its embedded Infinispan caches.
+{project_name} allows deployments that consist of multiple {project_name} instances that connect to each other using its embedded Infinispan caches.
 Load balancers can distribute the load evenly across those instances.
 Such setups are intended for transparent networks; see <@links.ha id="single-cluster-introduction" /> for more details.
 
@@ -51,10 +51,10 @@ using ROSA HCP.
 -->
 ////
 
-[#multi-cluster-v2-supported-configuration]
-== Supported Configuration
+[#multi-cluster-v2-infrastructure-requirements]
+== Infrastructure requirements
 
-The following configurations are supported:
+The following infrastructure requirements need to be met:
 
 * A highly available database with synchronous replication.
 

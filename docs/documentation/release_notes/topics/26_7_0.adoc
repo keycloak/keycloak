@@ -36,6 +36,25 @@ https://github.com/pulsastrix[Hugo Hakim Damer], https://github.com/rameshkumark
 https://github.com/Vitalisn4[Palpable] for the contributions!
 endif::[]
 
+== Identity Assertion JWT Authorization Grant experimental support
+
+{project_name} has experimental support for https://datatracker.ietf.org/doc/html/draft-ietf-oauth-identity-assertion-authz-grant[Identity Assertion JWT Authorization Grant (ID-JAG)].
+For now, {project_name} can act in the role of receiver, which receives ID-JAG and sends back access token, which works as a part of token endpoint. But there is the aim to extend on
+this in the upcoming {project_name} releases with further capabilities. Right now, functionality is available with the use of running {project_name} with the `identity-assertion-jwt` experimental feature.
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/bucchi[Yutaka Obuchi] for the contribution of this feature!
+endif::[]
+
+== Manage users and groups with the SCIM API (preview)
+
+https://datatracker.ietf.org/doc/html/rfc7644[SCIM] (System for Cross-domain Identity Management) is a standard protocol for reading and writing identity resources such as users and groups across multiple systems. It enables organizations to automate user provisioning and deprovisioning using widely available tooling — for example, integrating with identity governance platforms, HR systems, or other identity providers.
+
+{project_name} has SCIM APIs for managing users and groups within a realm. The implementation covers full CRUD and PATCH operations, filtering and pagination, schema extensions including the Enterprise User extension, and schema discovery endpoints.
+
+In this release, the SCIM API is being promoted to a preview feature. In the default profile it is disabled by default; to try it out, enable the `scim-api` feature.
+
+For more details, see the link:{adminguide_link}#_managing_scim[Managing users and groups through SCIM] documentation.
+
 = Administration
 
 == Client Admin API v2 (experimental)
@@ -124,6 +143,18 @@ For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 Read more about it in the link:https://www.keycloak.org/server/db#multiple-datasources[Configure multiple datasources] guide.
 
 = Configuring and Running
+
+== {project_name} Operator kustomize installation
+
+The {project_name} Operator can now be installed on vanilla Kubernetes clusters using kustomize instead of applying individual manifest files.
+
+== Cluster-wide install mode for the {project_name} Operator (preview)
+
+The {project_name} Operator now exposes `AllNamespaces` as a supported OLM install mode, allowing a single Operator instance to reconcile `Keycloak` custom resources across all namespaces in the cluster.
+
+For non-OLM installations, cluster-wide deployment is available through the `cluster-wide` kustomization overlay.
+
+Cluster-wide installation is in preview. For installation instructions and limitations, see the link:{operatorguide_link}[{operatorguide_name}].
 
 == Deprecation of SHA1 hashing functions in {project_name} 27
 
