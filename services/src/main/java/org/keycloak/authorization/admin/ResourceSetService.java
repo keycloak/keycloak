@@ -571,6 +571,9 @@ public class ResourceSetService {
                     }
                     inBrace = false;
                 } else if (inBrace) {
+                    if (c == '/') {
+                        throw malformedUri(uri);
+                    }
                     empty = false;
                 }
             }
@@ -578,12 +581,25 @@ public class ResourceSetService {
             if (inBrace) {
                 throw malformedUri(uri);
             }
+
+            int asteriskIndex = uri.indexOf('*');
+            if (asteriskIndex != -1) {
+                boolean validTrailing = uri.endsWith("/*");
+                boolean validSuffix = asteriskIndex > 0 && uri.charAt(asteriskIndex - 1) == '/'
+                        && asteriskIndex + 1 < uri.length() && uri.charAt(asteriskIndex + 1) == '.'
+                        && uri.indexOf('*', asteriskIndex + 1) == -1
+                        && uri.indexOf('/', asteriskIndex + 1) == -1;
+                if (!validTrailing && !validSuffix) {
+                    throw malformedUri(uri);
+                }
+            }
         }
     }
 
     private static ErrorResponseException malformedUri(String uri) {
         return new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
-                "URI [" + uri + "] is not a valid template; '{' and '}' must be matched and enclose a parameter name.",
+                "URI [" + uri + "] is not a valid template; '{' and '}' must be matched and enclose a parameter name that does not contain '/'."
+                        + " Wildcards are only supported as trailing '/*' or as a suffix pattern '/*.ext'.",
                 Status.BAD_REQUEST);
     }
 }
