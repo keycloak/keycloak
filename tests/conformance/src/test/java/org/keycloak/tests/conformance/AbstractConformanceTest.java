@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.conformance;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -78,8 +79,23 @@ public abstract class AbstractConformanceTest {
     }
 
     /**
-     * Drives the system under test once the module waits for it, e.g. delivers an OID4VP verifier
-     * request.
+     * Discovers all variant combinations of every named module from a single created plan. The modules share the
+     * same browser interaction and expected result, so a single test class can host a group of related modules.
+     */
+    protected Stream<ConformanceModuleVariant> discoverModuleVariants(String plan, Map<String, String> planVariant,
+            List<String> names, ConformanceResult expectedResult, BrowserInteraction browserInteraction) {
+        ConformanceModuleVariant template = new ConformanceModuleVariant(plan, planVariant, names.get(0), Map.of(),
+                expectedResult, browserInteraction);
+        Map<String, List<Map<String, String>>> discovered = OpenIdConformanceSuite.instance().client()
+                .discoverModuleVariants(plan, planVariant, names, suiteConfig(template));
+        return names.stream().flatMap(name -> discovered.get(name).stream()
+                .map(moduleVariant -> new ConformanceModuleVariant(plan, planVariant, name, moduleVariant,
+                        expectedResult, browserInteraction)));
+    }
+
+    /**
+     * Drives the system under test once the module waits for it, for example delivers an OID4VP verifier request or
+     * the credential offer the issuer initiated modules wait for.
      */
     protected Consumer<ModuleRun> interaction(ConformanceModuleVariant moduleVariant) {
         return null;
