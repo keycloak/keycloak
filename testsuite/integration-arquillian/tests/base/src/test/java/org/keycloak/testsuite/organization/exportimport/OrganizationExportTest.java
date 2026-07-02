@@ -75,6 +75,9 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         Map<String, List<String>> expectedManagedMembers = new HashMap<>();
         Map<String, List<String>> expectedUnmanagedMembers = new HashMap<>();
         Map<String, String> expectedGroupIds = new HashMap<>();
+        Map<String, String> expectedDefaultRoleNames = new HashMap<>();
+        Map<String, String> expectedCustomRoleNames = new HashMap<>();
+        Map<String, String> expectedCustomRoleMembers = new HashMap<>();
 
         // Create realm role for org group role mapping
         RoleRepresentation realmRole = new RoleRepresentation("org-export-realm-role", "Realm role for export test", false);
@@ -107,6 +110,18 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
                 assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
             }
 
+            RoleRepresentation defaultOrganizationRole = organization.roles().getDefault().toRepresentation();
+            RoleRepresentation organizationRole = new RoleRepresentation("org-export-member-role-" + i, "Organization member role for export test", false);
+            String organizationRoleId;
+            try (Response response = organization.roles().create(organizationRole)) {
+                assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+                organizationRoleId = ApiUtil.getCreatedId(response);
+            }
+            RoleRepresentation createdOrganizationRole = organization.roles().get(organizationRoleId).toRepresentation();
+            organization.roles().getDefault().addComposites(List.of(createdOrganizationRole, createdRealmRole, createdClientRole));
+            expectedDefaultRoleNames.put(orgRep.getName(), defaultOrganizationRole.getName());
+            expectedCustomRoleNames.put(orgRep.getName(), createdOrganizationRole.getName());
+
             // Create organization groups with hierarchy
             String deptId = createTopLevelGroup(organization, "Department-" + i);
             String teamId = createTopLevelGroup(organization, "Team-" + i);
@@ -124,10 +139,18 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
 
             expectedOrganizations.add(orgRep);
 
+            UserRepresentation customRoleMember = null;
             for (int j = 0; j < 3; j++) {
                 UserRepresentation member = addMember(organization, "realmuser-" + j + "@" + domain);
+                if (customRoleMember == null) {
+                    customRoleMember = member;
+                }
                 expectedUnmanagedMembers.computeIfAbsent(orgRep.getName(), s -> new ArrayList<>()).add(member.getUsername());
             }
+            UserRepresentation roleMember = new UserRepresentation();
+            roleMember.setId(customRoleMember.getId());
+            organization.roles().get(organizationRoleId).addUserMembers(List.of(roleMember));
+            expectedCustomRoleMembers.put(orgRep.getName(), customRoleMember.getUsername());
 
             UsersResource federatedUsers = providerRealm.users();
 
@@ -163,19 +186,23 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
 
         RealmRepresentation importedSingleFileRealm = exportRemoveImportRealm(true);
 
-        validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, expectedGroupIds, importedSingleFileRealm);
+        validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, expectedGroupIds,
+                expectedDefaultRoleNames, expectedCustomRoleNames, expectedCustomRoleMembers, importedSingleFileRealm);
 
         managedRealm.admin().logoutAll();
         providerRealm.logoutAll();
 
         RealmRepresentation importedDirRealm = exportRemoveImportRealm(false);
 
-        validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, expectedGroupIds, importedDirRealm);
+        validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, expectedGroupIds,
+                expectedDefaultRoleNames, expectedCustomRoleNames, expectedCustomRoleMembers, importedDirRealm);
     }
 
     private void validateImported(List<OrganizationRepresentation> expectedOrganizations,
             Map<String, List<String>> expectedManagedMembers, Map<String, List<String>> expectedUnmanagedMembers,
             Map<String, String> expectedGroupIds,
+            Map<String, String> expectedDefaultRoleNames, Map<String, String> expectedCustomRoleNames,
+            Map<String, String> expectedCustomRoleMembers,
             RealmRepresentation importedRealm) {
         assertTrue(importedRealm.isOrganizationsEnabled());
 
@@ -216,6 +243,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             
             // Validate organization groups and hierarchy
             validateOrganizationGroups(organization, expectedGroupIds);
+            validateOrganizationRoles(organization, orgRep, expectedDefaultRoleNames, expectedCustomRoleNames, expectedCustomRoleMembers);
         }
 
         // make sure a managed user can authenticate through the broker associated with an org
@@ -230,6 +258,36 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         assertThat(executions.stream().filter(e -> "Organization".equals(e.getDisplayName())).count(), is(1L));
         executions = flows.getExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW);
         assertThat(executions.stream().filter(e -> "First Broker Login - Conditional Organization".equals(e.getDisplayName())).count(), is(1L));
+    }
+
+    private void validateOrganizationRoles(OrganizationResource organization, OrganizationRepresentation orgRep,
+            Map<String, String> expectedDefaultRoleNames, Map<String, String> expectedCustomRoleNames,
+            Map<String, String> expectedCustomRoleMembers) {
+        String expectedDefaultRoleName = expectedDefaultRoleNames.get(orgRep.getName());
+        String expectedCustomRoleName = expectedCustomRoleNames.get(orgRep.getName());
+        RoleRepresentation defaultRole = organization.roles().getDefault().toRepresentation();
+        List<RoleRepresentation> roles = organization.roles().list(false);
+        List<String> roleNames = roles.stream().map(RoleRepresentation::getName).toList();
+
+        assertThat(defaultRole.getName(), equalTo(expectedDefaultRoleName));
+        assertThat(roleNames, containsInAnyOrder(expectedDefaultRoleName, expectedCustomRoleName));
+        assertThat(roleNames.stream().filter(expectedDefaultRoleName::equals).count(), is(1L));
+
+        RoleRepresentation customRole = roles.stream()
+                .filter(role -> expectedCustomRoleName.equals(role.getName()))
+                .findFirst()
+                .orElseThrow();
+        List<String> compositeNames = organization.roles().get(defaultRole.getId()).getRoleComposites()
+                .stream()
+                .map(RoleRepresentation::getName)
+                .toList();
+        assertThat(compositeNames, containsInAnyOrder(expectedCustomRoleName, "org-export-realm-role", "org-export-client-role"));
+
+        List<String> customRoleUsers = organization.roles().get(customRole.getId()).getUserMembers()
+                .stream()
+                .map(UserRepresentation::getUsername)
+                .toList();
+        assertThat(customRoleUsers, hasItem(expectedCustomRoleMembers.get(orgRep.getName())));
     }
 
     private void validateOrganizationGroups(OrganizationResource organization, Map<String, String> expectedGroupIds) {
