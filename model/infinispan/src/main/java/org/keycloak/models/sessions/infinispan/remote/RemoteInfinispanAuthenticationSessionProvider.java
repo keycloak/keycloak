@@ -68,9 +68,10 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
     @Override
     public RootAuthenticationSessionModel getRootAuthenticationSession(RealmModel realm, String authenticationSessionId) {
         var updater = transaction.get(authenticationSessionId);
-        if(updater != null) {
-            updater.initialize(session, realm, authSessionsLimit);
+        if (updater == null || !Objects.equals(realm.getId(), updater.getValue().getRealmId())) {
+            return null;
         }
+        updater.initialize(session, realm, authSessionsLimit);
         return updater;
     }
 
