@@ -51,7 +51,7 @@
     "generate:openapi": {
       "command": "kiota generate -l typescript -d openapi.json -c AdminClient -n ApiSdk -o ./src/generated --clean-output",
       "env": {
-        "KIOTA_VERSION": "v1.31.1"
+        "KIOTA_VERSION": "v1.32.4"
       },
       "files": [
         "openapi.json"
@@ -71,12 +71,12 @@
     }
   },
   "dependencies": {
-    "@microsoft/kiota-abstractions": "1.0.0-preview.102",
-    "@microsoft/kiota-http-fetchlibrary": "1.0.0-preview.102",
-    "@microsoft/kiota-serialization-form": "1.0.0-preview.102",
-    "@microsoft/kiota-serialization-json": "1.0.0-preview.102",
-    "@microsoft/kiota-serialization-multipart": "1.0.0-preview.102",
-    "@microsoft/kiota-serialization-text": "1.0.0-preview.102",
+    "@microsoft/kiota-abstractions": "1.0.0-preview.103",
+    "@microsoft/kiota-http-fetchlibrary": "1.0.0-preview.103",
+    "@microsoft/kiota-serialization-form": "1.0.0-preview.103",
+    "@microsoft/kiota-serialization-json": "1.0.0-preview.103",
+    "@microsoft/kiota-serialization-multipart": "1.0.0-preview.103",
+    "@microsoft/kiota-serialization-text": "1.0.0-preview.103",
     "camelize-ts": "^3.0.0",
     "url-template": "^3.1.1"
   },
