@@ -43,6 +43,7 @@ public class RoleRepresentation {
     public static class Composites {
         protected Set<String> realm;
         protected Map<String, List<String>> client;
+        protected Set<String> organization;
         @Deprecated
         protected Map<String, List<String>> application;
 
@@ -60,6 +61,14 @@ public class RoleRepresentation {
 
         public void setClient(Map<String, List<String>> client) {
             this.client = client;
+        }
+
+        public Set<String> getOrganization() {
+            return organization;
+        }
+
+        public void setOrganization(Set<String> organization) {
+            this.organization = organization;
         }
 
         @Deprecated

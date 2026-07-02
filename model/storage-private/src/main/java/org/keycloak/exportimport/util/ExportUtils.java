@@ -39,23 +39,18 @@ import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.MemberRepresentation;
-import org.keycloak.representations.idm.MembershipType;
-import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
@@ -258,38 +253,7 @@ public class ExportUtils {
         rep.setLocalizationTexts(realm.getRealmLocalizationTexts());
 
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION) && !options.isPartial()) {
-            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            orgProvider.getAllStream().map(model -> {
-                OrganizationRepresentation org = ModelToRepresentation.toRepresentation(model, false);
-
-                orgProvider.getMembersStream(model, (Map<String, String>) null, null, null, null)
-                        .forEach(user -> {
-                            MemberRepresentation member = new MemberRepresentation();
-                            member.setUsername(user.getUsername());
-                            member.setMembershipType(orgProvider.isManagedMember(model, user) ? MembershipType.MANAGED : MembershipType.UNMANAGED);
-
-                            // Export organization group memberships
-                            List<String> groupIds = orgProvider.getOrganizationGroupsByMember(model, user).map(GroupModel::getId).collect(Collectors.toList());
-                            if (!groupIds.isEmpty()) {
-                                member.setGroups(groupIds);
-                            }
-
-                            org.addMember(member);
-                        });
-
-                orgProvider.getIdentityProviders(model)
-                        .map(b -> {
-                            IdentityProviderRepresentation broker = new IdentityProviderRepresentation();
-                            broker.setAlias(b.getAlias());
-                            return broker;
-                        }).forEach(org::addIdentityProvider);
-
-                orgProvider.getTopLevelGroups(model, null, null)
-                        .map(group -> ModelToRepresentation.toGroupHierarchy(group, true))
-                        .forEach(org::addGroup);
-
-                return org;
-            }).forEach(rep::addOrganization);
+            OrganizationExportImportUtils.exportOrganizations(session, rep);
         }
 
         return rep;
@@ -340,6 +304,7 @@ public class ExportUtils {
         if (composites != null && composites.size() > 0) {
             Set<String> compositeRealmRoles = null;
             Map<String, List<String>> compositeClientRoles = null;
+            Set<String> compositeOrganizationRoles = null;
 
             for (RoleModel composite : composites) {
                 RoleContainerModel crContainer = composite.getContainer();
@@ -349,7 +314,7 @@ public class ExportUtils {
                         compositeRealmRoles = new HashSet<>();
                     }
                     compositeRealmRoles.add(composite.getName());
-                } else {
+                } else if (crContainer instanceof ClientModel) {
                     if (compositeClientRoles == null) {
                         compositeClientRoles = new HashMap<>();
                     }
@@ -362,6 +327,11 @@ public class ExportUtils {
                         compositeClientRoles.put(appName, currentAppComposites);
                     }
                     currentAppComposites.add(composite.getName());
+                } else if (crContainer instanceof OrganizationModel) {
+                    if (compositeOrganizationRoles == null) {
+                        compositeOrganizationRoles = new HashSet<>();
+                    }
+                    compositeOrganizationRoles.add(composite.getName());
                 }
             }
 
@@ -371,6 +341,9 @@ public class ExportUtils {
             }
             if (compositeClientRoles != null) {
                 compRep.setClient(compositeClientRoles);
+            }
+            if (compositeOrganizationRoles != null) {
+                compRep.setOrganization(compositeOrganizationRoles);
             }
 
             roleRep.setComposites(compRep);
@@ -398,30 +371,7 @@ public class ExportUtils {
         // Role mappings
         if (options.isGroupsAndRolesIncluded()) {
             Set<RoleModel> roles = user.getRoleMappingsStream().collect(Collectors.toSet());
-            List<String> realmRoleNames = new ArrayList<>();
-            Map<String, List<String>> clientRoleNames = new HashMap<>();
-            for (RoleModel role : roles) {
-                if (role.getContainer() instanceof RealmModel) {
-                    realmRoleNames.add(role.getName());
-                } else {
-                    ClientModel client = (ClientModel)role.getContainer();
-                    String clientId = client.getClientId();
-                    List<String> currentClientRoles = clientRoleNames.get(clientId);
-                    if (currentClientRoles == null) {
-                        currentClientRoles = new ArrayList<>();
-                        clientRoleNames.put(clientId, currentClientRoles);
-                    }
-
-                    currentClientRoles.add(role.getName());
-                }
-            }
-
-            if (realmRoleNames.size() > 0) {
-                userRep.setRealmRoles(realmRoleNames);
-            }
-            if (clientRoleNames.size() > 0) {
-                userRep.setClientRoles(clientRoleNames);
-            }
+            exportUserRoleMappings(userRep, roles);
         }
 
         // Credentials - extra security, do not export credentials if service accounts
@@ -583,30 +533,7 @@ public class ExportUtils {
         // Role mappings
         if (options.isGroupsAndRolesIncluded()) {
             Set<RoleModel> roles = userFederatedStorage(session).getRoleMappingsStream(realm, id).collect(Collectors.toSet());
-            List<String> realmRoleNames = new ArrayList<>();
-            Map<String, List<String>> clientRoleNames = new HashMap<>();
-            for (RoleModel role : roles) {
-                if (role.getContainer() instanceof RealmModel) {
-                    realmRoleNames.add(role.getName());
-                } else {
-                    ClientModel client = (ClientModel) role.getContainer();
-                    String clientId = client.getClientId();
-                    List<String> currentClientRoles = clientRoleNames.get(clientId);
-                    if (currentClientRoles == null) {
-                        currentClientRoles = new ArrayList<>();
-                        clientRoleNames.put(clientId, currentClientRoles);
-                    }
-
-                    currentClientRoles.add(role.getName());
-                }
-            }
-
-            if (realmRoleNames.size() > 0) {
-                userRep.setRealmRoles(realmRoleNames);
-            }
-            if (clientRoleNames.size() > 0) {
-                userRep.setClientRoles(clientRoleNames);
-            }
+            exportUserRoleMappings(userRep, roles);
         }
 
         // Credentials
@@ -635,6 +562,37 @@ public class ExportUtils {
 
     private static UserFederatedStorageProvider userFederatedStorage(KeycloakSession session) {
         return session.getProvider(UserFederatedStorageProvider.class);
+    }
+
+    static void exportUserRoleMappings(UserRepresentation userRep, Set<RoleModel> roles) {
+        List<String> realmRoleNames = new ArrayList<>();
+        Map<String, List<String>> clientRoleNames = new HashMap<>();
+        for (RoleModel role : roles) {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof OrganizationModel) {
+                continue;
+            }
+            if (container instanceof RealmModel) {
+                realmRoleNames.add(role.getName());
+            } else if (container instanceof ClientModel) {
+                ClientModel client = (ClientModel) container;
+                String clientId = client.getClientId();
+                List<String> currentClientRoles = clientRoleNames.get(clientId);
+                if (currentClientRoles == null) {
+                    currentClientRoles = new ArrayList<>();
+                    clientRoleNames.put(clientId, currentClientRoles);
+                }
+
+                currentClientRoles.add(role.getName());
+            }
+        }
+
+        if (realmRoleNames.size() > 0) {
+            userRep.setRealmRoles(realmRoleNames);
+        }
+        if (clientRoleNames.size() > 0) {
+            userRep.setClientRoles(clientRoleNames);
+        }
     }
 
 }

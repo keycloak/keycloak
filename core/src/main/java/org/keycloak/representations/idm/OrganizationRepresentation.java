@@ -35,6 +35,8 @@ public class OrganizationRepresentation {
     private String redirectUrl;
     private Map<String, List<String>> attributes;
     private Set<OrganizationDomainRepresentation> domains;
+    private RoleRepresentation defaultRole;
+    private List<RoleRepresentation> roles;
     private List<MemberRepresentation> members;
     private List<IdentityProviderRepresentation> identityProviders;
     private List<GroupRepresentation> groups;
@@ -127,6 +129,29 @@ public class OrganizationRepresentation {
             return;
         }
         getDomains().remove(domain);
+    }
+
+    public RoleRepresentation getDefaultRole() {
+        return defaultRole;
+    }
+
+    public void setDefaultRole(RoleRepresentation defaultRole) {
+        this.defaultRole = defaultRole;
+    }
+
+    public List<RoleRepresentation> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(List<RoleRepresentation> roles) {
+        this.roles = roles;
+    }
+
+    public void addRole(RoleRepresentation role) {
+        if (roles == null) {
+            roles = new ArrayList<>();
+        }
+        roles.add(role);
     }
 
     public List<MemberRepresentation> getMembers() {
