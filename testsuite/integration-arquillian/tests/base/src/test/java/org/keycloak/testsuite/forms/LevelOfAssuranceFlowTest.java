@@ -212,7 +212,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         configureStepUpFlow(TEST_REALM_NAME, testingClient, maxAge1, maxAge2, maxAge3);
     }
 
-    private static void configureStepUpFlow(String realmName, KeycloakTestingClient testingClient, int maxAge1, int maxAge2, int maxAge3) {
+    public static void configureStepUpFlow(String realmName, KeycloakTestingClient testingClient, int maxAge1, int maxAge2, int maxAge3) {
         testingClient.server(realmName).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(FLOW_ALIAS));
         testingClient.server(realmName)
                 .run(session -> FlowUtil.inCurrentRealm(session).selectFlow(FLOW_ALIAS).inForms(forms -> forms.clear()
