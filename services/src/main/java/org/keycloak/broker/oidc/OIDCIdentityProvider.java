@@ -482,8 +482,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         try {
             BrokeredIdentityContext identity = extractIdentity(tokenResponse, accessToken, idToken);
 
-            if (!identity.getId().equals(idToken.getSubject())) {
-                throw new IdentityBrokerException("Mismatch between the subject in the id_token and the subject from the user_info endpoint");
+            if (!identityMatchesIdToken(identity, idToken)) {
+                throw new IdentityBrokerException("Mismatch between the id_token and the user_info endpoint identity");
             }
 
             if (getConfig().isFilteredByClaims()) {
@@ -647,6 +647,15 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         if (tokenResponse != null) processAccessTokenResponse(identity, tokenResponse);
 
         return identity;
+    }
+
+    /**
+     * Validates that the brokered identity matches the ID token. The default implementation compares
+     * the identity id with the ID token subject claim. Providers may override this when the identity
+     * id is sourced from a different claim (e.g. Microsoft Graph object id vs. pairwise subject).
+     */
+    protected boolean identityMatchesIdToken(BrokeredIdentityContext identity, JsonWebToken idToken) {
+        return identity.getId().equals(idToken.getSubject());
     }
 
     protected String getusernameClaimNameForIdToken() {
