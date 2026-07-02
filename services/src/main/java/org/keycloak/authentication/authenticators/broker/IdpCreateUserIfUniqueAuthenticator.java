@@ -165,7 +165,16 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
 
     protected String getUsername(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
         RealmModel realm = context.getRealm();
-        return realm.isRegistrationEmailAsUsername() ? brokerContext.getEmail() : brokerContext.getModelUsername();
+        // An explicitly mapped username (e.g. set by a UsernameTemplateMapper) must take
+        // precedence over the realm's "email as username" setting. IdentityBrokerService
+        // already resolves modelUsername with this precedence (falling back to the email
+        // when no mapper provided a username), so honour that resolved value here instead
+        // of unconditionally overriding it with the email.
+        String modelUsername = brokerContext.getModelUsername();
+        if (modelUsername != null) {
+            return modelUsername;
+        }
+        return realm.isRegistrationEmailAsUsername() ? brokerContext.getEmail() : modelUsername;
     }
 
 

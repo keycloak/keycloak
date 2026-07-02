@@ -6,6 +6,7 @@ import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
 import org.keycloak.broker.oidc.mappers.UsernameTemplateMapper;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import com.google.common.collect.ImmutableMap;
@@ -16,6 +17,7 @@ import org.junit.Test;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class UsernameTemplateMapperTest extends AbstractBaseBrokerTest {
 
@@ -88,5 +90,37 @@ public class UsernameTemplateMapperTest extends AbstractBaseBrokerTest {
 
         String username = user.getUsername();
         assertEquals(bc.getIDPAlias() + "_" + idpUserId, username, "Should render alias:sub as Username");
+    }
+
+    /**
+     * Regression test for https://github.com/keycloak/keycloak/issues/49300
+     *
+     * An explicit UsernameTemplateMapper must take precedence over the realm's
+     * "Email as username" setting during first-broker-login. Before the fix,
+     * IdpCreateUserIfUniqueAuthenticator#getUsername unconditionally used the email
+     * when registrationEmailAsUsername was enabled, ignoring the mapped username.
+     */
+    @Test
+    public void usernameTemplateMapperShouldTakePrecedenceOverEmailAsUsername() {
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        RealmRepresentation consumerRealmRep = consumerRealm.toRepresentation();
+        consumerRealmRep.setRegistrationEmailAsUsername(true);
+        consumerRealm.update(consumerRealmRep);
+
+        try {
+            logInAsUserInIDP();
+            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+
+            UserRepresentation user = consumerRealm.users().search(bc.getUserEmail(), 0, 1).get(0);
+
+            String username = user.getUsername();
+            assertEquals(bc.getIDPAlias() + "_" + idpUserId, username,
+                    "Mapped username should win over email-as-username realm setting");
+            assertNotEquals(bc.getUserEmail(), username,
+                    "Username must not fall back to the email when a mapper provides one");
+        } finally {
+            consumerRealmRep.setRegistrationEmailAsUsername(false);
+            consumerRealm.update(consumerRealmRep);
+        }
     }
 }
