@@ -64,6 +64,37 @@ Before upgrading, you should check if any of your users, service accounts, or gr
 information after the upgrade. The `manage-realm` admin role is a high-privileged role and should only be granted to
 highly-trusted accounts.
 
+=== Stricter validation of resource URI templates in Authorization Services
+
+Resource URI templates used in Authorization Services are now validated more strictly when creating or updating resources via the Admin REST API.
+The following URI patterns are now rejected:
+
+* Empty placeholders, for example `+/api/{}/foo+`
+* Placeholder names containing a slash, for example `+/api/{client/id}/foo+`
+* Wildcards in the middle of a path, for example `+/api/*/info+`
+* Stray closing braces outside a placeholder, for example `+/api/{id}/foo}/bar+`
+
+Wildcards are only supported as a trailing `+/*+` (path prefix match) or as a suffix pattern `+/*.ext+` (file extension match).
+
+Previously, these malformed templates were silently accepted but either never matched any URI or could cause runtime errors during authorization evaluation.
+
+Before upgrading, review any existing authorization resources that use URI templates.
+You can check for affected resources by querying the Admin REST API for each client that uses Authorization Services:
+
+[source]
+----
+GET /admin/realms/{realm}/clients/{client-id}/authz/resource-server/resource
+----
+
+Inspect the `+uris+` field of each resource and verify that:
+
+* All `+{...}+` placeholders have matching braces, are not empty, and do not contain `+/+` in the parameter name.
+* Wildcards (`+*+`) appear only at the end of the URI as `+/*+` or as a suffix pattern like `+/*.html+`.
+
+Resources with malformed URI templates should be corrected before upgrading.
+After the upgrade, existing resources with malformed templates will continue to be stored, but they may not match request URIs as intended.
+Any update to such a resource will require fixing the URI template at the same time, as the stricter validation applies to all create and update operations.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

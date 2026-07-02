@@ -26,6 +26,15 @@ A string uniquely identifying the type of a set of one or more resources. The ty
 URIS that provides the locations/addresses for the resource. For HTTP resources, the URIS
 are usually the relative paths used to serve these resources.
 +
+URIs can use the following pattern syntax for path matching:
++
+** `+{param}+` -- A named path parameter that matches a single path segment. For example, `+/api/{id}/info+` matches `+/api/123/info+`. Parameter names must not be empty and must not contain `+/+`.
+** `+/*+` -- A trailing wildcard that matches any path starting with the prefix. For example, `+/api/*+` matches `+/api/foo+` and `+/api/foo/bar/baz+`.
+** `+/*.ext+` -- A suffix wildcard that matches any URI ending with the given file extension. For example, `+/*.html+` matches `+/page.html+` and `+/some/path/report.html+`.
++
+These patterns can be combined, for example `+/api/{id}/files/*+`.
+Wildcards (`+*+`) are only supported as a trailing `+/*+` or as a suffix `+/*.ext+`. A wildcard in the middle of a path, such as `+/api/*/info+`, never matches and will be rejected when creating or updating resources.
++
 * *Scopes*
 +
 One or more scopes to associate with the resource.

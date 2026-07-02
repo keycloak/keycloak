@@ -216,7 +216,19 @@ public abstract class PathMatcher<P> {
                         }
 
                         if (c == '{') {
-                            uri.replace(uri.indexOf("{", lastPattern), uri.indexOf("}", lastPattern) + 1, value.toString());
+                            int openBraceIndex = uri.indexOf("{", lastPattern);
+                            int closingBraceIndex = uri.indexOf("}", lastPattern);
+                            if (openBraceIndex == -1 || closingBraceIndex == -1 || closingBraceIndex < openBraceIndex) {
+                                return null;
+                            }
+                            if (closingBraceIndex == openBraceIndex + 1) {
+                                return null;
+                            }
+                            String paramName = uri.substring(openBraceIndex + 1, closingBraceIndex);
+                            if (paramName.indexOf('/') != -1) {
+                                return null;
+                            }
+                            uri.replace(openBraceIndex, closingBraceIndex + 1, value.toString());
                         }
 
                         if (value.charAt(value.length() - 1) == '}') {
@@ -256,6 +268,56 @@ public abstract class PathMatcher<P> {
 
     private boolean isTemplate(String uri) {
         return uri.indexOf("{") != -1;
+    }
+
+    /**
+     * Validates that the given URI is a well-formed path template.
+     *
+     * @return an error message if the URI is invalid, or {@code null} if it is valid
+     */
+    public static String validateTemplate(String uri) {
+        boolean inBrace = false;
+        boolean empty = true;
+
+        for (int i = 0; i < uri.length(); i++) {
+            char c = uri.charAt(i);
+
+            if (c == '{') {
+                if (inBrace) {
+                    return "nested '{'";
+                }
+                inBrace = true;
+                empty = true;
+            } else if (c == '}') {
+                if (!inBrace || empty) {
+                    return "unexpected '}' or empty parameter name";
+                }
+                inBrace = false;
+            } else if (inBrace) {
+                if (c == '/') {
+                    return "parameter name contains '/'";
+                }
+                empty = false;
+            }
+        }
+
+        if (inBrace) {
+            return "missing closing '}'";
+        }
+
+        int asteriskIndex = uri.indexOf('*');
+        if (asteriskIndex != -1) {
+            boolean validTrailing = uri.endsWith("/*") && asteriskIndex == uri.length() - 1;
+            boolean validSuffix = asteriskIndex > 0 && uri.charAt(asteriskIndex - 1) == '/'
+                    && asteriskIndex + 1 < uri.length() && uri.charAt(asteriskIndex + 1) == '.'
+                    && uri.indexOf('*', asteriskIndex + 1) == -1
+                    && uri.indexOf('/', asteriskIndex + 1) == -1;
+            if (!validTrailing && !validSuffix) {
+                return "wildcard '*' is only supported as trailing '/*' or as a suffix pattern '/*.ext'";
+            }
+        }
+
+        return null;
     }
 
     protected P resolvePathConfig(P entry, String path) {
