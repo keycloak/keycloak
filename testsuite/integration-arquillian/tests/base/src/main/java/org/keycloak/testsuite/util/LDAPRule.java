@@ -166,10 +166,11 @@ public class LDAPRule extends ExternalResource {
         if (passwordPolicyAnnotations != null) {
             LDAPPasswordPolicy passwordPolicy = (LDAPPasswordPolicy) passwordPolicyAnnotations;
 
-            log.debugf("Enabling LDAP password policy: mustChange=%s.", passwordPolicy.mustChange());
+            log.debugf("Enabling LDAP password policy: mustChange=%s, maxAge=%d.", passwordPolicy.mustChange(), passwordPolicy.maxAge());
 
             defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_PPOLICY_ENABLED, "true");
             defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_PPOLICY_MUST_CHANGE, String.valueOf(passwordPolicy.mustChange()));
+            defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_PPOLICY_MAX_AGE, String.valueOf(passwordPolicy.maxAge()));
 
             if (passwordPolicy.mustChange()) {
                 // Workaround for password policy behavior:
@@ -355,5 +356,6 @@ public class LDAPRule extends ExternalResource {
     @Retention(RetentionPolicy.RUNTIME)
     public @interface LDAPPasswordPolicy {
         public boolean mustChange() default false;
+        public int maxAge() default 0;
     }
 }
