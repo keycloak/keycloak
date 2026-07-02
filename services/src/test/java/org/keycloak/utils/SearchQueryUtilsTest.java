@@ -20,8 +20,9 @@ package org.keycloak.utils;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Test;
 import org.keycloak.models.ModelValidationException;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
