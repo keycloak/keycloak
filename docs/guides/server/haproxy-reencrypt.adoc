@@ -230,6 +230,27 @@ These rules route by destination port:
 With this setup, any request to an admin path on the public port is denied with an HTTP 403 response.
 ====
 
+[[isolating-master-realm-haproxy-reencrypt]]
+== Isolating the master realm from the public internet
+
+As a security best practice, restrict access to the administrative `master` realm endpoints from public IP addresses.
+Use the following steps to allow access to these URLs only from allowed internal IP addresses.
+
+=== HAProxy configuration
+
+[source,haproxy]
+----
+# Config for isolating the master realm from public internet.
+acl is_master_realm path /realms/master
+acl is_master_realm path_beg /realms/master/
+http-request deny if is_master_realm !is_allowed_src
+----
+
+This configuration targets requests matching the administrative paths `/realms/master` or starting with `/realms/master/`.
+This rule matches core management traffic (such as token requests, logins, or console lookups inside the master realm) while letting other user realm paths pass through unhindered.
+
+The explicit use of `priority: 100` on the master router and `priority: 50` on the public router defines a strict evaluation pipeline.
+
 [[graceful-shutdown-considerations-haproxy-reencrypt]]
 == Graceful shutdown considerations
 
