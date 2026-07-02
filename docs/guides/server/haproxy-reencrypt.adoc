@@ -47,6 +47,12 @@ frontend https_front
     http-request del-header x-original-.* -m reg
     http-request del-header x-real-ip
 
+    # Prevent external spoofing of client certificate headers
+    # These must be deleted unconditionally, because the set-header directives below
+    # are conditional
+    http-request del-header Client-Cert
+    http-request del-header Client-Cert-Chain
+
     # Prevent external tracing context injection (W3C Trace Context / Baggage)
     http-request del-header traceparent
     http-request del-header tracestate

@@ -488,6 +488,8 @@ Example HAProxy configuration:
 
 [source]
 ----
+http-request del-header Client-Cert
+http-request del-header Client-Cert-Chain
 http-request set-header Client-Cert %[ssl_c_der,base64] if { ssl_c_used } { ssl_c_verify 0 }
 http-request set-header Client-Cert-Chain %[ssl_c_chain_der,base64] if { ssl_c_used } { ssl_c_verify 0 }
 ----
