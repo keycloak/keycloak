@@ -36,6 +36,7 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailServerConfiguration;
 import org.keycloak.testsuite.util.SecondBrowser;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.userprofile.UserProfileContext;
 
 import com.google.common.collect.ImmutableMap;
@@ -46,6 +47,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -1298,7 +1300,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
                 "We must be on correct realm right now");
 
         log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation("Firstname", "Lastname");
+        fillUpdateProfileNameFields("Firstname", "Lastname");
 
         //link account by email
         waitForPage(driver, "account already exists", false);
@@ -1321,9 +1323,34 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         proceedLink.click();
 
         assertThat(driver2.getPageSource(), Matchers.containsString("You successfully verified your email. Please go back to your original browser and continue there with the login."));
+        final WebElement backToApplicationLink = driver2.findElement(By.partialLinkText("Back to Application"));
+        assertThat(backToApplicationLink, Matchers.notNullValue());
+        assertThat(backToApplicationLink.getAttribute("href"), Matchers.containsString("/auth/realms/" + bc.consumerRealmName() + "/app"));
 
         //test if the user has verified email
         assertTrue(consumerRealm.users().get(linkedUserId).toRepresentation().isEmailVerified());
+    }
+
+    private void fillUpdateProfileNameFields(String firstName, String lastName) {
+        fillUpdateProfileField("firstName", firstName);
+        fillUpdateProfileField("lastName", lastName);
+        UIUtils.clickLink(driver.findElement(By.cssSelector("input[type=\"submit\"]")));
+    }
+
+    private void fillUpdateProfileField(String name, String value) {
+        WebElement input = driver.findElement(By.name(name));
+        input.clear();
+        input.sendKeys(value);
+
+        if (!value.equals(input.getAttribute("value"))) {
+            ((JavascriptExecutor) driver).executeScript(
+                    "arguments[0].value = arguments[1];"
+                            + "arguments[0].dispatchEvent(new Event('input', { bubbles: true }));"
+                            + "arguments[0].dispatchEvent(new Event('change', { bubbles: true }));",
+                    input, value);
+        }
+
+        assertEquals(value, input.getAttribute("value"));
     }
 
     @Test
