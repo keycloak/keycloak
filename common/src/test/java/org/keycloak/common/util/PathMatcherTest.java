@@ -104,7 +104,7 @@ public class PathMatcherTest {
     }
 
     @Test
-    public void validateUriAcceptsValidPatterns() {
+    public void validateTemplateAcceptsValidPatterns() {
         Assertions.assertNull(PathMatcher.validateTemplate("/api/foo"));
         Assertions.assertNull(PathMatcher.validateTemplate("/api/{id}/info"));
         Assertions.assertNull(PathMatcher.validateTemplate("/api/{id}/*"));
@@ -114,7 +114,7 @@ public class PathMatcherTest {
     }
 
     @Test
-    public void validateUriRejectsMalformedBraces() {
+    public void validateTemplateRejectsMalformedBraces() {
         Assertions.assertNotNull(PathMatcher.validateTemplate("/api/{id"));
         Assertions.assertNotNull(PathMatcher.validateTemplate("/api/id}"));
         Assertions.assertNotNull(PathMatcher.validateTemplate("/api/{}"));
@@ -123,7 +123,7 @@ public class PathMatcherTest {
     }
 
     @Test
-    public void validateUriRejectsMalformedWildcards() {
+    public void validateTemplateRejectsMalformedWildcards() {
         Assertions.assertNotNull(PathMatcher.validateTemplate("/api/*/info"));
         Assertions.assertNotNull(PathMatcher.validateTemplate("/api/*/info/*"));
         Assertions.assertNotNull(PathMatcher.validateTemplate("/a/b/c/*.html/c/d"));
