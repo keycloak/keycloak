@@ -1389,7 +1389,7 @@ jobs:
           KC_TEST_SERVER_IMAGES: "quay.io/keycloak/keycloak:${{ matrix.version }},-"
 
       - name: Run tests with cacheless
-        run: ./mvnw verify -pl tests/clustering
+        run: ./mvnw verify -pl tests/clustering -Dsurefire.reportsDirectory=target/surefire-reports-cacheless
         env:
           KC_TEST_SERVER_IMAGES: "quay.io/keycloak/keycloak:${{ matrix.version }},-"
           KC_TEST_SERVER_CACHELESS: "true"

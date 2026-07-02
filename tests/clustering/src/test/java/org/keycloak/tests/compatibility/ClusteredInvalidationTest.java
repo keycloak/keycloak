@@ -76,11 +76,11 @@ public class ClusteredInvalidationTest {
 
     private boolean isCachelessFeatureEnabled() {
         var serverInfo = adminClient.serverInfo().getInfo();
-        return serverInfo.getFeatures().stream()
+        FeatureRepresentation feature = serverInfo.getFeatures().stream()
                 .filter(feat -> Profile.Feature.CACHELESS.name().equals(feat.getName()))
                 .findFirst()
-                .map(FeatureRepresentation::isEnabled)
-                .orElse(false);
+                .orElseThrow(() -> new RuntimeException("Cacheless feature not found in server info"));
+        return feature.isEnabled();
     }
 
 

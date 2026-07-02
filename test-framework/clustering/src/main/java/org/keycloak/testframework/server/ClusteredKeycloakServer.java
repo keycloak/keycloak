@@ -89,10 +89,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         }
 
         try {
-            long perLatchTimeout = cacheless ? DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS : (long) numServers * DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS;
-            for (var clusterLatch : consumers) {
-                clusterLatch.await(perLatchTimeout, TimeUnit.SECONDS);
-            }
+            long perLatchTimeout = (long) numServers * DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS;
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -101,7 +98,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
             if (cacheless) {
                 throw new RuntimeException("One or more nodes failed to start with 'cacheless' feature.", e);
             } else {
-                throw new RuntimeException("Expected %d cluster members" .formatted(numServers), e);
+                throw new RuntimeException("Expected %d cluster members".formatted(numServers), e);
             }
         }
         ReadinessProbe.waitUntilReady(this::getBaseUrl, numServers, startTimeout);
