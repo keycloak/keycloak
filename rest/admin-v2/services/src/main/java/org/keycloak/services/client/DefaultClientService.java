@@ -230,9 +230,10 @@ public class DefaultClientService implements ClientService {
                 } catch (IOException e) {
                     throw new ServiceException("Unknown Error Occurred", Response.Status.INTERNAL_SERVER_ERROR);
                 }
+                final JsonNode patchRoot;
                 try {
-                    JsonNode root = MAPPER.readTree(patchData);
-                    JsonNode authNode = root.get("auth");
+                    patchRoot = MAPPER.readTree(patchData);
+                    JsonNode authNode = patchRoot.get("auth");
                     if (authNode != null && authNode.has("secret") && authNode.get("secret").isNull()) {
                         patchExplicitNullSecret = true;
                     }
@@ -257,6 +258,7 @@ public class DefaultClientService implements ClientService {
                 } catch (IOException e) {
                     throw new ServiceException("Unknown Error Occurred", Response.Status.INTERNAL_SERVER_ERROR);
                 }
+                clearServerManagedFieldsNotInPatch(updated, patchRoot);
             }
             default -> throw new ServiceException("Invalid patch type", Response.Status.UNSUPPORTED_MEDIA_TYPE);
         }
@@ -397,6 +399,22 @@ public class DefaultClientService implements ClientService {
             return proposedRepresentation;
         } finally {
             realm.removeClient(tempModel.getId());
+        }
+    }
+
+    /**
+     * Merge patch applies the existing resource first, so server-managed fields are present even when
+     * omitted from the patch payload. Clear those fields unless the client explicitly patched them.
+     */
+    private void clearServerManagedFieldsNotInPatch(BaseClientRepresentation rep, JsonNode patchRoot) {
+        if (!patchRoot.has("uuid")) {
+            rep.setUuid(null);
+        }
+        if (!patchRoot.has("createdTimestamp")) {
+            rep.setCreatedTimestamp(null);
+        }
+        if (!patchRoot.has("updatedTimestamp")) {
+            rep.setUpdatedTimestamp(null);
         }
     }
 
