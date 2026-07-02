@@ -209,6 +209,29 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
             RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootAuthSessionId.get());
             assertNull(rootAuthSession);
 
+            setTimeOffset(0);
+
+            return null;
+        });
+
+
+        withRealm(realmId, (session, realm) -> {
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm, "test");
+            ClientModel client = realm.getClientByClientId("test-app");
+            rootAuthSession.createAuthenticationSession(client);
+            rootAuthSessionId.set(rootAuthSession.getId());
+
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            setTimeOffset(1900);
+
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm, "test");
+            ClientModel client = realm.getClientByClientId("test-app");
+            rootAuthSession.createAuthenticationSession(client);
+            rootAuthSessionId.set(rootAuthSession.getId());
+
             return null;
         });
     }

@@ -92,6 +92,8 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
             logger.debugf("Root authentication session with id '%s' is expired.", id);
             // let's restart it
             entity.setTimestamp(Time.currentTimeSeconds());
+            entity.getAuthenticationSessions().forEach((s, authenticationSessionEntity) -> authenticationSessionEntity.setRootAuthenticationSession(null));
+            entity.getAuthenticationSessions().clear();
         }
         return RootAuthenticationSessionAdapter.wrapEntity(session, realm,  entity, authSessionsLimit);
     }
