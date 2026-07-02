@@ -695,10 +695,18 @@ public class UserResource {
             session.users().setNotBeforeForUser(realm, user, Time.currentTime());
         }
 
-        session.sessions().getUserSessionsStream(realm, user)
-                .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
-                .forEach(userSession -> AuthenticationManager.backchannelLogout(session, realm, userSession,
-                        session.getContext().getUri(), clientConnection, headers, true));
+        List<UserSessionModel> userSessions = session.sessions().getUserSessionsStream(realm, user)
+                .collect(Collectors.toList()); // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
+
+        if (userSessions.size() > 1) {
+            // More than one active session: omit sid so each RP terminates all of them (one token per client).
+            AuthenticationManager.backchannelLogoutUserClientsOnce(session, realm, userSessions,
+                    session.getContext().getUri(), headers);
+        }
+
+        // Local cleanup + broker logout; clients notified above are skipped (already marked LOGGED_OUT).
+        userSessions.forEach(userSession -> AuthenticationManager.backchannelLogout(session, realm, userSession,
+                session.getContext().getUri(), clientConnection, headers, true));
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
     }
 

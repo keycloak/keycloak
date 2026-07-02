@@ -348,8 +348,16 @@ public class DefaultTokenManager implements TokenManager {
         return defaultValue;
     }
 
+    @Override
     public LogoutToken initLogoutToken(ClientModel client, UserModel user,
                                        AuthenticatedClientSessionModel clientSession) {
+        return initLogoutToken(client, user, clientSession, false);
+    }
+
+    @Override
+    public LogoutToken initLogoutToken(ClientModel client, UserModel user,
+                                       AuthenticatedClientSessionModel clientSession,
+                                       boolean logoutAllUserSessions) {
         LogoutToken token = new LogoutToken();
         token.id(SecretGenerator.getInstance().generateSecureID());
         token.issuedNow();
@@ -361,7 +369,7 @@ public class DefaultTokenManager implements TokenManager {
         token.addAudience(client.getClientId());
 
         OIDCAdvancedConfigWrapper oidcAdvancedConfigWrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
-        if (oidcAdvancedConfigWrapper.isBackchannelLogoutSessionRequired()){
+        if (oidcAdvancedConfigWrapper.isBackchannelLogoutSessionRequired() && !logoutAllUserSessions) {
             token.setSid(clientSession.getUserSession().getId());
         }
         if (oidcAdvancedConfigWrapper.getBackchannelLogoutRevokeOfflineTokens()){
