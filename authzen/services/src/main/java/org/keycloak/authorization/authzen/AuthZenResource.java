@@ -133,7 +133,7 @@ public class AuthZenResource {
         if (authResult == null) {
             throw new NotAuthorizedException("Bearer");
         }
-        if (authResult.user().getServiceAccountClientLink() == null) {
+        if (!authResult.client().getId().equals(authResult.user().getServiceAccountClientLink())) {
             throw new NotAuthorizedException("Bearer");
         }
         return authResult.token();
