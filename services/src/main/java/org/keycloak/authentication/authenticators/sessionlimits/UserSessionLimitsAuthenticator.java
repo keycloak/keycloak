@@ -31,6 +31,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
 
     private static final Logger logger = Logger.getLogger(UserSessionLimitsAuthenticator.class);
     public static final String SESSION_LIMIT_EXCEEDED = "sessionLimitExceeded";
+    public static final String FLOW_PATH_NOTE = "AUTH_FLOW_PATH";
     protected final KeycloakSession session;
 
     String behavior;
@@ -62,20 +63,35 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
         behavior = config.get(UserSessionLimitsAuthenticatorFactory.BEHAVIOR);
         int userRealmLimit = getIntConfigProperty(UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, config);
         int userClientLimit = getIntConfigProperty(UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, config);
+        String sessionCountingScope = config.getOrDefault(
+                UserSessionLimitsAuthenticatorFactory.SESSION_COUNTING_SCOPE,
+                UserSessionLimitsAuthenticatorFactory.SCOPE_ALL_FLOWS);
+
+        // Tag the session with the flow path BEFORE counting if scope is set to "This Authentication Flow"
+        // This ensures the session being created can be tracked properly
+        if (UserSessionLimitsAuthenticatorFactory.SCOPE_THIS_FLOW.equals(sessionCountingScope)) {
+            context.getAuthenticationSession().setUserSessionNote(FLOW_PATH_NOTE, context.getFlowPath());
+        }
 
         if (context.getRealm() != null && context.getUser() != null) {
 
-            // Get the session count in this realm for this specific user
-            List<UserSessionModel> userSessionsForRealm = session.sessions()
+            // Get all user sessions for this realm
+            List<UserSessionModel> allUserSessionsForRealm = session.sessions()
                     .getUserSessionsStream(context.getRealm(), context.getUser())
                     .collect(Collectors.toList());
+
+            // Filter sessions based on counting scope
+            List<UserSessionModel> userSessionsForRealm = filterSessionsByScope(
+                    allUserSessionsForRealm, context.getFlowPath(), sessionCountingScope);
+            
             int userSessionCountForRealm = userSessionsForRealm.size();
 
             // Get the session count related to the current client for this user
             List<UserSessionModel> userSessionsForClient = getUserSessionsForClientIfEnabled(userSessionsForRealm, currentClient, userClientLimit);
-            int userSessionCountForClient = userSessionsForClient.size();
+            int userSessionCountForClient = userSessionsForClient.size();           
             logger.debugf("session-limiter's configured realm session limit: %s", userRealmLimit);
             logger.debugf("session-limiter's configured client session limit: %s", userClientLimit);
+            logger.debugf("session-limiter's session counting scope: %s", sessionCountingScope);
             logger.debugf("session-limiter's count of total user sessions for the entire realm (could be apps other than web apps): %s", userSessionCountForRealm);
             logger.debugf("session-limiter's count of total user sessions for this keycloak client: %s", userSessionCountForClient);
 
@@ -106,6 +122,21 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
         } else {
             context.success();
         }
+    }
+
+    private List<UserSessionModel> filterSessionsByScope(
+            List<UserSessionModel> allSessions,
+            String currentFlowPath,
+            String sessionCountingScope) {
+
+        if (UserSessionLimitsAuthenticatorFactory.SCOPE_THIS_FLOW.equals(sessionCountingScope)) {
+            // Count only sessions from this specific flow
+            return allSessions.stream()
+                    .filter(s -> currentFlowPath.equals(s.getNote(FLOW_PATH_NOTE)))
+                    .collect(Collectors.toList());
+        }
+        // Default: count all sessions (SCOPE_ALL_FLOWS)
+        return allSessions;
     }
 
     private boolean exceedsLimit(long count, long limit) {
@@ -174,9 +205,9 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
                         .map(f -> f.get(UserSessionLimitsAuthenticatorFactory.ERROR_MESSAGE))
                         .orElse(SESSION_LIMIT_EXCEEDED);
 
-                context.getEvent().error(Errors.GENERIC_AUTHENTICATION_ERROR);
+                context.getEvent().error(Errors.ACCESS_DENIED);
                 Response challenge = context.form().setError(errorMessage).createErrorPage(Response.Status.FORBIDDEN);
-                context.failure(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, challenge, eventDetails, errorMessage);
+                context.forceChallenge(challenge);
                 return Collections.emptyList();
 
             case UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION:
