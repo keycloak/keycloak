@@ -168,13 +168,6 @@ Administrators often give realms short technical names (like `acme-prod`) but se
 
 Realm search now matches against the display name in addition to the realm name, so administrators can find realms by whichever name they remember.
 
-== Cluster-wide Keycloak Operator installation (preview)
-// https://github.com/keycloak/keycloak/issues/46981
-
-Organizations running multiple {project_name} instances across different Kubernetes namespaces previously needed to install a separate operator in each namespace. This release adds preview support for installing the {project_name} Operator at cluster scope via `kubectl`, allowing a single operator instance to manage {project_name} deployments across all namespaces.
-
-For installation instructions, see the https://www.keycloak.org/operator/installation[Operator Installation] guide.
-
 == Type-safe validation for parameterized scopes (experimental)
 // https://github.com/keycloak/keycloak/issues/49532
 
