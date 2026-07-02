@@ -15,36 +15,45 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.vci;
+package org.keycloak.tests.conformance.vp;
 
 import org.keycloak.tests.conformance.ConformanceSigningKey;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-/**
- * The attester key, generated at runtime so no private key material is committed to the repository. It is signed
- * by a CA so it serves both client attestation (verified against the trusted public JWKS) and key attestation
- * (which validates the x5c chain against the CA). The private JWKS is handed to the conformance suite to sign
- * attestations, while Keycloak trusts only the public JWKS and the CA certificate.
- */
-final class VciAttesterKey {
+final class VpVerifierKey {
 
-    static final String KID = "ct_client_attester_key";
+    private static final ConformanceSigningKey KEY =
+            ConformanceSigningKey.generate("vp_verifier_key", "OID4VP Conformance Verifier");
 
-    private static final ConformanceSigningKey KEY = ConformanceSigningKey.generate(KID, "OID4VCI Conformance Attester");
-
-    private VciAttesterKey() {
+    private VpVerifierKey() {
     }
 
-    static JsonNode privateJwks() {
-        return KEY.privateJwks();
+    static String keyStorePath() {
+        return KEY.keyStorePath();
+    }
+
+    static String keyStorePassword() {
+        return ConformanceSigningKey.KEYSTORE_PASSWORD;
+    }
+
+    static String keyAlias() {
+        return KEY.keyAlias();
+    }
+
+    static String caCertificatePem() {
+        return KEY.caCertificatePem();
+    }
+
+    static JsonNode privateJwk() {
+        return KEY.privateJwk();
     }
 
     static JsonNode publicJwks() {
         return KEY.publicJwks();
     }
 
-    static String caCertificatePem() {
-        return KEY.caCertificatePem();
+    static String clientId() {
+        return "x509_hash:" + KEY.x509Hash();
     }
 }
