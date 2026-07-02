@@ -374,6 +374,50 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         return tokenResponse;
     }
 
+    /**
+     * Test that both initial and refreshed access tokens have their audience limited to the credential endpoint.
+     * This verifies that the OID4VCITokenPostProcessor correctly sets the 'aud' claim.
+     */
+    @Test
+    public void testAccessTokenAudienceLimitedToCredentialEndpoint() throws Exception {
+        // Login
+        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
+        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+        assertTrue(tokenResponse.isSuccess());
+
+        // Get the expected credential endpoint URL from issuer metadata
+        String expectedAudience = issuer.getCredentialEndpoint();
+        assertNotNull(expectedAudience);
+
+        // Verify initial access token has correct audience
+        String accessToken1 = tokenResponse.getAccessToken();
+        wallet.assertAccessTokenAudience(accessToken1, expectedAudience);
+
+        // Obtain credential to ensure the token works
+        String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken1)
+                .credentialIdentifier(credentialIdentifier)
+                .send().getCredentialResponse();
+        assertSuccessfulCredentialResponse(credResponse);
+
+        // Move time forward a bit
+        timeOffSet.set(10);
+
+        // Refresh token
+        AccessTokenResponse refreshResponse = wallet.refreshRequest(ctx).send();
+        assertTrue(refreshResponse.isSuccess(), "Refresh token exchange should succeed");
+
+        // Verify refreshed access token also has correct audience
+        String accessToken2 = refreshResponse.getAccessToken();
+        wallet.assertAccessTokenAudience(accessToken2, expectedAudience);
+
+        // Verify the refreshed token still works for credential requests
+        credResponse = wallet.credentialRequest(ctx, accessToken2)
+                .credentialIdentifier(credentialIdentifier)
+                .send().getCredentialResponse();
+        assertSuccessfulCredentialResponse(credResponse);
+    }
+
     protected void assertSuccessfulCredentialResponse(CredentialResponse credentialResponse) {
         CredentialResponse.Credential credentialObj = credentialResponse.getCredentials().get(0);
         assertNotNull(credentialObj, "The first credential in the array should not be null");
