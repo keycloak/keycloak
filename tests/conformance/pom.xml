@@ -32,7 +32,7 @@
     <description>Keycloak Conformance Tests</description>
 
     <properties>
-        <keycloak.conformance.imageTag>release-v5.1.44</keycloak.conformance.imageTag>
+        <keycloak.conformance.imageTag>release-v5.2.0</keycloak.conformance.imageTag>
         <keycloak.conformance.mongoImageTag>6.0.13</keycloak.conformance.mongoImageTag>
     </properties>
 
@@ -82,6 +82,16 @@
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-test-containers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-ui</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-oauth</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
