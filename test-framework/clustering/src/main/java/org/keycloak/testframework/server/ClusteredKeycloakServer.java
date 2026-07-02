@@ -98,7 +98,11 @@ public class ClusteredKeycloakServer implements KeycloakServer {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         } catch (TimeoutException e) {
-            throw new RuntimeException("Expected %d cluster members".formatted(numServers), e);
+            if (cacheless) {
+                throw new RuntimeException("One or more nodes failed to start with 'cacheless' feature.", e);
+            } else {
+                throw new RuntimeException("Expected %d cluster members" .formatted(numServers), e);
+            }
         }
         ReadinessProbe.waitUntilReady(this::getBaseUrl, numServers, startTimeout);
     }
