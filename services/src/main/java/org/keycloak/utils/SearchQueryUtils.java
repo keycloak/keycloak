@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
@@ -87,7 +88,9 @@ public class SearchQueryUtils {
             String name = "";
             while (i < chars.length && chars[i] != ':') {
                 if (chars[i] == '\\') {
-                    if (i + 1 >= chars.length) break;
+                    if (i + 1 >= chars.length) {
+                        throw new ModelValidationException("Invalid search query: unterminated escape sequence");
+                    }
                     if (chars[i+1] == '\"') {
                         i++;
                     }
@@ -115,7 +118,7 @@ public class SearchQueryUtils {
                 name += chars[i];
                 i++;
             }
-            if(i == chars.length || chars[i] == ' ' || chars[i] == '\\') {
+            if(i == chars.length || chars[i] == ' ') {
                 continue;
             }
             i++;
@@ -124,7 +127,9 @@ public class SearchQueryUtils {
             String value = "";
             while (i < chars.length) {
                 if (chars[i] == '\\') {
-                    if (i + 1 >= chars.length) break;
+                    if (i + 1 >= chars.length) {
+                        throw new ModelValidationException("Invalid search query: unterminated escape sequence");
+                    }
                     if (chars[i+1] == '\"') {
                         i++;
                     }
