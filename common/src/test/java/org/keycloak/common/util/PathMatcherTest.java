@@ -74,6 +74,15 @@ public class PathMatcherTest {
     }
 
     @Test
+    public void emptyPlaceholderShouldNotMatch() {
+        TestingPathMatcher matcher = new TestingPathMatcher(Collections.singletonList(
+                "/api/{}/foo"
+        ));
+
+        Assertions.assertNull(matcher.matches("/api/1/foo"));
+    }
+
+    @Test
     public void slashInsidePlaceholderWithTrailingWildcard() {
         TestingPathMatcher matcher = new TestingPathMatcher(Collections.singletonList(
                 "/api/{a/b}/*"
@@ -92,6 +101,32 @@ public class PathMatcherTest {
         // inflated segment count makes this unmatchable
         Assertions.assertNull(matcher.matches("/api/1/foo"));
         Assertions.assertNull(matcher.matches("/api/1/b/foo"));
+    }
+
+    @Test
+    public void validateUriAcceptsValidPatterns() {
+        Assertions.assertNull(PathMatcher.validateTemplate("/api/foo"));
+        Assertions.assertNull(PathMatcher.validateTemplate("/api/{id}/info"));
+        Assertions.assertNull(PathMatcher.validateTemplate("/api/{id}/*"));
+        Assertions.assertNull(PathMatcher.validateTemplate("/*"));
+        Assertions.assertNull(PathMatcher.validateTemplate("/*.html"));
+        Assertions.assertNull(PathMatcher.validateTemplate("/api/{id}/*.json"));
+    }
+
+    @Test
+    public void validateUriRejectsMalformedBraces() {
+        Assertions.assertNotNull(PathMatcher.validateTemplate("/api/{id"));
+        Assertions.assertNotNull(PathMatcher.validateTemplate("/api/id}"));
+        Assertions.assertNotNull(PathMatcher.validateTemplate("/api/{}"));
+        Assertions.assertNotNull(PathMatcher.validateTemplate("/api/{{id}}"));
+        Assertions.assertNotNull(PathMatcher.validateTemplate("/api/{a/b}"));
+    }
+
+    @Test
+    public void validateUriRejectsMalformedWildcards() {
+        Assertions.assertNotNull(PathMatcher.validateTemplate("/api/*/info"));
+        Assertions.assertNotNull(PathMatcher.validateTemplate("/api/*/info/*"));
+        Assertions.assertNotNull(PathMatcher.validateTemplate("/a/b/c/*.html/c/d"));
     }
 
     private static final class TestingPathMatcher extends PathMatcher<String> {

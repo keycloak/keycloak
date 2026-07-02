@@ -69,6 +69,7 @@ highly-trusted accounts.
 Resource URI templates used in Authorization Services are now validated more strictly when creating or updating resources via the Admin REST API.
 The following URI patterns are now rejected:
 
+* Empty placeholders, for example `+/api/{}/foo+`
 * Placeholder names containing a slash, for example `+/api/{client/id}/foo+`
 * Wildcards in the middle of a path, for example `+/api/*/info+`
 * Stray closing braces outside a placeholder, for example `+/api/{id}/foo}/bar+`
@@ -87,7 +88,7 @@ GET /admin/realms/{realm}/clients/{client-id}/authz/resource-server/resource
 
 Inspect the `+uris+` field of each resource and verify that:
 
-* All `+{...}+` placeholders have matching braces and do not contain `+/+` in the parameter name.
+* All `+{...}+` placeholders have matching braces, are not empty, and do not contain `+/+` in the parameter name.
 * Wildcards (`+*+`) appear only at the end of the URI as `+/*+` or as a suffix pattern like `+/*.html+`.
 
 Resources with malformed URI templates should be corrected before upgrading.
