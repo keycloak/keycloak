@@ -144,6 +144,7 @@ public class RoleListMapper extends AbstractSAMLProtocolMapper implements SAMLRo
 
         List<String> allRoleNames = clientSessionCtx.getRolesStream()
           // todo need a role mapping
+          .filter(roleModel -> !roleModel.isOrganizationRole())
           .map(roleModel -> roleNameMappers.stream()
             .map(entry -> entry.mapper.mapName(entry.model, roleModel))
             .filter(Objects::nonNull)
