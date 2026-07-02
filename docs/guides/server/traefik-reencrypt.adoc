@@ -304,7 +304,7 @@ The `keycloak-master` router isolates the default management realm from custom a
 This router targets requests matching the regular expression `^/realms/master(/|$)`.
 This rule matches core management traffic (such as token requests, logins, or console lookups inside the master realm) while letting other user realm paths pass through unhindered.
 
-The explicit use of `priority: 100` on the master router and `priority: 50` on the public router defines a strict evaluation pipeline.
+The explicit use of `priority: 100` on the master router ensures it is evaluated before the `keycloak-public` router.
 
 [[graceful-shutdown-considerations-traefik-reencrypt]]
 == Graceful shutdown considerations
