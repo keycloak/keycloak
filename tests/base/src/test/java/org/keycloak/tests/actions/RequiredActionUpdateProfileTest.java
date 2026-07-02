@@ -66,7 +66,9 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By;
 import org.openqa.selenium.ElementClickInterceptedException;
+import org.openqa.selenium.WebElement;
 
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
@@ -81,6 +83,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 public class RequiredActionUpdateProfileTest {
 
     private static final String PASSWORD = PasswordGenerateUtil.generatePassword();
+    private static final String DISABLED_FORM_CONTROL_CLASS = "pf-m-disabled";
 
     @InjectRealm(config = RequiredActionUpdateProfileRealmConfig.class)
     ManagedRealm realm;
@@ -137,6 +140,34 @@ public class RequiredActionUpdateProfileTest {
         Assertions.assertEquals("test-user@localhost", user.getUsername());
         // email changed so verify that emailVerified flag is reset
         Assertions.assertEquals(false, user.isEmailVerified());
+    }
+
+    @Test
+    public void readOnlyProfileFieldsHaveDisabledFormControlClass() {
+        UserProfileResource userProfile = realm.admin().users().userProfile();
+        UPConfig configuration = userProfile.getConfiguration();
+        UPConfig readOnlyLastNameConfiguration = configuration.clone();
+        readOnlyLastNameConfiguration.addOrReplaceAttribute(new UPAttribute(UserModel.LAST_NAME,
+                new UPAttributePermissions(Set.of(ROLE_USER, ROLE_ADMIN), Set.of(ROLE_ADMIN))));
+
+        try {
+            userProfile.update(readOnlyLastNameConfiguration);
+
+            oauth.openLoginForm();
+            loginPage.fillLogin("test-user@localhost", PASSWORD);
+            loginPage.submit();
+
+            updateProfilePage.assertCurrent();
+
+            WebElement lastNameInput = updateProfilePage.getElementById(UserModel.LAST_NAME);
+
+            Assertions.assertNotNull(lastNameInput);
+            Assertions.assertFalse(lastNameInput.isEnabled());
+            Assertions.assertTrue(lastNameInput.findElement(By.xpath("..")).getAttribute("class")
+                    .contains(DISABLED_FORM_CONTROL_CLASS));
+        } finally {
+            userProfile.update(configuration);
+        }
     }
 
     @Test
