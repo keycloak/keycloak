@@ -95,7 +95,8 @@ public class UsernameTemplateMapper extends AbstractClaimMapper {
         property.setName(TEMPLATE);
         property.setLabel("Template");
         property.setHelpText("Template to use to format the username to import.  Substitutions are enclosed in ${}.  For example: '${ALIAS}.${CLAIM.sub}'.  ALIAS is the provider alias.  CLAIM.<NAME> references an ID or Access token claim. \n"
-          + "The substitution can be converted to upper or lower case by appending |uppercase or |lowercase to the substituted value, e.g. '${CLAIM.sub | lowercase}");
+          + "The substitution can be converted to upper or lower case by appending |uppercase or |lowercase to the substituted value, e.g. '${CLAIM.sub | lowercase} \n"
+          + "Optional claims can be rendered using '?' in the end of the claim name. For example: '${ALIAS}.${CLAIM.stuff?}'");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setDefaultValue("${ALIAS}.${CLAIM.preferred_username}");
         configProperties.add(property);
@@ -176,11 +177,20 @@ public class UsernameTemplateMapper extends AbstractClaimMapper {
             } else if (variable.equals("UUID")) {
                 m.appendReplacement(sb, transformer.apply(KeycloakModelUtils.generateId()));
             } else if (variable.startsWith("CLAIM.")) {
-                String name = variable.substring("CLAIM.".length());
+                String claimName = variable.substring("CLAIM.".length());
+                boolean optionalClaim = claimName.endsWith("?");
+                String name = optionalClaim ? claimName.substring(0, claimName.length() - 1) : claimName;
                 Object value = AbstractClaimMapper.getClaimValue(context, name);
                 if (value == null) {
-                    hasUnresolvedVariable = true;
-                    m.appendReplacement(sb, "");
+                    // In case the claim is optional, set value as empty string and append replacement
+                    // E.g. ${CLAIM.stuff?}
+                    if (optionalClaim) {
+                        value = "";
+                    } else {
+                        hasUnresolvedVariable = true;
+                        value = "";
+                    }
+                    m.appendReplacement(sb, transformer.apply(value.toString()));
                 } else {
                     if (value instanceof Collection && ((Collection<?>) value).size() == 1) {
                         // In case the value is list with single value, it might be preferred to avoid converting whole collection toString, but rather use value like "foo" instead of "[foo]"
