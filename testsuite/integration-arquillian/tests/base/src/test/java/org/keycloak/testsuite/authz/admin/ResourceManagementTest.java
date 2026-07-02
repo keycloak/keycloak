@@ -510,4 +510,20 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         }
     }
 
+    @Test
+    public void failCreateWithMultipleWildcards() {
+        ResourceRepresentation newResource = new ResourceRepresentation();
+
+        newResource.setName("Multiple Wildcards Resource");
+        newResource.setUris(new HashSet<>(Arrays.asList("/api/*/info/*")));
+
+        try {
+            doCreateResource(newResource);
+            fail("Cannot create a resource with multiple wildcards");
+        } catch (Exception e) {
+            assertEquals(HttpResponseException.class, e.getCause().getClass());
+            assertEquals(400, HttpResponseException.class.cast(e.getCause()).getStatusCode());
+        }
+    }
+
 }

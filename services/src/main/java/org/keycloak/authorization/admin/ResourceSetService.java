@@ -553,53 +553,12 @@ public class ResourceSetService {
         }
 
         for (String uri : uris) {
-            boolean inBrace = false;
-            boolean empty = true;
-
-            for (int i = 0; i < uri.length(); i++) {
-                char c = uri.charAt(i);
-
-                if (c == '{') {
-                    if (inBrace) {
-                        throw malformedUri(uri);
-                    }
-                    inBrace = true;
-                    empty = true;
-                } else if (c == '}') {
-                    if (!inBrace || empty) {
-                        throw malformedUri(uri);
-                    }
-                    inBrace = false;
-                } else if (inBrace) {
-                    if (c == '/') {
-                        throw malformedUri(uri);
-                    }
-                    empty = false;
-                }
-            }
-
-            if (inBrace) {
-                throw malformedUri(uri);
-            }
-
-            int asteriskIndex = uri.indexOf('*');
-            if (asteriskIndex != -1) {
-                boolean validTrailing = uri.endsWith("/*");
-                boolean validSuffix = asteriskIndex > 0 && uri.charAt(asteriskIndex - 1) == '/'
-                        && asteriskIndex + 1 < uri.length() && uri.charAt(asteriskIndex + 1) == '.'
-                        && uri.indexOf('*', asteriskIndex + 1) == -1
-                        && uri.indexOf('/', asteriskIndex + 1) == -1;
-                if (!validTrailing && !validSuffix) {
-                    throw malformedUri(uri);
-                }
+            String error = PathMatcher.validateTemplate(uri);
+            if (error != null) {
+                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
+                        "URI [" + uri + "] is not a valid template: " + error,
+                        Status.BAD_REQUEST);
             }
         }
-    }
-
-    private static ErrorResponseException malformedUri(String uri) {
-        return new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
-                "URI [" + uri + "] is not a valid template; '{' and '}' must be matched and enclose a parameter name that does not contain '/'."
-                        + " Wildcards are only supported as trailing '/*' or as a suffix pattern '/*.ext'.",
-                Status.BAD_REQUEST);
     }
 }
