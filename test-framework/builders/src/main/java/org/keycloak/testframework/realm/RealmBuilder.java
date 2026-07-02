@@ -642,6 +642,21 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder permanentLockout(boolean permanentLockout) {
+        rep.setPermanentLockout(permanentLockout);
+        return this;
+    }
+
+    public RealmBuilder maxTemporaryLockouts(int maxTemporaryLockouts) {
+        rep.setMaxTemporaryLockouts(maxTemporaryLockouts);
+        return this;
+    }
+
+    public RealmBuilder maxDeltaTimeSeconds(int maxDeltaTimeSeconds) {
+        rep.setMaxDeltaTimeSeconds(maxDeltaTimeSeconds);
+        return this;
+    }
+
     /**
      * Best practice is to use other convenience methods when configuring a realm, but while the framework is under
      * active development there may not be a way to perform all updates required. In these cases this method allows
