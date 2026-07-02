@@ -88,9 +88,9 @@ public class LoginSSLTest {
         driver.driver().navigate().to(keycloakUrls.getBase() + "/realms/" + managedRealm.getName() + "/");
         String keycloakIdentity = Objects.requireNonNull(driver.driver().manage().getCookieNamed("KEYCLOAK_IDENTITY")).getValue();
 
-        // Check identity cookie is signed with HS256
+        // Check identity cookie is signed with the realm default signature algorithm
         String algorithm = new JWSInput(keycloakIdentity).getHeader().getAlgorithm().name();
-        assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, algorithm);
+        assertEquals(Constants.DEFAULT_SIGNATURE_ALGORITHM, algorithm);
 
         // Change realm signature algorithm
         managedRealm.updateWithCleanup(realm -> realm.defaultSignatureAlgorithm(Algorithm.ES256));
@@ -100,9 +100,9 @@ public class LoginSSLTest {
         driver.driver().navigate().to(keycloakUrls.getBase() + "/realms/" + managedRealm.getName() + "/");
         keycloakIdentity = Objects.requireNonNull(driver.driver().manage().getCookieNamed("KEYCLOAK_IDENTITY")).getValue();
 
-        // Check identity cookie is still signed with HS256
+        // Check identity cookie now follows the changed realm default signature algorithm
         algorithm = new JWSInput(keycloakIdentity).getHeader().getAlgorithm().name();
-        assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, algorithm);
+        assertEquals(Algorithm.ES256, algorithm);
 
         // Check identity cookie still works
         oauth.openLoginForm();

@@ -1005,42 +1005,42 @@ public class RefreshTokenTest {
 
     @Test
     public void tokenRefreshRequest_ClientRS384_RealmRS384() throws Exception {
-        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.RS384, Algorithm.RS384);
+        conductTokenRefreshRequest(Algorithm.RS384, Algorithm.RS384, Algorithm.RS384);
     }
 
     @Test
     public void tokenRefreshRequest_ClientRS512_RealmRS256() throws Exception {
-        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.RS512, Algorithm.RS256);
+        conductTokenRefreshRequest(Algorithm.RS256, Algorithm.RS512, Algorithm.RS256);
     }
 
     @Test
     public void tokenRefreshRequest_ClientES256_RealmRS256() throws Exception {
-        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES256, Algorithm.RS256);
+        conductTokenRefreshRequest(Algorithm.RS256, Algorithm.ES256, Algorithm.RS256);
     }
 
     @Test
     public void tokenRefreshRequest_ClientES384_RealmES384() throws Exception {
-        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES384, Algorithm.ES384);
+        conductTokenRefreshRequest(Algorithm.ES384, Algorithm.ES384, Algorithm.ES384);
     }
 
     @Test
     public void tokenRefreshRequest_ClientES512_RealmRS256() throws Exception {
-        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES512, Algorithm.RS256);
+        conductTokenRefreshRequest(Algorithm.RS256, Algorithm.ES512, Algorithm.RS256);
     }
 
     @Test
     public void tokenRefreshRequest_ClientPS256_RealmRS256() throws Exception {
-        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS256, Algorithm.RS256);
+        conductTokenRefreshRequest(Algorithm.RS256, Algorithm.PS256, Algorithm.RS256);
     }
 
     @Test
     public void tokenRefreshRequest_ClientPS384_RealmES384() throws Exception {
-        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS384, Algorithm.ES384);
+        conductTokenRefreshRequest(Algorithm.ES384, Algorithm.PS384, Algorithm.ES384);
     }
 
     @Test
     public void tokenRefreshRequest_ClientPS512_RealmPS256() throws Exception {
-        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS512, Algorithm.PS256);
+        conductTokenRefreshRequest(Algorithm.PS256, Algorithm.PS512, Algorithm.PS256);
     }
 
     @Test

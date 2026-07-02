@@ -676,12 +676,12 @@ public class OfflineTokenBasicFlowTest {
 
     @Test
     public void offlineTokenRequest_ClientES256_RealmPS256() throws Exception {
-        conductOfflineTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES256, Algorithm.PS256);
+        conductOfflineTokenRequest(Algorithm.PS256, Algorithm.ES256, Algorithm.PS256);
     }
 
     @Test
     public void offlineTokenRequest_ClientPS256_RealmES256() throws Exception {
-        conductOfflineTokenRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS256, Algorithm.ES256);
+        conductOfflineTokenRequest(Algorithm.ES256, Algorithm.PS256, Algorithm.ES256);
     }
 
     private void setupCustomerUserRoles() {

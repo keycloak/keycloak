@@ -191,7 +191,7 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
             throw new RuntimeException(e);
         }
 
-        assertEquals(Algorithm.HS512, jws.getHeader().getAlgorithm().toString(),
+        assertEquals(Algorithm.RS256, jws.getHeader().getAlgorithm().toString(),
                 "Must use expected signing algorithm");
 
         assertNotNull(payload.getContext(), "Must embed an associated context");

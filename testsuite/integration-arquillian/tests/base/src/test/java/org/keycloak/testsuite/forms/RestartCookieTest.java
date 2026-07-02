@@ -37,6 +37,8 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.GeneratedHmacKeyProviderFactory;
@@ -156,12 +158,19 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
         getTestingClient().server(TEST_REALM_NAME).run(session -> {
             try {
                 RestartLoginCookie restartLoginCookie = RestartLoginCookie.decryptAndDecode(session, restartCookie);
-                String sigAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.INTERNAL);
+                // Reconstruct the legacy AES-CBC+HMAC (A*CBC_HS*) format, which used an HS512 HMAC key for content integrity
                 String algAlgorithm = session.tokens().cekManagementAlgorithm(TokenCategory.INTERNAL);
                 SecretKey encKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, algAlgorithm).getSecretKey();
-                SecretKey signKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, sigAlgorithm).getSecretKey();
+                SecretKey signKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Algorithm.HS512).getSecretKey();
                 String encodedJwt = session.tokens().encode(restartLoginCookie);
                 String oldRestartCookie = TokenUtil.jweDirectEncode(encKey, signKey, encodedJwt.getBytes(StandardCharsets.UTF_8));
+                // The legacy format is AES-CBC with a separate HMAC (enc is A128/A192/A256CBC-HS*
+                // depending on the AES key size), as opposed to the current AES-GCM format. Assert the
+                // reconstructed cookie really is the CBC+HMAC legacy format so the test can't silently
+                // stop exercising it.
+                JWEHeader oldHeader = (JWEHeader) new JWE(oldRestartCookie).getHeader();
+                Assertions.assertTrue(oldHeader.getEncryptionAlgorithm().contains("CBC"),
+                        "Expected a legacy AES-CBC+HMAC enc but was " + oldHeader.getEncryptionAlgorithm());
                 Assertions.assertNotNull(RestartLoginCookie.decryptAndDecode(session, oldRestartCookie));
             } catch (Exception e) {
                 Assertions.fail();

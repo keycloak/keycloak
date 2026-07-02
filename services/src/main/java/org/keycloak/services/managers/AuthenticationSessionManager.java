@@ -20,17 +20,18 @@ package org.keycloak.services.managers;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+import org.keycloak.TokenCategory;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -155,24 +156,38 @@ public class AuthenticationSessionManager {
             return authSessionId;
         }
 
-        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, Constants.INTERNAL_SIGNATURE_ALGORITHM);
-        SignatureSignerContext signer = signatureProvider.signer();
-        try {
-            boolean valid = signatureProvider.verifier(signer.getKid()).verify(authSessionId.getBytes(StandardCharsets.UTF_8), Base64Url.decode(signature));
-            if (!valid) {
-                return null;
-            }
-            //Save the signature to avoid re-verification for the same request
-            session.setAttribute(authSessionId, signature);
-            return authSessionId;
-        } catch (Exception e) {
-            log.errorf("Signature validation failed for auth session id: %s", authSessionId, e);
+        String algorithm = session.tokens().signatureAlgorithm(TokenCategory.INTERNAL);
+        boolean valid = verifyAuthSessionIdSignature(authSessionId, signature, algorithm);
+        if (!valid && !Algorithm.HS512.equals(algorithm)) {
+            // Backwards compatibility: before the realm default signature algorithm was applied to
+            // internal cookies, AUTH_SESSION_ID was always signed with HS512. Validate such cookies
+            // against the legacy algorithm so logins in progress survive an upgrade.
+            valid = verifyAuthSessionIdSignature(authSessionId, signature, Algorithm.HS512);
         }
-        return null;
+        if (!valid) {
+            return null;
+        }
+        //Save the signature to avoid re-verification for the same request
+        session.setAttribute(authSessionId, signature);
+        return authSessionId;
+    }
+
+    private boolean verifyAuthSessionIdSignature(String authSessionId, String signature, String algorithm) {
+        try {
+            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm);
+            if (signatureProvider == null) {
+                return false;
+            }
+            SignatureSignerContext signer = signatureProvider.signer();
+            return signatureProvider.verifier(signer.getKid()).verify(authSessionId.getBytes(StandardCharsets.UTF_8), Base64Url.decode(signature));
+        } catch (Exception e) {
+            log.debugf(e, "Signature validation with algorithm %s failed for auth session id: %s", algorithm, authSessionId);
+            return false;
+        }
     }
 
     public String signAndEncodeToBase64AuthSessionId(String authSessionId) {
-        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, Constants.INTERNAL_SIGNATURE_ALGORITHM);
+        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, session.tokens().signatureAlgorithm(TokenCategory.INTERNAL));
         SignatureSignerContext signer = signatureProvider.signer();
         StringBuilder buffer = new StringBuilder();
         byte[] signature =  signer.sign(authSessionId.getBytes(StandardCharsets.UTF_8));

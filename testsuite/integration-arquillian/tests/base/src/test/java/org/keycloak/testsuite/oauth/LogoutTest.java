@@ -35,7 +35,6 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
@@ -342,7 +341,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS384");
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS512");
-            backchannelLogoutRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, "RS512", "RS384");
+            backchannelLogoutRequest("RS384", "RS512", "RS384");
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS256");
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");

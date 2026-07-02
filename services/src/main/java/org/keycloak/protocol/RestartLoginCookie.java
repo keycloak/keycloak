@@ -26,6 +26,7 @@ import org.keycloak.Token;
 import org.keycloak.TokenCategory;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwe.JWE;
@@ -191,11 +192,11 @@ public class RestartLoginCookie implements Token {
                 String jwt = new String(contentBytes, StandardCharsets.UTF_8);
                 return session.tokens().decode(jwt, RestartLoginCookie.class);
             } else {
-                // decoding as before
-                String sigAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.INTERNAL);
+                // legacy format (before the realm default algorithm applied to internal cookies):
+                // AES-CBC encryption with a separate HMAC key
                 String algAlgorithm = session.tokens().cekManagementAlgorithm(TokenCategory.INTERNAL);
                 SecretKey encKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, algAlgorithm).getSecretKey();
-                SecretKey signKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, sigAlgorithm).getSecretKey();
+                SecretKey signKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Algorithm.HS512).getSecretKey();
                 byte[] contentBytes = TokenUtil.jweDirectVerifyAndDecode(encKey, signKey, encodedToken);
                 String jwt = new String(contentBytes, StandardCharsets.UTF_8);
                 return session.tokens().decode(jwt, RestartLoginCookie.class);

@@ -21,14 +21,13 @@ import java.nio.charset.StandardCharsets;
 import javax.crypto.SecretKey;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.TokenCategory;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.SignatureProvider;
-import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEException;
-import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -61,17 +60,31 @@ public class CIBAAuthenticationRequest extends JsonWebToken {
      * @throws Exception
      */
     public static CIBAAuthenticationRequest deserialize(KeycloakSession session, String jwe) {
-        SecretKey aesKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, Algorithm.AES).getSecretKey();
-        SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Constants.INTERNAL_SIGNATURE_ALGORITHM).getSecretKey();
-
         try {
-            byte[] contentBytes = TokenUtil.jweDirectVerifyAndDecode(aesKey, hmacKey, jwe);
-            jwe = new String(contentBytes, StandardCharsets.UTF_8);
+            String kid = new JWE(jwe).getHeader().getKeyId();
+            if (kid != null) {
+                // new way using kid: signed with the realm default algorithm, encrypted with the AES key
+                String algAlgorithm = session.tokens().cekManagementAlgorithm(TokenCategory.INTERNAL);
+                RealmModel realm = session.getContext().getRealm();
+                KeyWrapper encKey = session.keys().getKey(realm, kid, KeyUse.ENC, algAlgorithm);
+                if (encKey == null) {
+                    throw new RuntimeException("Cannot find encryption key '" + kid + "' for auth_req_id.");
+                }
+                byte[] contentBytes = TokenUtil.jweDirectVerifyAndDecode(encKey.getSecretKey(), null, jwe);
+                String jwt = new String(contentBytes, StandardCharsets.UTF_8);
+                return session.tokens().decode(jwt, CIBAAuthenticationRequest.class);
+            } else {
+                // legacy format (before the realm default algorithm applied to internal tokens):
+                // AES-CBC encryption with a separate HMAC key
+                SecretKey aesKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, Algorithm.AES).getSecretKey();
+                SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Algorithm.HS512).getSecretKey();
+                byte[] contentBytes = TokenUtil.jweDirectVerifyAndDecode(aesKey, hmacKey, jwe);
+                String jwt = new String(contentBytes, StandardCharsets.UTF_8);
+                return session.tokens().decode(jwt, CIBAAuthenticationRequest.class);
+            }
         } catch (JWEException e) {
             throw new RuntimeException("Error decoding auth_req_id.", e);
         }
-
-        return session.tokens().decode(jwe, CIBAAuthenticationRequest.class);
     }
 
     public static final String SESSION_STATE = IDToken.SESSION_STATE;
@@ -155,13 +168,11 @@ public class CIBAAuthenticationRequest extends JsonWebToken {
      */
     public String serialize(KeycloakSession session) {
         try {
-            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, Constants.INTERNAL_SIGNATURE_ALGORITHM);
-            SignatureSignerContext signer = signatureProvider.signer();
-            String encodedJwt = new JWSBuilder().type("JWT").jsonContent(this).sign(signer);
-            SecretKey aesKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, Algorithm.AES).getSecretKey();
-            SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Constants.INTERNAL_SIGNATURE_ALGORITHM).getSecretKey();
+            String algAlgorithm = session.tokens().cekManagementAlgorithm(getCategory());
+            KeyWrapper encKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, algAlgorithm);
 
-            return TokenUtil.jweDirectEncode(aesKey, hmacKey, encodedJwt.getBytes(StandardCharsets.UTF_8));
+            String encodedJwt = session.tokens().encode(this);
+            return TokenUtil.jweDirectEncode(encKey.getKid(), encKey.getSecretKey(), null, encodedJwt.getBytes(StandardCharsets.UTF_8));
         } catch (JWEException e) {
             throw new RuntimeException("Error encoding auth_req_id.", e);
         }

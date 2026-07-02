@@ -198,7 +198,6 @@ public class DefaultTokenManager implements TokenManager {
     public String signatureAlgorithm(TokenCategory category) {
         switch (category) {
             case INTERNAL:
-                return Constants.INTERNAL_SIGNATURE_ALGORITHM;
             case ADMIN:
                 return getSignatureAlgorithm(null);
             case ACCESS:
