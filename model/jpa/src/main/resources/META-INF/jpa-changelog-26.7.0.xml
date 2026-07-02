@@ -523,4 +523,8 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.7.0-authenticator-character-limit">
+        <modifyDataType tableName="AUTHENTICATION_EXECUTION" columnName="AUTHENTICATOR" newDataType="VARCHAR(255)"/>
+    </changeSet>
+
 </databaseChangeLog>
