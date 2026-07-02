@@ -20,7 +20,8 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.i18n",
         "org.keycloak.tests.infinispan",
         "org.keycloak.tests.keys",
-        "org.keycloak.tests.login"
+        "org.keycloak.tests.login",
+        "org.keycloak.tests.loginfailures"
 })
 public class Base2TestSuite {
 }
