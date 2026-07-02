@@ -36,7 +36,7 @@ public class ClasspathThemeResourceProviderFactory implements ThemeResourceProvi
 
     @Override
     public URL getTemplate(String name) throws IOException {
-        return classLoader.getResource(THEME_RESOURCES_TEMPLATES + name);
+        return ResourceLoader.getResource(classLoader, THEME_RESOURCES_TEMPLATES, name);
     }
 
     @Override
