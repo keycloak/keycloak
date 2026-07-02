@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.vci;
+package org.keycloak.tests.conformance.vci.issuer;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -27,9 +26,11 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.conformance.runner.BrowserInteraction;
 import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.tests.conformance.runner.ConformanceResult;
+import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
+import org.keycloak.tests.conformance.vci.VciConformanceRealmConfig;
 
 @KeycloakIntegrationTest(config = VciConformanceRealmConfig.ServerConfig.class)
-public class IssuerSignedMetadataTest extends AbstractVciConformanceTest {
+public class IssuerMissingProofTest extends AbstractVciConformanceTest {
 
     @InjectRealm(config = VciConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;
@@ -37,12 +38,10 @@ public class IssuerSignedMetadataTest extends AbstractVciConformanceTest {
     @Override
     protected Stream<ConformanceModuleVariant> moduleVariants() {
         return discoverModuleVariants(
-                "oid4vci-1_0-issuer-haip-test-plan",
-                Map.of(
-                        "credential_format", "sd_jwt_vc",
-                        "vci_authorization_code_flow_variant", "wallet_initiated"),
-                "oid4vci-1_0-issuer-metadata-test-signed",
+                HAIP_PLAN,
+                WALLET_INITIATED,
+                "oid4vci-1_0-issuer-fail-missing-proof",
                 ConformanceResult.PASSED,
-                BrowserInteraction.NONE);
+                BrowserInteraction.LOGIN);
     }
 }

@@ -53,6 +53,7 @@ final class VciTestSigningKey {
     static final String KEY_ALIAS = "oid4vci-conformance-signing";
     static final String PASSWORD = "password";
 
+    private static final String KEYSTORES_BASE_DIR;
     private static final String KEY_STORE_PATH;
     private static final String CA_CERTIFICATE_PEM;
 
@@ -77,12 +78,18 @@ final class VciTestSigningKey {
             keyStore.setKeyEntry(KEY_ALIAS, leafKeyPair.getPrivate(), PASSWORD.toCharArray(),
                     new Certificate[] { leafCertificate, caCertificate });
 
-            Path keyStorePath = Files.createTempFile("keycloak-oid4vci-conformance-signing", ".p12");
+            Path keystoresBaseDir = Files.createTempDirectory("keycloak-oid4vci-conformance-keystores");
+            keystoresBaseDir.toFile().deleteOnExit();
+            Path realmDir = keystoresBaseDir.resolve(VciConformanceRealmConfig.REALM);
+            Files.createDirectory(realmDir);
+            realmDir.toFile().deleteOnExit();
+            Path keyStorePath = Files.createTempFile(realmDir, "signing", ".p12");
             try (OutputStream output = Files.newOutputStream(keyStorePath)) {
                 keyStore.store(output, PASSWORD.toCharArray());
             }
             keyStorePath.toFile().deleteOnExit();
 
+            KEYSTORES_BASE_DIR = keystoresBaseDir.toString();
             KEY_STORE_PATH = keyStorePath.toString();
             CA_CERTIFICATE_PEM = PemUtils.addCertificateBeginEnd(PemUtils.encodeCertificate(caCertificate));
         } catch (Exception e) {
@@ -95,6 +102,10 @@ final class VciTestSigningKey {
 
     static String keyStorePath() {
         return KEY_STORE_PATH;
+    }
+
+    static String keystoresBaseDir() {
+        return KEYSTORES_BASE_DIR;
     }
 
     static String caCertificatePem() {

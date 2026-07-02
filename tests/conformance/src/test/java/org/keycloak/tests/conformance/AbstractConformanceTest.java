@@ -17,7 +17,9 @@
 
 package org.keycloak.tests.conformance;
 
+import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.keycloak.testframework.https.CertificatesConfig;
@@ -30,6 +32,7 @@ import org.keycloak.tests.conformance.runner.BrowserInteraction;
 import org.keycloak.tests.conformance.runner.ConformanceModuleResult;
 import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.tests.conformance.runner.ConformanceResult;
+import org.keycloak.tests.conformance.runner.ModuleRun;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
@@ -76,10 +79,34 @@ public abstract class AbstractConformanceTest {
                         expectedResult, browserInteraction));
     }
 
+    /**
+     * Discovers all variant combinations of every named module from a single created plan. The modules share the
+     * same browser interaction and expected result, so a single test class can host a group of related modules.
+     */
+    protected Stream<ConformanceModuleVariant> discoverModuleVariants(String plan, Map<String, String> planVariant,
+            List<String> names, ConformanceResult expectedResult, BrowserInteraction browserInteraction) {
+        ConformanceModuleVariant template = new ConformanceModuleVariant(plan, planVariant, names.get(0), Map.of(),
+                expectedResult, browserInteraction);
+        Map<String, List<Map<String, String>>> discovered = OpenIdConformanceSuite.instance().client()
+                .discoverModuleVariants(plan, planVariant, names, suiteConfig(template));
+        return names.stream().flatMap(name -> discovered.get(name).stream()
+                .map(moduleVariant -> new ConformanceModuleVariant(plan, planVariant, name, moduleVariant,
+                        expectedResult, browserInteraction)));
+    }
+
+    /**
+     * Drives the system under test once the module waits for it, for example delivers the credential offer the issuer
+     * initiated modules wait for.
+     */
+    protected Consumer<ModuleRun> interaction(ConformanceModuleVariant moduleVariant) {
+        return null;
+    }
+
     @ParameterizedTest
     @MethodSource("moduleVariants")
     public void conformance(ConformanceModuleVariant moduleVariant) {
-        ConformanceModuleResult result = suite.client().run(moduleVariant, suiteConfig(moduleVariant));
+        ConformanceModuleResult result = suite.client()
+                .run(moduleVariant, suiteConfig(moduleVariant), interaction(moduleVariant));
         if (!result.finishedWith(moduleVariant.expectedResult())) {
             LOGGER.errorf("Full logs of failed conformance module %s:%n%s", result.module(), result.logs().toPrettyString());
             Assertions.fail(result.failureSummary());
