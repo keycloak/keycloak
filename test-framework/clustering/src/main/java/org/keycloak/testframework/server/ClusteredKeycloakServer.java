@@ -89,8 +89,10 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         }
 
         try {
-            long perLatchTimeout = (long) numServers * DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS;
-
+            long perLatchTimeout = cacheless ? DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS : (long) numServers * DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS;
+            for (var clusterLatch : consumers) {
+                clusterLatch.await(perLatchTimeout, TimeUnit.SECONDS);
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
