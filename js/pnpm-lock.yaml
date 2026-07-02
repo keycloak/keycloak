@@ -342,8 +342,8 @@ importers:
         specifier: 1.0.0-preview.102
         version: 1.0.0-preview.102
       '@microsoft/kiota-serialization-json':
-        specifier: 1.0.0-preview.102
-        version: 1.0.0-preview.102
+        specifier: 1.0.0-preview.103
+        version: 1.0.0-preview.103
       '@microsoft/kiota-serialization-multipart':
         specifier: 1.0.0-preview.102
         version: 1.0.0-preview.102
@@ -1071,14 +1071,17 @@ packages:
   '@microsoft/kiota-abstractions@1.0.0-preview.102':
     resolution: {integrity: sha512-WL+S7X+W6zpDO6vFk+FClb5hoUJMV1ZcMHo1H52r2Q49xTuYx9esJqmwh/0EXsftmxKwOOIOoPfO7+Tp5QAddw==}
 
+  '@microsoft/kiota-abstractions@1.0.0-preview.103':
+    resolution: {integrity: sha512-om7nKH8nWyEAQ0lgbIdKdrkmznhkdDJdliCnAIo31X/hlUah1aBzvfUx+pbyp67Q040yLK+2J6P7AnvGSoN/qQ==}
+
   '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.102':
     resolution: {integrity: sha512-oXfrPOWkIR2/Gs700n00EY3VDc+Qgz6y7ZiA/f8FHJsnwSjZ017xcWFw2PLzJItczVsad0pq/N5DYnoF6Co11Q==}
 
   '@microsoft/kiota-serialization-form@1.0.0-preview.102':
     resolution: {integrity: sha512-1w70XAA/F4RgbyNbRAaZCjLAOiKQjdiQDYlNZC9x8g7xgd7tNqYqowt/auQS1A9SZOrT626q6+Gr2xKKyW3wOg==}
 
-  '@microsoft/kiota-serialization-json@1.0.0-preview.102':
-    resolution: {integrity: sha512-YpIt5pXNX13ND736oJFf0wBYPAafCv+CAE17Fa1HcS1drCdXx8ELPQ5GxGDbQG7J5LIMDgUtBOUmf5R/FrMQ6A==}
+  '@microsoft/kiota-serialization-json@1.0.0-preview.103':
+    resolution: {integrity: sha512-dTr8q6H42TSe+HaCPBXU4Pv6ypo7MjMGRo/r9GRbnCuy8VCWfe+Vh38rnAZJx4r8cmvOUD7Yw74IJ6q4Hjv3mg==}
 
   '@microsoft/kiota-serialization-multipart@1.0.0-preview.102':
     resolution: {integrity: sha512-tjwt0m+8+OqZizZU6gBARTcA8suPYS0onD9IUbhKsvRrAJpBIyp07hnyOTXBgE+gurGGbeT3TTl9AUK2ic6DiA==}
@@ -5421,6 +5424,13 @@ snapshots:
       tinyduration: 3.4.1
       tslib: 2.8.1
 
+  '@microsoft/kiota-abstractions@1.0.0-preview.103':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@std-uritemplate/std-uritemplate': 2.0.10
+      tinyduration: 3.4.1
+      tslib: 2.8.1
+
   '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.102':
     dependencies:
       '@microsoft/kiota-abstractions': 1.0.0-preview.102
@@ -5432,9 +5442,9 @@ snapshots:
       '@microsoft/kiota-abstractions': 1.0.0-preview.102
       tslib: 2.8.1
 
-  '@microsoft/kiota-serialization-json@1.0.0-preview.102':
+  '@microsoft/kiota-serialization-json@1.0.0-preview.103':
     dependencies:
-      '@microsoft/kiota-abstractions': 1.0.0-preview.102
+      '@microsoft/kiota-abstractions': 1.0.0-preview.103
       tslib: 2.8.1
 
   '@microsoft/kiota-serialization-multipart@1.0.0-preview.102':
