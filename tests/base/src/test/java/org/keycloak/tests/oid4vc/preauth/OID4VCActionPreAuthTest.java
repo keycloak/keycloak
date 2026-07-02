@@ -42,11 +42,8 @@ public class OID4VCActionPreAuthTest extends OID4VCIssuerTestBase {
     @InjectUser(config = OID4VCActionTest.OID4VCTestUserConfig.class)
     ManagedUser user;
 
-    OID4VCTestContext ctx;
-
     @BeforeEach
     void beforeEach() {
-        ctx = new OID4VCTestContext(client, minimalJwtTypeCredentialScope);
         user.admin().logout();
     }
 
@@ -57,11 +54,12 @@ public class OID4VCActionPreAuthTest extends OID4VCIssuerTestBase {
     public void testCredentialOfferAIASuccess_preAuthorizedCode() throws Exception {
 
         var ctx = new OID4VCTestContext(client, minimalJwtTypeCredentialScope);
+        String credentialConfigurationId = ctx.getCredentialConfigurationId();
 
         // Login as user. Check required-action displayed
         oauth.client(client.getClientId(), "test-secret");
         oauth.loginForm()
-                .kcAction(getKcActionParameter(client.getClientId(), minimalJwtTypeCredentialConfigurationIdName, true))
+                .kcAction(getKcActionParameter(client.getClientId(), credentialConfigurationId, true))
                 .open();
         oauth.fillLoginForm(user.getUsername(), TEST_PASSWORD);
 
@@ -70,7 +68,7 @@ public class OID4VCActionPreAuthTest extends OID4VCIssuerTestBase {
 
         EventAssertion.assertSuccess(events.poll())
                 .userId(user.getId())
-                .details(Details.CREDENTIAL_TYPE, minimalJwtTypeCredentialConfigurationIdName)
+                .details(Details.CREDENTIAL_TYPE, credentialConfigurationId)
                 .details(Details.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED, String.valueOf(true))
                 .details(Details.VERIFIABLE_CREDENTIAL_TARGET_USER_ID, user.getId())
                 .details(Details.VERIFIABLE_CREDENTIAL_TARGET_CLIENT_ID, client.getClientId())
@@ -92,7 +90,7 @@ public class OID4VCActionPreAuthTest extends OID4VCIssuerTestBase {
 
         EventAssertion.assertSuccess(events.poll())
                 .userId(user.getId())
-                .details(Details.CREDENTIAL_TYPE, minimalJwtTypeCredentialConfigurationIdName)
+                .details(Details.CREDENTIAL_TYPE, credentialConfigurationId)
                 .type(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST);
 
         String preAuthCode = credOffer.getPreAuthorizedCode();
@@ -109,9 +107,7 @@ public class OID4VCActionPreAuthTest extends OID4VCIssuerTestBase {
 
         String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
         assertNotNull(credentialIdentifier,"Has authorized credential identifier");
-
-        String credentialConfigId = ctx.getAuthorizedCredentialConfigurationId();
-        assertEquals(minimalJwtTypeCredentialConfigurationIdName, credentialConfigId);
+        assertEquals(credentialConfigurationId, ctx.getAuthorizedCredentialConfigurationId());
 
         EventAssertion.assertSuccess(events.poll())
                 .userId(user.getId())
@@ -127,7 +123,7 @@ public class OID4VCActionPreAuthTest extends OID4VCIssuerTestBase {
         EventAssertion.assertSuccess(events.poll())
                 .userId(user.getId())
                 .clientId(client.getClientId())
-                .details(Details.CREDENTIAL_TYPE, minimalJwtTypeCredentialConfigurationIdName)
+                .details(Details.CREDENTIAL_TYPE, credentialConfigurationId)
                 .type(EventType.VERIFIABLE_CREDENTIAL_REQUEST);
 
         verifyVCActionCredentialResponse(credResponse);

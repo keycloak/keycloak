@@ -70,18 +70,16 @@ public class ClientAttributesCondition extends AbstractClientPolicyConditionProv
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
-        if (context.getEvent() == PRE_AUTHORIZATION_REQUEST) {
-            PreAuthorizationRequestContext parc = (PreAuthorizationRequestContext) context;
-            ClientModel client = session.getContext().getRealm().getClientByClientId(parc.getClientId());
-            if (isAttributesMatched(client)) return ClientPolicyVote.YES;
-            return ClientPolicyVote.NO;
-        } else if (context instanceof ClientModelContext clientModelContext) {
-            ClientModel client = clientModelContext.getClient();
-            if (isAttributesMatched(client)) return ClientPolicyVote.YES;
-            return ClientPolicyVote.NO;
-        } else {
-            return ClientPolicyVote.ABSTAIN;
+        if (PRE_AUTHORIZATION_REQUEST == context.getEvent()) {
+            PreAuthorizationRequestContext paContext = (PreAuthorizationRequestContext) context;
+            ClientModel client = session.getContext().getRealm().getClientByClientId(paContext.getClientId());
+            return isAttributesMatched(client) ? ClientPolicyVote.YES : ClientPolicyVote.NO;
         }
+        if (context instanceof ClientModelContext clientModelContext) {
+            ClientModel client = clientModelContext.getClient();
+            return isAttributesMatched(client) ? ClientPolicyVote.YES : ClientPolicyVote.NO;
+        }
+        return ClientPolicyVote.ABSTAIN;
     }
 
     private boolean isAttributesMatched(ClientModel client) {

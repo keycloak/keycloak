@@ -51,7 +51,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicyExecutorFactory;
+import org.keycloak.protocol.oid4vc.clientpolicy.CredentialOfferRequiredExecutorFactory;
+import org.keycloak.protocol.oid4vc.clientpolicy.PreAuthorizedOfferAllowedExecutorFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsParser;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
@@ -135,6 +136,8 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIR
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT_DEFAULT;
+import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
+import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_PREAUTH_ALLOWED;
 import static org.keycloak.protocol.oidc.OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS;
 
 /**
@@ -183,7 +186,6 @@ public abstract class OID4VCIssuerTestBase {
     public static final int CREDENTIALS_EXPIRATION_IN_SECONDS = 15;
 
     public static final String VCI_CLIENT_POLICY_HAIP = "oid4vc-haip-policy";
-    public static final String VCI_CLIENT_POLICY_OFFER_REQUIRED = "oid4vci-offer-required";
 
     @InjectRealm(config = VCTestRealmConfig.class)
     protected ManagedRealm testRealm;
@@ -625,7 +627,7 @@ public abstract class OID4VCIssuerTestBase {
 
             // Explicitly enable cryptographic binding + proof types for test credential configurations.
             // The issuer metadata only advertises binding/proofs when it is explicitly configured as required.
-            CredentialScopeRepresentation sdJwtScope = createCredentialScope(
+            realm.clientScopes(createCredentialScope(
                     sdJwtTypeCredentialScopeName,
                     null,
                     sdJwtTypeCredentialConfigurationIdName,
@@ -633,16 +635,13 @@ public abstract class OID4VCIssuerTestBase {
                     sdJwtTypeCredentialVct,
                     VCFormat.SD_JWT_VC,
                     null,
-                    List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH, OID4VCConstants.KeyAttestationResistanceLevels.MODERATE)
-            );
-            Map<String, String> sdJwtAttrs = Optional.ofNullable(sdJwtScope.getAttributes()).orElseGet(HashMap::new);
-            sdJwtScope.setBindingRequired(true);
-            sdJwtAttrs.put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
-            sdJwtAttrs.put(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
-            sdJwtScope.setAttributes(sdJwtAttrs);
-            realm.clientScopes(sdJwtScope);
+                    List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH, OID4VCConstants.KeyAttestationResistanceLevels.MODERATE),
+                    Map.of(VC_BINDING_REQUIRED, "true",
+                           VC_BINDING_REQUIRED_PROOF_TYPES, "jwt",
+                           VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT,
+                           VC_POLICY_CREDENTIAL_PREAUTH_ALLOWED.getAttrName(), "true")));
 
-            CredentialScopeRepresentation jwtVcScope = createCredentialScope(
+            realm.clientScopes(createCredentialScope(
                     jwtTypeCredentialScopeName,
                     TEST_ISSUER_DID,
                     jwtTypeCredentialConfigurationIdName,
@@ -650,14 +649,11 @@ public abstract class OID4VCIssuerTestBase {
                     null,
                     VCFormat.JWT_VC,
                     TEST_CREDENTIAL_MAPPERS_FILE,
-                    Collections.emptyList()
-            );
-            Map<String, String> jwtVcAttrs = Optional.ofNullable(jwtVcScope.getAttributes()).orElseGet(HashMap::new);
-            jwtVcAttrs.put(VC_BINDING_REQUIRED, "true");
-            jwtVcAttrs.put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt,attestation");
-            jwtVcAttrs.put(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
-            jwtVcScope.setAttributes(jwtVcAttrs);
-            realm.clientScopes(jwtVcScope);
+                    List.of(),
+                    Map.of(VC_BINDING_REQUIRED, "true",
+                           VC_BINDING_REQUIRED_PROOF_TYPES, "jwt,attestation",
+                           VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT,
+                           VC_POLICY_CREDENTIAL_PREAUTH_ALLOWED.getAttrName(), "true")));
 
             realm.clientScopes(createCredentialScope(
                     minimalJwtTypeCredentialScopeName,
@@ -667,38 +663,102 @@ public abstract class OID4VCIssuerTestBase {
                     minimalJwtTypeCredentialScopeName,
                     VC_FORMAT_DEFAULT,
                     null,
-                    null
-            ));
+                    null,
+                    Map.of(VC_POLICY_CREDENTIAL_PREAUTH_ALLOWED.getAttrName(), "true")));
 
             realm.users(createUser("John Doe", Map.of("did", "did:key:1234"), List.of(), Collections.emptyMap()));
             realm.users(createUser("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
 
             // Add Client Policies
             //
-            ClientProfileRepresentation credentialIssuanceProfile = createClientProfileCredentialIssuance();
+            ClientProfileRepresentation credOfferRequiredProfile = createClientProfileCredentialOfferRequired();
+            ClientProfileRepresentation preAuthOfferAllowedProfile = createClientProfilePreAuthorizedOfferAllowed();
             ClientProfileRepresentation haipConformanceProfile = createClientProfileHaipConformance();
-            realm.clientProfile(credentialIssuanceProfile);
+            realm.clientProfile(credOfferRequiredProfile);
+            realm.clientProfile(preAuthOfferAllowedProfile);
             realm.clientProfile(haipConformanceProfile);
 
-            ClientPolicyRepresentation offerRequiredPolicy = createClientPolicyOfferRequired(credentialIssuanceProfile);
-            ClientPolicyRepresentation haipConformancePolicy = createClientPolicyHaipConformance(haipConformanceProfile);
-            realm.clientPolicy(offerRequiredPolicy);
-            realm.clientPolicy(haipConformancePolicy);
+            realm.clientPolicy(createClientPolicyCredentialOfferRequired(credOfferRequiredProfile));
+            realm.clientPolicy(createClientPolicyPreAuthorizedOfferAllowed(preAuthOfferAllowedProfile));
+            realm.clientPolicy(createClientPolicyHaipConformance(haipConformanceProfile));
 
             return realm;
         }
 
-        private ClientProfileRepresentation createClientProfileCredentialIssuance() {
+        private ClientProfileRepresentation createClientProfileCredentialOfferRequired() {
 
             ClientProfileRepresentation profile = new ClientProfileRepresentation();
-            profile.setName("oid4vc-credential-issuance-profile");
+            profile.setName("oid4vci-offer-required-profile");
 
-            ClientPolicyExecutorRepresentation executor = new ClientPolicyExecutorRepresentation();
-            executor.setExecutorProviderId(CredentialClientPolicyExecutorFactory.PROVIDER_ID);
-            executor.setConfiguration(JsonNodeFactory.instance.objectNode());
-            profile.setExecutors(List.of(executor));
+            // oid4vci-offer-required
+            //
+            ClientPolicyExecutorRepresentation credentialOfferRequired = new ClientPolicyExecutorRepresentation();
+            credentialOfferRequired.setExecutorProviderId(CredentialOfferRequiredExecutorFactory.PROVIDER_ID);
+            credentialOfferRequired.setConfiguration(JsonNodeFactory.instance.objectNode());
+
+            profile.setExecutors(List.of(credentialOfferRequired));
 
             return profile;
+        }
+
+        private ClientPolicyRepresentation createClientPolicyCredentialOfferRequired(ClientProfileRepresentation profile) {
+
+            ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
+            policy.setName(VC_POLICY_CREDENTIAL_OFFER_REQUIRED.getName());
+            policy.setDescription("Client policy to determine whether a credential offer is required");
+            policy.setEnabled(false);
+
+            ClientPolicyConditionRepresentation condition = new ClientPolicyConditionRepresentation();
+            condition.setConditionProviderId("client-attributes");
+            ObjectNode config = JsonNodeFactory.instance.objectNode();
+            config.put("attributes", JsonSerialization.valueAsString(List.of(Map.of(
+                    "key", OID4VCI_ENABLED_ATTRIBUTE_KEY,
+                    "value", String.valueOf(true)
+            ))));
+            condition.setConfiguration(config);
+
+            policy.setConditions(List.of(condition));
+            policy.setProfiles(List.of(profile.getName()));
+
+            return policy;
+        }
+
+        private ClientProfileRepresentation createClientProfilePreAuthorizedOfferAllowed() {
+
+            ClientProfileRepresentation profile = new ClientProfileRepresentation();
+            profile.setName("oid4vci-preauth-allowed-profile");
+
+            // oid4vci-preauth-offer-allowed
+            //
+            ClientPolicyExecutorRepresentation preAuthorizedOfferAllowed = new ClientPolicyExecutorRepresentation();
+            preAuthorizedOfferAllowed.setExecutorProviderId(PreAuthorizedOfferAllowedExecutorFactory.PROVIDER_ID);
+            preAuthorizedOfferAllowed.setConfiguration(JsonNodeFactory.instance.objectNode());
+
+            profile.setExecutors(List.of(preAuthorizedOfferAllowed));
+
+            return profile;
+        }
+
+        private ClientPolicyRepresentation createClientPolicyPreAuthorizedOfferAllowed(ClientProfileRepresentation profile) {
+
+            ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
+            policy.setName(VC_POLICY_CREDENTIAL_PREAUTH_ALLOWED.getName());
+            policy.setDescription("Client policy to determine whether pre-authorized offers are allowed");
+            policy.setEnabled(true);
+
+            ClientPolicyConditionRepresentation condition = new ClientPolicyConditionRepresentation();
+            condition.setConditionProviderId("client-attributes");
+            ObjectNode config = JsonNodeFactory.instance.objectNode();
+            config.put("attributes", JsonSerialization.valueAsString(List.of(Map.of(
+                    "key", OID4VCI_ENABLED_ATTRIBUTE_KEY,
+                    "value", String.valueOf(true)
+            ))));
+            condition.setConfiguration(config);
+
+            policy.setConditions(List.of(condition));
+            policy.setProfiles(List.of(profile.getName()));
+
+            return policy;
         }
 
         private ClientProfileRepresentation createClientProfileHaipConformance() {
@@ -830,28 +890,6 @@ public abstract class OID4VCIssuerTestBase {
             return policy;
         }
 
-        private ClientPolicyRepresentation createClientPolicyOfferRequired(ClientProfileRepresentation profile) {
-
-            ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
-            policy.setName(VCI_CLIENT_POLICY_OFFER_REQUIRED);
-            policy.setDescription("Client policy to determine whether a credential offers is required");
-            policy.setEnabled(false);
-
-            ClientPolicyConditionRepresentation condition = new ClientPolicyConditionRepresentation();
-            condition.setConditionProviderId("client-attributes");
-            ObjectNode config = JsonNodeFactory.instance.objectNode();
-            config.put("attributes", JsonSerialization.valueAsString(List.of(Map.of(
-                    "key", OID4VCI_ENABLED_ATTRIBUTE_KEY,
-                    "value", String.valueOf(true)
-            ))));
-            condition.setConfiguration(config);
-
-            policy.setConditions(List.of(condition));
-            policy.setProfiles(List.of(profile.getName()));
-
-            return policy;
-        }
-
         private CredentialScopeRepresentation createCredentialScope(
                 String scopeName,
                 String issuerDid,
@@ -860,7 +898,8 @@ public abstract class OID4VCIssuerTestBase {
                 String vct,
                 String format,
                 String protocolMapperReferenceFile,
-                List<String> acceptedKeyAttestationValues) {
+                List<String> acceptedKeyAttestationValues,
+                Map<String, String> attributes) {
 
             CredentialScopeRepresentation cs = new CredentialScopeRepresentation(scopeName)
                     .setIncludeInTokenScope(true)
@@ -869,7 +908,8 @@ public abstract class OID4VCIssuerTestBase {
                     .setCredentialConfigurationId(credentialConfigurationId)
                     .setCredentialIdentifier(credentialIdentifier)
                     .setFormat(format)
-                    .setVct(Optional.ofNullable(vct).orElse(credentialIdentifier));
+                    .setVct(Optional.ofNullable(vct).orElse(credentialIdentifier))
+                    .putAttributes(attributes);
 
             if (credentialConfigurationId != null) {
                 List<DisplayObject> displayObjects = List.of(

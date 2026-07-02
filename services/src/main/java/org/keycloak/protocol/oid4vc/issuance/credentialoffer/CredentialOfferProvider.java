@@ -75,6 +75,10 @@ import org.keycloak.provider.Provider;
  */
 public interface CredentialOfferProvider extends Provider {
 
+    /**
+     * Create the internal state representation of a credential offer.
+     * Calling this method will not add that state to persistent storage.
+     */
     CredentialOfferState createCredentialOffer(
             UserModel user,
             String grantType,
