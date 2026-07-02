@@ -15,44 +15,33 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.vci;
+package org.keycloak.tests.conformance.vci.issuer;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
-import org.keycloak.models.ParConfig;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.tests.conformance.runner.BrowserInteraction;
 import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.tests.conformance.runner.ConformanceResult;
+import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
+import org.keycloak.tests.conformance.vci.VciConformanceRealmConfig;
 
 @KeycloakIntegrationTest(config = VciConformanceRealmConfig.ServerConfig.class)
-public class IssuerExpiredRequestUriTest extends AbstractVciConformanceTest {
+public class IssuerHappyFlowAdditionalRequestsTest extends AbstractVciConformanceTest {
 
-    @InjectRealm(config = ShortParRequestUriLifespanRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = VciConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;
 
     @Override
     protected Stream<ConformanceModuleVariant> moduleVariants() {
         return discoverModuleVariants(
-                "oid4vci-1_0-issuer-haip-test-plan",
-                Map.of(
-                        "credential_format", "sd_jwt_vc",
-                        "vci_authorization_code_flow_variant", "wallet_initiated"),
-                "fapi2-security-profile-final-par-attempt-to-use-expired-request_uri",
-                ConformanceResult.REVIEW,
-                BrowserInteraction.errorPage("Invalid Request"));
-    }
-
-    public static class ShortParRequestUriLifespanRealmConfig extends VciConformanceRealmConfig {
-
-        @Override
-        public RealmBuilder configure(RealmBuilder realm) {
-            return super.configure(realm).attribute(ParConfig.PAR_REQUEST_URI_LIFESPAN, "15");
-        }
+                HAIP_PLAN,
+                WALLET_INITIATED,
+                "oid4vci-1_0-issuer-happy-flow-additional-requests",
+                ConformanceResult.PASSED,
+                BrowserInteraction.LOGIN);
     }
 }
