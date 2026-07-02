@@ -16,6 +16,7 @@
  */
 package org.keycloak.protocol.oidc.utils;
 
+import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
@@ -62,6 +63,12 @@ import org.keycloak.models.RealmModel;
             return b.ec(key.getPublicKey(), certificates, key.getUse());
         } else if (key.getType().equals(KeyType.OKP)) {
             return b.okp(key.getPublicKey(), key.getUse());
+        } else if (key.getType().equals(KeyType.AKP)) {
+            JWK jwk = b.akp((PublicKey) key.getPublicKey());
+            if (key.getUse() != null) {
+                jwk.setPublicKeyUse(key.getUse().getSpecName());
+            }
+            return jwk;
         }
         return null;
     }
