@@ -314,7 +314,7 @@ The following table shows the recommended paths to expose.
 |Exposed health checks lead to an unnecessary attack vector.
 
 |/lb-check
-|-
+|/lb-check
 |Yes
 |Endpoint to be used for an external load balancer to check the availability of a {project_name} cluster.
 
