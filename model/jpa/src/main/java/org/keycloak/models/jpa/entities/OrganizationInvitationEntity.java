@@ -16,15 +16,28 @@
  */
 package org.keycloak.models.jpa.entities;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.models.OrganizationInvitationModel;
+
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 /**
  * JPA entity for organization invitations.
@@ -60,6 +73,11 @@ public class OrganizationInvitationEntity implements OrganizationInvitationModel
 
     @Column(name = "INVITE_LINK", length = 2048)
     private String inviteLink;
+
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy = "invitation")
+    @Fetch(FetchMode.SELECT)
+    @BatchSize(size = 20)
+    protected Collection<OrganizationInvitationAttributeEntity> attributes = new LinkedList<>();
 
     public OrganizationInvitationEntity() {
     }
@@ -149,6 +167,19 @@ public class OrganizationInvitationEntity implements OrganizationInvitationModel
     @Override
     public void setInviteLink(String inviteLink) {
         this.inviteLink = inviteLink;
+    }
+
+    @Override
+    public Map<String, List<String>> getAttributes() {
+        Map<String, List<String>> result = new HashMap<>();
+        for (OrganizationInvitationAttributeEntity attr : attributes) {
+            result.computeIfAbsent(attr.getName(), k -> new ArrayList<>()).add(attr.getValue());
+        }
+        return result;
+    }
+
+    public Collection<OrganizationInvitationAttributeEntity> getAttributeEntities() {
+        return attributes;
     }
 
     @Override

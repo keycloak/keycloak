@@ -3,6 +3,7 @@ import {
   Button,
   ButtonVariant,
   Form,
+  FormGroup,
   Modal,
   ModalVariant,
 } from "@patternfly/react-core";
@@ -10,6 +11,18 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { KeyValueInput } from "../components/key-value-form/KeyValueInput";
+import {
+  KeyValueType,
+  keyValueToArray,
+} from "../components/key-value-form/key-value-convert";
+
+type InviteMemberForm = {
+  email: string;
+  firstName: string;
+  lastName: string;
+  attributes: KeyValueType[];
+};
 
 type InviteMemberModalProps = {
   orgId: string;
@@ -24,16 +37,21 @@ export const InviteMemberModal = ({
   const { addAlert, addError } = useAlerts();
 
   const { t } = useTranslation();
-  const form = useForm<Record<string, string>>();
+  const form = useForm<InviteMemberForm>();
   const { handleSubmit, formState } = form;
 
-  const submitForm = async (data: Record<string, string>) => {
+  const submitForm = async (data: InviteMemberForm) => {
     try {
-      const formData = new FormData();
-      for (const key in data) {
-        formData.append(key, data[key]);
-      }
-      await adminClient.organizations.invite({ orgId }, formData);
+      const attributes = keyValueToArray(data.attributes);
+      await adminClient.organizations.invite(
+        { orgId },
+        {
+          email: data.email,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          attributes,
+        },
+      );
       addAlert(t("inviteSent"));
       onClose();
     } catch (error) {
@@ -79,6 +97,9 @@ export const InviteMemberModal = ({
           />
           <TextControl name="firstName" label={t("firstName")} />
           <TextControl name="lastName" label={t("lastName")} />
+          <FormGroup label={t("attributes")} fieldId="attributes">
+            <KeyValueInput name="attributes" />
+          </FormGroup>
         </Form>
       </FormProvider>
     </Modal>

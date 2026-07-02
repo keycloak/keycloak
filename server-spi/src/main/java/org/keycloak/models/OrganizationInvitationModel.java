@@ -16,6 +16,9 @@
  */
 package org.keycloak.models;
 
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.common.util.Time;
 
 /**
@@ -139,6 +142,13 @@ public interface OrganizationInvitationModel {
      * @param inviteLink the invitation link
      */
     void setInviteLink(String inviteLink);
+
+    /**
+     * Returns the custom attributes associated with this invitation.
+     *
+     * @return a map of attribute names to their values
+     */
+    Map<String, List<String>> getAttributes();
 
     /**
      * Returns the current status of this invitation.

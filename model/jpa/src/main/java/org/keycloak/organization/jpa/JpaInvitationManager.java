@@ -18,6 +18,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationInvitationModel;
 import org.keycloak.models.OrganizationInvitationModel.Filter;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.jpa.entities.OrganizationInvitationAttributeEntity;
 import org.keycloak.models.jpa.entities.OrganizationInvitationEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.InvitationManager;
@@ -30,7 +31,8 @@ record JpaInvitationManager(KeycloakSession session, EntityManager em) implement
 
     @Override
     public OrganizationInvitationModel create(OrganizationModel organization, String email,
-                                              String firstName, String lastName) {
+                                              String firstName, String lastName,
+                                              Map<String, List<String>> attributes) {
         String id = KeycloakModelUtils.generateId();
         OrganizationInvitationEntity entity = new OrganizationInvitationEntity(
                 id, organization.getId(), email.trim(),
@@ -41,6 +43,20 @@ record JpaInvitationManager(KeycloakSession session, EntityManager em) implement
         entity.setExpiresAt(getExpiration());
 
         em.persist(entity);
+
+        if (attributes != null) {
+            for (Map.Entry<String, List<String>> entry : attributes.entrySet()) {
+                for (String value : entry.getValue()) {
+                    OrganizationInvitationAttributeEntity attr = new OrganizationInvitationAttributeEntity();
+                    attr.setId(KeycloakModelUtils.generateId());
+                    attr.setName(entry.getKey());
+                    attr.setValue(value);
+                    attr.setInvitation(entity);
+                    em.persist(attr);
+                    entity.getAttributeEntities().add(attr);
+                }
+            }
+        }
 
         return entity;
     }
