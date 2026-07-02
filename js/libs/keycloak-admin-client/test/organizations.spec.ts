@@ -74,4 +74,137 @@ describe("Organizations", () => {
       id: group.id!,
     });
   });
+
+  it("manages organization roles", async () => {
+    const org = await kcAdminClient.organizations.create({
+      name: "orgRoles",
+      alias: "org-roles",
+      enabled: true,
+      domains: [{ name: "roles.org" }],
+    });
+    const user = await kcAdminClient.users.create({
+      username: "organization-role-user",
+      enabled: true,
+    });
+    await kcAdminClient.organizations.addMember({
+      orgId: org.id,
+      userId: user.id,
+    });
+
+    const defaultRole = await kcAdminClient.organizations.findDefaultRole({
+      orgId: org.id,
+    });
+    expect(defaultRole?.id).to.be.ok;
+
+    const child = await kcAdminClient.organizations.createRole({
+      orgId: org.id,
+      name: "child-role",
+    });
+    const created = await kcAdminClient.organizations.createRole({
+      orgId: org.id,
+      name: "organization-role",
+      description: "before update",
+    });
+
+    expect(
+      await kcAdminClient.organizations.countRoles({ orgId: org.id }),
+    ).to.equal(3);
+    expect(
+      await kcAdminClient.organizations.listRoles({
+        orgId: org.id,
+        search: "organization-role",
+        briefRepresentation: false,
+      }),
+    ).to.have.length(1);
+
+    await kcAdminClient.organizations.updateRole(
+      { orgId: org.id, roleId: created.id },
+      { name: "organization-role", description: "after update" },
+    );
+    const role = await kcAdminClient.organizations.findRole({
+      orgId: org.id,
+      roleId: created.id,
+    });
+    expect(role?.description).to.equal("after update");
+
+    await kcAdminClient.roles.create({
+      name: "organization-composite-realm-role",
+    });
+    const realmRole = await kcAdminClient.roles.findOneByName({
+      name: "organization-composite-realm-role",
+    });
+    const client = await kcAdminClient.clients.create({
+      clientId: "organization-composite-client",
+    });
+    await kcAdminClient.clients.createRole({
+      id: client.id,
+      name: "organization-composite-client-role",
+    });
+    const clientRole = await kcAdminClient.clients.findRole({
+      id: client.id,
+      roleName: "organization-composite-client-role",
+    });
+
+    await kcAdminClient.organizations.addRoleComposites(
+      { orgId: org.id, roleId: created.id },
+      [{ id: child.id }, { id: realmRole!.id }, { id: clientRole!.id }],
+    );
+    expect(
+      await kcAdminClient.organizations.listRoleComposites({
+        orgId: org.id,
+        roleId: created.id,
+      }),
+    ).to.have.length(3);
+    expect(
+      await kcAdminClient.organizations.listRealmRoleComposites({
+        orgId: org.id,
+        roleId: created.id,
+      }),
+    ).to.have.length(1);
+    expect(
+      await kcAdminClient.organizations.listClientRoleComposites({
+        orgId: org.id,
+        roleId: created.id,
+        clientId: client.id,
+      }),
+    ).to.have.length(1);
+
+    await kcAdminClient.organizations.addRoleUsers(
+      { orgId: org.id, roleId: created.id },
+      [{ id: user.id }],
+    );
+    expect(
+      await kcAdminClient.organizations.listRoleUsers({
+        orgId: org.id,
+        roleId: created.id,
+        briefRepresentation: true,
+      }),
+    ).to.have.length(1);
+    await kcAdminClient.organizations.delRoleUsers(
+      { orgId: org.id, roleId: created.id },
+      [{ id: user.id }],
+    );
+
+    await kcAdminClient.organizations.delRoleComposites(
+      { orgId: org.id, roleId: created.id },
+      [{ id: child.id }, { id: realmRole!.id }, { id: clientRole!.id }],
+    );
+    await kcAdminClient.organizations.delRole({
+      orgId: org.id,
+      roleId: created.id,
+    });
+    expect(
+      await kcAdminClient.organizations.findRole({
+        orgId: org.id,
+        roleId: created.id,
+      }),
+    ).to.be.null;
+
+    await kcAdminClient.organizations.delById({ id: org.id });
+    await kcAdminClient.users.del({ id: user.id });
+    await kcAdminClient.roles.delByName({
+      name: "organization-composite-realm-role",
+    });
+    await kcAdminClient.clients.del({ id: client.id });
+  });
 });
