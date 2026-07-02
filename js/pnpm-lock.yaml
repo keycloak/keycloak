@@ -336,8 +336,8 @@ importers:
         specifier: 1.0.0-preview.102
         version: 1.0.0-preview.102
       '@microsoft/kiota-http-fetchlibrary':
-        specifier: 1.0.0-preview.102
-        version: 1.0.0-preview.102
+        specifier: 1.0.0-preview.103
+        version: 1.0.0-preview.103
       '@microsoft/kiota-serialization-form':
         specifier: 1.0.0-preview.102
         version: 1.0.0-preview.102
@@ -1071,8 +1071,11 @@ packages:
   '@microsoft/kiota-abstractions@1.0.0-preview.102':
     resolution: {integrity: sha512-WL+S7X+W6zpDO6vFk+FClb5hoUJMV1ZcMHo1H52r2Q49xTuYx9esJqmwh/0EXsftmxKwOOIOoPfO7+Tp5QAddw==}
 
-  '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.102':
-    resolution: {integrity: sha512-oXfrPOWkIR2/Gs700n00EY3VDc+Qgz6y7ZiA/f8FHJsnwSjZ017xcWFw2PLzJItczVsad0pq/N5DYnoF6Co11Q==}
+  '@microsoft/kiota-abstractions@1.0.0-preview.103':
+    resolution: {integrity: sha512-om7nKH8nWyEAQ0lgbIdKdrkmznhkdDJdliCnAIo31X/hlUah1aBzvfUx+pbyp67Q040yLK+2J6P7AnvGSoN/qQ==}
+
+  '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.103':
+    resolution: {integrity: sha512-DbhGL+pdVjtv2AVvxB4fxvNC/GMzKbYyeQsknaXJXwqnPR/oIClWjaXlIxWL5SBK72DOmrZ18leaWMB2vfWvpw==}
 
   '@microsoft/kiota-serialization-form@1.0.0-preview.102':
     resolution: {integrity: sha512-1w70XAA/F4RgbyNbRAaZCjLAOiKQjdiQDYlNZC9x8g7xgd7tNqYqowt/auQS1A9SZOrT626q6+Gr2xKKyW3wOg==}
@@ -5421,9 +5424,16 @@ snapshots:
       tinyduration: 3.4.1
       tslib: 2.8.1
 
-  '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.102':
+  '@microsoft/kiota-abstractions@1.0.0-preview.103':
     dependencies:
-      '@microsoft/kiota-abstractions': 1.0.0-preview.102
+      '@opentelemetry/api': 1.9.1
+      '@std-uritemplate/std-uritemplate': 2.0.10
+      tinyduration: 3.4.1
+      tslib: 2.8.1
+
+  '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.103':
+    dependencies:
+      '@microsoft/kiota-abstractions': 1.0.0-preview.103
       '@opentelemetry/api': 1.9.1
       tslib: 2.8.1
 
