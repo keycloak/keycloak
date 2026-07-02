@@ -23,7 +23,10 @@ import java.util.Collections;
 import java.util.stream.Stream;
 
 import org.keycloak.OAuthErrorException;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutor.Configuration;
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutor.UriValidation;
 import org.keycloak.util.JsonSerialization;
@@ -88,6 +91,22 @@ public class SecureRedirectUrisEnforcerExecutorTest {
     public void failUriSyntax() {
         checkFail("https://keycloak.org\n" ,false, SecureRedirectUrisEnforcerExecutor.ERR_GENERAL);
         checkFail("Collins'&1=1;--" ,false, SecureRedirectUrisEnforcerExecutor.ERR_GENERAL);
+    }
+
+    @Test
+    public void emptyPostLogoutRedirectUriListValueIsIgnored() {
+        setupConfiguration(configuration);
+
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("test-client");
+        client.setRedirectUris(Collections.singletonList("https://keycloak.org/callback"));
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(Collections.singletonList(""));
+
+        try {
+            executor.executeOnEvent(new AdminClientRegisterContext(client, null));
+        } catch (ClientPolicyException e) {
+            fail(e.getErrorDetail());
+        }
     }
 
     @Test
