@@ -313,12 +313,21 @@ The following table shows the recommended paths to expose.
 |No
 |Exposed health checks lead to an unnecessary attack vector.
 
+|/lb-check
+|/lb-check
+|Yes
+|Endpoint to be used for an external load balancer to check the availability of a {project_name} cluster.
+
 |===
 
 We assume you run {project_name} on the root path `/` on your reverse proxy/gateway's public API.
 If not, prefix the path with your desired one.
 
 NOTE: If you configured an `http-relative-path` on the server, proceed as follows to use discovery with RFC 8414: Configure a reverse proxy to map the `/.well-known/` path without the prefix to the path with the prefix on the server.
+
+The `lb-check` endpoint is only available when the `cacheless` or the `multi-site` feature is enabled.
+It is intended for external load balancers when you do not want to expose the management interface and its `/health` endpoints publicly.
+This is a non-blocking endpoint and should remain responsive under high load, so the load balancer does not remove a healthy cluster from rotation during transient overload.
 
 === Different context path on reverse proxy
 
