@@ -1262,6 +1262,7 @@ jobs:
       - build
     timeout-minutes: 45
     strategy:
+      fail-fast: false
       matrix:
         suite: [Base1TestSuite, Base2TestSuite, Base3TestSuite]
     steps:
