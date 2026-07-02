@@ -97,11 +97,21 @@ public class AccountIssuedVerifiableCredentialResource {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
         checkOid4VCIEnabled();
 
-        boolean removed = session.users().removeIssuedVerifiableCredential(credentialId);
-        if (!removed) {
+        boolean belongsToUser = session.users()
+                .getIssuedVerifiableCredentialsStreamByUser(user.getId())
+                .anyMatch(credential -> credential.getId().equals(credentialId));
+
+        if (!belongsToUser) {
             logger.warn(String.format("Issued credential with ID '%s' not found for user '%s' in the realm '%s'.", credentialId, user.getUsername(), realm.getName()));
             throw new NotFoundException("Issued credential not found");
         }
+
+        boolean removed = session.users().removeIssuedVerifiableCredential(credentialId);
+        if (!removed) {
+            logger.warn(String.format("Failed to remove issued credential with ID '%s' for user '%s' in realm '%s'.", credentialId, user.getUsername(), realm.getName()));
+            throw new NotFoundException("Issued credential not found");
+        }
+
         return Cors.builder().auth().checkAllowedOrigins(auth.getToken()).add(Response.noContent());
     }
 
@@ -133,7 +143,7 @@ public class AccountIssuedVerifiableCredentialResource {
         }
         rep.setClientName(clientName);
 
-        String effectiveUrl = ResolveRelative.resolveRelativeUri(session,client.getRootUrl(),client.getBaseUrl());
+        String effectiveUrl = ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), client.getBaseUrl());
         rep.setClientBaseUrl(effectiveUrl);
 
         return rep;
