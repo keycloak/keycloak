@@ -667,6 +667,7 @@ class KeycloakProcessor {
     @BuildStep
     @Consume(ConfigBuildItem.class)
     @Consume(CryptoProviderInitBuildItem.class)
+    @Consume(ProviderRegistryBuildItem.class)
     @Produce(KeycloakSessionFactoryPreInitBuildItem.class)
     SyntheticBeanBuildItem configureKeycloakSessionFactory(KeycloakRecorder recorder, List<PersistenceXmlDescriptorBuildItem> descriptors) {
         Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories = new HashMap<>();
