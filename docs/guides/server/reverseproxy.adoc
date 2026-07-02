@@ -326,9 +326,8 @@ If not, prefix the path with your desired one.
 NOTE: If you configured an `http-relative-path` on the server, proceed as follows to use discovery with RFC 8414: Configure a reverse proxy to map the `/.well-known/` path without the prefix to the path with the prefix on the server.
 
 The `lb-check` endpoint is only available when the `cacheless` or the `multi-site` feature is enabled.
-It is necessary as the regular `health` endpoints are only accessible in the internal cluster, but not an external loadbalancer.
-This is a non-blocking endpoint, and it will still return "200 OK" if the system is overloaded and in load-shedding mode.
-This ensures that the load balancer will not take a cluster out of rotation under high load as that would reduce the overall capacity of the system that it would make it difficult to recover from an overload scenario.
+It is intended for external load balancers when you do not want to expose the management interface and its `/health` endpoints publicly.
+This is a non-blocking endpoint and should remain responsive under high load, so the load balancer does not remove a healthy cluster from rotation during transient overload.
 
 === Different context path on reverse proxy
 
