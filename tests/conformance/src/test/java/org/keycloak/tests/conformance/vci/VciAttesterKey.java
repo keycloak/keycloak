@@ -45,7 +45,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  * (which validates the x5c chain against the CA). The private JWKS is handed to the conformance suite to sign
  * attestations, while Keycloak trusts only the public JWKS and the CA certificate.
  */
-final class VciAttesterKey {
+public final class VciAttesterKey {
 
     static final String KID = "ct_client_attester_key";
 
@@ -94,7 +94,7 @@ final class VciAttesterKey {
         return PUBLIC_JWKS;
     }
 
-    static String caCertificatePem() {
+    public static String caCertificatePem() {
         return CA_CERTIFICATE_PEM;
     }
 
