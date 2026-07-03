@@ -23,18 +23,22 @@ import java.util.stream.Stream;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SubjectCredentialManager;
+import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 
 public class AbstractUserAdapterFederatedStorageTest {
 
     @Test
     public void grantRoleRejectsOrganizationRolesForNonMembers() {
+        RecordingFederatedStorage nonMemberFederatedStorage = new RecordingFederatedStorage();
         AbstractUserAdapterFederatedStorage user = new AbstractUserAdapterFederatedStorage.Streams(null, null, null) {
             @Override
             public String getUsername() {
@@ -44,19 +48,22 @@ public class AbstractUserAdapterFederatedStorageTest {
             @Override
             public void setUsername(String username) {
             }
+
+            @Override
+            public UserFederatedStorageProvider getFederatedStorage() {
+                return nonMemberFederatedStorage.provider();
+            }
         };
-        OrganizationModel organization = (OrganizationModel) Proxy.newProxyInstance(getClass().getClassLoader(),
-                new Class<?>[] { OrganizationModel.class }, (proxy, method, args) -> false);
-        RoleModel role = (RoleModel) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { RoleModel.class },
-                (proxy, method, args) -> switch (method.getName()) {
-                    case "getContainer" -> organization;
-                    case "isOrganizationRole" -> true;
-                    default -> null;
-                });
+        OrganizationModel organization = organization(false);
+        RoleModel role = organizationRole(organization);
 
         assertThrows(ModelException.class, () -> user.grantRole(role));
+        assertEquals(0, nonMemberFederatedStorage.grants);
 
-        AbstractUserAdapterFederatedStorage member = new AbstractUserAdapterFederatedStorage.Streams(null, null, null) {
+        RealmModel realm = (RealmModel) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { RealmModel.class },
+                (proxy, method, args) -> null);
+        RecordingFederatedStorage memberFederatedStorage = new RecordingFederatedStorage();
+        AbstractUserAdapterFederatedStorage member = new AbstractUserAdapterFederatedStorage.Streams(null, realm, null) {
             @Override
             public String getUsername() {
                 return "user-2";
@@ -67,20 +74,29 @@ public class AbstractUserAdapterFederatedStorageTest {
             }
 
             @Override
+            public String getId() {
+                return "user-2";
+            }
+
+            @Override
             public boolean hasDirectRole(RoleModel role) {
-                return true;
+                return false;
+            }
+
+            @Override
+            public UserFederatedStorageProvider getFederatedStorage() {
+                return memberFederatedStorage.provider();
             }
         };
-        OrganizationModel memberOrganization = (OrganizationModel) Proxy.newProxyInstance(getClass().getClassLoader(),
-                new Class<?>[] { OrganizationModel.class }, (proxy, method, args) -> true);
-        RoleModel memberRole = (RoleModel) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { RoleModel.class },
-                (proxy, method, args) -> switch (method.getName()) {
-                    case "getContainer" -> memberOrganization;
-                    case "isOrganizationRole" -> true;
-                    default -> null;
-                });
+        OrganizationModel memberOrganization = organization(true);
+        RoleModel memberRole = organizationRole(memberOrganization);
 
         member.grantRole(memberRole);
+
+        assertEquals(1, memberFederatedStorage.grants);
+        assertSame(realm, memberFederatedStorage.realm);
+        assertEquals("user-2", memberFederatedStorage.userId);
+        assertSame(memberRole, memberFederatedStorage.role);
     }
 
     @Test
@@ -174,6 +190,20 @@ public class AbstractUserAdapterFederatedStorageTest {
                 (proxy, method, args) -> "getId".equals(method.getName()) ? id : null);
     }
 
+    private OrganizationModel organization(boolean member) {
+        return (OrganizationModel) Proxy.newProxyInstance(getClass().getClassLoader(),
+                new Class<?>[] { OrganizationModel.class }, (proxy, method, args) -> "isMember".equals(method.getName()) ? member : null);
+    }
+
+    private RoleModel organizationRole(OrganizationModel organization) {
+        return (RoleModel) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { RoleModel.class },
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "getContainer" -> organization;
+                    case "isOrganizationRole" -> true;
+                    default -> null;
+                });
+    }
+
     private RoleModel role(String name, RoleModel.Type type, String containerId) {
         return (RoleModel) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { RoleModel.class },
                 (proxy, method, args) -> switch (method.getName()) {
@@ -185,5 +215,25 @@ public class AbstractUserAdapterFederatedStorageTest {
                     case "toString" -> name;
                     default -> null;
                 });
+    }
+
+    private class RecordingFederatedStorage {
+        private int grants;
+        private RealmModel realm;
+        private String userId;
+        private RoleModel role;
+
+        private UserFederatedStorageProvider provider() {
+            return (UserFederatedStorageProvider) Proxy.newProxyInstance(getClass().getClassLoader(),
+                    new Class<?>[] { UserFederatedStorageProvider.class }, (proxy, method, args) -> {
+                        if ("grantRole".equals(method.getName())) {
+                            grants++;
+                            realm = (RealmModel) args[0];
+                            userId = (String) args[1];
+                            role = (RoleModel) args[2];
+                        }
+                        return null;
+                    });
+        }
     }
 }
