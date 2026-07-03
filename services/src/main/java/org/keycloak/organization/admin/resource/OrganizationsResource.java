@@ -166,10 +166,16 @@ public class OrganizationsResource {
         // check if are searching orgs by attribute.
         if (StringUtil.isNotBlank(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            return provider.getAllStream(attributes, first, max).map(model -> ModelToRepresentation.toRepresentation(model, briefRepresentation));
+            return provider.getAllStream(attributes, first, max).map(model -> toRepresentation(model, briefRepresentation));
         } else {
-            return provider.getAllStream(search, exact, first, max).map(model -> ModelToRepresentation.toRepresentation(model, briefRepresentation));
+            return provider.getAllStream(search, exact, first, max).map(model -> toRepresentation(model, briefRepresentation));
         }
+    }
+
+    private OrganizationRepresentation toRepresentation(OrganizationModel organization, boolean briefRepresentation) {
+        OrganizationRepresentation representation = ModelToRepresentation.toRepresentation(organization, briefRepresentation);
+        representation.setAccess(auth.orgs().getAccess(organization));
+        return representation;
     }
 
     /**

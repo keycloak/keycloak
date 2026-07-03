@@ -40,6 +40,7 @@ public class OrganizationRepresentation {
     private List<MemberRepresentation> members;
     private List<IdentityProviderRepresentation> identityProviders;
     private List<GroupRepresentation> groups;
+    private Map<String, Boolean> access;
 
     public String getId() {
         return id;
@@ -197,6 +198,14 @@ public class OrganizationRepresentation {
             groups = new ArrayList<>();
         }
         groups.add(group);
+    }
+
+    public Map<String, Boolean> getAccess() {
+        return access;
+    }
+
+    public void setAccess(Map<String, Boolean> access) {
+        this.access = access;
     }
 
     @Override

@@ -201,10 +201,10 @@ describe("OrganizationRoleDetails", () => {
       roleId: "role-id",
     });
     expect(mocks.composites.at(-1)).toEqual(
-      expect.objectContaining({ roleId: "role-id", isManager: true }),
+      expect.objectContaining({ roleId: "role-id", canManage: true }),
     );
     expect(mocks.users.at(-1)).toEqual(
-      expect.objectContaining({ roleId: "role-id", isManager: true }),
+      expect.objectContaining({ roleId: "role-id", canMapRole: true }),
     );
     expect(mocks.events.at(-1).resourcePath).toContain("role-id");
 
@@ -253,8 +253,23 @@ describe("OrganizationRoleDetails", () => {
     expect(mocks.headers.at(-1).dropdownItems).toBeUndefined();
     expect(mocks.attributeForms).toHaveLength(0);
     expect(mocks.events).toHaveLength(0);
-    expect(mocks.composites.at(-1).isManager).toBe(false);
+    expect(mocks.composites.at(-1).canManage).toBe(false);
     expect(mocks.roleForms.at(-1).isReadOnly).toBe(true);
+  });
+
+  it("uses role access when legacy organization management is absent", async () => {
+    mocks.manager = false;
+    mocks.findRole.mockResolvedValueOnce({
+      ...role,
+      access: { manage: true, mapRole: false },
+    });
+    renderDetails();
+    await waitFor(() => expect(mocks.roleForms.length).toBeGreaterThan(0));
+
+    expect(mocks.headers.at(-1).dropdownItems).toBeDefined();
+    expect(mocks.roleForms.at(-1).isReadOnly).toBe(false);
+    expect(mocks.composites.at(-1).canManage).toBe(true);
+    expect(mocks.users.at(-1).canMapRole).toBe(false);
   });
 
   it("handles a concurrently removed role", async () => {

@@ -88,8 +88,8 @@ vi.mock("./OrganizationForm", () => ({
 }));
 vi.mock("../events/AdminEvents", () => ({ AdminEvents: () => null }));
 vi.mock("./OrganizationRoles", () => ({
-  OrganizationRoles: () => {
-    mocks.roles();
+  OrganizationRoles: (props: any) => {
+    mocks.roles(props);
     return <div>organization-roles</div>;
   },
 }));
@@ -103,5 +103,5 @@ it("renders the organization roles tab", async () => {
     </MemoryRouter>,
   );
   await waitFor(() => expect(mocks.findOne).toHaveBeenCalled());
-  expect(mocks.roles).toHaveBeenCalled();
+  expect(mocks.roles).toHaveBeenCalledWith({ canCreateRole: false });
 });

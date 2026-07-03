@@ -107,7 +107,7 @@ describe("OrganizationRoleComposites", () => {
         organizationId="org-id"
         roleId="role-id"
         roleName="parent"
-        isManager
+        canManage
       />,
     );
     const table = mocks.tables.at(-1);
@@ -134,6 +134,11 @@ describe("OrganizationRoleComposites", () => {
       { id: "role-id", name: "self" },
       { id: "assigned", name: "assigned" },
       { id: "available", name: "available" },
+      {
+        id: "restricted",
+        name: "restricted",
+        access: { mapComposite: false },
+      },
     ]);
     expect(await modalTable.loader(0, 10, "a")).toEqual([
       expect.objectContaining({ id: "available", source: "organization" }),
@@ -230,7 +235,7 @@ describe("OrganizationRoleComposites", () => {
         organizationId="org-id"
         roleId="role-id"
         roleName="parent"
-        isManager
+        canManage
       />,
     );
     const table = mocks.tables.at(-1);
@@ -278,11 +283,12 @@ describe("OrganizationRoleComposites", () => {
         organizationId="org-id"
         roleId="role-id"
         roleName="parent"
-        isManager={false}
+        canManage={false}
       />,
     );
     const table = mocks.tables.at(-1);
     expect(table.toolbarItem).toBe(false);
+    expect(table.onSelect).toBeUndefined();
     expect(table.actions).toBeUndefined();
     expect(mocks.emptyStates.at(-1).onPrimaryAction).toBeUndefined();
   });

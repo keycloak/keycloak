@@ -100,10 +100,12 @@ vi.mock("@keycloak/keycloak-ui-shared", async () => {
 
 import { OrganizationRoles } from "./OrganizationRoles";
 
-const renderRoles = () =>
+const renderRoles = (canCreateRole?: boolean) =>
   render(
     <MemoryRouter>
-      <OrganizationRoles />
+      <OrganizationRoles
+        {...(canCreateRole === undefined ? {} : { canCreateRole })}
+      />
     </MemoryRouter>,
   );
 
@@ -215,10 +217,26 @@ describe("OrganizationRoles", () => {
 
   it("renders a view-only empty state", () => {
     mocks.hasAccess.mockReturnValue(false);
-    renderRoles();
+    renderRoles(false);
     const table = mocks.tables.at(-1);
     expect(table.toolbarItem).toBe(false);
-    expect(table.actionResolver).toBeUndefined();
+    expect(
+      table.actionResolver({
+        data: { id: "role-id", isDefault: false, access: { manage: false } },
+      }),
+    ).toEqual([]);
     expect(mocks.emptyStates.at(-1).onPrimaryAction).toBeUndefined();
+  });
+
+  it("allows row actions from role access without create access", () => {
+    mocks.hasAccess.mockReturnValue(false);
+    renderRoles(false);
+    const table = mocks.tables.at(-1);
+    expect(table.toolbarItem).toBe(false);
+    expect(
+      table.actionResolver({
+        data: { id: "role-id", isDefault: false, access: { manage: true } },
+      }),
+    ).toHaveLength(1);
   });
 });

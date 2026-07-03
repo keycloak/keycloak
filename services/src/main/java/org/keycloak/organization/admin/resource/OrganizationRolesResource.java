@@ -142,7 +142,11 @@ public class OrganizationRolesResource {
         Function<RoleModel, RoleRepresentation> toRepresentation = briefRepresentation ?
                 ModelToRepresentation::toBriefRepresentation :
                 ModelToRepresentation::toRepresentation;
-        return roles.map(toRepresentation);
+        return roles.map(role -> {
+            RoleRepresentation representation = toRepresentation.apply(role);
+            representation.setAccess(auth.roles().getAccess(role));
+            return representation;
+        });
     }
 
     @GET

@@ -17,7 +17,9 @@
 package org.keycloak.organization.admin.resource;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
@@ -77,6 +79,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
+
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class OrganizationRoleResource extends RoleResource {
 
@@ -110,7 +114,7 @@ public class OrganizationRoleResource extends RoleResource {
     })
     public RoleRepresentation getRole() {
         auth.roles().requireView(role);
-        return getRole(role);
+        return withAccess(getRole(role), role);
     }
 
     @PUT
@@ -207,9 +211,9 @@ public class OrganizationRoleResource extends RoleResource {
                                                         @QueryParam("max") Integer max) {
         auth.roles().requireView(role);
         if (search == null && first == null && max == null) {
-            return role.getCompositesStream().map(ModelToRepresentation::toBriefRepresentation);
+            return role.getCompositesStream().map(this::toBriefRepresentation);
         }
-        return role.getCompositesStream(search, first, max).map(ModelToRepresentation::toBriefRepresentation);
+        return role.getCompositesStream(search, first, max).map(this::toBriefRepresentation);
     }
 
     @GET
@@ -224,7 +228,7 @@ public class OrganizationRoleResource extends RoleResource {
     })
     public Stream<RoleRepresentation> getRealmRoleComposites() {
         auth.roles().requireView(role);
-        return getRealmRoleComposites(role);
+        return getRealmRoleComposites(role).map(this::withAccess);
     }
 
     @GET
@@ -244,7 +248,7 @@ public class OrganizationRoleResource extends RoleResource {
         if (client == null) {
             throw new NotFoundException("Could not find client");
         }
-        return getClientRoleComposites(client, role);
+        return getClientRoleComposites(client, role).map(this::withAccess);
     }
 
     @DELETE
@@ -298,7 +302,67 @@ public class OrganizationRoleResource extends RoleResource {
         int max = maxResults == null ? Constants.DEFAULT_MAX_RESULTS : maxResults;
 
         return session.getProvider(OrganizationProvider.class).getRoleMembersStream(organization, role, first, max)
-                .map(user -> ModelToRepresentation.toRepresentation(session, user, briefRep));
+                .map(user -> toUserRepresentation(user, briefRep));
+    }
+
+    @GET
+    @Path("users/available")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Returns organization members that can be assigned to the specified organization role")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UserRepresentation.class, type = SchemaType.ARRAY))),
+            @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public Stream<UserRepresentation> getAvailableUsersForRole(@Parameter(description = "A String representing either a member's username, e-mail, first name, or last name.") @QueryParam("search") String search,
+                                                               @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
+                                                               @Parameter(description = "Boolean which defines whether brief representations are returned") @QueryParam("briefRepresentation") @DefaultValue("true") Boolean briefRepresentation,
+                                                               @Parameter(description = "First result to return") @QueryParam("first") Integer firstResult,
+                                                               @Parameter(description = "Maximum number of results to return") @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults) {
+        auth.roles().requireMapRole(role);
+        auth.users().requireQuery();
+
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && !auth.users().canView()) {
+            return Stream.empty();
+        }
+
+        Map<String, String> filters = new HashMap<>();
+        if (StringUtil.isNotBlank(search)) {
+            filters.put(UserModel.SEARCH, search);
+        }
+
+        boolean briefRep = Boolean.TRUE.equals(briefRepresentation);
+        int first = firstResult == null ? 0 : firstResult;
+        int max = maxResults == null ? Constants.DEFAULT_MAX_RESULTS : maxResults;
+
+        return paginatedStream(session.getProvider(OrganizationProvider.class).getMembersStream(organization, filters, exact, null, null)
+                .filter(user -> !user.hasRole(role))
+                .filter(auth.users()::canManage), first, max)
+                .map(user -> toUserRepresentation(user, briefRep));
+    }
+
+    private RoleRepresentation toBriefRepresentation(RoleModel role) {
+        return withAccess(ModelToRepresentation.toBriefRepresentation(role), role);
+    }
+
+    private RoleRepresentation withAccess(RoleRepresentation representation) {
+        if (representation.getId() == null) {
+            return representation;
+        }
+        RoleModel model = session.roles().getRoleById(realm, representation.getId());
+        return model == null ? representation : withAccess(representation, model);
+    }
+
+    private RoleRepresentation withAccess(RoleRepresentation representation, RoleModel role) {
+        representation.setAccess(auth.roles().getAccess(role));
+        return representation;
+    }
+
+    private UserRepresentation toUserRepresentation(UserModel user, boolean briefRep) {
+        UserRepresentation representation = ModelToRepresentation.toRepresentation(session, user, briefRep);
+        representation.setAccess(auth.users().getAccessForListing(user));
+        return representation;
     }
 
     @POST

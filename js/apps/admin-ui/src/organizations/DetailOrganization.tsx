@@ -3,6 +3,7 @@ import {
   useAlerts,
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
+import type OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import {
   ActionGroup,
   Button,
@@ -51,6 +52,8 @@ export default function DetailOrganization() {
   const { t } = useTranslation();
 
   const form = useForm<OrganizationFormType>();
+  const [organization, setOrganization] =
+    useState<OrganizationRepresentation>();
 
   const save = async (org: OrganizationFormType) => {
     try {
@@ -72,6 +75,7 @@ export default function DetailOrganization() {
       if (!org) {
         throw new Error(t("notFound"));
       }
+      setOrganization(org);
       form.reset({
         ...org,
         domains: org.domains?.map((d) => d.name),
@@ -99,6 +103,8 @@ export default function DetailOrganization() {
   const eventsTab = useTab("events");
 
   const { hasAccess } = useAccess();
+  const canManageOrganization =
+    organization?.access?.manage ?? hasAccess("manage-organizations");
   const [activeEventsTab, setActiveEventsTab] = useState("adminEvents");
 
   return (
@@ -175,7 +181,7 @@ export default function DetailOrganization() {
             title={<TabTitleText>{t("roles")}</TabTitleText>}
             {...rolesTab}
           >
-            <OrganizationRoles />
+            <OrganizationRoles canCreateRole={canManageOrganization} />
           </Tab>
           <Tab
             id="groups"

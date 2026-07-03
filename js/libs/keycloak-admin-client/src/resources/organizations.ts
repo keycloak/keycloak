@@ -302,6 +302,21 @@ export class Organizations extends Resource<{ realm?: string }> {
     urlParamKeys: ["orgId", "roleId"],
   });
 
+  public listAvailableRoleUsers = this.makeRequest<
+    OrganizationRoleParams & {
+      briefRepresentation?: boolean;
+      first?: number;
+      max?: number;
+      search?: string;
+      exact?: boolean;
+    },
+    UserRepresentation[]
+  >({
+    method: "GET",
+    path: "/{orgId}/roles/{roleId}/users/available",
+    urlParamKeys: ["orgId", "roleId"],
+  });
+
   public addRoleUsers = this.makeUpdateRequest<
     OrganizationRoleParams,
     UserRepresentation[],

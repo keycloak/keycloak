@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   addAlert: vi.fn(),
   addError: vi.fn(),
   listUsers: vi.fn(),
+  listAvailableUsers: vi.fn(),
   addUsers: vi.fn(),
   delUsers: vi.fn(),
   tables: [] as any[],
@@ -36,6 +37,7 @@ vi.mock("../admin-client", () => ({
     adminClient: {
       organizations: {
         listRoleUsers: mocks.listUsers,
+        listAvailableRoleUsers: mocks.listAvailableUsers,
         addRoleUsers: mocks.addUsers,
         delRoleUsers: mocks.delUsers,
       },
@@ -82,13 +84,13 @@ vi.mock("@keycloak/keycloak-ui-shared", () => ({
 
 import { OrganizationRoleUsers } from "./OrganizationRoleUsers";
 
-const renderUsers = (isManager = true) =>
+const renderUsers = (canMapRole = true) =>
   render(
     <MemoryRouter>
       <OrganizationRoleUsers
         organizationId="org-id"
         roleId="role-id"
-        isManager={isManager}
+        canMapRole={canMapRole}
       />
     </MemoryRouter>,
   );
@@ -104,6 +106,9 @@ describe("OrganizationRoleUsers", () => {
     mocks.listUsers
       .mockReset()
       .mockResolvedValue([{ id: "user-id", username: "user" }]);
+    mocks.listAvailableUsers
+      .mockReset()
+      .mockResolvedValue([{ id: "available-id", username: "available" }]);
     mocks.addUsers.mockReset().mockResolvedValue(undefined);
     mocks.delUsers.mockReset().mockResolvedValue(undefined);
   });
@@ -114,8 +119,17 @@ describe("OrganizationRoleUsers", () => {
     expect(await table.loader(0, 10)).toEqual([
       { id: "user-id", username: "user" },
     ]);
+    expect(
+      table.isRowDisabled({
+        id: "restricted-id",
+        access: { manage: false },
+      }),
+    ).toBe(true);
     act(() => {
-      table.onSelect([{ id: "user-id", username: "user" }]);
+      table.onSelect([
+        { id: "user-id", username: "user" },
+        { id: "restricted-id", access: { manage: false } },
+      ]);
     });
     render(
       <MemoryRouter>
@@ -125,6 +139,23 @@ describe("OrganizationRoleUsers", () => {
     expect(screen.getByText("user")).toBeTruthy();
 
     fireEvent.click(screen.getByText("addOrganizationRoleUsers"));
+    expect(
+      await mocks.memberModals.at(-1).availableUsersQuery(0, 10, "a"),
+    ).toEqual([{ id: "available-id", username: "available" }]);
+    expect(mocks.listAvailableUsers).toHaveBeenCalledWith({
+      orgId: "org-id",
+      roleId: "role-id",
+      first: 0,
+      max: 10,
+      search: "a",
+      briefRepresentation: true,
+    });
+    expect(
+      mocks.memberModals.at(-1).canSelectUser({
+        id: "restricted-id",
+        access: { manage: false },
+      }),
+    ).toBe(false);
     await act(async () => {
       await mocks.memberModals
         .at(-1)
@@ -181,6 +212,8 @@ describe("OrganizationRoleUsers", () => {
     renderUsers(false);
     const table = mocks.tables.at(-1);
     expect(table.toolbarItem).toBe(false);
+    expect(table.onSelect).toBeUndefined();
+    expect(table.canSelectAll).toBe(false);
     expect(table.actions).toBeUndefined();
     expect(mocks.emptyStates.at(-1).onPrimaryAction).toBeUndefined();
   });

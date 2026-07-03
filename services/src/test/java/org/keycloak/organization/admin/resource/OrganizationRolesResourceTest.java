@@ -57,6 +57,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.provider.ProviderEvent;
+import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponseException;
@@ -118,7 +119,9 @@ public class OrganizationRolesResourceTest {
         assertThrows(BadRequestException.class, () -> roles.createRole(null));
         assertStatus(Response.Status.CONFLICT, assertThrows(ErrorResponseException.class, () -> roles.createRole(representation)));
 
-        assertEquals(List.of("member"), roles.getRoles("", null, null, true).map(RoleRepresentation::getName).toList());
+        List<RoleRepresentation> listedRoles = roles.getRoles("", null, null, true).toList();
+        assertEquals(List.of("member"), listedRoles.stream().map(RoleRepresentation::getName).toList());
+        assertEquals(Boolean.TRUE, listedRoles.get(0).getAccess().get("manage"));
         assertTrue(context.organizationRolesUnpagedCalled);
         assertNull(context.organizationRolesFirst);
         assertNull(context.organizationRolesMax);
@@ -158,6 +161,7 @@ public class OrganizationRolesResourceTest {
         assertThrows(BadRequestException.class, () -> roles.getRole(" "));
 
         OrganizationResource organizationResource = new OrganizationResource(context.session, context.organization, context.adminEvent, context.auth);
+        assertEquals(Boolean.TRUE, organizationResource.get().getAccess().get("manage"));
         assertNotNull(organizationResource.roles());
     }
 
@@ -170,7 +174,11 @@ public class OrganizationRolesResourceTest {
         context.defaultRole = defaultRole.model;
         OrganizationRoleResource resource = new OrganizationRoleResource(context.session, context.organization, role.model, context.adminEvent, context.auth);
 
-        assertEquals(role.id, resource.getRole().getId());
+        role.attributes.put("existing", List.of("value"));
+        RoleRepresentation loaded = resource.getRole();
+        assertEquals(role.id, loaded.getId());
+        assertEquals(Map.of("old", List.of("value"), "existing", List.of("value")), loaded.getAttributes());
+        assertEquals(Boolean.TRUE, loaded.getAccess().get("manage"));
 
         RoleRepresentation update = new RoleRepresentation();
         update.setName("renamed");
@@ -221,7 +229,9 @@ public class OrganizationRolesResourceTest {
         resource.addComposites(List.of());
 
         assertEquals(Set.of("realm-role", "client-role", "child"), roleNames(parent.composites));
-        assertEquals(List.of("realm-role", "client-role", "child"), resource.getRoleComposites(null, null, null).map(RoleRepresentation::getName).toList());
+        List<RoleRepresentation> composites = resource.getRoleComposites(null, null, null).toList();
+        assertEquals(List.of("realm-role", "client-role", "child"), composites.stream().map(RoleRepresentation::getName).toList());
+        assertEquals(Boolean.TRUE, composites.get(0).getAccess().get("mapComposite"));
         assertEquals(List.of("realm-role"), resource.getRoleComposites("realm", 0, 1).map(RoleRepresentation::getName).toList());
         assertEquals(List.of("realm-role"), resource.getRealmRoleComposites().map(RoleRepresentation::getName).toList());
         assertEquals(List.of("client-role"), resource.getClientRoleComposites(client.getId()).map(RoleRepresentation::getName).toList());
@@ -254,7 +264,12 @@ public class OrganizationRolesResourceTest {
         context.roleMembers.add(secondMember.model);
         OrganizationRoleResource resource = new OrganizationRoleResource(context.session, context.organization, role.model, context.adminEvent, context.auth);
 
-        assertEquals(List.of("member-id", "second-member-id"), resource.getUsersInRole(true, null, null).map(UserRepresentation::getId).toList());
+        context.permissions.userManageDenied.add(secondMember.id);
+        List<UserRepresentation> users = resource.getUsersInRole(true, null, null).toList();
+        assertEquals(List.of("member-id", "second-member-id"), users.stream().map(UserRepresentation::getId).toList());
+        assertEquals(Boolean.TRUE, users.get(0).getAccess().get("manage"));
+        assertEquals(Boolean.FALSE, users.get(1).getAccess().get("manage"));
+        context.permissions.userManageDenied.clear();
         assertEquals(List.of("second-member-id"), resource.getUsersInRole(true, 1, 2).map(UserRepresentation::getId).toList());
         assertEquals(Integer.valueOf(1), context.lastRoleMembersFirst);
         assertEquals(Integer.valueOf(2), context.lastRoleMembersMax);
@@ -341,6 +356,50 @@ public class OrganizationRolesResourceTest {
         assertThrows(ForbiddenException.class, () -> resource.deleteUserRoleMappings(List.of(user(member.id), user(restricted.id))));
         assertEquals(0, member.revokes);
         assertTrue(member.roleMappings.contains(role.model));
+    }
+
+    @Test
+    public void memberSearchIncludesUserAccessForRoleAssignments() {
+        TestContext context = new TestContext();
+        TestUser member = context.addUser("member-id", "member");
+        TestUser restricted = context.addUser("restricted-id", "restricted");
+        context.members.add(member.id);
+        context.members.add(restricted.id);
+        context.permissions.userManageDenied.add(restricted.id);
+        OrganizationMemberResource resource = new OrganizationMemberResource(context.session, context.organization, context.adminEvent, context.auth);
+
+        List<MemberRepresentation> members = resource.search(null, null, 0, 10, null, true).toList();
+
+        assertEquals(List.of("member-id", "restricted-id"), members.stream().map(MemberRepresentation::getId).toList());
+        assertEquals(Boolean.TRUE, members.get(0).getAccess().get("manage"));
+        assertEquals(Boolean.FALSE, members.get(1).getAccess().get("manage"));
+    }
+
+    @Test
+    public void itemListsAvailableUsersForRoleMappings() {
+        TestContext context = new TestContext();
+        TestRole role = context.addOrganizationRole("role-1", "member");
+        TestUser assigned = context.addUser("assigned-id", "assigned");
+        TestUser available = context.addUser("available-id", "available");
+        TestUser restricted = context.addUser("restricted-id", "restricted");
+        context.members.add(assigned.id);
+        context.members.add(available.id);
+        context.members.add(restricted.id);
+        assigned.roleMappings.add(role.model);
+        context.permissions.userManageDenied.add(restricted.id);
+        OrganizationRoleResource resource = new OrganizationRoleResource(context.session, context.organization, role.model, context.adminEvent, context.auth);
+
+        List<UserRepresentation> users = resource.getAvailableUsersForRole(null, null, true, 0, 10).toList();
+
+        assertEquals(List.of("available-id"), users.stream().map(UserRepresentation::getId).toList());
+        assertEquals(Boolean.TRUE, users.get(0).getAccess().get("manage"));
+
+        context.permissions.mapRole = false;
+        assertThrows(ForbiddenException.class, () -> resource.getAvailableUsersForRole(null, null, true, 0, 10).toList());
+        context.permissions.mapRole = true;
+
+        context.permissions.userQuery = false;
+        assertThrows(ForbiddenException.class, () -> resource.getAvailableUsersForRole(null, null, true, 0, 10).toList());
     }
 
     private static String repId(TestRole role) {
@@ -499,6 +558,8 @@ public class OrganizationRolesResourceTest {
                 case "getId" -> id;
                 case "getRealm" -> realm;
                 case "getName", "getAlias" -> alias;
+                case "getDomains" -> Stream.empty();
+                case "getAttributes" -> Map.of();
                 case "getDefaultRole" -> Objects.equals(id, "org-1") ? defaultRole : null;
                 case "getRole" -> roles.values().stream()
                         .filter(role -> role.container == organizationProxy && Objects.equals(role.name, args[0]))
@@ -633,12 +694,20 @@ public class OrganizationRolesResourceTest {
 
         private OrganizationProvider organizationProvider() {
             return proxy(OrganizationProvider.class, (providerProxy, method, args) -> switch (method.getName()) {
+                case "getMembersStream" -> {
+                    Stream<UserModel> stream = members.stream()
+                            .map(users::get)
+                            .filter(Objects::nonNull)
+                            .map(user -> user.model);
+                    yield page(stream, (Integer) args[3], (Integer) args[4]);
+                }
                 case "getRoleMembersStream" -> {
                     lastRoleMembersFirst = (Integer) args[2];
                     lastRoleMembersMax = (Integer) args[3];
                     yield page(roleMembers.stream()
                             .filter(user -> ((OrganizationModel) args[0]).isMember(user)), lastRoleMembersFirst, lastRoleMembersMax);
                 }
+                case "isManagedMember" -> true;
                 case "close" -> null;
                 default -> defaultValue(method.getReturnType());
             });
@@ -656,6 +725,11 @@ public class OrganizationRolesResourceTest {
                 case "canList" -> permissions.roleList;
                 case "canMapComposite" -> permissions.mapComposite;
                 case "canMapRole" -> permissions.mapRole;
+                case "getAccess" -> Map.of(
+                        "view", permissions.roleView,
+                        "manage", permissions.roleManage,
+                        "mapRole", permissions.mapRole,
+                        "mapComposite", permissions.mapComposite);
                 default -> defaultValue(method.getReturnType());
             });
             UserPermissionEvaluator users = proxy(UserPermissionEvaluator.class, (usersProxy, method, args) -> switch (method.getName()) {
@@ -665,6 +739,9 @@ public class OrganizationRolesResourceTest {
                 case "canQuery" -> permissions.userQuery;
                 case "canManage" -> args == null || args.length == 0 ? permissions.userManage : permissions.canManageUser((UserModel) args[0]);
                 case "canView" -> permissions.userView;
+                case "getAccess", "getAccessForListing" -> Map.of(
+                        "view", permissions.userView,
+                        "manage", permissions.canManageUser((UserModel) args[0]));
                 default -> defaultValue(method.getReturnType());
             });
             OrganizationPermissionEvaluator orgs = proxy(OrganizationPermissionEvaluator.class, (orgsProxy, method, args) -> switch (method.getName()) {
@@ -674,6 +751,7 @@ public class OrganizationRolesResourceTest {
                 case "canManage" -> permissions.organizationManage;
                 case "canView" -> permissions.organizationView;
                 case "canQuery" -> permissions.organizationQuery;
+                case "getAccess" -> Map.of("view", permissions.organizationView, "manage", permissions.organizationManage);
                 default -> defaultValue(method.getReturnType());
             });
             return proxy(AdminPermissionEvaluator.class, (authProxy, method, args) -> switch (method.getName()) {

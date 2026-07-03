@@ -39,6 +39,7 @@ public class RoleRepresentation {
     private Boolean clientRole;
     private String containerId;
     protected Map<String, List<String>> attributes;
+    protected Map<String, Boolean> access;
 
     public static class Composites {
         protected Set<String> realm;
@@ -158,6 +159,14 @@ public class RoleRepresentation {
 
     public void setAttributes(Map<String, List<String>> attributes) {
         this.attributes = attributes;
+    }
+
+    public Map<String, Boolean> getAccess() {
+        return access;
+    }
+
+    public void setAccess(Map<String, Boolean> access) {
+        this.access = access;
     }
 
     public RoleRepresentation singleAttribute(String name, String value) {

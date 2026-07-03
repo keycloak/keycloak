@@ -16,4 +16,5 @@ export default interface OrganizationRepresentation {
   identityProviders?: IdentityProviderRepresentation[];
   defaultRole?: RoleRepresentation;
   roles?: RoleRepresentation[];
+  access?: Record<string, boolean>;
 }

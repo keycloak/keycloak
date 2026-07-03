@@ -29,14 +29,23 @@ import { toOrganizationRole } from "./routes/OrganizationRole";
 
 type OrganizationRoleRow = RoleRepresentation & { isDefault: boolean };
 
-export const OrganizationRoles = () => {
+type OrganizationRolesProps = {
+  canCreateRole?: boolean;
+};
+
+export const OrganizationRoles = ({
+  canCreateRole,
+}: OrganizationRolesProps) => {
   const { t } = useTranslation();
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { hasAccess } = useAccess();
   const { realm } = useRealm();
   const { id: orgId } = useParams<EditOrganizationParams>();
-  const isManager = hasAccess("manage-organizations");
+  const legacyCanManageOrganizations = hasAccess("manage-organizations");
+  const canCreate = canCreateRole ?? legacyCanManageOrganizations;
+  const canManageRole = (role: OrganizationRoleRow) =>
+    role.access?.manage ?? legacyCanManageOrganizations;
 
   const [key, setKey] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
@@ -106,7 +115,7 @@ export const OrganizationRoles = () => {
         ariaLabelKey="organizationRoles"
         searchPlaceholderKey="searchForRoles"
         toolbarItem={
-          isManager && (
+          canCreate && (
             <ToolbarItem>
               <Button
                 data-testid="create-organization-role"
@@ -117,24 +126,20 @@ export const OrganizationRoles = () => {
             </ToolbarItem>
           )
         }
-        actionResolver={
-          isManager
-            ? (rowData: IRowData) => {
-                const role = rowData.data as OrganizationRoleRow;
-                return role.isDefault
-                  ? []
-                  : [
-                      {
-                        title: t("delete"),
-                        onClick: () => {
-                          setSelectedRole(role);
-                          toggleDeleteDialog();
-                        },
-                      },
-                    ];
-              }
-            : undefined
-        }
+        actionResolver={(rowData: IRowData) => {
+          const role = rowData.data as OrganizationRoleRow;
+          return role.isDefault || !canManageRole(role)
+            ? []
+            : [
+                {
+                  title: t("delete"),
+                  onClick: () => {
+                    setSelectedRole(role);
+                    toggleDeleteDialog();
+                  },
+                },
+              ];
+        }}
         columns={[
           {
             name: "name",
@@ -169,9 +174,9 @@ export const OrganizationRoles = () => {
         emptyState={
           <ListEmptyState
             message={t("noOrganizationRoles")}
-            instructions={isManager ? t("noOrganizationRolesInstructions") : ""}
-            primaryActionText={isManager ? t("createRole") : ""}
-            onPrimaryAction={isManager ? () => setCreateOpen(true) : undefined}
+            instructions={canCreate ? t("noOrganizationRolesInstructions") : ""}
+            primaryActionText={canCreate ? t("createRole") : ""}
+            onPrimaryAction={canCreate ? () => setCreateOpen(true) : undefined}
           />
         }
       />

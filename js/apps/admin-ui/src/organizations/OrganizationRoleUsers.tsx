@@ -24,13 +24,13 @@ import { emptyFormatter } from "../util";
 type OrganizationRoleUsersProps = {
   organizationId: string;
   roleId: string;
-  isManager: boolean;
+  canMapRole: boolean;
 };
 
 export const OrganizationRoleUsers = ({
   organizationId,
   roleId,
-  isManager,
+  canMapRole,
 }: OrganizationRoleUsersProps) => {
   const { t } = useTranslation();
   const { adminClient } = useAdminClient();
@@ -40,6 +40,8 @@ export const OrganizationRoleUsers = ({
   const [showAdd, setShowAdd] = useState(false);
   const [selected, setSelected] = useState<UserRepresentation[]>([]);
   const refresh = () => setKey((value) => value + 1);
+  const canManageUser = (user: UserRepresentation) =>
+    user.access?.manage ?? canMapRole;
 
   const loader = async (first?: number, max?: number) => {
     try {
@@ -48,6 +50,26 @@ export const OrganizationRoleUsers = ({
         roleId,
         first,
         max,
+        briefRepresentation: true,
+      });
+    } catch (error) {
+      addError("organizationRoleUsersLoadError", error);
+      return [];
+    }
+  };
+
+  const availableUsersLoader = async (
+    first?: number,
+    max?: number,
+    search?: string,
+  ) => {
+    try {
+      return await adminClient.organizations.listAvailableRoleUsers({
+        orgId: organizationId,
+        roleId,
+        first,
+        max,
+        search,
         briefRepresentation: true,
       });
     } catch (error) {
@@ -105,8 +127,10 @@ export const OrganizationRoleUsers = ({
         <MemberModal
           orgId={organizationId}
           membersQuery={loader}
+          availableUsersQuery={availableUsersLoader}
           titleKey="addOrganizationRoleUsers"
           confirmLabelKey="assign"
+          canSelectUser={canManageUser}
           onAdd={addUsers}
           onClose={() => setShowAdd(false)}
         />
@@ -115,11 +139,16 @@ export const OrganizationRoleUsers = ({
         key={key}
         loader={loader}
         isPaginated
-        canSelectAll={isManager}
-        onSelect={(users) => setSelected([...users])}
+        canSelectAll={canMapRole}
+        onSelect={
+          canMapRole
+            ? (users) => setSelected(users.filter(canManageUser))
+            : undefined
+        }
+        isRowDisabled={(user) => !canManageUser(user)}
         ariaLabelKey="organizationRoleUsers"
         toolbarItem={
-          isManager && (
+          canMapRole && (
             <>
               <ToolbarItem>
                 <Button onClick={() => setShowAdd(true)}>
@@ -139,7 +168,7 @@ export const OrganizationRoleUsers = ({
           )
         }
         actions={
-          isManager
+          canMapRole
             ? [
                 {
                   title: t("remove"),
@@ -181,10 +210,10 @@ export const OrganizationRoleUsers = ({
           <ListEmptyState
             message={t("noOrganizationRoleUsers")}
             instructions={
-              isManager ? t("noOrganizationRoleUsersInstructions") : ""
+              canMapRole ? t("noOrganizationRoleUsersInstructions") : ""
             }
-            primaryActionText={isManager ? t("addOrganizationRoleUsers") : ""}
-            onPrimaryAction={isManager ? () => setShowAdd(true) : undefined}
+            primaryActionText={canMapRole ? t("addOrganizationRoleUsers") : ""}
+            onPrimaryAction={canMapRole ? () => setShowAdd(true) : undefined}
           />
         }
       />

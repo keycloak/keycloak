@@ -68,7 +68,7 @@ export default function OrganizationRoleDetails() {
   const [attributes, setAttributes] = useState<KeyValueType[]>([]);
   const [key, setKey] = useState(0);
   const isDefault = routeRoleId === "default";
-  const isManager = hasAccess("manage-organizations");
+  const legacyCanManageOrganizations = hasAccess("manage-organizations");
   const roleName = useWatch({ control, name: "name" });
   const isComposite = useWatch({ control, name: "composite" });
 
@@ -150,6 +150,9 @@ export default function OrganizationRoleDetails() {
     return <KeycloakSpinner />;
   }
 
+  const canManageRole = role.access?.manage ?? legacyCanManageOrganizations;
+  const canMapRole = role.access?.mapRole ?? canManageRole;
+
   return (
     <>
       <DeleteConfirm />
@@ -169,7 +172,7 @@ export default function OrganizationRoleDetails() {
         ]}
         actionsDropdownId="organization-role-actions-dropdown"
         dropdownItems={
-          isManager && !isDefault
+          canManageRole && !isDefault
             ? [
                 <DropdownItem
                   key="delete"
@@ -201,7 +204,7 @@ export default function OrganizationRoleDetails() {
                 })}
                 role="manage-organizations"
                 editMode
-                isReadOnly={!isManager}
+                isReadOnly={!canManageRole}
               />
             </Tab>
             <Tab
@@ -213,7 +216,7 @@ export default function OrganizationRoleDetails() {
                 organizationId={orgId}
                 roleId={role.id}
                 roleName={roleName ?? ""}
-                isManager={isManager}
+                canManage={canManageRole}
               />
             </Tab>
             {!isDefault && (
@@ -225,7 +228,7 @@ export default function OrganizationRoleDetails() {
                 <AttributesForm
                   form={form}
                   save={onSubmit}
-                  fineGrainedAccess={isManager}
+                  fineGrainedAccess={canManageRole}
                   reset={() =>
                     setValue("attributes", attributes, { shouldDirty: false })
                   }
@@ -240,7 +243,7 @@ export default function OrganizationRoleDetails() {
               <OrganizationRoleUsers
                 organizationId={orgId}
                 roleId={role.id}
-                isManager={isManager}
+                canMapRole={canMapRole}
               />
             </Tab>
             {hasAccess("view-events") && (

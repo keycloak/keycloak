@@ -46,6 +46,9 @@ const toRoleRepresentation = (role: CompositeRow): RoleRepresentation => {
   return representation;
 };
 
+const canMapComposite = (role: RoleRepresentation) =>
+  role.access?.mapComposite ?? true;
+
 type AddOrganizationRoleCompositeModalProps = {
   organizationId: string;
   roleId: string;
@@ -105,7 +108,10 @@ export const AddOrganizationRoleCompositeModal = ({
     }
 
     return roles.filter(
-      (role) => role.id !== roleId && !assignedRoleIds.has(role.id!),
+      (role) =>
+        role.id !== roleId &&
+        !assignedRoleIds.has(role.id!) &&
+        canMapComposite(role),
     );
   };
 
@@ -192,14 +198,14 @@ type OrganizationRoleCompositesProps = {
   organizationId: string;
   roleId: string;
   roleName: string;
-  isManager: boolean;
+  canManage: boolean;
 };
 
 export const OrganizationRoleComposites = ({
   organizationId,
   roleId,
   roleName,
-  isManager,
+  canManage,
 }: OrganizationRoleCompositesProps) => {
   const { t } = useTranslation();
   const { adminClient } = useAdminClient();
@@ -295,12 +301,12 @@ export const OrganizationRoleComposites = ({
         key={key}
         loader={loader}
         isPaginated
-        canSelectAll={isManager}
-        onSelect={(roles) => setSelected([...roles])}
+        canSelectAll={canManage}
+        onSelect={canManage ? (roles) => setSelected([...roles]) : undefined}
         ariaLabelKey="organizationRoleComposites"
         searchPlaceholderKey="searchForRoles"
         toolbarItem={
-          isManager && (
+          canManage && (
             <>
               <ToolbarItem>
                 <Button onClick={openAssign}>{t("addAssociatedRoles")}</Button>
@@ -318,7 +324,7 @@ export const OrganizationRoleComposites = ({
           )
         }
         actions={
-          isManager
+          canManage
             ? [
                 {
                   title: t("unAssignRole"),
@@ -347,10 +353,10 @@ export const OrganizationRoleComposites = ({
           <ListEmptyState
             message={t("noOrganizationRoleComposites")}
             instructions={
-              isManager ? t("noOrganizationRoleCompositesInstructions") : ""
+              canManage ? t("noOrganizationRoleCompositesInstructions") : ""
             }
-            primaryActionText={isManager ? t("addAssociatedRoles") : ""}
-            onPrimaryAction={isManager ? openAssign : undefined}
+            primaryActionText={canManage ? t("addAssociatedRoles") : ""}
+            onPrimaryAction={canManage ? openAssign : undefined}
           />
         }
       />
