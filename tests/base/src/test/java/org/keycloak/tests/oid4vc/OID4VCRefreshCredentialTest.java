@@ -17,6 +17,7 @@ import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
+import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
@@ -47,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -54,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @see <a href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-14.5">OID4VCI specification section about credential refresh</a>
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithRestCredentialOfferEnabled.class)
 public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
 
     @InjectUser(config = OID4VCActionTest.OID4VCTestUserConfig.class)
@@ -110,10 +112,8 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
      *
      **/
     @Test
-    public void testRefreshTokenSingleCredentialIssued() throws Exception {
-        // Login
-        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
-        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+    public void testRefreshTokenSingleCredentialIssued() {
+        AccessTokenResponse tokenResponse = authzCodeFlow();
         assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
 
         // Obtain credential
@@ -159,6 +159,8 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         // Assert issued-credential ID matches and has not changed
         OID4VCAuthorizationDetail authzDetailResponse2 = ctx.getAuthorizationDetailFromAccessToken();
         assertEquals(issuedCred1.getId(), authzDetailResponse2.getIssuedCredentialId());
+        assertNull(authzDetailResponse2.getCredentialsOfferId(),
+                "credentials_offer_id must not be present in refresh-token-derived access token");
 
         // Verify that authorization_details on the token endpoint response have only known properties
         //
@@ -194,10 +196,8 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
      * Then make sure that refresh token is successful even after user session is expired (EG. after 14 days)
      **/
     @Test
-    public void testRefreshSuccessAfterSessionExpired() throws Exception {
-        // Login
-        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
-        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+    public void testRefreshSuccessAfterSessionExpired() {
+        AccessTokenResponse tokenResponse = authzCodeFlow();
         assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
 
         // Obtain credential
@@ -243,10 +243,8 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
      * Then remove issued verifiable credential and try to refresh token. Refresh should fail due the issued VC revoked
      **/
     @Test
-    public void testRefreshFailsWhenIssuedCredentialRemoved() throws Exception {
-        // Login
-        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
-        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+    public void testRefreshFailsWhenIssuedCredentialRemoved() {
+        AccessTokenResponse tokenResponse = authzCodeFlow();
         assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
 
         // Obtain credential
@@ -286,10 +284,8 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
      * Then make sure that issued verifiable credential is expired and try to refresh token. Refresh should fail due the issued VC expired
      **/
     @Test
-    public void testRefreshFailsWhenIssuedCredentialExpired() throws Exception {
-        // Login
-        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
-        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+    public void testRefreshFailsWhenIssuedCredentialExpired() {
+        AccessTokenResponse tokenResponse = authzCodeFlow();
         assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
 
         // Obtain credential
@@ -326,10 +322,8 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
      * parameter, the refresh should fail as it is OID4VCI refresh token, but without the OID4VCI scope requested inside "scope" parameter
      **/
     @Test
-    public void testRefreshWithScopeParameter() throws Exception {
-        // Login
-        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
-        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+    public void testRefreshWithScopeParameter() {
+        AccessTokenResponse tokenResponse = authzCodeFlow();
         assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
 
         // Obtain credential
@@ -371,6 +365,113 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
     }
 
     /**
+     * Verify credential re-issuance succeeds with refresh token after the original
+     * credential offer has been removed.
+     */
+    @Test
+    public void testRefreshSucceedsAfterCredentialOfferRemoved() {
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(user.getUsername());
+            req.preAuthorized(false);
+        });
+
+        assertNotNull(credOffer, "Credential offer should be created");
+
+        AccessTokenResponse tokenResponse = authzCodeFlow(credOffer.getAuthorizationCodeGrant().getIssuerState());;
+        assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
+
+        String accessToken1 = wallet.validateHolderAccessToken(ctx, tokenResponse);
+        assertNotNull(accessToken1, "access token must be present");
+
+        OID4VCAuthorizationDetail authzDetail1 = ctx.getAuthorizationDetailFromAccessToken();
+        assertNotNull(authzDetail1, "Authorization detail should be present in the first access token");
+
+        // Verify credentialsOfferId is present in first authorization detail/access token
+        assertNotNull(authzDetail1.getCredentialsOfferId(), "credentials_offer_id must be present in the first access token");
+
+        String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        CredentialResponse credResponse1 = wallet.credentialRequest(ctx, accessToken1)
+                .credentialIdentifier(credentialIdentifier)
+                .send().getCredentialResponse();
+
+        assertSuccessfulCredentialResponse(credResponse1);
+
+        // Verify the issued credential was created and stored
+        List<IssuedVerifiableCredentialRepresentation> issuedCreds1 = testRealm.admin().users().get(user.getId()).verifiableCredentials().getIssuedCredentials();
+        assertEquals(1, issuedCreds1.size(), "One issued credential should exist after first issuance");
+        String issuedCredId = issuedCreds1.get(0).getId();
+
+        // Verify issuedCredentialId is now present in the access token's authorization_details
+        assertEquals(issuedCredId, authzDetail1.getIssuedCredentialId(), "issuedCredentialId should be set after credential issuance");
+
+        //Time Delay
+        timeOffSet.set(10);
+
+        // Refresh the access token using the refresh token
+        AccessTokenResponse refreshTokenResponse = wallet.refreshRequest(ctx).send();
+        assertTrue(refreshTokenResponse.isSuccess(), "Refresh token exchange should succeed");
+        String accessToken2 = refreshTokenResponse.getAccessToken();
+
+        EventAssertion.assertSuccess(events.poll())
+                .details(CREDENTIAL_TYPE, ctx.getCredentialConfigurationId())
+                .type(EventType.REFRESH_TOKEN);
+
+        OID4VCAuthorizationDetail authzDetail2 = ctx.getAuthorizationDetailFromAccessToken();
+        assertNull(authzDetail2.getCredentialsOfferId(), "Refreshed access token should NOT contain credentialsOfferId");
+
+        assertEquals(authzDetail2.getIssuedCredentialId(), issuedCredId, "Refreshed access token should contain the correct issuedCredentialId");
+
+        CredentialResponse credResponse2 = wallet.credentialRequest(ctx, accessToken2)
+                .credentialIdentifier(credentialIdentifier)
+                .send().getCredentialResponse();
+
+        assertSuccessfulCredentialResponse(credResponse2);
+
+        List<IssuedVerifiableCredentialRepresentation> issuedCreds2 = testRealm.admin().users().get(user.getId()).verifiableCredentials().getIssuedCredentials();
+        assertEquals(1, issuedCreds2.size(), "Should still have one issued credential (re-issuance, not duplication)");
+        assertEquals(issuedCredId, issuedCreds2.get(0).getId(), "Issued credential ID should remain the same after refresh and re-issuance");
+    }
+
+    /**
+     * Verify that attempting to request a credential after the credential offer has expired results in an exception being thrown.
+     */
+    @Test
+    public void testThrowExceptionWhenCredentialIsOfferExpiredBeforeIssuance() {
+
+        long offerExpiryTime = Time.currentTimeSeconds() + 3;
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(user.getUsername());
+            req.expireAt((int) offerExpiryTime);
+            req.preAuthorized(false);
+        });
+
+        assertNotNull(credOffer, "Credential offer should be created");
+
+        timeOffSet.set(8);
+
+        AccessTokenResponse tokenResponse = authzCodeFlow(credOffer.getAuthorizationCodeGrant().getIssuerState());;
+        assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
+
+        String accessToken1 = wallet.validateHolderAccessToken(ctx, tokenResponse);
+        assertNotNull(accessToken1, "access token must be present");
+
+        OID4VCAuthorizationDetail authzDetail1 = ctx.getAuthorizationDetailFromAccessToken();
+        assertNotNull(authzDetail1, "Authorization detail should be present in the first access token");
+
+        // Verify credentialsOfferId is present in first authorization detail/access token
+        assertNotNull(authzDetail1.getCredentialsOfferId(), "credentials_offer_id must be present in the first access token");
+
+        String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+
+        Exception exception = assertThrows(IllegalStateException.class, () -> wallet.credentialRequest(ctx, accessToken1)
+                .credentialIdentifier(credentialIdentifier)
+                .send().getCredentialResponse());
+
+        String expectedExceptionMessage = "Credential offer has already expired";
+        assertTrue(exception.getMessage().contains(expectedExceptionMessage), "Expected exception message for expired credential offer");
+    }
+
+    /**
      * Test that the VC expiration (exp claim) uses the refresh interval,
      * while the issued credential and refresh token use the credential lifetime.
      * To verify the core feature: separating VC expiration from refresh token expiration.
@@ -381,17 +482,16 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         int credentialLifetime = 31536000; // 365 days
         int refreshInterval = 604800; // 7 days
 
-       String scopeId = getCredentialScopeId(minimalJwtTypeCredentialScopeName);
+        String scopeId = getCredentialScopeId(minimalJwtTypeCredentialScopeName);
 
-       testRealm.updateClientScope(scopeId, clientScope -> {
+        testRealm.updateClientScope(scopeId, clientScope -> {
             CredentialScopeRepresentation credScopeRep = new CredentialScopeRepresentation(clientScope.build());
             credScopeRep.setExpiryInSeconds(credentialLifetime);
             credScopeRep.setRefreshIntervalInSeconds(refreshInterval);
             return ClientScopeBuilder.update(credScopeRep);
         });
 
-        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
-        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+        AccessTokenResponse tokenResponse = authzCodeFlow();
         assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
 
         String accessToken = tokenResponse.getAccessToken();
@@ -447,6 +547,50 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
     }
 
     /**
+     * Test that both initial and refreshed access tokens have their audience limited to the credential endpoint.
+     * This verifies that the OID4VCITokenPostProcessor correctly sets the 'aud' claim.
+     */
+    @Test
+    public void testAccessTokenAudienceLimitedToCredentialEndpoint() throws Exception {
+        // Login
+        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
+        AccessTokenResponse tokenResponse = authzCodeFlow();
+        assertTrue(tokenResponse.isSuccess());
+
+        // Get the expected credential endpoint URL from issuer metadata
+        String expectedAudience = issuer.getCredentialEndpoint();
+        assertNotNull(expectedAudience);
+
+        // Verify initial access token has correct audience
+        String accessToken1 = tokenResponse.getAccessToken();
+        wallet.assertAccessTokenAudience(accessToken1, expectedAudience);
+
+        // Obtain credential to ensure the token works
+        String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken1)
+                .credentialIdentifier(credentialIdentifier)
+                .send().getCredentialResponse();
+        assertSuccessfulCredentialResponse(credResponse);
+
+        // Move time forward a bit
+        timeOffSet.set(10);
+
+        // Refresh token
+        AccessTokenResponse refreshResponse = wallet.refreshRequest(ctx).send();
+        assertTrue(refreshResponse.isSuccess(), "Refresh token exchange should succeed");
+
+        // Verify refreshed access token also has correct audience
+        String accessToken2 = refreshResponse.getAccessToken();
+        wallet.assertAccessTokenAudience(accessToken2, expectedAudience);
+
+        // Verify the refreshed token still works for credential requests
+        credResponse = wallet.credentialRequest(ctx, accessToken2)
+                .credentialIdentifier(credentialIdentifier)
+                .send().getCredentialResponse();
+        assertSuccessfulCredentialResponse(credResponse);
+    }
+
+    /**
      * Test that a custom refresh interval value is correctly applied to the VC.
      */
     @Test
@@ -462,8 +606,7 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         });
 
         // Obtain VC
-        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
-        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+        AccessTokenResponse tokenResponse = authzCodeFlow();
         assertTrue(tokenResponse.isSuccess());
 
         CredentialResponse credResponse = wallet.credentialRequest(ctx, tokenResponse.getAccessToken())
@@ -481,8 +624,8 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
 
         long tolerance = 60;
         assertTrue(Math.abs(vcLifetimeSeconds - customRefreshInterval) <= tolerance,
-                                    String.format("VC lifetime should be ~%d seconds, but was %d seconds",
-                                    customRefreshInterval, vcLifetimeSeconds));
+                String.format("VC lifetime should be ~%d seconds, but was %d seconds",
+                        customRefreshInterval, vcLifetimeSeconds));
     }
 
     /**
@@ -505,8 +648,7 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         });
 
         // Obtain VC
-        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
-        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+        AccessTokenResponse tokenResponse = authzCodeFlow();
         assertTrue(tokenResponse.isSuccess());
 
         CredentialResponse credResponse_1 = wallet.credentialRequest(ctx, tokenResponse.getAccessToken())
@@ -554,14 +696,26 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
 
         // Both VCs should point to the same issued credential (same ID)
         List<IssuedVerifiableCredentialRepresentation> issuedCreds = testRealm.admin().users().get(user.getId())
-                                                                              .verifiableCredentials().getIssuedCredentials();
+                .verifiableCredentials().getIssuedCredentials();
         assertEquals(1, issuedCreds.size(), "Should still be only one issued credential");
     }
 
-    protected AccessTokenResponse authzCodeFlow(CredentialIssuer issuer) throws Exception {
+    protected AccessTokenResponse authzCodeFlow() {
         AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
                 .scope(ctx.getScope())
                 .send(user.getUsername(), TEST_PASSWORD);
+        return assertAndGetAccessTokenResponse(authResponse);
+    }
+
+    protected AccessTokenResponse authzCodeFlow(String issuerState) {
+        AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
+                .scope(ctx.getScope())
+                .issuerState(issuerState)
+                .send(user.getUsername(), TEST_PASSWORD);
+        return assertAndGetAccessTokenResponse(authResponse);
+    }
+
+    private AccessTokenResponse assertAndGetAccessTokenResponse(AuthorizationEndpointResponse authResponse) {
         String code = authResponse.getCode();
         assertNotNull(code, "Authorization code should not be null");
 
@@ -569,50 +723,6 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
         assertNotNull(accessToken, "No accessToken");
         return tokenResponse;
-    }
-
-    /**
-     * Test that both initial and refreshed access tokens have their audience limited to the credential endpoint.
-     * This verifies that the OID4VCITokenPostProcessor correctly sets the 'aud' claim.
-     */
-    @Test
-    public void testAccessTokenAudienceLimitedToCredentialEndpoint() throws Exception {
-        // Login
-        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
-        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
-        assertTrue(tokenResponse.isSuccess());
-
-        // Get the expected credential endpoint URL from issuer metadata
-        String expectedAudience = issuer.getCredentialEndpoint();
-        assertNotNull(expectedAudience);
-
-        // Verify initial access token has correct audience
-        String accessToken1 = tokenResponse.getAccessToken();
-        wallet.assertAccessTokenAudience(accessToken1, expectedAudience);
-
-        // Obtain credential to ensure the token works
-        String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
-        CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken1)
-                .credentialIdentifier(credentialIdentifier)
-                .send().getCredentialResponse();
-        assertSuccessfulCredentialResponse(credResponse);
-
-        // Move time forward a bit
-        timeOffSet.set(10);
-
-        // Refresh token
-        AccessTokenResponse refreshResponse = wallet.refreshRequest(ctx).send();
-        assertTrue(refreshResponse.isSuccess(), "Refresh token exchange should succeed");
-
-        // Verify refreshed access token also has correct audience
-        String accessToken2 = refreshResponse.getAccessToken();
-        wallet.assertAccessTokenAudience(accessToken2, expectedAudience);
-
-        // Verify the refreshed token still works for credential requests
-        credResponse = wallet.credentialRequest(ctx, accessToken2)
-                .credentialIdentifier(credentialIdentifier)
-                .send().getCredentialResponse();
-        assertSuccessfulCredentialResponse(credResponse);
     }
 
     protected void assertSuccessfulCredentialResponse(CredentialResponse credentialResponse) {
