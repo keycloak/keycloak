@@ -34,6 +34,10 @@ import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.IdentityProvidersResource;
+import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.admin.client.resource.OrganizationRoleResource;
+import org.keycloak.admin.client.resource.OrganizationRolesResource;
+import org.keycloak.admin.client.resource.OrganizationsResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleByIdResource;
@@ -384,6 +388,38 @@ public class AdminEventPaths {
         URI uri = UriBuilder.fromUri(groupPath(groupId))
                 .path(GroupResource.class, "subGroup")
                 .build();
+        return uri.toString();
+    }
+
+    // ORGANIZATIONS
+
+    public static String organizationsPath() {
+        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "organizations").build();
+        return uri.toString();
+    }
+
+    public static String organizationResourcePath(String organizationId) {
+        URI uri = UriBuilder.fromUri(organizationsPath()).path(OrganizationsResource.class, "get").build(organizationId);
+        return uri.toString();
+    }
+
+    public static String organizationRolesResourcePath(String organizationId) {
+        URI uri = UriBuilder.fromUri(organizationResourcePath(organizationId)).path(OrganizationResource.class, "roles").build();
+        return uri.toString();
+    }
+
+    public static String organizationRoleResourcePath(String organizationId, String roleId) {
+        URI uri = UriBuilder.fromUri(organizationRolesResourcePath(organizationId)).path(OrganizationRolesResource.class, "get").build(roleId);
+        return uri.toString();
+    }
+
+    public static String organizationRoleCompositesPath(String organizationId, String roleId) {
+        URI uri = UriBuilder.fromUri(organizationRoleResourcePath(organizationId, roleId)).path(OrganizationRoleResource.class, "getRoleComposites").build();
+        return uri.toString();
+    }
+
+    public static String organizationRoleUsersPath(String organizationId, String roleId) {
+        URI uri = UriBuilder.fromUri(organizationRoleResourcePath(organizationId, roleId)).path(OrganizationRoleResource.class, "addUserMembers").build();
         return uri.toString();
     }
 

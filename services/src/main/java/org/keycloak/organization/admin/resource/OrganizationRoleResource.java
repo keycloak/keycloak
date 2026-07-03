@@ -264,11 +264,13 @@ public class OrganizationRoleResource extends RoleResource {
         List<RoleModel> composites = resolveCompositeRoles(roles, false);
         composites.forEach(role::removeCompositeRole);
 
-        adminEvent.resource(ResourceType.ORGANIZATION_ROLE)
-                .operation(OperationType.DELETE)
-                .resourcePath(session.getContext().getUri())
-                .representation(roles)
-                .success();
+        if (!roles.isEmpty()) {
+            adminEvent.resource(ResourceType.ORGANIZATION_ROLE)
+                    .operation(OperationType.DELETE)
+                    .resourcePath(session.getContext().getUri())
+                    .representation(roles)
+                    .success();
+        }
     }
 
     @GET
