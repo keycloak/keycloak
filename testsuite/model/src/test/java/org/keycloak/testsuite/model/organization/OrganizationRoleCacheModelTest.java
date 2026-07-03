@@ -29,6 +29,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
@@ -53,6 +54,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThrows;
 
 @RequireProvider(RealmProvider.class)
 @RequireProvider(ClientProvider.class)
@@ -159,18 +161,34 @@ public class OrganizationRoleCacheModelTest extends KeycloakModelTest {
     public void shouldInvalidateOrganizationRoleRenameAndComposites() {
         String[] ids = withRealm(realmId, (session, realm) -> {
             OrganizationModel acme = getOrganization(session, ACME_ID);
+            OrganizationModel other = getOrganization(session, OTHER_ID);
+            ClientModel client = session.clients().getClientByClientId(realm, CLIENT_ID);
             RoleModel role = acme.addRole("before-rename");
             RoleModel child = acme.addRole("child-composite");
-            return new String[] { role.getId(), child.getId() };
+            RoleModel otherChild = other.addRole("other-child-composite");
+            RoleModel realmRole = session.roles().addRealmRole(realm, "cache-composite-realm-role");
+            RoleModel clientRole = session.roles().addClientRole(client, "cache-composite-client-role");
+            return new String[] {
+                    role.getId(), child.getId(), otherChild.getId(), realmRole.getId(), clientRole.getId()
+            };
         });
 
         withRealm(realmId, (session, realm) -> {
             OrganizationModel acme = getOrganization(session, ACME_ID);
+            OrganizationModel other = getOrganization(session, OTHER_ID);
             RoleModel role = session.roles().getRoleById(acme, ids[0]);
             RoleModel child = session.roles().getRoleById(acme, ids[1]);
+            RoleModel otherChild = session.roles().getRoleById(other, ids[2]);
+            RoleModel realmRole = session.roles().getRoleById(realm, ids[3]);
+            RoleModel clientRole = session.roles().getRoleById(realm, ids[4]);
 
             role.setName("after-rename");
             role.addCompositeRole(child);
+            role.addCompositeRole(realmRole);
+            role.addCompositeRole(clientRole);
+            assertThrows(ModelException.class, () -> role.addCompositeRole(otherChild));
+            assertThrows(ModelException.class, () -> realmRole.addCompositeRole(child));
+            assertThrows(ModelException.class, () -> clientRole.addCompositeRole(child));
 
             return null;
         });
@@ -181,9 +199,25 @@ public class OrganizationRoleCacheModelTest extends KeycloakModelTest {
             RoleModel child = session.roles().getRoleById(acme, ids[1]);
 
             assertThat(acme.getRole("before-rename"), nullValue());
-            assertThat(role.getCompositesStream().map(RoleModel::getId).collect(Collectors.toList()), contains(ids[1]));
+            assertThat(role.getCompositesStream().map(RoleModel::getId).collect(Collectors.toList()),
+                    containsInAnyOrder(ids[1], ids[3], ids[4]));
 
+            child.setName("child-composite-renamed");
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            OrganizationModel acme = getOrganization(session, ACME_ID);
+            RoleModel role = acme.getRole("after-rename");
+            RoleModel child = session.roles().getRoleById(acme, ids[1]);
+            RoleModel realmRole = session.roles().getRoleById(realm, ids[3]);
+            RoleModel clientRole = session.roles().getRoleById(realm, ids[4]);
+
+            assertThat(roleNames(role.getCompositesStream()), containsInAnyOrder(
+                    "child-composite-renamed", "cache-composite-realm-role", "cache-composite-client-role"));
             role.removeCompositeRole(child);
+            role.removeCompositeRole(realmRole);
+            role.removeCompositeRole(clientRole);
             return null;
         });
 

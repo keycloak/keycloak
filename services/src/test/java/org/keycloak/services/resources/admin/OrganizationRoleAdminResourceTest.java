@@ -93,11 +93,13 @@ public class OrganizationRoleAdminResourceTest {
     }
 
     @Test
-    public void roleCompositesRejectOrganizationRolesUnderRealmRoles() {
+    public void roleCompositesRejectOrganizationRolesUnderRealmOrClientRoles() {
         OrganizationModel organization = mockOrganization("org-1");
         RoleModel organizationRole = mockOrganizationRole("role-1", organization);
         RealmModel realm = mockRealm(organizationRole);
         RoleModel realmRole = mockRealmRole("realm-role", realm);
+        ClientModel client = mockClient("client-1", "client", realm);
+        RoleModel clientRole = mockClientRole("client-role", client);
         RoleRepresentation representation = new RoleRepresentation();
         representation.setId(organizationRole.getId());
 
@@ -105,6 +107,8 @@ public class OrganizationRoleAdminResourceTest {
 
         assertThrows(BadRequestException.class, () -> resource.addComposites(
                 mockAdminPermissionEvaluator(), null, null, List.of(representation), realmRole));
+        assertThrows(BadRequestException.class, () -> resource.addComposites(
+                mockAdminPermissionEvaluator(), null, null, List.of(representation), clientRole));
     }
 
     @Test

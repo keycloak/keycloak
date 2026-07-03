@@ -19,6 +19,7 @@ package org.keycloak.organization.validation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
@@ -65,14 +66,18 @@ public class OrganizationsValidationTest {
         RoleModel parent = mockRole("parent", organization, true);
         RoleModel child = mockRole("child", organization, true);
         RoleModel realmRole = mockRole("realm-role", mockRealm(), false);
+        RoleModel clientRole = mockRole("client-role", mockClient(), false);
         RoleModel otherRole = mockRole("other-role", mockOrganization("org-2", null), true);
 
         OrganizationsValidation.validateOrganizationRoleComposite(parent, child);
         OrganizationsValidation.validateOrganizationRoleComposite(parent, realmRole);
+        OrganizationsValidation.validateOrganizationRoleComposite(parent, clientRole);
         OrganizationsValidation.validateOrganizationRoleComposite(realmRole, null);
         OrganizationsValidation.validateOrganizationRoleComposite(realmRole, realmRole);
+        OrganizationsValidation.validateOrganizationRoleComposite(clientRole, realmRole);
 
         assertThrows(ModelException.class, () -> OrganizationsValidation.validateOrganizationRoleComposite(realmRole, child));
+        assertThrows(ModelException.class, () -> OrganizationsValidation.validateOrganizationRoleComposite(clientRole, child));
         assertThrows(ModelException.class, () -> OrganizationsValidation.validateOrganizationRoleComposite(parent, otherRole));
     }
 
@@ -106,6 +111,11 @@ public class OrganizationsValidationTest {
 
     private static RealmModel mockRealm() {
         return proxy(RealmModel.class, (realmProxy, method, args) -> "getId".equals(method.getName()) ? "realm-1" : defaultValue(method.getReturnType()));
+    }
+
+    private static ClientModel mockClient() {
+        return proxy(ClientModel.class,
+                (clientProxy, method, args) -> "getId".equals(method.getName()) ? "client-1" : defaultValue(method.getReturnType()));
     }
 
     private static RoleModel mockRole(String id, Object container, boolean organizationRole) {
