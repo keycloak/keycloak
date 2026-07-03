@@ -38,6 +38,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
+import org.keycloak.broker.provider.IdentityProviderMapperConfigException;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
@@ -324,6 +325,7 @@ public class IdentityProviderResource {
         }
 
         IdentityProviderMapperModel model = RepresentationToModel.toModel(mapper);
+        validateMapper(model);
 
         try {
 //            model = realm.addIdentityProviderMapper(model);
@@ -385,6 +387,7 @@ public class IdentityProviderResource {
         IdentityProviderMapperModel model = session.identityProviders().getMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
+        validateMapper(model);
 
         session.identityProviders().updateMapper(model);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri()).representation(rep).success();
@@ -413,6 +416,21 @@ public class IdentityProviderResource {
         session.identityProviders().removeMapper(model);
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri()).success();
 
+    }
+
+    private void validateMapper(IdentityProviderMapperModel model) {
+        IdentityProviderMapper mapper = (IdentityProviderMapper) session.getKeycloakSessionFactory()
+                .getProviderFactory(IdentityProviderMapper.class, model.getIdentityProviderMapper());
+        if (mapper == null) {
+            throw ErrorResponse.error("Identity provider mapper provider not found.", BAD_REQUEST);
+        }
+
+        try {
+            mapper.validateConfig(session, realm, identityProviderModel, model);
+        } catch (IdentityProviderMapperConfigException exception) {
+            logger.error(exception.getMessage());
+            throw ErrorResponse.error(exception.getMessage(), BAD_REQUEST);
+        }
     }
 
     /**

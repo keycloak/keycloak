@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
@@ -44,19 +45,41 @@ public final class OrganizationRoleMapperHelper {
     }
 
     public static List<ProviderConfigProperty> getConfigProperties() {
-        ProviderConfigProperty organization = new ProviderConfigProperty();
-        organization.setName(ORGANIZATION);
-        organization.setLabel("Organization");
-        organization.setHelpText("Organization id or alias linked to the identity provider. If empty, the mapper uses the linked organization.");
-        organization.setType(ProviderConfigProperty.STRING_TYPE);
-
         ProviderConfigProperty role = new ProviderConfigProperty();
         role.setName(ORGANIZATION_ROLE);
         role.setLabel("Organization Role");
-        role.setHelpText("Organization role id to grant to the user.");
-        role.setType(ProviderConfigProperty.STRING_TYPE);
+        role.setHelpText("Organization role to grant from the organization linked to the identity provider.");
+        role.setType(ProviderConfigProperty.ORGANIZATION_ROLE_TYPE);
+        role.setRequired(true);
 
-        return List.of(organization, role);
+        return List.of(role);
+    }
+
+    static void validateConfig(KeycloakSession session, RealmModel realm, IdentityProviderModel identityProvider,
+            IdentityProviderMapperModel mapperModel) throws IdentityProviderMapperConfigException {
+        OrganizationModel organization = KeycloakModelUtils.getOrganizationForIdpMapper(session, identityProvider);
+        if (organization == null) {
+            throw new IdentityProviderMapperConfigException("Identity provider '" + identityProvider.getAlias()
+                    + "' is not linked to an enabled organization on realm '" + realm.getName() + "'.");
+        }
+
+        String organizationRef = mapperModel.getConfig().get(ORGANIZATION);
+        if (!StringUtil.isBlank(organizationRef) && !Objects.equals(organizationRef, organization.getId())
+                && !Objects.equals(organizationRef, organization.getAlias())) {
+            throw new IdentityProviderMapperConfigException("Organization '" + organizationRef + "' referenced by mapper '"
+                    + mapperModel.getName() + "' is not linked to identity provider '" + identityProvider.getAlias() + "'.");
+        }
+
+        String roleId = mapperModel.getConfig().get(ORGANIZATION_ROLE);
+        if (StringUtil.isBlank(roleId)) {
+            throw new IdentityProviderMapperConfigException("Organization role is required for mapper '" + mapperModel.getName() + "'.");
+        }
+
+        RoleModel role = session.roles().getRoleById(organization, roleId);
+        if (role == null || !role.isOrganizationRole() || !Objects.equals(organization.getId(), role.getContainerId())) {
+            throw new IdentityProviderMapperConfigException("Unable to find organization role '" + roleId + "' referenced by mapper '"
+                    + mapperModel.getName() + "' in organization '" + organization.getAlias() + "'.");
+        }
     }
 
     public static void grantUserRole(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {

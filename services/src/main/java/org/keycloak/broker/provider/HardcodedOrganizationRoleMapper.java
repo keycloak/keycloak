@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -30,7 +31,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 public class HardcodedOrganizationRoleMapper extends AbstractIdentityProviderMapper {
 
-    public static final String PROVIDER_ID = "hardcoded-organization-role-idp-mapper";
+    public static final String PROVIDER_ID = "oidc-hardcoded-organization-role-idp-mapper";
     public static final String[] COMPATIBLE_PROVIDERS = { ANY_PROVIDER };
 
     private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES =
@@ -39,6 +40,12 @@ public class HardcodedOrganizationRoleMapper extends AbstractIdentityProviderMap
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return OrganizationRoleMapperHelper.getConfigProperties();
+    }
+
+    @Override
+    public void validateConfig(KeycloakSession session, RealmModel realm, IdentityProviderModel identityProviderModel,
+            IdentityProviderMapperModel mapperModel) throws IdentityProviderMapperConfigException {
+        OrganizationRoleMapperHelper.validateConfig(session, realm, identityProviderModel, mapperModel);
     }
 
     @Override
