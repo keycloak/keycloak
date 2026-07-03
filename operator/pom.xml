@@ -122,8 +122,8 @@
             <artifactId>keycloak-admin-client</artifactId>
             <exclusions>
                 <exclusion>
-                	<groupId>org.keycloak</groupId>
-                	<artifactId>keycloak-client-common-synced</artifactId>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-client-common-synced</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
