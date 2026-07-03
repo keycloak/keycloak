@@ -38,6 +38,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -285,7 +286,7 @@ public class OrganizationRoleResource extends RoleResource {
         auth.roles().requireView(role);
         auth.users().requireQuery();
 
-        if (!realm.isAdminPermissionsEnabled() && !auth.users().canView()) {
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && !auth.users().canView()) {
             return Stream.empty();
         }
 

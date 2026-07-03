@@ -38,6 +38,8 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
+import org.keycloak.common.profile.ProfileConfigResolver;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
@@ -70,6 +72,8 @@ import org.keycloak.urls.UrlType;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -80,6 +84,17 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class OrganizationRolesResourceTest {
+
+    @Before
+    public void configureProfile() {
+        Profile.reset();
+        Profile.configure();
+    }
+
+    @After
+    public void resetProfile() {
+        Profile.reset();
+    }
 
     @Test
     public void collectionCreatesListsCountsAndLocatesRolesById() {
@@ -213,7 +228,16 @@ public class OrganizationRolesResourceTest {
 
         context.permissions.userView = false;
         assertTrue(resource.getUsersInRole(true, null, null).toList().isEmpty());
+        context.adminPermissionsEnabled = true;
+        withAdminFineGrainedAuthzV2(false, () -> assertTrue(resource.getUsersInRole(true, null, null).toList().isEmpty()));
+        withAdminFineGrainedAuthzV2(true,
+                () -> assertEquals(List.of("member-id"), resource.getUsersInRole(true, null, null).map(UserRepresentation::getId).toList()));
+        context.adminPermissionsEnabled = false;
         context.permissions.userView = true;
+
+        context.permissions.userQuery = false;
+        assertThrows(ForbiddenException.class, () -> resource.getUsersInRole(true, null, null).toList());
+        context.permissions.userQuery = true;
 
         resource.addUserRoleMappings(List.of(user(member.id)));
         assertEquals(1, member.grants);
@@ -264,6 +288,35 @@ public class OrganizationRolesResourceTest {
 
     private static void assertStatus(Response.Status status, WebApplicationException exception) {
         assertEquals(status.getStatusCode(), exception.getResponse().getStatus());
+    }
+
+    private static void withAdminFineGrainedAuthzV2(boolean enabled, Runnable runnable) {
+        Profile.reset();
+        Profile.configure(new AdminFineGrainedAuthzV2Resolver(enabled));
+        try {
+            runnable.run();
+        } finally {
+            Profile.reset();
+            Profile.configure();
+        }
+    }
+
+    private record AdminFineGrainedAuthzV2Resolver(boolean enabled) implements ProfileConfigResolver {
+        @Override
+        public Profile.ProfileName getProfileName() {
+            return null;
+        }
+
+        @Override
+        public FeatureConfig getFeatureConfig(String feature) {
+            if (enabled && Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2.getVersionedKey().equals(feature)) {
+                return FeatureConfig.ENABLED;
+            }
+            if (!enabled && Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2.getUnversionedKey().equals(feature)) {
+                return FeatureConfig.DISABLED;
+            }
+            return FeatureConfig.UNCONFIGURED;
+        }
     }
 
     private static class TestContext {
