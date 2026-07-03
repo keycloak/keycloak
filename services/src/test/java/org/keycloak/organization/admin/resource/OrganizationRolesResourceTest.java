@@ -269,6 +269,25 @@ public class OrganizationRolesResourceTest {
     }
 
     @Test
+    public void defaultRoleRejectsUserMappingMutations() {
+        TestContext context = new TestContext();
+        TestRole defaultRole = context.addOrganizationRole("role-1", "default-roles-acme");
+        TestUser member = context.addUser("member-id", "member");
+        context.defaultRole = defaultRole.model;
+        context.members.add(member.id);
+        OrganizationRoleResource resource = new OrganizationRoleResource(context.session, context.organization, defaultRole.model, context.adminEvent, context.auth);
+
+        assertStatus(Response.Status.BAD_REQUEST, assertThrows(ErrorResponseException.class, () -> resource.addUserRoleMappings(List.of(user(member.id)))));
+        assertEquals(0, member.grants);
+        assertFalse(member.roleMappings.contains(defaultRole.model));
+
+        member.roleMappings.add(defaultRole.model);
+        assertStatus(Response.Status.BAD_REQUEST, assertThrows(ErrorResponseException.class, () -> resource.deleteUserRoleMappings(List.of(user(member.id)))));
+        assertEquals(0, member.revokes);
+        assertTrue(member.roleMappings.contains(defaultRole.model));
+    }
+
+    @Test
     public void userRoleMappingBatchesValidateAllUsersBeforeGranting() {
         TestContext context = new TestContext();
         TestRole role = context.addOrganizationRole("role-1", "member");

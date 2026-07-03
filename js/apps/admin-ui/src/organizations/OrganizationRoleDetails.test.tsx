@@ -252,6 +252,7 @@ describe("OrganizationRoleDetails", () => {
     await waitFor(() => expect(mocks.roleForms.length).toBeGreaterThan(0));
     expect(mocks.headers.at(-1).dropdownItems).toBeUndefined();
     expect(mocks.attributeForms).toHaveLength(0);
+    expect(mocks.users).toHaveLength(0);
     expect(mocks.events).toHaveLength(0);
     expect(mocks.composites.at(-1).canManage).toBe(false);
     expect(mocks.roleForms.at(-1).isReadOnly).toBe(true);

@@ -133,6 +133,7 @@ public class OrganizationExportImportUtilsTest {
         ClientModel client = client("client-1", "client-a");
         UserModel user = user("user-1", "member");
 
+        user.grantRole(organization.getDefaultRole());
         user.grantRole(role("role-2", "same-b", organization));
         user.grantRole(role("role-1", "same-a", organization));
         user.grantRole(role("role-3", "other", other));

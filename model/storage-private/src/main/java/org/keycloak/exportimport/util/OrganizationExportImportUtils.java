@@ -123,8 +123,10 @@ public final class OrganizationExportImportUtils {
     }
 
     public static List<String> exportOrganizationMemberRoleMappings(OrganizationModel organization, UserModel user) {
+        RoleModel defaultRole = organization.getDefaultRole();
         return user.getRoleMappingsStream()
                 .filter(role -> isRoleFromOrganization(role, organization))
+                .filter(role -> defaultRole == null || !Objects.equals(defaultRole.getId(), role.getId()))
                 .map(RoleModel::getName)
                 .sorted()
                 .collect(Collectors.toList());

@@ -430,6 +430,7 @@ public class OrganizationRoleResource extends RoleResource {
         }
 
         auth.roles().requireMapRole(role);
+        rejectDefaultRoleUserMappingMutation();
         try {
             List<UserModel> resolvedUsers = resolveUsersForRoleMapping(users, validateMembership);
             for (UserModel user : resolvedUsers) {
@@ -481,6 +482,14 @@ public class OrganizationRoleResource extends RoleResource {
         RoleModel defaultRole = organization.getDefaultRole();
         if (defaultRole != null && Objects.equals(defaultRole.getId(), role.getId())) {
             throw ErrorResponse.error(role.getName() + " is default role of the organization and cannot be removed.",
+                    Response.Status.BAD_REQUEST);
+        }
+    }
+
+    private void rejectDefaultRoleUserMappingMutation() {
+        RoleModel defaultRole = organization.getDefaultRole();
+        if (defaultRole != null && Objects.equals(defaultRole.getId(), role.getId())) {
+            throw ErrorResponse.error("default organization role mappings are managed by organization membership.",
                     Response.Status.BAD_REQUEST);
         }
     }

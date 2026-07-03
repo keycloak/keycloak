@@ -235,17 +235,19 @@ export default function OrganizationRoleDetails() {
                 />
               </Tab>
             )}
-            <Tab
-              data-testid="organization-role-users-tab"
-              title={<TabTitleText>{t("usersInRole")}</TabTitleText>}
-              {...usersTab}
-            >
-              <OrganizationRoleUsers
-                organizationId={orgId}
-                roleId={role.id}
-                canMapRole={canMapRole}
-              />
-            </Tab>
+            {!isDefault && (
+              <Tab
+                data-testid="organization-role-users-tab"
+                title={<TabTitleText>{t("usersInRole")}</TabTitleText>}
+                {...usersTab}
+              >
+                <OrganizationRoleUsers
+                  organizationId={orgId}
+                  roleId={role.id}
+                  canMapRole={canMapRole}
+                />
+              </Tab>
+            )}
             {hasAccess("view-events") && (
               <Tab
                 data-testid="organization-role-events-tab"
