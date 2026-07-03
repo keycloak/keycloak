@@ -377,7 +377,7 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
 
         assertNotNull(credOffer, "Credential offer should be created");
 
-        AccessTokenResponse tokenResponse = authzCodeFlow(credOffer.getAuthorizationCodeGrant().getIssuerState());;
+        AccessTokenResponse tokenResponse = authzCodeFlow(credOffer.getAuthorizationCodeGrant().getIssuerState());
         assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
 
         String accessToken1 = wallet.validateHolderAccessToken(ctx, tokenResponse);
@@ -401,8 +401,8 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         assertEquals(1, issuedCreds1.size(), "One issued credential should exist after first issuance");
         String issuedCredId = issuedCreds1.get(0).getId();
 
-        // Verify issuedCredentialId is now present in the access token's authorization_details
-        assertEquals(issuedCredId, authzDetail1.getIssuedCredentialId(), "issuedCredentialId should be set after credential issuance");
+        // Verify issuedCredentialId from authorization_details matches the stored issued credential
+        assertEquals(issuedCredId, authzDetail1.getIssuedCredentialId(), "issued_credential_id in authorization_details should match the stored issued credential");
 
         //Time Delay
         timeOffSet.set(10);
@@ -419,7 +419,7 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         OID4VCAuthorizationDetail authzDetail2 = ctx.getAuthorizationDetailFromAccessToken();
         assertNull(authzDetail2.getCredentialsOfferId(), "Refreshed access token should NOT contain credentialsOfferId");
 
-        assertEquals(authzDetail2.getIssuedCredentialId(), issuedCredId, "Refreshed access token should contain the correct issuedCredentialId");
+        assertEquals(issuedCredId, authzDetail2.getIssuedCredentialId(), "Refreshed access token should contain the correct issuedCredentialId");
 
         CredentialResponse credResponse2 = wallet.credentialRequest(ctx, accessToken2)
                 .credentialIdentifier(credentialIdentifier)
@@ -436,7 +436,7 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
      * Verify that attempting to request a credential after the credential offer has expired results in an exception being thrown.
      */
     @Test
-    public void testThrowExceptionWhenCredentialIsOfferExpiredBeforeIssuance() {
+    public void testThrowsExceptionWhenCredentialOfferExpiredBeforeIssuance() {
 
         long offerExpiryTime = Time.currentTimeSeconds() + 3;
         CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
@@ -447,9 +447,7 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
 
         assertNotNull(credOffer, "Credential offer should be created");
 
-        timeOffSet.set(8);
-
-        AccessTokenResponse tokenResponse = authzCodeFlow(credOffer.getAuthorizationCodeGrant().getIssuerState());;
+        AccessTokenResponse tokenResponse = authzCodeFlow(credOffer.getAuthorizationCodeGrant().getIssuerState());
         assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
 
         String accessToken1 = wallet.validateHolderAccessToken(ctx, tokenResponse);
@@ -462,6 +460,8 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         assertNotNull(authzDetail1.getCredentialsOfferId(), "credentials_offer_id must be present in the first access token");
 
         String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+
+        timeOffSet.set(8);
 
         Exception exception = assertThrows(IllegalStateException.class, () -> wallet.credentialRequest(ctx, accessToken1)
                 .credentialIdentifier(credentialIdentifier)

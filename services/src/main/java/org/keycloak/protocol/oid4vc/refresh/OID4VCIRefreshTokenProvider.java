@@ -183,7 +183,7 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
         }
 
         responseBuilder.getAccessToken().setAuthorizationDetails(clearedDetails);
-          if (responseBuilder.getRefreshToken() != null) {
+        if (responseBuilder.getRefreshToken() != null) {
             responseBuilder.getRefreshToken().setAuthorizationDetails(clearedDetails);
         }
 

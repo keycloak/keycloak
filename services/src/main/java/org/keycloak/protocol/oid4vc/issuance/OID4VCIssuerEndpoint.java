@@ -895,7 +895,7 @@ public class OID4VCIssuerEndpoint {
 
             offerState = offerStorage.getOfferStateById(credOfferId);
             if (offerState == null) {
-                if(tokenAuthDetail.getIssuedCredentialId() == null) {
+                if (tokenAuthDetail.getIssuedCredentialId() == null) {
                     var errorMessage = "No credential offer state for: " + credOfferId;
                     eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
                     throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
