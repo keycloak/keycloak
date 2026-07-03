@@ -245,14 +245,17 @@ public class OrganizationRolesResourceTest {
         TestContext context = new TestContext();
         TestRole role = context.addOrganizationRole("role-1", "member");
         TestUser member = context.addUser("member-id", "member");
+        TestUser secondMember = context.addUser("second-member-id", "second-member");
         TestUser outsider = context.addUser("outsider-id", "outsider");
         context.members.add(member.id);
-        context.roleMembers.add(member.model);
         context.roleMembers.add(outsider.model);
+        context.members.add(secondMember.id);
+        context.roleMembers.add(member.model);
+        context.roleMembers.add(secondMember.model);
         OrganizationRoleResource resource = new OrganizationRoleResource(context.session, context.organization, role.model, context.adminEvent, context.auth);
 
-        assertEquals(List.of("member-id"), resource.getUsersInRole(true, null, null).map(UserRepresentation::getId).toList());
-        resource.getUsersInRole(true, 1, 2).toList();
+        assertEquals(List.of("member-id", "second-member-id"), resource.getUsersInRole(true, null, null).map(UserRepresentation::getId).toList());
+        assertEquals(List.of("second-member-id"), resource.getUsersInRole(true, 1, 2).map(UserRepresentation::getId).toList());
         assertEquals(Integer.valueOf(1), context.lastRoleMembersFirst);
         assertEquals(Integer.valueOf(2), context.lastRoleMembersMax);
 
@@ -261,7 +264,7 @@ public class OrganizationRolesResourceTest {
         context.adminPermissionsEnabled = true;
         withAdminFineGrainedAuthzV2(false, () -> assertTrue(resource.getUsersInRole(true, null, null).toList().isEmpty()));
         withAdminFineGrainedAuthzV2(true,
-                () -> assertEquals(List.of("member-id"), resource.getUsersInRole(true, null, null).map(UserRepresentation::getId).toList()));
+                () -> assertEquals(List.of("member-id", "second-member-id"), resource.getUsersInRole(true, null, null).map(UserRepresentation::getId).toList()));
         context.adminPermissionsEnabled = false;
         context.permissions.userView = true;
 
@@ -576,7 +579,7 @@ public class OrganizationRolesResourceTest {
                 case "getRoleMembersStream" -> {
                     lastRoleMembersFirst = (Integer) args[2];
                     lastRoleMembersMax = (Integer) args[3];
-                    yield roleMembers.stream();
+                    yield page(roleMembers.stream(), lastRoleMembersFirst, lastRoleMembersMax);
                 }
                 case "close" -> null;
                 default -> defaultValue(method.getReturnType());
@@ -621,10 +624,23 @@ public class OrganizationRolesResourceTest {
                         return userProfileProvider();
                     }
                     if (args[0].equals(OrganizationProvider.class)) {
-                        return proxy(OrganizationProvider.class, (providerProxy, providerMethod, providerArgs) -> defaultValue(providerMethod.getReturnType()));
+                        return organizationProvider();
                     }
                 }
                 return defaultValue(method.getReturnType());
+            });
+        }
+
+        private OrganizationProvider organizationProvider() {
+            return proxy(OrganizationProvider.class, (providerProxy, method, args) -> switch (method.getName()) {
+                case "getRoleMembersStream" -> {
+                    lastRoleMembersFirst = (Integer) args[2];
+                    lastRoleMembersMax = (Integer) args[3];
+                    yield page(roleMembers.stream()
+                            .filter(user -> ((OrganizationModel) args[0]).isMember(user)), lastRoleMembersFirst, lastRoleMembersMax);
+                }
+                case "close" -> null;
+                default -> defaultValue(method.getReturnType());
             });
         }
 

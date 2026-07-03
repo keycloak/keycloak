@@ -43,6 +43,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.JpaRealmProvider;
 import org.keycloak.models.jpa.RoleAdapter;
 import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.jpa.entities.UserEntity;
+import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.testsuite.model.KeycloakModelTest;
@@ -228,6 +230,34 @@ public class OrganizationRoleModelTest extends KeycloakModelTest {
     }
 
     @Test
+    public void shouldPageRoleMembersAfterOrganizationMembershipIntersection() {
+        withRealm(realmId, (session, realm) -> {
+            OrganizationProvider organizations = session.getProvider(OrganizationProvider.class);
+            OrganizationModel organization = getOrganization(session, ACME_ID);
+            RoleModel role = organization.addRole("paged-role-member");
+            UserModel outsider = session.users().addUser(realm, "a-outsider");
+            UserModel memberA = session.users().addUser(realm, "b-member-a");
+            UserModel memberB = session.users().addUser(realm, "c-member-b");
+            UserModel managedMember = session.users().addUser(realm, "d-managed-member");
+
+            organizations.addMember(organization, memberA);
+            organizations.addMember(organization, memberB);
+            organizations.addManagedMember(organization, managedMember);
+            memberA.grantRole(role);
+            memberB.grantRole(role);
+            managedMember.grantRole(role);
+            grantRoleMappingDirectly(session, outsider, role);
+
+            assertThat(usernames(organizations.getRoleMembersStream(organization, role, 0, 2)), contains("b-member-a", "c-member-b"));
+            assertThat(usernames(organizations.getRoleMembersStream(organization, role, 1, 1)), contains("c-member-b"));
+            organization.setEnabled(false);
+            assertThat(organizations.getRoleMembersStream(organization, role, 2, 1).map(UserModel::isEnabled).collect(Collectors.toList()), contains(false));
+
+            return null;
+        });
+    }
+
+    @Test
     public void shouldValidateDirectFederatedRoleMappings() {
         withRealm(realmId, (session, realm) -> {
             UserFederatedStorageProvider federatedStorage = session.getProvider(UserFederatedStorageProvider.class);
@@ -398,6 +428,18 @@ public class OrganizationRoleModelTest extends KeycloakModelTest {
 
     private List<String> roleIds(java.util.stream.Stream<RoleModel> roles) {
         return roles.map(RoleModel::getId).collect(Collectors.toList());
+    }
+
+    private List<String> usernames(java.util.stream.Stream<UserModel> users) {
+        return users.map(UserModel::getUsername).collect(Collectors.toList());
+    }
+
+    private void grantRoleMappingDirectly(KeycloakSession session, UserModel user, RoleModel role) {
+        EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+        UserRoleMappingEntity mapping = new UserRoleMappingEntity();
+        mapping.setUser(em.find(UserEntity.class, user.getId()));
+        mapping.setRoleId(role.getId());
+        em.persist(mapping);
     }
 
     private RoleModel roleWithoutContainer() {

@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.utils.KeycloakSessionUtil;
 
 import org.junit.Assert;
@@ -188,6 +190,25 @@ public class OrganizationRoleSpiTest {
     }
 
     @Test
+    public void shouldFilterOrganizationRoleMembersBeforeDefaultPagination() {
+        TestOrganization organization = new TestOrganization();
+        RoleModel role = new TestRole("member", organization);
+        OrganizationProvider provider = organizationProvider(List.of(
+                user("outsider"),
+                user("member-a", role),
+                user("member-b", role)));
+
+        Assert.assertEquals(List.of("member-a", "member-b"),
+                provider.getRoleMembersStream(organization, role, 0, 2).map(UserModel::getUsername).toList());
+        Assert.assertEquals(List.of("member-b"),
+                provider.getRoleMembersStream(organization, role, 1, 1).map(UserModel::getUsername).toList());
+        Assert.assertEquals(List.of("member-a", "member-b"),
+                provider.getRoleMembersStream(organization, role, null, null).map(UserModel::getUsername).toList());
+        Assert.assertEquals(List.of("member-a", "member-b"),
+                provider.getRoleMembersStream(organization, role, 0, -1).map(UserModel::getUsername).toList());
+    }
+
+    @Test
     public void shouldFailExplicitlyWhenProviderDoesNotSupportOrganizationRoles() {
         TestOrganization organization = new TestOrganization();
         TestRole role = new TestRole("member", organization);
@@ -216,6 +237,32 @@ public class OrganizationRoleSpiTest {
                         return id;
                     }
                     throw new UnsupportedOperationException();
+                });
+    }
+
+    private static OrganizationProvider organizationProvider(List<UserModel> members) {
+        return (OrganizationProvider) Proxy.newProxyInstance(OrganizationProvider.class.getClassLoader(), new Class<?>[] { OrganizationProvider.class },
+                (proxy, method, args) -> {
+                    if ("getMembersStream".equals(method.getName()) && method.getParameterTypes()[1] == String.class) {
+                        return members.stream();
+                    }
+                    if ("close".equals(method.getName())) {
+                        return null;
+                    }
+                    if (method.isDefault()) {
+                        return InvocationHandler.invokeDefault(proxy, method, args);
+                    }
+                    throw new UnsupportedOperationException(method.getName());
+                });
+    }
+
+    private static UserModel user(String username, RoleModel... roles) {
+        Set<RoleModel> roleSet = Set.of(roles);
+        return (UserModel) Proxy.newProxyInstance(UserModel.class.getClassLoader(), new Class<?>[] { UserModel.class },
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "getId", "getUsername" -> username;
+                    case "hasRole" -> roleSet.contains(args[0]);
+                    default -> throw new UnsupportedOperationException(method.getName());
                 });
     }
 

@@ -310,6 +310,26 @@ public class OrganizationRoleCacheModelTest extends KeycloakModelTest {
     }
 
     @Test
+    public void shouldDelegateRoleMemberPaginationThroughOrganizationCache() {
+        withRealm(realmId, (session, realm) -> {
+            OrganizationProvider organizations = session.getProvider(OrganizationProvider.class);
+            OrganizationModel organization = organizations.create("cache-role-members-page", "Cache Role Members Page", "cache-role-members-page");
+            RoleModel role = organization.addRole("cache-role-member-page-role");
+            UserModel memberA = session.users().addUser(realm, "cache-member-a");
+            UserModel memberB = session.users().addUser(realm, "cache-member-b");
+
+            organizations.addMember(organization, memberA);
+            organizations.addMember(organization, memberB);
+            memberA.grantRole(role);
+            memberB.grantRole(role);
+
+            assertThat(usernames(organizations.getRoleMembersStream(organization, role, 1, 1)), contains("cache-member-b"));
+
+            return null;
+        });
+    }
+
+    @Test
     public void shouldInvalidateRolesWhenRemovingRolesOrOrganization() {
         String[] clearedRoleIds = withRealm(realmId, (session, realm) -> {
             OrganizationProvider organizations = session.getProvider(OrganizationProvider.class);
@@ -381,5 +401,9 @@ public class OrganizationRoleCacheModelTest extends KeycloakModelTest {
 
     private List<String> roleIds(java.util.stream.Stream<RoleModel> roles) {
         return roles.map(RoleModel::getId).collect(Collectors.toList());
+    }
+
+    private List<String> usernames(java.util.stream.Stream<UserModel> users) {
+        return users.map(UserModel::getUsername).collect(Collectors.toList());
     }
 }

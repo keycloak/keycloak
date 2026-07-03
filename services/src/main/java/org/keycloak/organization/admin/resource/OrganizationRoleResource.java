@@ -52,6 +52,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -294,8 +295,7 @@ public class OrganizationRoleResource extends RoleResource {
         int first = firstResult == null ? 0 : firstResult;
         int max = maxResults == null ? Constants.DEFAULT_MAX_RESULTS : maxResults;
 
-        return session.users().getRoleMembersStream(realm, role, first, max)
-                .filter(organization::isMember)
+        return session.getProvider(OrganizationProvider.class).getRoleMembersStream(organization, role, first, max)
                 .map(user -> ModelToRepresentation.toRepresentation(session, user, briefRep));
     }
 
