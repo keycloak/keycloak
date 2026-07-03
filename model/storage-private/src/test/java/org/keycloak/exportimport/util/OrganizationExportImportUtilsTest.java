@@ -40,21 +40,21 @@ import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
-import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OAuth2DeviceConfig;
-import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.SubjectCredentialManager;
-import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.MemberRepresentation;
@@ -72,6 +72,7 @@ import org.junit.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -339,6 +340,21 @@ public class OrganizationExportImportUtilsTest {
     }
 
     @Test
+    public void importOrganizationRolesPreservesRepresentationIds() {
+        OrganizationModel organization = organization("org-1", "acme");
+        RoleRepresentation role = roleRepresentation("stable-role-id", "admin", "Admin");
+        OrganizationRepresentation representation = new OrganizationRepresentation();
+        representation.setRoles(List.of(role));
+        KeycloakSession session = session();
+
+        OrganizationExportImportUtils.importOrganizationRoles(session, realm("realm-1"), organization, representation);
+
+        RoleModel imported = organization.getRole("admin");
+        assertThat(imported.getId(), is("stable-role-id"));
+        assertThat(session.roles().getRoleById(organization, "stable-role-id"), is(imported));
+    }
+
+    @Test
     public void importOrganizationRolesRejectsInvalidReferences() {
         OrganizationRepresentation unnamedRole = new OrganizationRepresentation();
         unnamedRole.setRoles(List.of(new RoleRepresentation()));
@@ -414,8 +430,10 @@ public class OrganizationExportImportUtilsTest {
 
         MemberRepresentation missingRole = new MemberRepresentation();
         missingRole.setOrganizationRoles(List.of("missing"));
-        assertThrows(ModelException.class,
+        ModelException exception = assertThrows(ModelException.class,
                 () -> OrganizationExportImportUtils.importOrganizationMemberRoleMappings(organization, missingRole, user));
+        assertThat(exception.getMessage(), containsString("organization role mapping"));
+        assertThat(exception.getMessage(), containsString("missing"));
 
         organizationHandler(organization).members.add(user);
         OrganizationExportImportUtils.importOrganizationMemberRoleMappings(organization, member, user);
