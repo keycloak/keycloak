@@ -159,6 +159,7 @@ public class RepresentationToModel {
 
     public static void importRoles(RolesRepresentation realmRoles, RealmModel realm) {
         if (realmRoles == null) return;
+        rejectOrganizationComposites(realmRoles);
 
         if (realmRoles.getRealm() != null) { // realm roles
             for (RoleRepresentation roleRep : realmRoles.getRealm()) {
@@ -201,6 +202,32 @@ public class RepresentationToModel {
                     addComposites(role, roleRep, realm);
                 }
             }
+        }
+    }
+
+    private static void rejectOrganizationComposites(RolesRepresentation realmRoles) {
+        if (realmRoles.getRealm() != null) {
+            for (RoleRepresentation roleRep : realmRoles.getRealm()) {
+                rejectOrganizationComposites(roleRep);
+            }
+        }
+        if (realmRoles.getClient() != null) {
+            for (List<RoleRepresentation> roleReps : realmRoles.getClient().values()) {
+                if (roleReps != null) {
+                    for (RoleRepresentation roleRep : roleReps) {
+                        rejectOrganizationComposites(roleRep);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void rejectOrganizationComposites(RoleRepresentation roleRep) {
+        if (roleRep == null || roleRep.getComposites() == null) {
+            return;
+        }
+        if (roleRep.getComposites().getOrganization() != null) {
+            throw new ModelException("Organization role composites are only valid inside organization role import");
         }
     }
 

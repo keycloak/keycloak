@@ -87,24 +87,42 @@ public class OrganizationExportImportUtilsTest {
     }
 
     @Test
-    public void exportRoleIncludesOrganizationComposites() {
+    public void exportOrganizationRoleOwnsOrganizationComposites() {
         RealmModel realm = realm("realm-1");
         ClientModel client = client("client-1", "client-a");
         OrganizationModel organization = organization("org-1", "acme");
-        RoleModel parent = role("parent-id", "parent", organization);
-        RoleModel organizationRole = role("org-role-id", "organization-child", organization);
+        RoleModel parent = organization.addRole("parent-id", "parent");
+        RoleModel organizationRole = organization.addRole("org-role-id", "organization-child");
         RoleModel realmRole = role("realm-role-id", "realm-child", realm);
         RoleModel clientRole = role("client-role-id", "client-child", client);
 
         parent.addCompositeRole(organizationRole);
         parent.addCompositeRole(realmRole);
         parent.addCompositeRole(clientRole);
+        RoleModel organizationOnlyParent = organization.addRole("organization-only-parent-id", "organization-only-parent");
+        organizationOnlyParent.addCompositeRole(organizationRole);
 
-        RoleRepresentation representation = ExportUtils.exportRole(parent);
+        RoleRepresentation genericRepresentation = ExportUtils.exportRole(parent);
+        RoleRepresentation genericOrganizationOnlyRepresentation = ExportUtils.exportRole(organizationOnlyParent);
+        OrganizationRepresentation organizationRepresentation = new OrganizationRepresentation();
+        OrganizationExportImportUtils.exportOrganizationRoles(organization, organizationRepresentation);
+        RoleRepresentation organizationRoleRepresentation = organizationRepresentation.getRoles().stream()
+                .filter(role -> "parent".equals(role.getName()))
+                .findFirst()
+                .orElseThrow();
+        RoleRepresentation organizationOnlyRoleRepresentation = organizationRepresentation.getRoles().stream()
+                .filter(role -> "organization-only-parent".equals(role.getName()))
+                .findFirst()
+                .orElseThrow();
 
-        assertThat(representation.getComposites().getOrganization(), contains("organization-child"));
-        assertThat(representation.getComposites().getRealm(), contains("realm-child"));
-        assertThat(representation.getComposites().getClient().get("client-a"), contains("client-child"));
+        assertNull(genericRepresentation.getComposites().getOrganization());
+        assertNull(genericOrganizationOnlyRepresentation.getComposites());
+        assertThat(genericRepresentation.getComposites().getRealm(), contains("realm-child"));
+        assertThat(genericRepresentation.getComposites().getClient().get("client-a"), contains("client-child"));
+        assertThat(organizationRoleRepresentation.getComposites().getOrganization(), contains("organization-child"));
+        assertThat(organizationRoleRepresentation.getComposites().getRealm(), contains("realm-child"));
+        assertThat(organizationRoleRepresentation.getComposites().getClient().get("client-a"), contains("client-child"));
+        assertThat(organizationOnlyRoleRepresentation.getComposites().getOrganization(), contains("organization-child"));
     }
 
     @Test

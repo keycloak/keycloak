@@ -304,7 +304,6 @@ public class ExportUtils {
         if (composites != null && composites.size() > 0) {
             Set<String> compositeRealmRoles = null;
             Map<String, List<String>> compositeClientRoles = null;
-            Set<String> compositeOrganizationRoles = null;
 
             for (RoleModel composite : composites) {
                 RoleContainerModel crContainer = composite.getContainer();
@@ -327,26 +326,20 @@ public class ExportUtils {
                         compositeClientRoles.put(appName, currentAppComposites);
                     }
                     currentAppComposites.add(composite.getName());
-                } else if (crContainer instanceof OrganizationModel) {
-                    if (compositeOrganizationRoles == null) {
-                        compositeOrganizationRoles = new HashSet<>();
-                    }
-                    compositeOrganizationRoles.add(composite.getName());
                 }
             }
 
-            RoleRepresentation.Composites compRep = new RoleRepresentation.Composites();
-            if (compositeRealmRoles != null) {
-                compRep.setRealm(compositeRealmRoles);
-            }
-            if (compositeClientRoles != null) {
-                compRep.setClient(compositeClientRoles);
-            }
-            if (compositeOrganizationRoles != null) {
-                compRep.setOrganization(compositeOrganizationRoles);
-            }
+            if (compositeRealmRoles != null || compositeClientRoles != null) {
+                RoleRepresentation.Composites compRep = new RoleRepresentation.Composites();
+                if (compositeRealmRoles != null) {
+                    compRep.setRealm(compositeRealmRoles);
+                }
+                if (compositeClientRoles != null) {
+                    compRep.setClient(compositeClientRoles);
+                }
 
-            roleRep.setComposites(compRep);
+                roleRep.setComposites(compRep);
+            }
         }
 
         return roleRep;

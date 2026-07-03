@@ -90,7 +90,9 @@ public final class OrganizationExportImportUtils {
     }
 
     public static void exportOrganizationRoles(OrganizationModel organization, OrganizationRepresentation representation) {
-        List<RoleRepresentation> roles = ExportUtils.exportRoles(organization.getRolesStream());
+        List<RoleRepresentation> roles = organization.getRolesStream()
+                .map(role -> exportOrganizationRole(organization, role))
+                .collect(Collectors.toList());
         if (!roles.isEmpty()) {
             representation.setRoles(roles);
         }
@@ -99,6 +101,25 @@ public final class OrganizationExportImportUtils {
         if (defaultRole != null) {
             representation.setDefaultRole(ModelToRepresentation.toBriefRepresentation(defaultRole));
         }
+    }
+
+    private static RoleRepresentation exportOrganizationRole(OrganizationModel organization, RoleModel role) {
+        RoleRepresentation roleRep = ExportUtils.exportRole(role);
+        Set<String> compositeOrganizationRoles = role.getCompositesStream()
+                .filter(composite -> isRoleFromOrganization(composite, organization))
+                .map(RoleModel::getName)
+                .collect(Collectors.toSet());
+
+        if (!compositeOrganizationRoles.isEmpty()) {
+            RoleRepresentation.Composites composites = roleRep.getComposites();
+            if (composites == null) {
+                composites = new RoleRepresentation.Composites();
+                roleRep.setComposites(composites);
+            }
+            composites.setOrganization(compositeOrganizationRoles);
+        }
+
+        return roleRep;
     }
 
     public static List<String> exportOrganizationMemberRoleMappings(OrganizationModel organization, UserModel user) {
