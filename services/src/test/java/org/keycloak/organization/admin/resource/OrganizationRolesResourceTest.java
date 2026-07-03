@@ -79,6 +79,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -118,7 +119,36 @@ public class OrganizationRolesResourceTest {
         assertStatus(Response.Status.CONFLICT, assertThrows(ErrorResponseException.class, () -> roles.createRole(representation)));
 
         assertEquals(List.of("member"), roles.getRoles("", null, null, true).map(RoleRepresentation::getName).toList());
-        assertEquals(List.of("member"), roles.getRoles("mem", 0, 10, false).map(RoleRepresentation::getName).toList());
+        assertTrue(context.organizationRolesUnpagedCalled);
+        assertNull(context.organizationRolesFirst);
+        assertNull(context.organizationRolesMax);
+
+        context.resetOrganizationRoleLookupTracking();
+        assertEquals(List.of("member"), roles.getRoles("", 0, 10, true).map(RoleRepresentation::getName).toList());
+        assertFalse(context.organizationRolesUnpagedCalled);
+        assertEquals(Integer.valueOf(0), context.organizationRolesFirst);
+        assertEquals(Integer.valueOf(10), context.organizationRolesMax);
+
+        context.resetOrganizationRoleLookupTracking();
+        assertEquals(List.of("member"), roles.getRoles("", 0, null, true).map(RoleRepresentation::getName).toList());
+        assertTrue(context.organizationRolesUnpagedCalled);
+        assertNull(context.organizationRolesFirst);
+        assertNull(context.organizationRolesMax);
+
+        context.resetOrganizationRoleLookupTracking();
+        assertEquals(List.of("member"), roles.getRoles("", null, 10, true).map(RoleRepresentation::getName).toList());
+        assertTrue(context.organizationRolesUnpagedCalled);
+        assertNull(context.organizationRolesFirst);
+        assertNull(context.organizationRolesMax);
+
+        context.resetOrganizationRoleLookupTracking();
+        List<RoleRepresentation> searchResult = roles.getRoles("mem", 0, 10, false).toList();
+        assertEquals(List.of("member"), searchResult.stream().map(RoleRepresentation::getName).toList());
+        assertEquals(Map.of("team", List.of("platform")), searchResult.get(0).getAttributes());
+        assertFalse(context.organizationRolesUnpagedCalled);
+        assertEquals("mem", context.organizationRolesSearch);
+        assertEquals(Integer.valueOf(0), context.organizationRolesFirst);
+        assertEquals(Integer.valueOf(10), context.organizationRolesMax);
         assertEquals(1, roles.getRoleCount("mem"));
 
         context.defaultRole = created.model;
@@ -377,6 +407,10 @@ public class OrganizationRolesResourceTest {
         private boolean adminPermissionsEnabled;
         private Integer lastRoleMembersFirst;
         private Integer lastRoleMembersMax;
+        private boolean organizationRolesUnpagedCalled;
+        private Integer organizationRolesFirst;
+        private Integer organizationRolesMax;
+        private String organizationRolesSearch;
         private final RealmModel realm;
         private final OrganizationModel organization;
         private final OrganizationModel otherOrganization;
@@ -436,6 +470,13 @@ public class OrganizationRolesResourceTest {
             return user;
         }
 
+        void resetOrganizationRoleLookupTracking() {
+            organizationRolesUnpagedCalled = false;
+            organizationRolesFirst = null;
+            organizationRolesMax = null;
+            organizationRolesSearch = null;
+        }
+
         private RealmModel realm() {
             return proxy(RealmModel.class, (realmProxy, method, args) -> switch (method.getName()) {
                 case "getId" -> "realm-1";
@@ -487,14 +528,21 @@ public class OrganizationRolesResourceTest {
             Stream<RoleModel> stream = roles.values().stream()
                     .filter(role -> role.container == organizationProxy)
                     .map(role -> role.model);
-            if (args != null && args.length == 2) {
+            if (args == null) {
+                organizationRolesUnpagedCalled = true;
+            } else if (args.length == 2) {
+                organizationRolesFirst = (Integer) args[0];
+                organizationRolesMax = (Integer) args[1];
                 stream = page(stream, (Integer) args[0], (Integer) args[1]);
             }
             return stream;
         }
 
         private Stream<RoleModel> searchOrganizationRoles(Object organizationProxy, Object[] args) {
-            String search = ((String) args[0]).toLowerCase();
+            organizationRolesSearch = (String) args[0];
+            organizationRolesFirst = (Integer) args[1];
+            organizationRolesMax = (Integer) args[2];
+            String search = organizationRolesSearch.toLowerCase();
             return page(roles.values().stream()
                     .filter(role -> role.container == organizationProxy)
                     .filter(role -> role.name.toLowerCase().contains(search) || (role.description != null && role.description.toLowerCase().contains(search)))

@@ -19,6 +19,7 @@ package org.keycloak.organization.admin.resource;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -128,9 +129,15 @@ public class OrganizationRolesResource {
                                                @Parameter(description = "If false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         auth.roles().requireList(organization);
 
-        Stream<RoleModel> roles = StringUtil.isNotBlank(search) ?
-                organization.searchForRolesStream(search, firstResult, maxResults) :
-                organization.getRolesStream(firstResult, maxResults);
+        Stream<RoleModel> roles;
+
+        if (StringUtil.isNotBlank(search)) {
+            roles = organization.searchForRolesStream(search, firstResult, maxResults);
+        } else if (!Objects.isNull(firstResult) && !Objects.isNull(maxResults)) {
+            roles = organization.getRolesStream(firstResult, maxResults);
+        } else {
+            roles = organization.getRolesStream();
+        }
 
         Function<RoleModel, RoleRepresentation> toRepresentation = briefRepresentation ?
                 ModelToRepresentation::toBriefRepresentation :
