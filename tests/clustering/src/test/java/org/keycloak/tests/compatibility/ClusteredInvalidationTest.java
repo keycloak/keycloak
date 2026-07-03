@@ -2,8 +2,6 @@ package org.keycloak.tests.compatibility;
 
 import java.util.Objects;
 
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectLoadBalancer;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -24,9 +22,6 @@ public class ClusteredInvalidationTest {
 
     @InjectLoadBalancer
     LoadBalancer loadBalancer;
-
-    @InjectAdminClient(mode = InjectAdminClient.Mode.BOOTSTRAP)
-    Keycloak adminClient;
 
     @AfterEach
     public void cleanup() {
