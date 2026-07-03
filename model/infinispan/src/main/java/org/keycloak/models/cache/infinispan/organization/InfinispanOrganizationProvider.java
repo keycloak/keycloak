@@ -89,9 +89,6 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     @Override
     public boolean remove(OrganizationModel organization) {
         registerOrganizationInvalidation(organization);
-        if (realmCache != null) {
-            realmCache.registerOrganizationRoleInvalidations(organization);
-        }
         registerCountInvalidation();
         return getDelegate().remove(organization);
     }

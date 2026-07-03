@@ -242,6 +242,7 @@ public class OrganizationRoleCacheModelTest extends KeycloakModelTest {
         withRealm(realmId, (session, realm) -> {
             OrganizationModel acme = getOrganization(session, ACME_ID);
 
+            assertThat(session.roles().getRoleById(acme, roleId).getName(), is("stale-cache-role"));
             assertThat(acme.getRole("stale-cache-role").getId(), is(roleId));
             assertThat(roleNames(acme.getRolesStream()), hasItem("stale-cache-role"));
 
@@ -252,11 +253,31 @@ public class OrganizationRoleCacheModelTest extends KeycloakModelTest {
             OrganizationModel acme = getOrganization(session, ACME_ID);
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             RoleEntity entity = em.find(RoleEntity.class, roleId);
-            em.remove(entity);
-            session.getProvider(CacheRealmProvider.class).registerInvalidation(roleId);
+            entity.setName("fresh-cache-role");
+            em.flush();
 
-            assertThat(roleNames(acme.getRolesStream()), not(hasItem("stale-cache-role")));
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            OrganizationModel acme = getOrganization(session, ACME_ID);
+
+            assertThat(session.roles().getRoleById(acme, roleId).getName(), is("stale-cache-role"));
+            assertThat(acme.getRole("stale-cache-role").getId(), is(roleId));
+            assertThat(roleNames(acme.getRolesStream()), hasItem("stale-cache-role"));
+
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            OrganizationModel acme = getOrganization(session, ACME_ID);
+            session.getProvider(CacheRealmProvider.class).registerRoleInvalidation(roleId, "stale-cache-role", acme.getId());
+
+            assertThat(session.roles().getRoleById(acme, roleId).getName(), is("fresh-cache-role"));
             assertThat(acme.getRole("stale-cache-role"), nullValue());
+            assertThat(acme.getRole("fresh-cache-role").getId(), is(roleId));
+            assertThat(roleNames(acme.getRolesStream()), not(hasItem("stale-cache-role")));
+            assertThat(roleNames(acme.getRolesStream()), hasItem("fresh-cache-role"));
 
             return null;
         });
@@ -299,13 +320,17 @@ public class OrganizationRoleCacheModelTest extends KeycloakModelTest {
             assertThat(roleNames(organization.getRolesStream()), hasItem("clear-custom-role"));
             session.roles().removeRoles(organization);
             assertThat(organization.getRolesStream().collect(Collectors.toList()), empty());
+            assertThat(organization.getDefaultRole(), nullValue());
 
-            return new String[] { defaultRole.getId(), customRole.getId() };
+            return new String[] { organization.getId(), defaultRole.getId(), customRole.getId() };
         });
 
         withRealm(realmId, (session, realm) -> {
-            assertThat(session.roles().getRoleById(realm, clearedRoleIds[0]), nullValue());
+            OrganizationModel organization = getOrganization(session, clearedRoleIds[0]);
+
+            assertThat(organization.getDefaultRole(), nullValue());
             assertThat(session.roles().getRoleById(realm, clearedRoleIds[1]), nullValue());
+            assertThat(session.roles().getRoleById(realm, clearedRoleIds[2]), nullValue());
             return null;
         });
 
