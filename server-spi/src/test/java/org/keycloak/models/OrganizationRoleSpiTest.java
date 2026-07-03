@@ -33,9 +33,9 @@ public class OrganizationRoleSpiTest {
 
     @Test
     public void shouldClassifyAllRoleTypes() {
-        RoleModel realmRole = new TestRole("realm", false, proxy(RealmModel.class));
-        RoleModel clientRole = new TestRole("client", true, proxy(ClientModel.class));
-        RoleModel organizationRole = new TestRole("organization", false, new TestOrganization());
+        RoleModel realmRole = new TestRole("realm", proxy(RealmModel.class));
+        RoleModel clientRole = new TestRole("client", proxy(ClientModel.class));
+        RoleModel organizationRole = new TestRole("organization", new TestOrganization());
 
         Assert.assertEquals(RoleModel.Type.REALM, realmRole.getType());
         Assert.assertTrue(realmRole.isRealmRole());
@@ -53,6 +53,34 @@ public class OrganizationRoleSpiTest {
     }
 
     @Test
+    public void shouldExposeStableTypeIntegerValues() {
+        Assert.assertEquals(0, RoleModel.Type.REALM.intValue());
+        Assert.assertEquals(1, RoleModel.Type.CLIENT.intValue());
+        Assert.assertEquals(2, RoleModel.Type.ORGANIZATION.intValue());
+
+        for (RoleModel.Type type : RoleModel.Type.values()) {
+            Assert.assertSame(type, RoleModel.Type.valueOf(type.intValue()));
+        }
+
+        IllegalArgumentException cause = Assert.assertThrows(IllegalArgumentException.class, () -> RoleModel.Type.valueOf(99));
+        Assert.assertTrue(cause.getMessage().contains("99"));
+    }
+
+    @Test
+    public void shouldDetectRolesFromClientByTypeAndContainerId() {
+        ClientModel client = client("client");
+        ClientModel otherClient = client("other-client");
+        RoleModel clientRole = new TestRole("client-role", client);
+        RoleModel realmRole = new TestRole("realm-role", proxy(RealmModel.class));
+        RoleModel organizationRole = new TestRole("organization-role", new TestOrganization());
+
+        Assert.assertTrue(RoleUtils.isRoleFromClient(clientRole, client));
+        Assert.assertFalse(RoleUtils.isRoleFromClient(clientRole, otherClient));
+        Assert.assertFalse(RoleUtils.isRoleFromClient(realmRole, client));
+        Assert.assertFalse(RoleUtils.isRoleFromClient(organizationRole, client));
+    }
+
+    @Test
     public void shouldResolveOrganizationRealmWhenExpandingComposites() {
         RealmModel realm = proxy(RealmModel.class);
         TestOrganization organization = new TestOrganization() {
@@ -61,7 +89,7 @@ public class OrganizationRoleSpiTest {
                 return realm;
             }
         };
-        TestRole role = new TestRole("organization-role", false, organization);
+        TestRole role = new TestRole("organization-role", organization);
         RealmModel[] resolvedRealm = new RealmModel[1];
         TestRoleProvider roleProvider = new TestRoleProvider() {
             @Override
@@ -91,7 +119,7 @@ public class OrganizationRoleSpiTest {
     @Test
     public void shouldExposeOrganizationAsRoleContainerWithoutBreakingExistingProviders() {
         TestOrganization organization = new TestOrganization();
-        RoleModel role = new TestRole("role", false, organization);
+        RoleModel role = new TestRole("role", organization);
 
         Assert.assertTrue(RoleContainerModel.class.isAssignableFrom(OrganizationModel.class));
         Assert.assertThrows(UnsupportedOperationException.class, organization::getRealm);
@@ -108,8 +136,8 @@ public class OrganizationRoleSpiTest {
 
     @Test
     public void shouldManageDefaultRoleCompositesThroughRoleModel() {
-        TestRole defaultRole = new TestRole("default", false, new TestOrganization());
-        TestRole composite = new TestRole("composite", false, proxy(RealmModel.class));
+        TestRole defaultRole = new TestRole("default", new TestOrganization());
+        TestRole composite = new TestRole("composite", proxy(RealmModel.class));
         TestOrganization organization = new TestOrganization() {
             @Override
             public RoleModel getDefaultRole() {
@@ -124,7 +152,7 @@ public class OrganizationRoleSpiTest {
 
     @Test
     public void shouldDelegateOrganizationAddRoleConvenienceMethod() {
-        RoleModel role = new TestRole("member", false, proxy(RealmModel.class));
+        RoleModel role = new TestRole("member", proxy(RealmModel.class));
         String[] arguments = new String[2];
         TestOrganization organization = new TestOrganization() {
             @Override
@@ -143,7 +171,7 @@ public class OrganizationRoleSpiTest {
     @Test
     public void shouldDelegateRoleProviderConvenienceMethods() {
         TestOrganization organization = new TestOrganization();
-        TestRole role = new TestRole("member", false, organization);
+        TestRole role = new TestRole("member", organization);
         DelegatingRoleProvider provider = new DelegatingRoleProvider(role);
 
         Assert.assertSame(role, provider.addOrganizationRole(organization, "member"));
@@ -162,7 +190,7 @@ public class OrganizationRoleSpiTest {
     @Test
     public void shouldFailExplicitlyWhenProviderDoesNotSupportOrganizationRoles() {
         TestOrganization organization = new TestOrganization();
-        TestRole role = new TestRole("member", false, organization);
+        TestRole role = new TestRole("member", organization);
         RoleProvider provider = new TestRoleProvider();
 
         Assert.assertThrows(UnsupportedOperationException.class, () -> provider.addOrganizationRole(organization, "id", "member"));
@@ -172,13 +200,23 @@ public class OrganizationRoleSpiTest {
         Assert.assertThrows(UnsupportedOperationException.class, () -> provider.getOrganizationRolesStream(organization, 0, 10));
         Assert.assertThrows(UnsupportedOperationException.class, () -> provider.getOrganizationRolesCount(organization, "member"));
         Assert.assertThrows(UnsupportedOperationException.class, () -> provider.removeRoles(organization));
-        Assert.assertFalse(role.isClientRole());
+        Assert.assertEquals(RoleModel.Type.ORGANIZATION, role.getType());
     }
 
     @SuppressWarnings("unchecked")
     private static <T> T proxy(Class<T> type) {
         return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] { type },
                 (proxy, method, args) -> { throw new UnsupportedOperationException(); });
+    }
+
+    private static ClientModel client(String id) {
+        return (ClientModel) Proxy.newProxyInstance(ClientModel.class.getClassLoader(), new Class<?>[] { ClientModel.class },
+                (proxy, method, args) -> {
+                    if ("getId".equals(method.getName())) {
+                        return id;
+                    }
+                    throw new UnsupportedOperationException();
+                });
     }
 
     private static class TestOrganization implements OrganizationModel {
@@ -206,13 +244,11 @@ public class OrganizationRoleSpiTest {
     private static class TestRole implements RoleModel {
 
         private final String id;
-        private final boolean clientRole;
         private final RoleContainerModel container;
         private final List<RoleModel> composites = new java.util.ArrayList<>();
 
-        private TestRole(String id, boolean clientRole, RoleContainerModel container) {
+        private TestRole(String id, RoleContainerModel container) {
             this.id = id;
-            this.clientRole = clientRole;
             this.container = container;
         }
 
@@ -225,7 +261,6 @@ public class OrganizationRoleSpiTest {
         @Override public void addCompositeRole(RoleModel role) { composites.add(role); }
         @Override public void removeCompositeRole(RoleModel role) { composites.remove(role); }
         @Override public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) { return composites.stream(); }
-        @Override public boolean isClientRole() { return clientRole; }
         @Override public String getContainerId() { return container.getId(); }
         @Override public RoleContainerModel getContainer() { return container; }
         @Override public boolean hasRole(RoleModel role) { return composites.contains(role); }

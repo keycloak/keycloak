@@ -236,11 +236,6 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
     }
 
     @Override
-    public boolean isClientRole() {
-        return getType() == Type.CLIENT;
-    }
-
-    @Override
     public Type getType() {
         return role.getType();
     }

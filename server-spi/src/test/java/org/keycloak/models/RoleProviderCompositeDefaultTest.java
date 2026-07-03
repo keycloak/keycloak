@@ -105,7 +105,6 @@ public class RoleProviderCompositeDefaultTest {
         @Override public void addCompositeRole(RoleModel role) { throw new UnsupportedOperationException(); }
         @Override public void removeCompositeRole(RoleModel role) { throw new UnsupportedOperationException(); }
         @Override public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) { throw new UnsupportedOperationException(); }
-        @Override public boolean isClientRole() { throw new UnsupportedOperationException(); }
         @Override public String getContainerId() { throw new UnsupportedOperationException(); }
         @Override public RoleContainerModel getContainer() { throw new UnsupportedOperationException(); }
         @Override public boolean hasRole(RoleModel role) { throw new UnsupportedOperationException(); }

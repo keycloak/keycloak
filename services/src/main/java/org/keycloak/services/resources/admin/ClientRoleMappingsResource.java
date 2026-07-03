@@ -137,7 +137,7 @@ public class ClientRoleMappingsResource {
         // This avoids the O(C*M*D) cost of calling user.hasRole() per client
         // role, which recursively expands composites without memoization.
         return RoleUtils.getDeepRoleMappings(user).stream()
-                .filter(r -> r.isClientRole() && r.getContainerId().equals(client.getId()))
+                .filter(r -> r.getType() == RoleModel.Type.CLIENT && r.getContainerId().equals(client.getId()))
                 .map(toBriefRepresentation);
     }
 

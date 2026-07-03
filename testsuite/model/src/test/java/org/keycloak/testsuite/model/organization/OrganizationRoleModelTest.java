@@ -107,7 +107,7 @@ public class OrganizationRoleModelTest extends KeycloakModelTest {
             assertThat(defaultRole.getName(), is(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-acme"));
             assertThat(defaultRole.getType(), is(RoleModel.Type.ORGANIZATION));
             assertThat(defaultRole.isOrganizationRole(), is(true));
-            assertThat(defaultRole.isClientRole(), is(false));
+            assertThat(defaultRole.getType(), is(RoleModel.Type.ORGANIZATION));
             assertThat(defaultRole.getContainerId(), is(organization.getId()));
             assertThat(defaultRole.getContainer().getId(), is(organization.getId()));
             assertThat(session.roles().getRoleById(organization, defaultRole.getId()).getId(), is(defaultRole.getId()));
@@ -164,12 +164,16 @@ public class OrganizationRoleModelTest extends KeycloakModelTest {
         String[] ids = withRealm(realmId, (session, realm) -> {
             OrganizationProvider organizations = session.getProvider(OrganizationProvider.class);
             OrganizationModel organization = getOrganization(session, ACME_ID);
+            ClientModel client = session.clients().getClientByClientId(realm, CLIENT_ID);
             UserModel user = session.users().addUser(realm, "member");
             RoleModel defaultRole = organization.getDefaultRole();
             RoleModel customRole = organization.addRole("project-admin");
+            RoleModel clientRole = session.roles().addClientRole(client, "bulk-client-role");
 
             session.users().grantToAllUsers(realm, customRole);
             assertThat(user.hasDirectRole(customRole), is(false));
+            session.users().grantToAllUsers(realm, clientRole);
+            assertThat(roleIds(user.getClientRoleMappingsStream(client)), contains(clientRole.getId()));
 
             organizations.addMember(organization, user);
             user.grantRole(customRole);
@@ -243,14 +247,18 @@ public class OrganizationRoleModelTest extends KeycloakModelTest {
     public void shouldRejectOrganizationRoleMappingsForGroups() {
         withRealm(realmId, (session, realm) -> {
             OrganizationModel organization = getOrganization(session, ACME_ID);
+            ClientModel client = session.clients().getClientByClientId(realm, CLIENT_ID);
             GroupModel group = session.groups().createGroup(realm, "organization-role-group");
             RoleModel role = organization.addRole("group-only-role");
             RoleModel realmRole = session.roles().addRealmRole(realm, "realm-group-role");
+            RoleModel clientRole = session.roles().addClientRole(client, "client-group-role");
 
             assertThrows(ModelException.class, () -> group.grantRole(role));
             assertThat(group.hasDirectRole(role), is(false));
             group.grantRole(realmRole);
+            group.grantRole(clientRole);
             assertThat(group.hasDirectRole(realmRole), is(true));
+            assertThat(roleIds(group.getClientRoleMappingsStream(client)), contains(clientRole.getId()));
 
             return null;
         });

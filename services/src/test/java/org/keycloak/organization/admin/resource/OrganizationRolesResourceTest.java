@@ -54,6 +54,7 @@ import org.keycloak.models.RoleProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.provider.ProviderEvent;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponseException;
@@ -74,6 +75,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -135,6 +137,16 @@ public class OrganizationRolesResourceTest {
         assertEquals("Renamed role", role.description);
         assertFalse(role.attributes.containsKey("old"));
         assertEquals(List.of("value"), role.attributes.get("new"));
+        assertEquals(1, context.providerEvents.size());
+        RoleModel.RoleNameChangeEvent event = (RoleModel.RoleNameChangeEvent) context.providerEvents.get(0);
+        assertSame(context.realm, event.getRealm());
+        assertSame(role.model, event.getRole());
+        assertSame(context.session, event.getKeycloakSession());
+        assertEquals(RoleModel.Type.ORGANIZATION, event.getRole().getType());
+        assertEquals(context.organization.getId(), event.getRole().getContainerId());
+        assertSame(context.organization, event.getRole().getContainer());
+        assertEquals("member", event.getPreviousName());
+        assertEquals("renamed", event.getNewName());
 
         assertThrows(BadRequestException.class, () -> resource.updateRole(null));
 
@@ -258,6 +270,7 @@ public class OrganizationRolesResourceTest {
         private final Map<String, TestRole> roles = new LinkedHashMap<>();
         private final Map<String, TestUser> users = new LinkedHashMap<>();
         private final Map<String, ClientModel> clients = new LinkedHashMap<>();
+        private final List<ProviderEvent> providerEvents = new ArrayList<>();
         private final Set<String> members = new LinkedHashSet<>();
         private final List<UserModel> roleMembers = new ArrayList<>();
         private final TestPermissions permissions = new TestPermissions();
@@ -429,6 +442,7 @@ public class OrganizationRolesResourceTest {
                     return Stream.empty();
                 }
                 if ("publish".equals(method.getName())) {
+                    providerEvents.add((ProviderEvent) args[0]);
                     return null;
                 }
                 return defaultValue(method.getReturnType());

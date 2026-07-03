@@ -46,7 +46,7 @@ public class JpaUpdate26_7_0_OrganizationRoles extends CustomKeycloakTask {
         try (PreparedStatement statement = jdbcConnection.prepareStatement("SELECT ID, CLIENT_ROLE FROM " + getTableName("KEYCLOAK_ROLE"));
                 ResultSet resultSet = statement.executeQuery()) {
             while (resultSet.next()) {
-                String type = resultSet.getBoolean("CLIENT_ROLE") ? RoleModel.Type.CLIENT.name() : RoleModel.Type.REALM.name();
+                int type = resultSet.getBoolean("CLIENT_ROLE") ? RoleModel.Type.CLIENT.intValue() : RoleModel.Type.REALM.intValue();
                 statements.add(new UpdateStatement(null, null, roleTable)
                         .addNewColumnValue("TYPE", type)
                         .setWhereClause("ID=?")
@@ -92,7 +92,7 @@ public class JpaUpdate26_7_0_OrganizationRoles extends CustomKeycloakTask {
                 .addColumnValue("DESCRIPTION", "${role_default-roles}")
                 .addColumnValue("NAME", roleName)
                 .addColumnValue("REALM_ID", realmId)
-                .addColumnValue("TYPE", RoleModel.Type.ORGANIZATION.name())
+                .addColumnValue("TYPE", RoleModel.Type.ORGANIZATION.intValue())
                 .addColumnValue("ORG_ID", organizationId));
     }
 

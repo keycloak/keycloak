@@ -92,12 +92,8 @@ public abstract class RoleResource {
                 }
 
                 @Override
-                public String getClientId() {
-                    if (!role.isClientRole()) {
-                        return null;
-                    }
-
-                    return ((ClientModel) role.getContainer()).getClientId();
+                public RoleModel getRole() {
+                    return role;
                 }
 
                 @Override
@@ -141,7 +137,7 @@ public abstract class RoleResource {
         }
         composites.forEach(role::addCompositeRole);
 
-        if (role.isClientRole()) {
+        if (role.getType() == RoleModel.Type.CLIENT) {
             adminEvent.resource(ResourceType.CLIENT_ROLE);
         } else {
             adminEvent.resource(ResourceType.REALM_ROLE);
@@ -171,7 +167,7 @@ public abstract class RoleResource {
             role.removeCompositeRole(composite);
         }
 
-        if (role.isClientRole()) {
+        if (role.getType() == RoleModel.Type.CLIENT) {
             adminEvent.resource(ResourceType.CLIENT_ROLE);
         } else {
             adminEvent.resource(ResourceType.REALM_ROLE);

@@ -54,13 +54,13 @@ public class JpaUpdate26_7_0_OrganizationRolesTest {
             SqlStatement[] statements = new JpaUpdate26_7_0_OrganizationRoles().generateStatements(database);
             executeStatements(database, connection, statements);
 
-            assertThat(roleType(connection, "realm-role"), is(RoleModel.Type.REALM.name()));
-            assertThat(roleType(connection, "client-role"), is(RoleModel.Type.CLIENT.name()));
+            assertThat(roleType(connection, "realm-role"), is(RoleModel.Type.REALM.intValue()));
+            assertThat(roleType(connection, "client-role"), is(RoleModel.Type.CLIENT.intValue()));
 
             String defaultRoleId = organizationDefaultRole(connection, "org-1");
             assertThat(defaultRoleId, notNullValue());
             assertThat(defaultRoleName(connection, defaultRoleId), is(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-acme"));
-            assertThat(roleType(connection, defaultRoleId), is(RoleModel.Type.ORGANIZATION.name()));
+            assertThat(roleType(connection, defaultRoleId), is(RoleModel.Type.ORGANIZATION.intValue()));
             assertThat(roleOrganization(connection, defaultRoleId), is("org-1"));
             assertThat(roleClientRealmConstraint(connection, defaultRoleId), is("org-1"));
             assertThat(localRoleMappings(connection, "user-1", defaultRoleId), is(1));
@@ -134,7 +134,7 @@ public class JpaUpdate26_7_0_OrganizationRolesTest {
                     "NAME VARCHAR(255), " +
                     "REALM_ID VARCHAR(36), " +
                     "CLIENT VARCHAR(36), " +
-                    "TYPE VARCHAR(32), " +
+                    "TYPE INT, " +
                     "ORG_ID VARCHAR(255))");
             statement.execute("CREATE TABLE ORG (" +
                     "ID VARCHAR(36) NOT NULL, " +
@@ -171,7 +171,7 @@ public class JpaUpdate26_7_0_OrganizationRolesTest {
             statement.execute("CREATE TABLE KEYCLOAK_ROLE (" +
                     "ID VARCHAR(36) NOT NULL, " +
                     "CLIENT_ROLE BOOLEAN, " +
-                    "TYPE VARCHAR(32))");
+                    "TYPE INT)");
         }
     }
 
@@ -186,7 +186,7 @@ public class JpaUpdate26_7_0_OrganizationRolesTest {
                     "NAME VARCHAR(255), " +
                     "REALM_ID VARCHAR(36), " +
                     "CLIENT VARCHAR(36), " +
-                    "TYPE VARCHAR(32))");
+                    "TYPE INT)");
             statement.execute("CREATE TABLE ORG (" +
                     "ID VARCHAR(36) NOT NULL, " +
                     "REALM_ID VARCHAR(36), " +
@@ -232,8 +232,8 @@ public class JpaUpdate26_7_0_OrganizationRolesTest {
         }
     }
 
-    private String roleType(Connection connection, String roleId) throws Exception {
-        return queryString(connection, "SELECT TYPE FROM KEYCLOAK_ROLE WHERE ID = ?", roleId);
+    private int roleType(Connection connection, String roleId) throws Exception {
+        return queryCount(connection, "SELECT TYPE FROM KEYCLOAK_ROLE WHERE ID = ?", roleId);
     }
 
     private String roleOrganization(Connection connection, String roleId) throws Exception {

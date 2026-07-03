@@ -26,12 +26,16 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.organization.OrganizationProvider;
@@ -52,7 +56,9 @@ import static org.hamcrest.Matchers.nullValue;
 
 @RequireProvider(RealmProvider.class)
 @RequireProvider(ClientProvider.class)
+@RequireProvider(GroupProvider.class)
 @RequireProvider(RoleProvider.class)
+@RequireProvider(UserProvider.class)
 @RequireProvider(CacheRealmProvider.class)
 @RequireProvider(value = OrganizationProvider.class, only = "infinispan")
 public class OrganizationRoleCacheModelTest extends KeycloakModelTest {
@@ -222,6 +228,32 @@ public class OrganizationRoleCacheModelTest extends KeycloakModelTest {
     }
 
     @Test
+    public void shouldCacheClientRoleMappingsForUsersAndGroups() {
+        String[] ids = withRealm(realmId, (session, realm) -> {
+            ClientModel client = session.clients().getClientByClientId(realm, CLIENT_ID);
+            RoleModel clientRole = session.roles().addClientRole(client, "cache-mapping-client-role");
+            UserModel user = session.users().addUser(realm, "cache-mapping-user");
+            GroupModel group = session.groups().createGroup(realm, "cache-mapping-group");
+
+            user.grantRole(clientRole);
+            group.grantRole(clientRole);
+
+            return new String[] { client.getId(), clientRole.getId(), user.getId(), group.getId() };
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            ClientModel client = session.clients().getClientById(realm, ids[0]);
+            UserModel user = session.users().getUserById(realm, ids[2]);
+            GroupModel group = session.groups().getGroupById(realm, ids[3]);
+
+            assertThat(roleIds(user.getClientRoleMappingsStream(client)), contains(ids[1]));
+            assertThat(roleIds(group.getClientRoleMappingsStream(client)), contains(ids[1]));
+
+            return null;
+        });
+    }
+
+    @Test
     public void shouldInvalidateRolesWhenRemovingRolesOrOrganization() {
         String[] clearedRoleIds = withRealm(realmId, (session, realm) -> {
             OrganizationProvider organizations = session.getProvider(OrganizationProvider.class);
@@ -285,5 +317,9 @@ public class OrganizationRoleCacheModelTest extends KeycloakModelTest {
 
     private List<String> roleNames(java.util.stream.Stream<RoleModel> roles) {
         return roles.map(RoleModel::getName).collect(Collectors.toList());
+    }
+
+    private List<String> roleIds(java.util.stream.Stream<RoleModel> roles) {
+        return roles.map(RoleModel::getId).collect(Collectors.toList());
     }
 }

@@ -267,7 +267,7 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
 
     @Override
     public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
-        return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
+        return getRoleMappingsStream().filter(r -> RoleUtils.isRoleFromClient(r, app));
     }
 
     @Override

@@ -525,7 +525,7 @@
 
     <changeSet author="keycloak" id="26.7.0-40585-organization-roles-schema">
         <addColumn tableName="KEYCLOAK_ROLE">
-            <column name="TYPE" type="VARCHAR(32)"/>
+            <column name="TYPE" type="INT"/>
             <column name="ORG_ID" type="VARCHAR(255)"/>
         </addColumn>
         <addColumn tableName="ORG">
@@ -538,7 +538,7 @@
     </changeSet>
 
     <changeSet author="keycloak" id="26.7.0-40585-organization-roles-constraints">
-        <addNotNullConstraint tableName="KEYCLOAK_ROLE" columnName="TYPE" columnDataType="VARCHAR(32)"/>
+        <addNotNullConstraint tableName="KEYCLOAK_ROLE" columnName="TYPE" columnDataType="INT"/>
 
         <addForeignKeyConstraint baseTableName="KEYCLOAK_ROLE"
                                  baseColumnNames="ORG_ID"
@@ -559,6 +559,8 @@
         <createIndex tableName="KEYCLOAK_ROLE" indexName="IDX_KEYCLOAK_ROLE_TYPE">
             <column name="TYPE"/>
         </createIndex>
+
+        <dropColumn tableName="KEYCLOAK_ROLE" columnName="CLIENT_ROLE"/>
     </changeSet>
 
 </databaseChangeLog>

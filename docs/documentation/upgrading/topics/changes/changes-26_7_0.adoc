@@ -4,6 +4,63 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== `RoleNameChangeEvent` now extends `RoleEvent`
+
+`RoleModel.RoleNameChangeEvent` now extends `RoleModel.RoleEvent`. The rename event carries only the rename delta through `getPreviousName()` and `getNewName()`. The realm, role and session are inherited from `RoleEvent` through `getRealm()`, `getRole()` and `getKeycloakSession()`.
+
+The previous `getClientId()` accessor was removed. Custom extensions that produce or consume `RoleNameChangeEvent` must be recompiled and updated.
+
+Custom event producers must now provide the renamed role:
+
+[source,java]
+----
+@Override
+public RoleModel getRole() {
+    return renamedRole;
+}
+----
+
+Custom consumers should classify the rename through the role model:
+
+[source,java]
+----
+RoleModel role = event.getRole();
+
+if (role.getType() == RoleModel.Type.CLIENT) {
+    String clientId = ((ClientModel) role.getContainer()).getClientId();
+}
+----
+
+For organization roles, the organization id is available from the role container id:
+
+[source,java]
+----
+RoleModel role = event.getRole();
+
+if (role.getType() == RoleModel.Type.ORGANIZATION) {
+    String organizationId = role.getContainerId();
+}
+----
+
+Organization role renames publish the same event. `RoleModel#getContainerId()` is the model/container id and is not the public client id for client roles. Use `ClientModel#getClientId()` when a client role consumer needs the public client id.
+
+The `RoleModel` returned by the event is valid during synchronous dispatch in the current session and should not be retained beyond that lifecycle.
+
+=== `RoleModel#isClientRole()` removed
+
+`RoleModel#isClientRole()` has been removed. Custom role providers and consumers should use `RoleModel#getType()` and compare it with `RoleModel.Type.CLIENT`, `RoleModel.Type.REALM` or `RoleModel.Type.ORGANIZATION`.
+
+[source,java]
+----
+if (role.getType() == RoleModel.Type.CLIENT) {
+    ClientModel client = (ClientModel) role.getContainer();
+}
+----
+
+The `RoleModel.Type` enum now exposes stable integer values through `intValue()` and `valueOf(int)`, matching the pattern used by `GroupModel.Type`. The role storage schema now stores the role type in `KEYCLOAK_ROLE.TYPE` as an integer discriminator and removes the legacy `KEYCLOAK_ROLE.CLIENT_ROLE` column during upgrade.
+
+The helper `RoleUtils.isClientRole(RoleModel, ClientModel)` has been replaced by `RoleUtils.isRoleFromClient(RoleModel, ClientModel)`.
+
 === Test Framework representation builders
 
 The test framework provides a number of builders to simplify creating representations. These can be used on their own,

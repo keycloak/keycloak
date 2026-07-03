@@ -17,13 +17,18 @@
 package org.keycloak.storage.adapter;
 
 import java.lang.reflect.Proxy;
+import java.util.Set;
+import java.util.stream.Stream;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.SubjectCredentialManager;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
 public class AbstractUserAdapterFederatedStorageTest {
@@ -76,5 +81,109 @@ public class AbstractUserAdapterFederatedStorageTest {
                 });
 
         member.grantRole(memberRole);
+    }
+
+    @Test
+    public void abstractUserAdapterFiltersClientRoleMappingsByTypeAndContainer() {
+        ClientModel client = client("client-id");
+        RoleModel clientRole = role("client-role", RoleModel.Type.CLIENT, "client-id");
+        RoleModel otherClientRole = role("other-client-role", RoleModel.Type.CLIENT, "other-client-id");
+        RoleModel realmRole = role("realm-role", RoleModel.Type.REALM, "realm-id");
+
+        AbstractUserAdapter user = new AbstractUserAdapter(null, null, null) {
+            @Override
+            public String getUsername() {
+                return "user-3";
+            }
+
+            @Override
+            public void setUsername(String username) {
+            }
+
+            @Override
+            public Set<RoleModel> getRoleMappings() {
+                return Set.of(clientRole, otherClientRole, realmRole);
+            }
+
+            @Override
+            public SubjectCredentialManager credentialManager() {
+                return null;
+            }
+        };
+
+        assertEquals(Set.of(clientRole), user.getClientRoleMappings(client));
+    }
+
+    @Test
+    public void abstractUserAdapterStreamsFilterClientRoleMappingsByTypeAndContainer() {
+        ClientModel client = client("client-id");
+        RoleModel clientRole = role("client-role", RoleModel.Type.CLIENT, "client-id");
+        RoleModel organizationRole = role("organization-role", RoleModel.Type.ORGANIZATION, "client-id");
+
+        AbstractUserAdapter.Streams user = new AbstractUserAdapter.Streams(null, null, null) {
+            @Override
+            public String getUsername() {
+                return "user-4";
+            }
+
+            @Override
+            public void setUsername(String username) {
+            }
+
+            @Override
+            public Stream<RoleModel> getRoleMappingsStream() {
+                return Stream.of(clientRole, organizationRole);
+            }
+
+            @Override
+            public SubjectCredentialManager credentialManager() {
+                return null;
+            }
+        };
+
+        assertEquals(Set.of(clientRole), user.getClientRoleMappingsStream(client).collect(java.util.stream.Collectors.toSet()));
+    }
+
+    @Test
+    public void federatedStorageFiltersClientRoleMappingsByTypeAndContainer() {
+        ClientModel client = client("client-id");
+        RoleModel clientRole = role("client-role", RoleModel.Type.CLIENT, "client-id");
+        RoleModel realmRole = role("realm-role", RoleModel.Type.REALM, "client-id");
+
+        AbstractUserAdapterFederatedStorage user = new AbstractUserAdapterFederatedStorage.Streams(null, null, null) {
+            @Override
+            public String getUsername() {
+                return "user-5";
+            }
+
+            @Override
+            public void setUsername(String username) {
+            }
+
+            @Override
+            public Stream<RoleModel> getRoleMappingsStream() {
+                return Stream.of(clientRole, realmRole);
+            }
+        };
+
+        assertEquals(Set.of(clientRole), user.getClientRoleMappingsStream(client).collect(java.util.stream.Collectors.toSet()));
+    }
+
+    private ClientModel client(String id) {
+        return (ClientModel) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { ClientModel.class },
+                (proxy, method, args) -> "getId".equals(method.getName()) ? id : null);
+    }
+
+    private RoleModel role(String name, RoleModel.Type type, String containerId) {
+        return (RoleModel) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { RoleModel.class },
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "getName" -> name;
+                    case "getType" -> type;
+                    case "getContainerId" -> containerId;
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "equals" -> proxy == args[0];
+                    case "toString" -> name;
+                    default -> null;
+                });
     }
 }

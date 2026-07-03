@@ -705,7 +705,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     private ResourceServer getResourceServer(RoleModel role) {
         ResourceServer resourceServer = null;
-        if (role.isClientRole()) {
+        if (role.getType() == RoleModel.Type.CLIENT) {
             RoleContainerModel container = role.getContainer();
             resourceServer = session.getProvider(AuthorizationProvider.class).getStoreFactory().getResourceServerStore().findById(container.getId());
         }

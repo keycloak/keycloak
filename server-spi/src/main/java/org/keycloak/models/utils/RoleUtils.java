@@ -270,14 +270,7 @@ public class RoleUtils {
         return false;
     }
 
-    public static boolean isClientRole(RoleModel r, ClientModel c) {
-        RoleContainerModel container = r.getContainer();
-        if (container instanceof ClientModel) {
-            ClientModel appModel = (ClientModel) container;
-            if (Objects.equals(appModel.getId(), c.getId())) {
-                return true;
-            }
-        }
-        return false;
+    public static boolean isRoleFromClient(RoleModel r, ClientModel c) {
+        return r.getType() == RoleModel.Type.CLIENT && Objects.equals(r.getContainerId(), c.getId());
     }
 }

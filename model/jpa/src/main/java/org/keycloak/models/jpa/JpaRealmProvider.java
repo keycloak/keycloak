@@ -293,7 +293,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         roleEntity.setName(name);
         roleEntity.setRealmId(client.getRealm().getId());
         roleEntity.setClientId(client.getId());
-        roleEntity.setClientRole(true);
         roleEntity.setType(RoleModel.Type.CLIENT);
         em.persist(roleEntity);
         RoleAdapter adapter = new RoleAdapter(session, client.getRealm(), em, roleEntity);
@@ -313,7 +312,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         roleEntity.setName(name);
         roleEntity.setRealmId(organization.getRealm().getId());
         roleEntity.setOrganizationId(organization.getId());
-        roleEntity.setClientRole(false);
         roleEntity.setType(RoleModel.Type.ORGANIZATION);
         em.persist(roleEntity);
         em.flush();
@@ -416,8 +414,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(cb.equal(roleRoot.get("realmId"), realm.getId()));
-        predicates.add(cb.equal(roleRoot.get("type"), RoleModel.Type.CLIENT.name()));
-        predicates.add(cb.isTrue(roleRoot.get("clientRole")));
+        predicates.add(cb.equal(roleRoot.get("type"), RoleModel.Type.CLIENT.intValue()));
         predicates.add(cb.equal(roleRoot.get("clientId"),clientRoot.get("id")));
         if(search != null && !search.isEmpty()) {
             search = "%" + search.trim().toLowerCase() + "%";

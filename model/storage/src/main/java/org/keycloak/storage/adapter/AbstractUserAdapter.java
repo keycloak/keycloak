@@ -166,7 +166,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
      * @deprecated Use {@link #getClientRoleMappingsStream(ClientModel)} instead
      */
     public Set<RoleModel> getClientRoleMappings(ClientModel app) {
-        return getRoleMappings().stream().filter(r -> RoleUtils.isClientRole(r, app)).collect(Collectors.toSet());
+        return getRoleMappings().stream().filter(r -> RoleUtils.isRoleFromClient(r, app)).collect(Collectors.toSet());
     }
 
     @Override
@@ -490,7 +490,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
         @Override
         public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
-            return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
+            return getRoleMappingsStream().filter(r -> RoleUtils.isRoleFromClient(r, app));
         }
 
         @Override

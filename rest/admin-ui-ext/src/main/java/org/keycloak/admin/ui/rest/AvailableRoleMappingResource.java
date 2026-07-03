@@ -76,7 +76,7 @@ public class AvailableRoleMappingResource extends RoleMappingResource {
             else throw new ForbiddenException();
         } else {
             if (auth.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS)) {
-                Stream<String> excludedRoleIds = scopeModel.getScopeMappingsStream().filter(RoleModel::isClientRole).map(RoleModel::getId);
+                Stream<String> excludedRoleIds = scopeModel.getScopeMappingsStream().filter(role -> role.getType() == RoleModel.Type.CLIENT).map(RoleModel::getId);
                 return searchForClientRolesByExcludedIds(realm, search, first, max, excludedRoleIds);
             }
             if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
@@ -115,7 +115,7 @@ public class AvailableRoleMappingResource extends RoleMappingResource {
             else throw new ForbiddenException();
         } else {
             if (auth.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS)) {
-                Stream<String> excludedRoleIds = Stream.concat(client.getScopeMappingsStream(), client.getRolesStream()).filter(RoleModel::isClientRole).map(RoleModel::getId);
+                Stream<String> excludedRoleIds = Stream.concat(client.getScopeMappingsStream(), client.getRolesStream()).filter(role -> role.getType() == RoleModel.Type.CLIENT).map(RoleModel::getId);
                 return searchForClientRolesByExcludedIds(realm, search, first, max, excludedRoleIds);
             }
             if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
@@ -154,7 +154,7 @@ public class AvailableRoleMappingResource extends RoleMappingResource {
             else throw new ForbiddenException();
         } else {
             if (auth.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
-                Stream<String> excludedRoleIds = group.getRoleMappingsStream().filter(RoleModel::isClientRole).map(RoleModel::getId);
+                Stream<String> excludedRoleIds = group.getRoleMappingsStream().filter(role -> role.getType() == RoleModel.Type.CLIENT).map(RoleModel::getId);
                 return searchForClientRolesByExcludedIds(realm, search, first, max, excludedRoleIds);
             }
             if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
@@ -194,7 +194,7 @@ public class AvailableRoleMappingResource extends RoleMappingResource {
             else throw new ForbiddenException();
         } else {
             if (auth.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
-                Stream<String> excludedRoleIds = userModel.getRoleMappingsStream().filter(RoleModel::isClientRole).map(RoleModel::getId);
+                Stream<String> excludedRoleIds = userModel.getRoleMappingsStream().filter(role -> role.getType() == RoleModel.Type.CLIENT).map(RoleModel::getId);
                 return searchForClientRolesByExcludedIds(realm, search, first, max, excludedRoleIds);
             }
             if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {

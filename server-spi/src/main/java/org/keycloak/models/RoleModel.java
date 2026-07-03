@@ -30,21 +30,43 @@ import org.keycloak.provider.ProviderEvent;
 public interface RoleModel {
 
     enum Type {
-        REALM,
-        CLIENT,
-        ORGANIZATION
+        REALM(0),
+        CLIENT(1),
+        ORGANIZATION(2);
+
+        private final int value;
+
+        Type(int value) {
+            this.value = value;
+        }
+
+        public static Type valueOf(int value) {
+            Type[] values = values();
+
+            for (int i = 0; i < values.length; i++) {
+                if (values[i].value == value) {
+                    return values[i];
+                }
+            }
+
+            throw new IllegalArgumentException("No type found with value " + value);
+        }
+
+        public int intValue() {
+            return value;
+        }
     }
 
-    interface RoleNameChangeEvent extends ProviderEvent {
-        RealmModel getRealm();
+    /**
+     * Event fired when a role is renamed.
+     * <p>
+     * The renamed role is the authoritative source for the role identity and
+     * container context. The role is always non-null and is only valid during
+     * synchronous event dispatch in the current session.
+     */
+    interface RoleNameChangeEvent extends RoleEvent {
         String getNewName();
         String getPreviousName();
-
-        /**
-         * @return the Client ID of the client, for a client role; {@code null}, for a realm role
-         */
-        String getClientId();
-        KeycloakSession getKeycloakSession();
     }
 
     interface RoleEvent extends ProviderEvent {
@@ -143,20 +165,17 @@ public interface RoleModel {
      */
     Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max);
 
-    boolean isClientRole();
-
     /**
-     * Returns the scope that owns this role. The default implementation preserves compatibility
-     * with role providers that only implement {@link #isClientRole()} while recognizing an
-     * {@link OrganizationModel} container as an organization role.
+     * Returns the scope that owns this role.
      *
      * @return the role type
      */
     default Type getType() {
-        if (isClientRole()) {
+        RoleContainerModel container = getContainer();
+        if (container instanceof ClientModel) {
             return Type.CLIENT;
         }
-        if (getContainer() instanceof OrganizationModel) {
+        if (container instanceof OrganizationModel) {
             return Type.ORGANIZATION;
         }
         return Type.REALM;

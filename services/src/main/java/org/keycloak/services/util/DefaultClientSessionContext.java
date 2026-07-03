@@ -292,7 +292,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
             final Set<String> requestedClientIdsFromAudience = Arrays.stream(getAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, ClientModel[].class))
                     .map(ClientModel::getId)
                     .collect(Collectors.toSet());
-            clientScopeRoles.removeIf(role-> role.isClientRole() && !requestedClientIdsFromAudience.contains(role.getContainerId()));
+            clientScopeRoles.removeIf(role -> role.getType() == RoleModel.Type.CLIENT && !requestedClientIdsFromAudience.contains(role.getContainerId()));
         }
 
         // Check if expanded roles of clientScope has any intersection with expanded roles of user. If not, it is not permitted

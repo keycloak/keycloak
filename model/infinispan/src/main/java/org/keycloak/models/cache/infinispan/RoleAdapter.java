@@ -166,11 +166,6 @@ public class RoleAdapter implements RoleModel {
     }
 
     @Override
-    public boolean isClientRole() {
-        return cached instanceof CachedClientRole;
-    }
-
-    @Override
     public Type getType() {
         if (cached instanceof CachedClientRole) {
             return Type.CLIENT;

@@ -142,7 +142,7 @@ public class RoleByIdResource extends RoleResource {
         auth.roles().requireManage(role);
         deleteRole(role);
 
-        if (role.isClientRole()) {
+        if (role.getType() == RoleModel.Type.CLIENT) {
             adminEvent.resource(ResourceType.CLIENT_ROLE);
         } else {
             adminEvent.resource(ResourceType.REALM_ROLE);
@@ -172,7 +172,7 @@ public class RoleByIdResource extends RoleResource {
         auth.roles().requireManage(role);
         updateRole(rep, role, realm, session);
 
-        if (role.isClientRole()) {
+        if (role.getType() == RoleModel.Type.CLIENT) {
             adminEvent.resource(ResourceType.CLIENT_ROLE);
         } else {
             adminEvent.resource(ResourceType.REALM_ROLE);

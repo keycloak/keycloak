@@ -72,7 +72,7 @@ public class RoleCompositeResource {
         for (RoleModel compositeRole : compositeRoles) {
             RoleRepresentation roleRep = toRoleRepresentation(compositeRole);
 
-            if (compositeRole.isClientRole()) {
+            if (compositeRole.getType() == RoleModel.Type.CLIENT) {
                 ClientModel client = this.realm.getClientById(compositeRole.getContainerId());
                 if (client != null) {
                     String clientId = client.getClientId();
@@ -85,7 +85,7 @@ public class RoleCompositeResource {
                     }
                     clientMapping.getMappings().add(roleRep);
                 }
-            } else {
+            } else if (compositeRole.getType() == RoleModel.Type.REALM) {
                 realmMappings.add(roleRep);
             }
         }
@@ -102,7 +102,7 @@ public class RoleCompositeResource {
                 role.getName(),
                 role.getDescription(),
                 role.isComposite(),
-                role.isClientRole(),
+                role.getType() == RoleModel.Type.CLIENT,
                 role.getContainerId()
         );
     }
