@@ -48,7 +48,8 @@ class HostnameV2DefaultPortTest {
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.options(Map.of(
                     "hostname", "https://localtest.me:443",
-                    "hostname-admin", "https://admin.localtest.me:443"
+                    "hostname-admin", "https://admin.localtest.me:443",
+                    "hostname-strict-host-check-enabled", "false"
             ));
         }
     }

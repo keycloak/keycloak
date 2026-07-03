@@ -44,7 +44,8 @@ class HostnameV2FixedUrlTest {
     static class ServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.option("hostname", FIXED_URL);
+            return config.option("hostname", FIXED_URL)
+                    .option("hostname-strict-host-check-enabled", "false");
         }
     }
 }

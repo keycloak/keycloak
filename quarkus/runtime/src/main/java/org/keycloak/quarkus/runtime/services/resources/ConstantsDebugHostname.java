@@ -42,6 +42,7 @@ public class ConstantsDebugHostname {
             HostnameV2Options.HOSTNAME_ADMIN.getKey(),
             HostnameV2Options.HOSTNAME_BACKCHANNEL_DYNAMIC.getKey(),
             HostnameV2Options.HOSTNAME_STRICT.getKey(),
+            HostnameV2Options.HOSTNAME_STRICT_HOST_CHECK_ENABLED.getKey(),
             ProxyOptions.PROXY_HEADERS.getKey(),
             HttpOptions.HTTP_ENABLED.getKey(),
             HttpOptions.HTTP_RELATIVE_PATH.getKey(),

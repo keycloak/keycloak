@@ -99,6 +99,27 @@ Resources with malformed URI templates should be corrected before upgrading.
 After the upgrade, existing resources with malformed templates will continue to be stored, but they may not match request URIs as intended.
 Any update to such a resource will require fixing the URI template at the same time, as the stricter validation applies to all create and update operations.
 
+=== Strict validation of HTTP Host header
+
+When the `hostname` option is configured, {project_name} now validates the HTTP `Host` header (or HTTP/2 `:authority` pseudo-header) against the configured `hostname` and, if set, `hostname-admin` values.
+Requests whose host does not match are rejected with HTTP `421 Misdirected Request`.
+For the full details, see the link:https://www.keycloak.org/server/reverseproxy#_host_header_validation[Host header validation] section in the reverse proxy guide.
+
+No action is required if:
+
+* Your reverse proxy forwards the original `Host` header correctly and `proxy-headers` is set to `forwarded` or `xforwarded`.
+* You access {project_name} directly using the hostname specified in the `hostname` option.
+
+You may see `421 Misdirected Request` errors if:
+
+* A re-encrypt or edge-terminating reverse proxy does not forward the original `Host` header.
+Configure the proxy to forward the original hostname and set `proxy-headers` to `forwarded` or `xforwarded` for {project_name} depending on how the proxy forwards the information.
+* A TLS passthrough proxy uses a wildcard or multi-SAN certificate shared with other services.
+Use a dedicated certificate for {project_name} instead.
+
+To restore the previous behavior, set `hostname-strict-host-check-enabled=false`.
+This option is deprecated and may be removed in a future version.
+
 === Organization invitation filters use exact matching
 
 The `email`, `firstName`, and `lastName` query parameters on the organization invitations list endpoint (`+GET /admin/realms/{realm}/orgs/{orgId}/invitations+`) now use case-insensitive exact matching instead of substring matching.

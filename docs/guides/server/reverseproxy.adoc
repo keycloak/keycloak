@@ -81,6 +81,11 @@ When using passthrough:
 
 * Forwarded headers are not applicable because the proxy cannot modify the encrypted traffic.
 
+* Do not share a TLS certificate (wildcard or multi-SAN) across different backend services when using HTTP/2.
+When multiple DNS names resolve to the same IP address and are covered by the same certificate, browsers may coalesce HTTP/2 connections and send requests intended for one service to another.
+This can lead to error responses or information disclosure.
+Instead, use a certificate specific to each service, or switch to re-encrypt.
+
 * Enable the PROXY protocol (`--proxy-protocol-enabled=true`) to see the real client IP address.
 Note that the PROXY protocol is not compatible with the `--proxy-headers` option.
 +
@@ -89,6 +94,30 @@ Therefore, it can be spoofed, tampered with, or leaked.
 Mitigate this risk, for example, by restricting network access.
 
 * Allow a longer `--shutdown-delay` (for example, 10–30 seconds) to give keepalive connections time to drain during shutdown, since the proxy cannot signal a connection close at the HTTP connection level.
+
+=== Host header validation
+
+When the `hostname` option is configured, {project_name} validates the HTTP `Host` header (or HTTP/2 `:authority` pseudo-header) against the configured `hostname` and, if set, `hostname-admin` values.
+Requests whose host does not match are rejected with HTTP `421 Misdirected Request`.
+
+This prevents HTTP/2 connection coalescing issues that can occur when a TLS certificate -- whether a wildcard certificate (for example `*.example.com`) or a certificate with multiple Subject Alternative Names (SANs) -- covers both {project_name} and other services.
+It also catches misconfigured reverse proxies that do not forward the original hostname.
+
+The check is not active when:
+
+* The `hostname` option is not configured.
+* The `hostname-backchannel-dynamic` option is set to `true`, as backchannel requests use dynamic hostnames by design.
+
+It is not triggered for requests sent to:
+
+* The management port, as it is not exposed to external traffic.
+* Management endpoints (`/health`, `/metrics`, `/openapi`) served on the main HTTP port.
+
+To disable the check, set `hostname-strict-host-check-enabled=false`.
+This option is deprecated and may be removed in a future version.
+
+WARNING: Disabling this check can lead to error responses or information disclosure when HTTP/2 connection coalescing causes requests to be routed to the wrong service -- either requests intended for another service arriving at {project_name}, or requests intended for {project_name} arriving at another service.
+It also hides misconfigured forwarded headers for re-encrypt proxies.
 
 === Backchannel access considerations
 

@@ -294,11 +294,23 @@ class KeycloakProcessor {
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     @Consume(ConfigBuildItem.class)
-    void filterAllRequests(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder) {
+    void filterAllRequests(BuildProducer<FilterBuildItem> filters,
+                           BuildProducer<MisdirectedRequestFilterBuildItem> misdirectedRequestFilterProducer,
+                           KeycloakRecorder recorder) {
         var filter = recorder.getRejectNonNormalizedPathFilter();
         if (filter != null) {
             filters.produce(new FilterBuildItem(filter, SecurityHandlerPriorities.CORS + 1));
         }
+        var misdirectedFilter = recorder.createMisdirectedRequestFilter();
+        filters.produce(new FilterBuildItem(recorder.asMisdirectedRequestHandler(misdirectedFilter), SecurityHandlerPriorities.CORS + 1));
+        misdirectedRequestFilterProducer.produce(new MisdirectedRequestFilterBuildItem(misdirectedFilter));
+    }
+
+    @Record(ExecutionTime.RUNTIME_INIT)
+    @BuildStep
+    @Consume(ConfigBuildItem.class)
+    void configureMisdirectedRequestFilter(MisdirectedRequestFilterBuildItem filterBuildItem, KeycloakRecorder recorder) {
+        recorder.configureMisdirectedRequestFilter(filterBuildItem.getFilter());
     }
 
     @Record(ExecutionTime.STATIC_INIT)

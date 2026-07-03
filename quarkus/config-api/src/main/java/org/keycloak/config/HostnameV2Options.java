@@ -24,6 +24,17 @@ public class HostnameV2Options {
             .defaultValue(Boolean.TRUE)
             .build();
 
+    /**
+     * This option was added for backwards compatibility in 26.7. It should not be necessary to disable it, and disabling it might lead to security problems.
+     */
+    @Deprecated(forRemoval = true, since = "26.7")
+    public static final Option<Boolean> HOSTNAME_STRICT_HOST_CHECK_ENABLED = new OptionBuilder<>("hostname-strict-host-check-enabled", Boolean.class)
+            .category(OptionCategory.HOSTNAME_V2)
+            .description("Whether the server should validate that the HTTP Host header matches the configured hostname, and reject requests with HTTP 421 if not. This prevents HTTP/2 connection coalescing issues when using wildcard certificates. Requires 'hostname' to be configured.")
+            .defaultValue(Boolean.TRUE)
+            .deprecated()
+            .build();
+
     public static final Option<Boolean> HOSTNAME_DEBUG = new OptionBuilder<>("hostname-debug", Boolean.class)
             .category(OptionCategory.HOSTNAME_V2)
             .description("Toggles the hostname debug page that is accessible at /realms/master/hostname-debug.")
