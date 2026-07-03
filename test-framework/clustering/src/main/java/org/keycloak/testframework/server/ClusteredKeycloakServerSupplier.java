@@ -16,9 +16,12 @@ public class ClusteredKeycloakServerSupplier extends AbstractKeycloakServerSuppl
     @ConfigProperty(name = "images", defaultValue = ClusteredKeycloakServer.SNAPSHOT_IMAGE)
     String images = ClusteredKeycloakServer.SNAPSHOT_IMAGE;
 
+    @ConfigProperty(name = "cacheless", defaultValue = "false")
+    boolean cacheless;
+
     @Override
     public KeycloakServer getServer() {
-        return new ClusteredKeycloakServer(numContainers, images, startTimeout);
+        return new ClusteredKeycloakServer(numContainers, images, startTimeout, cacheless);
     }
 
     @Override
