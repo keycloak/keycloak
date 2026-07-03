@@ -31,10 +31,14 @@ import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.utils.StringUtil;
 
+import org.jboss.logging.Logger;
+
 public final class OrganizationRoleMapperHelper {
 
     public static final String ORGANIZATION = "organization";
     public static final String ORGANIZATION_ROLE = "organizationRole";
+
+    private static final Logger LOG = Logger.getLogger(OrganizationRoleMapperHelper.class);
 
     private OrganizationRoleMapperHelper() {
     }
@@ -57,32 +61,43 @@ public final class OrganizationRoleMapperHelper {
 
     public static void grantUserRole(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         RoleModel role = getRole(session, realm, mapperModel, context);
+        if (role == null) {
+            return;
+        }
         validateMembership(user, role);
         user.grantRole(role);
     }
 
     static RoleModel getRole(KeycloakSession session, RealmModel realm, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        OrganizationModel organization = getOrganization(session, mapperModel, context);
+        OrganizationModel organization = getOrganization(session, realm, mapperModel, context);
+        if (organization == null) {
+            return null;
+        }
+
         String roleId = mapperModel.getConfig().get(ORGANIZATION_ROLE);
 
         if (StringUtil.isBlank(roleId)) {
-            throw new IdentityBrokerException("Organization role id is required for mapper '" + mapperModel.getName() + "' on realm '" + realm.getName() + "'.");
+            LOG.warnf("Organization role id is required for mapper '%s' on realm '%s'.", mapperModel.getName(), realm.getName());
+            return null;
         }
 
         RoleModel role = session.roles().getRoleById(organization, roleId);
         if (role == null || !role.isOrganizationRole() || !Objects.equals(organization.getId(), role.getContainerId())) {
-            throw new IdentityBrokerException("Unable to find organization role '" + roleId + "' referenced by mapper '" + mapperModel.getName()
-                    + "' in organization '" + organization.getAlias() + "' on realm '" + realm.getName() + "'.");
+            LOG.warnf("Unable to find organization role '%s' referenced by mapper '%s' in organization '%s' on realm '%s'.", roleId,
+                    mapperModel.getName(), organization.getAlias(), realm.getName());
+            return null;
         }
 
         return role;
     }
 
-    private static OrganizationModel getOrganization(KeycloakSession session, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+    private static OrganizationModel getOrganization(KeycloakSession session, RealmModel realm, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         OrganizationModel organization = KeycloakModelUtils.getOrganizationForIdpMapper(session, context.getIdpConfig());
 
         if (organization == null) {
-            throw new IdentityBrokerException("Identity provider '" + context.getIdpConfig().getAlias() + "' is not linked to an enabled organization.");
+            LOG.warnf("Identity provider '%s' is not linked to an enabled organization for mapper '%s' on realm '%s'.",
+                    context.getIdpConfig().getAlias(), mapperModel.getName(), realm.getName());
+            return null;
         }
 
         String organizationRef = mapperModel.getConfig().get(ORGANIZATION);
@@ -90,8 +105,9 @@ public final class OrganizationRoleMapperHelper {
             return organization;
         }
 
-        throw new IdentityBrokerException("Organization '" + organizationRef + "' referenced by mapper '" + mapperModel.getName()
-                + "' is not linked to identity provider '" + context.getIdpConfig().getAlias() + "'.");
+        LOG.warnf("Organization '%s' referenced by mapper '%s' on realm '%s' is not linked to identity provider '%s'.", organizationRef,
+                mapperModel.getName(), realm.getName(), context.getIdpConfig().getAlias());
+        return null;
     }
 
     private static void validateMembership(UserModel user, RoleModel role) {
