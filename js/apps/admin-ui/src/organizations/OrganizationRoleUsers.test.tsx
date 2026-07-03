@@ -193,6 +193,9 @@ describe("OrganizationRoleUsers", () => {
     expect(await table.loader()).toEqual([]);
 
     fireEvent.click(screen.getByText("addOrganizationRoleUsers"));
+    mocks.listAvailableUsers.mockRejectedValueOnce(new Error("available"));
+    expect(await mocks.memberModals.at(-1).availableUsersQuery()).toEqual([]);
+
     mocks.addUsers.mockRejectedValueOnce(new Error("add"));
     await act(async () => {
       await mocks.memberModals.at(-1).onAdd([{ id: "user-id" }]);
@@ -205,7 +208,7 @@ describe("OrganizationRoleUsers", () => {
     await act(async () => {
       await mocks.confirms.at(-1).onConfirm();
     });
-    expect(mocks.addError).toHaveBeenCalledTimes(3);
+    expect(mocks.addError).toHaveBeenCalledTimes(4);
   });
 
   it("renders view-only controls", () => {

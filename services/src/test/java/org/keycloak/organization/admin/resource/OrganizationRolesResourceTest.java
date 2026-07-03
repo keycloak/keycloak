@@ -220,6 +220,16 @@ public class OrganizationRolesResourceTest {
         assertEquals(List.of("realm-role"), resource.getRealmRoleComposites().map(RoleRepresentation::getName).toList());
         assertEquals(List.of("client-role"), resource.getClientRoleComposites(client.getId()).map(RoleRepresentation::getName).toList());
 
+        TestRole idlessRealmRole = new TestRole(null, "idless-realm-role", RoleModel.Type.REALM, context.realm);
+        parent.composites.add(idlessRealmRole.model);
+        RoleRepresentation idlessRepresentation = resource.getRealmRoleComposites()
+                .filter(rep -> idlessRealmRole.name.equals(rep.getName()))
+                .findFirst()
+                .orElseThrow();
+        assertNull(idlessRepresentation.getId());
+        assertNull(idlessRepresentation.getAccess());
+        parent.composites.remove(idlessRealmRole.model);
+
         assertThrows(NotFoundException.class, () -> resource.getClientRoleComposites("missing-client"));
         assertThrows(BadRequestException.class, () -> resource.addComposites(null));
         assertThrows(NotFoundException.class, () -> resource.addComposites(Collections.singletonList(new RoleRepresentation())));

@@ -23,18 +23,25 @@ import java.util.Map;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.OrganizationRoleResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.events.AdminEvents;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
@@ -48,6 +55,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
 public class OrganizationRoleTest extends AbstractOrganizationTest {
@@ -55,9 +63,14 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
     @InjectAdminEvents
     AdminEvents adminEvents;
 
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
+
     @Test
     public void testOrganizationRoleLifecycleAndEvents() {
         OrganizationRepresentation organization = createOrganization();
+        assertThat(realm.admin().organizations().searchByAttribute("key:value1").stream()
+                .map(OrganizationRepresentation::getId).toList(), hasItem(organization.getId()));
         OrganizationResource organizationResource = realm.admin().organizations().get(organization.getId());
         MemberRepresentation member = addMember(organizationResource, "role-member@neworg.org");
         MemberRepresentation secondMember = addMember(organizationResource, "second-role-member@neworg.org");
@@ -140,7 +153,15 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         assertThat(roleResource.getUserMembers().stream().map(UserRepresentation::getId).toList(), containsInAnyOrder(user.getId(), secondUser.getId()));
         assertThat(roleResource.getUserMembers(true, 0, 1), hasSize(1));
         assertThat(roleResource.getUserMembers(true, 1, 1), hasSize(1));
-        assertThat(roleResource.getAvailableUserMembers(null, null, true, 0, 10).stream().map(UserRepresentation::getId).toList(), contains(availableMember.getId()));
+        assertThat(roleResource.getAvailableUserMembers("available-role-member", false, true, null, null).stream()
+                .map(UserRepresentation::getId).toList(), contains(availableMember.getId()));
+
+        try (Keycloak restrictedAdmin = createRestrictedAdmin()) {
+            adminEvents.clear();
+            OrganizationRoleResource restrictedRole = restrictedAdmin.realm(realm.getName()).organizations()
+                    .get(organization.getId()).roles().get(roleId);
+            assertTrue(restrictedRole.getAvailableUserMembers(null, null, true, 0, 10).isEmpty());
+        }
 
         roleResource.deleteUserMembers(List.of(user, secondUser));
         AdminEventAssertion.assertSuccess(adminEvents.poll())
@@ -155,5 +176,36 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
                 .operationType(OperationType.DELETE)
                 .resourceType(ResourceType.ORGANIZATION_ROLE)
                 .resourcePath(AdminEventPaths.organizationRoleResourcePath(organization.getId(), roleId));
+    }
+
+    private Keycloak createRestrictedAdmin() {
+        String username = "organization-role-restricted-admin";
+        UserRepresentation user = UserBuilder.create()
+                .username(username)
+                .password("password")
+                .name("Organization", "Role Admin")
+                .email("organization-role-restricted-admin@example.test")
+                .emailVerified(true)
+                .enabled(true)
+                .build();
+        String userId;
+        try (Response response = realm.admin().users().create(user)) {
+            userId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.users().get(userId).remove());
+
+        var realmManagement = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        List<RoleRepresentation> adminRoles = List.of(AdminRoles.QUERY_USERS, AdminRoles.MANAGE_ORGANIZATIONS).stream()
+                .map(name -> realm.admin().clients().get(realmManagement.getId()).roles().get(name).toRepresentation())
+                .toList();
+        realm.admin().users().get(userId).roles().clientLevel(realmManagement.getId()).add(adminRoles);
+
+        return KeycloakBuilder.builder()
+                .serverUrl(keycloakUrls.getBaseUrl().toString())
+                .realm(realm.getName())
+                .username(username)
+                .password("password")
+                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
+                .build();
     }
 }
