@@ -562,7 +562,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         return client;
     }
 
-    private OrganizationModel getRoleOrganization(RoleModel role) {
+    protected OrganizationModel getRoleOrganization(RoleModel role) {
         RoleContainerModel container = role.getContainer();
         return container instanceof OrganizationModel organization ? organization : null;
     }

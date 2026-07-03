@@ -209,9 +209,4 @@ class RolePermissionsV2 extends RolePermissions {
 
         return false;
     }
-
-    private OrganizationModel getRoleOrganization(RoleModel role) {
-        RoleContainerModel container = role.getContainer();
-        return container instanceof OrganizationModel organization ? organization : null;
-    }
 }
