@@ -122,17 +122,20 @@ public class JpaUpdate26_7_0_OrganizationRoles extends CustomKeycloakTask {
         String name = alias == null || alias.isBlank() ? organization.name() : alias;
         String baseRoleName = Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + name.toLowerCase(Locale.ROOT);
 
-        if (isRoleNameAvailable(organization.id(), baseRoleName)) {
+        return determineDefaultRoleName(organization.id(), baseRoleName, Integer.MAX_VALUE);
+    }
+
+    String determineDefaultRoleName(String organizationId, String baseRoleName, int maxSuffix) throws CustomChangeException {
+        if (isRoleNameAvailable(organizationId, baseRoleName)) {
             return baseRoleName;
         }
-        int i = 1;
-        while (true) {
+        for (int i = 1; i < maxSuffix; i++) {
             String roleName = baseRoleName + "-" + i;
-            if (isRoleNameAvailable(organization.id(), roleName)) {
+            if (isRoleNameAvailable(organizationId, roleName)) {
                 return roleName;
             }
-            i++;
         }
+        throw new CustomChangeException(getTaskId() + ": Unable to determine default organization role name.");
     }
 
     private boolean isRoleNameAvailable(String organizationId, String roleName) throws CustomChangeException {
