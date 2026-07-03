@@ -70,6 +70,35 @@ highly-trusted accounts.
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== Stricter validation of resource URI templates in Authorization Services
+
+Resource URI templates used in Authorization Services are now validated more strictly when creating or updating resources via the Admin REST API.
+The documented patterns — named placeholders like `+/api/{id}/info+`, trailing wildcards like `+/api/*+`, suffix patterns like `+/*.html+`, and combinations like `+/api/{id}/files/*+` — continue to work unchanged.
+
+The following malformed URI patterns, which previously were silently accepted but either never matched any URI or could cause runtime errors during authorization evaluation:
+
+* Empty placeholders, for example `+/api/{}/foo+`
+* Placeholder names containing a slash, for example `+/api/{client/id}/foo+`
+* Wildcards in the middle of a path, for example `+/api/*/info+`
+* Suffix patterns with an empty file extension, for example `+/*.+`
+* Stray closing braces outside a placeholder, for example `+/api/{id}/foo}/bar+`
+
+Before upgrading, you can check for affected resources by querying the Admin REST API for each client that uses Authorization Services:
+
+[source]
+----
+GET /admin/realms/{realm}/clients/{client-id}/authz/resource-server/resource
+----
+
+Inspect the `+uris+` field of each resource and verify that:
+
+* All `+{...}+` placeholders have matching braces, are not empty, and do not contain `+/+` in the parameter name.
+* Wildcards (`+*+`) appear only at the end of the URI as `+/*+` or as a suffix pattern like `+/*.html+` with a non-empty extension.
+
+Resources with malformed URI templates should be corrected before upgrading.
+After the upgrade, existing resources with malformed templates will continue to be stored, but they may not match request URIs as intended.
+Any update to such a resource will require fixing the URI template at the same time, as the stricter validation applies to all create and update operations.
+
 === Organization invitation filters use exact matching
 
 The `email`, `firstName`, and `lastName` query parameters on the organization invitations list endpoint (`+GET /admin/realms/{realm}/orgs/{orgId}/invitations+`) now use case-insensitive exact matching instead of substring matching.
