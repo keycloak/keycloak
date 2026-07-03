@@ -36,7 +36,7 @@ public abstract class PathMatcher<P> {
         for (P entry : getPaths()) {
             String expectedUri = getPath(entry);
 
-            if (expectedUri == null) {
+            if (expectedUri == null || expectedUri.isEmpty()) {
                 continue;
             }
 
@@ -221,9 +221,6 @@ public abstract class PathMatcher<P> {
                             if (openBraceIndex == -1 || closingBraceIndex == -1 || closingBraceIndex < openBraceIndex) {
                                 return null;
                             }
-                            if (closingBraceIndex == openBraceIndex + 1) {
-                                return null;
-                            }
                             String paramName = uri.substring(openBraceIndex + 1, closingBraceIndex);
                             if (paramName.indexOf('/') != -1) {
                                 return null;
@@ -231,7 +228,7 @@ public abstract class PathMatcher<P> {
                             uri.replace(openBraceIndex, closingBraceIndex + 1, value.toString());
                         }
 
-                        if (value.charAt(value.length() - 1) == '}') {
+                        if (value.length() > 0 && value.charAt(value.length() - 1) == '}') {
                             lastPattern = uri.indexOf(value.toString()) + value.length();
                         }
 
@@ -309,7 +306,7 @@ public abstract class PathMatcher<P> {
         if (asteriskIndex != -1) {
             boolean validTrailing = uri.endsWith("/*") && asteriskIndex == uri.length() - 1;
             boolean validSuffix = asteriskIndex > 0 && uri.charAt(asteriskIndex - 1) == '/'
-                    && asteriskIndex + 1 < uri.length() && uri.charAt(asteriskIndex + 1) == '.'
+                    && asteriskIndex + 2 < uri.length() && uri.charAt(asteriskIndex + 1) == '.'
                     && uri.indexOf('*', asteriskIndex + 1) == -1
                     && uri.indexOf('/', asteriskIndex + 1) == -1;
             if (!validTrailing && !validSuffix) {

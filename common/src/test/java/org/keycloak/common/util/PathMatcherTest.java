@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 public class PathMatcherTest {
 
     @Test
-    public void keycloak15833Test() {
+    public void templateWithWildcardMatchesCorrectPathOnly() {
         TestingPathMatcher matcher = new TestingPathMatcher(Collections.singletonList(
                 "/api/v1/{clientId}/campaigns/*"
         ));
@@ -74,12 +74,22 @@ public class PathMatcherTest {
     }
 
     @Test
-    public void emptyPlaceholderShouldNotMatch() {
-        TestingPathMatcher matcher = new TestingPathMatcher(Collections.singletonList(
-                "/api/{}/foo"
-        ));
+    public void emptyPlaceholderMatchesForLegacyCompatibility() {
+        String template = "/api/{}/foo";
+        Assertions.assertNotNull(PathMatcher.validateTemplate(template));
 
-        Assertions.assertNull(matcher.matches("/api/1/foo"));
+        TestingPathMatcher matcher = new TestingPathMatcher(Collections.singletonList(template));
+        Assertions.assertNotNull(matcher.matches("/api/1/foo"));
+    }
+
+    @Test
+    public void emptyExtensionSuffixMatchesForLegacyCompatibility() {
+        String template = "/*.";
+        Assertions.assertNotNull(PathMatcher.validateTemplate(template));
+
+        TestingPathMatcher matcher = new TestingPathMatcher(Collections.singletonList(template));
+        Assertions.assertNotNull(matcher.matches("/file."));
+        Assertions.assertNull(matcher.matches("/file.txt"));
     }
 
     @Test
@@ -127,6 +137,26 @@ public class PathMatcherTest {
         Assertions.assertNotNull(PathMatcher.validateTemplate("/api/*/info"));
         Assertions.assertNotNull(PathMatcher.validateTemplate("/api/*/info/*"));
         Assertions.assertNotNull(PathMatcher.validateTemplate("/a/b/c/*.html/c/d"));
+        Assertions.assertNotNull(PathMatcher.validateTemplate("/*."));
+    }
+
+    @Test
+    public void emptyTemplateShouldNotMatch() {
+        TestingPathMatcher matcher = new TestingPathMatcher(Collections.singletonList(
+                ""
+        ));
+
+        Assertions.assertNull(matcher.matches("/foo"));
+        Assertions.assertNull(matcher.matches(""));
+    }
+
+    @Test
+    public void templateStartingWithPlaceholderShouldNotMatch() {
+        TestingPathMatcher matcher = new TestingPathMatcher(Collections.singletonList(
+                "{id}/foo"
+        ));
+
+        Assertions.assertNull(matcher.matches("/1/foo"));
     }
 
     private static final class TestingPathMatcher extends PathMatcher<String> {
