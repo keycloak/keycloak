@@ -293,6 +293,13 @@ The following table shows the recommended paths to expose.
 |Yes
 |This path is needed to work correctly, for example, for OIDC endpoints.
 
+|/realms/master/
+| -
+|No
+|Although `/realms/` is exposed, the `master` realm is used for administrating {project_name} and is not needed for user-facing authentication.
+Restrict `/realms/master/` to internal or administrative access toreduce the attack surface.
+See <<isolating-master-realm, Isolating the master realm>> for more information.
+
 |/resources/
 |/resources/
 |Yes
@@ -319,6 +326,30 @@ We assume you run {project_name} on the root path `/` on your reverse proxy/gate
 If not, prefix the path with your desired one.
 
 NOTE: If you configured an `http-relative-path` on the server, proceed as follows to use discovery with RFC 8414: Configure a reverse proxy to map the `/.well-known/` path without the prefix to the path with the prefix on the server.
+
+[[isolating-master-realm]]
+=== Isolating the master realm
+
+The path under `/realms/` also includes the administrative `master` realm at ``/realms/master/`.
+By default, the `master` realm is used only for administering {project_name}; regular applications authenticate against their own realms and do not need it.
+
+As a security best practice, do not expose `/realms/master/`  the public internet.
+Restricting it to trusted, internal networks keeps the administrative endpoints of the `master` realm, such as its token endpoints and login flows, unreachable from the outside and reduces the attack surface.
+
+NOTE: Path-based isolation of the `master` realm requires TLS re-encrypt or edge termination mode, because the proxy needs to inspect and filter HTTP paths.
+Passthrough mode does not allow path filtering.
+
+Depending on your topology,you can:
+
+* Deny the `/realms/master/` path on your public-facing proxy and allow it only on an internal or administrative proxy or hostname.
+* Combine this with serving the AdminUI and Admin API on a dedicated hostname and port.
+
+WARNING: This recommendation assumes the `master` realm is reserved for administration.
+If you use the `master` realm for regular end users, restricting it will break their access; instead ,migrate those users to a dedicated realm before isolating `/realms/master/`.
+
+For concrete configuration examples, see the master realm isolation guidance in the following blueprints:
+* <@links.server id="haproxy-reencrypt"/>
+* <@links.server id="traefik-reencrypt"/>
 
 === Different context path on reverse proxy
 
