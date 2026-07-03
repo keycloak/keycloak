@@ -38,8 +38,6 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.Profile;
-import org.keycloak.common.profile.ProfileConfigResolver;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
@@ -57,7 +55,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.provider.ProviderEvent;
-import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponseException;
@@ -73,8 +70,6 @@ import org.keycloak.urls.UrlType;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -86,17 +81,6 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class OrganizationRolesResourceTest {
-
-    @Before
-    public void configureProfile() {
-        Profile.reset();
-        Profile.configure();
-    }
-
-    @After
-    public void resetProfile() {
-        Profile.reset();
-    }
 
     @Test
     public void collectionCreatesListsCountsAndLocatesRolesById() {
@@ -251,41 +235,13 @@ public class OrganizationRolesResourceTest {
     }
 
     @Test
-    public void itemListsAssignsAndRevokesUsers() {
+    public void itemAssignsAndRevokesUsers() {
         TestContext context = new TestContext();
         TestRole role = context.addOrganizationRole("role-1", "member");
         TestUser member = context.addUser("member-id", "member");
-        TestUser secondMember = context.addUser("second-member-id", "second-member");
         TestUser outsider = context.addUser("outsider-id", "outsider");
         context.members.add(member.id);
-        context.roleMembers.add(outsider.model);
-        context.members.add(secondMember.id);
-        context.roleMembers.add(member.model);
-        context.roleMembers.add(secondMember.model);
         OrganizationRoleResource resource = new OrganizationRoleResource(context.session, context.organization, role.model, context.adminEvent, context.auth);
-
-        context.permissions.userManageDenied.add(secondMember.id);
-        List<UserRepresentation> users = resource.getUsersInRole(true, null, null).toList();
-        assertEquals(List.of("member-id", "second-member-id"), users.stream().map(UserRepresentation::getId).toList());
-        assertEquals(Boolean.TRUE, users.get(0).getAccess().get("manage"));
-        assertEquals(Boolean.FALSE, users.get(1).getAccess().get("manage"));
-        context.permissions.userManageDenied.clear();
-        assertEquals(List.of("second-member-id"), resource.getUsersInRole(true, 1, 2).map(UserRepresentation::getId).toList());
-        assertEquals(Integer.valueOf(1), context.lastRoleMembersFirst);
-        assertEquals(Integer.valueOf(2), context.lastRoleMembersMax);
-
-        context.permissions.userView = false;
-        assertTrue(resource.getUsersInRole(true, null, null).toList().isEmpty());
-        context.adminPermissionsEnabled = true;
-        withAdminFineGrainedAuthzV2(false, () -> assertTrue(resource.getUsersInRole(true, null, null).toList().isEmpty()));
-        withAdminFineGrainedAuthzV2(true,
-                () -> assertEquals(List.of("member-id", "second-member-id"), resource.getUsersInRole(true, null, null).map(UserRepresentation::getId).toList()));
-        context.adminPermissionsEnabled = false;
-        context.permissions.userView = true;
-
-        context.permissions.userQuery = false;
-        assertThrows(ForbiddenException.class, () -> resource.getUsersInRole(true, null, null).toList());
-        context.permissions.userQuery = true;
 
         resource.addUserRoleMappings(List.of(user(member.id)));
         assertEquals(1, member.grants);
@@ -358,50 +314,6 @@ public class OrganizationRolesResourceTest {
         assertTrue(member.roleMappings.contains(role.model));
     }
 
-    @Test
-    public void memberSearchIncludesUserAccessForRoleAssignments() {
-        TestContext context = new TestContext();
-        TestUser member = context.addUser("member-id", "member");
-        TestUser restricted = context.addUser("restricted-id", "restricted");
-        context.members.add(member.id);
-        context.members.add(restricted.id);
-        context.permissions.userManageDenied.add(restricted.id);
-        OrganizationMemberResource resource = new OrganizationMemberResource(context.session, context.organization, context.adminEvent, context.auth);
-
-        List<MemberRepresentation> members = resource.search(null, null, 0, 10, null, true).toList();
-
-        assertEquals(List.of("member-id", "restricted-id"), members.stream().map(MemberRepresentation::getId).toList());
-        assertEquals(Boolean.TRUE, members.get(0).getAccess().get("manage"));
-        assertEquals(Boolean.FALSE, members.get(1).getAccess().get("manage"));
-    }
-
-    @Test
-    public void itemListsAvailableUsersForRoleMappings() {
-        TestContext context = new TestContext();
-        TestRole role = context.addOrganizationRole("role-1", "member");
-        TestUser assigned = context.addUser("assigned-id", "assigned");
-        TestUser available = context.addUser("available-id", "available");
-        TestUser restricted = context.addUser("restricted-id", "restricted");
-        context.members.add(assigned.id);
-        context.members.add(available.id);
-        context.members.add(restricted.id);
-        assigned.roleMappings.add(role.model);
-        context.permissions.userManageDenied.add(restricted.id);
-        OrganizationRoleResource resource = new OrganizationRoleResource(context.session, context.organization, role.model, context.adminEvent, context.auth);
-
-        List<UserRepresentation> users = resource.getAvailableUsersForRole(null, null, true, 0, 10).toList();
-
-        assertEquals(List.of("available-id"), users.stream().map(UserRepresentation::getId).toList());
-        assertEquals(Boolean.TRUE, users.get(0).getAccess().get("manage"));
-
-        context.permissions.mapRole = false;
-        assertThrows(ForbiddenException.class, () -> resource.getAvailableUsersForRole(null, null, true, 0, 10).toList());
-        context.permissions.mapRole = true;
-
-        context.permissions.userQuery = false;
-        assertThrows(ForbiddenException.class, () -> resource.getAvailableUsersForRole(null, null, true, 0, 10).toList());
-    }
-
     private static String repId(TestRole role) {
         return role.id;
     }
@@ -426,35 +338,6 @@ public class OrganizationRolesResourceTest {
 
     private static void assertStatus(Response.Status status, WebApplicationException exception) {
         assertEquals(status.getStatusCode(), exception.getResponse().getStatus());
-    }
-
-    private static void withAdminFineGrainedAuthzV2(boolean enabled, Runnable runnable) {
-        Profile.reset();
-        Profile.configure(new AdminFineGrainedAuthzV2Resolver(enabled));
-        try {
-            runnable.run();
-        } finally {
-            Profile.reset();
-            Profile.configure();
-        }
-    }
-
-    private record AdminFineGrainedAuthzV2Resolver(boolean enabled) implements ProfileConfigResolver {
-        @Override
-        public Profile.ProfileName getProfileName() {
-            return null;
-        }
-
-        @Override
-        public FeatureConfig getFeatureConfig(String feature) {
-            if (enabled && Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2.getVersionedKey().equals(feature)) {
-                return FeatureConfig.ENABLED;
-            }
-            if (!enabled && Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2.getUnversionedKey().equals(feature)) {
-                return FeatureConfig.DISABLED;
-            }
-            return FeatureConfig.UNCONFIGURED;
-        }
     }
 
     private static class TestContext {

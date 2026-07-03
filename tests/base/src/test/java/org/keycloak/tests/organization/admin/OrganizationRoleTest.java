@@ -42,7 +42,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -58,7 +60,10 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         OrganizationRepresentation organization = createOrganization();
         OrganizationResource organizationResource = realm.admin().organizations().get(organization.getId());
         MemberRepresentation member = addMember(organizationResource, "role-member@neworg.org");
+        MemberRepresentation secondMember = addMember(organizationResource, "second-role-member@neworg.org");
+        MemberRepresentation availableMember = addMember(organizationResource, "available-role-member@neworg.org");
         UserRepresentation user = realm.admin().users().get(member.getId()).toRepresentation();
+        UserRepresentation secondUser = realm.admin().users().get(secondMember.getId()).toRepresentation();
 
         String realmRoleName = "organization-role-composite";
         RoleRepresentation realmRole = new RoleRepresentation(realmRoleName, "Realm role composite", false);
@@ -127,14 +132,17 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         assertThrows(NotFoundException.class, () -> roleResource.addComposites(List.of(missingRole)));
         assertNull(adminEvents.poll());
 
-        roleResource.addUserMembers(List.of(user));
+        roleResource.addUserMembers(List.of(user, secondUser));
         AdminEventAssertion.assertSuccess(adminEvents.poll())
                 .operationType(OperationType.CREATE)
                 .resourceType(ResourceType.ORGANIZATION_ROLE_MAPPING)
                 .resourcePath(AdminEventPaths.organizationRoleUsersPath(organization.getId(), roleId));
-        assertThat(roleResource.getUserMembers().stream().map(UserRepresentation::getId).toList(), contains(user.getId()));
+        assertThat(roleResource.getUserMembers().stream().map(UserRepresentation::getId).toList(), containsInAnyOrder(user.getId(), secondUser.getId()));
+        assertThat(roleResource.getUserMembers(true, 0, 1), hasSize(1));
+        assertThat(roleResource.getUserMembers(true, 1, 1), hasSize(1));
+        assertThat(roleResource.getAvailableUserMembers(null, null, true, 0, 10).stream().map(UserRepresentation::getId).toList(), contains(availableMember.getId()));
 
-        roleResource.deleteUserMembers(List.of(user));
+        roleResource.deleteUserMembers(List.of(user, secondUser));
         AdminEventAssertion.assertSuccess(adminEvents.poll())
                 .operationType(OperationType.DELETE)
                 .resourceType(ResourceType.ORGANIZATION_ROLE_MAPPING)

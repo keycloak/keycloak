@@ -100,6 +100,15 @@ public interface OrganizationRoleResource {
                                              @QueryParam("first") Integer firstResult,
                                              @QueryParam("max") Integer maxResults);
 
+    @GET
+    @Path("users/available")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> getAvailableUserMembers(@QueryParam("search") String search,
+                                                      @QueryParam("exact") Boolean exact,
+                                                      @QueryParam("briefRepresentation") Boolean briefRepresentation,
+                                                      @QueryParam("first") Integer firstResult,
+                                                      @QueryParam("max") Integer maxResults);
+
     @POST
     @Path("users")
     @Consumes(MediaType.APPLICATION_JSON)
