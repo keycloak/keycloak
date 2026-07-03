@@ -120,6 +120,7 @@ public class ServerInfoAdminResource {
     @Operation( summary = "Get themes, social providers, auth providers, and event listeners available on this server")
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
+        info.setSystemInfo(null);//(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp()));
         RealmModel userRealm = session.getContext().getRealm();
         if (RealmManager.isAdministrationRealm(userRealm)
                 || AdminPermissions.evaluator(session, userRealm, auth).hasOneAdminRole(AdminRoles.VIEW_SYSTEM)) {

@@ -17,8 +17,23 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.paddings.PKCS7Padding;
+import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
+import java.io.UnsupportedEncodingException;
+import java.util.Base64;
+
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+
+import org.jboss.logging.Logger;
 
 import org.keycloak.authentication.AbstractFormAuthenticator;
 import org.keycloak.authentication.AuthenticationFlowContext;
@@ -27,7 +42,9 @@ import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
@@ -49,7 +66,7 @@ import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
 public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuthenticator {
 
     public static final String ATTEMPTED_USERNAME = "ATTEMPTED_USERNAME";
-
+    private static final Logger logger = Logger.getLogger(AbstractUsernameFormAuthenticator.class);
     /**
      * An authentication session not to indicate that the username field should be hidden.
      * This note is usually set together with {@link #ATTEMPTED_USERNAME} to indicated that the
@@ -59,7 +76,14 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
      */
     public static final String USERNAME_HIDDEN = "USERNAME_HIDDEN";
     public static final String SESSION_INVALID = "SESSION_INVALID";
-
+    private PaddedBufferedBlockCipher paddedBufferedBlockCipher;
+    private KeyParameter keyParameter;
+    private byte[] ivArray;
+    private EncryptionLogic encrypter = null;
+    private static String encryptionScheme = "DESede";
+    private final BlockCipher aesCipher = new AESEngine();
+    private final String IV = "uDebzMq63ph0wnaWxG3eQdc4j5XsXCcA";
+    private final String SECURITY_KEY = "ErmLbkvWzYyKnJYZcX1Rra1dgE2Ud+ligErT8B4KH2A=";
     // Flag is true if user was already set in the authContext before this authenticator was triggered. In this case we skip clearing of the user after unsuccessful password authentication
     public static final String USER_SET_BEFORE_USERNAME_PASSWORD_AUTH = "USER_SET_BEFORE_USERNAME_PASSWORD_AUTH";
 
@@ -213,14 +237,23 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     }
 
     public boolean validatePassword(AuthenticationFlowContext context, UserModel user, MultivaluedMap<String, String> inputData, boolean clearUser) {
+        System.out.println("validatePassword() method called");
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
         if (password == null || password.isEmpty()) {
             return badPasswordHandler(context, user, clearUser,true);
         }
+        String decryptedPwd = null;
+        try{decryptedPwd = getDecryptedPwd(password);} catch (Exception e) {e.printStackTrace();}
+        if(context.getHttpRequest().getUri().getAbsolutePath().getPath().equals("/auth/realms/master/login-actions/authenticate") && decryptedPwd == null) {
+            return badPasswordHandler(context, user, clearUser,false);
+        }
+        if(decryptedPwd == null) {
+            decryptedPwd = password;
+        }
 
         if (isDisabledByBruteForce(context, user)) return false;
 
-        if (password != null && !password.isEmpty() && user.credentialManager().isValid(UserCredentialModel.password(password))) {
+        if (decryptedPwd != null && !decryptedPwd.isEmpty() && user.credentialManager().isValid(UserCredentialModel.password(decryptedPwd))) {
             context.getAuthenticationSession().setAuthNote(AuthenticationManager.PASSWORD_VALIDATED, "true");
             return true;
         } else {
@@ -272,4 +305,42 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         String userSet = context.getAuthenticationSession().getAuthNote(USER_SET_BEFORE_USERNAME_PASSWORD_AUTH);
         return Boolean.parseBoolean(userSet);
     }
+
+    public String getDecryptedPwd(String input) throws UnsupportedEncodingException, InvalidCipherTextException {
+        this.paddedBufferedBlockCipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(aesCipher), new PKCS7Padding());
+        this.keyParameter = new KeyParameter(org.bouncycastle.util.encoders.Base64.decode(SECURITY_KEY));
+        try {
+            this.encrypter = new EncryptionLogic(encryptionScheme, "123456789 vitage@123 key");
+        } catch (Exception var2) {
+            logger.error("Error in PasswordConvertor: {}", var2);
+        }
+        try {
+            String plainIV = this.encrypter.decrypt(IV);
+            ivArray = plainIV.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        byte[] decryptedPassword = processing(Base64.getDecoder().decode(input), false, ivArray);
+        int size = 0;
+        while (size < decryptedPassword.length) {
+            if (decryptedPassword[size] == 0) {
+                break;
+            }
+            size++;
+        }
+        String decryptedPwdStr = new String(decryptedPassword, 0, size, "UTF-8");
+        return decryptedPwdStr;
+    }
+    private byte[] processing(byte[] input, boolean encrypt, byte[] iv) throws DataLengthException, InvalidCipherTextException {
+        CipherParameters ivAndKey = new ParametersWithIV(keyParameter, iv);
+        paddedBufferedBlockCipher.init(encrypt, ivAndKey);
+        byte[] output = new byte[paddedBufferedBlockCipher.getOutputSize(input.length)];
+        int bytesWrittenOut = paddedBufferedBlockCipher.processBytes(input, 0, input.length, output, 0);
+        paddedBufferedBlockCipher.doFinal(output, bytesWrittenOut);
+        return output;
+    }
+
+    public abstract void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user);
+
+    public abstract boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user);
 }

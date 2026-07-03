@@ -16,6 +16,8 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -773,6 +775,40 @@ public class UserResource {
         if (Validation.isBlank(cred.getValue())) {
             throw new BadRequestException("Empty password not allowed");
         }
+
+        String decryptedPwd = null;
+
+        AbstractUsernameFormAuthenticator authenticator = new AbstractUsernameFormAuthenticator() {
+            @Override
+            public void authenticate(AuthenticationFlowContext context) {
+
+            }
+
+            @Override
+            public boolean requiresUser() {
+                return false;
+            }
+
+            @Override
+            public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+
+            }
+
+            @Override
+            public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
+                return false;
+            }
+
+        };
+
+        try{decryptedPwd = authenticator.getDecryptedPwd(cred.getValue());} catch (Exception e) {
+            logger.errorf("Error occurred while decrypting the password. Details: '%s'", e);
+        }
+
+        if (decryptedPwd != null) {
+            cred.setValue(decryptedPwd);
+        }
+
 
         try {
             user.credentialManager().updateCredential(UserCredentialModel.password(cred.getValue(), false));

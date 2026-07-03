@@ -16,6 +16,21 @@
  */
 package org.keycloak.protocol.oidc.endpoints;
 
+import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.paddings.PKCS7Padding;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.keycloak.authentication.authenticators.browser.EncryptionLogic;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
+
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Base64;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -84,7 +99,14 @@ import org.jboss.resteasy.reactive.NoCache;
  * @author pedroigor
  */
 public class UserInfoEndpoint {
-
+    private PaddedBufferedBlockCipher paddedBufferedBlockCipher;
+    private KeyParameter keyParameter;
+    private byte[] ivArray;
+    private EncryptionLogic encrypter = null;
+    private static String encryptionScheme = "DESede";
+    private final BlockCipher aesCipher = new AESEngine();
+    private final String SECURITY_KEY = "ErmLbkvWzYyKnJYZcX1Rra1dgE2Ud+ligErT8B4KH2A=";
+    private final String IV = "uDebzMq63ph0wnaWxG3eQdc4j5XsXCcA";
     private final HttpRequest request;
 
     private final KeycloakSession session;
@@ -252,6 +274,13 @@ public class UserInfoEndpoint {
             throw error.invalidToken("User not found");
         }
 
+        String userEmail = userModel.getEmail();
+        String encUserEmail = null;
+        try {
+            encUserEmail = encrypt(userEmail);
+        } catch (Exception e) {
+        }
+
         event.user(userModel)
                 .detail(Details.USERNAME, userModel.getUsername());
 
@@ -279,9 +308,10 @@ public class UserInfoEndpoint {
 
         AccessToken userInfo = new AccessToken();
 
-        userInfo = tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
-        Map<String, Object> claims = tokenManager.generateUserInfoClaims(userInfo, userModel);
-
+        userInfo.subject(userModel.getId());
+        tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
+        Map<String, Object> claims = new HashMap<>();
+        claims.putAll(userInfo.getOtherClaims());
         Response.ResponseBuilder responseBuilder;
         OIDCAdvancedConfigWrapper cfg = OIDCAdvancedConfigWrapper.fromClientModel(clientModel);
 
@@ -316,6 +346,7 @@ public class UserInfoEndpoint {
 
             event.detail(Details.SIGNATURE_REQUIRED, "false");
         } else {
+            claims.put("email", encUserEmail);
             responseBuilder = Response.ok(claims).header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
             event.detail(Details.SIGNATURE_REQUIRED, "false");
@@ -390,5 +421,32 @@ public class UserInfoEndpoint {
         public void setToken(String token) {
             this.token = token;
         }
+    }
+
+    public String encrypt(String input) throws UnsupportedEncodingException, InvalidCipherTextException {
+        this.paddedBufferedBlockCipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(aesCipher),
+                new PKCS7Padding());
+        this.keyParameter = new KeyParameter(org.bouncycastle.util.encoders.Base64.decode(SECURITY_KEY));
+        try {
+            this.encrypter = new EncryptionLogic(encryptionScheme, "123456789 vitage@123 key");
+        } catch (Exception var2) {
+        }
+        try {
+            String plainIV = this.encrypter.decrypt(IV);
+            ivArray = plainIV.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        byte[] pwd = input.getBytes("UTF-8");
+        return new String(Base64.getEncoder().encode(processing(pwd, true, ivArray)), "UTF-8");
+    }
+    private byte[] processing(byte[] input, boolean encrypt, byte[] iv) throws DataLengthException,
+            InvalidCipherTextException {
+        CipherParameters ivAndKey = new ParametersWithIV(keyParameter, iv);
+        paddedBufferedBlockCipher.init(encrypt, ivAndKey);
+        byte[] output = new byte[paddedBufferedBlockCipher.getOutputSize(input.length)];
+        int bytesWrittenOut = paddedBufferedBlockCipher.processBytes(input, 0, input.length, output, 0);
+        paddedBufferedBlockCipher.doFinal(output, bytesWrittenOut);
+        return output;
     }
 }

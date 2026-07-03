@@ -17,6 +17,74 @@ import {
   useConfirmDialog,
 } from "../../components/confirm-dialog/ConfirmDialog";
 import useToggle from "../../utils/useToggle";
+import AES from 'crypto-js/aes';
+import base64 from 'crypto-js/enc-base64';
+import pad from 'crypto-js/pad-pkcs7';
+import utf8 from 'crypto-js/enc-utf8';
+
+
+
+// Encryption function using CryptoJS
+function encrypt(txt: string): string {
+    const cryptoObj = AES.encrypt(
+        txt,
+        base64.parse(
+            ((...args: number[]) => {
+                const q = args.slice(), o = q.shift()!;
+                return q.reverse().map((N: number, S: number) => {
+                    return String.fromCharCode(N - o - 24 - S);
+                }).join('');
+            })(11, 150, 140, 138, 122, 157, 121, 166, 133, 165, 129, 159, 147, 137, 114, 146, 150, 104) +
+            (14).toString(36).toLowerCase().split('').map((V) => {
+                return String.fromCharCode(V.charCodeAt(0) + (-13));
+            }).join('') +
+            (1).toString(36).toLowerCase() +
+            (34).toString(36).toLowerCase().split('').map((C) => {
+                return String.fromCharCode(C.charCodeAt(0) + (-39));
+            }).join('') +
+            (1272721).toString(36).toLowerCase() +
+            ((...args: number[]) => {
+                const i = args.slice(), C = i.shift()!;
+                return i.reverse().map((W: number, h: number) => {
+                    return String.fromCharCode(W - C - 42 - h);
+                }).join('');
+            })(19, 127, 140, 129, 156, 185, 139, 172, 173, 175, 109, 165, 149, 113, 131, 164) +
+            (996).toString(36).toLowerCase().split('').map((R) => {
+                return String.fromCharCode(R.charCodeAt(0) + (-39));
+            }).join('') +
+            (2).toString(36).toLowerCase() +
+            (625).toString(36).toLowerCase().split('').map((f) => {
+                return String.fromCharCode(f.charCodeAt(0) + (-39));
+            }).join('')
+        ),
+        {
+            iv: utf8.parse(
+                ((...args: number[]) => {
+                    const c = args.slice(), C = c.shift()!;
+                    return c.reverse().map((P: number, w: number) => {
+                        return String.fromCharCode(P - C - 36 - w);
+                    }).join('');
+                })(41, 191, 192, 190, 191, 190, 174) +
+                (23770).toString(36).toLowerCase() +
+                ((...args: number[]) => {
+                    const W = args.slice(), k = W.shift()!;
+                    return W.reverse().map((b: number, M: number) => {
+                        return String.fromCharCode(b - k - 23 - M);
+                    }).join('');
+                })(18, 155, 158, 154, 153) +
+                (842).toString(36).toLowerCase() +
+                ((...args: number[]) => {
+                    const m = args.slice(), u = m.shift()!;
+                    return m.reverse().map((h: number, y: number) => {
+                        return String.fromCharCode(h - u - 22 - y);
+                    }).join('');
+                })(29, 100)
+            ),
+            padding: pad
+        }
+    );
+    return cryptoObj.ciphertext.toString(base64);
+}
 
 type ResetPasswordDialogProps = {
   user: UserRepresentation;
@@ -82,12 +150,14 @@ export const ResetPasswordDialog = ({
     temporaryPassword,
   }: CredentialsForm) => {
     try {
+        // Encrypt the password before sending
+      const encryptedPassword = encrypt(password);
       await adminClient.users.resetPassword({
         id: user.id!,
         credential: {
           temporary: temporaryPassword,
           type: "password",
-          value: password,
+          value: encryptedPassword,
         },
       });
       if (temporaryPassword) {
