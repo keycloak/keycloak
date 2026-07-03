@@ -125,6 +125,67 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     public static final String FEDERATED_REFRESH_TOKEN = "FEDERATED_REFRESH_TOKEN";
     public static final String FEDERATED_TOKEN_EXPIRATION = "FEDERATED_TOKEN_EXPIRATION";
+
+    protected String getFederatedRefreshTokenKey() {
+        return FEDERATED_REFRESH_TOKEN + ":" + getConfig().getAlias();
+    }
+
+    protected String getFederatedTokenExpirationKey() {
+        return FEDERATED_TOKEN_EXPIRATION + ":" + getConfig().getAlias();
+    }
+
+    protected String getFederatedIdTokenKey() {
+        return OIDCIdentityProvider.FEDERATED_ID_TOKEN + ":" + getConfig().getAlias();
+    }
+
+    protected String getFederatedRefreshToken(UserSessionModel userSession) {
+        String token = userSession.getNote(getFederatedRefreshTokenKey());
+        if (token != null) {
+            return token;
+        }
+        return userSession.getNote(FEDERATED_REFRESH_TOKEN);
+    }
+
+    protected String getFederatedTokenExpiration(UserSessionModel userSession) {
+        String value = userSession.getNote(getFederatedTokenExpirationKey());
+        if (value != null) {
+            return value;
+        }
+        return userSession.getNote(FEDERATED_TOKEN_EXPIRATION);
+    }
+
+    protected String getFederatedIdToken(UserSessionModel userSession) {
+        String token = userSession.getNote(getFederatedIdTokenKey());
+        if (token != null) {
+            return token;
+        }
+        return userSession.getNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
+    }
+
+    protected void setFederatedRefreshToken(UserSessionModel userSession, String token) {
+        userSession.setNote(getFederatedRefreshTokenKey(), token);
+    }
+
+    protected void setFederatedRefreshToken(AuthenticationSessionModel authSession, String token) {
+        authSession.setUserSessionNote(getFederatedRefreshTokenKey(), token);
+    }
+
+    protected void setFederatedTokenExpiration(UserSessionModel userSession, String value) {
+        userSession.setNote(getFederatedTokenExpirationKey(), value);
+    }
+
+    protected void setFederatedTokenExpiration(AuthenticationSessionModel authSession, String value) {
+        authSession.setUserSessionNote(getFederatedTokenExpirationKey(), value);
+    }
+
+    protected void setFederatedIdToken(UserSessionModel userSession, String token) {
+        userSession.setNote(getFederatedIdTokenKey(), token);
+    }
+
+    protected void setFederatedIdToken(AuthenticationSessionModel authSession, String token) {
+        authSession.setUserSessionNote(getFederatedIdTokenKey(), token);
+    }
+
     public static final String ACCESS_DENIED = "access_denied";
     protected static ObjectMapper mapper = new ObjectMapper();
 
@@ -312,10 +373,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         Response response = null;
         if (userSession != null && getConfig().isStoreTokenInSession()) {
             // use the session if present and configured to be used, only in V2
-            String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
-            brokerId = brokerId == null ? userSession.getNote(UserAuthenticationIdentityProvider.EXTERNAL_IDENTITY_PROVIDER) : brokerId;
-            String federatedAccessToken = userSession.getNote(FEDERATED_ACCESS_TOKEN);
-            if (getConfig().getAlias().equals(brokerId) && federatedAccessToken != null) {
+            String federatedAccessToken = getFederatedAccessToken(userSession);
+            if (federatedAccessToken != null) {
                 response = exchangeSessionToken(uriInfo, null, null, userSession, user);
                 if (Response.Status.Family.familyOf(response.getStatus()) == Response.Status.Family.SUCCESSFUL) {
                     return response;
@@ -413,17 +472,16 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
      */
     protected Response hasExternalExchangeToken(EventBuilder event, UserSessionModel tokenUserSession, MultivaluedMap<String, String> params) {
         if (getConfig().getAlias().equals(tokenUserSession.getNote(OIDCIdentityProvider.EXCHANGE_PROVIDER))) {
-
             String requestedType = params.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
             if ((requestedType == null || requestedType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE))) {
-                String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
+                String accessToken = getFederatedAccessToken(tokenUserSession);
                 if (accessToken != null) {
                     AccessTokenResponse tokenResponse = new AccessTokenResponse();
                     tokenResponse.setToken(accessToken);
                     return buildTokenResponse(session.getContext().getUri(), event, null, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
                 }
             } else if (OAuth2Constants.ID_TOKEN_TYPE.equals(requestedType)) {
-                String idToken = tokenUserSession.getNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
+                String idToken = getFederatedIdToken(tokenUserSession);
                 if (idToken != null) {
                     AccessTokenResponse tokenResponse = new AccessTokenResponse();
                     tokenResponse.setToken(null);
@@ -472,7 +530,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected Response exchangeSessionToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
-        String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
+        String accessToken = getFederatedAccessToken(tokenUserSession);
 
         if (accessToken == null) {
             if (event != null) {
@@ -620,7 +678,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     @Override
     public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
         String token = (String) context.getContextData().get(FEDERATED_ACCESS_TOKEN);
-        if (token != null) authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, token);
+        if (token != null) {
+            setFederatedAccessToken(authSession, token);
+        }
     }
 
     public SimpleHttpRequest authenticateTokenRequest(final SimpleHttpRequest tokenRequest) {
@@ -1076,10 +1136,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     public void exchangeExternalComplete(UserSessionModel userSession, BrokeredIdentityContext context, MultivaluedMap<String, String> params) {
         if (getConfig().isStoreTokenInSession()) {
             if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ACCESS_TOKEN)) {
-                userSession.setNote(FEDERATED_ACCESS_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
+                String subjectToken = params.getFirst(OAuth2Constants.SUBJECT_TOKEN);
+                setFederatedAccessToken(userSession, subjectToken);
             }
             if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ID_TOKEN)) {
-                userSession.setNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
+                String subjectToken = params.getFirst(OAuth2Constants.SUBJECT_TOKEN);
+                setFederatedIdToken(userSession, subjectToken);
             }
             userSession.setNote(OIDCIdentityProvider.EXCHANGE_PROVIDER, getConfig().getAlias());
         }

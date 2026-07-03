@@ -72,6 +72,10 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
         return this.config;
     }
 
+    protected String getFederatedAccessTokenKey() {
+        return FEDERATED_ACCESS_TOKEN + ":" + getConfig().getAlias();
+    }
+
     @Override
     public void close() {
         // no-op
@@ -231,11 +235,28 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     }
 
     protected String getFederatedAccessToken(UserSessionModel userSession) {
-        // return the FEDERATED_ACCESS_TOKEN but just if logged in using this identity provider
-        if (getConfig().getAlias().equals(userSession.getNote(Details.IDENTITY_PROVIDER))) {
-             return userSession.getNote(FEDERATED_ACCESS_TOKEN);
+        // First try alias-namespaced key (supports multiple linked IdPs)
+        String token = userSession.getNote(getFederatedAccessTokenKey());
+        if (token != null) {
+            return token;
+        }
+        // Fallback to un-namespaced key for backward compatibility
+        String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
+        if (brokerId == null) {
+            brokerId = userSession.getNote(EXTERNAL_IDENTITY_PROVIDER);
+        }
+        if (getConfig().getAlias().equals(brokerId)) {
+            return userSession.getNote(FEDERATED_ACCESS_TOKEN);
         }
         return null;
+    }
+
+    protected void setFederatedAccessToken(UserSessionModel userSession, String token) {
+        userSession.setNote(getFederatedAccessTokenKey(), token);
+    }
+
+    protected void setFederatedAccessToken(AuthenticationSessionModel authSession, String token) {
+        authSession.setUserSessionNote(getFederatedAccessTokenKey(), token);
     }
 
     protected Response buildTokenResponse(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient,
