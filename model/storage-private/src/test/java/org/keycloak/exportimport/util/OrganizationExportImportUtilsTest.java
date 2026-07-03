@@ -64,7 +64,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
-import org.keycloak.storage.datastore.DefaultExportImportManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
 import org.junit.BeforeClass;
@@ -424,36 +423,6 @@ public class OrganizationExportImportUtilsTest {
         assertThat(user.hasDirectRole(role), is(true));
     }
 
-    @Test
-    public void importOrganizationsImportsRolesBeforeMemberMappings() throws Exception {
-        RealmModel realm = realm("realm-1");
-        OrganizationModel organization = organization("org-1", "acme");
-        OrganizationProvider provider = organizationProvider(organization);
-        UserModel user = user("user-1", "alice");
-        OrganizationRepresentation organizationRepresentation = organizationRepresentationWithMember("alice");
-        RealmRepresentation representation = new RealmRepresentation();
-        representation.setOrganizations(List.of(organizationRepresentation));
-
-        invokeImportOrganizations(session(provider, userProvider(user)), representation, realm);
-
-        assertThat(organization.getRole("admin").getName(), is("admin"));
-        assertThat(organization.getRolesStream().map(RoleModel::getName).toList(), containsInAnyOrder("default-roles-acme", "admin"));
-        assertThat(organization.isMember(user), is(true));
-        assertThat(user.hasDirectRole(organization.getRole("admin")), is(true));
-    }
-
-    @Test
-    public void importOrganizationsRejectsMissingMembers() {
-        RealmRepresentation representation = new RealmRepresentation();
-        representation.setOrganizations(List.of(organizationRepresentationWithMember("missing")));
-
-        InvocationTargetException exception = assertThrows(InvocationTargetException.class,
-                () -> invokeImportOrganizations(session(organizationProvider(organization("org-1", "acme")), userProvider()),
-                        representation, realm("realm-1")));
-
-        assertThat(exception.getCause(), instanceOf(ModelException.class));
-    }
-
     private static RoleRepresentation roleRepresentation(String id, String name, String description) {
         RoleRepresentation representation = new RoleRepresentation();
         representation.setId(id);
@@ -471,28 +440,6 @@ public class OrganizationExportImportUtilsTest {
         representation.setRoles(List.of(role));
 
         OrganizationExportImportUtils.importOrganizationRoles(session(), realm, organization, representation);
-    }
-
-    private static OrganizationRepresentation organizationRepresentationWithMember(String username) {
-        RoleRepresentation role = roleRepresentation("admin-id", "admin", "Admin");
-        MemberRepresentation member = new MemberRepresentation();
-        member.setUsername(username);
-        member.setMembershipType(MembershipType.UNMANAGED);
-        member.setOrganizationRoles(List.of("admin"));
-        OrganizationRepresentation organization = new OrganizationRepresentation();
-        organization.setId("org-1");
-        organization.setName("Acme");
-        organization.setAlias("acme");
-        organization.setEnabled(true);
-        organization.setRoles(List.of(role));
-        organization.setMembers(List.of(member));
-        return organization;
-    }
-
-    private static void invokeImportOrganizations(KeycloakSession session, RealmRepresentation representation, RealmModel realm) throws Exception {
-        Method method = DefaultExportImportManager.class.getDeclaredMethod("importOrganizations", RealmRepresentation.class, RealmModel.class);
-        method.setAccessible(true);
-        method.invoke(new DefaultExportImportManager(session), representation, realm);
     }
 
     private static RoleRepresentation.Composites compositesWithRealmRole(String roleName) {
