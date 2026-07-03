@@ -19,6 +19,7 @@ package org.keycloak.admin.ui.rest;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -40,6 +41,7 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 public class AvailableRoleMappingResourceRoleTypeTest {
 
@@ -73,6 +75,30 @@ public class AvailableRoleMappingResourceRoleTypeTest {
         ), excludedIds);
     }
 
+    @Test
+    public void availableCompositeMappingsRejectOrganizationRoleParents() {
+        RoleModel organizationRole = role("organization-role-id", "organization-role", RoleModel.Type.ORGANIZATION, container("organization"));
+        List<List<String>> excludedIds = new ArrayList<>();
+        KeycloakSession session = session(user(Stream.empty()), organizationRole, excludedIds);
+        AvailableRoleMappingResource resource = new AvailableRoleMappingResource(session,
+                realm(clientScope(Stream.empty()), client("target-client-id", "target-client"), group(Stream.empty()), client("client-id", "client"), user(Stream.empty()), organizationRole), adminAuth());
+
+        assertThrows(RuntimeException.class, () -> resource.listAvailableRoleMappings(organizationRole.getId(), 0, 10, ""));
+    }
+
+    @Test
+    public void availableCompositeMappingsKeepMissingParentBehavior() {
+        ClientModel client = client("client-id", "client");
+        RoleModel availableClientRole = role("available-client-role-id", "available-client-role", RoleModel.Type.CLIENT, client);
+        List<List<String>> excludedIds = new ArrayList<>();
+        KeycloakSession session = session(user(Stream.empty()), availableClientRole, excludedIds);
+        AvailableRoleMappingResource resource = new AvailableRoleMappingResource(session,
+                realm(clientScope(Stream.empty()), client("target-client-id", "target-client"), group(Stream.empty()), client, user(Stream.empty())), adminAuth());
+
+        assertEquals("available-client-role", resource.listAvailableRoleMappings("missing-parent-id", 0, 10, "").get(0).getRole());
+        assertEquals(List.of(List.of("missing-parent-id")), excludedIds);
+    }
+
     private static KeycloakSession session(UserModel user, RoleModel availableClientRole, List<List<String>> excludedIds) {
         RoleProvider roleProvider = proxy(RoleProvider.class, (roleProviderProxy, method, args) -> switch (method.getName()) {
             case "searchForClientRolesStream" -> {
@@ -102,12 +128,17 @@ public class AvailableRoleMappingResourceRoleTypeTest {
         });
     }
 
-    private static RealmModel realm(ClientScopeModel clientScope, ClientModel targetClient, GroupModel group, ClientModel roleClient, UserModel user) {
+    private static RealmModel realm(ClientScopeModel clientScope, ClientModel targetClient, GroupModel group, ClientModel roleClient, UserModel user, RoleModel... roles) {
         Map<String, ClientModel> clients = Map.of(targetClient.getId(), targetClient, roleClient.getId(), roleClient);
+        Map<String, RoleModel> rolesById = new HashMap<>();
+        for (RoleModel role : roles) {
+            rolesById.put(role.getId(), role);
+        }
         return proxy(RealmModel.class, (realmProxy, method, args) -> switch (method.getName()) {
             case "getClientScopeById" -> Objects.equals(args[0], "client-scope-id") ? clientScope : null;
             case "getClientById" -> clients.get(args[0]);
             case "getGroupById" -> Objects.equals(args[0], "group-id") ? group : null;
+            case "getRoleById" -> rolesById.get(args[0]);
             default -> defaultValue(method.getReturnType());
         });
     }
@@ -162,6 +193,7 @@ public class AvailableRoleMappingResourceRoleTypeTest {
             case "getType" -> type;
             case "getContainer" -> container;
             case "getContainerId" -> container.getId();
+            case "isOrganizationRole" -> type == RoleModel.Type.ORGANIZATION;
             default -> defaultValue(method.getReturnType());
         });
     }

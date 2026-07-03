@@ -606,6 +606,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     public RoleModel getRoleById(OrganizationModel organization, String id) {
         RoleEntity entity = em.find(RoleEntity.class, id);
         if (entity == null) return null;
+        if (!organization.getRealm().getId().equals(entity.getRealmId())) return null;
+        if (entity.getType() != RoleModel.Type.ORGANIZATION) return null;
         if (!organization.getId().equals(entity.getOrganizationId())) return null;
         return new RoleAdapter(session, organization.getRealm(), em, entity);
     }

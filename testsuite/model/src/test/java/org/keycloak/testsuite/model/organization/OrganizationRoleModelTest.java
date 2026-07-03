@@ -133,6 +133,11 @@ public class OrganizationRoleModelTest extends KeycloakModelTest {
             assertThat(acme.getRole("shared").getId(), is(acmeRole.getId()));
             assertThat(session.roles().getOrganizationRole(acme, "shared").getId(), is(acmeRole.getId()));
             assertThat(session.roles().getOrganizationRole(other, "shared").getId(), is(otherRole.getId()));
+            assertThat(session.roles().getRoleById(realm, acmeRole.getId()).getId(), is(acmeRole.getId()));
+            assertThat(session.roles().getRoleById(acme, acmeRole.getId()).getId(), is(acmeRole.getId()));
+            assertThat(session.roles().getRoleById(acme, otherRole.getId()), nullValue());
+            assertThat(session.roles().getRoleById(acme, realmRole.getId()), nullValue());
+            assertThat(session.roles().getRoleById(acme, clientRole.getId()), nullValue());
             assertThat(session.roles().getRealmRole(realm, "shared").getId(), is(realmRole.getId()));
             assertThat(session.roles().getClientRole(client, "shared").getId(), is(clientRole.getId()));
             assertThat(realmRole.getType(), is(RoleModel.Type.REALM));

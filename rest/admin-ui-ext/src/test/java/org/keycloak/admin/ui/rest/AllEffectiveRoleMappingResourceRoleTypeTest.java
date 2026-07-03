@@ -18,11 +18,11 @@ package org.keycloak.admin.ui.rest;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
-import org.keycloak.admin.ui.rest.model.RoleMappingRepresentation;
+import org.keycloak.admin.ui.rest.model.EffectiveRole;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -34,60 +34,49 @@ import org.keycloak.services.resources.admin.fgap.RolePermissionEvaluator;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
-public class RoleCompositeResourceRoleTypeTest {
+public class AllEffectiveRoleMappingResourceRoleTypeTest {
 
     @Test
-    public void compositeMappingsGroupOnlyClientAndRealmRoles() {
+    public void allEffectiveMappingsExcludeOrganizationRoles() {
         ClientModel client = client("client-id", "client");
-        RoleModel clientRole = role("client-role-id", "client-role", RoleModel.Type.CLIENT, client, Stream.empty());
-        RoleModel realmRole = role("realm-role-id", "realm-role", RoleModel.Type.REALM, container("realm"), Stream.empty());
-        RoleModel organizationRole = role("organization-role-id", "organization-role", RoleModel.Type.ORGANIZATION, container("organization"), Stream.empty());
-        RoleModel composite = role("composite-role-id", "composite-role", RoleModel.Type.REALM, container("realm"), Stream.of(clientRole, realmRole, organizationRole));
+        RoleModel clientRole = role("client-role-id", "client-role", RoleModel.Type.CLIENT, client, List.of());
+        RoleModel realmRole = role("realm-role-id", "realm-role", RoleModel.Type.REALM, container("realm"), List.of());
+        RoleModel organizationRole = role("organization-role-id", "organization-role", RoleModel.Type.ORGANIZATION, container("organization"), List.of());
+        RoleModel parent = role("parent-role-id", "parent-role", RoleModel.Type.REALM, container("realm"), List.of(clientRole, realmRole, organizationRole));
+        AllEffectiveRoleMappingResource resource = new AllEffectiveRoleMappingResource(session(), realm(client, parent), auth());
 
-        RoleMappingRepresentation representation = new RoleCompositeResource(session(), realm(client, composite), auth()).getCompositeRoleMappings(composite.getId());
+        List<String> names = resource.listAllEffectiveRealmRoleMappings(parent.getId()).stream()
+                .map(EffectiveRole::getName)
+                .toList();
 
-        assertNotNull(representation.getRealmMappings());
-        assertEquals(List.of("realm-role"), representation.getRealmMappings().stream().map(RoleMappingRepresentation.RoleRepresentation::getName).toList());
-        assertNotNull(representation.getClientMappings());
-        assertEquals(1, representation.getClientMappings().size());
-        assertEquals("client-role", representation.getClientMappings().get("client").getMappings().get(0).getName());
-        assertFalse(representation.getClientMappings().containsKey("organization"));
+        assertTrue(names.contains("parent-role"));
+        assertTrue(names.contains("realm-role"));
+        assertTrue(names.contains("client-role"));
+        assertFalse(names.contains("organization-role"));
     }
 
     @Test
-    public void compositeMappingsReturnNullBucketsWhenOnlyOrganizationRolesArePresent() {
-        RoleModel organizationRole = role("organization-role-id", "organization-role", RoleModel.Type.ORGANIZATION, container("organization"), Stream.empty());
-        RoleModel composite = role("composite-role-id", "composite-role", RoleModel.Type.REALM, container("realm"), Stream.of(organizationRole));
+    public void allEffectiveMappingsRejectOrganizationRoleParents() {
+        RoleModel organizationRole = role("organization-role-id", "organization-role", RoleModel.Type.ORGANIZATION, container("organization"), List.of());
+        AllEffectiveRoleMappingResource resource = new AllEffectiveRoleMappingResource(session(), realm(null, organizationRole), auth());
 
-        RoleMappingRepresentation representation = new RoleCompositeResource(session(), realm(null, composite), auth()).getCompositeRoleMappings(composite.getId());
-
-        assertNull(representation.getRealmMappings());
-        assertNull(representation.getClientMappings());
+        assertThrows(RuntimeException.class, () -> resource.listAllEffectiveRealmRoleMappings(organizationRole.getId()));
     }
 
     @Test
-    public void compositeMappingsRejectOrganizationRoleParents() {
-        RoleModel organizationRole = role("organization-role-id", "organization-role", RoleModel.Type.ORGANIZATION, container("organization"), Stream.empty());
+    public void allEffectiveMappingsUseProviderFallback() {
+        RoleModel parent = role("parent-role-id", "parent-role", RoleModel.Type.REALM, container("realm"), List.of());
+        AllEffectiveRoleMappingResource resource = new AllEffectiveRoleMappingResource(session(parent), realm(null), auth());
 
-        assertThrows(RuntimeException.class, () -> new RoleCompositeResource(session(), realm(null, organizationRole), auth())
-                .getCompositeRoleMappings(organizationRole.getId()));
-    }
+        List<String> names = resource.listAllEffectiveRealmRoleMappings(parent.getId()).stream()
+                .map(EffectiveRole::getName)
+                .toList();
 
-    @Test
-    public void compositeMappingsUseProviderFallback() {
-        RoleModel composite = role("composite-role-id", "composite-role", RoleModel.Type.REALM, container("realm"), Stream.empty());
-
-        RoleMappingRepresentation representation = new RoleCompositeResource(session(composite), realm(null), auth())
-                .getCompositeRoleMappings(composite.getId());
-
-        assertNull(representation.getRealmMappings());
-        assertNull(representation.getClientMappings());
+        assertTrue(names.contains("parent-role"));
     }
 
     private static KeycloakSession session() {
@@ -113,11 +102,13 @@ public class RoleCompositeResourceRoleTypeTest {
         });
     }
 
-    private static RealmModel realm(ClientModel client, RoleModel... composites) {
-        Map<String, RoleModel> roles = java.util.Arrays.stream(composites)
-                .collect(java.util.stream.Collectors.toMap(RoleModel::getId, role -> role));
+    private static RealmModel realm(ClientModel client, RoleModel... roles) {
+        Map<String, RoleModel> rolesById = new HashMap<>();
+        for (RoleModel role : roles) {
+            rolesById.put(role.getId(), role);
+        }
         return proxy(RealmModel.class, (realmProxy, method, args) -> switch (method.getName()) {
-            case "getRoleById" -> roles.get(args[0]);
+            case "getRoleById" -> rolesById.get(args[0]);
             case "getClientById" -> client != null && client.getId().equals(args[0]) ? client : null;
             default -> defaultValue(method.getReturnType());
         });
@@ -138,7 +129,7 @@ public class RoleCompositeResourceRoleTypeTest {
         });
     }
 
-    private static RoleModel role(String id, String name, RoleModel.Type type, RoleContainerModel container, Stream<RoleModel> composites) {
+    private static RoleModel role(String id, String name, RoleModel.Type type, RoleContainerModel container, List<RoleModel> composites) {
         return proxy(RoleModel.class, (roleProxy, method, args) -> switch (method.getName()) {
             case "getId" -> id;
             case "getName" -> name;
@@ -147,8 +138,7 @@ public class RoleCompositeResourceRoleTypeTest {
             case "getContainer" -> container;
             case "getContainerId" -> container.getId();
             case "isOrganizationRole" -> type == RoleModel.Type.ORGANIZATION;
-            case "isComposite" -> true;
-            case "getCompositesStream" -> composites;
+            case "getCompositesStream" -> composites.stream();
             default -> defaultValue(method.getReturnType());
         });
     }

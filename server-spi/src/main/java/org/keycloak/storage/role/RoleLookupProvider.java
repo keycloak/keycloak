@@ -37,7 +37,8 @@ public interface RoleLookupProvider {
     RoleModel getRealmRole(RealmModel realm, String name);
 
     /**
-     * Exact search for a role by its internal ID..
+     * Exact search for a role by its internal ID within the realm.
+     * This lookup is not limited to realm roles and may return realm, client or organization roles.
      * @param realm Realm.
      * @param id Internal ID of the role.
      * @return Model of the role.
@@ -112,6 +113,7 @@ public interface RoleLookupProvider {
 
     /**
      * Returns an organization role by internal ID within the given organization.
+     * This lookup only returns organization roles owned by the given organization.
      *
      * @param organization Organization that owns the role.
      * @param id Internal role ID.

@@ -123,6 +123,7 @@ public class OrganizationRoleCacheModelTest extends KeycloakModelTest {
             assertThat(session.roles().getRoleById(acme, ids[0]).getId(), is(ids[0]));
             assertThat(session.roles().getRoleById(other, ids[0]), nullValue());
             assertThat(session.roles().getRoleById(acme, ids[3]), nullValue());
+            assertThat(session.roles().getRoleById(acme, ids[4]), nullValue());
             RoleModel realmRole = session.roles().getRoleById(realm, ids[3]);
             RoleModel clientRole = session.roles().getRoleById(realm, ids[4]);
             assertThat(session.roles().getRoleById(realm, ids[0]).getType(), is(RoleModel.Type.ORGANIZATION));
