@@ -264,6 +264,52 @@ public class OrganizationRolesResourceTest {
         assertStatus(Response.Status.BAD_REQUEST, assertThrows(ErrorResponseException.class, () -> resource.deleteUserRoleMappings(List.of(user(member.id)))));
     }
 
+    @Test
+    public void userRoleMappingBatchesValidateAllUsersBeforeGranting() {
+        TestContext context = new TestContext();
+        TestRole role = context.addOrganizationRole("role-1", "member");
+        TestUser member = context.addUser("member-id", "member");
+        TestUser outsider = context.addUser("outsider-id", "outsider");
+        TestUser restricted = context.addUser("restricted-id", "restricted");
+        context.members.add(member.id);
+        context.members.add(restricted.id);
+        OrganizationRoleResource resource = new OrganizationRoleResource(context.session, context.organization, role.model, context.adminEvent, context.auth);
+
+        assertThrows(NotFoundException.class, () -> resource.addUserRoleMappings(List.of(user(member.id), user("missing"))));
+        assertEquals(0, member.grants);
+        assertFalse(member.roleMappings.contains(role.model));
+
+        assertStatus(Response.Status.BAD_REQUEST, assertThrows(ErrorResponseException.class,
+                () -> resource.addUserRoleMappings(List.of(user(member.id), user(outsider.id)))));
+        assertEquals(0, member.grants);
+        assertFalse(member.roleMappings.contains(role.model));
+
+        context.permissions.userManageDenied.add(restricted.id);
+        assertThrows(ForbiddenException.class, () -> resource.addUserRoleMappings(List.of(user(member.id), user(restricted.id))));
+        assertEquals(0, member.grants);
+        assertFalse(member.roleMappings.contains(role.model));
+    }
+
+    @Test
+    public void userRoleMappingBatchesValidateAllUsersBeforeRevoking() {
+        TestContext context = new TestContext();
+        TestRole role = context.addOrganizationRole("role-1", "member");
+        TestUser member = context.addUser("member-id", "member");
+        TestUser restricted = context.addUser("restricted-id", "restricted");
+        member.roleMappings.add(role.model);
+        restricted.roleMappings.add(role.model);
+        OrganizationRoleResource resource = new OrganizationRoleResource(context.session, context.organization, role.model, context.adminEvent, context.auth);
+
+        assertThrows(NotFoundException.class, () -> resource.deleteUserRoleMappings(List.of(user(member.id), user("missing"))));
+        assertEquals(0, member.revokes);
+        assertTrue(member.roleMappings.contains(role.model));
+
+        context.permissions.userManageDenied.add(restricted.id);
+        assertThrows(ForbiddenException.class, () -> resource.deleteUserRoleMappings(List.of(user(member.id), user(restricted.id))));
+        assertEquals(0, member.revokes);
+        assertTrue(member.roleMappings.contains(role.model));
+    }
+
     private static String repId(TestRole role) {
         return role.id;
     }
@@ -550,10 +596,10 @@ public class OrganizationRolesResourceTest {
             });
             UserPermissionEvaluator users = proxy(UserPermissionEvaluator.class, (usersProxy, method, args) -> switch (method.getName()) {
                 case "requireQuery" -> require(permissions.userQuery);
-                case "requireManage" -> require(permissions.userManage);
+                case "requireManage" -> require(permissions.canManageUser((UserModel) args[0]));
                 case "requireView" -> require(permissions.userView);
                 case "canQuery" -> permissions.userQuery;
-                case "canManage" -> permissions.userManage;
+                case "canManage" -> args == null || args.length == 0 ? permissions.userManage : permissions.canManageUser((UserModel) args[0]);
                 case "canView" -> permissions.userView;
                 default -> defaultValue(method.getReturnType());
             });
@@ -600,10 +646,15 @@ public class OrganizationRolesResourceTest {
         private boolean mapRole = true;
         private boolean userQuery = true;
         private boolean userManage = true;
+        private final Set<String> userManageDenied = new LinkedHashSet<>();
         private boolean userView = true;
         private boolean organizationManage = true;
         private boolean organizationView = true;
         private boolean organizationQuery = true;
+
+        private boolean canManageUser(UserModel user) {
+            return userManage && !userManageDenied.contains(user.getId());
+        }
     }
 
     private static class TestRole {

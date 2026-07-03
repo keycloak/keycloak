@@ -365,12 +365,8 @@ public class OrganizationRoleResource extends RoleResource {
 
         auth.roles().requireMapRole(role);
         try {
-            for (UserRepresentation userRepresentation : users) {
-                UserModel user = getUser(userRepresentation);
-                auth.users().requireManage(user);
-                if (validateMembership) {
-                    OrganizationsValidation.validateOrganizationRoleMapping(user, role);
-                }
+            List<UserModel> resolvedUsers = resolveUsersForRoleMapping(users, validateMembership);
+            for (UserModel user : resolvedUsers) {
                 mapping.accept(user, role);
             }
         } catch (ModelIllegalStateException mise) {
@@ -388,6 +384,19 @@ public class OrganizationRoleResource extends RoleResource {
                     .representation(users)
                     .success();
         }
+    }
+
+    private List<UserModel> resolveUsersForRoleMapping(List<UserRepresentation> users, boolean validateMembership) {
+        List<UserModel> resolvedUsers = new ArrayList<>();
+        for (UserRepresentation userRepresentation : users) {
+            UserModel user = getUser(userRepresentation);
+            auth.users().requireManage(user);
+            if (validateMembership) {
+                OrganizationsValidation.validateOrganizationRoleMapping(user, role);
+            }
+            resolvedUsers.add(user);
+        }
+        return resolvedUsers;
     }
 
     private UserModel getUser(UserRepresentation userRepresentation) {
