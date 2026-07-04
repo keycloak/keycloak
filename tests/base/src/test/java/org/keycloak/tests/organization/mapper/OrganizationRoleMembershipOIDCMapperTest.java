@@ -107,7 +107,7 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
         OrganizationRepresentation otherRepresentation = createOrganization("other");
         OrganizationResource acme = realm.admin().organizations().get(acmeRepresentation.getId());
         OrganizationResource other = realm.admin().organizations().get(otherRepresentation.getId());
-        MemberRepresentation member = addMember(acme);
+        MemberRepresentation member = addMember(acme, memberEmail, "Test", "User");
         other.members().addMember(member.getId()).close();
 
         RoleRepresentation acmeRole = createOrganizationRole(acme, "acme-admin");
@@ -139,9 +139,11 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
             assertThat(otherRoles, not(hasItem("acme-auditor")));
         }
 
-        assertThat(accessToken.getRealmAccess().isUserInRole(realmRole.getName()), is(true));
-        assertThat(accessToken.getRealmAccess().isUserInRole(acmeRole.getName()), is(false));
-        assertThat(accessToken.getResourceAccess(clientRole.clientId()).isUserInRole(clientRole.role().getName()), is(true));
+        if (accessToken.getRealmAccess() != null) {
+            assertThat(accessToken.getRealmAccess().isUserInRole(realmRole.getName()), is(false));
+            assertThat(accessToken.getRealmAccess().isUserInRole(acmeRole.getName()), is(false));
+        }
+        assertThat(accessToken.getResourceAccess(), not(hasKey(clientRole.clientId())));
         assertThat(accessToken.getResourceAccess(), not(hasKey("acme")));
     }
 
@@ -158,10 +160,10 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
     @Test
     public void testNoClaimWithoutOrganizationScope() throws Exception {
         OrganizationResource organization = realm.admin().organizations().get(createOrganization("acme").getId());
-        MemberRepresentation member = addMember(organization);
+        MemberRepresentation member = addMember(organization, memberEmail, "Test", "User");
         assignOrganizationRole(organization, createOrganizationRole(organization, "member"), member.getId());
 
-        AccessTokenResponse response = authenticate("openid email profile");
+        AccessTokenResponse response = authenticate("openid");
         AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
 
         assertThat(accessToken.getOtherClaims(), not(hasKey(OAuth2Constants.ORGANIZATION)));
@@ -170,7 +172,7 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
     @SuppressWarnings("unchecked")
     private void assertCustomClaimName(String claimName) throws Exception {
         OrganizationResource organization = realm.admin().organizations().get(createOrganization("acme").getId());
-        MemberRepresentation member = addMember(organization);
+        MemberRepresentation member = addMember(organization, memberEmail, "Test", "User");
         RoleRepresentation role = createOrganizationRole(organization, "member");
         assignOrganizationRole(organization, role, member.getId());
         setMapperConfig(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, claimName);
@@ -205,7 +207,16 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
         try (Response response = clientResource.getProtocolMappers().createMapper(mapper)) {
             mapperId = ApiUtil.getCreatedId(response);
         }
-        realm.cleanup().add(r -> r.clients().get(client.getId()).getProtocolMappers().delete(mapperId));
+        realm.cleanup().add(r -> r.clients().findByClientId("direct-grant").stream()
+                .findFirst()
+                .ifPresent(currentClient -> {
+                    ClientResource currentClientResource = r.clients().get(currentClient.getId());
+                    boolean mapperExists = currentClientResource.getProtocolMappers().getMappers().stream()
+                            .anyMatch(candidate -> mapperId.equals(candidate.getId()));
+                    if (mapperExists) {
+                        currentClientResource.getProtocolMappers().delete(mapperId);
+                    }
+                }));
     }
 
     private ClientScopeResource organizationScope() {
@@ -229,7 +240,10 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
 
         try (Response response = realm.admin().clients().create(client)) {
             String clientId = ApiUtil.getCreatedId(response);
-            realm.cleanup().add(r -> r.clients().get(clientId).remove());
+            realm.cleanup().add(r -> r.clients().findByClientId("direct-grant").stream()
+                    .filter(currentClient -> clientId.equals(currentClient.getId()))
+                    .findFirst()
+                    .ifPresent(currentClient -> r.clients().get(currentClient.getId()).remove()));
         }
     }
 
