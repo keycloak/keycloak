@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.organization.mapper;
+package org.keycloak.tests.organization.mapper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -47,12 +47,16 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -61,10 +65,15 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
+@KeycloakIntegrationTest
 public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizationTest {
 
-    @Before
+    @InjectOAuthClient
+    OAuthClient oauth;
+
+    @BeforeEach
     public void addRoleMapper() {
+        ensureDirectGrantClient();
         setMapperConfig(ProtocolMapperUtils.MULTIVALUED, null);
         setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, null);
         setMapperConfig(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, null);
@@ -96,8 +105,8 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
     public void testRolesAndCompositesAcrossTokenSurfaces() throws Exception {
         OrganizationRepresentation acmeRepresentation = createOrganization("acme");
         OrganizationRepresentation otherRepresentation = createOrganization("other");
-        OrganizationResource acme = managedRealm.admin().organizations().get(acmeRepresentation.getId());
-        OrganizationResource other = managedRealm.admin().organizations().get(otherRepresentation.getId());
+        OrganizationResource acme = realm.admin().organizations().get(acmeRepresentation.getId());
+        OrganizationResource other = realm.admin().organizations().get(otherRepresentation.getId());
         MemberRepresentation member = addMember(acme);
         other.members().addMember(member.getId()).close();
 
@@ -148,7 +157,7 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
 
     @Test
     public void testNoClaimWithoutOrganizationScope() throws Exception {
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization("acme").getId());
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization("acme").getId());
         MemberRepresentation member = addMember(organization);
         assignOrganizationRole(organization, createOrganizationRole(organization, "member"), member.getId());
 
@@ -160,7 +169,7 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
 
     @SuppressWarnings("unchecked")
     private void assertCustomClaimName(String claimName) throws Exception {
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization("acme").getId());
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization("acme").getId());
         MemberRepresentation member = addMember(organization);
         RoleRepresentation role = createOrganizationRole(organization, "member");
         assignOrganizationRole(organization, role, member.getId());
@@ -188,23 +197,40 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
     }
 
     private void addDirectGrantAudience() {
-        ClientRepresentation client = managedRealm.admin().clients().findByClientId("direct-grant").get(0);
-        ClientResource clientResource = managedRealm.admin().clients().get(client.getId());
+        ClientRepresentation client = realm.admin().clients().findByClientId("direct-grant").get(0);
+        ClientResource clientResource = realm.admin().clients().get(client.getId());
         ProtocolMapperRepresentation mapper = ModelToRepresentation.toRepresentation(AudienceProtocolMapper.createClaimMapper(
                 "direct-grant-audience", "direct-grant", null, true, false, false));
         String mapperId;
         try (Response response = clientResource.getProtocolMappers().createMapper(mapper)) {
             mapperId = ApiUtil.getCreatedId(response);
         }
-        getCleanup().addCleanup(() -> clientResource.getProtocolMappers().delete(mapperId));
+        realm.cleanup().add(r -> r.clients().get(client.getId()).getProtocolMappers().delete(mapperId));
     }
 
     private ClientScopeResource organizationScope() {
-        ClientScopeRepresentation scope = managedRealm.admin().clientScopes().findAll().stream()
+        ClientScopeRepresentation scope = realm.admin().clientScopes().findAll().stream()
                 .filter(candidate -> OIDCLoginProtocolFactory.ORGANIZATION.equals(candidate.getName()))
                 .findAny()
                 .orElseThrow();
-        return managedRealm.admin().clientScopes().get(scope.getId());
+        return realm.admin().clientScopes().get(scope.getId());
+    }
+
+    private void ensureDirectGrantClient() {
+        if (!realm.admin().clients().findByClientId("direct-grant").isEmpty()) {
+            return;
+        }
+
+        ClientRepresentation client = ClientBuilder.create("direct-grant")
+                .secret("password")
+                .directAccessGrantsEnabled()
+                .optionalClientScopes(OIDCLoginProtocolFactory.ORGANIZATION)
+                .build();
+
+        try (Response response = realm.admin().clients().create(client)) {
+            String clientId = ApiUtil.getCreatedId(response);
+            realm.cleanup().add(r -> r.clients().get(clientId).remove());
+        }
     }
 
     private static void setIncludedTokenTypes(ProtocolMapperRepresentation mapper) {
@@ -223,8 +249,8 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
     }
 
     private RoleRepresentation createRealmRole(String name) {
-        managedRealm.admin().roles().create(new RoleRepresentation(name, "", false));
-        return managedRealm.admin().roles().get(name).toRepresentation();
+        realm.admin().roles().create(new RoleRepresentation(name, "", false));
+        return realm.admin().roles().get(name).toRepresentation();
     }
 
     private ClientRole createClientRole(String clientId, String roleName) {
@@ -232,11 +258,11 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
         client.setClientId(clientId);
         client.setEnabled(true);
         String clientUuid;
-        try (Response response = managedRealm.admin().clients().create(client)) {
+        try (Response response = realm.admin().clients().create(client)) {
             clientUuid = ApiUtil.getCreatedId(response);
         }
-        managedRealm.admin().clients().get(clientUuid).roles().create(new RoleRepresentation(roleName, "", false));
-        RoleRepresentation role = managedRealm.admin().clients().get(clientUuid).roles().get(roleName).toRepresentation();
+        realm.admin().clients().get(clientUuid).roles().create(new RoleRepresentation(roleName, "", false));
+        RoleRepresentation role = realm.admin().clients().get(clientUuid).roles().get(roleName).toRepresentation();
         return new ClientRole(clientId, role);
     }
 
