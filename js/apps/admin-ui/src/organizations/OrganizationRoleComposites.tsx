@@ -18,7 +18,6 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { getAvailableClientRoles } from "../components/role-mapping/resource";
 import { emptyFormatter } from "../util";
 import { translationFormatter } from "../utils/translationFormatter";
 
@@ -46,14 +45,10 @@ const toRoleRepresentation = (role: CompositeRow): RoleRepresentation => {
   return representation;
 };
 
-const canMapComposite = (role: RoleRepresentation) =>
-  role.access?.mapComposite ?? true;
-
 type AddOrganizationRoleCompositeModalProps = {
   organizationId: string;
   roleId: string;
   roleName: string;
-  assignedRoleIds: Set<string>;
   onAssign: (roles: RoleRepresentation[]) => Promise<boolean>;
   onClose: () => void;
 };
@@ -62,7 +57,6 @@ export const AddOrganizationRoleCompositeModal = ({
   organizationId,
   roleId,
   roleName,
-  assignedRoleIds,
   onAssign,
   onClose,
 }: AddOrganizationRoleCompositeModalProps) => {
@@ -73,46 +67,15 @@ export const AddOrganizationRoleCompositeModal = ({
   const [isAssigning, setIsAssigning] = useState(false);
 
   const loader = async (first?: number, max?: number, search?: string) => {
-    let roles: CompositeRow[];
-    if (source === "organization") {
-      roles = (
-        await adminClient.organizations.listRoles({
-          orgId: organizationId,
-          first,
-          max,
-          search,
-        })
-      ).map((role) => ({ ...role, source }));
-    } else if (source === "realm") {
-      roles = (await adminClient.roles.find({ first, max, search })).map(
-        (role) => ({ ...role, source }),
-      );
-    } else {
-      roles = (
-        await getAvailableClientRoles(adminClient, {
-          id: roleId,
-          type: "roles",
-          first: first ?? 0,
-          max: max ?? 10,
-          search,
-        })
-      ).map((role) => ({
-        id: role.id,
-        name: role.role,
-        description: role.description,
-        clientRole: true,
-        containerId: role.clientId,
-        clientName: role.client,
-        source,
-      }));
-    }
-
-    return roles.filter(
-      (role) =>
-        role.id !== roleId &&
-        !assignedRoleIds.has(role.id!) &&
-        canMapComposite(role),
-    );
+    const roles = await adminClient.organizations.listAvailableRoleComposites({
+      orgId: organizationId,
+      roleId,
+      source,
+      first,
+      max,
+      search,
+    });
+    return roles.map((role) => ({ ...role, source }));
   };
 
   return (
@@ -212,7 +175,6 @@ export const OrganizationRoleComposites = ({
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
   const [showAssign, setShowAssign] = useState(false);
-  const [assignedRoleIds, setAssignedRoleIds] = useState(new Set<string>());
   const [selected, setSelected] = useState<CompositeRow[]>([]);
   const refresh = () => setKey((value) => value + 1);
 
@@ -235,18 +197,7 @@ export const OrganizationRoleComposites = ({
     }
   };
 
-  const openAssign = async () => {
-    try {
-      const roles = await adminClient.organizations.listRoleComposites({
-        orgId: organizationId,
-        roleId,
-      });
-      setAssignedRoleIds(new Set(roles.map((role) => role.id!)));
-      setShowAssign(true);
-    } catch (error) {
-      addError("organizationRoleCompositesLoadError", error);
-    }
-  };
+  const openAssign = () => setShowAssign(true);
 
   const addComposites = async (roles: RoleRepresentation[]) => {
     try {
@@ -292,7 +243,6 @@ export const OrganizationRoleComposites = ({
           organizationId={organizationId}
           roleId={roleId}
           roleName={roleName}
-          assignedRoleIds={assignedRoleIds}
           onAssign={addComposites}
           onClose={() => setShowAssign(false)}
         />

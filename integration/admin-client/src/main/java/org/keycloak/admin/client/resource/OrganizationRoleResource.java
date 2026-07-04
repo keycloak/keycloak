@@ -63,6 +63,14 @@ public interface OrganizationRoleResource {
                                                  @QueryParam("max") Integer max);
 
     @GET
+    @Path("composites/available")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<RoleRepresentation> getAvailableRoleComposites(@QueryParam("source") String source,
+                                                         @QueryParam("search") String search,
+                                                         @QueryParam("first") Integer first,
+                                                         @QueryParam("max") Integer max);
+
+    @GET
     @Path("composites/realm")
     @Produces(MediaType.APPLICATION_JSON)
     Set<RoleRepresentation> getRealmRoleComposites();

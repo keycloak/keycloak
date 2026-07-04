@@ -13,12 +13,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   addAlert: vi.fn(),
   addError: vi.fn(),
-  listRoles: vi.fn(),
-  findRealmRoles: vi.fn(),
   listComposites: vi.fn(),
+  listAvailableComposites: vi.fn(),
   addComposites: vi.fn(),
   delComposites: vi.fn(),
-  availableClientRoles: vi.fn(),
   tables: [] as any[],
   emptyStates: [] as any[],
   confirms: [] as any[],
@@ -36,18 +34,13 @@ vi.mock("../admin-client", () => ({
   useAdminClient: () => ({
     adminClient: {
       organizations: {
-        listRoles: mocks.listRoles,
         listRoleComposites: mocks.listComposites,
+        listAvailableRoleComposites: mocks.listAvailableComposites,
         addRoleComposites: mocks.addComposites,
         delRoleComposites: mocks.delComposites,
       },
-      roles: { find: mocks.findRealmRoles },
     },
   }),
-}));
-
-vi.mock("../components/role-mapping/resource", () => ({
-  getAvailableClientRoles: mocks.availableClientRoles,
 }));
 
 vi.mock("../components/confirm-dialog/ConfirmDialog", () => ({
@@ -88,12 +81,10 @@ describe("OrganizationRoleComposites", () => {
     mocks.tables.length = 0;
     mocks.emptyStates.length = 0;
     mocks.confirms.length = 0;
-    mocks.listRoles.mockReset().mockResolvedValue([]);
-    mocks.findRealmRoles.mockReset().mockResolvedValue([]);
     mocks.listComposites.mockReset().mockResolvedValue([]);
+    mocks.listAvailableComposites.mockReset().mockResolvedValue([]);
     mocks.addComposites.mockReset().mockResolvedValue(undefined);
     mocks.delComposites.mockReset().mockResolvedValue(undefined);
-    mocks.availableClientRoles.mockReset().mockResolvedValue([]);
   });
 
   it("loads, adds, and removes composites", async () => {
@@ -121,24 +112,16 @@ describe("OrganizationRoleComposites", () => {
     });
     table.columns[1].cellRenderer({ source: "realm" });
 
-    mocks.listComposites.mockResolvedValueOnce([{ id: "assigned" }]);
-    await act(async () => {
-      await table.toolbarItem.props.children[0].props.children.props.onClick();
+    act(() => {
+      table.toolbarItem.props.children[0].props.children.props.onClick();
     });
     expect(screen.getByText(/addAssociatedRolesTo/)).toBeTruthy();
 
     const modalTable = mocks.tables.findLast(
       (props) => props.ariaLabelKey === "availableOrganizationRoleComposites",
     );
-    mocks.listRoles.mockResolvedValueOnce([
-      { id: "role-id", name: "self" },
-      { id: "assigned", name: "assigned" },
+    mocks.listAvailableComposites.mockResolvedValueOnce([
       { id: "available", name: "available" },
-      {
-        id: "restricted",
-        name: "restricted",
-        access: { mapComposite: false },
-      },
     ]);
     expect(await modalTable.loader(0, 10, "a")).toEqual([
       expect.objectContaining({ id: "available", source: "organization" }),
@@ -178,7 +161,6 @@ describe("OrganizationRoleComposites", () => {
         organizationId="org-id"
         roleId="role-id"
         roleName="parent"
-        assignedRoleIds={new Set()}
         onAssign={onAssign}
         onClose={vi.fn()}
       />,
@@ -191,9 +173,17 @@ describe("OrganizationRoleComposites", () => {
         )
         .loader(),
     ).toEqual([]);
+    expect(mocks.listAvailableComposites).toHaveBeenLastCalledWith({
+      orgId: "org-id",
+      roleId: "role-id",
+      source: "organization",
+      first: undefined,
+      max: undefined,
+      search: undefined,
+    });
 
     fireEvent.click(screen.getByText("realmRoles"));
-    mocks.findRealmRoles.mockResolvedValueOnce([{ id: "realm-role" }]);
+    mocks.listAvailableComposites.mockResolvedValueOnce([{ id: "realm-role" }]);
     expect(
       await mocks.tables
         .findLast(
@@ -202,14 +192,16 @@ describe("OrganizationRoleComposites", () => {
         )
         .loader(),
     ).toEqual([expect.objectContaining({ id: "realm-role", source: "realm" })]);
+    expect(mocks.listAvailableComposites).toHaveBeenLastCalledWith(
+      expect.objectContaining({ source: "realm" }),
+    );
 
     fireEvent.click(screen.getByText("clientRoles"));
-    mocks.availableClientRoles.mockResolvedValueOnce([
+    mocks.listAvailableComposites.mockResolvedValueOnce([
       {
         id: "client-role",
-        role: "client role",
-        client: "client",
-        clientId: "client-id",
+        name: "client role",
+        clientRole: true,
         description: "description",
       },
     ]);
@@ -224,9 +216,11 @@ describe("OrganizationRoleComposites", () => {
       expect.objectContaining({
         id: "client-role",
         source: "client",
-        clientName: "client",
       }),
     ]);
+    expect(mocks.listAvailableComposites).toHaveBeenLastCalledWith(
+      expect.objectContaining({ source: "client" }),
+    );
   });
 
   it("reports loader and mutation failures", async () => {
@@ -241,14 +235,8 @@ describe("OrganizationRoleComposites", () => {
     const table = mocks.tables.at(-1);
     mocks.listComposites.mockRejectedValueOnce(new Error("load"));
     expect(await table.loader()).toEqual([]);
-    mocks.listComposites.mockRejectedValueOnce(new Error("open"));
-    await act(async () => {
-      await table.toolbarItem.props.children[0].props.children.props.onClick();
-    });
-
-    mocks.listComposites.mockResolvedValueOnce([]);
-    await act(async () => {
-      await table.toolbarItem.props.children[0].props.children.props.onClick();
+    act(() => {
+      table.toolbarItem.props.children[0].props.children.props.onClick();
     });
     mocks.addComposites.mockRejectedValueOnce(new Error("add"));
     const modalTable = mocks.tables.findLast(

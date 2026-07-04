@@ -180,6 +180,17 @@ describe("Organizations", () => {
         roleName: names.clientRole,
       });
 
+      expect(
+        await kcAdminClient.organizations.listAvailableRoleComposites({
+          orgId: organizationId,
+          roleId: organizationRoleId,
+          source: "realm",
+          search: names.realmRole,
+          first: 0,
+          max: 1,
+        }),
+      ).to.have.length(1);
+
       compositeRoles = [
         { id: childRoleId },
         { id: realmRole!.id },

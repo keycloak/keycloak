@@ -21,7 +21,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
@@ -217,6 +219,48 @@ public class OrganizationRoleResource extends RoleResource {
     }
 
     @GET
+    @Path("composites/available")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Get roles available as composites of an organization role")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RoleRepresentation.class, type = SchemaType.ARRAY))),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public Stream<RoleRepresentation> getAvailableRoleComposites(
+            @Parameter(description = "Role source: organization, realm, or client") @QueryParam("source") String source,
+            @QueryParam("search") String search,
+            @QueryParam("first") Integer first,
+            @QueryParam("max") Integer max) {
+        auth.roles().requireManage(role);
+
+        Stream<RoleModel> candidates = switch (source == null ? "" : source) {
+            case "organization" -> StringUtil.isNotBlank(search)
+                    ? organization.searchForRolesStream(search, null, null)
+                    : organization.getRolesStream();
+            case "realm" -> StringUtil.isNotBlank(search)
+                    ? session.roles().searchForRolesStream(realm, search, null, null)
+                    : session.roles().getRealmRolesStream(realm);
+            case "client" -> session.roles().searchForClientRolesStream(realm, search, null, null, null);
+            default -> throw new BadRequestException("unknown composite role source");
+        };
+
+        Set<String> assignedRoleIds = role.getCompositesStream()
+                .map(RoleModel::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        return paginatedStream(candidates
+                .filter(candidate -> !Objects.equals(role.getId(), candidate.getId()))
+                .filter(candidate -> !assignedRoleIds.contains(candidate.getId()))
+                .filter(auth.roles()::canMapComposite)
+                .filter(this::isValidComposite), first, max)
+                .map(this::toBriefRepresentation);
+    }
+
+    @GET
     @Path("composites/realm")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
@@ -344,6 +388,15 @@ public class OrganizationRoleResource extends RoleResource {
 
     private RoleRepresentation toBriefRepresentation(RoleModel role) {
         return withAccess(ModelToRepresentation.toBriefRepresentation(role), role);
+    }
+
+    private boolean isValidComposite(RoleModel candidate) {
+        try {
+            OrganizationsValidation.validateOrganizationRoleComposite(role, candidate);
+            return true;
+        } catch (ModelException ignored) {
+            return false;
+        }
     }
 
     private RoleRepresentation withAccess(RoleRepresentation representation) {

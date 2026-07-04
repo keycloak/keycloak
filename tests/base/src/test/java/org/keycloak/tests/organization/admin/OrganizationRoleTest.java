@@ -125,6 +125,9 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         roleResource.deleteComposites(List.of());
         assertNull(adminEvents.poll());
 
+        assertThat(roleResource.getAvailableRoleComposites("realm", realmRoleName, 0, 10).stream()
+                .map(RoleRepresentation::getId).toList(), contains(realmRole.getId()));
+
         roleResource.addComposites(List.of(realmRole));
         AdminEventAssertion.assertSuccess(adminEvents.poll())
                 .operationType(OperationType.CREATE)

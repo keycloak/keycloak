@@ -245,6 +245,45 @@ public class OrganizationRolesResourceTest {
     }
 
     @Test
+    public void availableCompositesFilterBeforePaginationAcrossSources() {
+        TestContext context = new TestContext();
+        TestRole parent = context.addOrganizationRole("parent", "00-parent");
+        TestRole assigned = context.addOrganizationRole("assigned", "01-assigned");
+        TestRole restricted = context.addOrganizationRole("restricted", "02-restricted");
+        TestRole available = context.addOrganizationRole("available", "03-available");
+        context.addOrganizationRole("other", "04-other", context.otherOrganization);
+        TestRole realmRole = context.addRealmRole("realm-role", "realm-role");
+        ClientModel client = context.addClient("client-1", "application");
+        TestRole clientRole = context.addClientRole("client-role", "client-role", client);
+        parent.composites.add(assigned.model);
+        context.permissions.mapCompositeDenied.add(restricted.id);
+        context.includeCrossOrganizationRoleCandidates = true;
+        OrganizationRoleResource resource = new OrganizationRoleResource(context.session, context.organization, parent.model, context.adminEvent, context.auth);
+
+        List<RoleRepresentation> organizationCandidates = resource
+                .getAvailableRoleComposites("organization", null, 0, 1).toList();
+        assertEquals(List.of(available.id), organizationCandidates.stream().map(RoleRepresentation::getId).toList());
+        assertEquals(Boolean.TRUE, organizationCandidates.get(0).getAccess().get("mapComposite"));
+        assertFalse(resource.getAvailableRoleComposites("organization", null, null, null)
+                .map(RoleRepresentation::getId).toList().contains("other"));
+        assertEquals(List.of(available.id), resource.getAvailableRoleComposites("organization", "03", null, null)
+                .map(RoleRepresentation::getId).toList());
+
+        assertEquals(List.of(realmRole.id), resource.getAvailableRoleComposites("realm", "realm", null, null)
+                .map(RoleRepresentation::getId).toList());
+        assertEquals(List.of(realmRole.id), resource.getAvailableRoleComposites("realm", null, null, null)
+                .map(RoleRepresentation::getId).toList());
+        assertEquals(List.of(clientRole.id), resource.getAvailableRoleComposites("client", "application", null, null)
+                .map(RoleRepresentation::getId).toList());
+
+        assertThrows(BadRequestException.class, () -> resource.getAvailableRoleComposites("unknown", null, null, null));
+        assertThrows(BadRequestException.class, () -> resource.getAvailableRoleComposites(null, null, null, null));
+
+        context.permissions.roleManage = false;
+        assertThrows(ForbiddenException.class, () -> resource.getAvailableRoleComposites("organization", null, null, null));
+    }
+
+    @Test
     public void itemAssignsAndRevokesUsers() {
         TestContext context = new TestContext();
         TestRole role = context.addOrganizationRole("role-1", "member");
@@ -382,6 +421,7 @@ public class OrganizationRolesResourceTest {
         private Integer lastRoleMembersFirst;
         private Integer lastRoleMembersMax;
         private boolean organizationRolesUnpagedCalled;
+        private boolean includeCrossOrganizationRoleCandidates;
         private Integer organizationRolesFirst;
         private Integer organizationRolesMax;
         private String organizationRolesSearch;
@@ -502,7 +542,8 @@ public class OrganizationRolesResourceTest {
 
         private Stream<RoleModel> organizationRoles(Object organizationProxy, Object[] args) {
             Stream<RoleModel> stream = roles.values().stream()
-                    .filter(role -> role.container == organizationProxy)
+                    .filter(role -> role.container == organizationProxy
+                            || includeCrossOrganizationRoleCandidates && role.type == RoleModel.Type.ORGANIZATION)
                     .map(role -> role.model);
             if (args == null) {
                 organizationRolesUnpagedCalled = true;
@@ -541,9 +582,26 @@ public class OrganizationRolesResourceTest {
                             .filter(role -> search == null || role.name.contains(search) || (role.description != null && role.description.contains(search)))
                             .count();
                 }
+                case "getRealmRolesStream" -> rolesByType(RoleModel.Type.REALM, null,
+                        args.length > 1 ? new Object[] { args[1], args[2] } : null);
+                case "searchForRolesStream" -> rolesByType(RoleModel.Type.REALM, (String) args[1], new Object[] { args[2], args[3] });
+                case "searchForClientRolesStream" -> rolesByType(RoleModel.Type.CLIENT, (String) args[1], new Object[] { args[3], args[4] });
                 case "close" -> null;
                 default -> defaultValue(method.getReturnType());
             });
+        }
+
+        private Stream<RoleModel> rolesByType(RoleModel.Type type, String search, Object[] page) {
+            Stream<RoleModel> stream = roles.values().stream()
+                    .filter(role -> role.type == type)
+                    .filter(role -> search == null
+                            || role.name.toLowerCase().contains(search.toLowerCase())
+                            || role.container instanceof ClientModel client
+                                    && client.getClientId().toLowerCase().contains(search.toLowerCase()))
+                    .map(role -> role.model);
+            Integer first = page == null || page.length == 0 ? null : (Integer) page[0];
+            Integer max = page == null || page.length < 2 ? null : (Integer) page[1];
+            return page(stream, first, max);
         }
 
         private UserProvider userProvider() {
@@ -630,12 +688,12 @@ public class OrganizationRolesResourceTest {
                 case "requireManage" -> require(permissions.roleManage);
                 case "requireView" -> require(permissions.roleView);
                 case "requireList" -> require(permissions.roleList);
-                case "requireMapComposite" -> require(permissions.mapComposite);
+                case "requireMapComposite" -> require(permissions.canMapComposite((RoleModel) args[0]));
                 case "requireMapRole" -> require(permissions.mapRole);
                 case "canManage" -> permissions.roleManage;
                 case "canView" -> permissions.roleView;
                 case "canList" -> permissions.roleList;
-                case "canMapComposite" -> permissions.mapComposite;
+                case "canMapComposite" -> permissions.canMapComposite((RoleModel) args[0]);
                 case "canMapRole" -> permissions.mapRole;
                 case "getAccess" -> Map.of(
                         "view", permissions.roleView,
@@ -697,6 +755,7 @@ public class OrganizationRolesResourceTest {
         private boolean roleView = true;
         private boolean roleList = true;
         private boolean mapComposite = true;
+        private final Set<String> mapCompositeDenied = new LinkedHashSet<>();
         private boolean mapRole = true;
         private boolean userQuery = true;
         private boolean userManage = true;
@@ -708,6 +767,10 @@ public class OrganizationRolesResourceTest {
 
         private boolean canManageUser(UserModel user) {
             return userManage && !userManageDenied.contains(user.getId());
+        }
+
+        private boolean canMapComposite(RoleModel role) {
+            return mapComposite && !mapCompositeDenied.contains(role.getId());
         }
     }
 

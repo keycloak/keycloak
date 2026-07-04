@@ -251,6 +251,16 @@ export class Organizations extends Resource<{ realm?: string }> {
     urlParamKeys: ["orgId", "roleId"],
   });
 
+  public listAvailableRoleComposites = this.makeRequest<
+    OrganizationRoleParams &
+      PaginatedQuery & { source: "organization" | "realm" | "client" },
+    RoleRepresentation[]
+  >({
+    method: "GET",
+    path: "/{orgId}/roles/{roleId}/composites/available",
+    urlParamKeys: ["orgId", "roleId"],
+  });
+
   public listRealmRoleComposites = this.makeRequest<
     OrganizationRoleParams,
     RoleRepresentation[]
