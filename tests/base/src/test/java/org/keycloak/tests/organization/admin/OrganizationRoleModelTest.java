@@ -17,8 +17,6 @@
 
 package org.keycloak.tests.organization.admin;
 
-import java.util.List;
-
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
