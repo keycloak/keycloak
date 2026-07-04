@@ -1,8 +1,15 @@
 /**
  * @vitest-environment jsdom
  */
-import { Suspense } from "react";
-import { act, cleanup, render, waitFor } from "@testing-library/react";
+import { Suspense, useState } from "react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -18,14 +25,6 @@ const mocks = vi.hoisted(() => ({
   delRole: vi.fn(),
   navigate: vi.fn(),
   fetchErrors: [] as unknown[],
-  roleForms: [] as any[],
-  attributeForms: [] as any[],
-  headers: [] as any[],
-  composites: [] as any[],
-  users: [] as any[],
-  events: [] as any[],
-  confirms: [] as any[],
-  toggleConfirm: vi.fn(),
 }));
 
 vi.mock("react-i18next", () => ({
@@ -77,25 +76,81 @@ vi.mock("../utils/useParams", () => ({
   useParams: () => mocks.params,
 }));
 
-vi.mock("../components/confirm-dialog/ConfirmDialog", () => ({
-  useConfirmDialog: (config: any) => {
-    mocks.confirms.push(config);
-    return [mocks.toggleConfirm, () => null];
-  },
-}));
+vi.mock("../components/confirm-dialog/ConfirmDialog", async () => {
+  const { useState } = await import("react");
+
+  return {
+    useConfirmDialog: (config: any) => {
+      const [open, setOpen] = useState(false);
+      const Dialog = () =>
+        open ? (
+          <div role="dialog">
+            <button
+              onClick={async () => {
+                await config.onConfirm();
+                setOpen(false);
+              }}
+            >
+              {config.continueButtonLabel}
+            </button>
+            <button onClick={() => setOpen(false)}>cancel</button>
+          </div>
+        ) : null;
+
+      return [() => setOpen(true), Dialog];
+    },
+  };
+});
 
 vi.mock("../components/role-form/RoleForm", () => ({
   RoleForm: (props: any) => {
-    mocks.roleForms.push(props);
-    return null;
+    const [name, setName] = useState(props.form.getValues("name") ?? "");
+    const [description, setDescription] = useState(
+      props.form.getValues("description") ?? "",
+    );
+
+    return (
+      <form
+        aria-label="role-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          props.onSubmit({
+            name,
+            description,
+            attributes: [{ key: "two", value: "2" }],
+          });
+        }}
+      >
+        <input
+          aria-label="name"
+          disabled={props.isReadOnly}
+          value={name}
+          onChange={(event) => setName(event.currentTarget.value)}
+        />
+        <textarea
+          aria-label="description"
+          disabled={props.isReadOnly}
+          value={description}
+          onChange={(event) => setDescription(event.currentTarget.value)}
+        />
+        <span data-testid="role-form-mode">
+          {props.isReadOnly ? "read-only" : "editable"}
+        </span>
+        <button type="submit">save</button>
+        <a data-testid="cancel" href={props.cancelLink.pathname}>
+          cancel
+        </a>
+      </form>
+    );
   },
 }));
 
 vi.mock("../components/key-value-form/AttributeForm", () => ({
-  AttributesForm: (props: any) => {
-    mocks.attributeForms.push(props);
-    return null;
-  },
+  AttributesForm: (props: any) => (
+    <div data-testid="attributes-form">
+      <button onClick={props.reset}>reset-attributes</button>
+    </div>
+  ),
 }));
 
 vi.mock("../components/routable-tabs/RoutableTabs", () => ({
@@ -104,31 +159,37 @@ vi.mock("../components/routable-tabs/RoutableTabs", () => ({
 }));
 
 vi.mock("../components/view-header/ViewHeader", () => ({
-  ViewHeader: (props: any) => {
-    mocks.headers.push(props);
-    return <div>{props.dropdownItems}</div>;
-  },
+  ViewHeader: (props: any) => (
+    <header>
+      <h1>{props.titleKey}</h1>
+      {props.badges?.map((badge: any) => (
+        <span key={badge.id}>{badge.text}</span>
+      ))}
+      <div>{props.dropdownItems}</div>
+    </header>
+  ),
 }));
 
 vi.mock("./OrganizationRoleComposites", () => ({
-  OrganizationRoleComposites: (props: any) => {
-    mocks.composites.push(props);
-    return null;
-  },
+  OrganizationRoleComposites: (props: any) => (
+    <div data-testid="composites">
+      {props.roleId}:{props.canManage ? "manage" : "view"}
+    </div>
+  ),
 }));
 
 vi.mock("./OrganizationRoleUsers", () => ({
-  OrganizationRoleUsers: (props: any) => {
-    mocks.users.push(props);
-    return null;
-  },
+  OrganizationRoleUsers: (props: any) => (
+    <div data-testid="users">
+      {props.roleId}:{props.canMapRole ? "map" : "view"}
+    </div>
+  ),
 }));
 
 vi.mock("../events/AdminEvents", () => ({
-  AdminEvents: (props: any) => {
-    mocks.events.push(props);
-    return null;
-  },
+  AdminEvents: (props: any) => (
+    <div data-testid="events">{props.resourcePath}</div>
+  ),
 }));
 
 vi.mock("@keycloak/keycloak-ui-shared", async () => {
@@ -172,6 +233,12 @@ const renderDetails = () =>
     </MemoryRouter>,
   );
 
+const confirmDelete = () => {
+  fireEvent.click(
+    within(screen.getByRole("dialog")).getByRole("button", { name: "delete" }),
+  );
+};
+
 describe("OrganizationRoleDetails", () => {
   beforeEach(() => {
     cleanup();
@@ -180,67 +247,84 @@ describe("OrganizationRoleDetails", () => {
     mocks.manager = true;
     mocks.viewEvents = true;
     mocks.fetchErrors.length = 0;
-    mocks.roleForms.length = 0;
-    mocks.attributeForms.length = 0;
-    mocks.headers.length = 0;
-    mocks.composites.length = 0;
-    mocks.users.length = 0;
-    mocks.events.length = 0;
-    mocks.confirms.length = 0;
     mocks.findRole.mockResolvedValue(role);
     mocks.findDefaultRole.mockResolvedValue({ ...role, id: "default-id" });
     mocks.updateRole.mockResolvedValue(undefined);
     mocks.delRole.mockResolvedValue(undefined);
   });
 
-  it("loads, updates, resets, and deletes a regular role", async () => {
+  it("loads a regular role and renders connected tabs", async () => {
     renderDetails();
-    await waitFor(() => expect(mocks.roleForms.length).toBeGreaterThan(0));
+
+    await screen.findByRole("form", { name: "role-form" });
     expect(mocks.findRole).toHaveBeenCalledWith({
       orgId: "org-id",
       roleId: "role-id",
     });
-    expect(mocks.composites.at(-1)).toEqual(
-      expect.objectContaining({ roleId: "role-id", canManage: true }),
-    );
-    expect(mocks.users.at(-1)).toEqual(
-      expect.objectContaining({ roleId: "role-id", canMapRole: true }),
-    );
-    expect(mocks.events.at(-1).resourcePath).toContain("role-id");
+    expect(screen.getByTestId("composites").textContent).toBe("role-id:manage");
+    expect(screen.getByTestId("users").textContent).toBe("role-id:map");
+    expect(screen.getByTestId("events").textContent).toContain("role-id");
+  });
 
-    await act(() =>
-      mocks.roleForms.at(-1).onSubmit({
-        name: "  role-name  ",
-        description: "updated",
-        attributes: [{ key: "two", value: "2" }],
-      }),
-    );
-    expect(mocks.updateRole).toHaveBeenCalledWith(
-      { orgId: "org-id", roleId: "role-id" },
-      expect.objectContaining({
-        name: "role-name",
-        attributes: { two: ["2"] },
-      }),
-    );
-    mocks.attributeForms.at(-1).reset();
+  it("submits updates from the visible role form", async () => {
+    renderDetails();
 
-    mocks.headers.at(-1).dropdownItems[0].props.onClick();
-    expect(mocks.toggleConfirm).toHaveBeenCalled();
-    await act(() => mocks.confirms.at(-1).onConfirm());
-    expect(mocks.delRole).toHaveBeenCalled();
+    await screen.findByRole("form", { name: "role-form" });
+    fireEvent.change(screen.getByLabelText("name"), {
+      target: { value: "  role-name  " },
+    });
+    fireEvent.change(screen.getByLabelText("description"), {
+      target: { value: "updated" },
+    });
+    fireEvent.submit(screen.getByRole("form", { name: "role-form" }));
+
+    await waitFor(() =>
+      expect(mocks.updateRole).toHaveBeenCalledWith(
+        { orgId: "org-id", roleId: "role-id" },
+        expect.objectContaining({
+          name: "role-name",
+          description: "updated",
+          attributes: { two: ["2"] },
+        }),
+      ),
+    );
+    expect(mocks.addAlert).toHaveBeenCalled();
+    fireEvent.click(screen.getByText("reset-attributes"));
+  });
+
+  it("deletes a regular role from the visible header action", async () => {
+    renderDetails();
+
+    await screen.findByRole("form", { name: "role-form" });
+    fireEvent.click(screen.getByRole("menuitem", { name: "deleteRole" }));
+    confirmDelete();
+
+    await waitFor(() => expect(mocks.delRole).toHaveBeenCalled());
     expect(mocks.navigate).toHaveBeenCalled();
   });
 
   it("reports update and delete errors", async () => {
     renderDetails();
-    await waitFor(() => expect(mocks.roleForms.length).toBeGreaterThan(0));
+    await screen.findByRole("form", { name: "role-form" });
+
     mocks.updateRole.mockRejectedValueOnce(new Error("update"));
-    await act(() =>
-      mocks.roleForms.at(-1).onSubmit({ name: "role-name", attributes: [] }),
+    fireEvent.submit(screen.getByRole("form", { name: "role-form" }));
+    await waitFor(() =>
+      expect(mocks.addError).toHaveBeenCalledWith(
+        "organizationRoleSaveError",
+        expect.any(Error),
+      ),
     );
+
     mocks.delRole.mockRejectedValueOnce(new Error("delete"));
-    await act(() => mocks.confirms.at(-1).onConfirm());
-    expect(mocks.addError).toHaveBeenCalledTimes(2);
+    fireEvent.click(screen.getByRole("menuitem", { name: "deleteRole" }));
+    confirmDelete();
+    await waitFor(() =>
+      expect(mocks.addError).toHaveBeenCalledWith(
+        "roleDeleteError",
+        expect.any(Error),
+      ),
+    );
   });
 
   it("loads a protected default role in view-only mode", async () => {
@@ -248,14 +332,17 @@ describe("OrganizationRoleDetails", () => {
     mocks.manager = false;
     mocks.viewEvents = false;
     renderDetails();
+
     await waitFor(() => expect(mocks.findDefaultRole).toHaveBeenCalled());
-    await waitFor(() => expect(mocks.roleForms.length).toBeGreaterThan(0));
-    expect(mocks.headers.at(-1).dropdownItems).toBeUndefined();
-    expect(mocks.attributeForms).toHaveLength(0);
-    expect(mocks.users).toHaveLength(0);
-    expect(mocks.events).toHaveLength(0);
-    expect(mocks.composites.at(-1).canManage).toBe(false);
-    expect(mocks.roleForms.at(-1).isReadOnly).toBe(true);
+    await screen.findByRole("form", { name: "role-form" });
+    expect(screen.queryByTestId("delete-organization-role")).toBeNull();
+    expect(screen.queryByTestId("attributes-form")).toBeNull();
+    expect(screen.queryByTestId("users")).toBeNull();
+    expect(screen.queryByTestId("events")).toBeNull();
+    expect(screen.getByTestId("composites").textContent).toBe(
+      "default-id:view",
+    );
+    expect(screen.getByTestId("role-form-mode").textContent).toBe("read-only");
   });
 
   it("uses role access when legacy organization management is absent", async () => {
@@ -265,17 +352,18 @@ describe("OrganizationRoleDetails", () => {
       access: { manage: true, mapRole: false },
     });
     renderDetails();
-    await waitFor(() => expect(mocks.roleForms.length).toBeGreaterThan(0));
 
-    expect(mocks.headers.at(-1).dropdownItems).toBeDefined();
-    expect(mocks.roleForms.at(-1).isReadOnly).toBe(false);
-    expect(mocks.composites.at(-1).canManage).toBe(true);
-    expect(mocks.users.at(-1).canMapRole).toBe(false);
+    await screen.findByRole("form", { name: "role-form" });
+    expect(screen.getByTestId("delete-organization-role")).toBeTruthy();
+    expect(screen.getByTestId("role-form-mode").textContent).toBe("editable");
+    expect(screen.getByTestId("composites").textContent).toBe("role-id:manage");
+    expect(screen.getByTestId("users").textContent).toBe("role-id:view");
   });
 
   it("handles a concurrently removed role", async () => {
     mocks.findRole.mockResolvedValueOnce(null);
     renderDetails();
+
     await waitFor(() => expect(mocks.fetchErrors).toHaveLength(1));
     expect((mocks.fetchErrors[0] as Error).message).toBe("notFound");
   });

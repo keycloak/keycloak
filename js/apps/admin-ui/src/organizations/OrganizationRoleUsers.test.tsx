@@ -2,11 +2,12 @@
  * @vitest-environment jsdom
  */
 import {
-  act,
   cleanup,
   fireEvent,
   render,
   screen,
+  waitFor,
+  within,
 } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -18,11 +19,6 @@ const mocks = vi.hoisted(() => ({
   listAvailableUsers: vi.fn(),
   addUsers: vi.fn(),
   delUsers: vi.fn(),
-  tables: [] as any[],
-  emptyStates: [] as any[],
-  memberModals: [] as any[],
-  confirms: [] as any[],
-  toggleConfirm: vi.fn(),
 }));
 
 vi.mock("react-i18next", () => ({
@@ -49,38 +45,160 @@ vi.mock("../context/realm-context/RealmContext", () => ({
   useRealm: () => ({ realm: "test-realm" }),
 }));
 
-vi.mock("../groups/MembersModal", () => ({
-  MemberModal: (props: any) => {
-    mocks.memberModals.push(props);
-    return <button onClick={props.onClose}>member-modal</button>;
-  },
-}));
+vi.mock("../groups/MembersModal", async () => {
+  const { useEffect, useState } = await import("react");
 
-vi.mock("../components/confirm-dialog/ConfirmDialog", () => ({
-  useConfirmDialog: (config: any) => {
-    mocks.confirms.push(config);
-    return [mocks.toggleConfirm, () => null];
-  },
-}));
+  return {
+    MemberModal: (props: any) => {
+      const [availableUsers, setAvailableUsers] = useState<any[]>([]);
+      const [selected, setSelected] = useState<any[]>([]);
 
-vi.mock("@keycloak/keycloak-ui-shared", () => ({
-  useAlerts: () => ({ addAlert: mocks.addAlert, addError: mocks.addError }),
-  KeycloakDataTable: (props: any) => {
-    mocks.tables.push(props);
-    return (
-      <div data-testid="table">
-        {props.toolbarItem}
-        {props.emptyState}
-      </div>
-    );
-  },
-  ListEmptyState: (props: any) => {
-    mocks.emptyStates.push(props);
-    return props.onPrimaryAction ? (
-      <button onClick={props.onPrimaryAction}>empty-action</button>
-    ) : null;
-  },
-}));
+      useEffect(() => {
+        let mounted = true;
+        props.availableUsersQuery(0, 10, "a").then((users: any[]) => {
+          if (mounted) {
+            setAvailableUsers(users);
+          }
+        });
+        return () => {
+          mounted = false;
+        };
+      }, []);
+
+      return (
+        <div role="dialog" aria-label={props.titleKey}>
+          {availableUsers.map((user) => (
+            <button
+              key={user.id}
+              disabled={!props.canSelectUser(user)}
+              onClick={() => setSelected([user])}
+            >
+              {user.username}
+            </button>
+          ))}
+          <button
+            onClick={async () => {
+              await props.onAdd(selected);
+              props.onClose();
+            }}
+          >
+            {props.confirmLabelKey}
+          </button>
+          <button onClick={props.onClose}>cancel</button>
+        </div>
+      );
+    },
+  };
+});
+
+vi.mock("../components/confirm-dialog/ConfirmDialog", async () => {
+  const { useState } = await import("react");
+
+  return {
+    useConfirmDialog: (config: any) => {
+      const [open, setOpen] = useState(false);
+      const Dialog = () =>
+        open ? (
+          <div role="dialog">
+            <button
+              onClick={async () => {
+                await config.onConfirm();
+                setOpen(false);
+              }}
+            >
+              {config.continueButtonLabel}
+            </button>
+            <button
+              onClick={() => {
+                config.onCancel?.();
+                setOpen(false);
+              }}
+            >
+              cancel
+            </button>
+          </div>
+        ) : null;
+
+      return [() => setOpen(true), Dialog];
+    },
+  };
+});
+
+vi.mock("@keycloak/keycloak-ui-shared", async () => {
+  const { useEffect, useState } = await import("react");
+
+  const rowLabel = (row: any) => row.username ?? row.id;
+
+  return {
+    useAlerts: () => ({ addAlert: mocks.addAlert, addError: mocks.addError }),
+    KeycloakDataTable: (props: any) => {
+      const [rows, setRows] = useState<any[]>([]);
+
+      useEffect(() => {
+        let mounted = true;
+        props.loader?.().then((loadedRows: any[]) => {
+          if (mounted) {
+            setRows(loadedRows);
+          }
+        });
+        return () => {
+          mounted = false;
+        };
+      }, []);
+
+      return (
+        <div data-testid={props.ariaLabelKey}>
+          {props.toolbarItem}
+          {rows.length === 0 && props.emptyState}
+          {rows.map((row) => {
+            const label = rowLabel(row);
+            const disabled = props.isRowDisabled?.(row) ?? false;
+            return (
+              <div key={row.id} role="row" aria-label={label}>
+                {props.onSelect && (
+                  <input
+                    aria-label={`Select ${label}`}
+                    type="checkbox"
+                    disabled={disabled}
+                    onChange={(event) =>
+                      props.onSelect(event.currentTarget.checked ? [row] : [])
+                    }
+                  />
+                )}
+                {props.columns.map((column: any) => (
+                  <span key={column.name}>
+                    {column.cellRenderer
+                      ? column.cellRenderer(row)
+                      : String(row[column.name] ?? "")}
+                  </span>
+                ))}
+                {props.actions?.map((action: any) => (
+                  <button
+                    key={action.title}
+                    disabled={disabled}
+                    onClick={() => action.onRowClick(row)}
+                  >
+                    {action.title}
+                  </button>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      );
+    },
+    ListEmptyState: (props: any) => (
+      <>
+        <div data-testid="empty-state">{props.message}</div>
+        {props.onPrimaryAction && (
+          <button onClick={props.onPrimaryAction}>
+            {props.primaryActionText}
+          </button>
+        )}
+      </>
+    ),
+  };
+});
 
 import { OrganizationRoleUsers } from "./OrganizationRoleUsers";
 
@@ -99,13 +217,14 @@ describe("OrganizationRoleUsers", () => {
   beforeEach(() => {
     cleanup();
     vi.clearAllMocks();
-    mocks.tables.length = 0;
-    mocks.emptyStates.length = 0;
-    mocks.memberModals.length = 0;
-    mocks.confirms.length = 0;
-    mocks.listUsers
-      .mockReset()
-      .mockResolvedValue([{ id: "user-id", username: "user" }]);
+    mocks.listUsers.mockReset().mockResolvedValue([
+      { id: "user-id", username: "user" },
+      {
+        id: "restricted-id",
+        username: "restricted",
+        access: { manage: false },
+      },
+    ]);
     mocks.listAvailableUsers
       .mockReset()
       .mockResolvedValue([{ id: "available-id", username: "available" }]);
@@ -115,33 +234,22 @@ describe("OrganizationRoleUsers", () => {
 
   it("loads, assigns, and removes members", async () => {
     renderUsers();
-    const table = mocks.tables.at(-1);
-    expect(await table.loader(0, 10)).toEqual([
-      { id: "user-id", username: "user" },
-    ]);
+
+    const userRow = await screen.findByRole("row", { name: "user" });
+    expect(within(userRow).getByText("user")).toBeTruthy();
     expect(
-      table.isRowDisabled({
-        id: "restricted-id",
-        access: { manage: false },
-      }),
+      (screen.getByLabelText("Select restricted") as HTMLInputElement).disabled,
     ).toBe(true);
-    act(() => {
-      table.onSelect([
-        { id: "user-id", username: "user" },
-        { id: "restricted-id", access: { manage: false } },
-      ]);
-    });
-    render(
-      <MemoryRouter>
-        {table.columns[0].cellRenderer({ id: "user-id", username: "user" })}
-      </MemoryRouter>,
-    );
-    expect(screen.getByText("user")).toBeTruthy();
 
     fireEvent.click(screen.getByText("addOrganizationRoleUsers"));
-    expect(
-      await mocks.memberModals.at(-1).availableUsersQuery(0, 10, "a"),
-    ).toEqual([{ id: "available-id", username: "available" }]);
+    fireEvent.click(await screen.findByRole("button", { name: "available" }));
+    fireEvent.click(screen.getByRole("button", { name: "assign" }));
+    await waitFor(() =>
+      expect(mocks.addUsers).toHaveBeenCalledWith(
+        { orgId: "org-id", roleId: "role-id" },
+        [{ id: "available-id" }],
+      ),
+    );
     expect(mocks.listAvailableUsers).toHaveBeenCalledWith({
       orgId: "org-id",
       roleId: "role-id",
@@ -150,74 +258,83 @@ describe("OrganizationRoleUsers", () => {
       search: "a",
       briefRepresentation: true,
     });
-    expect(
-      mocks.memberModals.at(-1).canSelectUser({
-        id: "restricted-id",
-        access: { manage: false },
-      }),
-    ).toBe(false);
-    await act(async () => {
-      await mocks.memberModals
-        .at(-1)
-        .onAdd([
-          { id: "user-id", username: "user", membershipType: "MANAGED" },
-        ]);
-    });
-    expect(mocks.addUsers).toHaveBeenCalledWith(
-      { orgId: "org-id", roleId: "role-id" },
-      [{ id: "user-id" }],
-    );
-    mocks.memberModals.at(-1).onClose();
-    act(() => {
-      mocks.emptyStates.at(-1).onPrimaryAction();
-    });
-    mocks.memberModals.at(-1).onClose();
 
-    act(() => {
-      table.actions[0].onRowClick({ id: "user-id", username: "user" });
-    });
-    await act(async () => {
-      await mocks.confirms.at(-1).onConfirm();
-    });
-    expect(mocks.delUsers).toHaveBeenCalledWith(
-      { orgId: "org-id", roleId: "role-id" },
-      [{ id: "user-id" }],
+    const refreshedUserRow = await screen.findByRole("row", { name: "user" });
+    fireEvent.click(
+      within(refreshedUserRow).getByRole("button", { name: "remove" }),
     );
-    mocks.confirms.at(-1).onCancel();
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "remove",
+      }),
+    );
+    await waitFor(() =>
+      expect(mocks.delUsers).toHaveBeenCalledWith(
+        { orgId: "org-id", roleId: "role-id" },
+        [{ id: "user-id" }],
+      ),
+    );
+    expect(mocks.addAlert).toHaveBeenCalled();
   });
 
   it("reports loader and mutation failures", async () => {
-    renderUsers();
-    const table = mocks.tables.at(-1);
     mocks.listUsers.mockRejectedValueOnce(new Error("load"));
-    expect(await table.loader()).toEqual([]);
+    renderUsers();
+    await waitFor(() =>
+      expect(mocks.addError).toHaveBeenCalledWith(
+        "organizationRoleUsersLoadError",
+        expect.any(Error),
+      ),
+    );
 
-    fireEvent.click(screen.getByText("addOrganizationRoleUsers"));
+    cleanup();
+    renderUsers();
+    await screen.findByRole("row", { name: "user" });
     mocks.listAvailableUsers.mockRejectedValueOnce(new Error("available"));
-    expect(await mocks.memberModals.at(-1).availableUsersQuery()).toEqual([]);
+    fireEvent.click(screen.getByText("addOrganizationRoleUsers"));
+    await waitFor(() =>
+      expect(mocks.addError).toHaveBeenCalledWith(
+        "organizationRoleUsersLoadError",
+        expect.any(Error),
+      ),
+    );
 
+    cleanup();
+    renderUsers();
+    await screen.findByRole("row", { name: "user" });
     mocks.addUsers.mockRejectedValueOnce(new Error("add"));
-    await act(async () => {
-      await mocks.memberModals.at(-1).onAdd([{ id: "user-id" }]);
-    });
+    fireEvent.click(screen.getByText("addOrganizationRoleUsers"));
+    fireEvent.click(await screen.findByRole("button", { name: "available" }));
+    fireEvent.click(screen.getByRole("button", { name: "assign" }));
+    await waitFor(() =>
+      expect(mocks.addError).toHaveBeenCalledWith(
+        "organizationRoleUsersAddError",
+        expect.any(Error),
+      ),
+    );
 
-    act(() => {
-      table.actions[0].onRowClick({ id: "user-id" });
-    });
     mocks.delUsers.mockRejectedValueOnce(new Error("remove"));
-    await act(async () => {
-      await mocks.confirms.at(-1).onConfirm();
-    });
-    expect(mocks.addError).toHaveBeenCalledTimes(4);
+    const row = screen.getByRole("row", { name: "user" });
+    fireEvent.click(within(row).getByRole("button", { name: "remove" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "remove",
+      }),
+    );
+    await waitFor(() =>
+      expect(mocks.addError).toHaveBeenCalledWith(
+        "organizationRoleUsersRemoveError",
+        expect.any(Error),
+      ),
+    );
   });
 
-  it("renders view-only controls", () => {
+  it("renders view-only controls", async () => {
     renderUsers(false);
-    const table = mocks.tables.at(-1);
-    expect(table.toolbarItem).toBe(false);
-    expect(table.onSelect).toBeUndefined();
-    expect(table.canSelectAll).toBe(false);
-    expect(table.actions).toBeUndefined();
-    expect(mocks.emptyStates.at(-1).onPrimaryAction).toBeUndefined();
+
+    const row = await screen.findByRole("row", { name: "user" });
+    expect(screen.queryByText("addOrganizationRoleUsers")).toBeNull();
+    expect(within(row).queryByLabelText("Select user")).toBeNull();
+    expect(within(row).queryByRole("button", { name: "remove" })).toBeNull();
   });
 });
