@@ -26,9 +26,9 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.WebApplicationException;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
+import org.keycloak.broker.provider.HardcodedRoleMapper;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.provider.IdentityProviderMapperConfigException;
-import org.keycloak.broker.provider.HardcodedRoleMapper;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;

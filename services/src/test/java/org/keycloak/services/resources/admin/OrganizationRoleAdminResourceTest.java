@@ -40,8 +40,8 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserModel;
@@ -56,8 +56,8 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public class OrganizationRoleAdminResourceTest {
 

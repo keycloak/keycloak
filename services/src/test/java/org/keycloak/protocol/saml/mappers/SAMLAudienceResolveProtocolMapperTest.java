@@ -21,7 +21,6 @@ import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.util.List;
 import java.util.stream.Stream;
-
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 
