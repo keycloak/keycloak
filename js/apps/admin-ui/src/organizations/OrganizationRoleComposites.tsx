@@ -329,7 +329,7 @@ export const OrganizationRoleComposites = ({
                   title: t("unAssignRole"),
                   onRowClick: (role) => {
                     if (role.isInherited) {
-                      return false;
+                      return;
                     }
                     setSelected([role]);
                     toggleRemoveDialog();
