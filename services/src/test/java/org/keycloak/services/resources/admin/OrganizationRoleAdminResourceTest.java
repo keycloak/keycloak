@@ -81,7 +81,8 @@ public class OrganizationRoleAdminResourceTest {
         AtomicInteger additions = new AtomicInteger();
         AtomicInteger removals = new AtomicInteger();
         ScopeContainerModel scopeContainer = mockScopeContainer(additions, removals);
-        ScopeMappedResource resource = new ScopeMappedResource(realm, null, scopeContainer, mockSession(), adminEventBuilder(realm), () -> {}, () -> {});
+        ScopeMappedResource resource = new ScopeMappedResource(realm, mockAdminPermissionEvaluator(), scopeContainer,
+                mockSession(), adminEventBuilder(realm), () -> {}, () -> {});
         RoleRepresentation representation = new RoleRepresentation();
         representation.setId(realmRole.getId());
 
