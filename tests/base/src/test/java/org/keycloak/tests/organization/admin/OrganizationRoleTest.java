@@ -135,6 +135,8 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
                 .resourcePath(AdminEventPaths.organizationRoleCompositesPath(organization.getId(), roleId))
                 .representation(List.of(realmRole));
         assertThat(roleResource.getRoleComposites().stream().map(RoleRepresentation::getName).toList(), contains(realmRole.getName()));
+        assertThat(roleResource.getEffectiveRoleComposites(null, 0, 10).stream()
+                .map(RoleRepresentation::getName).toList(), contains(realmRole.getName()));
 
         roleResource.deleteComposites(List.of(realmRole));
         AdminEventAssertion.assertSuccess(adminEvents.poll())

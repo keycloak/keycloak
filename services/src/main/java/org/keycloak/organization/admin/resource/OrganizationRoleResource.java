@@ -16,9 +16,14 @@
  */
 package org.keycloak.organization.admin.resource;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -261,6 +266,28 @@ public class OrganizationRoleResource extends RoleResource {
     }
 
     @GET
+    @Path("composites/effective")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Get effective composite roles of an organization role")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RoleRepresentation.class, type = SchemaType.ARRAY))),
+            @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public Stream<RoleRepresentation> getEffectiveRoleComposites(
+            @QueryParam("search") String search,
+            @QueryParam("first") Integer first,
+            @QueryParam("max") Integer max) {
+        auth.roles().requireView(role);
+
+        return paginatedStream(effectiveRoleComposites()
+                .filter(candidate -> matchesSearch(candidate, search))
+                .sorted(effectiveRoleComparator()), first, max)
+                .map(this::toBriefRepresentation);
+    }
+
+    @GET
     @Path("composites/realm")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
@@ -397,6 +424,66 @@ public class OrganizationRoleResource extends RoleResource {
         } catch (ModelException ignored) {
             return false;
         }
+    }
+
+    private Stream<RoleModel> effectiveRoleComposites() {
+        Set<String> visitedRoleIds = new LinkedHashSet<>();
+        Set<RoleModel> visitedRoles = new LinkedHashSet<>();
+        List<RoleModel> effective = new ArrayList<>();
+        Deque<RoleModel> pending = new ArrayDeque<>(role.getCompositesStream().toList());
+
+        while (!pending.isEmpty()) {
+            RoleModel candidate = pending.removeFirst();
+            String candidateId = candidate.getId();
+            if (isEffectiveCompositeCandidate(candidate, candidateId, visitedRoleIds, visitedRoles)) {
+                effective.add(candidate);
+                candidate.getCompositesStream().forEach(pending::addLast);
+            }
+        }
+
+        return effective.stream();
+    }
+
+    private boolean isEffectiveCompositeCandidate(RoleModel candidate, String candidateId, Set<String> visitedRoleIds, Set<RoleModel> visitedRoles) {
+        if (Objects.equals(candidateId, role.getId()) || Objects.equals(candidate, role)) {
+            return false;
+        }
+        if (candidateId == null ? !visitedRoles.add(candidate) : !visitedRoleIds.add(candidateId)) {
+            return false;
+        }
+        return isValidComposite(candidate);
+    }
+
+    private boolean matchesSearch(RoleModel candidate, String search) {
+        if (StringUtil.isBlank(search)) {
+            return true;
+        }
+        String normalized = search.toLowerCase(Locale.ROOT);
+        return contains(candidate.getName(), normalized)
+                || contains(candidate.getDescription(), normalized)
+                || candidate.getContainer() instanceof ClientModel client && contains(client.getClientId(), normalized);
+    }
+
+    private boolean contains(String value, String search) {
+        return value != null && value.toLowerCase(Locale.ROOT).contains(search);
+    }
+
+    private Comparator<RoleModel> effectiveRoleComparator() {
+        return Comparator.comparingInt(this::effectiveRoleTypeOrder)
+                .thenComparing(this::effectiveClientId)
+                .thenComparing(RoleModel::getName);
+    }
+
+    private int effectiveRoleTypeOrder(RoleModel role) {
+        return switch (role.getType()) {
+            case ORGANIZATION -> 0;
+            case REALM -> 1;
+            case CLIENT -> 2;
+        };
+    }
+
+    private String effectiveClientId(RoleModel role) {
+        return role.getContainer() instanceof ClientModel client ? client.getClientId() : "";
     }
 
     private RoleRepresentation withAccess(RoleRepresentation representation) {

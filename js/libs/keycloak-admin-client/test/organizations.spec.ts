@@ -207,6 +207,14 @@ describe("Organizations", () => {
         }),
       ).to.have.length(3);
       expect(
+        await kcAdminClient.organizations.listEffectiveRoleComposites({
+          orgId: organizationId,
+          roleId: organizationRoleId,
+          first: 0,
+          max: 10,
+        }),
+      ).to.have.length(3);
+      expect(
         await kcAdminClient.organizations.listRealmRoleComposites({
           orgId: organizationId,
           roleId: organizationRoleId,

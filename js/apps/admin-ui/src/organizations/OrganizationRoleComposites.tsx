@@ -8,6 +8,7 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
+  Checkbox,
   Modal,
   ModalVariant,
   ToggleGroup,
@@ -18,7 +19,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { emptyFormatter } from "../util";
+import { emptyFormatter, upperCaseFormatter } from "../util";
 import { translationFormatter } from "../utils/translationFormatter";
 
 type CompositeSource = "organization" | "realm" | "client";
@@ -26,6 +27,7 @@ type CompositeSource = "organization" | "realm" | "client";
 type CompositeRow = RoleRepresentation & {
   source: CompositeSource;
   clientName?: string;
+  isInherited?: boolean;
 };
 
 const sourceKey = (
@@ -42,6 +44,7 @@ const toRoleRepresentation = (role: CompositeRow): RoleRepresentation => {
   const representation: RoleRepresentation = { ...role };
   delete (representation as Partial<CompositeRow>).source;
   delete (representation as Partial<CompositeRow>).clientName;
+  delete (representation as Partial<CompositeRow>).isInherited;
   return representation;
 };
 
@@ -174,22 +177,46 @@ export const OrganizationRoleComposites = ({
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
+  const [hideInherited, setHideInherited] = useState(true);
   const [showAssign, setShowAssign] = useState(false);
   const [selected, setSelected] = useState<CompositeRow[]>([]);
   const refresh = () => setKey((value) => value + 1);
 
   const loader = async (first?: number, max?: number, search?: string) => {
     try {
-      const roles = await adminClient.organizations.listRoleComposites({
-        orgId: organizationId,
-        roleId,
-        first,
-        max,
-        search,
-      });
-      return roles.map((role) => ({
+      if (hideInherited) {
+        const roles = await adminClient.organizations.listRoleComposites({
+          orgId: organizationId,
+          roleId,
+          first,
+          max,
+          search,
+        });
+        return roles.map((role) => ({
+          ...role,
+          source: sourceKey(role, organizationId),
+          isInherited: false,
+        }));
+      }
+
+      const [effectiveRoles, directRoles] = await Promise.all([
+        adminClient.organizations.listEffectiveRoleComposites({
+          orgId: organizationId,
+          roleId,
+          first,
+          max,
+          search,
+        }),
+        adminClient.organizations.listRoleComposites({
+          orgId: organizationId,
+          roleId,
+        }),
+      ]);
+      const directRoleIds = new Set(directRoles.map((role) => role.id));
+      return effectiveRoles.map((role) => ({
         ...role,
         source: sourceKey(role, organizationId),
+        isInherited: !directRoleIds.has(role.id),
       }));
     } catch (error) {
       addError("organizationRoleCompositesLoadError", error);
@@ -224,7 +251,7 @@ export const OrganizationRoleComposites = ({
       try {
         await adminClient.organizations.delRoleComposites(
           { orgId: organizationId, roleId },
-          selected,
+          selected.map(toRoleRepresentation),
         );
         addAlert(t("organizationRoleCompositesRemoved"), AlertVariant.success);
         setSelected([]);
@@ -252,26 +279,48 @@ export const OrganizationRoleComposites = ({
         loader={loader}
         isPaginated
         canSelectAll={canManage}
-        onSelect={canManage ? (roles) => setSelected([...roles]) : undefined}
+        onSelect={
+          canManage
+            ? (roles) => setSelected(roles.filter((role) => !role.isInherited))
+            : undefined
+        }
+        isRowDisabled={(role) => role.isInherited || false}
         ariaLabelKey="organizationRoleComposites"
         searchPlaceholderKey="searchForRoles"
         toolbarItem={
-          canManage && (
-            <>
-              <ToolbarItem>
-                <Button onClick={openAssign}>{t("addAssociatedRoles")}</Button>
-              </ToolbarItem>
-              <ToolbarItem>
-                <Button
-                  variant="link"
-                  isDisabled={selected.length === 0}
-                  onClick={toggleRemoveDialog}
-                >
-                  {t("unAssignRole")}
-                </Button>
-              </ToolbarItem>
-            </>
-          )
+          <>
+            <ToolbarItem>
+              <Checkbox
+                label={t("hideInheritedRoles")}
+                id="hideInheritedRoles"
+                data-testid="hideInheritedRoles"
+                isChecked={hideInherited}
+                onChange={(_event, checked) => {
+                  setHideInherited(checked);
+                  setSelected([]);
+                  refresh();
+                }}
+              />
+            </ToolbarItem>
+            {canManage && (
+              <>
+                <ToolbarItem>
+                  <Button onClick={openAssign}>
+                    {t("addAssociatedRoles")}
+                  </Button>
+                </ToolbarItem>
+                <ToolbarItem>
+                  <Button
+                    variant="link"
+                    isDisabled={selected.length === 0}
+                    onClick={toggleRemoveDialog}
+                  >
+                    {t("unAssignRole")}
+                  </Button>
+                </ToolbarItem>
+              </>
+            )}
+          </>
         }
         actions={
           canManage
@@ -279,6 +328,9 @@ export const OrganizationRoleComposites = ({
                 {
                   title: t("unAssignRole"),
                   onRowClick: (role) => {
+                    if (role.isInherited) {
+                      return false;
+                    }
                     setSelected([role]);
                     toggleRemoveDialog();
                   },
@@ -294,6 +346,11 @@ export const OrganizationRoleComposites = ({
             cellRenderer: (role) => t(`${role.source}Role`),
           },
           {
+            name: "isInherited",
+            displayKey: "inherent",
+            cellFormatters: [upperCaseFormatter(), emptyFormatter()],
+          },
+          {
             name: "description",
             displayKey: "description",
             cellFormatters: [translationFormatter(t)],
@@ -307,6 +364,16 @@ export const OrganizationRoleComposites = ({
             }
             primaryActionText={canManage ? t("addAssociatedRoles") : ""}
             onPrimaryAction={canManage ? openAssign : undefined}
+            secondaryActions={[
+              {
+                text: t("showInheritedRoles"),
+                onClick: () => {
+                  setHideInherited(false);
+                  setSelected([]);
+                  refresh();
+                },
+              },
+            ]}
           />
         }
       />

@@ -284,6 +284,54 @@ public class OrganizationRolesResourceTest {
     }
 
     @Test
+    public void effectiveCompositesExpandFilterDeduplicateAndPage() {
+        TestContext context = new TestContext();
+        TestRole parent = context.addOrganizationRole("parent", "parent");
+        TestRole organizationChild = context.addOrganizationRole("org-child", "00-org-child");
+        TestRole organizationGrandchild = context.addOrganizationRole("org-grandchild", "01-org-grandchild");
+        TestRole otherOrganizationRole = context.addOrganizationRole("other-child", "other-child", context.otherOrganization);
+        TestRole realmDirect = context.addRealmRole("realm-direct", "02-realm-direct");
+        TestRole realmDuplicate = context.addRealmRole("realm-duplicate", "03-realm-duplicate");
+        TestRole realmNested = context.addRealmRole("realm-nested", "04-realm-nested");
+        ClientModel client = context.addClient("client-1", "application");
+        TestRole clientNested = context.addClientRole("client-nested", "05-client-nested", client);
+        parent.composites.add(organizationChild.model);
+        parent.composites.add(realmDirect.model);
+        parent.composites.add(realmDuplicate.model);
+        organizationChild.composites.add(organizationGrandchild.model);
+        organizationChild.composites.add(realmNested.model);
+        organizationChild.composites.add(realmDuplicate.model);
+        organizationChild.composites.add(otherOrganizationRole.model);
+        organizationGrandchild.composites.add(parent.model);
+        realmNested.composites.add(clientNested.model);
+        OrganizationRoleResource resource = new OrganizationRoleResource(context.session, context.organization, parent.model, context.adminEvent, context.auth);
+
+        assertEquals(List.of("00-org-child", "02-realm-direct", "03-realm-duplicate"),
+                resource.getRoleComposites(null, null, null).map(RoleRepresentation::getName).toList());
+        parent.composites.add(parent.model);
+        List<RoleRepresentation> effective = resource.getEffectiveRoleComposites(null, null, null).toList();
+        assertEquals(List.of(
+                "00-org-child",
+                "01-org-grandchild",
+                "02-realm-direct",
+                "03-realm-duplicate",
+                "04-realm-nested",
+                "05-client-nested"),
+                effective.stream().map(RoleRepresentation::getName).toList());
+        assertEquals(Boolean.TRUE, effective.get(0).getAccess().get("view"));
+        assertFalse(effective.stream().map(RoleRepresentation::getName).toList().contains("other-child"));
+        assertFalse(effective.stream().map(RoleRepresentation::getId).toList().contains(parent.id));
+        assertEquals(1, effective.stream().filter(role -> Objects.equals(role.getId(), realmDuplicate.id)).count());
+        assertEquals(List.of("01-org-grandchild"), resource.getEffectiveRoleComposites("grand", null, null)
+                .map(RoleRepresentation::getName).toList());
+        assertEquals(List.of("01-org-grandchild", "02-realm-direct"), resource.getEffectiveRoleComposites(null, 1, 2)
+                .map(RoleRepresentation::getName).toList());
+
+        context.permissions.roleView = false;
+        assertThrows(ForbiddenException.class, () -> resource.getEffectiveRoleComposites(null, null, null));
+    }
+
+    @Test
     public void itemAssignsAndRevokesUsers() {
         TestContext context = new TestContext();
         TestRole role = context.addOrganizationRole("role-1", "member");

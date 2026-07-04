@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   addError: vi.fn(),
   listComposites: vi.fn(),
   listAvailableComposites: vi.fn(),
+  listEffectiveComposites: vi.fn(),
   addComposites: vi.fn(),
   delComposites: vi.fn(),
   tables: [] as any[],
@@ -36,6 +37,7 @@ vi.mock("../admin-client", () => ({
       organizations: {
         listRoleComposites: mocks.listComposites,
         listAvailableRoleComposites: mocks.listAvailableComposites,
+        listEffectiveRoleComposites: mocks.listEffectiveComposites,
         addRoleComposites: mocks.addComposites,
         delRoleComposites: mocks.delComposites,
       },
@@ -63,9 +65,18 @@ vi.mock("@keycloak/keycloak-ui-shared", () => ({
   },
   ListEmptyState: (props: any) => {
     mocks.emptyStates.push(props);
-    return props.onPrimaryAction ? (
-      <button onClick={props.onPrimaryAction}>empty-action</button>
-    ) : null;
+    return (
+      <>
+        {props.onPrimaryAction && (
+          <button onClick={props.onPrimaryAction}>empty-action</button>
+        )}
+        {props.secondaryActions?.map((action: any) => (
+          <button key={action.text} onClick={action.onClick}>
+            {action.text}
+          </button>
+        ))}
+      </>
+    );
   },
 }));
 
@@ -83,6 +94,7 @@ describe("OrganizationRoleComposites", () => {
     mocks.confirms.length = 0;
     mocks.listComposites.mockReset().mockResolvedValue([]);
     mocks.listAvailableComposites.mockReset().mockResolvedValue([]);
+    mocks.listEffectiveComposites.mockReset().mockResolvedValue([]);
     mocks.addComposites.mockReset().mockResolvedValue(undefined);
     mocks.delComposites.mockReset().mockResolvedValue(undefined);
   });
@@ -112,9 +124,7 @@ describe("OrganizationRoleComposites", () => {
     });
     table.columns[1].cellRenderer({ source: "realm" });
 
-    act(() => {
-      table.toolbarItem.props.children[0].props.children.props.onClick();
-    });
+    fireEvent.click(screen.getByText("addAssociatedRoles"));
     expect(screen.getByText(/addAssociatedRolesTo/)).toBeTruthy();
 
     const modalTable = mocks.tables.findLast(
@@ -152,6 +162,72 @@ describe("OrganizationRoleComposites", () => {
     });
     expect(mocks.delComposites).toHaveBeenCalled();
     mocks.confirms.at(-1).onCancel();
+  });
+
+  it("loads effective composites and prevents inherited removal", async () => {
+    render(
+      <OrganizationRoleComposites
+        organizationId="org-id"
+        roleId="role-id"
+        roleName="parent"
+        canManage
+      />,
+    );
+    let table = mocks.tables.at(-1);
+    mocks.listComposites.mockResolvedValueOnce([
+      { id: "direct", containerId: "org-id", name: "direct" },
+    ]);
+    expect(await table.loader()).toEqual([
+      expect.objectContaining({
+        id: "direct",
+        source: "organization",
+        isInherited: false,
+      }),
+    ]);
+
+    fireEvent.click(screen.getByTestId("hideInheritedRoles"));
+    table = mocks.tables.at(-1);
+    mocks.listEffectiveComposites.mockResolvedValueOnce([
+      { id: "direct", containerId: "org-id", name: "direct" },
+      { id: "inherited", containerId: "realm-id", name: "inherited" },
+    ]);
+    mocks.listComposites.mockResolvedValueOnce([
+      { id: "direct", containerId: "org-id", name: "direct" },
+    ]);
+
+    const roles = await table.loader(0, 10, "role");
+    expect(mocks.listEffectiveComposites).toHaveBeenCalledWith({
+      orgId: "org-id",
+      roleId: "role-id",
+      first: 0,
+      max: 10,
+      search: "role",
+    });
+    expect(roles).toEqual([
+      expect.objectContaining({ id: "direct", isInherited: false }),
+      expect.objectContaining({
+        id: "inherited",
+        source: "realm",
+        isInherited: true,
+      }),
+    ]);
+    expect(table.isRowDisabled(roles[1])).toBe(true);
+    expect(table.actions[0].onRowClick(roles[1])).toBe(false);
+    expect(mocks.toggleConfirm).not.toHaveBeenCalled();
+
+    act(() => {
+      table.onSelect(roles);
+    });
+    await act(async () => {
+      table.actions[0].onRowClick(roles[0]);
+    });
+    await act(async () => {
+      await mocks.confirms.at(-1).onConfirm();
+    });
+    expect(mocks.delComposites).toHaveBeenCalledWith(
+      { orgId: "org-id", roleId: "role-id" },
+      [{ id: "direct", containerId: "org-id", name: "direct" }],
+    );
   });
 
   it("loads every source in the assignment modal", async () => {
@@ -235,9 +311,7 @@ describe("OrganizationRoleComposites", () => {
     const table = mocks.tables.at(-1);
     mocks.listComposites.mockRejectedValueOnce(new Error("load"));
     expect(await table.loader()).toEqual([]);
-    act(() => {
-      table.toolbarItem.props.children[0].props.children.props.onClick();
-    });
+    fireEvent.click(screen.getByText("addAssociatedRoles"));
     mocks.addComposites.mockRejectedValueOnce(new Error("add"));
     const modalTable = mocks.tables.findLast(
       (props) => props.ariaLabelKey === "availableOrganizationRoleComposites",
@@ -275,7 +349,9 @@ describe("OrganizationRoleComposites", () => {
       />,
     );
     const table = mocks.tables.at(-1);
-    expect(table.toolbarItem).toBe(false);
+    expect(screen.getByTestId("hideInheritedRoles")).toBeTruthy();
+    expect(screen.queryByText("addAssociatedRoles")).toBeNull();
+    fireEvent.click(screen.getByText("showInheritedRoles"));
     expect(table.onSelect).toBeUndefined();
     expect(table.actions).toBeUndefined();
     expect(mocks.emptyStates.at(-1).onPrimaryAction).toBeUndefined();
