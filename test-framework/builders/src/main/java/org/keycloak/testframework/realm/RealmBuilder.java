@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
@@ -242,6 +243,10 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
     public RealmBuilder eventsExpiration(long eventsExpiration) {
         rep.setEventsExpiration(eventsExpiration);
         return this;
+    }
+
+    public RealmBuilder adminEventsExpiration(long adminEventsExpiration) {
+        return attribute(RealmAttributes.ADMIN_EVENTS_EXPIRATION, String.valueOf(adminEventsExpiration));
     }
 
     public RealmBuilder internationalizationEnabled(boolean enabled) {
