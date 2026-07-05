@@ -144,19 +144,21 @@ public class KeycloakRecorder {
             return null;
         }
         
-        String adminHostnameOrUrl = Configuration.getConfigValue(HostnameV2Options.HOSTNAME_ADMIN).getValue();
-        String adminHostname = null;
-        if (adminHostnameOrUrl != null) {
-            if (adminHostnameOrUrl.startsWith("http://") || adminHostnameOrUrl.startsWith("https://")) {
-                adminHostname = URI.create(adminHostnameOrUrl).getHost(); 
-            } else {
-                adminHostname = adminHostnameOrUrl;
-            }
-        }
-        boolean isStrict = Configuration.getConfigValue(HostnameV2Options.HOSTNAME).getValue() != null;
-        return new MisdirectedFilter(isStrict, adminHostname);
+        Set<String> allowedHosts = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        extractHost(HostnameV2Options.HOSTNAME, allowedHosts);
+        extractHost(HostnameV2Options.HOSTNAME_ADMIN, allowedHosts);
+        return new MisdirectedFilter(allowedHosts);
     }
     
+    private static void extractHost(Option<String> option, Set<String> allowedHosts) {
+        String hostnameOrUrl = Configuration.getConfigValue(option).getValue();
+        if (hostnameOrUrl != null) {
+            allowedHosts.add((hostnameOrUrl.startsWith("http://") || hostnameOrUrl.startsWith("https://"))
+                    ? URI.create(hostnameOrUrl).getHost()
+                    : hostnameOrUrl);
+        }
+    }
+
     public void configureTruststore() {
         List<String> truststores = new ArrayList<>();
         Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
