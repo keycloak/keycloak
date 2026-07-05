@@ -17,6 +17,7 @@
 
 package org.keycloak.loginfailures.jpa;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.IntConsumer;
 
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -37,7 +38,7 @@ public enum LoginFailureExpirationAction implements ExpirationAction {
             return false;
         }
         // expired if last-failure + max-delta-time < current time
-        var expired = currentTime - realm.getMaxDeltaTimeSeconds();
+        var expired = TimeUnit.SECONDS.toMillis(currentTime - realm.getMaxDeltaTimeSeconds());
         var em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
         var userIds = em.createNamedQuery("findExpiredLoginFailureUserIdsByRealm", String.class)
                 .setParameter("realmId", realmId)

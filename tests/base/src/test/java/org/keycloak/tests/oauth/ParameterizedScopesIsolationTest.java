@@ -2,6 +2,7 @@ package org.keycloak.tests.oauth;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -64,7 +65,7 @@ public class ParameterizedScopesIsolationTest {
     OAuthClient oauth;
 
     @Test
-    public void testParameterizedScopeIsolationAcrossCodeExchangeAndRefresh() {
+    public void isolationAcrossCodeExchangeAndRefresh() {
         createAndAssignParameterizedScope(SCOPE_NAME, "string");
 
         String scopeA = SCOPE_NAME + ":" + VALUE_A;
@@ -113,30 +114,40 @@ public class ParameterizedScopesIsolationTest {
         assertTokenScope(refreshResponse2, scopeB, scopeA);
     }
 
-    private void assertTokenScope(AccessTokenResponse response, String expectedScope, String notExpectedScope) {
-        AccessToken token = oauth.parseToken(response.getAccessToken(), AccessToken.class);
-        assertScopeContains(token.getScope(), expectedScope);
-        assertScopeNotContains(token.getScope(), notExpectedScope);
-    }
+    @Test
+    public void usernameScopeTypeResolvesUserByEmailWhenLoginWithEmailAllowed() {
+        realm.updateWithCleanup(r -> r.loginWithEmailAllowed(true));
 
-    private void createAndAssignParameterizedScope(String name, String type) {
-        ClientScopeRepresentation scopeRep = ParameterizedScopeBuilder.create(name)
-                .parameterizedScopeType(type)
-                .build();
+        String scopeName = "email-scope";
+        String requestedScope = scopeName + ":target@localhost";
+        createAndAssignParameterizedScope(scopeName, "username");
 
-        String scopeId;
-        try (Response response = realm.admin().clientScopes().create(scopeRep)) {
-            assertEquals(201, response.getStatus(), "Parameterized scope creation should succeed");
-            scopeId = ApiUtil.getCreatedId(response);
-        }
+        AuthorizationEndpointResponse authResponse = oauth.loginForm()
+                .scope(requestedScope)
+                .doLogin(USERNAME, PASSWORD);
+        assertTrue(authResponse.isRedirected());
 
-        String clientId = realm.admin().clients().findByClientId(oauth.getClientId()).get(0).getId();
-        realm.cleanup().add(r -> r.clientScopes().get(scopeId).remove());
-        realm.admin().clients().get(clientId).addOptionalClientScope(scopeId);
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authResponse.getCode());
+        assertTrue(tokenResponse.isSuccess());
+        assertScopeContains(tokenResponse.getScope(), requestedScope);
     }
 
     @Test
-    public void testUsernameScopeTypeDropsScopeWhenTargetUserDisabled() {
+    public void usernameScopeTypeRejectsEmailWhenLoginWithEmailNotAllowed() {
+        realm.updateWithCleanup(r -> r.loginWithEmailAllowed(false));
+
+        String scopeName = "no-email-scope";
+        String requestedScope = scopeName + ":target@localhost";
+        createAndAssignParameterizedScope(scopeName, "username");
+
+        oauth.scope(requestedScope);
+        oauth.openLoginForm();
+        AuthorizationEndpointResponse res = oauth.parseLoginResponse();
+        assertEquals(OAuthErrorException.INVALID_SCOPE, res.getError());
+    }
+
+    @Test
+    public void usernameScopeTypeDropsScopeWhenTargetUserDisabled() {
         String scopeName = "user-scope";
         String requestedScope = scopeName + ":" + targetUser.getUsername();
 
@@ -179,6 +190,28 @@ public class ParameterizedScopesIsolationTest {
         assertNotNull(scopeString, "Scope string should not be null");
         assertFalse(scopeString.contains(notExpectedScope),
                 "Scope '" + scopeString + "' should NOT contain '" + notExpectedScope + "'");
+    }
+
+    private void assertTokenScope(AccessTokenResponse response, String expectedScope, String notExpectedScope) {
+        AccessToken token = oauth.parseToken(response.getAccessToken(), AccessToken.class);
+        assertScopeContains(token.getScope(), expectedScope);
+        assertScopeNotContains(token.getScope(), notExpectedScope);
+    }
+
+    private void createAndAssignParameterizedScope(String name, String type) {
+        ClientScopeRepresentation scopeRep = ParameterizedScopeBuilder.create(name)
+                .parameterizedScopeType(type)
+                .build();
+
+        String scopeId;
+        try (Response response = realm.admin().clientScopes().create(scopeRep)) {
+            assertEquals(201, response.getStatus(), "Parameterized scope creation should succeed");
+            scopeId = ApiUtil.getCreatedId(response);
+        }
+
+        String clientId = realm.admin().clients().findByClientId(oauth.getClientId()).get(0).getId();
+        realm.cleanup().add(r -> r.clientScopes().get(scopeId).remove());
+        realm.admin().clients().get(clientId).addOptionalClientScope(scopeId);
     }
 
     static class TestRealmConfig implements RealmConfig {

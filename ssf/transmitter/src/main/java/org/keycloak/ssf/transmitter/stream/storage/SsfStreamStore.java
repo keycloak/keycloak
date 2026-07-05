@@ -54,15 +54,25 @@ public interface SsfStreamStore {
     List<StreamConfig> getAvailableStreams(ClientModel receiverClient);
 
     /**
-     * Returns every stream configuration attached to a client whose SSF
-     * receiver capability is enabled (i.e. the client carries the
-     * {@code ssf.enabled} attribute). This does <strong>not</strong> filter
-     * by per-stream {@code StreamStatusValue} — a stream registered against
-     * an SSF-enabled client is returned regardless of whether it is
-     * {@code enabled}, {@code paused}, or {@code disabled}; the dispatcher
-     * applies the per-stream status filter in
-     * {@code SecurityEventTokenDispatcher#dispatchEvent} before actually
-     * delivering an event.
+     * Returns every stream configuration eligible for event delivery —
+     * i.e. attached to a client that is an <em>enabled</em> SSF receiver.
+     * Implementations MUST exclude both clients that are not configured as
+     * SSF receivers and receivers whose client is disabled, so the
+     * transmitter stops delivering to a receiver the operator has switched
+     * off — the per-client counterpart to the realm-level transmitter
+     * disable.
+     *
+     * <p>This is the dispatch-enumeration entry point and is deliberately
+     * stricter than the management lookups ({@link #getStream} /
+     * {@link #getAvailableStreams}), which resolve a disabled client's
+     * stream so admin flows can still read and delete it.
+     *
+     * <p>This does <strong>not</strong> filter by per-stream
+     * {@code StreamStatusValue} — a stream owned by an eligible client is
+     * returned regardless of whether it is {@code enabled}, {@code paused},
+     * or {@code disabled}; the dispatcher applies the per-stream status
+     * filter in {@code SecurityEventTokenDispatcher#dispatchEvent} before
+     * actually delivering an event.
      *
      * <p>Used when there is no specific client context on the session, e.g.
      * when the event listener fans an event out to all receivers.

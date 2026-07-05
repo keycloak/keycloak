@@ -1124,7 +1124,11 @@ public class LoginTest {
         assertTrue(authSessionId.length() >= 24);
         assertNotNull(signature);
 
-        runOnServer.run(session-> assertNotNull(session.authenticationSessions().getRootAuthenticationSession(session.getContext().getRealm(), authSessionId)));
+        var managedRealmId = managedRealm.getId();
+        runOnServer.run(session-> {
+            RealmModel realm = session.realms().getRealm(managedRealmId);
+            assertNotNull(session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId));
+        });
     }
 
     @Test

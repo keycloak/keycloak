@@ -158,6 +158,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder loginWithEmailAllowed(boolean loginWithEmailAllowed) {
+        rep.setLoginWithEmailAllowed(loginWithEmailAllowed);
+        return this;
+    }
+
     public RealmBuilder registrationEmailAsUsername(boolean registrationEmailAsUsername) {
         rep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
         return this;
@@ -220,6 +225,12 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
 
     public RealmBuilder removeEventListeners(String... eventListeners) {
         rep.setEventsListeners(removeValues(rep.getEventsListeners(), eventListeners));
+        return this;
+    }
+
+    public RealmBuilder browserSecurityHeader(String name, String value) {
+        rep.setBrowserSecurityHeaders(createIfNull(rep.getBrowserSecurityHeaders(), HashMap::new));
+        rep.getBrowserSecurityHeaders().put(name, value);
         return this;
     }
 
@@ -633,6 +644,21 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
 
     public RealmBuilder accountTheme(String accountTheme) {
         rep.setAccountTheme(accountTheme);
+        return this;
+    }
+
+    public RealmBuilder permanentLockout(boolean permanentLockout) {
+        rep.setPermanentLockout(permanentLockout);
+        return this;
+    }
+
+    public RealmBuilder maxTemporaryLockouts(int maxTemporaryLockouts) {
+        rep.setMaxTemporaryLockouts(maxTemporaryLockouts);
+        return this;
+    }
+
+    public RealmBuilder maxDeltaTimeSeconds(int maxDeltaTimeSeconds) {
+        rep.setMaxDeltaTimeSeconds(maxDeltaTimeSeconds);
         return this;
     }
 
