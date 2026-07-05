@@ -55,7 +55,8 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     private static final Logger logger = Logger.getLogger(JpaEventStoreProvider.class);
     private static final int EXPIRED_DELETE_MAX_RESULTS = 500;
-    private static final long EXPIRED_DELETE_TIME_LIMIT_MS = 5 * 60 * 1000L;
+    // maximum 4 minutes duration in case there is a big backlog of old events to be deleted
+    private static final long EXPIRED_DELETE_TIME_LIMIT_MS = 4 * 60 * 1000L;
 
     private final KeycloakSession session;
     private final EntityManager em;
@@ -89,6 +90,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     public void clearExpiredEvents() {
         int numDeleted = 0;
         long currentTimeMillis = Time.currentTimeMillis();
+        long deadline = currentTimeMillis + EXPIRED_DELETE_TIME_LIMIT_MS;
 
         List<Object[]> realmExpirations = em.createQuery(
                 "select r.id, r.eventsExpiration from RealmEntity r where r.eventsExpiration > 0", Object[].class)
@@ -101,7 +103,8 @@ public class JpaEventStoreProvider implements EventStoreProvider {
             int currentNumDeleted = deleteByIdBatches(
                     "select event.id from EventEntity event where event.realmId = :realmId and event.time < :eventTime order by event.time",
                     query -> query.setParameter("realmId", realmId).setParameter("eventTime", eventTime),
-                    "delete from EventEntity event where event.id in :eventIds");
+                    "delete from EventEntity event where event.id in :eventIds",
+                    deadline);
             logger.tracef("Deleted %d events for realm %s with expiration %d", (Object) currentNumDeleted, realmId, expiration);
             numDeleted += currentNumDeleted;
         }
@@ -257,6 +260,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
         int numDeleted = 0;
         long current = Time.currentTimeMillis();
+        long deadline = current + EXPIRED_DELETE_TIME_LIMIT_MS;
         for (Object[] row : realmExpirations) {
             String realmId = (String) row[0];
             long expiration = (Long) row[1];
@@ -264,18 +268,18 @@ public class JpaEventStoreProvider implements EventStoreProvider {
             int currentNumDeleted = deleteByIdBatches(
                     "select event.id from AdminEventEntity event where event.realmId = :realmId and event.time < :eventTime order by event.time",
                     queryBuilder -> queryBuilder.setParameter("realmId", realmId).setParameter("eventTime", eventTime),
-                    "delete from AdminEventEntity event where event.id in :eventIds");
+                    "delete from AdminEventEntity event where event.id in :eventIds",
+                    deadline);
             logger.tracef("Deleted %d admin events for realm %s with expiration %d", (Object) currentNumDeleted, realmId, expiration);
             numDeleted += currentNumDeleted;
         }
         logger.debugf("Cleared %d expired admin events in all realms", numDeleted);
     }
 
-    private int deleteByIdBatches(String selectIdsQuery, Consumer<TypedQuery<String>> queryConfigurator, String deleteByIdsQuery) {
+    private int deleteByIdBatches(String selectIdsQuery, Consumer<TypedQuery<String>> queryConfigurator, String deleteByIdsQuery, long deadline) {
         int deleted = 0;
-        long startTime = Time.currentTimeMillis();
         while (true) {
-            if (Time.currentTimeMillis() - startTime > EXPIRED_DELETE_TIME_LIMIT_MS) {
+            if (Time.currentTimeMillis() > deadline) {
                 logger.debugf("Batch delete reached time limit after deleting %d rows", deleted);
                 return deleted;
             }

@@ -143,6 +143,9 @@ public class AdminEventsTest {
                 .adminEventsEnabled(true)
                 .adminEventsExpiration(1));
 
+        // create at least one event
+        realm.addUser(UserBuilder.create("expire_admin_event"));
+
         List<AdminEventRepresentation> storedAdminEvents = realm.admin().getAdminEvents();
         Assertions.assertFalse(storedAdminEvents.isEmpty(), "Expected at least one admin event in the store");
 
