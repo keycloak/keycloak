@@ -42,6 +42,7 @@ import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -81,6 +82,7 @@ import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_URI_
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_RESPONSE_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.ISSUER_METADATA_ATTACHMENT_KEY;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -681,5 +683,18 @@ public class OID4VCBasicWallet {
             openLoginForm();
             return parseLoginResponse();
         }
+    }
+
+    public void assertAccessTokenAudience(String accessToken, String... expectedAudience) {
+        assertNotNull(accessToken);
+        assertNotNull(expectedAudience);
+
+        AccessToken token = oauth.verifyToken(accessToken);
+        assertNotNull(token);
+
+        String[] audience = token.getAudience();
+        assertNotNull(audience);
+        assertEquals(expectedAudience.length, audience.length);
+        assertArrayEquals(expectedAudience, audience, "Access token audience should be limited to credential endpoint");
     }
 }
