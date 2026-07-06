@@ -25,7 +25,7 @@ Two or more independent {project_name} deployments running in different sites.
 
 Users, realms, clients, sessions, and other entities are stored in a database that is replicated synchronously across all sites.
 
-The realm data, including clients and groups, and authorization data is cached in the {project_name} embedded Infinispan caches as local caches.
+The realm data, including clients and groups, and authorization data are cached in the {project_name} embedded Infinispan caches as local caches.
 
 image::high-availability/active-active-stateless.dio.svg[]
 

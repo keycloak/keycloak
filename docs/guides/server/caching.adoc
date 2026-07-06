@@ -158,7 +158,7 @@ Disabling `persistent-user-sessions` is not possible when `multi-site` feature i
 
 <@features.techpreview feature="stateless"/>
 
-When the feature `stateless` is enabled, {project_name} will not cache user entity data, and information from login failures, authentication sessions and action tokens will be persisted to the database. While realm data and authentication data is still cached, no state is kept in memory, and the database is the source of truth. The work cache is still used to invalidate realm and authentication data within the cluster.
+When the feature `stateless` is enabled, {project_name} will not cache user entity data, and information from login failures, authentication sessions and action tokens will be persisted to the database. While realm data and authentication data are still cached, no state is kept in memory, and the database is the source of truth. The work cache is still used to invalidate realm and authentication data within the cluster.
 
 If you are running multiple {project_name} clusters, they will send invalidation events via a database table. For that, each cluster needs to have a unique name specified via `spi-cache-embedded--default--cluster-name`.
 
