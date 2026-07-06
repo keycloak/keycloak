@@ -4,9 +4,9 @@
 <@tmpl.guide
 title="Concepts for multi-cluster deployments (v2)"
 summary="Understand multi-cluster deployment with synchronous replication without an external {jdgserver_name} cluster. This is an experimental feature."
-tileVisible="false" >
-
-<#include "/templates/experimental-feature.adoc">
+tileVisible="false"
+preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/issues/49469" >
 
 This topic describes a highly available multi-cluster setup and the behavior to expect.
 It outlines the requirements of the high availability architecture and describes the benefits and tradeoffs.

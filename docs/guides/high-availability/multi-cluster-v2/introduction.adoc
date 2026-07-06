@@ -4,9 +4,9 @@
 
 <@tmpl.guide
 title="Multi-cluster deployments (v2)"
-summary="Connect multiple {project_name} deployments without an external {jdgserver_name} cluster" >
-
-<#include "/templates/experimental-feature.adoc">
+summary="Connect multiple {project_name} deployments without an external {jdgserver_name} cluster"
+preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/issues/49469" >
 
 {project_name} allows deployments that consist of multiple {project_name} instances that connect to each other using its embedded Infinispan caches.
 Load balancers can distribute the load evenly across those instances.
