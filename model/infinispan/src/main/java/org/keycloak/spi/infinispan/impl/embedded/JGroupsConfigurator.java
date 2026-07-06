@@ -250,7 +250,7 @@ public final class JGroupsConfigurator {
                     // TODO: Remove this case once the model tests have been migrated
                     logger.error("The stateless feature must hast JDBC_PING discovery enabled");
                 } else {
-                    throw new RuntimeException("The stateless feature must hast JDBC_PING discovery enabled");
+                    throw new RuntimeException("The stateless feature must have JDBC_PING discovery enabled");
                 }
             }
             return;
