@@ -89,13 +89,6 @@ public class CredentialScopeModel implements ClientScopeModel {
     public static final String VC_SIGNING_KEY_ID = "vc.signing_key_id";
 
     /**
-     * Optional strategy for additional issuer key resolution requirements.
-     * If absent, credential issuance follows the regular OID4VCI behavior.
-     */
-    public static final String VC_ISSUER_KEY_RESOLUTION_STRATEGY = "vc.issuer_key_resolution_strategy";
-    public static final String VC_ISSUER_KEY_RESOLUTION_STRATEGY_HAIP_X5C = "haip_x5c";
-
-    /**
      * an optional attribute for the metadata endpoint
      */
     public static final String VC_DISPLAY = "vc.display";
@@ -265,16 +258,6 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public void setSigningKeyId(String signingKeyId) {
         clientScope.setAttribute(VC_SIGNING_KEY_ID, signingKeyId);
-    }
-
-    public String getIssuerKeyResolutionStrategy() {
-        return Optional.ofNullable(clientScope.getAttribute(VC_ISSUER_KEY_RESOLUTION_STRATEGY))
-                .filter(StringUtil::isNotBlank)
-                .orElse(null);
-    }
-
-    public void setIssuerKeyResolutionStrategy(String issuerKeyResolutionStrategy) {
-        clientScope.setAttribute(VC_ISSUER_KEY_RESOLUTION_STRATEGY, issuerKeyResolutionStrategy);
     }
 
     public String getBuildConfigHashAlgorithm() {

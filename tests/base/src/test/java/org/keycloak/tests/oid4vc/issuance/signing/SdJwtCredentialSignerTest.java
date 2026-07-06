@@ -66,12 +66,10 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
 import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_ISSUER_KEY_RESOLUTION_STRATEGY_HAIP_X5C;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -137,8 +135,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
                     .setNumberOfDecoys(0)
                     .setSdJwtVisibleClaims(List.of())
                     .setSigningKeyId(keyWrapper.getKid())
-                    .setSigningAlgorithm(Algorithm.RS256)
-                    .setIssuerKeyResolutionStrategy(VC_ISSUER_KEY_RESOLUTION_STRATEGY_HAIP_X5C);
+                    .setSigningAlgorithm(Algorithm.RS256);
 
             SdJwtCredentialSigner signer = new SdJwtCredentialSigner(session);
             SdJwtCredentialBody body = new SdJwtCredentialBuilder()
@@ -234,9 +231,10 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
     }
 
     @Test
-    public void testDefaultSdJwtDoesNotRequireX5cHeader() throws Exception {
+    public void testSdJwtIncludesX5cHeaderByDefault() throws Exception {
         runOnServer.run(session -> {
             KeyWrapper keyWrapper = getKeyFromSession(session);
+            ensureHaipCompliantCertificateChain(keyWrapper);
 
             CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
                     .setCredentialIssuer(TEST_DID.toString())
@@ -253,8 +251,10 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
             String sdJwtString = new SdJwtCredentialSigner(session).signCredential(credentialBody, credentialBuildConfig);
             SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtString);
 
-            assertNull(sdJwtVP.getIssuerSignedJWT().getJwsHeader().getX5c(),
-                    "x5c should only be required for the HAIP x5c issuer key resolution strategy");
+            assertNotNull(sdJwtVP.getIssuerSignedJWT().getJwsHeader().getX5c(),
+                    "x5c should be included when the signing key has a HAIP-compliant certificate chain");
+            assertFalse(sdJwtVP.getIssuerSignedJWT().getJwsHeader().getX5c().isEmpty(),
+                    "x5c should contain the signing certificate");
         });
     }
 
@@ -290,8 +290,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
                     .setNumberOfDecoys(0)
                     .setSdJwtVisibleClaims(List.of())
                     .setSigningKeyId(signingKeyId)
-                    .setSigningAlgorithm(Algorithm.RS256)
-                    .setIssuerKeyResolutionStrategy(VC_ISSUER_KEY_RESOLUTION_STRATEGY_HAIP_X5C);
+                    .setSigningAlgorithm(Algorithm.RS256);
 
             SdJwtCredentialSigner sdJwtCredentialSigner = new SdJwtCredentialSigner(session);
 
@@ -351,8 +350,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
                 .setNumberOfDecoys(0)
                 .setSdJwtVisibleClaims(List.of())
                 .setSigningKeyId(keyWrapper.getKid())
-                .setSigningAlgorithm(Algorithm.RS256)
-                .setIssuerKeyResolutionStrategy(VC_ISSUER_KEY_RESOLUTION_STRATEGY_HAIP_X5C);
+                .setSigningAlgorithm(Algorithm.RS256);
 
         VerifiableCredential testCredential = getTestCredential(Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID())));
         SdJwtCredentialBody credentialBody = new SdJwtCredentialBuilder().buildCredentialBody(testCredential, credentialBuildConfig);
