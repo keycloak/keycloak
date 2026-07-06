@@ -23,6 +23,7 @@ import java.util.stream.IntStream;
 import javax.naming.directory.BasicAttribute;
 
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -31,6 +32,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.UserStoragePrivateUtil;
@@ -148,6 +150,73 @@ public class UserSyncTest extends KeycloakModelTest {
                 (float) (timeNeeded) / NUMBER_OF_USERS), timeNeeded, Matchers.lessThan((long) (18 * NUMBER_OF_USERS)));
         assertThat(res.getAdded(), is(NUMBER_OF_USERS));
         assertThat(withRealm(realmId, (session, realm) -> UserStoragePrivateUtil.userLocalStorage(session).getUsersCount(realm)), is(NUMBER_OF_USERS));
+    }
+
+    @Test
+    public void testUserCacheSurvivesLastSyncUpdate() {
+        // give the provider a caching policy so federated users are cached and the assertions below
+        // are meaningful regardless of the parameterized default (the assumeThat further down still
+        // covers configurations where the user cache is globally disabled)
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel provider = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            provider.setCachePolicy(CacheableStorageProviderModel.CachePolicy.EVICT_DAILY);
+            realm.updateComponent(provider);
+            return null;
+        });
+
+        // create a user in LDAP and read it so it gets cached
+        withRealm(realmId, (session, realm) -> {
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "cacheuser", "CacheFN", "CacheLN", "cacheuser@email.org", "my-street 9", "1234");
+            return null;
+        });
+
+        Long firstCacheTimestamp = withRealm(realmId, (session, realm) -> {
+            UserModel user = session.users().getUserByUsername(realm, "cacheuser");
+            assertThat(user, is(notNullValue()));
+            return user instanceof CachedUserModel cached ? cached.getCacheTimestamp() : null;
+        });
+
+        // nothing to assert if this configuration does not cache federated users
+        assumeThat("Cannot run testUserCacheSurvivesLastSyncUpdate because federated users are not cached in this configuration",
+                firstCacheTimestamp, notNullValue());
+
+        // simulate the tail of a federation sync: persist only the lastSync timestamp on the provider
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel provider = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            provider.setLastSync(Time.currentTime(), UserStorageProviderModel.SyncMode.FULL);
+            realm.updateComponent(provider);
+            return null;
+        });
+
+        // the cached user must survive the lastSync bump (same cache timestamp => not evicted/reloaded)
+        withRealm(realmId, (session, realm) -> {
+            UserModel user = session.users().getUserByUsername(realm, "cacheuser");
+            assertThat(user, Matchers.instanceOf(CachedUserModel.class));
+            assertThat(((CachedUserModel) user).getCacheTimestamp(), is(firstCacheTimestamp));
+            return null;
+        });
+
+        // sanity check: a genuine (non-lastSync) config change still evicts the user cache
+        try {
+            Time.setOffset(10); // ensure a reload gets a strictly later cache timestamp
+            withRealm(realmId, (session, realm) -> {
+                UserStorageProviderModel provider = new UserStorageProviderModel(realm.getComponent(userFederationId));
+                provider.getConfig().putSingle("someUserAffectingSetting", "changed");
+                realm.updateComponent(provider);
+                return null;
+            });
+
+            withRealm(realmId, (session, realm) -> {
+                UserModel user = session.users().getUserByUsername(realm, "cacheuser");
+                assertThat(user, Matchers.instanceOf(CachedUserModel.class));
+                assertThat(((CachedUserModel) user).getCacheTimestamp(), is(not(firstCacheTimestamp)));
+                return null;
+            });
+        } finally {
+            Time.setOffset(0);
+        }
     }
 
     @Test
