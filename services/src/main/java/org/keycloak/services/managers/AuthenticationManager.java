@@ -157,6 +157,9 @@ public class AuthenticationManager {
     // userSession note with authTime (time when authentication flow including requiredActions was finished)
     public static final String AUTH_TIME = "AUTH_TIME";
 
+    // authSession note (seconds) with the time the user authenticated in this authentication session. Used to detect authentication sessions that authenticated before the user's credentials were reset.
+    public static final String AUTHENTICATION_TIME = "AUTHENTICATION_TIME";
+
     // authSession client note set during brokering indicating the time when the authentication happened at the IdP
     public static final String AUTH_TIME_BROKER = "AUTH_TIME_BROKER";
 
@@ -1124,6 +1127,25 @@ public class AuthenticationManager {
     }
 
     // Return null if action is not required. Or the alias of the requiredAction in case it is required.
+ 
+    public static void invalidateAuthenticationSessionsForUser(KeycloakSession session, RealmModel realm, UserModel user, AuthenticationSessionModel currentAuthSession) {
+        int now = Time.currentTime();
+        session.users().setNotBeforeForUser(realm, user, now);
+        currentAuthSession.setAuthNote(AUTHENTICATION_TIME, String.valueOf(now));
+    }
+
+    public static boolean isAuthenticationSessionInvalidatedByCredentialReset(KeycloakSession session, RealmModel realm, AuthenticationSessionModel authSession) {
+        UserModel user = authSession.getAuthenticatedUser();
+        if (user == null) {
+            return false;
+        }
+        String authenticationTime = authSession.getAuthNote(AUTHENTICATION_TIME);
+        if (authenticationTime == null) {
+            return false;
+        }
+        return Integer.parseInt(authenticationTime) < session.users().getNotBeforeOfUser(realm, user);
+    }
+
     public static String nextRequiredAction(final KeycloakSession session, final AuthenticationSessionModel authSession,
             final HttpRequest request, final EventBuilder event) {
         final var realm = authSession.getRealm();

@@ -1148,6 +1148,12 @@ public class AuthenticationProcessor {
 
     // May create new userSession too (if userSession argument is null)
     public static ClientSessionContext attachSession(AuthenticationSessionModel authSession, UserSessionModel userSession, KeycloakSession session, RealmModel realm, ClientConnection connection, EventBuilder event) {
+
+        if (AuthenticationManager.isAuthenticationSessionInvalidatedByCredentialReset(session, realm, authSession)) {
+            event.error(Errors.SESSION_EXPIRED);
+            throw new ErrorPageException(session, authSession, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
+        }
+
         String username = authSession.getAuthenticatedUser().getUsername();
         String attemptedUsername = authSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
         if (attemptedUsername != null) username = attemptedUsername;
@@ -1237,6 +1243,8 @@ public class AuthenticationProcessor {
 
     protected Response authenticationComplete() {
         new AcrStore(session, authenticationSession).setAuthFlowLevelAuthenticatedToCurrentRequest();
+
+        authenticationSession.setAuthNote(AuthenticationManager.AUTHENTICATION_TIME, String.valueOf(Time.currentTime()));
 
         // attachSession(); // Session will be attached after requiredActions + consents are finished.
         AuthenticationManager.setClientScopesInSession(session, authenticationSession);

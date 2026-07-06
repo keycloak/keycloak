@@ -215,6 +215,7 @@ public class AuthenticatorUtil {
                     });
         }
 
+        AuthenticationManager.invalidateAuthenticationSessionsForUser(session, realm, user, authSession);
     }
 
     private static void backchannelLogout(KeycloakSession session, RealmModel realm, ClientConnection conn, HttpRequest req, EventBuilder event, UserSessionModel s) {

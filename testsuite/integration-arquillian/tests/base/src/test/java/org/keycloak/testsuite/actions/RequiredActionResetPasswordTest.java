@@ -58,6 +58,7 @@ import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -204,6 +205,39 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
             MatcherAssert.assertThat(offlineSessions.stream().map(UserSessionRepresentation::getId).collect(Collectors.toList()),
                     Matchers.containsInAnyOrder(offlineSession.getSessionId()));
         }
+    }
+
+    @Test
+    public void resetPasswordLogoutSessionsInvalidatesInProgressAuthSession() {
+        requireUpdatePassword();
+        UserResource testUser = managedRealm.admin().users().get(findUser("test-user@localhost").getId());
+
+        // Browser attacker: authenticate with the current password and stop on the update password screen.
+        // This leaves an in progress authentication session that authenticated with the pre reset credentials.
+        driver2.navigate().to(oauth.loginForm().build());
+        driver2.findElement(By.id("username")).sendKeys("test-user@localhost");
+        driver2.findElement(By.id("password")).sendKeys("password");
+        driver2.findElement(By.id("password")).submit();
+        MatcherAssert.assertThat("Browser attacker should be on the update-password page",
+                driver2.findElements(By.id("password-new")).isEmpty(), Matchers.is(false));
+
+        timeOffSet.set(30);
+        
+        // Browser victim: reset the password and choose to sign out of other devices.
+        oauth.openLoginForm();
+        loginPage.login("test-user@localhost", "password");
+        changePasswordPage.assertCurrent();
+        changePasswordPage.checkLogoutSessions();
+        changePasswordPage.changePassword("new-password", "new-password");
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertEquals(1, testUser.getUserSessions().size());
+
+        // Browser attacker try to finish the flow. It must be rejected and must not create a session.
+        driver2.findElement(By.id("password-new")).sendKeys("attacker-password");
+        driver2.findElement(By.id("password-confirm")).sendKeys("attacker-password");
+        driver2.findElement(By.id("password-confirm")).submit();
+        assertEquals(1, testUser.getUserSessions().size());
+        MatcherAssert.assertThat(driver2.getPageSource(), Matchers.containsString("Session not active."));
     }
 
     @Test

@@ -1181,6 +1181,11 @@ public class LoginActionsService {
 
         AuthenticationSessionModel authSession = checks.getAuthenticationSession();
 
+        if (AuthenticationManager.isAuthenticationSessionInvalidatedByCredentialReset(session, realm, authSession)) {
+            event.error(Errors.SESSION_EXPIRED);
+            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
+        }
+
         processLocaleParam(authSession);
 
         if (!checks.isActionRequest()) {
