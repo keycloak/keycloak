@@ -296,8 +296,8 @@ The following table shows the recommended paths to expose.
 |/realms/master/
 | -
 |No
-|Although `/realms/` is exposed, the `master` realm is used for administrating {project_name} and is not needed for user-facing authentication.
-Restrict `/realms/master/` to internal or administrative access toreduce the attack surface.
+|Although `/realms/` is exposed, the `master` realm is used for administering {project_name} and is not needed for user-facing authentication.
+Restrict `/realms/master/` to internal or administrative access to reduce the attack surface.
 See <<isolating-master-realm, Isolating the master realm>> for more information.
 
 |/resources/
@@ -339,22 +339,22 @@ This is a non-blocking endpoint and should remain responsive under high load, so
 [[isolating-master-realm]]
 === Isolating the master realm
 
-The path under `/realms/` also includes the administrative `master` realm at ``/realms/master/`.
+The path under `/realms/` also includes the administrative `master` realm at `/realms/master/`.
 By default, the `master` realm is used only for administering {project_name}; regular applications authenticate against their own realms and do not need it.
 
-As a security best practice, do not expose `/realms/master/`  the public internet.
+As a security best practice, do not expose `/realms/master/` to the public internet.
 Restricting it to trusted, internal networks keeps the administrative endpoints of the `master` realm, such as its token endpoints and login flows, unreachable from the outside and reduces the attack surface.
 
 NOTE: Path-based isolation of the `master` realm requires TLS re-encrypt or edge termination mode, because the proxy needs to inspect and filter HTTP paths.
 Passthrough mode does not allow path filtering.
 
-Depending on your topology,you can:
+Depending on your topology, you can:
 
 * Deny the `/realms/master/` path on your public-facing proxy and allow it only on an internal or administrative proxy or hostname.
-* Combine this with serving the AdminUI and Admin API on a dedicated hostname and port.
+* Combine this with serving the Admin UI and Admin API on a dedicated hostname and port.
 
 WARNING: This recommendation assumes the `master` realm is reserved for administration.
-If you use the `master` realm for regular end users, restricting it will break their access; instead ,migrate those users to a dedicated realm before isolating `/realms/master/`.
+If you use the `master` realm for regular end users, restricting it will break their access; instead, migrate those users to a dedicated realm before isolating `/realms/master/`.
 
 For concrete configuration examples, see the master realm isolation guidance in the following blueprints:
 * <@links.server id="haproxy-reencrypt"/>
