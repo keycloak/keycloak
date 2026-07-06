@@ -3,10 +3,10 @@
 
 This release features new capabilities for users and administrators of {project_name}. The highlights of this release are:
 
-* Enhanced reverse proxy guides with blueprints for HAProxy and Traefik
-* Step-up authentication for SAML clients
 * Automate user provisioning with the SCIM API (preview)
 // * Simplified multi-cluster high availability without external caches (preview)
+* Enhanced reverse proxy guides with blueprints for HAProxy and Traefik
+* Step-up authentication for SAML clients
 
 Read on to learn more about each new feature.
 If you are upgrading from a previous release, https://www.keycloak.org/docs/latest/upgrading/index.html[also review the changes listed in the upgrading guide].
