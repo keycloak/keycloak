@@ -28,10 +28,7 @@ The multi-cluster deployment capabilities of {project_name} are targeted at use 
 * Provide data centers with the appropriate network latency and database configuration.
 
 
-// TODO: Add an automated test, or remove
-////
-<#--
-
+// TODO: Add an automated test
 [#multi-cluster-v2-tested-configuration]
 == Tested Configuration
 
@@ -48,8 +45,6 @@ using ROSA HCP.
 ** Version ${properties["aurora-postgresql.version"]}
 
 * AWS Global Accelerator, sending traffic to both ROSA clusters
--->
-////
 
 [#multi-cluster-v2-infrastructure-requirements]
 == Infrastructure requirements
@@ -70,17 +65,13 @@ Networking problems can cause downtimes until the failure detection isolates pro
 
 <#include "/high-availability/partials/configuration-disclaimer.adoc" />
 
-////
-<#--
-// TODO: Add an automated test, or remove
+// TODO: Add an automated test
 [#multi-cluster-v2-load]
 <#include "/high-availability/partials/tested-load.adoc" />
 
 <@profile.ifCommunity>
 While we did not see a hard limit in our tests with these values, we ask you to test for higher volumes with horizontally and vertically scaled {project_name} instances and databases.
 </@profile.ifCommunity>
--->
-////
 
 [#multi-cluster-v2-limitations]
 == Limitations

@@ -462,8 +462,8 @@ jobs:
         with:
           job-name: External Infinispan IT
 
-  cacheless-tests:
-    name: Cacheless IT
+  stateless-tests:
+    name: Stateless IT
     needs: [ build, conditional ]
     if: needs.conditional.outputs.ci-store == 'true'
     runs-on: ubuntu-latest
@@ -479,18 +479,18 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh clusterless`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dauth.server.feature=cacheless -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dauth.server.feature=stateless -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Run new base tests without caches
         run: |          
-          ./mvnw package -f tests/pom.xml -Dtest=CachelessTestSuite
+          ./mvnw package -f tests/pom.xml -Dtest=StatelessTestSuite
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
-          job-name: Cacheless IT
+          job-name: Stateless IT
 
   auroradb-integration-tests:
     name: AuroraDB IT
@@ -1389,11 +1389,11 @@ jobs:
         env:
           KC_TEST_SERVER_IMAGES: "quay.io/keycloak/keycloak:${{ matrix.version }},-"
 
-      - name: Run tests with cacheless
-        run: ./mvnw verify -pl tests/clustering -Dsurefire.reportsDirectory=target/surefire-reports-cacheless
+      - name: Run tests with stateless
+        run: ./mvnw verify -pl tests/clustering -Dsurefire.reportsDirectory=target/surefire-reports-stateless
         env:
           KC_TEST_SERVER_IMAGES: "quay.io/keycloak/keycloak:${{ matrix.version }},-"
-          KC_TEST_SERVER_CACHELESS: "true"
+          KC_TEST_SERVER_STATELESS: "true"
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -1402,8 +1402,8 @@ jobs:
         with:
           job-name: Cluster Compatibility Tests
 
-  cacheless-cluster-integration-tests:
-    name: Clustering IT (Cacheless)
+  stateless-cluster-integration-tests:
+    name: Clustering IT (Stateless)
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -1422,14 +1422,14 @@ jobs:
       - name: Run tests
         run: ./mvnw verify -pl tests/clustering
         env:
-          KC_TEST_SERVER_CACHELESS: "true"
+          KC_TEST_SERVER_STATELESS: "true"
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
-          job-name: Clustering IT (Cacheless)
+          job-name: Clustering IT (Stateless)
 
   check:
     name: Status Check - Keycloak CI
@@ -1462,8 +1462,8 @@ jobs:
       - authzen-integration-tests
       - admin-v2-tests
       - testsuite-deprecation-check
-      - cacheless-tests
-      - cacheless-cluster-integration-tests
+      - stateless-tests
+      - stateless-cluster-integration-tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3

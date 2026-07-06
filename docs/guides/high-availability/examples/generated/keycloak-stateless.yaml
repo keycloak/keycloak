@@ -73,7 +73,7 @@ spec:
 ---
 # Source: keycloak/templates/keycloak.yaml
 # There are several callouts in this YAML marked with `# <1>' etc. See 'multi-cluster-v2/deploy-keycloak-kubernetes.adoc` for the details.
-# tag::keycloak-cacheless[]
+# tag::keycloak-stateless[]
 apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
@@ -109,20 +109,20 @@ spec:
     strategy: Auto
   features:
     enabled:
-      - cacheless # <4>
+      - stateless # <4>
   additionalOptions:
-    # end::keycloak-cacheless[]
+    # end::keycloak-stateless[]
     - name: http-metrics-histograms-enabled
       value: 'true'
     - name: http-metrics-slos
       value: '5,10,25,50,250,500'
-    # tag::keycloak-cacheless[]
-    # end::keycloak-cacheless[]
-    # tag::keycloak-cacheless-queue-size[]
+    # tag::keycloak-stateless[]
+    # end::keycloak-stateless[]
+    # tag::keycloak-stateless-queue-size[]
     - name: http-max-queued-requests
       value: "1000"
-    # end::keycloak-cacheless-queue-size[]
-    # tag::keycloak-cacheless[]
+    # end::keycloak-stateless-queue-size[]
+    # tag::keycloak-stateless[]
     - name: spi-cache-embedded--default--cluster-name
       value: <CLUSTER_NAME_HERE> # <5>
     - name: log-console-output
@@ -136,15 +136,15 @@ spec:
   http:
     tlsSecret: keycloak-tls-secret
   instances: 3
-  # end::keycloak-cacheless[]
+  # end::keycloak-stateless[]
   serviceMonitor:
     enabled: true
-  # tag::keycloak-cacheless[]
+  # tag::keycloak-stateless[]
   truststores:
     db:
       configMap:
         name: keycloak-db-rootcert # <8>
-  # end::keycloak-cacheless[]
+  # end::keycloak-stateless[]
   unsupported:
     podTemplate:
       metadata:

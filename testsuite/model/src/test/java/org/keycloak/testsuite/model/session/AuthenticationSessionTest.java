@@ -337,7 +337,7 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
 
     @Test
     public void testRemoveAfterCreation() {
-        Assume.assumeFalse(Profile.isFeatureEnabled(Profile.Feature.CACHELESS));
+        Assume.assumeFalse(Profile.isFeatureEnabled(Profile.Feature.STATELESS));
         var computeOperationCount = operationCounterSupplier();
         var operationsBefore = computeOperationCount.getAsLong();
 

@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test for LoginFailureExpirationAction to verify that expired login failure entries are properly removed from the
  * database.
  * <p>
- * This test only runs when the cacheless feature is enabled.
+ * This test only runs when the stateless feature is enabled.
  */
 @KeycloakIntegrationTest
 public class LoginFailureExpirationTest {
@@ -97,8 +97,8 @@ public class LoginFailureExpirationTest {
 
     @Test
     public void testLoginFailureExpiration() {
-        // Only run this test when cacheless feature is enabled
-        Assumptions.assumeTrue(isCachelessFeatureEnabled(), "Test only runs with cacheless feature enabled");
+        // Only run this test when stateless feature is enabled
+        Assumptions.assumeTrue(isStatelessFeatureEnabled(), "Test only runs with stateless feature enabled");
 
         var state = createState();
 
@@ -189,8 +189,8 @@ public class LoginFailureExpirationTest {
 
     @Test
     public void testLoginFailureExpirationWithPermanentLockout() {
-        // Only run this test when cacheless feature is enabled
-        Assumptions.assumeTrue(isCachelessFeatureEnabled(), "Test only runs with cacheless feature enabled");
+        // Only run this test when stateless feature is enabled
+        Assumptions.assumeTrue(isStatelessFeatureEnabled(), "Test only runs with stateless feature enabled");
 
         var state = createState();
 
@@ -230,8 +230,8 @@ public class LoginFailureExpirationTest {
 
     @Test
     public void testLoginFailureExpirationWithMaxRemovalLimit() {
-        // Only run this test when cacheless feature is enabled
-        Assumptions.assumeTrue(isCachelessFeatureEnabled(), "Test only runs with cacheless feature enabled");
+        // Only run this test when stateless feature is enabled
+        Assumptions.assumeTrue(isStatelessFeatureEnabled(), "Test only runs with stateless feature enabled");
 
         var state = createState();
 
@@ -277,12 +277,12 @@ public class LoginFailureExpirationTest {
         });
     }
 
-    private boolean isCachelessFeatureEnabled() {
+    private boolean isStatelessFeatureEnabled() {
         var serverInfo = adminClient.serverInfo().getInfo();
         var feature = serverInfo.getFeatures().stream()
-                .filter(feat -> Profile.Feature.CACHELESS.name().equals(feat.getName()))
+                .filter(feat -> Profile.Feature.STATELESS.name().equals(feat.getName()))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Cacheless feature not found"));
+                .orElseThrow(() -> new RuntimeException("Stateless feature not found"));
         return feature.isEnabled();
     }
 

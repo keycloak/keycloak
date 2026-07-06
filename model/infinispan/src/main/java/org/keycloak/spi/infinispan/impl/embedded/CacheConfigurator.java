@@ -401,7 +401,7 @@ public final class CacheConfigurator {
     /**
      * Configures the entry lifespan for the local caches (realm, user, and authorization).
      * <p>
-     * When the {@link Profile.Feature#CACHELESS} feature is enabled, the default lifespan is set to
+     * When the {@link Profile.Feature#STATELESS} feature is enabled, the default lifespan is set to
      * {@link #DEFAULT_LIFESPAN} milliseconds; otherwise, entries are immortal by default.
      *
      * @param holder The {@link ConfigurationBuilderHolder} where the caches are configured.
@@ -409,7 +409,7 @@ public final class CacheConfigurator {
      * @throws IllegalStateException if a cache is not defined in the {@code holder}.
      */
     public static void configureLocalCachesExpiration(ConfigurationBuilderHolder holder, Config.Scope config) {
-        var defaultLifespan = Profile.isFeatureEnabled(Profile.Feature.CACHELESS) ? DEFAULT_LIFESPAN : DISABLED_LIFESPAN;
+        var defaultLifespan = Profile.isFeatureEnabled(Profile.Feature.STATELESS) ? DEFAULT_LIFESPAN : DISABLED_LIFESPAN;
         Stream.of(AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME)
                 .forEach(name -> setExpiration(holder, config, name, defaultLifespan));
     }

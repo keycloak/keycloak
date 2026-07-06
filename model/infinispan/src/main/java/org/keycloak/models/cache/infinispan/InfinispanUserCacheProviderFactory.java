@@ -89,6 +89,6 @@ public class InfinispanUserCacheProviderFactory implements UserCacheProviderFact
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return config.getBoolean("enabled", !Profile.isFeatureEnabled(Profile.Feature.CACHELESS));
+        return config.getBoolean("enabled", !Profile.isFeatureEnabled(Profile.Feature.STATELESS));
     }
 }

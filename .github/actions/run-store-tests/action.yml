@@ -75,14 +75,14 @@ runs:
           2>&1 | misc/log/trimmer.sh
 
     # The LoginTest should be enough to exercise the authentication sessions
-    - name: Run cacheless smoke test
+    - name: Run stateless smoke test
       shell: bash
       run: |
         ./mvnw test ${{ env.SUREFIRE_RETRY }} \
           -Pauth-server-quarkus -Pdb-${{ inputs.db }} \
           "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" \
           -Dtest=LoginTest \
-          -Dauth.server.feature=cacheless \
+          -Dauth.server.feature=stateless \
           -Ddocker.database.skip=true \
           -Ddocker.database.port=$DATABASE_PORT \
           -Ddocker.container.testdb.ip=localhost \
