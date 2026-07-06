@@ -125,6 +125,9 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
 
     @Override
     public void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession) {
+        if (!Objects.equals(realm.getId(), authenticationSession.getRealm().getId())) {
+            throw new ModelException("Authentication session with id '" + authenticationSession.getId() + "' does not belong to realm '" + realm.getId() + "'");
+        }
         if (transientSessions.remove(authenticationSession.getId()) != null) {
             return;
         }

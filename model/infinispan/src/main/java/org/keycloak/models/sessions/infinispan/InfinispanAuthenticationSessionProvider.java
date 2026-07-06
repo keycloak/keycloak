@@ -25,6 +25,7 @@ import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
@@ -145,6 +146,9 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     @Override
     public void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession) {
+        if (!Objects.equals(realm.getId(), authenticationSession.getRealm().getId())) {
+            throw new ModelException("Authentication session with id '" + authenticationSession.getId() + "' does not belong to realm '" + realm.getId() + "'");
+        }
         SessionUpdateTask<RootAuthenticationSessionEntity> removeTask = Tasks.removeSync();
         sessionTx.addTask(authenticationSession.getId(), removeTask);
     }
