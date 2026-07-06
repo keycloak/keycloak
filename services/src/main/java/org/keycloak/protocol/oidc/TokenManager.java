@@ -498,7 +498,6 @@ public class TokenManager {
         clientSession.detachFromUserSession();
     }
 
-
     public static Set<RoleModel> getAccess(UserModel user, ClientModel client, Stream<ClientScopeModel> clientScopes) {
         Set<RoleModel> roleMappings = RoleUtils.getDeepUserRoleMappings(user);
 
