@@ -83,7 +83,7 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
 
         // Create/Update client session's notes concurrently
         CountDownLatch cdl = new CountDownLatch(20 * CLIENTS_COUNT);
-        if (Profile.Feature.CACHELESS.isAvailable()) {
+        if (Profile.Feature.STATELESS.isAvailable()) {
             // In cachless mode, the authentication sessions are pessimistically locked,
             // therefore there can be no concurrency with the when creating client sessions.
             IntStream.range(0, CLIENTS_COUNT)

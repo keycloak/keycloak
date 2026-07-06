@@ -24,13 +24,13 @@ import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.testsuite.model.Config;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
 
-public class Cacheless extends KeycloakModelParameters {
-    public Cacheless() {
+public class Stateless extends KeycloakModelParameters {
+    public Stateless() {
         super(Set.of(), Set.of());
     }
 
     @Override
     public void updateConfig(Config cf) {
-        System.getProperties().put(PropertiesProfileConfigResolver.getPropertyKey(Profile.Feature.CACHELESS), "enabled");
+        System.getProperties().put(PropertiesProfileConfigResolver.getPropertyKey(Profile.Feature.STATELESS), "enabled");
     }
 }

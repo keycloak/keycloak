@@ -46,17 +46,17 @@ public class ClusteredKeycloakServer implements KeycloakServer {
     private final DockerKeycloakDistribution[] containers;
     private final String images;
     private final long startTimeout;
-    private final boolean cacheless;
+    private final boolean stateless;
 
     private static LazyFuture<String> defaultImage() {
         return DockerKeycloakDistribution.createImage(true);
     }
 
-    public ClusteredKeycloakServer(int numServers, String images, long startTimeout, boolean cacheless) {
+    public ClusteredKeycloakServer(int numServers, String images, long startTimeout, boolean stateless) {
         containers = new DockerKeycloakDistribution[numServers];
         this.images = images;
         this.startTimeout = startTimeout;
-        this.cacheless = cacheless;
+        this.stateless = stateless;
     }
 
     @Override
@@ -69,8 +69,8 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
         // Infinispan clustered cache
         configBuilder.cache(CacheType.ISPN);
-        if (cacheless) {
-            configBuilder.features(Profile.Feature.CACHELESS);
+        if (stateless) {
+            configBuilder.features(Profile.Feature.STATELESS);
             latchSupplier = () -> {
                 var clusterLatch = new CountdownLatchLoggingConsumer(1, String.format(CLUSTER_VIEW_REGEX, 1));
                 consumers.add(clusterLatch);
@@ -89,7 +89,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         }
 
         try {
-            long perLatchTimeout = cacheless ? DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS : (long) numServers * DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS;
+            long perLatchTimeout = stateless ? DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS : (long) numServers * DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS;
             for (var clusterLatch : consumers) {
                 clusterLatch.await(perLatchTimeout, TimeUnit.SECONDS);
             }
@@ -97,8 +97,8 @@ public class ClusteredKeycloakServer implements KeycloakServer {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         } catch (TimeoutException e) {
-            if (cacheless) {
-                throw new RuntimeException("One or more nodes failed to start with 'cacheless' feature.", e);
+            if (stateless) {
+                throw new RuntimeException("One or more nodes failed to start with 'stateless' feature.", e);
             } else {
                 throw new RuntimeException("Expected %d cluster members".formatted(numServers), e);
             }
@@ -132,7 +132,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
             copyProvidersAndConfigs(container, configBuilder);
 
             configureLogConsumers(container, i, clusterLatch.get());
-            configureClusterNameIfCachelessEnabled(configBuilder, i);
+            configureClusterNameIfStatelessEnabled(configBuilder, i);
             container.runKc(configBuilder.toArgs());
         }
     }
@@ -148,7 +148,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
             copyProvidersAndConfigs(container, configBuilder);
             configureLogConsumers(container, i, clusterLatch.get());
-            configureClusterNameIfCachelessEnabled(configBuilder, i);
+            configureClusterNameIfStatelessEnabled(configBuilder, i);
             container.runKc(configBuilder.toArgs());
         }
     }
@@ -197,8 +197,8 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         return containers.length;
     }
 
-    private void configureClusterNameIfCachelessEnabled(KeycloakServerConfigBuilder configBuilder, int id) {
-        if (!cacheless) {
+    private void configureClusterNameIfStatelessEnabled(KeycloakServerConfigBuilder configBuilder, int id) {
+        if (!stateless) {
             return;
         }
         configBuilder.spiOption("cache-embedded", "default", "cluster-name", "cluster-" + id);

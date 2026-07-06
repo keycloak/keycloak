@@ -222,7 +222,7 @@ The existing multi-cluster setup for {project_name} requires deploying and manag
 
 Multi-cluster v2 removes the external {jdgserver_name} requirement entirely. {project_name} instances connect directly to each other using embedded Infinispan caches and rely on the synchronously replicated database as the single source of truth. Cache invalidation across sites is handled through a database-backed outbox pattern. The load balancer can detect the downtime of a site without requiring external fencing infrastructure.
 
-To enable this setup, start {project_name} with the feature `cacheless`. For architecture details and a deployment blueprint, see the link:https://www.keycloak.org/high-availability/multi-cluster-v2/introduction[Multi-cluster deployments (v2)] guide.
+To enable this setup, start {project_name} with the feature `stateless`. For architecture details and a deployment blueprint, see the link:https://www.keycloak.org/high-availability/multi-cluster-v2/introduction[Multi-cluster deployments (v2)] guide.
 
 == {project_name} Operator kustomize installation
 // https://github.com/keycloak/keycloak/issues/46981

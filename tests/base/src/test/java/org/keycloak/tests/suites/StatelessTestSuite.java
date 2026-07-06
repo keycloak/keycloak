@@ -29,12 +29,12 @@ import org.junit.platform.suite.api.Suite;
         SessionTimeoutValidationTest.class,
         LoginFailureExpirationTest.class
 })
-public class CachelessTestSuite {
+public class StatelessTestSuite {
 
     @BeforeSuite
     public static void beforeSuite() {
         SuiteSupport.startSuite()
-                .registerServerConfig(CachelessServerConfig.class);
+                .registerServerConfig(StatelessServerConfig.class);
     }
 
     @AfterSuite
@@ -42,11 +42,11 @@ public class CachelessTestSuite {
         SuiteSupport.stopSuite();
     }
 
-    public static class CachelessServerConfig implements KeycloakServerConfig {
+    public static class StatelessServerConfig implements KeycloakServerConfig {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.CACHELESS);
+            return config.features(Profile.Feature.STATELESS);
         }
     }
 }
