@@ -42,9 +42,10 @@ test.describe.serial("Client SSF stream creation", () => {
   });
 
   /**
-   * Navigate to the client's SSF Stream sub-tab, skipping when the server
-   * `ssf` feature is disabled (the tab never renders in that case). Uses
-   * waitFor rather than count() so it doesn't race the SPA load.
+   * Navigate to the client's SSF Stream sub-tab. The integration server is
+   * always started with the `ssf` feature enabled (see
+   * js/apps/keycloak-server/scripts/start-server.js, #49977), so the SSF tab
+   * must render — assert it rather than skip, so a missing tab fails loudly.
    */
   async function goToStreamTab(page: Page) {
     await login(page, {
@@ -55,15 +56,7 @@ test.describe.serial("Client SSF stream creation", () => {
       }),
     });
 
-    const featureEnabled = await page
-      .getByTestId("ssfTab")
-      .waitFor({ state: "visible", timeout: 15_000 })
-      .then(() => true)
-      .catch(() => false);
-    test.skip(
-      !featureEnabled,
-      "SSF server feature is disabled — add 'ssf' to --features in js/apps/keycloak-server/scripts/start-server.js (#49977).",
-    );
+    await expect(page.getByTestId("ssfTab")).toBeVisible({ timeout: 15_000 });
   }
 
   test("validates the push endpoint URL before allowing submit", async ({
