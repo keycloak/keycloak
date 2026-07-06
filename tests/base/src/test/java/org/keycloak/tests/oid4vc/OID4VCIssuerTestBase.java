@@ -526,8 +526,8 @@ public abstract class OID4VCIssuerTestBase {
     }
 
     /**
-     * Persistently configure SD-JWT scopes to use a dedicated signing key with a
-     * non-self-signed leaf certificate, so HAIP-6.1.1 is satisfied across requests.
+     * Persistently add a dedicated realm signing key provider with a non-self-signed
+     * leaf certificate, so SD-JWT issuance can satisfy HAIP-6.1.1 across requests.
      */
     protected void ensureHaipCompliantSdJwtSigningConfiguration() {
         final String providerName = "haip-sdjwt-signing-key-provider";

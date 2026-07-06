@@ -141,15 +141,14 @@ public class SdJwtCredentialSigner extends AbstractCredentialSigner<String> {
         return x5cList;
     }
 
-    private boolean isSelfSigned(X509Certificate cert) {
+    private boolean isSelfSigned(X509Certificate cert) throws CredentialSignerException {
         try {
             cert.verify(cert.getPublicKey());
             return true;
         } catch (SignatureException | InvalidKeyException e) {
             return false;
         } catch (CertificateException | NoSuchAlgorithmException | NoSuchProviderException e) {
-            LOGGER.debugf(e, "Failed to verify whether certificate %s is self-signed", cert.getSubjectX500Principal());
-            return false;
+            throw new CredentialSignerException("HAIP-6.1.1 violation: failed to verify whether certificate is self-signed.", e);
         }
     }
 }
