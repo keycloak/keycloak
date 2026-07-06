@@ -97,7 +97,7 @@ public class Profile {
         CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
 
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
-        STEP_UP_AUTHENTICATION_SAML("Step-up Authentication Saml", Type.PREVIEW, Feature.STEP_UP_AUTHENTICATION),
+        STEP_UP_AUTHENTICATION_SAML("Step-up Authentication Saml", Type.DEFAULT, Feature.STEP_UP_AUTHENTICATION),
 
         CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.DEFAULT),
         CLIENT_AUTH_ABCA("Attestation-Based Client Authentication", Type.EXPERIMENTAL),
@@ -123,7 +123,7 @@ public class Profile {
 
         MULTI_SITE("Multi-site support", Type.DISABLED_BY_DEFAULT, FeatureUpdatePolicy.SHUTDOWN),
 
-        CACHELESS("Store authentication sessions, action tokens and login failure data in the database, removing the need for Infinispan caches.", Type.EXPERIMENTAL, FeatureUpdatePolicy.SHUTDOWN),
+        STATELESS("Stateless (stores authentication sessions, action tokens and login failure data in the database, allowing multiple clusters to be connected with just the database)", Type.PREVIEW, FeatureUpdatePolicy.SHUTDOWN),
 
         CLUSTERLESS("Store all session data, work cache and login failure data in an external Infinispan cluster.", Type.EXPERIMENTAL, FeatureUpdatePolicy.SHUTDOWN),
 
@@ -185,7 +185,7 @@ public class Profile {
         @Deprecated
         TWITTER_BROKER("Twitter Identity Broker", Type.DEFAULT, 1, true, null, null),
 
-        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.EXPERIMENTAL),
+        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.PREVIEW),
 
         RESOURCE_INDICATORS("Resource Indicators for OAuth 2.0", Type.EXPERIMENTAL),
 

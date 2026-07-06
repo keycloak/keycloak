@@ -6,6 +6,7 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.admin.client.SessionTest;
 import org.keycloak.tests.admin.concurrency.ConcurrentLoginTest;
+import org.keycloak.tests.loginfailures.LoginFailureExpirationTest;
 import org.keycloak.tests.model.UserSessionProviderOfflineTest;
 import org.keycloak.tests.model.UserSessionProviderTest;
 import org.keycloak.tests.oauth.RefreshTokenTimeoutsTest;
@@ -26,13 +27,14 @@ import org.junit.platform.suite.api.Suite;
         UserSessionProviderOfflineTest.class,
         UserSessionLimitsTest.class,
         SessionTimeoutValidationTest.class,
+        LoginFailureExpirationTest.class
 })
-public class CachelessTestSuite {
+public class StatelessTestSuite {
 
     @BeforeSuite
     public static void beforeSuite() {
         SuiteSupport.startSuite()
-                .registerServerConfig(CachelessServerConfig.class);
+                .registerServerConfig(StatelessServerConfig.class);
     }
 
     @AfterSuite
@@ -40,11 +42,11 @@ public class CachelessTestSuite {
         SuiteSupport.stopSuite();
     }
 
-    public static class CachelessServerConfig implements KeycloakServerConfig {
+    public static class StatelessServerConfig implements KeycloakServerConfig {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.CACHELESS);
+            return config.features(Profile.Feature.STATELESS);
         }
     }
 }

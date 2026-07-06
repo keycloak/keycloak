@@ -688,7 +688,7 @@ public class AuthenticationManager {
                     uriInfo,
                     headers);
             clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
-            TokenManager.dettachClientSession(clientSession);
+            TokenManager.detachClientSession(clientSession);
         }
     }
 

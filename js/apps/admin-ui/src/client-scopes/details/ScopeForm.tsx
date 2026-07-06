@@ -234,7 +234,11 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     defaultValue: clientScope?.attributes?.["vc.signing_key_id"] ?? "",
   });
 
-  const scopeTypeNames = serverInfo.parameterizedScopeTypes || [];
+  const parameterizedScopeTypeInfos = serverInfo.parameterizedScopeTypes || [];
+  const scopeTypeNames = parameterizedScopeTypeInfos.map((t) => t.name);
+  const scopeTypeDefaults = Object.fromEntries(
+    parameterizedScopeTypeInfos.map((t) => [t.name, t.repeatable]),
+  );
 
   useEffect(() => {
     convertToFormValues(clientScope ?? {}, setValue);
@@ -276,6 +280,11 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       "attributes.parameterized.scope.regexp",
     );
 
+  const repeatableFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.parameterized.scope.repeatable",
+    );
+
   useEffect(() => {
     if (parameterizedScope === "true" && isCustomType) {
       const current = (form.getValues(regexpFieldName) as string) || "";
@@ -284,6 +293,13 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       }
     }
   }, [parameterType, parameterizedScope]);
+
+  useEffect(() => {
+    if (parameterizedScope === "true" && parameterType) {
+      const defaultRepeatable = scopeTypeDefaults[parameterType] ?? true;
+      setValue(repeatableFieldName, String(defaultRepeatable));
+    }
+  }, [parameterType]);
 
   /* Form-level validation handles correctness; here we only prune known optional
        OID4VC fields when empty. If new attributes are added, extend
@@ -362,6 +378,15 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                     }}
                   />
                 )}
+                <DefaultSwitchControl
+                  name={repeatableFieldName}
+                  defaultValue={String(
+                    scopeTypeDefaults[parameterType] ?? true,
+                  )}
+                  label={t("repeatableScope")}
+                  labelIcon={t("repeatableScopeHelp")}
+                  stringify
+                />
               </>
             )}
           </>

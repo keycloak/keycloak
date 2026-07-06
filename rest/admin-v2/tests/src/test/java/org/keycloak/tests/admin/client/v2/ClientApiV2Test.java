@@ -768,7 +768,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("client-invalid-fragment");
         rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
-        assertClientCreationFailsWithError(rep, "Redirect URIs must not contain an URI fragment");
+        assertClientCreationFailsWithError(rep, "A redirect URI must not contain an URL fragment");
     }
 
     @Test
@@ -796,7 +796,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-invalid-fragment");
         rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
-        assertClientCreationFailsWithError(rep, "{\"error\":\"Redirect URIs must not contain an URI fragment\"}");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"A redirect URI must not contain an URL fragment\"}");
     }
 
     @Test
@@ -824,7 +824,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("client-update-invalid-fragment");
         rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
-        assertClientUpdateFailsWithError(rep, "Redirect URIs must not contain an URI fragment");
+        assertClientUpdateFailsWithError(rep, "A redirect URI must not contain an URL fragment");
     }
 
     @Test
@@ -852,7 +852,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-update-invalid-fragment");
         rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
-        assertClientCreationFailsWithError(rep, "{\"error\":\"Redirect URIs must not contain an URI fragment\"}");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"A redirect URI must not contain an URL fragment\"}");
     }
 
     @Test
