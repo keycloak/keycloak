@@ -3,6 +3,14 @@
 
 This release features new capabilities for users and administrators of {project_name}. The highlights of this release are:
 
+* Enhanced reverse proxy guides with blueprints for HAProxy and Traefik
+* Step-up authentication for SAML clients
+* Automate user provisioning with the SCIM API (preview)
+// * Simplified multi-cluster high availability without external caches (preview)
+
+Read on to learn more about each new feature.
+If you are upgrading from a previous release, https://www.keycloak.org/docs/latest/upgrading/index.html[also review the changes listed in the upgrading guide].
+
 = Security and Standards
 
 == Stronger security for the Identity Brokering API
@@ -108,10 +116,14 @@ In multi-service architectures, a backend service sometimes needs to act on beha
 
 To enable token exchange delegation, start {project_name} with the feature `token-exchange-delegation` enabled.
 
-== Step-up authentication for SAML (supported)
+== Step-up authentication for SAML clients
 // https://github.com/keycloak/keycloak/issues/46543
 
-The feature `step-up-authentication-saml` extends the step-up authentication to include the SAML protocol and clients. This feature is now promoted to supported. For more information, see the link:{adminguide_link}#_step-up-authentication-saml[{adminguide_name}].
+Step-up authentication allows applications to require a stronger level of authentication for sensitive operations — for example, prompting for a second factor before — even when the user already has an active session. Previously, this capability was only available for OpenID Connect clients.
+
+{project_name} now extends step-up authentication to the SAML protocol, enabling SAML service providers to request a specific authentication context class in their authentication requests. The feature `step-up-authentication-saml` has been promoted from preview to supported in this release.
+
+For more information, see the link:{adminguide_link}#_step-up-authentication-saml[{adminguide_name}].
 
 = Administration
 
@@ -194,7 +206,7 @@ Read more about it in the link:https://www.keycloak.org/server/db#multiple-datas
 
 = Configuring and Running
 
-== Production-ready reverse proxy guides for HAProxy and Traefik
+== Enhanced reverse proxy guides with blueprints for HAProxy and Traefik
 // https://github.com/keycloak/keycloak/issues/48002
 
 Running {project_name} in production requires a reverse proxy, but configuring TLS termination, certificate forwarding, and admin API security correctly across different proxies is error-prone.
