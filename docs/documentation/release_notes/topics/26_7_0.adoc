@@ -119,7 +119,7 @@ To enable token exchange delegation, start {project_name} with the feature `toke
 == Step-up authentication for SAML clients
 // https://github.com/keycloak/keycloak/issues/46543
 
-Step-up authentication allows applications to require a stronger level of authentication for sensitive operations — for example, prompting for a second factor before continuing — even when the user already has an active session. Previously, this capability was only available for OpenID Connect clients.
+Step-up authentication allows applications to require a stronger level of authentication for sensitive operations. Previously, this capability was only available for OpenID Connect clients.
 
 {project_name} now extends step-up authentication to the SAML protocol, enabling SAML service providers to request a specific authentication context class in their authentication requests. The feature `step-up-authentication-saml` has been promoted from preview to supported in this release.
 
