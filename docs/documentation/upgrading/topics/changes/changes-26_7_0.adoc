@@ -316,7 +316,7 @@ The Identity Brokering API V1 is now deprecated but remains enabled by default f
 The switch **Bearer only** on OIDC clients is now deprecated and will be removed in a future version.
 
 The switch could be used to specify that a client acts only as a service, which cannot authenticate using any grant type or obtain tokens issued to itself. However, a bearer-only client can
-already be simulated by creating an OIDC client without any grants supported.
+already be configured by creating an OIDC client without any grants supported.
 
 The switch is already unavailable in the admin console client settings, but it was still possible to use it, for example, by directly updating a client through the admin REST API.
 In the future, this will no longer be possible.
