@@ -160,7 +160,7 @@ As before, for any rolling update or scaling up or down, this must be done one n
 
 Use the `shutdown-timeout` option to adjust the timeout to your environment. Restore the original behavior by setting it to `1s`.
 
-=== Extensions must not restart a Keycloak transaction
+=== Extensions must not restart a {project_name} transaction
 
 This change might affect custom {project_name} extensions.
 
@@ -212,6 +212,7 @@ If you attempt to exchange a sender-constrained token using a different client, 
 For more details, see the link:{securing_apps_token_exchange_link}[Token Exchange] guide.
 
 === HAProxy certificate lookup provider
+
 The `HaProxySslClientCertificateLookup` implementation has deprecated support for configuring `--spi-x509cert-lookup--haproxy--ssl-cert-chain-prefix`
 as HAProxy does not provide a built-in mechanism to forward individual intermediate certificates as dedicated HTTP headers.
 Consequently, this solution does not work when more than one intermediate certificate is used. Existing deployments of
@@ -312,13 +313,13 @@ The Identity Brokering API V1 is now deprecated but remains enabled by default f
 
 === Switch Bearer-only on OpenID Connect clients is deprecated
 
-The switch **Bearer only** on OIDC clients is deprecated now and will be removed in some future version.
+The switch **Bearer only** on OIDC clients is now deprecated and will be removed in a future version.
 
-The switch was possible to be used to specify that client can act just as service, which is not able to authenticate by any grant and obtain tokens issued to itself. However bearer-only client can
-be already simulated by creating OIDC client without any grants supported.
+The switch could be used to specify that a client acts only as a service, which cannot authenticate using any grant type or obtain tokens issued to itself. However, a bearer-only client can
+already be configured by creating an OIDC client without any grants supported.
 
-The switch is already unavailable in the admin console client settings, but it was still possible to use it for example by directly updating client through admin REST API. In the
-future, this will not be possible anymore.
+The switch is already unavailable in the admin console client settings, but it was still possible to use it, for example, by directly updating a client through the admin REST API.
+In the future, this will no longer be possible.
 
 === Option Allow regex pattern comparison is deprecated for the X509 client authenticator
 
