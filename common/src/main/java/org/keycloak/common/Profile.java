@@ -123,7 +123,7 @@ public class Profile {
 
         MULTI_SITE("Multi-site support", Type.DISABLED_BY_DEFAULT, FeatureUpdatePolicy.SHUTDOWN),
 
-        STATELESS("Store authentication sessions, action tokens and login failure data in the database, removing the need for Infinispan caches. This allows multiple Keycloak clusters to be connected with just the database.", Type.PREVIEW, FeatureUpdatePolicy.SHUTDOWN),
+        STATELESS("Stateless (storing authentication sessions, action tokens and login failure data in the database, and allowing multiple clusters to be connected with just the database)", Type.PREVIEW, FeatureUpdatePolicy.SHUTDOWN),
 
         CLUSTERLESS("Store all session data, work cache and login failure data in an external Infinispan cluster.", Type.EXPERIMENTAL, FeatureUpdatePolicy.SHUTDOWN),
 

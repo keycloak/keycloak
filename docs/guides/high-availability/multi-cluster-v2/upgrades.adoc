@@ -6,7 +6,11 @@ title="Managing upgrades (v2)"
 summary="How to manage multi-cluster upgrades"
 tileVisible="false"
 preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/issues/49469" >
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
+
+This topic describes a highly available multi-cluster setup and the behavior to expect.
+It outlines the requirements of the high availability architecture and describes the benefits and tradeoffs.
+See <@links.ha id="multi-cluster-v2-introduction" /> for the introduction.
 
 == {project_name} upgrades
 

@@ -6,7 +6,7 @@ title="Deploying {project_name} for HA with the Operator (v2)"
 summary="Deploy {project_name} for multi-cluster HA (stateless) with the {project_name} Operator as a building block."
 tileVisible="false"
 preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/issues/49469" >
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
 
 This {section} describes advanced {project_name} configurations for {kubernetes} which are load tested and will recover from single Pod failures or site failures.
 
