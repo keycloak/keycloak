@@ -8,9 +8,10 @@ import { assertNotificationMessage } from "../utils/masthead.ts";
 // Exercises the Subjects sub-tab of a client's SSF view: the per-subject
 // add / ignore / remove / check actions that map to
 // POST /admin/realms/{realm}/ssf/clients/{clientId}/subjects/{action}.
-// Like the other SSF specs this depends on the server `ssf` feature being
-// enabled (see js/apps/keycloak-server/scripts/start-server.js); when it is
-// off the SSF tab never renders and the feature-dependent tests skip.
+// The integration server is always started with the `ssf` feature (see
+// js/apps/keycloak-server/scripts/start-server.js, #49977), so these tests
+// assert the SSF tab renders and fail loudly if it is absent, rather than
+// skipping.
 test.describe.serial("Client SSF subjects", () => {
   const realmName = `ssf-subjects-realm-${uuid()}`;
   const clientId = `ssf-subjects-client-${uuid()}`;

@@ -6,19 +6,23 @@ import { login, navigateTo } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 
 // Exercises the Receiver sub-tab of a client's SSF view — the primary
-// configuration form (Save / Revert). Like the other SSF specs this depends
-// on the server `ssf` feature being enabled (see
-// js/apps/keycloak-server/scripts/start-server.js); when it is off the SSF
-// tab never renders and the feature-dependent tests skip.
+// configuration form (Save / Revert). The integration server is always
+// started with the `ssf` feature (see
+// js/apps/keycloak-server/scripts/start-server.js, #49977), so these tests
+// assert the SSF tab renders and fail loudly if it is absent, rather than
+// skipping.
 test.describe.serial("Client SSF receiver", () => {
   const realmName = `ssf-receiver-realm-${uuid()}`;
   const clientId = `ssf-receiver-client-${uuid()}`;
   const audience = "https://receiver.example.com/ssf";
 
-  // TextControl/TextAreaControl derive their data-testid from the form field
-  // name, which is the beerified attribute path (dots after the first become
-  // 🍺 — see convertAttributeNameToForm in src/util.ts).
-  const audienceTestId = "attributes.ssf🍺streamAudience";
+  // TextControl derives its data-testid from the form field name, which is the
+  // attribute path with dots after the first replaced by 🍺 (see
+  // convertAttributeNameToForm/beerify in src/util.ts). We reproduce that
+  // transform here rather than importing the helper — src/util.ts pulls the
+  // @keycloak/keycloak-ui-shared runtime into the Playwright transform, which
+  // fails to resolve — so the 🍺 path isn't embedded as a literal.
+  const audienceTestId = `attributes.${"ssf.streamAudience".replaceAll(".", "🍺")}`;
 
   let clientUuid: string;
 

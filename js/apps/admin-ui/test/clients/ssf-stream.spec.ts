@@ -6,9 +6,10 @@ import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 
 // Exercises the admin-console "Create stream" flow on a client's SSF Stream
-// sub-tab. Like ssf.spec.ts this depends on the server `ssf` feature being
-// enabled (see js/apps/keycloak-server/scripts/start-server.js); when it is
-// off the SSF tab never renders and the tests skip themselves.
+// sub-tab. The integration server is always started with the `ssf` feature
+// (see js/apps/keycloak-server/scripts/start-server.js, #49977), so these
+// tests assert the SSF tab renders and fail loudly if it is absent, rather
+// than skipping.
 test.describe.serial("Client SSF stream creation", () => {
   const realmName = `ssf-stream-realm-${uuid()}`;
   const clientId = `ssf-stream-client-${uuid()}`;
