@@ -49,7 +49,7 @@ endif::[]
 
 When two organizations each run their own authorization server, users often need to re-authenticate when crossing between them — even though their identity was already verified. The https://datatracker.ietf.org/doc/html/draft-ietf-oauth-identity-assertion-authz-grant[Identity Assertion JWT Authorization Grant (ID-JAG)] solves this by allowing one authorization server to present a signed identity assertion to another, which then issues an access token without requiring the user to log in again.
 
-{project_name} now supports this flow as an experimental feature. It can act as the receiving authorization server, accepting ID-JAG assertions at the token endpoint and issuing access tokens in return. Further capabilities are planned for upcoming releases. To try it out, start {project_name} with the `identity-assertion-jwt` experimental feature.
++{project_name} provides partial experimental support for the Identity Assertion JWT Authorization Grant. It currently implements only the receiving authorization server role, accepting ID-JAG assertions at the token endpoint and issuing access tokens in return. Other parts of the ID-JAG specification are not yet implemented, so the complete flow is not currently supported. Additional capabilities are planned for future releases.
 ifeval::[{project_community}==true]
 Many thanks to https://github.com/bucchi[Yutaka Obuchi] for the contribution of this feature!
 endif::[]
