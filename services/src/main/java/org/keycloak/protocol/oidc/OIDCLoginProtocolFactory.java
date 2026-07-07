@@ -46,6 +46,7 @@ import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.AllowedWebOriginsProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.FullNameMapper;
+import org.keycloak.protocol.oidc.mappers.ParameterizedScopeUserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.SubMapper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper;
@@ -71,6 +72,8 @@ import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_R
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_REQ_TOKEN_PARAMS_FAIL_FAST;
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE;
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE;
+import static org.keycloak.representations.IDToken.MAY_ACT;
+import static org.keycloak.representations.JsonWebToken.SUBJECT;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -108,6 +111,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String AUDIENCE_RESOLVE = "audience resolve";
     public static final String ALLOWED_WEB_ORIGINS = "allowed web origins";
     public static final String ACR = "acr loa level";
+    public static final String DELEGATION_MAY_ACT_SUB = "may_act sub";
     public static final String ORGANIZATION = "organization";
     // microprofile-jwt claims
     public static final String UPN = "upn";
@@ -271,6 +275,12 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             builtins.put(ACR, model);
         }
 
+        if (Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_DELEGATION)) {
+            model = ParameterizedScopeUserPropertyMapper.create(
+                    DELEGATION_MAY_ACT_SUB, "id", MAY_ACT + "." + SUBJECT, "String", true, true, true);
+            builtins.put(DELEGATION_MAY_ACT_SUB, model);
+        }
+
         model = UserSessionNoteMapper.createClaimMapper(IDToken.AUTH_TIME, AuthenticationManager.AUTH_TIME,
                 IDToken.AUTH_TIME, "long",
                 true, true, false, true);
@@ -372,7 +382,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
         if (Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_DELEGATION)) {
             ClientScopeModel delegationScope = newRealm.addClientScope(DELEGATION_SCOPE);
-            delegationScope.setDescription("Delegation scope to add the 'may_act' claim to the access token using parameters");
+            delegationScope.setDescription("OpenID Connect scope for token exchange delegation");
             delegationScope.setIsParameterizedScope(true);
             delegationScope.setDisplayOnConsentScreen(true);
             delegationScope.setAttribute(ClientScopeModel.IS_ALWAYS_CONSENT, Boolean.TRUE.toString());
@@ -380,6 +390,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             delegationScope.setIncludeInTokenScope(true);
             delegationScope.setProtocol(getId());
             delegationScope.setConsentScreenText("${delegationScopeConsentText}");
+            delegationScope.addProtocolMapper(builtins.get(DELEGATION_MAY_ACT_SUB));
         }
     }
 
