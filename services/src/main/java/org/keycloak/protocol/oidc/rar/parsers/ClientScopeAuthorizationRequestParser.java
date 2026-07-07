@@ -140,13 +140,16 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
                     continue;
                 }
                 try {
+                    if (paramValue.length() > ParameterizedScopeTypeProvider.MAX_PARAMETER_LENGTH) {
+                        throw new InvalidScopeParameterException("parameter value exceeds maximum length of " + ParameterizedScopeTypeProvider.MAX_PARAMETER_LENGTH);
+                    }
                     if (user != null) {
                         resolveType(clientScopeModel).validateParameterWithUser(user, clientScopeModel, paramValue);
                     } else {
                         resolveType(clientScopeModel).validateParameter(clientScopeModel, paramValue);
                     }
                 } catch (InvalidScopeParameterException e) {
-                    logger.warnf("Invalid scope parameter for '%s': %s", requestScope, e.getMessage());
+                    logger.warnf("Invalid scope parameter for '%s': %s", clientScopeModel.getName(), e.getMessage());
                     return Optional.empty();
                 }
                 return Optional.of(new IntermediaryScopeRepresentation(clientScopeModel, paramValue, requestScope));

@@ -16,6 +16,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantTypeFactory;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
+import org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeProvider;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -590,6 +591,68 @@ public class ParameterizedScopesOAuthGrantTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("custom-regex-scope:abc"));
+    }
+
+    @Test
+    public void customRegexScopeRejectsExcessivelyLongParameter() {
+        createAndAssignOptionalScope(ParameterizedScopeBuilder.create("length-scope")
+                .parameterizedScopeType("custom").regexp("[a-z]+").build());
+
+        oauth.client(THIRD_PARTY_APP, "password");
+        assertLongParameterRejected("length-scope");
+
+        // parameter at max length should be accepted
+        String maxParam = "a".repeat(ParameterizedScopeTypeProvider.MAX_PARAMETER_LENGTH);
+        oauth.scope("length-scope:" + maxParam);
+        oauth.openLoginForm();
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("length-scope:" + maxParam));
+    }
+
+    @Test
+    public void stringScopeRejectsExcessivelyLongParameter() {
+        createAndAssignOptionalScope(ParameterizedScopeBuilder.create("length-scope")
+                .parameterizedScopeType("string").build());
+        oauth.client(THIRD_PARTY_APP, "password");
+        assertLongParameterRejected("length-scope");
+    }
+
+    @Test
+    public void integerScopeRejectsExcessivelyLongParameter() {
+        createAndAssignOptionalScope(ParameterizedScopeBuilder.create("length-scope")
+                .parameterizedScopeType("integer").build());
+        oauth.client(THIRD_PARTY_APP, "password");
+        assertLongParameterRejected("length-scope");
+    }
+
+    @Test
+    public void booleanScopeRejectsExcessivelyLongParameter() {
+        createAndAssignOptionalScope(ParameterizedScopeBuilder.create("length-scope")
+                .parameterizedScopeType("boolean").build());
+        oauth.client(THIRD_PARTY_APP, "password");
+        assertLongParameterRejected("length-scope");
+    }
+
+    private String createAndAssignOptionalScope(ClientScopeRepresentation scope) {
+        String scopeId = ApiUtil.getCreatedId(realm.admin().clientScopes().create(scope));
+        thirdParty.admin().addOptionalClientScope(scopeId);
+        realm.cleanup().add(r -> {
+            r.clients().get(thirdParty.getId()).removeOptionalClientScope(scopeId);
+            r.clientScopes().get(scopeId).remove();
+        });
+        return scopeId;
+    }
+
+    private void assertLongParameterRejected(String scopeName) {
+        String longParam = "a".repeat(ParameterizedScopeTypeProvider.MAX_PARAMETER_LENGTH + 1);
+        oauth.scope(scopeName + ":" + longParam);
+        oauth.openLoginForm();
+        Assertions.assertEquals(OAuthErrorException.INVALID_SCOPE, oauth.parseLoginResponse().getError());
     }
 
     private static List<String> scopesOf(AccessTokenResponse res) {
