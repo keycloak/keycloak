@@ -18,7 +18,7 @@ public class ClientPersistedFieldResolver implements PersistedFieldResolver<Base
     @Override
     public Object getValue(BaseClientRepresentation representation, String fieldName) {
         // TODO: if this can ever return non-simple types we have to ensure the objects implement the equals method
-        // if not, and we could consider converting to JsonNode or Map via jackon logic
+        // if not, and we could consider converting to JsonNode or Map via Jackson logic
         return DefaultClientService.MAPPERS.resolveFieldValue(fieldName, representation);
     }
 
