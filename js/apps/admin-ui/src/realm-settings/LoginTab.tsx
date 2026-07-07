@@ -29,14 +29,6 @@ export const RealmSettingsLoginTab = ({
   const { realm: realmName } = useRealm();
   const isFeatureEnabled = useIsFeatureEnabled();
   const passkeysVisible = isFeatureEnabled(Feature.Passkeys);
-  const passkeysEnabled =
-    realm.webAuthnPolicyPasswordlessPasskeysEnabled ?? false;
-
-  const updatePasskeysEnabled = (value: boolean) =>
-    updateSwitchValue({
-      webAuthnPolicyPasswordlessPasskeysEnabled: value,
-    });
-
   const updateSwitchValue = async (switches: SwitchType | SwitchType[]) => {
     const name = Array.isArray(switches)
       ? Object.keys(switches[0])[0]
@@ -153,11 +145,19 @@ export const RealmSettingsLoginTab = ({
               <Switch
                 id="kc-passkeys-enabled-switch"
                 data-testid="passkeys-enabled-switch"
-                value={passkeysEnabled ? "on" : "off"}
+                value={
+                  realm.webAuthnPolicyPasswordlessPasskeysEnabled ? "on" : "off"
+                }
                 label={t("on")}
                 labelOff={t("off")}
-                isChecked={passkeysEnabled}
-                onChange={(_event, value) => updatePasskeysEnabled(value)}
+                isChecked={
+                  realm.webAuthnPolicyPasswordlessPasskeysEnabled ?? false
+                }
+                onChange={async (_event, value) => {
+                  await updateSwitchValue({
+                    webAuthnPolicyPasswordlessPasskeysEnabled: value,
+                  });
+                }}
                 aria-label={t("webAuthnPolicyPasskeysEnabled")}
               />{" "}
               <SettingsShortcut
