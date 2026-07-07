@@ -134,7 +134,7 @@ describe("Clients V2 API", () => {
     const clientIds = sortedClients!.map(
       (c) => (c as OIDCClientRepresentation).clientId,
     );
-    expect(clientIds.toSorted()).to.deep.equal(clientIds);
+    expect(clientIds.sort()).to.deep.equal(clientIds);
 
     const sortedClient1 = sortedClients!.find(
       (c) => (c as OIDCClientRepresentation).clientId === clientId1,
