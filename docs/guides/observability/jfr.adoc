@@ -156,6 +156,7 @@ See below for events that can reveal sensitive information:
 // TODO: This is a draft warning, please review
 WARNING: Other flight recorder events can contain information like host names, file paths or URL parameters.
 To analyze the contents for sensitive information, use `jfr print recording.jfr` or `jfr print --json recording.jfr` to review the contents.
+You can also use `jfr scrub --include-events ...` to share a subset of the events for troubleshooting.
 
 After the scrubbed version of the JFR is created, remove the original unsanitized file to prevent leaks:
 [source]
