@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.organization.member;
+package org.keycloak.testsuite.organization.federation;
 
 import java.util.List;
 import java.util.Map;
