@@ -4,10 +4,11 @@ import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
 import org.keycloak.protocol.oidc.mappers.ParameterizedScopeMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -16,8 +17,10 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.oauth.CibaProvider;
 import org.keycloak.testframework.oauth.DefaultOAuthClientConfiguration;
 import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectCibaProvider;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -33,6 +36,7 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.ciba.AuthenticationRequestAcknowledgement;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -69,6 +73,9 @@ public class ParameterizedScopesIsolationTest {
 
     @InjectOAuthClient(config = TestOAuthClientConfig.class)
     OAuthClient oauth;
+
+    @InjectCibaProvider
+    CibaProvider ciba;
 
     @Test
     public void isolationAcrossCodeExchangeAndRefresh() {
@@ -146,10 +153,55 @@ public class ParameterizedScopesIsolationTest {
         String requestedScope = scopeName + ":target@localhost";
         createAndAssignParameterizedScope(scopeName, "username");
 
+        AuthorizationEndpointResponse authResponse = oauth.loginForm()
+                .scope(requestedScope)
+                .doLogin(USERNAME, PASSWORD);
+        assertTrue(authResponse.isRedirected());
+
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authResponse.getCode());
+        assertTrue(tokenResponse.isSuccess());
+        assertScopeNotContains(tokenResponse.getScope(), requestedScope);
+    }
+
+    @Test
+    public void usernameScopeTypeDoesNotLeakUserExistence() {
+        String scopeName = "user-check";
+        String requestedScope = scopeName + ":nonexistent-user";
+        createAndAssignParameterizedScope(scopeName, "username");
+
+        AuthorizationEndpointResponse authResponse = oauth.loginForm()
+                .scope(requestedScope)
+                .doLogin(USERNAME, PASSWORD);
+        assertTrue(authResponse.isRedirected());
+
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authResponse.getCode());
+        assertTrue(tokenResponse.isSuccess());
+        assertScopeNotContains(tokenResponse.getScope(), requestedScope);
+    }
+
+    @Test
+    public void cibaUsernameScopeTypeDoesNotLeakUserExistence() throws Exception {
+        String scopeName = "ciba-user-check";
+        String requestedScope = scopeName + ":nonexistent-user";
+        createAndAssignParameterizedScope(scopeName, "username");
+
         oauth.scope(requestedScope);
-        oauth.openLoginForm();
-        AuthorizationEndpointResponse res = oauth.parseLoginResponse();
-        assertEquals(OAuthErrorException.INVALID_SCOPE, res.getError());
+        AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(USERNAME)
+                .bindingMessage("ciba-binding-msg")
+                .clientNotificationToken("ciba-notification-token")
+                .send();
+        assertTrue(response.isSuccess());
+        assertNotNull(response.getAuthReqId());
+
+        CibaProvider.CibaAuthenticationChannelRequest authChannelReq = ciba.getAuthChannel("ciba-binding-msg");
+        assertEquals(Response.Status.OK.getStatusCode(),
+                oauth.ciba().doAuthenticationChannelCallback(authChannelReq.getBearerToken(), AuthenticationChannelResponse.Status.SUCCEED));
+
+        ciba.getPushedCibaClientNotification("ciba-notification-token");
+
+        AccessTokenResponse tokenResponse = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
+        assertTrue(tokenResponse.isSuccess());
+        assertScopeNotContains(tokenResponse.getScope(), requestedScope);
     }
 
     @Test
@@ -303,14 +355,20 @@ public class ParameterizedScopesIsolationTest {
     static class TestOAuthClientConfig extends DefaultOAuthClientConfiguration {
         @Override
         public ClientBuilder configure(ClientBuilder client) {
-            return super.configure(client).consentRequired(false);
+            return super.configure(client)
+                    .consentRequired(false)
+                    .attribute(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "ping")
+                    .attribute(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, "http://localhost:8500/ciba/push-ciba-client-notification")
+                    .attribute(CibaConfig.OIDC_CIBA_GRANT_ENABLED, Boolean.TRUE.toString());
         }
     }
 
     public static class ParameterizedScopesServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.PARAMETERIZED_SCOPES);
+            return config.features(Profile.Feature.PARAMETERIZED_SCOPES)
+                    .option("spi-ciba-auth-channel-ciba-http-auth-channel-http-authentication-channel-uri",
+                            "http://localhost:8500/ciba/request-authentication-channel");
         }
     }
 }

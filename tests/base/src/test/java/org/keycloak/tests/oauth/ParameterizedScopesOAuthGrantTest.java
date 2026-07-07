@@ -561,6 +561,41 @@ public class ParameterizedScopesOAuthGrantTest {
     }
 
     @Test
+    public void consentPageExcludesInvalidUsernameScopeParam() {
+        realm.updateClientScope(PARAMETERIZED_SCOPE_ID, s -> s.attribute(ClientScopeModel.CONSENT_SCREEN_TEXT, ""));
+
+        ClientScopeRepresentation usernameScope = ParameterizedScopeBuilder.create("user-scope")
+                .parameterizedScopeType("username")
+                .displayOnConsentScreen(true)
+                .build();
+        String usernameScopeId = ApiUtil.getCreatedId(realm.admin().clientScopes().create(usernameScope));
+        thirdParty.admin().addOptionalClientScope(usernameScopeId);
+        realm.cleanup().add(r -> {
+            r.clients().get(thirdParty.getId()).removeOptionalClientScope(usernameScopeId);
+            r.clientScopes().get(usernameScopeId).remove();
+        });
+
+        oauth.client(THIRD_PARTY_APP, "password");
+        oauth.scope("foo-parameter-scope:param1 user-scope:nonexistent-user");
+        oauth.openLoginForm();
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        grantPage.assertCurrent();
+
+        List<String> grants = grantPage.getDisplayedGrants();
+        Assertions.assertTrue(grants.contains("foo-parameter-scope: param1"),
+                "Valid string scope should be on consent page");
+        Assertions.assertTrue(grants.stream().noneMatch(g -> g.contains("user-scope")),
+                "Invalid username scope should NOT be on consent page");
+        grantPage.accept();
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        Assertions.assertTrue(res.isSuccess());
+        MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("foo-parameter-scope:param1"));
+        MatcherAssert.assertThat(scopesOf(res), Matchers.not(Matchers.hasItems("user-scope:nonexistent-user")));
+    }
+
+    @Test
     public void oauthGrantCustomRegexScopeValidation() {
         ClientScopeRepresentation customScope = ParameterizedScopeBuilder.create("custom-regex-scope")
                 .parameterizedScopeType("custom")

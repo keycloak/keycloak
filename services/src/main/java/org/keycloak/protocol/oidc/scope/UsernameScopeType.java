@@ -40,7 +40,6 @@ public class UsernameScopeType implements ParameterizedScopeTypeProvider {
         if (StringUtil.isBlank(parameter)) {
             throw new InvalidScopeParameterException("Username parameter must not be blank");
         }
-        resolveUser(scope, parameter);
     }
 
     @Override
