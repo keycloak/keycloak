@@ -108,7 +108,7 @@ Example output:
  Start: YYYY-MM-DD HH:mm:ss (UTC)
  Duration: 120 s
 
- Event Type                              Count  Size (bytes) 
+ Event Type                              Count  Size (bytes)
 =============================================================
  jdk.NativeMethodSample                   5919         82597
  jdk.ModuleExport                         2134         27601
@@ -137,18 +137,25 @@ For {project_name}, high-risk content collected by JFR can be removed by the fol
 [source]
 ----
 jfr scrub \
-  --exclude-events jdk.InitialEnvironmentVariable,jdk.InitialSystemProperty,jdk.JVMInformation,jdk.OldObjectSample \
+  --exclude-events jdk.InitialEnvironmentVariable,jdk.JVMInformation,jdk.OldObjectSample \
   recording.jfr recording-scrubbed.jfr
 ----
 
+See below for events that can reveal sensitive information:
+
 [%autowidth]
 |===
-| JFR Event | Explanation
-| `jdk.InitialEnvironmentVariable` | Environment variables can contain secrets passed to {project_name} during startup. For example: `KC_DB_PASSWORD`.
-| `jdk.JVMInformation` | JVM information contains CLI arguments passed to {project_name} during startup. For example: `--db-password`.
-| `jdk.InitialSystemProperty` | 
-| `jdk.OldObjectSample` | 
+| JFR Event | Risk | Explanation
+
+| `jdk.InitialEnvironmentVariable` | High | Environment variables can contain secrets passed to {project_name} during startup. For example: `KC_DB_PASSWORD`.
+| `jdk.JVMInformation` | High | JVM information contains CLI arguments passed to {project_name} during startup. For example: `--db-password`.
+| `jdk.OldObjectSample` | High | Serialized Java objects can include sensitive in-memory information.
+| `jdk.InitialSystemProperty` | Low | {project_name} by default does not pass sensitive information here.
 |===
+
+// TODO: This is a draft warning, please review
+WARNING: Other flight recorder events can contain information like host names, file paths or URL parameters.
+To analyze the contents for sensitive information, use `jfr print recording.jfr` or `jfr print --json recording.jfr` to review the contents.
 
 After the scrubbed version of the JFR is created, remove the original unsanitized file to prevent leaks:
 [source]
