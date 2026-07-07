@@ -35,7 +35,7 @@ export const RealmSettingsLoginTab = ({
   const updatePasskeysEnabled = (value: boolean) =>
     updateSwitchValue({
       webAuthnPolicyPasswordlessPasskeysEnabled: value,
-    } as SwitchType);
+    });
 
   const updateSwitchValue = async (switches: SwitchType | SwitchType[]) => {
     const name = Array.isArray(switches)
