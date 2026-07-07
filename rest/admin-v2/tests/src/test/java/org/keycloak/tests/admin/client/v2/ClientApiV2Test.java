@@ -59,6 +59,8 @@ import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
@@ -106,6 +108,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @InjectClient(realmRef = "testRealm", config = TestClientConfig.class)
     ManagedClient testClient;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @Override
     public String getRealmName() {
@@ -249,13 +254,13 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setClientId(clientId);
         rep.setDescription("Timestamp test client");
 
-        long beforeCreate = Time.currentTimeMillis();
+        long beforeCreate = runOnServer.fetch(session -> Time.currentTimeMillis(), Long.class);
         OIDCClientRepresentation created;
         try (var response = getClientsApi().createClient(rep)) {
             assertThat(response.getStatus(), is(201));
             created = response.readEntity(OIDCClientRepresentation.class);
         }
-        long afterCreate = Time.currentTimeMillis();
+        long afterCreate = runOnServer.fetch(session -> Time.currentTimeMillis(), Long.class);
 
         assertThat(created.getCreatedTimestamp(), notNullValue());
         assertThat(created.getUpdatedTimestamp(), notNullValue());
@@ -266,18 +271,19 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         assertThat(created.getCreatedTimestamp() <= afterCreate, is(true));
 
         try {
-            Time.setOffset(1);
+            setServerTimeOffset(1);
 
             OIDCClientRepresentation patch = new OIDCClientRepresentation();
             patch.setDescription("Updated description");
-            BaseClientRepresentation updated = getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
+            BaseClientRepresentation updated = getClientsApi().client(clientId)
+                    .patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
             assertThat(updated.getDescription(), is("Updated description"));
             assertThat(updated.getCreatedTimestamp(), is(created.getCreatedTimestamp()));
             assertThat(updated.getUpdatedTimestamp(), notNullValue());
             assertThat(updated.getUpdatedTimestamp() >= updated.getCreatedTimestamp(), is(true));
             assertThat(updated.getUpdatedTimestamp() > created.getUpdatedTimestamp(), is(true));
         } finally {
-            Time.setOffset(0);
+            setServerTimeOffset(0);
         }
     }
 
@@ -441,11 +447,11 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     @Test
     public void getClientsSortByCreatedTimestamp() {
         try {
-            Time.setOffset(0);
+            setServerTimeOffset(0);
             createSortTestClient("sort-created-a", "A", "alpha");
-            Time.setOffset(1);
+            setServerTimeOffset(1);
             createSortTestClient("sort-created-b", "B", "beta");
-            Time.setOffset(2);
+            setServerTimeOffset(2);
             createSortTestClient("sort-created-c", "C", "gamma");
 
             ListOptions listOptions = new ListOptions();
@@ -460,25 +466,25 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
                 assertThat(sortTestClientIds, is(List.of("sort-created-a", "sort-created-b", "sort-created-c")));
             }
         } finally {
-            Time.setOffset(0);
+            setServerTimeOffset(0);
         }
     }
 
     @Test
     public void getClientsSortByUpdatedTimestamp() throws JsonProcessingException {
         try {
-            Time.setOffset(0);
+            setServerTimeOffset(0);
             createSortTestClient("sort-updated-a", "A", "alpha");
-            Time.setOffset(1);
+            setServerTimeOffset(1);
             createSortTestClient("sort-updated-b", "B", "beta");
-            Time.setOffset(2);
+            setServerTimeOffset(2);
             createSortTestClient("sort-updated-c", "C", "gamma");
 
-            Time.setOffset(10);
+            setServerTimeOffset(10);
             patchSortTestClient("sort-updated-c", "gamma updated");
-            Time.setOffset(11);
+            setServerTimeOffset(11);
             patchSortTestClient("sort-updated-a", "alpha updated");
-            Time.setOffset(12);
+            setServerTimeOffset(12);
             patchSortTestClient("sort-updated-b", "beta updated");
 
             ListOptions listOptions = new ListOptions();
@@ -493,7 +499,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
                 assertThat(sortTestClientIds, is(List.of("sort-updated-c", "sort-updated-a", "sort-updated-b")));
             }
         } finally {
-            Time.setOffset(0);
+            setServerTimeOffset(0);
         }
     }
 
@@ -560,6 +566,10 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(400, response.getStatusLine().getStatusCode());
             assertThat(EntityUtils.toString(response.getEntity()), containsString("sort direction must be asc or desc"));
         }
+    }
+
+    private void setServerTimeOffset(int offset) {
+        runOnServer.run(session -> Time.setOffset(offset));
     }
 
     private void createSortTestClient(String clientId, String displayName, String description) {
