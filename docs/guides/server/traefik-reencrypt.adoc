@@ -56,6 +56,14 @@ tls:
   certificates:
     - certFile: /certs/traefik-external/cert.pem # <1>
       keyFile: /certs/traefik-external/key.pem
+  options:
+    default:
+      clientAuth:
+        # CA chain used to verify client certificates presented during the TLS handshake
+        caFiles:
+          - /certs/client-ca-chain.pem
+        # Request a client certificate but do not require one; clients without one can still connect
+        clientAuthType: VerifyClientCertIfGiven
 
 http:
   serversTransports:
@@ -102,6 +110,11 @@ http:
           Uber-Trace-Id: ""
           X-Ot-Span-Context: ""
 
+    # Forward the client certificate verified during the TLS handshake as a PEM block
+    pass-client-cert:
+      passTLSClientCert:
+        pem: true
+
     # Allowed source IP ranges. Replace with your internal IP address ranges. # <5>
     ip-allowlist:
       ipAllowList:
@@ -119,6 +132,7 @@ http:
       rule: "PathPrefix(`/realms/`) || PathPrefix(`/resources/`) || PathPrefix(`/.well-known/`)"
       middlewares:
         - filter-headers
+        - pass-client-cert
       tls: {}
       service: keycloak
 
@@ -130,6 +144,7 @@ http:
       priority: 1
       middlewares:
         - filter-headers
+        - pass-client-cert
         - ip-allowlist
       tls: {}
       service: keycloak
@@ -210,6 +225,20 @@ See the <@links.server id="mutual-tls"/> guide for additional details.
 `--https-management-client-auth=none`::
 Disables the client authentication requirement for the management endpoint.
 This allows Traefik to perform HTTPS health checks against the management port (`9000`) without needing to present the mTLS client certificate.
+
+=== Enabling client certificate lookups
+
+The mTLS configuration above secures the connection between Traefik and {project_name}.
+To additionally use a certificate that an end user presents to Traefik for X.509 authentication, {project_name} must read the certificate that the `pass-client-cert` middleware forwards in the `X-Forwarded-Tls-Client-Cert` header.
+Enable the `traefik` client certificate lookup provider when starting {project_name}:
+
+<@kc.start parameters="--spi-x509cert-lookup--provider=traefik"/>
+
+The `traefik` provider reads the client certificate and any intermediate CA certificates from the `X-Forwarded-Tls-Client-Cert` header, so no header names need to be configured.
+If your certificate chain contains more intermediate certificates than the default, set the `certificate-chain-length` option accordingly.
+Otherwise, the provider discards the request:
+
+<@kc.start parameters="--spi-x509cert-lookup--provider=traefik --spi-x509cert-lookup--traefik--certificate-chain-length=2"/>
 
 [[admin-dedicated-port-traefik-reencrypt]]
 == Optional: Admin UI and Admin API on a dedicated hostname and port
