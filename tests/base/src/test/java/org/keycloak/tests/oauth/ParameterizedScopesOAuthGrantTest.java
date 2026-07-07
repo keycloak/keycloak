@@ -47,6 +47,7 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.ciba.AuthenticationRequestAcknowledgement;
+import org.keycloak.utils.RegexUtils;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -590,6 +591,40 @@ public class ParameterizedScopesOAuthGrantTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("custom-regex-scope:abc"));
+    }
+
+    @Test
+    public void oauthGrantCustomRegexScopeRejectsExcessivelyLongParameter() {
+        ClientScopeRepresentation customScope = ParameterizedScopeBuilder.create("custom-regex-length-scope")
+                .parameterizedScopeType("custom")
+                .regexp("[a-z]+")
+                .build();
+        String customScopeId = ApiUtil.getCreatedId(realm.admin().clientScopes().create(customScope));
+        realm.cleanup().add(r -> {
+            r.clients().get(thirdParty.getId()).removeOptionalClientScope(customScopeId);
+            r.clientScopes().get(customScopeId).remove();
+        });
+        thirdParty.admin().addOptionalClientScope(customScopeId);
+
+        oauth.client(THIRD_PARTY_APP, "password");
+
+        // parameter exceeding max length should be rejected
+        String longParam = "a".repeat(RegexUtils.DEFAULT_MAX_LENGTH + 1);
+        oauth.scope("custom-regex-length-scope:" + longParam);
+        oauth.openLoginForm();
+        Assertions.assertEquals(OAuthErrorException.INVALID_SCOPE, oauth.parseLoginResponse().getError());
+
+        // parameter at max length should be accepted
+        String maxParam = "a".repeat(RegexUtils.DEFAULT_MAX_LENGTH);
+        oauth.scope("custom-regex-length-scope:" + maxParam);
+        oauth.openLoginForm();
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("custom-regex-length-scope:" + maxParam));
     }
 
     private static List<String> scopesOf(AccessTokenResponse res) {

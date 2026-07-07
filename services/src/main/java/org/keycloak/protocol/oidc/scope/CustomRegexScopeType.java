@@ -4,6 +4,7 @@ import jakarta.annotation.Nonnull;
 
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.saml.common.util.StringUtil;
+import org.keycloak.utils.RegexUtils;
 
 public class CustomRegexScopeType implements ParameterizedScopeTypeProvider {
 
@@ -16,6 +17,9 @@ public class CustomRegexScopeType implements ParameterizedScopeTypeProvider {
 
     @Override
     public void validateParameter(@Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException {
+        if (parameter.length() > RegexUtils.DEFAULT_MAX_LENGTH) {
+            throw new InvalidScopeParameterException("parameter value exceeds maximum length of " + RegexUtils.DEFAULT_MAX_LENGTH);
+        }
         String regexp = scope.getParameterizedScopeRegexp();
         if (StringUtil.isNullOrEmpty(regexp)) {
             throw new InvalidScopeParameterException("custom scope type requires a regex pattern");
