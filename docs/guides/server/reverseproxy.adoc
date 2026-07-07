@@ -285,13 +285,18 @@ The following table shows the recommended paths to expose.
 
 |/admin/
 | -
-|No
+|Only internally
 |Exposed admin paths lead to an unnecessary attack vector.
 
 |/realms/
 |/realms/
 |Yes
 |This path is needed to work correctly, for example, for OIDC endpoints.
+
+|/realms/master/
+|/realms/master/
+|Only internally
+|Assuming the administrative realm is called `master`, restrict `/realms/master/` to internal access. See <<isolating-master-realm, Isolating authentication for the administrative realm>> for more information.
 
 |/resources/
 |/resources/
@@ -328,6 +333,16 @@ NOTE: If you configured an `http-relative-path` on the server, proceed as follow
 The `lb-check` endpoint is only available when the `stateless` or the `multi-site` feature is enabled.
 It is intended for external load balancers when you do not want to expose the management interface and its `/health` endpoints publicly.
 This is a non-blocking endpoint and should remain responsive under high load, so the load balancer does not remove a healthy cluster from rotation during transient overload.
+
+[[isolating-master-realm]]
+=== Isolating authentication for the administrative realm
+
+As a security best practice, restrict access to the authentication protocol endpoints of the administrative realm from public IP addresses.
+The following description assumes {project_name}'s default settings and that this realm is called `master`.
+
+To do that, do not expose the path `/realms/master/` to the public internet.
+
+Depending on your topology, you can combine this with serving the Admin UI and Admin API on a dedicated hostname and port. See <@links.server id="hostname" anchor="administration-console-on-a-separate-hostname" /> for details.
 
 === Different context path on reverse proxy
 
