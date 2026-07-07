@@ -80,7 +80,7 @@ import static org.keycloak.utils.StringUtil.isBlank;
  */
 public class DefaultClientService implements ClientService {
     private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
-    private static final ClientModelMappers MAPPERS = new ClientModelMappers();
+    public static final ClientModelMappers MAPPERS = new ClientModelMappers();
 
     private final KeycloakSession session;
     private final AdminPermissionEvaluator permissions;
@@ -101,6 +101,11 @@ public class DefaultClientService implements ClientService {
     @Override
     public Optional<BaseClientRepresentation> getClient(@Nonnull RealmModel realm,
                                                         @Nonnull String clientId) throws ServiceException {
+        return getClient(realm, clientId, true);
+    }
+
+    public Optional<BaseClientRepresentation> getClient(@Nonnull RealmModel realm,
+                                                        @Nonnull String clientId, boolean includeReadOnlyFields) throws ServiceException {
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             return Optional.empty();
@@ -109,7 +114,7 @@ public class DefaultClientService implements ClientService {
         
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientViewContext(client, permissions.adminAuth()));
-            return Optional.ofNullable(getMapper(client.getProtocol()).fromModel(client));
+            return Optional.ofNullable(getMapper(client.getProtocol()).fromModel(client, includeReadOnlyFields));
         } catch (ClientPolicyException e) {
             throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
@@ -217,7 +222,7 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, InputStream patch) throws ServiceException {
-        Supplier<BaseClientRepresentation> getOriginalClient = () -> getClient(realm, clientId)
+        Supplier<BaseClientRepresentation> getOriginalClient = () -> getClient(realm, clientId, false)
                 .orElseThrow(() -> new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND));
 
         BaseClientRepresentation updated;
@@ -327,6 +332,9 @@ public class DefaultClientService implements ClientService {
             } else {
                 // Check permissions, execute validations and trigger client policies
                 permissions.clients().requireManage();
+                if (strategy == CreateOrUpdateStrategy.PUT && client.getUuid() != null && realm.getClientById(client.getUuid()) != null) {
+                    throw new ServiceException("uuid already exists, but with a different clientId", Response.Status.BAD_REQUEST);
+                }
                 validator.validate(client, strategy.getValidationGroup(), Default.class);
                 var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper);
                 session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(proposedRepresentation, permissions.adminAuth()));

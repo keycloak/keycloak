@@ -1,5 +1,6 @@
 package org.keycloak.tests.admin.client.v2.validation;
 
+import java.util.Map;
 import java.util.UUID;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -129,9 +130,9 @@ public class PutClientValidationTest extends AbstractClientValidationTest {
         try (var response = client.execute(updateRequest)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("uuid: uuid is server-managed and must not be user-specified"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(Map.class);
+            
+            assertThat((String)body.get("error"), is("uuid already exists, but with a different clientId"));
         }
 
         // Try to create client with a different UUID (should pass)

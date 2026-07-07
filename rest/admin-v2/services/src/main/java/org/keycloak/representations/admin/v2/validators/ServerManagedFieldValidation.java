@@ -11,39 +11,39 @@ final class ServerManagedFieldValidation {
     private ServerManagedFieldValidation() {
     }
 
-    static boolean isValid(Object representation, String[] fields, boolean rejectExistingValueOnCreate,
+    static boolean isValid(Object representation, String[] fields,
             ConstraintValidatorContext context) {
         if (representation == null) {
             return true;
         }
 
+        PersistedFieldResolver fieldResolver = PersistedFieldResolvers.forType(representation.getClass());
+        ValidationContext validationContext = ValidationContext.unwrap(context);
+        Object persisted = fieldResolver.getPersisted(validationContext, representation);
+        if (persisted == null) {
+            return true;
+        }
         boolean valid = true;
         for (String field : fields) {
-            if (!isFieldValid(representation, field, rejectExistingValueOnCreate, context)) {
+            if (!isFieldValid(representation, persisted, field, context, fieldResolver)) {
                 valid = false;
             }
         }
         return valid;
     }
 
-    private static boolean isFieldValid(Object representation, String field, boolean rejectExistingValueOnCreate,
-            ConstraintValidatorContext context) {
-        PersistedFieldResolver fieldResolver = PersistedFieldResolvers.forType(representation.getClass());
-
-        String providedValue = fieldResolver.getProvidedValue(representation, field);
-        if (providedValue == null || providedValue.isEmpty()) {
-            return true;
+    private static boolean isFieldValid(Object representation, Object persisted, String field,
+            ConstraintValidatorContext context, PersistedFieldResolver fieldResolver) {
+        Object providedValue = fieldResolver.getValue(representation, field);
+        if (providedValue == null) {
+            // note: this does not consider explicit nulls in a patch as being invalid for server managed fields
+            // this is consistent with platforms like kubernetes
+            return true;  
         }
 
-        ValidationContext validationContext = ValidationContext.unwrap(context);
-        String persistedValue = fieldResolver.getPersistedValue(validationContext, representation, field);
+        Object persistedValue = fieldResolver.getValue(persisted, field);
 
-        if (persistedValue != null) {
-            if (persistedValue.equals(providedValue)) {
-                return true;
-            }
-        } else if (!rejectExistingValueOnCreate
-                || !fieldResolver.valueExists(validationContext, field, providedValue)) {
+        if (persistedValue != null && persistedValue.equals(providedValue)) {
             return true;
         }
 

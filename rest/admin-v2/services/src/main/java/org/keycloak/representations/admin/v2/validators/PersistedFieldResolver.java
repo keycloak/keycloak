@@ -7,13 +7,12 @@ import org.keycloak.validation.jakarta.ValidationContext;
  *
  * @author Vaclav Muzikar <vmuzikar@ibm.com>
  */
-public interface PersistedFieldResolver {
+public interface PersistedFieldResolver<T> {
 
     boolean supports(Class<?> representationType);
 
-    String getProvidedValue(Object representation, String fieldName);
+    Object getValue(T representation, String fieldName);
 
-    String getPersistedValue(ValidationContext context, Object representation, String fieldName);
+    T getPersisted(ValidationContext context, T representation);
 
-    boolean valueExists(ValidationContext context, String fieldName, String value);
 }

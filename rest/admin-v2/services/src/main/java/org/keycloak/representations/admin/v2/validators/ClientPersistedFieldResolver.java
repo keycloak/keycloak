@@ -1,19 +1,14 @@
 package org.keycloak.representations.admin.v2.validators;
 
-import java.util.Objects;
-import java.util.Optional;
-
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.mapper.ClientModelMappers;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
+import org.keycloak.services.client.DefaultClientService;
 import org.keycloak.validation.jakarta.ValidationContext;
 
 /**
  * Resolves persisted field values for clients.
  */
-public class ClientPersistedFieldResolver implements PersistedFieldResolver {
-
-    private static final ClientModelMappers MAPPERS = new ClientModelMappers();
+public class ClientPersistedFieldResolver implements PersistedFieldResolver<BaseClientRepresentation> {
 
     @Override
     public boolean supports(Class<?> representationType) {
@@ -21,35 +16,19 @@ public class ClientPersistedFieldResolver implements PersistedFieldResolver {
     }
 
     @Override
-    public String getProvidedValue(Object representation, String fieldName) {
-        BaseClientRepresentation client = (BaseClientRepresentation) representation;
-        return fieldValue(fieldName, client);
+    public Object getValue(BaseClientRepresentation representation, String fieldName) {
+        // TODO: if this can ever return non-simple types we have to ensure the objects implement the equals method
+        // if not, and we could consider converting to JsonNode or Map via jackon logic
+        return DefaultClientService.MAPPERS.resolveFieldValue(fieldName, representation);
     }
 
     @Override
-    public String getPersistedValue(ValidationContext context, Object representation, String fieldName) {
-        BaseClientRepresentation client = (BaseClientRepresentation) representation;
-        ClientModel persistedClient = context.realm().getClientByClientId(client.getClientId());
+    public BaseClientRepresentation getPersisted(ValidationContext context, BaseClientRepresentation representation) {
+        ClientModel persistedClient = context.realm().getClientByClientId(representation.getClientId());
         if (persistedClient == null) {
             return null;
         }
-        var converted = MAPPERS.getMapper(client.getProtocol()).get().fromModel(persistedClient);
-        return fieldValue(fieldName, converted);
+        return DefaultClientService.MAPPERS.getMapper(representation.getProtocol()).get().fromModel(persistedClient);
     }
 
-    @Override
-    public boolean valueExists(ValidationContext context, String fieldName, String value) {
-        if (Objects.equals(fieldName, "uuid")) {
-            return Optional.ofNullable(context.realm().getClientById(value)).isPresent();
-        }
-        return false;
-    }
-
-    private String fieldValue(String fieldName, BaseClientRepresentation target) throws AssertionError {
-        return toStringValue(MAPPERS.resolveFieldValue(fieldName, target));
-    }
-
-    private static String toStringValue(Object value) {
-        return value == null ? null : value.toString();
-    }
 }

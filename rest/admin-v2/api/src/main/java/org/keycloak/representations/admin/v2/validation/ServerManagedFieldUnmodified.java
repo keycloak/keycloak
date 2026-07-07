@@ -25,7 +25,6 @@ public @interface ServerManagedFieldUnmodified {
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
     String[] affectedFieldNames();
-    boolean rejectExistingValueOnCreate() default false;
 
     @Target({ElementType.TYPE})
     @Retention(RetentionPolicy.RUNTIME)

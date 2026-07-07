@@ -21,17 +21,14 @@ import org.keycloak.representations.admin.v2.validation.ServerManagedFieldUnmodi
 public class ServerManagedFieldUnmodifiedValidator implements ConstraintValidator<ServerManagedFieldUnmodified, Object> {
 
     private String[] affectedFieldNames;
-    private boolean rejectExistingValueOnCreate;
 
     @Override
     public void initialize(ServerManagedFieldUnmodified annotation) {
         this.affectedFieldNames = annotation.affectedFieldNames();
-        this.rejectExistingValueOnCreate = annotation.rejectExistingValueOnCreate();
     }
 
     @Override
     public boolean isValid(Object representation, ConstraintValidatorContext context) {
-        return ServerManagedFieldValidation.isValid(representation, affectedFieldNames, rejectExistingValueOnCreate,
-                context);
+        return ServerManagedFieldValidation.isValid(representation, affectedFieldNames, context);
     }
 }

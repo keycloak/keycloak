@@ -12,7 +12,7 @@ public final class PersistedFieldResolvers {
     private PersistedFieldResolvers() {
     }
 
-    public static PersistedFieldResolver forType(Class<?> representationType) {
+    public static PersistedFieldResolver<?> forType(Class<?> representationType) {
         return RESOLVERS.stream()
                 .filter(resolver -> resolver.supports(representationType))
                 .findFirst()

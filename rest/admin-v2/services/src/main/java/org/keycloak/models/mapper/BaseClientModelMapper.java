@@ -48,6 +48,7 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
     }
  
     final Map<String, MappedField<BaseClientRepresentation>> fields = new LinkedHashMap<String, MappedField<BaseClientRepresentation>>();
+    private Set<String> writableFields;
 
     public Set<String> getFieldNames() {
         return Collections.unmodifiableSet(fields.keySet());
@@ -108,5 +109,12 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
     }
 
     protected abstract T createClientRepresentation();
+    
+    public Set<String> getWritableField() {
+        if (writableFields == null) {
+            writableFields = fields.entrySet().stream().filter(e -> e.getValue().modelSetter != null).map(e -> e.getKey()).collect(Collectors.toSet());
+        }
+        return writableFields;
+    }
 
 }

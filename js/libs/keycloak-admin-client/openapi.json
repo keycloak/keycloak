@@ -89,13 +89,13 @@
           "createdTimestamp" : {
             "type" : "integer",
             "format" : "int64",
-            "description" : "Timestamp when the client was created. Validation: on update: createdTimestamp is server-managed and must not be user-specified",
+            "description" : "Timestamp when the client was created. Validation: on update/on patch: createdTimestamp is server-managed and must not be user-specified",
             "readOnly" : true
           },
           "updatedTimestamp" : {
             "type" : "integer",
             "format" : "int64",
-            "description" : "Timestamp when the client was last updated. Validation: on update: updatedTimestamp is server-managed and must not be user-specified",
+            "description" : "Timestamp when the client was last updated. Validation: on update/on patch: updatedTimestamp is server-managed and must not be user-specified",
             "readOnly" : true
           }
         },

@@ -18,15 +18,15 @@ class ClientPersistedFieldResolverTest {
         client.setProtocol(OIDCClientRepresentation.PROTOCOL);
         client.setCreatedTimestamp(1_700_000_000_000L);
 
-        assertEquals("client-uuid", resolver.getProvidedValue(client, "uuid"));
-        assertEquals(OIDCClientRepresentation.PROTOCOL, resolver.getProvidedValue(client, "protocol"));
-        assertEquals("1700000000000", resolver.getProvidedValue(client, "createdTimestamp"));
+        assertEquals("client-uuid", resolver.getValue(client, "uuid"));
+        assertEquals(OIDCClientRepresentation.PROTOCOL, resolver.getValue(client, "protocol"));
+        assertEquals(1700000000000L, resolver.getValue(client, "createdTimestamp"));
     }
 
     @Test
     void getProvidedValueReturnsNullForUnsetField() {
         var client = new OIDCClientRepresentation("test-client");
 
-        assertNull(resolver.getProvidedValue(client, "uuid"));
+        assertNull(resolver.getValue(client, "uuid"));
     }
 }
