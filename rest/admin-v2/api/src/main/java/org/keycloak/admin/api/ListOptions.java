@@ -116,7 +116,7 @@ public class ListOptions {
                 .map(String::trim)
                 .filter(segment -> !segment.isEmpty())
                 .map(ListOptions::parseSortSegment)
-                .collect(Collectors.toList());
+                .collect(Collectors.toUnmodifiableList());
         if (parsedSort.isEmpty()) {
             throw new IllegalArgumentException("sort must specify at least one field");
         }
@@ -124,7 +124,7 @@ public class ListOptions {
     }
 
     public void setSort(List<SortOption> sort) {
-        parsedSort = sort;
+        parsedSort = List.copyOf(sort);
         if (sort == null) {
             this.sort = null;
         } else if (sort.isEmpty()) {
