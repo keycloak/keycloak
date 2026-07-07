@@ -50,11 +50,11 @@ When creating a parameterized scope, you must select a parameter type that deter
 | No
 
 | `username`
-| Validates that the parameter value is the username of an existing, enabled user in the realm. Additionally, a user cannot target themselves with this scope type.
+| Validates that the parameter value is the username of an existing, enabled user in the realm. When the realm allows login with email, the parameter can also be an email address. Additionally, a user cannot target themselves with this scope type.
 | Yes
 
 | `delegation`
-| Extends the `username` type with an additional impersonation check. The parameter must be a valid, enabled username, the user cannot target themselves, and the current user must have impersonation permissions for the target user.
+| Extends the `username` type with an additional impersonation check. The parameter must be the username (or email address when the realm allows login with email) of an existing, enabled user. The user cannot target themselves, and the current user must have impersonation permissions for the target user.
 | No
 
 | `custom`
