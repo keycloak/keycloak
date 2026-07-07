@@ -21,7 +21,7 @@ import jakarta.validation.Payload;
 @Repeatable(ServerManagedFieldUnmodified.List.class)
 @Constraint(validatedBy = {})
 public @interface ServerManagedFieldUnmodified {
-    String message() default "Field is server-managed and must not be user-specified";
+    String message() default "{0} is server-managed and must not be user-specified";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
     String[] affectedFieldNames();

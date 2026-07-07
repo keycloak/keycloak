@@ -451,8 +451,8 @@ public class ValidationAnnotationScannerTest {
         assertEquals(2, descriptions.size());
         assertTrue(descriptions.containsKey("uuid"));
         assertTrue(descriptions.containsKey("protocol"));
-        assertEquals("Field is server-managed and must not be user-specified", descriptions.get("uuid"));
-        assertEquals("Field is server-managed and must not be user-specified", descriptions.get("protocol"));
+        assertEquals("uuid is server-managed and must not be user-specified", descriptions.get("uuid"));
+        assertEquals("protocol is server-managed and must not be user-specified", descriptions.get("protocol"));
     }
 
     @Test
