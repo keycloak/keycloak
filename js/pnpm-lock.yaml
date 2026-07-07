@@ -481,9 +481,6 @@ importers:
       rfc4648:
         specifier: ^1.5.4
         version: 1.5.4
-      uuid:
-        specifier: ^14.0.1
-        version: 14.0.1
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: ^29.0.0
