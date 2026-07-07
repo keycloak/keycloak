@@ -210,7 +210,7 @@ public class ParameterizedScopeMapperTest {
     @Test
     public void repeatableScopeMapsMultipleValues() {
         String repScopeId = addOptionalScopeWithCleanup("rep-scope", true,
-                ParameterizedScopeMapper.create("rep-raw-mapper", "rep_values", "String", true, false, true, true));
+                ParameterizedScopeMapper.create("rep-raw-mapper", "rep_values", "String", true, false, true));
 
         AccessToken token = loginWithScopeParam("rep-scope", TARGET_USERNAME, "second-target");
         assertListClaim(token, "rep_values", TARGET_USERNAME, "second-target");

@@ -737,7 +737,7 @@ public class TokenManager {
         return true;
     }
 
-    private static boolean isRepeatableScope(KeycloakSession session, ClientScopeModel clientScope) {
+    public static boolean isRepeatableScope(KeycloakSession session, ClientScopeModel clientScope) {
         String attr = clientScope.getAttribute(ClientScopeModel.IS_REPEATABLE_SCOPE);
         if (attr != null) {
             return Boolean.parseBoolean(attr);
