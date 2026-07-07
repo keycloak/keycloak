@@ -122,7 +122,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
         waitForPageToLoad();
 
         webAuthnErrorPage.assertCurrent();
-        assertThat(webAuthnErrorPage.getError(), is("Failed to register your Passkey. Device already exists with the same name"));
+        assertThat(webAuthnErrorPage.getError(), is("Failed to register your Passkey."));
         webAuthnErrorPage.clickTryAgain();
 
         webAuthnRegisterPage.assertCurrent();
@@ -431,7 +431,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
             waitForPageToLoad();
             webAuthnErrorPage.assertCurrent();
             assertThat(webAuthnErrorPage.getError(), containsString(
-                    "The user attempted to register an authenticator that contains one of the credentials already registered with the relying party."));
+                    "This Passkey is already registered."));
         }
     }
 

@@ -33,7 +33,7 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
 
         registerAndExpectError("attach-tamper",
                 tamperFormField("authenticatorAttachment", "platform"),
-                "Policy requires 'cross-platform' authenticator attachment but got 'platform'");
+                "Your organization requires a different type of security key. Please use the correct type.");
     }
 
     @Test
@@ -43,7 +43,7 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
 
         registerAndExpectError("attach-invalid",
                 tamperFormField("authenticatorAttachment", "not-a-real-value"),
-                "Unexpected authenticator attachment value");
+                "Your organization requires a different type of security key. Please use the correct type.");
     }
 
     @Test
@@ -53,7 +53,7 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
 
         registerAndExpectError("attach-omit",
                 tamperFormField("authenticatorAttachment", ""),
-                "Authenticator attachment is required by the policy but was not provided by the client.");
+                "Failed to register your Passkey.");
     }
 
     @Test
@@ -64,7 +64,7 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
 
         registerAndExpectError("alg-tamper",
                 tamperCreateOptions("opts.publicKey.pubKeyCredParams = [{type: 'public-key', alg: -7}];"),
-                "alg not listed in options.pubKeyCredParams is used.");
+                "Failed to register your Passkey.");
     }
 
     @Test
@@ -77,7 +77,7 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
                 tamperCreateOptions(
                         "opts.publicKey.authenticatorSelection = opts.publicKey.authenticatorSelection || {};" +
                         "opts.publicKey.authenticatorSelection.userVerification = 'discouraged';"),
-                "Verifier is configured to check user verified, but UV flag in authenticatorData is not set.");
+                "Failed to register your Passkey.");
     }
 
     @Test
@@ -88,7 +88,7 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
 
         registerAndExpectError("att-tamper",
                 tamperCreateOptions("opts.publicKey.attestation = 'none';"),
-                "AttestationVerifier is not configured to handle the supplied AttestationStatement format 'none'.");
+                "Failed to register your Passkey.");
     }
 
     @Test
@@ -127,7 +127,7 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnErrorPage.assertCurrent();
         assertThat(webAuthnErrorPage.getError(),
-                containsString("The actual challenge does not match the expected challenge"));
+                containsString("Failed to register your Passkey."));
     }
 
     @Test
@@ -137,7 +137,7 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
                 .webAuthnPolicyAttestationConveyancePreference("none"));
 
         registerAndExpectError("aaguid-none-attestation",
-                "Acceptable AAGUIDs require an attestation format other than 'none'.");
+                "Your organization requires verified security keys. Attestation format 'none' is not accepted; please use a key that provides attestation.");
     }
 
     private void registerAndExpectError(String testId, String tamperScript, String expectedError) {

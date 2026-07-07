@@ -60,10 +60,15 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.WebAuthnConstants.AUTH_ERR_DETAIL_LABEL;
 import static org.keycloak.WebAuthnConstants.AUTH_ERR_LABEL;
+import static org.keycloak.authentication.requiredactions.WebAuthnRegister.mapBrowserApiErrorToMessageKey;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_GET;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_INVALID_STATE;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_NOT_ALLOWED;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_SECURITY;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_AUTH_VERIFICATION;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_DIFFERENT_USER;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_REGISTRATION;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_UNSUPPORTED_BROWSER;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_USER_NOT_FOUND;
 
 /**
@@ -155,7 +160,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         // receive error from navigator.credentials.get()
         String errorMsgFromWebAuthnApi = params.getFirst(WebAuthnConstants.ERROR);
         if (StringUtil.isNotBlank(errorMsgFromWebAuthnApi)) {
-            setErrorResponse(context, WEBAUTHN_ERROR_API_GET, errorMsgFromWebAuthnApi);
+            String mappedKey = mapBrowserApiErrorToMessageKey(errorMsgFromWebAuthnApi, false);
+            setErrorResponse(context, mappedKey, errorMsgFromWebAuthnApi);
             return;
         }
 
@@ -253,6 +259,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         try {
             result = user.credentialManager().isValid(cred);
         } catch (WebAuthnException wae) {
+            logger.warnv("WebAuthn authentication verification failed. {0}", wae.getMessage());
             setErrorResponse(context, WEBAUTHN_ERROR_AUTH_VERIFICATION, wae.getMessage());
             return;
         }
@@ -315,7 +322,6 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         Response errorResponse = null;
         switch (errorCase) {
         case WEBAUTHN_ERROR_REGISTRATION:
-            logger.warn(errorCase);
             context.getEvent()
                 .detail(AUTH_ERR_LABEL, errorCase)
                 .error(Errors.INVALID_USER_CREDENTIALS);
@@ -323,7 +329,11 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
             context.failure(AuthenticationFlowError.INVALID_CREDENTIALS, errorResponse);
             break;
         case WEBAUTHN_ERROR_API_GET:
-            logger.warnv("error returned from navigator.credentials.get(). {0}", errorMessage);
+        case WEBAUTHN_ERROR_API_NOT_ALLOWED:
+        case WEBAUTHN_ERROR_API_INVALID_STATE:
+        case WEBAUTHN_ERROR_API_SECURITY:
+        case WEBAUTHN_ERROR_UNSUPPORTED_BROWSER:
+            logger.warnv("Error returned from navigator.credentials.get(). {0}", errorMessage);
             context.getEvent()
                 .detail(AUTH_ERR_LABEL, errorCase)
                 .detail(AUTH_ERR_DETAIL_LABEL, errorMessage)
@@ -340,7 +350,6 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
             context.failure(AuthenticationFlowError.USER_CONFLICT, errorResponse);
             break;
         case WEBAUTHN_ERROR_AUTH_VERIFICATION:
-            logger.warnv("WebAuthn API .get() response validation failure. {0}", errorMessage);
             context.getEvent()
                 .detail(AUTH_ERR_LABEL, errorCase)
                 .detail(AUTH_ERR_DETAIL_LABEL, errorMessage)

@@ -75,9 +75,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
 
             webAuthnErrorPage.assertCurrent();
 
-            final String expectedMessage = getExpectedMessageByDriver(
-                    "SecurityError: The operation is insecure.",
-                    "The relying party ID is not a registrable domain suffix of, nor equal to the current domain.");
+            final String expectedMessage = "A security error occurred during the Passkey operation. Please ensure you are on the correct site and try again.";
 
             assertThat(webAuthnErrorPage.getError(), containsString(expectedMessage));
         }

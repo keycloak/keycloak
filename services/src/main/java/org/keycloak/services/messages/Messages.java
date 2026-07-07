@@ -336,6 +336,15 @@ public class Messages {
     public static final String WEBAUTHN_ERROR_REGISTER_VERIFICATION = "webauthn-error-register-verification";
     public static final String WEBAUTHN_ERROR_USER_NOT_FOUND = "webauthn-error-user-not-found";
 
+    // WebAuthn Error — specific localizable cases
+    public static final String WEBAUTHN_ERROR_REGISTRATION_NOT_ALLOWED_AAGUID = "webauthn-error-registration-not-allowed-aaguid";
+    public static final String WEBAUTHN_ERROR_REGISTRATION_AAGUID_ATTESTATION_REQUIRED = "webauthn-error-registration-aaguid-attestation-required";
+    public static final String WEBAUTHN_ERROR_REGISTRATION_ATTACHMENT_MISMATCH = "webauthn-error-registration-attachment-mismatch";
+    public static final String WEBAUTHN_ERROR_API_NOT_ALLOWED = "webauthn-error-api-not-allowed";
+    public static final String WEBAUTHN_ERROR_API_INVALID_STATE = "webauthn-error-api-invalid-state";
+    public static final String WEBAUTHN_ERROR_API_SECURITY = "webauthn-error-api-security";
+    public static final String WEBAUTHN_ERROR_UNSUPPORTED_BROWSER = "webauthn-unsupported-browser-text";
+
     // Conditions in Conditional Flow
     public static final String ACCESS_DENIED = "access-denied";
 
