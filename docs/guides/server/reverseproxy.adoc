@@ -285,7 +285,7 @@ The following table shows the recommended paths to expose.
 
 |/admin/
 | -
-|No
+|Only internally
 |Exposed admin paths lead to an unnecessary attack vector.
 
 |/realms/
@@ -294,11 +294,9 @@ The following table shows the recommended paths to expose.
 |This path is needed to work correctly, for example, for OIDC endpoints.
 
 |/realms/master/
-| -
-|No
-|Although `/realms/` is exposed, the `master` realm is used for administering {project_name} and is not needed for user-facing authentication.
-Restrict `/realms/master/` to internal or administrative access to reduce the attack surface.
-See <<isolating-master-realm, Isolating the master realm>> for more information.
+|/realms/master/
+|Only internally
+|Assuming the administrative realm is called `master`, restrict `/realms/master/` to internal access. See <<isolating-master-realm, Isolating authentication for the administrative realm>> for more information.
 
 |/resources/
 |/resources/
@@ -337,28 +335,14 @@ It is intended for external load balancers when you do not want to expose the ma
 This is a non-blocking endpoint and should remain responsive under high load, so the load balancer does not remove a healthy cluster from rotation during transient overload.
 
 [[isolating-master-realm]]
-=== Isolating the master realm
+=== Isolating authentication for the administrative realm
 
-The path under `/realms/` also includes the administrative `master` realm at `/realms/master/`.
-By default, the `master` realm is used only for administering {project_name}; regular applications authenticate against their own realms and do not need it.
+As a security best practice, restrict access to the authentication protocol endpoints of the administrative realm from public IP addresses.
+The following description assumes {project_name}'s default settings and that this realm is called `master`.
 
-As a security best practice, do not expose `/realms/master/` to the public internet.
-Restricting it to trusted, internal networks keeps the administrative endpoints of the `master` realm, such as its token endpoints and login flows, unreachable from the outside and reduces the attack surface.
+To do that, do not expose the path `/realms/master/` to the public internet.
 
-NOTE: Path-based isolation of the `master` realm requires TLS re-encrypt or edge termination mode, because the proxy needs to inspect and filter HTTP paths.
-Passthrough mode does not allow path filtering.
-
-Depending on your topology, you can:
-
-* Deny the `/realms/master/` path on your public-facing proxy and allow it only on an internal or administrative proxy or hostname.
-* Combine this with serving the Admin UI and Admin API on a dedicated hostname and port.
-
-WARNING: This recommendation assumes the `master` realm is reserved for administration.
-If you use the `master` realm for regular end users, restricting it will break their access; instead, migrate those users to a dedicated realm before isolating `/realms/master/`.
-
-For concrete configuration examples, see the master realm isolation guidance in the following blueprints:
-* <@links.server id="haproxy-reencrypt"/>
-* <@links.server id="traefik-reencrypt"/>
+Depending on your topology, you can combine this with serving the Admin UI and Admin API on a dedicated hostname and port. See <@links.server id="hostname" anchor="administration-console-on-a-separate-hostname" /> for details.
 
 === Different context path on reverse proxy
 
