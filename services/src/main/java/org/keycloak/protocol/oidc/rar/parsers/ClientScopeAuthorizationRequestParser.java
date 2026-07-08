@@ -18,6 +18,7 @@ package org.keycloak.protocol.oidc.rar.parsers;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -133,7 +134,11 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
      * @return see description
      */
     private Optional<IntermediaryScopeRepresentation> getMatchingClientScope(UserModel user, String requestScope, Collection<ClientScopeModel> optionalScopes) {
-        for (ClientScopeModel clientScopeModel : optionalScopes) {
+        List<ClientScopeModel> sorted = optionalScopes.stream()
+                .sorted(Comparator.comparingInt((ClientScopeModel s) -> s.getName().length()).reversed())
+                .toList();
+
+        for (ClientScopeModel clientScopeModel : sorted) {
             if (clientScopeModel.isParameterizedScope()) {
                 String paramValue = clientScopeModel.getParameterFromScope(requestScope).orElse(null);
                 if (paramValue == null) {
