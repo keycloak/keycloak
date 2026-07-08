@@ -60,6 +60,7 @@ public interface Details {
     String TOKEN_ISSUED_FOR = "token_issued_for";
     String ORG_ID = "org_id";
     String REFRESH_TOKEN_ID = "refresh_token_id";
+    String REFRESH_TOKEN_PROVIDER_ID = "refresh_token_provider_id";
     String REFRESH_TOKEN_TYPE = "refresh_token_type";
     String REFRESH_TOKEN_SUB = "refresh_token_sub";
     String CLIENT_ASSERTION_ID = "client_assertion_id";
