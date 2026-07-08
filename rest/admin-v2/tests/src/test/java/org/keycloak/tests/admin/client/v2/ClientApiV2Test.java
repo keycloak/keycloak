@@ -448,9 +448,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     public void getClientsSortByCreatedTimestamp() {
         try {
             setServerTimeOffset(0);
-            createSortTestClient("sort-created-a", "A", "alpha");
+            createSortTestClient("sort-created-b", "A", "alpha");
             setServerTimeOffset(1);
-            createSortTestClient("sort-created-b", "B", "beta");
+            createSortTestClient("sort-created-a", "B", "beta");
             setServerTimeOffset(2);
             createSortTestClient("sort-created-c", "C", "gamma");
 
@@ -463,7 +463,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
                         .map(BaseClientRepresentation::getClientId)
                         .filter(id -> id.startsWith("sort-created-"))
                         .toList();
-                assertThat(sortTestClientIds, is(List.of("sort-created-a", "sort-created-b", "sort-created-c")));
+                assertThat(sortTestClientIds, is(List.of("sort-created-b", "sort-created-a", "sort-created-c")));
             }
         } finally {
             setServerTimeOffset(0);
