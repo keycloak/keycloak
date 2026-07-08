@@ -168,7 +168,7 @@ Time                         JVM User           JVM System           Machine Tot
 [[scrub-sensitive-data]]
 == Scrub sensitive data from a flight recording
 
-Once a recording is dumped into a file it is important to scrub it for potentially sensistive data to prevent security leaks. This can be done using a standard `jfr scrub` command.
+Once a recording is dumped into a file it is important to scrub it for potentially sensitive data to prevent security leaks. This can be done using a standard `jfr scrub` command.
 
 For {project_name}, high-risk content collected by JFR can be removed by the following command:
 [source]
