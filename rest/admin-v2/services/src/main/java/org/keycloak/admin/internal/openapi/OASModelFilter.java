@@ -12,6 +12,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.keycloak.admin.api.ClientField;
+
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -21,6 +23,7 @@ import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.media.Discriminator;
 import org.eclipse.microprofile.openapi.models.media.Schema;
+import org.eclipse.microprofile.openapi.models.parameters.Parameter;
 import org.eclipse.microprofile.openapi.models.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.models.security.SecurityScheme;
 import org.jboss.jandex.AnnotationInstance;
@@ -33,6 +36,13 @@ import org.jboss.logging.Logger;
 import static org.keycloak.utils.StringUtil.isNullOrEmpty;
 
 public class OASModelFilter implements OASFilter {
+
+    private static final String SORT_PARAMETER_NAME = "sort";
+    private static final String ALLOWED_FIELDS_MARKER = " Allowed fields: ";
+    private static final String CLIENTS_LIST_PATH_SUFFIX = "/clients/v2";
+    private static final Map<String, Supplier<String>> SORT_ALLOWED_FIELDS_BY_PATH_SUFFIX = Map.of(
+            CLIENTS_LIST_PATH_SUFFIX, ClientField::allowedApiNames
+    );
 
     private final Logger log = Logger.getLogger(OASModelFilter.class);
     private final IndexView indexView;
@@ -87,6 +97,7 @@ public class OASModelFilter implements OASFilter {
         addSecurityScheme(openAPI);
 
         addJavaExampleExtensions(openAPI);
+        enhanceSortParameterDescriptions(openAPI);
     }
 
     /**
@@ -407,6 +418,62 @@ public class OASModelFilter implements OASFilter {
 
     private void addJavaExampleExtensions(OpenAPI openAPI) {
         new JavaDocExampleGenerator(indexView).generate(openAPI);
+    }
+
+    private void enhanceSortParameterDescriptions(OpenAPI openAPI) {
+        if (openAPI.getPaths() == null || openAPI.getPaths().getPathItems().isEmpty()) {
+            return;
+        }
+
+        openAPI.getPaths().getPathItems().forEach((path, pathItem) -> {
+            Supplier<String> allowedFields = resolveSortAllowedFields(path);
+            if (allowedFields == null) {
+                return;
+            }
+            String allowedApiNames = allowedFields.get();
+            enhanceSortParameters(pathItem.getParameters(), allowedApiNames);
+            pathItem.getOperations().forEach((method, operation) ->
+                    enhanceSortParameters(operation.getParameters(), allowedApiNames));
+        });
+    }
+
+    private static Supplier<String> resolveSortAllowedFields(String path) {
+        for (Map.Entry<String, Supplier<String>> entry : SORT_ALLOWED_FIELDS_BY_PATH_SUFFIX.entrySet()) {
+            if (path.endsWith(entry.getKey())) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
+    private static void enhanceSortParameters(List<Parameter> parameters, String allowedApiNames) {
+        if (parameters == null) {
+            return;
+        }
+        for (Parameter parameter : parameters) {
+            if (SORT_PARAMETER_NAME.equals(parameter.getName())) {
+                parameter.setDescription(enhanceSortParameterDescription(parameter.getDescription(), allowedApiNames));
+            }
+        }
+    }
+
+    private static String enhanceSortParameterDescription(String description, String allowedApiNames) {
+        String base = stripAllowedFieldsSuffix(description);
+        if (isNullOrEmpty(base)) {
+            return "Allowed fields: " + allowedApiNames + ".";
+        }
+        return base + ALLOWED_FIELDS_MARKER + allowedApiNames + ".";
+    }
+
+    private static String stripAllowedFieldsSuffix(String description) {
+        if (isNullOrEmpty(description)) {
+            return description;
+        }
+        int idx = description.indexOf(ALLOWED_FIELDS_MARKER);
+        if (idx >= 0) {
+            return description.substring(0, idx);
+        }
+        return description;
     }
 
 }

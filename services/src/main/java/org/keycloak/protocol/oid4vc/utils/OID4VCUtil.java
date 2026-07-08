@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
@@ -54,8 +55,10 @@ public class OID4VCUtil {
      * @param expectedCredentialScope expected credential scope
      * @param expectedClient expected client
      * @throws IllegalStateException in case that issued-credential not present or does not match with user, client or clientScope
+     * @return issued verifiable credential model (as long as it is found)
+     * @throws IllegalStateException in case that issued verifiable credential is not found or is expired
      */
-    public static void checkIssuedVerifiableCredential(KeycloakSession session, UserModel user, String issuedCredentialId, CredentialScopeModel expectedCredentialScope, ClientModel expectedClient) {
+    public static IssuedVerifiableCredentialModel checkIssuedVerifiableCredential(KeycloakSession session, UserModel user, String issuedCredentialId, CredentialScopeModel expectedCredentialScope, ClientModel expectedClient) {
         if (issuedCredentialId == null) {
             throw new IllegalStateException("Issued credential ID not present");
         }
@@ -80,6 +83,16 @@ public class OID4VCUtil {
         if (!expectedCredentialScope.getId().equals(verifiableCredential.getClientScopeId())) {
             throw new IllegalStateException("Different client scope than client scope from issued-credential");
         }
+
+        IssuedVerifiableCredentialModel issuedCredential = issuedCred.get();
+
+        // Check issued-credential not expired
+        long currentTimeMs = Time.currentTimeMillis();
+        if (currentTimeMs > issuedCredential.getExpiresAt()) {
+            throw new IllegalStateException("Issued credential is expired");
+        }
+
+        return issuedCredential;
     }
 
     public static List<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsByUserAndClient(KeycloakSession session, UserModel user, ClientModel client) {

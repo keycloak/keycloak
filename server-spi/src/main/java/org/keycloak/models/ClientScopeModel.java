@@ -95,6 +95,7 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
     String IS_PARAMETERIZED_SCOPE = "is.parameterized.scope";
     String PARAMETERIZED_SCOPE_REGEXP = "parameterized.scope.regexp";
     String PARAMETERIZED_SCOPE_TYPE = "parameterized.scope.type";
+    String IS_REPEATABLE_SCOPE = "parameterized.scope.repeatable";
     String IS_ALWAYS_CONSENT = "always.display.consent";
 
     /** @deprecated Use {@link #IS_PARAMETERIZED_SCOPE} instead. */

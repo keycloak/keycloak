@@ -1,5 +1,6 @@
 package org.keycloak.admin.api;
 
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -19,9 +20,24 @@ public class ListOptions {
     @QueryParam("fields")
     protected String fields;
 
+    @Parameter(description = "Sort expression. Comma-separated fields with optional direction per field using | (e.g. displayName|desc,clientId). Default direction is asc.",
+            schema = @Schema(type = SchemaType.STRING, defaultValue = "clientId"))
+    @QueryParam("sort")
+    protected String sort;
+
     @Parameter(description = "Filter expression using SCIM-like syntax, e.g. clientId eq \"my-app\" and enabled eq true")
     @QueryParam("q")
     protected String query;
+
+    @Parameter(description = "Maximum number of results to return. Defaults to 100.")
+    @QueryParam("limit")
+    protected Integer limit;
+
+    @Parameter(description = "Index of the first result to return, counted from 0. Defaults to 0.")
+    @QueryParam("offset")
+    protected Integer offset;
+    
+    private transient List<SortOption> parsedSort;
 
     public ListOptions fields(Set<String> fields) {
         this.setFields(fields);
@@ -30,6 +46,21 @@ public class ListOptions {
 
     public ListOptions query(String query) {
         this.setQuery(query);
+        return this;
+    }
+
+    public ListOptions limit(int limit) {
+        this.setLimit(limit);
+        return this;
+    }
+
+    public ListOptions sort(List<SortOption> sort) {
+        this.setSort(sort);
+        return this;
+    }
+
+    public ListOptions offset(int offset) {
+        this.setOffset(offset);
         return this;
     }
 
@@ -54,5 +85,76 @@ public class ListOptions {
     public void setQuery(String query) {
         this.query = query;
     }
-    
+
+    public Integer getLimit() {
+        return limit;
+    }
+
+    public void setLimit(Integer limit) {
+        this.limit = limit;
+    }
+
+    public Integer getOffset() {
+        return offset;
+    }
+
+    public void setOffset(Integer offset) {
+        this.offset = offset;
+    }
+
+    public List<SortOption> getSort() {
+        if (sort == null) {
+            return null;
+        }
+        if (sort.isEmpty()) {
+            return List.of();
+        }
+        if (parsedSort != null) {
+            return parsedSort;
+        }
+        parsedSort = Arrays.stream(sort.split(","))
+                .map(String::trim)
+                .filter(segment -> !segment.isEmpty())
+                .map(ListOptions::parseSortSegment)
+                .collect(Collectors.toUnmodifiableList());
+        if (parsedSort.isEmpty()) {
+            throw new IllegalArgumentException("sort must specify at least one field");
+        }
+        return parsedSort;
+    }
+
+    public void setSort(List<SortOption> sort) {
+        parsedSort = List.copyOf(sort);
+        if (sort == null) {
+            this.sort = null;
+        } else if (sort.isEmpty()) {
+            this.sort = "";
+        } else {
+            this.sort = sort.stream().map(SortOption::toQuerySegment).collect(Collectors.joining(","));
+        }
+    }
+
+    private static SortOption parseSortSegment(String segment) {
+        String[] parts = segment.split("\\|", 2);
+        String fieldName = parts[0].trim();
+        if (fieldName.isEmpty()) {
+            throw new IllegalArgumentException("sort must specify at least one field");
+        }
+        ClientField field = ClientField.fromApiName(fieldName).orElseThrow(() ->
+                new IllegalArgumentException(String.format("%s is not a sortable field", fieldName)));
+        SortOrder order = parts.length == 1 ? SortOrder.ASC : parseSortOrder(parts[1].trim());
+        return SortOption.of(field, order);
+    }
+
+    private static SortOrder parseSortOrder(String value) {
+        if (value.isEmpty()) {
+            return SortOrder.ASC;
+        }
+        for (SortOrder order : SortOrder.values()) {
+            if (order.name().equalsIgnoreCase(value)) {
+                return order;
+            }
+        }
+        throw new IllegalArgumentException("sort direction must be asc or desc");
+    }
 }

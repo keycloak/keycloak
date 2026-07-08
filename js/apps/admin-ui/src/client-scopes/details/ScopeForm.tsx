@@ -20,6 +20,8 @@ import {
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
 
+import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";
+import { toHumanFormat } from "../../components/time-selector/TimeSelector";
 import { useAdminClient } from "../../admin-client";
 import { getProtocolName } from "../../clients/utils";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
@@ -44,6 +46,8 @@ const VC_FORMAT_JWT_VC = "jwt_vc_json";
 const VC_FORMAT_SD_JWT = "dc+sd-jwt";
 const VC_FORMAT_JWT_VC_TYP = "vc+jwt";
 const VC_FORMAT_SD_JWT_TYP = "dc+sd-jwt";
+const VC_EXPIRY_DEFAULT_SECONDS = 31536000; // 1 year (matches VC_EXPIRY_IN_SECONDS_DEFAULT)
+const VC_REFRESH_INTERVAL_DEFAULT_SECONDS = 604800; // 7 days (matches VC_REFRESH_INTERVAL_IN_SECONDS_DEFAULT)
 
 // Allowed values for OID4VCI cryptographic binding methods and proof types.
 // Keep these in sync with server-side support in CredentialScopeModel / ProofType.
@@ -72,7 +76,7 @@ type ScopeFormProps = {
 };
 
 export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { adminClient } = useAdminClient();
   const form = useForm<ClientScopeDefaultOptionalType>({ mode: "onChange" });
   const { control, handleSubmit, setValue, formState } = form;
@@ -207,6 +211,32 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     isFeatureEnabled(Feature.OpenId4VCI) &&
     realmRepresentation.verifiableCredentialsEnabled;
   const isNotSaml = selectedProtocol != "saml";
+
+  const computeRefreshIntervalDefault = () => {
+    const expiryAttr = clientScope?.attributes?.["vc.expiry_in_seconds"];
+    const lifetimeFromAttr =
+      typeof expiryAttr === "string" && expiryAttr !== ""
+        ? parseInt(expiryAttr, 10)
+        : undefined;
+
+    const lifetimeFieldName = convertAttributeNameToForm(
+      "attributes.vc.expiry_in_seconds",
+    );
+    const lifetimeValue = form.getValues(lifetimeFieldName);
+    const lifetimeFromForm =
+      typeof lifetimeValue === "number"
+        ? lifetimeValue
+        : typeof lifetimeValue === "string" && lifetimeValue !== ""
+          ? parseInt(lifetimeValue, 10)
+          : undefined;
+
+    const lifetime =
+      (Number.isFinite(lifetimeFromAttr) ? lifetimeFromAttr : undefined) ??
+      (Number.isFinite(lifetimeFromForm) ? lifetimeFromForm : undefined) ??
+      VC_EXPIRY_DEFAULT_SECONDS;
+
+    return Math.min(VC_REFRESH_INTERVAL_DEFAULT_SECONDS, lifetime);
+  };
   const recommendedTokenJwsType =
     selectedFormat === VC_FORMAT_SD_JWT
       ? VC_FORMAT_SD_JWT_TYP
@@ -234,7 +264,11 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     defaultValue: clientScope?.attributes?.["vc.signing_key_id"] ?? "",
   });
 
-  const scopeTypeNames = serverInfo.parameterizedScopeTypes || [];
+  const parameterizedScopeTypeInfos = serverInfo.parameterizedScopeTypes || [];
+  const scopeTypeNames = parameterizedScopeTypeInfos.map((t) => t.name);
+  const scopeTypeDefaults = Object.fromEntries(
+    parameterizedScopeTypeInfos.map((t) => [t.name, t.repeatable]),
+  );
 
   useEffect(() => {
     convertToFormValues(clientScope ?? {}, setValue);
@@ -276,6 +310,11 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       "attributes.parameterized.scope.regexp",
     );
 
+  const repeatableFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.parameterized.scope.repeatable",
+    );
+
   useEffect(() => {
     if (parameterizedScope === "true" && isCustomType) {
       const current = (form.getValues(regexpFieldName) as string) || "";
@@ -284,6 +323,13 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       }
     }
   }, [parameterType, parameterizedScope]);
+
+  useEffect(() => {
+    if (parameterizedScope === "true" && parameterType) {
+      const defaultRepeatable = scopeTypeDefaults[parameterType] ?? true;
+      setValue(repeatableFieldName, String(defaultRepeatable));
+    }
+  }, [parameterType]);
 
   /* Form-level validation handles correctness; here we only prune known optional
        OID4VC fields when empty. If new attributes are added, extend
@@ -362,6 +408,15 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                     }}
                   />
                 )}
+                <DefaultSwitchControl
+                  name={repeatableFieldName}
+                  defaultValue={String(
+                    scopeTypeDefaults[parameterType] ?? true,
+                  )}
+                  label={t("repeatableScope")}
+                  labelIcon={t("repeatableScopeHelp")}
+                  stringify
+                />
               </>
             )}
           </>
@@ -499,17 +554,63 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               label={t("issuerDid")}
               labelIcon={t("issuerDidHelp")}
             />
-            <TextControl
+            <TimeSelectorControl
               name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
                 "attributes.vc.expiry_in_seconds",
               )}
               label={t("credentialLifetime")}
               labelIcon={t("credentialLifetimeHelp")}
-              type="number"
+              units={["second", "minute", "hour", "day"]}
               min={1}
-              defaultValue={
-                clientScope?.attributes?.["vc.expiry_in_seconds"] ?? "31536000"
-              }
+              controller={{
+                defaultValue: VC_EXPIRY_DEFAULT_SECONDS,
+                rules: { min: 1 },
+              }}
+            />
+            <TimeSelectorControl
+              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                "attributes.vc.refresh_interval_in_seconds",
+              )}
+              label={t("credentialRefreshInterval")}
+              labelIcon={t("credentialRefreshIntervalHelp")}
+              units={["second", "minute", "hour", "day"]}
+              min={1}
+              controller={{
+                defaultValue: computeRefreshIntervalDefault(),
+                rules: {
+                  min: 1,
+                  validate: {
+                    notGreaterThanLifetime: (value) => {
+                      if (value === "" || value == null) {
+                        return true;
+                      }
+                      // Use beerified field name to read from form
+                      const lifetimeFieldName =
+                        convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                          "attributes.vc.expiry_in_seconds",
+                        );
+                      const lifetimeStr =
+                        form.getValues(lifetimeFieldName) ||
+                        String(VC_EXPIRY_DEFAULT_SECONDS);
+
+                      const lifetime = parseInt(String(lifetimeStr), 10);
+                      const interval =
+                        typeof value === "number" ? value : parseInt(value, 10);
+
+                      if (isNaN(interval) || isNaN(lifetime)) {
+                        return true;
+                      }
+                      return (
+                        interval <= lifetime ||
+                        t("refreshIntervalCannotExceedLifetime", {
+                          interval: toHumanFormat(interval, i18n.language),
+                          lifetime: toHumanFormat(lifetime, i18n.language),
+                        })
+                      );
+                    },
+                  },
+                },
+              }}
             />
             <SelectControl
               id="kc-vc-format"

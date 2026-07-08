@@ -3,6 +3,7 @@ package org.keycloak.testsuite.client;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -177,12 +178,12 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients()
                 .get(cidConfidential);
         String secret = clientResource.getSecret().getValue();
-        int secretCreationTime = OIDCClientSecretConfigWrapper.fromClientRepresentation(
+        long secretCreationTime = OIDCClientSecretConfigWrapper.fromClientRepresentation(
                 clientResource.toRepresentation()).getClientSecretCreationTime();
         assertThat(secret, equalTo(DEFAULT_SECRET));
         String newSecret = clientResource.generateNewSecret().getValue();
         assertThat(newSecret, not(equalTo(secret)));
-        int updatedSecretCreationTime = OIDCClientSecretConfigWrapper.fromClientRepresentation(
+        long updatedSecretCreationTime = OIDCClientSecretConfigWrapper.fromClientRepresentation(
                 clientResource.toRepresentation()).getClientSecretCreationTime();
         assertThat(updatedSecretCreationTime, greaterThanOrEqualTo(secretCreationTime));
     }
@@ -203,7 +204,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
                 .get(cidConfidential);
         String secret = clientResource.getSecret().getValue();
         ClientRepresentation clientRepresentation = clientResource.toRepresentation();
-        int secretCreationTime = OIDCClientSecretConfigWrapper.fromClientRepresentation(
+        long secretCreationTime = OIDCClientSecretConfigWrapper.fromClientRepresentation(
                         clientRepresentation)
                 .getClientSecretCreationTime();
         clientRepresentation.setDescription("New Description Updated");
@@ -269,9 +270,9 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
                 clientResource.toRepresentation());
         assertThat(wrapper.hasRotatedSecret(), is(Boolean.TRUE));
         assertThat(wrapper.getClientRotatedSecret(null), equalTo(secondSecret));
-        int rotatedCreationTime = wrapper.getClientSecretCreationTime();
+        long rotatedCreationTime = wrapper.getClientSecretCreationTime();
         assertThat(rotatedCreationTime, is(notNullValue()));
-        assertThat(rotatedCreationTime, greaterThan(0));
+        assertThat(rotatedCreationTime, greaterThan(0L));
 
     }
 
@@ -296,7 +297,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
                 clientResource.toRepresentation());
-        int secretCreationTime = wrapper.getClientSecretCreationTime();
+        long secretCreationTime = wrapper.getClientSecretCreationTime();
 
         logger.debug("Current time " + Time.toDate(Time.currentTime()));
         //advance 1 hour
@@ -457,10 +458,10 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         timeOffSet.set(3601);
         clientResource.update(clientResource.toRepresentation());
 
-        logger.debug(">>> secret expiration time after first update " + Time.toDate(
+        logger.debug(">>> secret expiration time after first update " + new Date(TimeUnit.SECONDS.toMillis(
                 OIDCClientSecretConfigWrapper.fromClientRepresentation(
                                 clientResource.toRepresentation())
-                        .getClientSecretExpirationTime()) + " | Time: " + Time.toDate(Time.currentTime()));
+                        .getClientSecretExpirationTime())) + " | Time: " + Time.toDate(Time.currentTime()));
 
         // force rotation
         String updatedSecret = clientResource.getSecret().getValue();
@@ -470,18 +471,18 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
                 clientRepresentation);
 
         logger.debug(
-                ">>> secret expiration configured " + Time.toDate(
-                        wrapper.getClientSecretExpirationTime())
+                ">>> secret expiration configured " + new Date(TimeUnit.SECONDS.toMillis(
+                        wrapper.getClientSecretExpirationTime()))
                         + " | Time: " + Time.toDate(Time.currentTime()));
 
         oauth.client(clientId);
 
         timeOffSet.set(7201);
 
-        logger.debug("client secret:" + updatedSecret + "\nsecret expiration: " + Time.toDate(
-                wrapper.getClientSecretExpirationTime()) + "\nrotated secret: "
-                + wrapper.getClientRotatedSecret(null) + "\nrotated expiration: " + Time.toDate(
-                wrapper.getClientRotatedSecretExpirationTime()) + " | Time: " + Time.toDate(
+        logger.debug("client secret:" + updatedSecret + "\nsecret expiration: " + new Date(TimeUnit.SECONDS.toMillis(
+                wrapper.getClientSecretExpirationTime())) + "\nrotated secret: "
+                + wrapper.getClientRotatedSecret(null) + "\nrotated expiration: " + new Date(TimeUnit.SECONDS.toMillis(
+                wrapper.getClientRotatedSecretExpirationTime())) + " | Time: " + Time.toDate(
                 Time.currentTime()));
         logger.debug(">>> trying login at time " + Time.toDate(Time.currentTime()));
 
@@ -558,9 +559,25 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
                 clientResource.toRepresentation());
-        int clientSecretExpirationTime = wrapper.getClientSecretExpirationTime();
-        assertThat(clientSecretExpirationTime, is(not(0)));
+        long clientSecretExpirationTime = wrapper.getClientSecretExpirationTime();
+        assertThat(clientSecretExpirationTime, is(not(0L)));
 
+    }
+
+    @Test
+    public void secretExpirationWithLargeOffsetDoesNotOverflow() throws Exception {
+        long fiftyYearsInSeconds = TimeUnit.DAYS.toSeconds(365 * 50);
+        doConfigProfileAndPolicy(new ClientProfileBuilder(),
+                getClientProfileConfiguration(fiftyYearsInSeconds, TimeUnit.DAYS.toSeconds(2), TimeUnit.DAYS.toSeconds(10)));
+
+        String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
+        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
+
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
+                clientResource.toRepresentation());
+        long expirationTime = wrapper.getClientSecretExpirationTime();
+
+        assertThat(expirationTime, is(greaterThan((long) Integer.MAX_VALUE)));
     }
 
     /**
@@ -663,7 +680,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRepresentation);
 
         assertThat(wrapper.hasRotatedSecret(), is(false));
-        assertThat(wrapper.getClientSecretExpirationTime(),is(0));
+        assertThat(wrapper.getClientSecretExpirationTime(),is(0L));
     }
 
     /**
@@ -695,7 +712,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRepresentation);
         assertThat(clientResource.getSecret().getValue(),equalTo(newSecret));
         assertThat(wrapper.hasRotatedSecret(), is(false));
-        assertThat(wrapper.getClientSecretExpirationTime(),is(0));
+        assertThat(wrapper.getClientSecretExpirationTime(),is(0L));
     }
 
     /**
@@ -753,7 +770,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
     @NotNull
     private ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
-            int expirationPeriod, int rotatedExpirationPeriod, int remainExpirationPeriod) {
+            long expirationPeriod, long rotatedExpirationPeriod, long remainExpirationPeriod) {
         ClientSecretRotationExecutor.Configuration profileConfig = new ClientSecretRotationExecutor.Configuration();
         profileConfig.setExpirationPeriod(expirationPeriod);
         profileConfig.setRotatedExpirationPeriod(rotatedExpirationPeriod);
