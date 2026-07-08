@@ -15,11 +15,15 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantTypeFactory;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
+import org.keycloak.protocol.oidc.mappers.ParameterizedScopeUserPropertyMapper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
@@ -55,7 +59,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.representations.IDToken.MAY_ACT;
+import static org.keycloak.representations.IDToken.PREFERRED_USERNAME;
 import static org.keycloak.representations.JsonWebToken.SUBJECT;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  *
@@ -164,6 +171,66 @@ public class TokenExchangeDelegationTest {
     }
 
     @Test
+    public void delegationWithPreferredUsernameMapper() {
+        final ClientResource realmManagement = AdminApiUtil.findClientByClientId(realm.admin(), Constants.REALM_MANAGEMENT_CLIENT_ID);
+        final String clientUUID = realmManagement.toRepresentation().getId();
+        final RoleRepresentation impersonation = realmManagement.roles().get(AdminRoles.IMPERSONATION).toRepresentation();
+        administrator.admin().roles().clientLevel(clientUUID).add(List.of(impersonation));
+
+        realm.cleanup().add(r -> r.users().get(administrator.getId()).roles().clientLevel(clientUUID).remove(List.of(impersonation)));
+        String delegationScopeId = findDelegationScopeId();
+        ProtocolMapperModel preferredUsernameMapper = ParameterizedScopeUserPropertyMapper.create(
+                "may_act preferred_username", "username",
+                MAY_ACT + "." + PREFERRED_USERNAME, "String",
+                true, true, true);
+
+        try (var response = realm.admin().clientScopes().get(delegationScopeId).getProtocolMappers()
+                .createMapper(ModelToRepresentation.toRepresentation(preferredUsernameMapper))) {
+            assertEquals(201, response.getStatus(), "Mapper creation should succeed");
+        }
+        realm.cleanup().add(r -> {
+            r.clientScopes().get(delegationScopeId).getProtocolMappers()
+                    .getMappers().stream()
+                    .filter(m -> "may_act preferred_username".equals(m.getName()))
+                    .findFirst()
+                    .ifPresent(m -> r.clientScopes().get(delegationScopeId).getProtocolMappers().delete(m.getId()));
+        });
+
+        final String scope = OIDCLoginProtocolFactory.DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + administrator.getUsername();
+        oauth.scope(scope).openLoginForm();
+        oauth.fillLoginForm(USERNAME, PASSWORD);
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent).type(EventType.LOGIN)
+                .clientId("test-app")
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.USERNAME, USERNAME)
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+
+        AccessToken token = oauth.verifyToken(res.getAccessToken());
+        assertMayActPresent(token, administrator.getId());
+        assertMayActPreferredUsernamePresent(token, administrator.getUsername());
+
+        res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+
+        AccessToken refreshedToken = oauth.verifyToken(res.getAccessToken());
+        assertMayActPresent(refreshedToken, administrator.getId());
+        assertMayActPreferredUsernamePresent(refreshedToken, administrator.getUsername());
+
+        LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+        Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+    }
+
+    @Test
     public void cibaDelegationNoImpersonation() {
         // client Backchannel Authentication Request
         final String scope = OIDCLoginProtocolFactory.DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + administrator.getUsername();
@@ -252,6 +319,22 @@ public class TokenExchangeDelegationTest {
 
     private static void assertMayActNotPresent(AccessToken token) {
         Assertions.assertNull(token.getOtherClaims().get(MAY_ACT), "may_act claim should not be present");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void assertMayActPreferredUsernamePresent(AccessToken token, String expectedUsername) {
+        Map<String, Object> mayAct = (Map<String, Object>) token.getOtherClaims().get(MAY_ACT);
+        Assertions.assertNotNull(mayAct, "may_act claim should be present");
+        Assertions.assertEquals(expectedUsername, mayAct.get(PREFERRED_USERNAME),
+                "may_act.preferred_username should contain the actor username");
+    }
+
+    private String findDelegationScopeId() {
+        return realm.admin().clientScopes().findAll().stream()
+                .filter(cs -> OIDCLoginProtocolFactory.DELEGATION_SCOPE.equals(cs.getName()))
+                .map(ClientScopeRepresentation::getId)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("delegation client scope not found"));
     }
 
     private static void assertScopeContains(String scopeString, String expectedScope) {
