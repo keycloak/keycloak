@@ -11,7 +11,6 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.admin.api.ClientField;
 import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.SortOption;
 import org.keycloak.models.Constants;
@@ -40,11 +39,11 @@ public interface ClientService extends Service {
     }
 
     class ClientSortAndSliceOptions {
-        private List<SortOption> sortOptions;
+        private List<SortOption<ClientField>> sortOptions;
         private int offset;
         private int limit;
 
-        private ClientSortAndSliceOptions(List<SortOption> sortOptions, int offset, int limit) {
+        private ClientSortAndSliceOptions(List<SortOption<ClientField>> sortOptions, int offset, int limit) {
             this.offset = offset;
             this.limit = limit;
             this.sortOptions = List.copyOf(sortOptions);
@@ -59,11 +58,11 @@ public interface ClientService extends Service {
         }
 
         public static ClientSortAndSliceOptions fromQuery(ListOptions listOptions) {
-            List<SortOption> options;
+            List<SortOption<ClientField>> options;
             int normalizedOffset;
             int normalizedLimit;
             try {
-                var sort = listOptions.getSort();
+                var sort = listOptions.getSort(ClientField::fromApiName);
                 options = sort == null || sort.isEmpty()
                         ? List.of(SortOption.of(ClientField.defaultField()))
                         : sort;
