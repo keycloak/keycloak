@@ -123,7 +123,7 @@ public class SiteHealthImpl implements ClusterHealth {
                 return;
             }
             if (sites.isEmpty()) {
-                logger.debug("No caches are replicated to the remove sites. Is this a mistake?");
+                logger.debug("No caches are replicated to the remote sites. Is this a mistake?");
                 healthy = true;
                 return;
             }
@@ -132,7 +132,7 @@ public class SiteHealthImpl implements ClusterHealth {
             statusConsumer.accept(siteState.status());
             SiteHealthCheckEvent event = null;
             if (JFR_HEALTH_CHECK.isEnabled()) {
-                // a recording is progress, let's track it.
+                // a recording is in progress, let's track it.
                 event = new SiteHealthCheckEvent();
                 event.begin();
             }
@@ -213,7 +213,7 @@ public class SiteHealthImpl implements ClusterHealth {
         }
 
         logger.debugf("Some site(s) is(are) not reachable. Keeping 'unhealthy' state");
-        if (!allOnline && sites.values().stream().allMatch("offline"::equals)) {
+        if (!allOnline && sites.values().stream().allMatch("online"::equals)) {
             takeOffline(sites.keySet());
         }
     }
@@ -294,7 +294,7 @@ public class SiteHealthImpl implements ClusterHealth {
         // do not throw an exception, it will change the health to false
         SiteStateChangeEvent event = null;
         if (JFR_STATE_CHANGE.isEnabled()) {
-            // a recording is progress, let's track it.
+            // a recording is in progress, let's track it.
             event = new SiteStateChangeEvent();
             event.begin();
         }
