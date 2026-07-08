@@ -36,6 +36,8 @@ public class ListOptions {
     @Parameter(description = "Index of the first result to return, counted from 0. Defaults to 0.")
     @QueryParam("offset")
     protected Integer offset;
+    
+    private transient List<SortOption> parsedSort;
 
     public ListOptions fields(Set<String> fields) {
         this.setFields(fields);
@@ -107,18 +109,22 @@ public class ListOptions {
         if (sort.isEmpty()) {
             return List.of();
         }
-        List<SortOption> options = Arrays.stream(sort.split(","))
+        if (parsedSort != null) {
+            return parsedSort;
+        }
+        parsedSort = Arrays.stream(sort.split(","))
                 .map(String::trim)
                 .filter(segment -> !segment.isEmpty())
                 .map(ListOptions::parseSortSegment)
-                .collect(Collectors.toList());
-        if (options.isEmpty()) {
+                .collect(Collectors.toUnmodifiableList());
+        if (parsedSort.isEmpty()) {
             throw new IllegalArgumentException("sort must specify at least one field");
         }
-        return options;
+        return parsedSort;
     }
 
     public void setSort(List<SortOption> sort) {
+        parsedSort = List.copyOf(sort);
         if (sort == null) {
             this.sort = null;
         } else if (sort.isEmpty()) {

@@ -6,6 +6,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ListOptionsTest {
@@ -39,6 +40,19 @@ public class ListOptionsTest {
         options.sort = "displayName|desc,clientId";
         assertEquals(List.of(SortOption.of(ClientField.DISPLAY_NAME, SortOrder.DESC), SortOption.of(ClientField.CLIENT_ID)),
                 options.getSort());
+    }
+
+    @Test
+    void getSortCachesParsedResult() {
+        ListOptions options = new ListOptions();
+        options.sort = "displayName|desc,clientId";
+
+        List<SortOption> first = options.getSort();
+        List<SortOption> second = options.getSort();
+
+        assertEquals(List.of(SortOption.of(ClientField.DISPLAY_NAME, SortOrder.DESC), SortOption.of(ClientField.CLIENT_ID)),
+                first);
+        assertSame(first, second);
     }
 
     @Test

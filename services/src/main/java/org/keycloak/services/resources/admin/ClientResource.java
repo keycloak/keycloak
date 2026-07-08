@@ -39,7 +39,6 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.admin.AuthorizationService;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
@@ -259,8 +258,6 @@ public class ClientResource {
         if (client == null) {
             throw new NotFoundException("Could not find client");
         }
-
-        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
 
         ClientRepresentation clientRepresentation = new ClientRepresentation();
         clientRepresentation.setId(client.getId());

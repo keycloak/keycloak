@@ -104,7 +104,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(Configuration.getConfig().isPropertyPresent("quarkus.log.category.\"io.k8s\".level"));
         putEnvVar("SOME_LOG_LEVEL", "debug");
         assertEquals("debug", createConfig().getRawValue("kc.log-level"));
-        SmallRyeConfig config = ConfigUtils.emptyConfigBuilder().setAddDefaultSources(false).addDiscoveredSources().build();
+        SmallRyeConfig config = ConfigBuilderCustomizer.addInterceptors(ConfigUtils.emptyConfigBuilder().setAddDefaultSources(false).addDiscoveredSources()).build();
         assertNull(Expressions.withoutExpansion(() -> config.getConfigValue("kc.log-level")).getValue());
     }
 

@@ -476,6 +476,28 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.7.0-add-timestamps-client">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="CLIENT" columnName="CREATED_TIMESTAMP"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="CLIENT">
+            <column name="CREATED_TIMESTAMP" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-add-last-modified-timestamp-client">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="CLIENT" columnName="LAST_MODIFIED_TIMESTAMP"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="CLIENT">
+            <column name="LAST_MODIFIED_TIMESTAMP" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+
     <changeSet author="keycloak" id="26.7.0-cluster-event">
         <createTable tableName="CLUSTER_EVENT">
             <column name="ID" type="VARCHAR(36)">

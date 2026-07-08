@@ -324,11 +324,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Try enable client. Should fail
         clientRep.setEnabled(true);
-        assertFail(ClientRegOp.UPDATE, clientRep, 403, "Not permitted to enable client");
-
-        // Try update disabled client. Should pass
-        clientRep.setEnabled(false);
-        reg.update(clientRep);
+        assertFail(ClientRegOp.UPDATE, clientRep, 401, "Not authorized to update client");
 
         // Revert
         managedRealm.admin().components().component(policyId).remove();

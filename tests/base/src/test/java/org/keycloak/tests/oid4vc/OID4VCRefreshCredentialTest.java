@@ -1,6 +1,8 @@
 package org.keycloak.tests.oid4vc;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,11 +26,14 @@ import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.ClientScopeBuilder;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -90,6 +95,11 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         user.admin().logout();
         user.admin().verifiableCredentials().getIssuedCredentials()
                 .forEach(issuedCred -> user.admin().verifiableCredentials().revokeIssuedCredential(issuedCred.getId()));
+    }
+
+    @AfterEach
+    void resetTestState() {
+        timeOffSet.set(0);
     }
 
     /**
@@ -360,6 +370,193 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         }
     }
 
+    /**
+     * Test that the VC expiration (exp claim) uses the refresh interval,
+     * while the issued credential and refresh token use the credential lifetime.
+     * To verify the core feature: separating VC expiration from refresh token expiration.
+     */
+    @Test
+    public void testVCExpirationUsesRefreshInterval() throws Exception {
+        //Using different values to configure credential scope
+        int credentialLifetime = 31536000; // 365 days
+        int refreshInterval = 604800; // 7 days
+
+       String scopeId = getCredentialScopeId(minimalJwtTypeCredentialScopeName);
+
+       testRealm.updateClientScope(scopeId, clientScope -> {
+            CredentialScopeRepresentation credScopeRep = new CredentialScopeRepresentation(clientScope.build());
+            credScopeRep.setExpiryInSeconds(credentialLifetime);
+            credScopeRep.setRefreshIntervalInSeconds(refreshInterval);
+            return ClientScopeBuilder.update(credScopeRep);
+        });
+
+        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
+        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+        assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
+
+        String accessToken = tokenResponse.getAccessToken();
+        String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+
+        CredentialResponse response = wallet.credentialRequest(ctx,accessToken)
+                .credentialIdentifier(credentialIdentifier)
+                .send().getCredentialResponse();
+        assertSuccessfulCredentialResponse(response);
+
+        CredentialResponse.Credential credentialObj = response.getCredentials().get(0);
+        assertNotNull(credentialObj);
+        IssuerSignedJWT issuerSignedJWT = SdJwtVP.of(credentialObj.getCredential().toString()).getIssuerSignedJWT();
+
+        long iat = issuerSignedJWT.getPayload().get("iat").asLong();
+        long exp = issuerSignedJWT.getPayload().get("exp").asLong();
+        long vcLifetimeSeconds = exp - iat;
+
+        long tolerance = 60; // 1 minute tolerance for time normalization
+        assertTrue(Math.abs(vcLifetimeSeconds - refreshInterval) <= tolerance,
+                String.format("VC lifetime should be ~%d seconds (refresh interval), but was %d seconds",
+                        refreshInterval, vcLifetimeSeconds));
+
+        // 2. Verify issued credential expiration is based on credential lifetime (365 days)
+        List<IssuedVerifiableCredentialRepresentation> issuedCreds =
+                testRealm.admin().users().get(user.getId()).verifiableCredentials().getIssuedCredentials();
+        assertEquals(1, issuedCreds.size());
+        IssuedVerifiableCredentialRepresentation issuedCred = issuedCreds.get(0);
+
+        long issuedCredLifetimeSeconds = (issuedCred.getExpiresAt() - issuedCred.getIssuedAt()) / 1000;
+        assertTrue(Math.abs(issuedCredLifetimeSeconds - credentialLifetime) <= tolerance,
+                String.format("Issued credential lifetime should be ~%d seconds (credential lifetime), but was %d seconds",
+                        credentialLifetime, issuedCredLifetimeSeconds));
+
+        // 3. Verify refresh token expiration matches credential lifetime (NOT refresh interval)
+        String refreshToken = tokenResponse.getRefreshToken();
+        assertNotNull(refreshToken);
+
+        // Decode the refresh token JWT
+        String[] parts = refreshToken.split("\\.");
+        assertEquals(3, parts.length, "Expected refresh token to be a JWT with 3 parts");
+        String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+        JsonNode refreshTokenPayload = JsonSerialization.readValue(payload, JsonNode.class);
+
+        long refreshTokenIat = refreshTokenPayload.get("iat").asLong();
+        long refreshTokenExp = refreshTokenPayload.get("exp").asLong();
+        long refreshTokenLifetimeSeconds = refreshTokenExp - refreshTokenIat;
+
+        // Refresh token lifetime should match credential lifetime (365 days), NOT refresh interval (7 days)
+        assertTrue(Math.abs(refreshTokenLifetimeSeconds - credentialLifetime) <= tolerance,
+                String.format("Refresh token lifetime should be ~%d seconds (credential lifetime), but was %d seconds",
+                        credentialLifetime, refreshTokenLifetimeSeconds));
+    }
+
+    /**
+     * Test that a custom refresh interval value is correctly applied to the VC.
+     */
+    @Test
+    public void testCustomRefreshInterval() throws Exception {
+        // Set custom refresh interval (1 hour)
+        int customRefreshInterval = 3600;
+
+        String scopeId = getCredentialScopeId(minimalJwtTypeCredentialScopeName);
+        testRealm.updateClientScope(scopeId, clientScope -> {
+            CredentialScopeRepresentation credScopeRep = new CredentialScopeRepresentation(clientScope.build());
+            credScopeRep.setRefreshIntervalInSeconds(customRefreshInterval);
+            return ClientScopeBuilder.update(credScopeRep);
+        });
+
+        // Obtain VC
+        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
+        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+        assertTrue(tokenResponse.isSuccess());
+
+        CredentialResponse credResponse = wallet.credentialRequest(ctx, tokenResponse.getAccessToken())
+                .credentialIdentifier(ctx.getAuthorizedCredentialIdentifier())
+                .send().getCredentialResponse();
+        assertSuccessfulCredentialResponse(credResponse);
+
+        // Parse and verify VC expiration
+        CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
+        IssuerSignedJWT issuerSignedJWT = SdJwtVP.of(credentialObj.getCredential().toString()).getIssuerSignedJWT();
+
+        long iat = issuerSignedJWT.getPayload().get("iat").asLong();
+        long exp = issuerSignedJWT.getPayload().get("exp").asLong();
+        long vcLifetimeSeconds = exp - iat;
+
+        long tolerance = 60;
+        assertTrue(Math.abs(vcLifetimeSeconds - customRefreshInterval) <= tolerance,
+                                    String.format("VC lifetime should be ~%d seconds, but was %d seconds",
+                                    customRefreshInterval, vcLifetimeSeconds));
+    }
+
+    /**
+     * Test that you can successfully refresh a credential even after the VC itself has expired,
+     * as long as the refresh token is still valid.
+     *
+     */
+    @Test
+    public void testRefreshSucceedsAfterVCExpired() throws Exception {
+        // Configure with short refresh interval for testing
+        int credentialLifetime = 86400; // 1 day (for easier testing)
+        int refreshInterval = 3600; // 1 hour
+        String scopeId = getCredentialScopeId(minimalJwtTypeCredentialScopeName);
+
+        testRealm.updateClientScope(scopeId, clientScope -> {
+            CredentialScopeRepresentation credScopeRep = new CredentialScopeRepresentation(clientScope.build());
+            credScopeRep.setExpiryInSeconds(credentialLifetime);
+            credScopeRep.setRefreshIntervalInSeconds(refreshInterval);
+            return ClientScopeBuilder.update(credScopeRep);
+        });
+
+        // Obtain VC
+        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
+        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+        assertTrue(tokenResponse.isSuccess());
+
+        CredentialResponse credResponse_1 = wallet.credentialRequest(ctx, tokenResponse.getAccessToken())
+                .credentialIdentifier(ctx.getAuthorizedCredentialIdentifier())
+                .send().getCredentialResponse();
+        assertSuccessfulCredentialResponse(credResponse_1);
+
+        // Parse first VC
+        CredentialResponse.Credential credential_1 = credResponse_1.getCredentials().get(0);
+        IssuerSignedJWT jwt_1 = SdJwtVP.of(credential_1.getCredential().toString()).getIssuerSignedJWT();
+        long exp_1 = jwt_1.getPayload().get("exp").asLong();
+
+        // Fast-forward time past VC expiration (2 hours)
+        timeOffSet.set(7200); // 2 hours
+
+        // Verify VC is expired
+        long currentTime = Time.currentTime();
+        assertTrue(currentTime > exp_1, "VC should be expired");
+
+        // Refresh token should still work
+        AccessTokenResponse refreshResponse = wallet.refreshRequest(ctx).send();
+        assertTrue(refreshResponse.isSuccess(), "Refresh should succeed even though VC is expired");
+
+
+        // Obtain new VC with the refreshed access token
+        CredentialResponse credResponse_2 = wallet.credentialRequest(ctx, refreshResponse.getAccessToken())
+                .credentialIdentifier(ctx.getAuthorizedCredentialIdentifier())
+                .send().getCredentialResponse();
+        assertSuccessfulCredentialResponse(credResponse_2);
+
+        // Parse new VC
+        CredentialResponse.Credential credential_2 = credResponse_2.getCredentials().get(0);
+        IssuerSignedJWT jwt_2 = SdJwtVP.of(credential_2.getCredential().toString()).getIssuerSignedJWT();
+
+        long iat_2 = jwt_2.getPayload().get("iat").asLong();
+        long exp_2 = jwt_2.getPayload().get("exp").asLong();
+
+        // New VC should have fresh expiration based on refresh interval
+        long newVcLifetime = exp_2 - iat_2;
+        long tolerance = 60;
+        assertTrue(Math.abs(newVcLifetime - refreshInterval) <= tolerance, "New VC should have fresh expiration based on refresh interval");
+
+        // New VC should not be expired yet
+        assertTrue(currentTime < exp_2, "New VC should not be expired");
+
+        // Both VCs should point to the same issued credential (same ID)
+        List<IssuedVerifiableCredentialRepresentation> issuedCreds = testRealm.admin().users().get(user.getId())
+                                                                              .verifiableCredentials().getIssuedCredentials();
+        assertEquals(1, issuedCreds.size(), "Should still be only one issued credential");
+    }
 
     protected AccessTokenResponse authzCodeFlow(CredentialIssuer issuer) throws Exception {
         AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
@@ -374,6 +571,50 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         return tokenResponse;
     }
 
+    /**
+     * Test that both initial and refreshed access tokens have their audience limited to the credential endpoint.
+     * This verifies that the OID4VCITokenPostProcessor correctly sets the 'aud' claim.
+     */
+    @Test
+    public void testAccessTokenAudienceLimitedToCredentialEndpoint() throws Exception {
+        // Login
+        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
+        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+        assertTrue(tokenResponse.isSuccess());
+
+        // Get the expected credential endpoint URL from issuer metadata
+        String expectedAudience = issuer.getCredentialEndpoint();
+        assertNotNull(expectedAudience);
+
+        // Verify initial access token has correct audience
+        String accessToken1 = tokenResponse.getAccessToken();
+        wallet.assertAccessTokenAudience(accessToken1, expectedAudience);
+
+        // Obtain credential to ensure the token works
+        String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken1)
+                .credentialIdentifier(credentialIdentifier)
+                .send().getCredentialResponse();
+        assertSuccessfulCredentialResponse(credResponse);
+
+        // Move time forward a bit
+        timeOffSet.set(10);
+
+        // Refresh token
+        AccessTokenResponse refreshResponse = wallet.refreshRequest(ctx).send();
+        assertTrue(refreshResponse.isSuccess(), "Refresh token exchange should succeed");
+
+        // Verify refreshed access token also has correct audience
+        String accessToken2 = refreshResponse.getAccessToken();
+        wallet.assertAccessTokenAudience(accessToken2, expectedAudience);
+
+        // Verify the refreshed token still works for credential requests
+        credResponse = wallet.credentialRequest(ctx, accessToken2)
+                .credentialIdentifier(credentialIdentifier)
+                .send().getCredentialResponse();
+        assertSuccessfulCredentialResponse(credResponse);
+    }
+
     protected void assertSuccessfulCredentialResponse(CredentialResponse credentialResponse) {
         CredentialResponse.Credential credentialObj = credentialResponse.getCredentials().get(0);
         assertNotNull(credentialObj, "The first credential in the array should not be null");
@@ -381,4 +622,13 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         assertEquals(minimalJwtTypeCredentialScopeName, issuerSignedJWT.getPayload().get(CLAIM_NAME_VCT).asText());
     }
 
+    private String getCredentialScopeId(String credentialScopeName) {
+        return testRealm.admin()
+                .clientScopes().findAll()
+                .stream()
+                .filter(cs -> credentialScopeName.equals(cs.getName()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Credential scope not found:" + credentialScopeName))
+                .getId();
+    }
 }

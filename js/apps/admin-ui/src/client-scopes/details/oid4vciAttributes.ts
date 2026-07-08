@@ -17,6 +17,7 @@ export const OID4VC_ATTRIBUTE_KEYS = [
   "vc.binding_required",
   "vc.binding_required_proof_types",
   "vc.cryptographic_binding_methods_supported",
+  "vc.refresh_interval_in_seconds",
 ] as const;
 
 const isEmptyValue = (value: unknown) =>
