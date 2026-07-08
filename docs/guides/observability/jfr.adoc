@@ -94,6 +94,13 @@ IMPORTANT: Once a recording is dumped into a file it is important to sanitize it
 
 Once the recording is dumped into a file it can be viewed and manipulated using the standard `jfr` tool.
 
+To print the content of a recording in a human-readable form use the `jfr print` command:
+[source]
+----
+jfr print recording.jfr
+----
+
+To get a general overview of the content use the `jfr summary` command:
 [source]
 ----
 jfr summary recording.jfr
@@ -125,6 +132,36 @@ Example output:
  jdk.CompilerStatistics                    120          3840
  jdk.ExceptionStatistics                   120          1440
  jdk.JavaThreadStatistics                  120          1560
+ ⋯
+----
+
+To display aggregated content of the recording in a tabular form use the `jfr view` command.
+
+To get a list of available views use `jfr view types` command:
+[source]
+----
+jfr view types recording.jfr
+----
+
+To get a specific view use `jfr view <event-type>` command. For example:
+[source]
+----
+jfr view CPULoad recording.jfr
+----
+
+Example output:
+[source]
+----
+                                     CPU Load
+
+Time                         JVM User           JVM System           Machine Total
+------------------ ------------------ -------------------- -----------------------
+10:32:07                        0.02%                0.01%                   4.26%
+10:32:08                        0.05%                0.00%                   2.25%
+10:32:09                        0.10%                0.05%                   2.20%
+10:32:10                        0.05%                0.00%                   3.05%
+10:32:11                        0.05%                0.00%                   2.56%
+10:32:12                        0.05%                0.05%                   2.55%
  ⋯
 ----
 
