@@ -111,9 +111,9 @@ public class DefaultRefreshTokenProvider extends AbstractRefreshTokenProvider im
         if (userSession != null) {
             AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
             if (clientSession != null) {
-                TokenManager.detachClientSession(clientSession);
-
                 revokeTokenExchangeSession(userSession, token, event);
+
+                TokenManager.detachClientSession(clientSession);
 
                 // TODO: Might need optimization to prevent loading client sessions from cache in getAuthenticatedClientSessions()
                 if (userSession.getAuthenticatedClientSessions().isEmpty()) {
