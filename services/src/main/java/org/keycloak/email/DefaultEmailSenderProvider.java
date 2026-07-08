@@ -187,6 +187,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             msg.setHeader("To", address);
             msg.setSubject(MimeUtility.encodeText(subject, StandardCharsets.UTF_8.name(), null));
             msg.setContent(multipart);
+            customizeMessage(msg, config);
             msg.saveChanges();
             msg.setSentDate(new Date());
 
@@ -198,6 +199,18 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
         } catch (MessagingException e) {
             throw new EmailException("MessagingException occurred", e);
         }
+    }
+
+    /**
+     * Extension point for subclasses to modify the message before it is sent, e.g. to add
+     * vendor-specific headers. Invoked after the standard headers and content have been set,
+     * just before the message is saved and handed to the transport. The default implementation
+     * does nothing.
+     *
+     * @param message the message about to be sent
+     * @param config the realm's SMTP configuration
+     */
+    protected void customizeMessage(Message message, Map<String, String> config) throws MessagingException {
     }
 
     private Multipart buildMultipartBody(String textBody, String htmlBody) throws EmailException {
