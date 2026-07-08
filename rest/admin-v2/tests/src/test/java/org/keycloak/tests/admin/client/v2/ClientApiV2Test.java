@@ -59,6 +59,8 @@ import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
@@ -106,6 +108,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @InjectClient(realmRef = "testRealm", config = TestClientConfig.class)
     ManagedClient testClient;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @Override
     public String getRealmName() {
@@ -249,13 +254,13 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setClientId(clientId);
         rep.setDescription("Timestamp test client");
 
-        long beforeCreate = Time.currentTimeMillis();
+        long beforeCreate = runOnServer.fetch(session -> Time.currentTimeMillis(), Long.class);
         OIDCClientRepresentation created;
         try (var response = getClientsApi().createClient(rep)) {
             assertThat(response.getStatus(), is(201));
             created = response.readEntity(OIDCClientRepresentation.class);
         }
-        long afterCreate = Time.currentTimeMillis();
+        long afterCreate = runOnServer.fetch(session -> Time.currentTimeMillis(), Long.class);
 
         assertThat(created.getCreatedTimestamp(), notNullValue());
         assertThat(created.getUpdatedTimestamp(), notNullValue());
@@ -266,18 +271,19 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         assertThat(created.getCreatedTimestamp() <= afterCreate, is(true));
 
         try {
-            Time.setOffset(1);
+            setServerTimeOffset(1);
 
             OIDCClientRepresentation patch = new OIDCClientRepresentation();
             patch.setDescription("Updated description");
-            BaseClientRepresentation updated = getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
+            BaseClientRepresentation updated = getClientsApi().client(clientId)
+                    .patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
             assertThat(updated.getDescription(), is("Updated description"));
             assertThat(updated.getCreatedTimestamp(), is(created.getCreatedTimestamp()));
             assertThat(updated.getUpdatedTimestamp(), notNullValue());
             assertThat(updated.getUpdatedTimestamp() >= updated.getCreatedTimestamp(), is(true));
             assertThat(updated.getUpdatedTimestamp() > created.getUpdatedTimestamp(), is(true));
         } finally {
-            Time.setOffset(0);
+            setServerTimeOffset(0);
         }
     }
 
@@ -439,6 +445,65 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
+    public void getClientsSortByCreatedTimestamp() {
+        try {
+            setServerTimeOffset(0);
+            createSortTestClient("sort-created-b", "A", "alpha");
+            setServerTimeOffset(1);
+            createSortTestClient("sort-created-a", "B", "beta");
+            setServerTimeOffset(2);
+            createSortTestClient("sort-created-c", "C", "gamma");
+
+            ListOptions listOptions = new ListOptions();
+            listOptions.setFields(Set.of("clientId"));
+            listOptions.setSort(List.of(SortOption.of(ClientField.CREATED_TIMESTAMP)));
+
+            try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
+                List<String> sortTestClientIds = clients
+                        .map(BaseClientRepresentation::getClientId)
+                        .filter(id -> id.startsWith("sort-created-"))
+                        .toList();
+                assertThat(sortTestClientIds, is(List.of("sort-created-b", "sort-created-a", "sort-created-c")));
+            }
+        } finally {
+            setServerTimeOffset(0);
+        }
+    }
+
+    @Test
+    public void getClientsSortByUpdatedTimestamp() throws JsonProcessingException {
+        try {
+            setServerTimeOffset(0);
+            createSortTestClient("sort-updated-a", "A", "alpha");
+            setServerTimeOffset(1);
+            createSortTestClient("sort-updated-b", "B", "beta");
+            setServerTimeOffset(2);
+            createSortTestClient("sort-updated-c", "C", "gamma");
+
+            setServerTimeOffset(10);
+            patchSortTestClient("sort-updated-c", "gamma updated");
+            setServerTimeOffset(11);
+            patchSortTestClient("sort-updated-a", "alpha updated");
+            setServerTimeOffset(12);
+            patchSortTestClient("sort-updated-b", "beta updated");
+
+            ListOptions listOptions = new ListOptions();
+            listOptions.setFields(Set.of("clientId"));
+            listOptions.setSort(List.of(SortOption.of(ClientField.UPDATED_TIMESTAMP)));
+
+            try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
+                List<String> sortTestClientIds = clients
+                        .map(BaseClientRepresentation::getClientId)
+                        .filter(id -> id.startsWith("sort-updated-"))
+                        .toList();
+                assertThat(sortTestClientIds, is(List.of("sort-updated-c", "sort-updated-a", "sort-updated-b")));
+            }
+        } finally {
+            setServerTimeOffset(0);
+        }
+    }
+
+    @Test
     public void getClientsSortByMultipleFieldsDesc() {
         createSortTestClient("sort-b", "B", "beta");
         createSortTestClient("sort-a", "A", "alpha");
@@ -503,6 +568,10 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         }
     }
 
+    private void setServerTimeOffset(int offset) {
+        runOnServer.run(session -> Time.setOffset(offset));
+    }
+
     private void createSortTestClient(String clientId, String displayName, String description) {
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setEnabled(true);
@@ -514,6 +583,12 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             BaseClientRepresentation created = response.readEntity(BaseClientRepresentation.class);
             testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
+    }
+
+    private void patchSortTestClient(String clientId, String description) throws JsonProcessingException {
+        OIDCClientRepresentation patch = new OIDCClientRepresentation();
+        patch.setDescription(description);
+        getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
     }
 
     @Test

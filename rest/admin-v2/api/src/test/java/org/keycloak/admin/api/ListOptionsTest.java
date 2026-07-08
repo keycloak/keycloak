@@ -63,6 +63,13 @@ public class ListOptionsTest {
     }
 
     @Test
+    void testSortTime() {
+        ListOptions options = new ListOptions();
+        options.setSort(List.of(SortOption.of(ClientField.CREATED_TIMESTAMP, SortOrder.DESC)));
+        assertEquals("createdTimestamp|desc", options.sort);
+    }
+
+    @Test
     void invalidSortFieldThrowsBadRequest() {
         ListOptions options = new ListOptions();
         options.sort = "unknown";

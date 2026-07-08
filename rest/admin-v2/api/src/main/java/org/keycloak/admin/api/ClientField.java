@@ -18,7 +18,9 @@ public enum ClientField {
     DESCRIPTION("description", stringKey(BaseClientRepresentation::getDescription)),
     PROTOCOL("protocol", stringKey(BaseClientRepresentation::getProtocol)),
     ENABLED("enabled", booleanKey(BaseClientRepresentation::getEnabled)),
-    APP_URL("appUrl", stringKey(BaseClientRepresentation::getAppUrl));
+    APP_URL("appUrl", stringKey(BaseClientRepresentation::getAppUrl)),
+    CREATED_TIMESTAMP("createdTimestamp", longKey(BaseClientRepresentation::getCreatedTimestamp)),
+    UPDATED_TIMESTAMP("updatedTimestamp", longKey(BaseClientRepresentation::getUpdatedTimestamp));
 
     private final String apiName;
     private final ComparatorFactory comparatorFactory;
@@ -50,6 +52,11 @@ public enum ClientField {
 
     public static String allowedApiNames() {
         return Stream.of(values()).map(ClientField::getApiName).collect(Collectors.joining(", "));
+    }
+
+    private static ComparatorFactory longKey(Function<BaseClientRepresentation, Long> getter) {
+        return ascending -> Comparator.comparing(getter, Comparator.nullsLast(
+                ascending ? Long::compareTo : Comparator.<Long>reverseOrder()));
     }
 
     private static ComparatorFactory stringKey(Function<BaseClientRepresentation, String> getter) {
