@@ -288,6 +288,67 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
+    public void clientTimestampsAreServerManaged() throws JsonProcessingException {
+        var clientId = "server-managed-timestamp-client";
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setDescription("Server managed timestamp test client");
+
+        try (var response = getClientsApi().createClient(rep)) {
+            assertThat(response.getStatus(), is(201));
+        }
+
+        // the persisted timestamps may be bumped slightly after creation (e.g. for filling additional
+        // fields), so fetch the authoritative values instead of relying on the create response
+        OIDCClientRepresentation persisted = (OIDCClientRepresentation) getClientsApi().client(clientId).getClient();
+
+        // PUT with a modified createdTimestamp fails
+        OIDCClientRepresentation putRep = new OIDCClientRepresentation();
+        putRep.setEnabled(true);
+        putRep.setClientId(clientId);
+        putRep.setCreatedTimestamp(persisted.getCreatedTimestamp() + 1000);
+        putRep.setUpdatedTimestamp(persisted.getUpdatedTimestamp());
+        try (var response = getClientsApi().client(clientId).createOrUpdateClient(putRep)) {
+            assertThat(response.getStatus(), is(400));
+            var body = response.readEntity(ViolationExceptionResponse.class);
+            assertThat(body.violations(), hasItem("createdTimestamp: createdTimestamp is server-managed and must not be user-specified"));
+        }
+
+        // PUT with a modified updatedTimestamp fails
+        putRep.setCreatedTimestamp(persisted.getCreatedTimestamp());
+        putRep.setUpdatedTimestamp(persisted.getUpdatedTimestamp() + 1000);
+        try (var response = getClientsApi().client(clientId).createOrUpdateClient(putRep)) {
+            assertThat(response.getStatus(), is(400));
+            var body = response.readEntity(ViolationExceptionResponse.class);
+            assertThat(body.violations(), hasItem("updatedTimestamp: updatedTimestamp is server-managed and must not be user-specified"));
+        }
+
+        // PUT with the unmodified (persisted) timestamps succeeds
+        putRep.setCreatedTimestamp(persisted.getCreatedTimestamp());
+        putRep.setUpdatedTimestamp(persisted.getUpdatedTimestamp());
+        try (var response = getClientsApi().client(clientId).createOrUpdateClient(putRep)) {
+            assertThat(response.getStatus(), is(200));
+        }
+
+        // PATCH with a modified createdTimestamp fails
+        OIDCClientRepresentation createdPatch = new OIDCClientRepresentation();
+        createdPatch.setCreatedTimestamp(persisted.getCreatedTimestamp() + 1000);
+        BadRequestException createdEx = assertThrows(BadRequestException.class,
+                () -> getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(createdPatch))));
+        var createdBody = createdEx.getResponse().readEntity(ViolationExceptionResponse.class);
+        assertThat(createdBody.violations(), hasItem("createdTimestamp: createdTimestamp is server-managed and must not be user-specified"));
+
+        // PATCH with a modified updatedTimestamp fails
+        OIDCClientRepresentation updatedPatch = new OIDCClientRepresentation();
+        updatedPatch.setUpdatedTimestamp(persisted.getUpdatedTimestamp() + 1000);
+        BadRequestException updatedEx = assertThrows(BadRequestException.class,
+                () -> getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(updatedPatch))));
+        var updatedBody = updatedEx.getResponse().readEntity(ViolationExceptionResponse.class);
+        assertThat(updatedBody.violations(), hasItem("updatedTimestamp: updatedTimestamp is server-managed and must not be user-specified"));
+    }
+
+    @Test
     public void deleteClient() {
         var clientIdToDelete = "to-delete";
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
