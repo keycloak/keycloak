@@ -46,6 +46,7 @@ public class OID4VCRefreshTokenProviderEventTest extends OID4VCIssuerTestBase {
         user.admin().logout();
         user.admin().verifiableCredentials().getIssuedCredentials()
                 .forEach(issuedCred -> user.admin().verifiableCredentials().revokeIssuedCredential(issuedCred.getId()));
+        events.skipAll();
     }
 
     @AfterEach
@@ -54,7 +55,7 @@ public class OID4VCRefreshTokenProviderEventTest extends OID4VCIssuerTestBase {
     }
 
     /**
-     *   Verify that Refresh token must carry Details.REFRESH_TOKEN_PROVIDER_ID with value "oid4vci"
+     *   Verify that the REFRESH_TOKEN event carries Details.REFRESH_TOKEN_PROVIDER_ID with value "oid4vci"
      *   when the token was issued by OID4VCIRefreshTokenProvider.
      */
     @Test
@@ -88,7 +89,7 @@ public class OID4VCRefreshTokenProviderEventTest extends OID4VCIssuerTestBase {
      */
     @Test
     public void testStandardRefreshTokenEventCarriesDefaultProviderId() {
-        // Perform a plain OIDC auth-code flow (no OID4VCI scope)
+        // Perform a plain OIDC password grant flow (no OID4VCI scope)
         AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest(user.getUsername(), user.getPassword());
         assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
 

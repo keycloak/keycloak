@@ -76,7 +76,7 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
                 .detail(Details.REFRESH_TOKEN_ID, oldRefreshToken.getId())
                 .detail(Details.REFRESH_TOKEN_TYPE, oldRefreshToken.getType());
 
-        String providerIdDetail = oldRefreshToken.getProvider() != null ? oldRefreshToken.getProvider() : DefaultRefreshTokenProviderFactory.PROVIDER_ID;
+        String providerIdDetail = oldRefreshToken.getProvider() != null ? oldRefreshToken.getProvider() : getProviderId();
         event.detail(Details.REFRESH_TOKEN_PROVIDER_ID, providerIdDetail);
 
         if (oldRefreshToken.getSubject() != null) {

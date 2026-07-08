@@ -68,7 +68,8 @@ public interface RefreshTokenProvider extends Provider {
 
     /**
      * Returns the provider ID that this instance uses to identify issued refresh tokens.
-     * Used for event detail emission during initial issuance.
+     * Used for event detail emission during initial issuance
+     * and refresh-token processing when the token does not carry a provider claim
      */
     default String getProviderId() {
         return DefaultRefreshTokenProviderFactory.PROVIDER_ID;

@@ -48,7 +48,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.refresh.DefaultRefreshTokenProviderFactory;
 import org.keycloak.protocol.oidc.refresh.RefreshTokenProvider;
-import org.keycloak.protocol.oidc.refresh.DefaultRefreshTokenProviderFactory;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -130,7 +129,7 @@ public class TokenRevocationEndpoint {
 
             refreshTokenProvider.revokeToken(token, user, client, event);
 
-            event.detail(Details.REFRESH_TOKEN_PROVIDER_ID, providerClaim != null ? providerClaim : DefaultRefreshTokenProviderFactory.PROVIDER_ID);
+            event.detail(Details.REFRESH_TOKEN_PROVIDER_ID, providerClaim != null ? providerClaim : refreshTokenProvider.getProviderId());
             event.detail(Details.REVOKED_CLIENT, client.getClientId());
             event.session(token.getSessionId());
             event.detail(Details.REFRESH_TOKEN_ID, token.getId());
