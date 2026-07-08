@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -75,10 +76,12 @@ import org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Metrics;
+import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.commons.configuration.io.ConfigurationWriter;
 import org.infinispan.commons.io.StringBuilderWriter;
 import org.infinispan.commons.util.Version;
+import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
@@ -119,6 +122,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     private static final String REMOTE_HEALTH_ENABLED = "remoteHealthEnabled";
 
     private Config.Scope config;
+    private KeycloakSessionFactory keycloakSessionFactory;
 
     private volatile EmbeddedCacheManager cacheManager;
     private volatile RemoteCacheManager remoteCacheManager;
@@ -192,6 +196,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        keycloakSessionFactory = factory;
         factory.register(this);
     }
 
@@ -286,7 +291,12 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .register(Metrics.globalRegistry);
         }
         return SiteHealthImpl.create(factory, remoteCacheManager, connectionProvider.getExecutor("site-health"),
-                status -> siteStatus.set(status.getValue()));
+                status -> siteStatus.set(status.getValue()),
+                this::triggerInvalidationEvent);
+    }
+
+    private void triggerInvalidationEvent() {
+        Optional.ofNullable(keycloakSessionFactory).ifPresent(f -> f.publish(InvalidateLocalCachesEvent.INSTANCE));
     }
 
     private Duration getShutdownTimeout() {
@@ -439,6 +449,12 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             KeycloakModelUtils.runJobInTransaction(pme.getFactory(), this::registerSystemWideListeners);
         } else if (event instanceof ShutdownDelayInitiatedEvent se) {
             Optional.ofNullable(shutdownManager).ifPresent(sm -> sm.onShutdownStarted(se.timestamp()));
+        } else if (event instanceof InvalidateLocalCachesEvent) {
+            Arrays.stream(InfinispanConnectionProvider.LOCAL_CACHE_NAMES)
+                    .map(name -> cacheManager.getCache(name, false))
+                    .filter(Objects::nonNull)
+                    .filter(cache -> cache.getCacheConfiguration().clustering().cacheMode() == CacheMode.LOCAL)
+                    .forEach(Cache::clear);
         }
     }
 

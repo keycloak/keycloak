@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +44,11 @@ public class SiteHealthImplTest {
     }
 
     private SiteHealthImpl createSite(StubInfinispanManagement management) {
-        return new SiteHealthImpl(storage, management, Runnable::run, s -> {});
+        return createSite(management, null);
+    }
+
+    private SiteHealthImpl createSite(StubInfinispanManagement management, Runnable onBecameHealthy) {
+        return new SiteHealthImpl(storage, management, Runnable::run, s -> {}, onBecameHealthy);
     }
 
     // --- Initial state ---
@@ -668,6 +673,59 @@ public class SiteHealthImplTest {
         siteB.triggerClusterHealthCheck();
         assertFalse(siteB.isHealthy());
         assertTrue(siteA.isHealthy());
+    }
+
+    // --- onBecameHealthy callback tests ---
+
+    @Test
+    public void testOnBecameHealthyInvokedWhenHealthySwitchesFromFalseToTrue() {
+        var counter = new AtomicInteger(0);
+        var management = new StubInfinispanManagement(SITE_A);
+        var site = createSite(management, counter::incrementAndGet);
+
+        assertFalse(site.isHealthy());
+
+        site.triggerClusterHealthCheck();
+
+        assertTrue(site.isHealthy());
+        assertEquals(1, counter.get());
+    }
+
+    @Test
+    public void testOnBecameHealthyNotInvokedWhenAlreadyHealthy() {
+        var counter = new AtomicInteger(0);
+        var management = new StubInfinispanManagement(SITE_A);
+        var site = createSite(management, counter::incrementAndGet);
+
+        site.triggerClusterHealthCheck();
+        assertEquals(1, counter.get());
+
+        // second check: already healthy, should not invoke again
+        site.triggerClusterHealthCheck();
+        assertEquals(1, counter.get());
+    }
+
+    @Test
+    public void testOnBecameHealthyInvokedAgainAfterHealthyBecomeFalse() {
+        var counter = new AtomicInteger(0);
+        var management = new StubInfinispanManagement(SITE_A);
+        var site = createSite(management, counter::incrementAndGet);
+
+        // become healthy
+        site.triggerClusterHealthCheck();
+        assertTrue(site.isHealthy());
+        assertEquals(1, counter.get());
+
+        // site goes down, trigger failure
+        management.throwOnSiteStatus = true;
+        site.triggerClusterHealthCheck();
+        assertFalse(site.isHealthy());
+
+        // site comes back, healthy again
+        management.throwOnSiteStatus = false;
+        site.triggerClusterHealthCheck();
+        assertTrue(site.isHealthy());
+        assertEquals(2, counter.get());
     }
 
     // --- Stubs ---

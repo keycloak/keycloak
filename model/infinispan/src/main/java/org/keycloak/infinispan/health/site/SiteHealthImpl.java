@@ -51,20 +51,23 @@ public class SiteHealthImpl implements ClusterHealth {
     private final SiteStorage storage;
     private final Executor executor;
     private final Consumer<Status> statusConsumer;
+    private final Runnable onBecameHealthy;
     private final AtomicBoolean inProgress = new AtomicBoolean(false);
     private volatile boolean healthy = false;
     private volatile SiteState transitionState;
 
-    public SiteHealthImpl(SiteStorage storage, InfinispanManagement management, Executor executor, Consumer<Status> statusConsumer) {
+    public SiteHealthImpl(SiteStorage storage, InfinispanManagement management, Executor executor, Consumer<Status> statusConsumer, Runnable onBecameHealthy) {
         this.management = Objects.requireNonNull(management);
         this.storage = Objects.requireNonNull(storage);
         this.executor = Objects.requireNonNull(executor);
         this.statusConsumer = Objects.requireNonNullElse(statusConsumer, status -> {
         });
+        this.onBecameHealthy = Objects.requireNonNullElse(onBecameHealthy, () -> {
+        });
     }
 
-    public static SiteHealthImpl create(KeycloakSessionFactory factory, RemoteCacheManager remoteCacheManager, Executor executor, Consumer<Status> statusConsumer) {
-        return new SiteHealthImpl(new JpaSiteStorage(factory), RestInfinispanManagement.fromRemoteCacheManager(remoteCacheManager), executor, statusConsumer);
+    public static SiteHealthImpl create(KeycloakSessionFactory factory, RemoteCacheManager remoteCacheManager, Executor executor, Consumer<Status> statusConsumer, Runnable onBecameHealthy) {
+        return new SiteHealthImpl(new JpaSiteStorage(factory), RestInfinispanManagement.fromRemoteCacheManager(remoteCacheManager), executor, statusConsumer, onBecameHealthy);
     }
 
     @Override
@@ -247,7 +250,10 @@ public class SiteHealthImpl implements ClusterHealth {
 
     private void onHealthy(SiteState siteState, Map<String, String> sites, SiteConnection connection) {
         logger.debugf("Checking 'healthy' state. State=%s, Connection=%s", siteState, connection);
-        healthy = true;
+        if (!healthy) {
+            healthy = true;
+            onBecameHealthy.run();
+        }
         if (connection.onlineSites().containsAll(sites.keySet())) {
             logger.debug("All sites are online, keeping 'healthy' state");
             return;
