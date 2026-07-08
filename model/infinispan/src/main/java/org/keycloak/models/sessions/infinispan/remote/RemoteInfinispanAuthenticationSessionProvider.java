@@ -19,6 +19,9 @@ package org.keycloak.models.sessions.infinispan.remote;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.SecretGenerator;
@@ -26,9 +29,11 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
+import org.keycloak.models.sessions.infinispan.query.QueryHelper;
 import org.keycloak.models.sessions.infinispan.remote.transaction.AuthenticationSessionChangeLogTransaction;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
@@ -82,6 +87,22 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
             throw new ModelException("Authentication session with id '" + authenticationSession.getId() + "' does not belong to realm '" + realm.getId() + "'");
         }
         transaction.remove(authenticationSession.getId());
+    }
+
+    @Override
+    public Stream<RootAuthenticationSessionModel> getRootAuthenticationSessionsByAuthenticatedUser(RealmModel realm, UserModel user) {
+
+        var query = transaction.getCache()
+                .<RootAuthenticationSessionEntity>query("FROM " + RemoteInfinispanAuthenticationSessionProviderFactory.PROTO_ENTITY + " WHERE realmId = :realmId")
+                .setParameter("realmId", realm.getId());
+
+        return QueryHelper.streamAll(query, 100, Function.identity())
+                .filter(entity -> entity.hasAuthenticationSessionForUser(user.getId()))
+                .map(RootAuthenticationSessionEntity::getId)
+                .collect(Collectors.toList())
+                .stream()
+                .map(id -> getRootAuthenticationSession(realm, id))
+                .filter(Objects::nonNull);
     }
 
     @Override
