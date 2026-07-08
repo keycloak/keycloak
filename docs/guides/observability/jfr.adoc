@@ -2,12 +2,12 @@
 
 <@tmpl.guide
 title="Troubleshooting performance issues using Java Flight Recorder (JFR)"
-summary="Create Java flight recordings of a {project_name} server to diagnose performance issues"
+summary="Create Java Flight Recorder (JFR) recordings of a {project_name} server to diagnose performance issues"
 >
 
 == What is Java Flight Recorder
 
-Java Flight Recorder (JFR) is a standard monitoring tool for collecting diagnostic and profiling data about a running Java application. It is built-into a JVM and designed to have a low performance impact.
+Java Flight Recorder (JFR) is a standard monitoring tool for collecting diagnostic and profiling data about a running Java application. It is built into a JVM and designed to have a low performance impact.
 
 JFR can be started on JVM startup by providing parameters via the `-XX:StartFlightRecording` argument, or it can be started later during application runtime by sending the `JFR.start` command using the `jcmd` tool.
 
@@ -60,7 +60,7 @@ Use jcmd 896224 JFR.start to start a recording.
 
 == Create a fixed-time recording
 
-A fixed-time recording can be created executing the `JFR.start` command with the `duration` parameter. After the requested interval elapses the recording will be stopped and its data automatically dumped into a file.
+A fixed-time recording can be created by executing the `JFR.start` command with the `duration` parameter. After the requested interval elapses the recording will be stopped and its data automatically dumped into a file.
 
 [source]
 ----
