@@ -12,10 +12,10 @@ public interface RepModelMapper <T, U> {
     }
     
     default T fromModel(U model, boolean includeReadOnlyFields) {
-        return fromModel(model, includeReadOnlyFields ? null : getWritableField());
+        return fromModel(model, includeReadOnlyFields ? null : getWritableFields());
     }
     
-    Set<String> getWritableField();
+    Set<String> getWritableFields();
     
     T fromModel(U model, Set<String> includeFields);
     

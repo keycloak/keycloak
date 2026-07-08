@@ -11,7 +11,7 @@ import org.keycloak.validation.jakarta.ValidationContext;
 public class ClientPersistedFieldResolver implements PersistedFieldResolver<BaseClientRepresentation> {
 
     @Override
-    public boolean supports(Class<?> representationType) {
+    public boolean supports(Class<? extends BaseClientRepresentation> representationType) {
         return BaseClientRepresentation.class.isAssignableFrom(representationType);
     }
 
@@ -28,6 +28,8 @@ public class ClientPersistedFieldResolver implements PersistedFieldResolver<Base
         if (persistedClient == null) {
             return null;
         }
+        // TODO: any fields materialized by secondary logic will not be populated
+        // we should consider moving the role logic under the mappers
         return DefaultClientService.MAPPERS.getMapper(representation.getProtocol()).get().fromModel(persistedClient);
     }
 

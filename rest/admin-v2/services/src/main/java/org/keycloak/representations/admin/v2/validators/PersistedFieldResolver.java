@@ -9,7 +9,7 @@ import org.keycloak.validation.jakarta.ValidationContext;
  */
 public interface PersistedFieldResolver<T> {
 
-    boolean supports(Class<?> representationType);
+    boolean supports(Class<? extends T> representationType);
 
     Object getValue(T representation, String fieldName);
 
