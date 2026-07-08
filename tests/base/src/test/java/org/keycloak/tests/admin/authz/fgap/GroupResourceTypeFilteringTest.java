@@ -38,6 +38,7 @@ import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -89,6 +90,7 @@ public class GroupResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    @DatabaseTest
     public void testViewAllGroupsUsingUserPolicy() {
         List<GroupRepresentation> search = realmAdminClient.realm(realm.getName()).groups().groups();
         assertTrue(search.isEmpty());
@@ -102,6 +104,7 @@ public class GroupResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    @DatabaseTest
     public void testDeniedResourcesPrecedenceOverGrantedResources() {
         UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
         createAllPermission(adminPermissionsClient, GROUPS_RESOURCE_TYPE, policy, Set.of(VIEW));
@@ -123,6 +126,7 @@ public class GroupResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    @DatabaseTest
     public void testFilterSubGroups() {
         UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
         createAllPermission(adminPermissionsClient, GROUPS_RESOURCE_TYPE, policy, Set.of(VIEW));

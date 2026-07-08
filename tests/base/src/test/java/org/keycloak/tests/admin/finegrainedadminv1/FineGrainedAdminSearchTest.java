@@ -25,7 +25,6 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.services.resources.admin.fgap.ClientPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.GroupPermissionManagement;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.tests.suites.DatabaseTest;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -36,7 +35,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.oneOf;
 
 @KeycloakIntegrationTest(config = AbstractFineGrainedAdminTest.FineGrainedAdminServerConf.class)
-@DatabaseTest
 public class FineGrainedAdminSearchTest extends AbstractFineGrainedAdminTest {
 
     @Test
