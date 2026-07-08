@@ -4,9 +4,11 @@ import {
   ActionGroup,
   Alert,
   Button,
+  Divider,
   FormHelperText,
   HelperText,
   HelperTextItem,
+  Title,
 } from "@patternfly/react-core";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
@@ -380,6 +382,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             />
             {parameterizedScope === "true" && (
               <>
+                <Title headingLevel="h2" size="lg">
+                  {t("parameterizedScopeSettings")}
+                </Title>
                 <SelectControl
                   id="kc-parameter-type"
                   name={parameterTypeFieldName}
@@ -417,6 +422,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                   labelIcon={t("repeatableScopeHelp")}
                   stringify
                 />
+                <Divider className="pf-v5-u-mb-sm" />
               </>
             )}
           </>
