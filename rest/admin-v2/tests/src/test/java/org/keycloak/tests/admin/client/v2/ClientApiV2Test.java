@@ -503,6 +503,23 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         }
     }
 
+    /**
+     * Regression test for the {@code IllegalArgumentException} thrown by {@code ListOptions#getSort()} when a sort
+     * segment has no field name (e.g. a leading/duplicate separator). Verifies it is mapped to HTTP 400 for the
+     * Admin API v2, and not the HTTP 500 an uncaught {@code IllegalArgumentException} would otherwise produce.
+     */
+    @Test
+    public void getClientsSortWithMissingFieldReturns400() throws IOException, URISyntaxException {
+        URI uri = new URIBuilder(getClientsApiUrl()).addParameter("sort", "|desc").build();
+
+        HttpGet request = new HttpGet(uri);
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            assertThat(EntityUtils.toString(response.getEntity()), containsString("sort must specify at least one field"));
+        }
+    }
+
     private void createSortTestClient(String clientId, String displayName, String description) {
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setEnabled(true);
