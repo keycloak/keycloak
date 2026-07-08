@@ -114,7 +114,10 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
     
     public Set<String> getWritableFields() {
         if (writableFields == null) {
-            writableFields = fields.entrySet().stream().filter(e -> !e.getValue().readOnly).map(e -> e.getKey()).collect(Collectors.toSet());
+            writableFields = fields.entrySet().stream()
+                    .filter(e -> !e.getValue().readOnly)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toUnmodifiableSet());
         }
         return writableFields;
     }
