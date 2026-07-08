@@ -114,7 +114,7 @@ class DefaultEmailSenderProviderTest {
             // then
             assertThat(greenMail.waitForIncomingEmail(1), is(true));
             MimeMessage received = greenMail.getReceivedMessages()[0];
-            assertThat(received.getHeader("X-Custom-Header")[0], is("custom-value"));
+            assertThat(received.getHeader("X-Custom-Header", null), is("custom-value"));
         } finally {
             greenMail.stop();
         }
