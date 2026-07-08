@@ -15,6 +15,17 @@ Recording can either be started in a continuous mode in which case the `JFR.dump
 
 This guide further demonstrates creating a fixed-time flight recording using the `jcmd` tool.
 
+=== Security considerations
+
+Some of the diagnostic data collected by Java Flight Recorder may be security-sensitive.
+
+WARNING: It is not recommended to share JFR recordings without sanitizing them for potentially sensitive information.
+
+There are several approaches to sanitizing a JFR recording:
+
+* Proactively, by disabling the collection of certain types of data when starting a JFR recording. This can be done by using custom JFR settings. See the <<create-a-fixed-time-recording>> section on how to apply custom settings.
+* Retroactively, by scrubbing a recording for certain types of data after it has been saved to a file. This can be done by the `jfr scrub` command, either by excluding certain types of data, or by only including types of data that are relevant for investigating a particular performance problem and known to be safe. See the <<scrub-sensitive-data>> section for details
+
 == Find the {project_name} server process
 
 The `jcmd` tool can use a PID or a main class to identify the target process:
@@ -58,6 +69,7 @@ No available recordings.
 Use jcmd 896224 JFR.start to start a recording.
 ----
 
+[[create-a-fixed-time-recording]]
 == Create a fixed-time recording
 
 A fixed-time recording can be created by executing the `JFR.start` command with the `duration` parameter. After the requested interval elapses the recording will be stopped and its data automatically dumped into a file.
@@ -170,6 +182,8 @@ Time                         JVM User           JVM System           Machine Tot
 
 Once a recording is dumped into a file it is important to scrub it for potentially sensitive data to prevent security leaks. This can be done using a standard `jfr scrub` command.
 
+=== Exclude sensitive information
+
 For {project_name}, high-risk content collected by JFR can be removed by the following command:
 [source]
 ----
@@ -185,20 +199,22 @@ See below for events that can reveal sensitive information:
 | JFR Event | Risk | Explanation
 
 | `jdk.InitialEnvironmentVariable` | High | Environment variables can contain secrets passed to {project_name} during startup. For example: `KC_DB_PASSWORD`.
-| `jdk.JVMInformation` | High | JVM information contains CLI arguments passed to {project_name} during startup. For example: `--db-password`.
+| `jdk.JVMInformation` | High | JVM information can contain secrets in CLI arguments passed to {project_name} during startup. For example: `--db-password`.
 | `jdk.OldObjectSample` | High | Serialized Java objects can include sensitive in-memory information.
 | `jdk.InitialSystemProperty` | Low | {project_name} by default does not pass sensitive information here.
 |===
 
-// TODO: This is a draft warning, please review
-WARNING: Other flight recorder events can contain information like host names, file paths or URL parameters.
+WARNING: Other flight recorder events may contain information like host names, file paths or URL parameters.
 To analyze the contents for sensitive information, use `jfr print recording.jfr` or `jfr print --json recording.jfr` to review the contents.
 You can also use `jfr scrub --include-events ...` to share a subset of the events for troubleshooting.
 
-After the scrubbed version of the JFR is created, remove the original unsanitized file to prevent leaks:
+=== Include only specific information (inverse scrub)
+
 [source]
 ----
-rm recording.jfr
+jfr scrub \
+  --include-events jdk.ExecutionSample,jdk.CPULoad,jdk.GarbageCollection,jdk.GCHeapSummary,jdk.GCPhasePause,jdk.MetaspaceSummary,jdk.JavaMonitorEnter,jdk.ThreadPark \
+  recording.jfr recording-scrubbed.jfr
 ----
 
 </@tmpl.guide>
