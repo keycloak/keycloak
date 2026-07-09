@@ -64,6 +64,7 @@ public class IDToken extends JsonWebToken {
 
     // RFC 8693 - OAuth 2.0 Token Exchange
     public static final String MAY_ACT = "may_act";
+    public static final String ACT = "act";
 
     // NOTE!!!  WE used to use @JsonUnwrapped on a UserClaimSet object.  This screws up otherClaims and the won't work
     // anymore.  So don't have any @JsonUnwrapped!

@@ -116,7 +116,11 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
     @Override
     protected Response tokenExchange() {
+        AuthenticationManager.AuthResult authResult = processSubjectToken();
+        return exchangeClientToClient(authResult.user(), authResult.session(), authResult.token(), true);
+    }
 
+    protected AuthenticationManager.AuthResult processSubjectToken() {
         String subjectToken = context.getParams().getSubjectToken();
 
         event.detail(Details.REQUESTED_TOKEN_TYPE, context.getParams().getRequestedTokenType());
@@ -133,6 +137,19 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         UserSessionModel tokenSession = authResult.session();
         AccessToken token = authResult.token();
 
+        validateSenderConstrainedToken(token);
+
+        event.user(tokenUser);
+        event.detail(Details.USERNAME, tokenUser.getUsername());
+        if (token.getSessionId() != null) {
+            event.session(tokenSession);
+        }
+        event.detail(Details.SUBJECT_TOKEN_CLIENT_ID, token.getIssuedFor());
+
+        return authResult;
+    }
+
+    protected void validateSenderConstrainedToken(AccessToken token) {
         if (isSenderConstrainedToken(token)) {
             // Reject sender-constrained tokens (RFC 7800) as subject_token if client does not match the authorized parties claim
             if (!token.getIssuedFor().equals(client.getClientId())) {
@@ -169,15 +186,6 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                 }
             }
         }
-
-        event.user(tokenUser);
-        event.detail(Details.USERNAME, tokenUser.getUsername());
-        if (token.getSessionId() != null) {
-            event.session(tokenSession);
-        }
-        event.detail(Details.SUBJECT_TOKEN_CLIENT_ID, token.getIssuedFor());
-
-        return exchangeClientToClient(tokenUser, tokenSession, token, true);
     }
 
     @Override
