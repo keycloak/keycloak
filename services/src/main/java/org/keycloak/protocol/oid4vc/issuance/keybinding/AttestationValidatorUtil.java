@@ -222,7 +222,7 @@ public class AttestationValidatorUtil {
         }
     }
 
-    private static KeyAttestationsRequired getAttestationRequirements(VCIssuanceContext vcIssuanceContext) {
+    public static KeyAttestationsRequired getAttestationRequirements(VCIssuanceContext vcIssuanceContext) {
         if (vcIssuanceContext.getCredentialConfig() == null ||
                 vcIssuanceContext.getCredentialConfig().getProofTypesSupported() == null ||
                 vcIssuanceContext.getCredentialConfig().getProofTypesSupported().getSupportedProofTypes() == null) {
