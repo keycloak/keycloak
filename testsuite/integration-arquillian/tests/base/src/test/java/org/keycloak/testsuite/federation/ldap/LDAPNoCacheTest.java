@@ -37,15 +37,14 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
-import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -53,6 +52,7 @@ import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -60,8 +60,8 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test for the scenarios with disabled cache for LDAP provider. This involves scenarios when something is changed directly in LDAP server
@@ -109,7 +109,7 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
     }
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected AppPage appPage;
@@ -129,10 +129,10 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
 
             RealmModel realm = ctx.getRealm();
             UserModel user = session.users().getUserByUsername(realm, username);
-            Assert.assertNotNull("User not found", user);
-            Assert.assertEquals(newEmail, user.getEmail());
-            Assert.assertEquals(Collections.singletonList(newEmail), user.getAttributes().get(UserModel.EMAIL));
-            Assert.assertEquals(Collections.singletonList(newEmail), user.getAttributeStream(UserModel.EMAIL).collect(Collectors.toList()));
+            Assertions.assertNotNull(user, "User not found");
+            Assertions.assertEquals(newEmail, user.getEmail());
+            Assertions.assertEquals(Collections.singletonList(newEmail), user.getAttributes().get(UserModel.EMAIL));
+            Assertions.assertEquals(Collections.singletonList(newEmail), user.getAttributeStream(UserModel.EMAIL).collect(Collectors.toList()));
         });
     }
 
@@ -209,12 +209,12 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
-        MimeMessage[] messages = greenMail.getReceivedMessages();
-        Assert.assertEquals(expectedCountOfMessages, messages.length);
-        MimeMessage message = greenMail.getReceivedMessages()[expectedCountOfMessages - 1];
+        MimeMessage[] messages = mail.getReceivedMessages();
+        Assertions.assertEquals(expectedCountOfMessages, messages.length);
+        MimeMessage message = mail.getReceivedMessages()[expectedCountOfMessages - 1];
 
         String emailAddress = MailUtils.getRecipient(message);
-        Assert.assertEquals(expectedEmail, emailAddress);
+        Assertions.assertEquals(expectedEmail, emailAddress);
     }
 
     private static void changeEmailAddressInLDAP(KeycloakTestingClient testingClient, String newEmail) {

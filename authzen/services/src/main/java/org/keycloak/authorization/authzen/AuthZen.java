@@ -16,18 +16,21 @@
  */
 package org.keycloak.authorization.authzen;
 
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 public final class AuthZen {
 
     public static final String AUTHZEN_ACCESS_PATH = "access/v1";
     public static final String EVALUATION_PATH = AUTHZEN_ACCESS_PATH + "/evaluation";
+    public static final String EVALUATIONS_PATH = AUTHZEN_ACCESS_PATH + "/evaluations";
 
     private AuthZen() {
     }
@@ -80,6 +83,43 @@ public final class AuthZen {
             @JsonProperty(required = true) Action action,
             Map<String, Object> context) {}
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public record EvaluationResponse(boolean decision) {}
+    public record EvaluationResponse(boolean decision, Map<String, Object> context) {
+        public EvaluationResponse(boolean decision) {
+            this(decision, null);
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record EvaluationItem(
+            Subject subject,
+            Resource resource,
+            Action action,
+            Map<String, Object> context) {}
+
+    public enum EvaluationsSemantic {
+        @JsonProperty("execute_all")
+        EXECUTE_ALL,
+
+        @JsonProperty("deny_on_first_deny")
+        DENY_ON_FIRST_DENY,
+
+        @JsonProperty("permit_on_first_permit")
+        PERMIT_ON_FIRST_PERMIT;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public record Options(EvaluationsSemantic evaluationsSemantic) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record EvaluationsRequest(
+            Subject subject,
+            Resource resource,
+            Action action,
+            Map<String, Object> context,
+            Options options,
+            List<EvaluationItem> evaluations) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record EvaluationsResponse(List<EvaluationResponse> evaluations) {}
 }

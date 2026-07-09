@@ -65,8 +65,8 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createRsaJwk;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.generateEcdsaKey;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.generateSignedDPoPProof;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ParWithDPoPTest extends AbstractClientPoliciesTest {
     @Rule
@@ -1044,14 +1044,14 @@ public class ParWithDPoPTest extends AbstractClientPoliciesTest {
     private AuthorizationEndpointResponse sendAuthorizationRequest(String clientId, String requestUri, String dpopJkt) {
         // Authorization Request with request_uri of PAR
         // remove parameters as query strings of uri
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         oauth.responseType(null);
         oauth.redirectUri(null);
         oauth.scope(null);
         // ----- Authorization Request -----
         AuthorizationEndpointResponse loginResponse = oauth.loginForm().requestUri(requestUri).dpopJkt(dpopJkt).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         // revert
-        oauth.clientId(null);
+        oauth.client(null);
         return loginResponse;
     }
 

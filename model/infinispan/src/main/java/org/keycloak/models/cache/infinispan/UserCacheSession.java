@@ -39,6 +39,7 @@ import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ProtocolMapperModel;
@@ -48,6 +49,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
@@ -55,6 +57,8 @@ import org.keycloak.models.cache.infinispan.entities.CachedFederatedIdentityLink
 import org.keycloak.models.cache.infinispan.entities.CachedUser;
 import org.keycloak.models.cache.infinispan.entities.CachedUserConsent;
 import org.keycloak.models.cache.infinispan.entities.CachedUserConsents;
+import org.keycloak.models.cache.infinispan.entities.CachedUserVerifiableCredential;
+import org.keycloak.models.cache.infinispan.entities.CachedUserVerifiableCredentials;
 import org.keycloak.models.cache.infinispan.entities.UserListQuery;
 import org.keycloak.models.cache.infinispan.events.CacheKeyInvalidatedEvent;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
@@ -64,6 +68,7 @@ import org.keycloak.models.cache.infinispan.events.UserFederationLinkRemovedEven
 import org.keycloak.models.cache.infinispan.events.UserFederationLinkUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.UserFullInvalidationEvent;
 import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
+import org.keycloak.models.cache.infinispan.events.UserVerifiableCredentialsUpdatedEvent;
 import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
@@ -105,7 +110,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     protected Set<String> realmInvalidations = new HashSet<>();
     protected Set<InvalidationEvent> invalidationEvents = new HashSet<>(); // Events to be sent across cluster
     protected Map<String, UserModel> managedUsers = new HashMap<>();
-    private StoreManagers datastoreProvider;
+    private final StoreManagers datastoreProvider;
 
     public UserCacheSession(UserCacheManager cache, KeycloakSession session) {
         this.cache = cache;
@@ -745,6 +750,9 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         return userId + ".consents";
     }
 
+    static String getVerifiableCredentialsCacheKey(String userId) {
+        return userId + ".verifiableCredentials";
+    }
 
     @Override
     public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
@@ -846,11 +854,110 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         for (String clientScopeId : cachedConsent.getClientScopeIds()) {
             ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
             if (clientScope != null) {
-                consentModel.addGrantedClientScope(clientScope);
+                if (ClientScopeModel.isParameterizedScope(clientScope)) {
+                    cachedConsent.getParameters(clientScopeId).stream()
+                            .forEach(p -> consentModel.addGrantedClientScope(clientScope, p));
+                } else {
+                    consentModel.addGrantedClientScope(clientScope);
+                }
             }
         }
 
         return consentModel;
+    }
+
+
+    @Override
+    public UserVerifiableCredentialModel addVerifiableCredential(String userId, UserVerifiableCredentialModel credentialModel) {
+        invalidateVerifiableCredentials(userId);
+        return getDelegate().addVerifiableCredential(userId, credentialModel);
+    }
+
+    @Override
+    public boolean removeVerifiableCredential(String userId, String clientScopeId) {
+        invalidateVerifiableCredentials(userId);
+        return getDelegate().removeVerifiableCredential(userId, clientScopeId);
+    }
+
+    private void invalidateVerifiableCredentials(String userId) {
+        cache.verifiableCredentialsInvalidation(userId, invalidations);
+        invalidationEvents.add(UserVerifiableCredentialsUpdatedEvent.create(userId));
+    }
+
+    @Override
+    public Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId) {
+        logger.tracev("getVerifiableCredentialsByUser: {0}", userId);
+
+        String cacheKey = getVerifiableCredentialsCacheKey(userId);
+        if (invalidations.contains(userId) || invalidations.contains(cacheKey)) {
+            return getDelegate().getVerifiableCredentialsByUser(userId);
+        }
+
+        CachedUserVerifiableCredentials cached = cache.get(cacheKey, CachedUserVerifiableCredentials.class);
+
+        if (cached != null && realmInvalidations.contains(cached.getRealm())) {
+            return getDelegate().getVerifiableCredentialsByUser(userId);
+        }
+
+        if (cached == null) {
+            long loaded = cache.getCurrentRevision(cacheKey);
+            List<UserVerifiableCredentialModel> credentials = getDelegate().getVerifiableCredentialsByUser(userId).toList();
+            RealmModel realm = session.getContext().getRealm();
+            cached = new CachedUserVerifiableCredentials(loaded, cacheKey, realm, credentials);
+            cache.addRevisioned(cached, startupRevision);
+            return credentials.stream();
+        } else {
+            return cached.getCredentials().stream()
+                    .map(this::toCredentialModel);
+        }
+    }
+
+    private UserVerifiableCredentialModel toCredentialModel(CachedUserVerifiableCredential cachedCredential) {
+        UserVerifiableCredentialModel credentialModel = new UserVerifiableCredentialModel(cachedCredential.getId(), cachedCredential.getClientScopeId());
+        credentialModel.setRevision(cachedCredential.getRevision());
+        credentialModel.setCreatedDate(cachedCredential.getCreatedDate());
+        credentialModel.setUpdatedDate(cachedCredential.getUpdatedDate());
+        credentialModel.setUserAttributes(cachedCredential.getUserAttributes());
+        return credentialModel;
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialById(String id) {
+        return getDelegate().getVerifiableCredentialById(id);
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialByClientScope(String userId, String clientScopeId) {
+        return getVerifiableCredentialsByUser(userId)
+                .filter(vc -> clientScopeId.equals(vc.getClientScopeId()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String clientScopeId) {
+        invalidateVerifiableCredentials(userId);
+        return getDelegate().updateVerifiableCredential(userId, clientScopeId);
+    }
+
+    @Override
+    public IssuedVerifiableCredentialModel addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc) {
+        return getDelegate().addIssuedVerifiableCredential(issuedVc);
+    }
+
+    @Override
+    public Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId) {
+        return getDelegate().getIssuedVerifiableCredentialsStreamByUser(userId);
+    }
+
+    @Override
+    public boolean removeIssuedVerifiableCredential(String credentialId) {
+        return getDelegate().removeIssuedVerifiableCredential(credentialId);
+    }
+
+    @Override
+    public void removeExpiredIssuedVerifiableCredentials() {
+        getDelegate().removeExpiredIssuedVerifiableCredentials();
     }
 
     @Override
@@ -998,7 +1105,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     @Override
     public void preRemove(ClientScopeModel clientScope) {
-        // Not needed to invalidate realm probably. Just consents are affected ATM and they are checked if they exists
+        addRealmInvalidation(clientScope.getRealm().getId());
         getDelegate().preRemove(clientScope);
     }
 

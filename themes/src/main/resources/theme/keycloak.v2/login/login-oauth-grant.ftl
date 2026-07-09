@@ -19,10 +19,10 @@
                 <#if oauth.clientScopesRequested??>
                     <#list oauth.clientScopesRequested as clientScope>
                         <li>
-                            <span><#if !clientScope.dynamicScopeParameter??>
+                            <span><#if !clientScope.parameterizedScopeParameter??>
                                         ${advancedMsg(clientScope.consentScreenText)}
                                     <#else>
-                                        ${advancedMsg(clientScope.consentScreenText)}: <b>${clientScope.dynamicScopeParameter}</b>
+                                        ${advancedMsg(clientScope.consentScreenText, clientScope.parameterizedScopeParameter)}
                                 </#if>
                             </span>
                         </li>
@@ -49,9 +49,9 @@
 
             <form class="${properties.kcFormClass} ${properties.kcMarginTopClass!}" action="${url.oauthAction}" method="POST">
                 <input type="hidden" name="code" value="${oauth.code}">
-                <@buttons.actionGroup>
+                <@buttons.actionGroup horizontal=true>
                     <@buttons.button id="kc-login" name="accept" label="doYes"/>
-                    <@buttons.button id="kc-cancel" name="cancel" label="doNo" class=["kcButtonSecondaryClass"]/>
+                    <@buttons.button id="kc-cancel" name="cancel" label="doNo" type="secondary"/>
                 </@buttons.actionGroup>
             </form>
         </div>

@@ -37,6 +37,7 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.client.LocalPortForward;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
@@ -120,7 +121,9 @@ public class KeycloakKubernetesJwtTest extends BaseOperatorTest {
             IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
             idp.setAlias("kubernetes");
             idp.setProviderId("kubernetes");
-            idp.getConfig().put("issuer", "https://kubernetes.default.svc.cluster.local");
+            String oidcConfig = k8sclient.raw("/.well-known/openid-configuration");
+            String issuer = (String) Serialization.unmarshal(oidcConfig, Map.class).get("issuer");
+            idp.getConfig().put("issuer", issuer);
             keycloak.realm("test").identityProviders().create(idp).close();
 
         }

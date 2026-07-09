@@ -21,7 +21,12 @@ export type AccessType =
   | "view-clients"
   | "manage-authorization"
   | "manage-clients"
+  | "manage-organizations"
+  | "view-organizations"
   | "query-groups"
+  | "query-organizations"
+  | "admin"
+  | "realm-admin"
   | "anyone"
   | AccessTypeFunc;
 

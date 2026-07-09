@@ -107,7 +107,7 @@ public class UserVerificationRegisterTest extends AbstractWebAuthnVirtualTest {
                 .setWebAuthnPolicyUserVerificationRequirement(requirement.getValue())
                 .update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmData.getUserVerificationRequirement(), containsString(requirement.getValue()));
 
             registerDefaultUser(shouldSuccess);

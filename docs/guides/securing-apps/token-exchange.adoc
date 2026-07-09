@@ -265,7 +265,9 @@ This use case can be replaced by refresh token grant.
 * The `subject_token` sent to the token exchange endpoint must have the requester client set as an audience in the `aud` claim. Otherwise, the request would be rejected. The only exception is, if client
 exchanges his own token, which was issued to it. Exchanging to itself might be useful to downscope/upscope the token or filter unneeded token audiences and so on.
 
-* Sender-constrained tokens (as defined in RFC 7800) cannot be used as `subject_token`. This includes DPoP-bound tokens and X.509 certificate-bound tokens. Standard Token Exchange only accepts Bearer access tokens as subject tokens. If you provide a sender-constrained token, the request will be rejected with an `invalid_request` error. However, you can obtain DPoP-bound tokens as **output** from token exchange by including a valid DPoP proof in the request. For more details, see <@links.securingapps id="dpop" />.
+* Sender-constrained tokens (as defined in RFC 7800) can be used as `subject_token` only when the requesting client is the same client that the token was originally issued for.
+The client must also provide valid proof of possession: a DPoP proof for DPoP-bound tokens, or the matching client certificate for mTLS-bound tokens.
+If the client does not match or the proof is missing/invalid, the request is rejected. For more details on DPoP, see <@links.securingapps id="dpop" />.
 
 * Consents - If the requester client has *Consent required* enabled, the token exchange is allowed only if the user is already granted consent to all requested scopes
 
@@ -289,8 +291,8 @@ for the requester client (if the client session was not yet created).
 
 * {project_name} Token exchange does not yet have support for the `resource` parameter.
 
-* The token exchange specification mentions the concepts of https://datatracker.ietf.org/doc/html/rfc8693#name-delegation-vs-impersonation[impersonation and delegation]. {project_name} has support for the
-impersonation use case, but not yet for the delegation use case.
+* The token exchange specification mentions the concepts of https://datatracker.ietf.org/doc/html/rfc8693#name-delegation-vs-impersonation[impersonation and delegation]. {project_name} has support for
+impersonation and experimental support for delegation through the <<_token-exchange-delegation,Token Exchange Delegation>> feature.
 
 ==== Revocation
 
@@ -326,12 +328,80 @@ s|Public clients  | Not available. Downscoping implemented by V1 can be replaced
 s|Consents        | Allowed for clients with `Consent required` as long as the user is already granted consent | Not allowed for clients with *Consent required*
 s|Authorization  | Verification that the requester client must be in the audience of the `subject_token`. Integration with client policies. No Fine-grained admin permissions | Based on fine-grained admin permissions version 1
 s|Revocation chain | Not available for access tokens. Available for refresh tokens   | Not available for access nor refresh tokens
-s|Delegation per RFC 8693|Not supported yet|Not supported
+s|Delegation per RFC 8693|Experimental support via <<_token-exchange-delegation,Token Exchange Delegation>>|Not supported
 s|Resource parameter per RFC 8693|Not supported yet|Not supported
 s|Internal to external Token Exchange | Identity brokering APIs can be used instead. See link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] for more information. | Implemented as a preview
 s|External to internal Token Exchange | Use-case implemented by Standard Token Exchange V2 and JWT Authorization Grant. See <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" /> for more information. | Implemented as a preview
 s|Subject impersonation (including direct naked impersonation)   | Not implemented yet | Implemented as a preview
 |===
+
+[[_token-exchange-delegation]]
+== Token exchange delegation
+
+<#include "/templates/experimental-feature.adoc">
+
+Token exchange delegation allows a subject to pre-authorize an actor to act on their behalf, as described in the https://datatracker.ietf.org/doc/html/rfc8693#name-delegation-vs-impersonation[delegation semantics of the token exchange specification].
+
+This feature requires the `parameterized-scopes` feature to be enabled. To enable both features, start {project_name} with:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --features=token-exchange-delegation,parameterized-scopes
+----
+
+=== Admin delegation
+
+Admin delegation allows a user (subject) to delegate their token to an administrator. The client requests the `delegation` scope with the administrator's identifier as a parameter using the https://datatracker.ietf.org/doc/html/rfc9396[parameterized scopes] syntax.
+
+When the feature is enabled, a `delegation` client scope is automatically created in new realms. Clients that want to use delegation must add the `delegation` scope to their optional client scopes in the Admin Console.
+
+==== How it works
+
+. The client requests the `delegation` scope with the administrator's (actor) identifier as a parameter, for example `scope=openid delegation:admin`.
+. {project_name} validates that the specified administrator (actor) exists and has the `impersonation` role from the `realm-management` client.
+. The user (subject) is presented with a consent screen to approve the delegation.
+. If the user consents and validation passes, the issued token includes the `may_act` claim with the actor's user ID as the `sub`:
++
+[source,json]
+----
+{
+  "sub": "subject@example.com",
+  "may_act": {
+    "sub": "f1234567-89ab-cdef-0123-456789abcdef"
+  },
+  "scope": "openid delegation:admin",
+  ...
+}
+----
+
+The `may_act` claim declares that the specified administrator (actor) is authorized to act on behalf of the user (subject). The `sub` inside `may_act` contains the actor's user ID, consistent with {project_name}'s standard `sub` claim semantics. An external Security Token Service (STS) receiving this token can verify the delegation authorization directly from the claim without querying back to {project_name}.
+
+If the administrator (actor) does not have impersonation permission, the delegation scope is silently dropped and the `may_act` claim is not included in the token. The consent for delegation is always required and is not stored permanently - the user must approve delegation each login session.
+
+==== Adding additional claims to `may_act`
+
+By default, only the actor's `sub` (user ID) is included in the `may_act` claim. Additional claims can be added by configuring extra "Parameterized Scope User Property" mappers on the `delegation` client scope in the Admin Console.
+
+For example, to include the actor's username:
+
+. Navigate to *Client scopes* -> *delegation* -> *Mappers* -> *Add mapper* -> *By type* -> *Parameterized Scope User Property*.
+. Set *User Property* to `username`.
+. Set *Token Claim Name* to `may_act.preferred_username`.
+. Enable the token types where the claim should be included (e.g. access token, ID token).
+
+The resulting token will then include:
+
+[source,json]
+----
+{
+  "may_act": {
+    "sub": "f1234567-89ab-cdef-0123-456789abcdef",
+    "preferred_username": "admin"
+  }
+}
+----
+
+Other useful claims to add include `may_act.email` (user property `email`) or `may_act.iss` (for cross-realm delegation scenarios).
 
 [[_legacy-token-exchange]]
 == Legacy token exchange

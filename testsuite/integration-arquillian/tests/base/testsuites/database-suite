@@ -1,15 +1,6 @@
-AccountRestServiceTest
-AuthorizationCodeTest
 AuthorizationTest
-ClientRegistrationTest
-ExportImportTest
 KcOidcBrokerTest
 LDAPUserLoginTest
-LoginTest
-PasswordPolicyTest
-RequiredActionUpdateProfileTest
-SSOTest
-SamlClientTest
 UserProfileTest
 OidcAdvancedClaimToGroupMapperTest
 OidcAdvancedClaimToRoleMapperTest

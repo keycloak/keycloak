@@ -5,7 +5,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.Permissions;
 import org.keycloak.models.UserModel;
 import org.keycloak.scim.resource.schema.AbstractModelSchema;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
@@ -17,6 +20,8 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 
 import static java.util.Optional.ofNullable;
+
+import static org.keycloak.scim.resource.schema.attribute.Attribute.getSchema;
 
 public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserModel ,User> {
 
@@ -30,11 +35,13 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
 
     @Override
     protected Set<String> getModelAttributeNames() {
-        UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, Map.of());
+        UserProfile profile = getUserProfile();
         Attributes attributes = profile.getAttributes();
         Set<String> names = new HashSet<>(attributes.nameSet());
+
         names.add(UserModel.ENABLED);
         names.add("groups");
+
         return names;
     }
 
@@ -59,7 +66,15 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
             return String.valueOf(model.isEnabled());
         }
         if ("groups".equals(name)) {
-            return model.getGroupsStream().toList();
+            Permissions permissions = session.getContext().getPermissions();
+
+            if (permissions.hasPermission(model, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW)) {
+                return model.getGroupsStream()
+                        .filter(this::canViewGroup)
+                        .toList();
+            }
+
+            return List.of();
         }
         if (UserModel.EMAIL.equals(name)) {
             return model.getEmail() == null ? List.of() : List.of(model.getEmail());
@@ -94,5 +109,17 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
         }
 
         return null;
+    }
+
+    protected boolean hasSchema(String attributeName) {
+        return getId().equals(getSchema(attributeName));
+    }
+
+    protected UserProfile getUserProfile() {
+        return session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, Map.of());
+    }
+
+    protected boolean canViewGroup(GroupModel group) {
+        return session.getContext().getPermissions().hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
     }
 }

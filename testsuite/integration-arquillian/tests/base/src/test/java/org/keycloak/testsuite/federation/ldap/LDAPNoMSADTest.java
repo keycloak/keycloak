@@ -35,10 +35,10 @@ import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -110,7 +110,7 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
             ldapProvider.getLdapIdentityStore().update(john2);
 
             // Assert DN was changed
-            Assert.assertEquals("sn=Doe2", john2.getDn().getFirstRdn().toString());
+            Assertions.assertEquals("sn=Doe2", john2.getDn().getFirstRdn().toString());
 
             // Remove "sn" mapper
             snMapper = appRealm.getComponentsStream(ctx.getLdapModel().getId(), LDAPStorageMapper.class.getName())
@@ -118,7 +118,7 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
                     .findFirst()
                     .orElse(null);
 
-            Assert.assertNotNull(snMapper);
+            Assertions.assertNotNull(snMapper);
             appRealm.removeComponent(snMapper);
         });
 
@@ -129,7 +129,7 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             UserModel johnkeycloak2 = session.users().getUserByUsername(appRealm, "johnkeycloak2");
-            Assert.assertNotNull(johnkeycloak2);
+            Assertions.assertNotNull(johnkeycloak2);
 
             johnkeycloak2.setFirstName("foo2");
             johnkeycloak2.setLastName("foo");
@@ -137,7 +137,7 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
 
         // Re-create "sn" mapper back
         snMapperRep.setId(null);
-        testRealm().components().add(snMapperRep);
+        managedRealm.admin().components().add(snMapperRep);
 
     }
 
@@ -159,12 +159,12 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
 
             // Assert DN was changed
             String rdnAttrName = ldapProvider.getLdapIdentityStore().getConfig().getRdnLdapAttribute();
-            Assert.assertEquals("sn=Doe3+" + rdnAttrName + "=johnkeycloak3", john2.getDn().getFirstRdn().toString());
+            Assertions.assertEquals("sn=Doe3+" + rdnAttrName + "=johnkeycloak3", john2.getDn().getFirstRdn().toString());
         });
 
         // Update some user attributes not mapped to DN. DN won't be changed
-        String userId = testRealm().users().search("johnkeycloak3").get(0).getId();
-        UserResource user = testRealm().users().get(userId);
+        String userId = managedRealm.admin().users().search("johnkeycloak3").get(0).getId();
+        UserResource user = managedRealm.admin().users().get(userId);
 
         UserRepresentation userRep = user.toRepresentation();
         assertFirstRDNEndsWith(userRep, "johnkeycloak3", "Doe3");
@@ -172,7 +172,7 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
         user.update(userRep);
 
         userRep = user.toRepresentation();
-        Assert.assertEquals("newemail@email.cz", userRep.getEmail());
+        Assertions.assertEquals("newemail@email.cz", userRep.getEmail());
         assertFirstRDNEndsWith(userRep, "johnkeycloak3", "Doe3");
 
         // Update some user attributes mapped to DN. DN will be changed
@@ -195,10 +195,10 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
 
         // Order is not guaranteed and can be dependent on LDAP server, so can't test simple string
         List<String> rdnKeys = firstRDN.getAllKeys();
-        Assert.assertEquals(2, rdnKeys.size());
-        Assert.assertEquals(expectedLastNameInDN, firstRDN.getAttrValue("sn"));
+        Assertions.assertEquals(2, rdnKeys.size());
+        Assertions.assertEquals(expectedLastNameInDN, firstRDN.getAttrValue("sn"));
         rdnKeys.remove("sn");
-        Assert.assertEquals(expectedUsernameInDN, firstRDN.getAttrValue(rdnKeys.get(0)));
+        Assertions.assertEquals(expectedUsernameInDN, firstRDN.getAttrValue(rdnKeys.get(0)));
     }
 
 

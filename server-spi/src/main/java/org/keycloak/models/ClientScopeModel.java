@@ -18,9 +18,12 @@
 package org.keycloak.models;
 
 import java.util.Map;
+import java.util.Optional;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.provider.ProviderEvent;
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -29,9 +32,27 @@ import org.keycloak.provider.ProviderEvent;
 public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeContainerModel, OrderedModel {
 
     /**
-     * The character separator used to specify values when the client scope is dynamic. For instance, {@code <scope>:<value>}.
+     * The character separator used to specify values when the client scope is parameterized. For instance, {@code <scope>:<value>}.
      */
     String VALUE_SEPARATOR = ":";
+
+    /**
+     * Returns true when parameterized scopes are enabled and the scope is defined as parameterized.
+     *
+     * @param scope The scope to check
+     * @return true when the parameterized scopes feature is enabled and the scope is parameterized, false otherwise
+     */
+    static boolean isParameterizedScope(ClientScopeModel scope) {
+        return Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES) && scope.isParameterizedScope();
+    }
+
+    /**
+     * @deprecated Use {@link #isParameterizedScope(ClientScopeModel)} instead.
+     */
+    @Deprecated
+    static boolean isDynamicScope(ClientScopeModel scope) {
+        return isParameterizedScope(scope);
+    }
 
     interface ClientScopeRemovedEvent extends ProviderEvent {
         ClientScopeModel getClientScope();
@@ -71,8 +92,18 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
     String CONSENT_SCREEN_TEXT = "consent.screen.text";
     String GUI_ORDER = "gui.order";
     String INCLUDE_IN_TOKEN_SCOPE = "include.in.token.scope";
-    String IS_DYNAMIC_SCOPE = "is.dynamic.scope";
-    String DYNAMIC_SCOPE_REGEXP = "dynamic.scope.regexp";
+    String IS_PARAMETERIZED_SCOPE = "is.parameterized.scope";
+    String PARAMETERIZED_SCOPE_REGEXP = "parameterized.scope.regexp";
+    String PARAMETERIZED_SCOPE_TYPE = "parameterized.scope.type";
+    String IS_REPEATABLE_SCOPE = "parameterized.scope.repeatable";
+    String IS_ALWAYS_CONSENT = "always.display.consent";
+
+    /** @deprecated Use {@link #IS_PARAMETERIZED_SCOPE} instead. */
+    @Deprecated
+    String IS_DYNAMIC_SCOPE = IS_PARAMETERIZED_SCOPE;
+    /** @deprecated Use {@link #PARAMETERIZED_SCOPE_REGEXP} instead. */
+    @Deprecated
+    String DYNAMIC_SCOPE_REGEXP = PARAMETERIZED_SCOPE_REGEXP;
     String INCLUDE_IN_OPENID_PROVIDER_METADATA = "include.in.openid.provider.metadata";
 
     default boolean isDisplayOnConsentScreen() {
@@ -89,6 +120,9 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
         String consentScreenText = getAttribute(CONSENT_SCREEN_TEXT);
         if (ObjectUtil.isBlank(consentScreenText)) {
             consentScreenText = getName();
+            if (isParameterizedScope()) {
+                consentScreenText += ": {0}";
+            }
         }
         return consentScreenText;
     }
@@ -115,16 +149,58 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
         setAttribute(INCLUDE_IN_TOKEN_SCOPE, String.valueOf(includeInTokenScope));
     }
 
+    default boolean isParameterizedScope() {
+        return Boolean.parseBoolean(getAttribute(IS_PARAMETERIZED_SCOPE));
+    }
+
+    default boolean isAlwaysConsent() {
+        return isParameterizedScope() && isDisplayOnConsentScreen()
+                && Boolean.parseBoolean(getAttribute(IS_ALWAYS_CONSENT))
+                && Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES);
+    }
+
+    default void setIsParameterizedScope(boolean isParameterizedScope) {
+        setAttribute(IS_PARAMETERIZED_SCOPE, String.valueOf(isParameterizedScope));
+    }
+
+    default String getParameterizedScopeRegexp() {
+        return getAttribute(PARAMETERIZED_SCOPE_REGEXP);
+    }
+
+    /**
+     * Extracts the parameter value from a requested scope string in the format {@code scopeName:parameterValue}.
+     *
+     * @param requestScope the requested scope string, e.g. {@code "my_scope:some_value"}
+     * @return the extracted parameter value, or empty if this is not a parameterized scope or no valid parameter is present
+     */
+    default Optional<String> getParameterFromScope(String requestScope) {
+        if (!isParameterizedScope() || StringUtil.isBlank(requestScope)) {
+            return Optional.empty();
+        }
+        String prefix = getName() + VALUE_SEPARATOR;
+        if (!requestScope.startsWith(prefix)) {
+            return Optional.empty();
+        }
+        String value = requestScope.substring(prefix.length()).trim();
+        return Optional.of(value).filter(v -> !v.isEmpty());
+    }
+
+    /** @deprecated Use {@link #isParameterizedScope()} instead. */
+    @Deprecated
     default boolean isDynamicScope() {
-        return Boolean.parseBoolean(getAttribute(IS_DYNAMIC_SCOPE));
+        return isParameterizedScope();
     }
 
+    /** @deprecated Use {@link #setIsParameterizedScope(boolean)} instead. */
+    @Deprecated
     default void setIsDynamicScope(boolean isDynamicScope) {
-        setAttribute(IS_DYNAMIC_SCOPE, String.valueOf(isDynamicScope));
+        setIsParameterizedScope(isDynamicScope);
     }
 
+    /** @deprecated Use {@link #getParameterizedScopeRegexp()} instead. */
+    @Deprecated
     default String getDynamicScopeRegexp() {
-        return getAttribute(DYNAMIC_SCOPE_REGEXP);
+        return getParameterizedScopeRegexp();
     }
 
     default boolean isIncludeInOpenIDProviderMetadata() {

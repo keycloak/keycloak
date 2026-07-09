@@ -34,6 +34,8 @@ model/                                      ci-store
 testsuite/model/                            ci-store
 operator/                                   operator
 
+testsuite/integration-arquillian/tests/other/sssd/   ci-sssd
+
 docs/guides/                                guides
 docs/documentation/                         documentation
 

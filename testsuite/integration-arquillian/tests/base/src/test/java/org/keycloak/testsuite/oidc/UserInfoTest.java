@@ -61,6 +61,8 @@ import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -76,6 +78,10 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.Urls;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
@@ -83,28 +89,28 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.MediaType;
 
 import org.hamcrest.CoreMatchers;
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
@@ -112,9 +118,9 @@ import static org.keycloak.testsuite.AbstractTestRealmKeycloakTest.TEST_REALM_NA
 import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author pedroigor
@@ -140,7 +146,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        RealmBuilder realm = RealmBuilder.edit(realmRepresentation).testEventListener();
+        RealmBuilder realm = RealmBuilder.update(realmRepresentation).eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID);
         RealmRepresentation testRealm = realm.build();
         testRealms.add(testRealm);
 
@@ -243,11 +249,11 @@ public class UserInfoTest extends AbstractKeycloakTest {
     public void testSuccess_dotsInClientId() throws Exception {
         // Create client with dot in the name
         final String clientId = "my.foo.$\\client\\$";
-        ClientRepresentation clientRep = org.keycloak.testsuite.util.ClientBuilder.create()
+        ClientRepresentation clientRep = ClientBuilder.create()
                 .clientId(clientId)
-                .addRedirectUri("http://foo.host")
+                .redirectUris("http://foo.host")
                 .secret("password")
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .build();
 
         RealmResource realm = adminClient.realm("test");
@@ -375,14 +381,14 @@ public class UserInfoTest extends AbstractKeycloakTest {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
-            Assert.assertEquals(200, response.getStatus());
-            Assert.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);
+            Assertions.assertEquals(200, response.getStatus());
+            Assertions.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);
             String encryptedResponse = response.readEntity(String.class);
             response.close();
 
             // parse JWE and JOSE Header
             String[] parts = encryptedResponse.split("\\.");
-            Assert.assertEquals(parts.length, 5);
+            Assertions.assertEquals(parts.length, 5);
 
             // get decryption key
             // not publickey , use privateKey
@@ -391,15 +397,15 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             // a nested JWT (signed and encrypted JWT) needs to set "JWT" to its JOSE Header's "cty" field
             JWEHeader jweHeader = (JWEHeader) getHeader(parts[0]);
-            Assert.assertEquals(algAlgorithm, jweHeader.getAlgorithm());
+            Assertions.assertEquals(algAlgorithm, jweHeader.getAlgorithm());
             if(encAlgorithm != null) {
-                Assert.assertEquals(encAlgorithm, jweHeader.getEncryptionAlgorithm());
+                Assertions.assertEquals(encAlgorithm, jweHeader.getEncryptionAlgorithm());
             } else {
                 // if enc algorithm is not specified the default for this value is A128CBC-HS256
-                Assert.assertEquals(JWEConstants.A128CBC_HS256, jweHeader.getEncryptionAlgorithm());
+                Assertions.assertEquals(JWEConstants.A128CBC_HS256, jweHeader.getEncryptionAlgorithm());
             }
             if(sigAlgorithm != null) {
-                Assert.assertEquals("JWT", jweHeader.getContentType());
+                Assertions.assertEquals("JWT", jweHeader.getContentType());
             }
 
             // verify and decrypt JWE
@@ -420,12 +426,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
             } else {
                 userInfo = JsonSerialization.readValue(jwePayload, UserInfo.class);
             }
-            Assert.assertNotNull(userInfo);
-            Assert.assertNotNull(userInfo.getSubject());
-            Assert.assertEquals("test-user@localhost", userInfo.getEmail());
-            Assert.assertEquals("test-user@localhost", userInfo.getPreferredUsername());
+            Assertions.assertNotNull(userInfo);
+            Assertions.assertNotNull(userInfo.getSubject());
+            Assertions.assertEquals("test-user@localhost", userInfo.getEmail());
+            Assertions.assertEquals("test-user@localhost", userInfo.getPreferredUsername());
         } catch (JWSInputException | JWEException | IOException e) {
-            Assert.fail();
+            Assertions.fail();
         } finally {
             clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
             clientRep = clientResource.toRepresentation();
@@ -485,35 +491,34 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
-            events.expect(EventType.USER_INFO_REQUEST)
-                    .session(Matchers.notNullValue(String.class))
-                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                    .detail(Details.USERNAME, "test-user@localhost")
-                    .detail(Details.SIGNATURE_REQUIRED, "true")
-                    .detail(Details.SIGNATURE_ALGORITHM, Algorithm.RS256)
-                    .assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.USER_INFO_REQUEST)
+                    .hasSessionId()
+                    .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .details(Details.USERNAME, "test-user@localhost")
+                    .details(Details.SIGNATURE_REQUIRED, "true")
+                    .details(Details.SIGNATURE_ALGORITHM, Algorithm.RS256);
 
             // Check signature and content
             PublicKey publicKey = PemUtils.decodePublicKey(KeyUtils.findActiveSigningKey(adminClient.realm("test")).getPublicKey());
 
-            Assert.assertEquals(200, response.getStatus());
-            Assert.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);
+            Assertions.assertEquals(200, response.getStatus());
+            Assertions.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);
             String signedResponse = response.readEntity(String.class);
             response.close();
 
             JWSInput jwsInput = new JWSInput(signedResponse);
-            Assert.assertTrue(RSAProvider.verify(jwsInput, publicKey));
+            Assertions.assertTrue(RSAProvider.verify(jwsInput, publicKey));
 
             UserInfo userInfo = JsonSerialization.readValue(jwsInput.getContent(), UserInfo.class);
 
-            Assert.assertNotNull(userInfo);
-            Assert.assertNotNull(userInfo.getSubject());
-            Assert.assertEquals("test-user@localhost", userInfo.getEmail());
-            Assert.assertEquals("test-user@localhost", userInfo.getPreferredUsername());
+            Assertions.assertNotNull(userInfo);
+            Assertions.assertNotNull(userInfo.getSubject());
+            Assertions.assertEquals("test-user@localhost", userInfo.getEmail());
+            Assertions.assertEquals("test-user@localhost", userInfo.getPreferredUsername());
 
-            Assert.assertTrue(userInfo.hasAudience("test-app"));
+            Assertions.assertTrue(userInfo.hasAudience("test-app"));
             String expectedIssuer = Urls.realmIssuer(new URI(AUTH_SERVER_ROOT), "test");
-            Assert.assertEquals(expectedIssuer, userInfo.getIssuer());
+            Assertions.assertEquals(expectedIssuer, userInfo.getIssuer());
 
         } finally {
             client.close();
@@ -547,7 +552,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
             String realmName = "test";
-            testingClient.testing().removeUserSessions(realmName);
+            runOnServer.run(RunHelpers.removeUserSessions());
 
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
@@ -560,13 +565,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             response.close();
 
-            events.expect(EventType.USER_INFO_REQUEST_ERROR)
+            EventAssertion.assertError(events.poll()).type(EventType.USER_INFO_REQUEST_ERROR)
                     .error(Errors.USER_SESSION_NOT_FOUND)
-                    .user(Matchers.nullValue(String.class))
-                    .session(accessTokenResponse.getSessionState())
-                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                    .assertEvent();
-            events.assertEmpty();
+                    .userId(null)
+                    .sessionId(accessTokenResponse.getSessionState())
+                    .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
+            Assertions.assertNull(events.poll());
 
         } finally {
             client.close();
@@ -580,7 +584,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
-            setTimeOffset(600);
+            timeOffSet.set(600);
 
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
@@ -593,13 +597,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             response.close();
 
-            events.expect(EventType.USER_INFO_REQUEST_ERROR)
+            EventAssertion.assertError(events.poll()).type(EventType.USER_INFO_REQUEST_ERROR)
                     .error(Errors.INVALID_TOKEN)
-                    .user(Matchers.nullValue(String.class))
-                    .session(Matchers.nullValue(String.class))
-                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                    .client((String) null)
-                    .assertEvent();
+                    .userId(null)
+                    .sessionId(null)
+                    .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .clientId(null);
         } finally {
             client.close();
         }
@@ -613,13 +616,13 @@ public class UserInfoTest extends AbstractKeycloakTest {
         oauth.doLogout(refreshToken1);
         events.clear();
 
-        setTimeOffset(2);
+        timeOffSet.set(2);
 
         driver.navigate().refresh();
         oauth.fillLoginForm("test-user@localhost", "password");
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
-        Assert.assertFalse(loginPage.isCurrent());
+        Assertions.assertFalse(loginPage.isCurrent());
 
         events.clear();
 
@@ -637,13 +640,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             response.close();
 
-            events.expect(EventType.USER_INFO_REQUEST_ERROR)
+            EventAssertion.assertError(events.poll()).type(EventType.USER_INFO_REQUEST_ERROR)
                     .error(Errors.USER_SESSION_NOT_FOUND)
-                    .user(Matchers.nullValue(String.class))
-                    .session(accessTokenResponse.getSessionState())
-                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                    .client("test-app")
-                    .assertEvent();
+                    .userId(null)
+                    .sessionId(accessTokenResponse.getSessionState())
+                    .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .clientId("test-app");
         } finally {
             client.close();
         }
@@ -697,13 +699,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             response.close();
 
-            events.expect(EventType.USER_INFO_REQUEST_ERROR)
+            EventAssertion.assertError(events.poll()).type(EventType.USER_INFO_REQUEST_ERROR)
                     .error(Errors.INVALID_TOKEN)
-                    .user(Matchers.nullValue(String.class))
-                    .session(Matchers.nullValue(String.class))
-                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                    .client((String) null)
-                    .assertEvent();
+                    .userId(null)
+                    .sessionId(null)
+                    .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .clientId(null);
 
             events.clear();
             rep.setNotBefore(0);
@@ -721,16 +722,58 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             response.close();
 
-            events.expect(EventType.USER_INFO_REQUEST_ERROR)
+            EventAssertion.assertError(events.poll()).type(EventType.USER_INFO_REQUEST_ERROR)
                     .error(Errors.INVALID_TOKEN)
-                    .user(Matchers.nullValue(String.class))
-                    .session(Matchers.nullValue(String.class))
-                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                    .client((String) null)
-                    .assertEvent();
+                    .userId(null)
+                    .sessionId(null)
+                    .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .clientId(null);
 
             clientRep.setNotBefore(0);
             clientResource.update(clientRep);
+
+            //Test realm notBefore with client notBefore both set
+            // Set client notBefore to past
+            clientRep.setNotBefore(time - 200);
+            clientResource.update(clientRep);
+
+            // Set realm notBefore to future
+            rep.setNotBefore(time);
+            realm.update(rep);
+
+            response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+
+            EventAssertion.assertError(events.poll()).type(EventType.USER_INFO_REQUEST_ERROR)
+                    .error(Errors.INVALID_TOKEN)
+                    .sessionId(null)
+                    .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .clientId(null);
+
+            rep.setNotBefore(0);
+            realm.update(rep);
+            clientRep.setNotBefore(0);
+            clientResource.update(clientRep);
+
+            testingClient.server("test").run(session -> {
+                RealmModel realmModel = session.getContext().getRealm();
+                UserModel userModel = session.users().getUserByUsername(realmModel, "test-user@localhost");
+                session.users().setNotBeforeForUser(realmModel, userModel, time);
+            });
+
+            response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+
+            testingClient.server("test").run(session -> {
+                RealmModel realmModel = session.getContext().getRealm();
+                UserModel userModel = session.users().getUserByUsername(realmModel, "test-user@localhost");
+                session.users().setNotBeforeForUser(realmModel, userModel, 0);
+            });
+
+            response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            assertEquals(Status.OK.getStatusCode(), response.getStatus());
+
         } finally {
             client.close();
         }
@@ -743,7 +786,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client, true, true);
 
-            testingClient.testing().removeExpired("test");
+            runOnServer.run(RunHelpers.removeExpired());
 
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
@@ -768,13 +811,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
                 assertThat(wwwAuthHeader, CoreMatchers.containsString("Bearer"));
                 assertThat(wwwAuthHeader, CoreMatchers.containsString("error=\"" + OAuthErrorException.INVALID_TOKEN + "\""));
 
-                events.expect(EventType.USER_INFO_REQUEST_ERROR)
+                EventAssertion.assertError(events.poll()).type(EventType.USER_INFO_REQUEST_ERROR)
                         .error(Errors.INVALID_TOKEN)
-                        .client((String) null)
-                        .user(Matchers.nullValue(String.class))
-                        .session(Matchers.nullValue(String.class))
-                        .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                        .assertEvent();
+                        .clientId(null)
+                        .userId(null)
+                        .sessionId(null)
+                        .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
             }
 
         } finally {
@@ -855,13 +897,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
                 assertThat(wwwAuthHeader, CoreMatchers.containsString("Bearer"));
                 assertThat(wwwAuthHeader, CoreMatchers.containsString("error=\"" + OAuthErrorException.INSUFFICIENT_SCOPE + "\""));
 
-                events.expect(EventType.USER_INFO_REQUEST_ERROR)
+                EventAssertion.assertError(events.poll()).type(EventType.USER_INFO_REQUEST_ERROR)
                         .error(Errors.ACCESS_DENIED)
-                        .client((String) null)
-                        .user(Matchers.nullValue(String.class))
-                        .session(Matchers.nullValue(String.class))
-                        .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                        .assertEvent();
+                        .clientId(null)
+                        .userId(null)
+                        .sessionId(null)
+                        .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
             }
         } finally {
             client.close();
@@ -889,13 +930,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
             assertThat(wwwAuthHeader, CoreMatchers.containsString("Bearer"));
             assertThat(wwwAuthHeader, CoreMatchers.containsString("error=\"" + OAuthErrorException.INVALID_TOKEN + "\""));
 
-            events.expect(EventType.USER_INFO_REQUEST_ERROR)
+            EventAssertion.assertError(events.poll()).type(EventType.USER_INFO_REQUEST_ERROR)
                     .error(Errors.USER_DISABLED)
-                    .client("test-app")
-                    .user(user.getId())
-                    .session(Matchers.notNullValue(String.class))
-                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                    .assertEvent();
+                    .clientId("test-app")
+                    .userId(user.getId())
+                    .hasSessionId()
+                    .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
         } finally {
             client.close();
         }
@@ -921,13 +961,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
             response.close();
 
             assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
-            events.expect(EventType.USER_INFO_REQUEST)
+            EventAssertion.assertError(events.poll()).type(EventType.USER_INFO_REQUEST_ERROR)
                     .error(Errors.INVALID_CLIENT)
-                    .client((String) null)
-                    .user(Matchers.nullValue(String.class))
-                    .session(Matchers.nullValue(String.class))
-                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                    .assertEvent();
+                    .clientId(null)
+                    .userId(null)
+                    .sessionId(null)
+                    .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
         } finally {
             client.close();
         }
@@ -997,13 +1036,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     private UserInfo testSuccessfulUserInfoResponse(Response response, String expectedClientId) {
-        events.expect(EventType.USER_INFO_REQUEST)
-                .session(Matchers.notNullValue(String.class))
-                .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                .detail(Details.USERNAME, "test-user@localhost")
-                .detail(Details.SIGNATURE_REQUIRED, "false")
-                .client(expectedClientId)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.USER_INFO_REQUEST)
+                .hasSessionId()
+                .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                .details(Details.USERNAME, "test-user@localhost")
+                .details(Details.SIGNATURE_REQUIRED, "false")
+                .clientId(expectedClientId);
         return UserInfoClientUtil.testSuccessfulUserInfoResponse(response, "test-user@localhost", "test-user@localhost");
     }
 
@@ -1029,16 +1067,15 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
                 Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken(), acceptHeader);
 
-                events.expect(EventType.USER_INFO_REQUEST)
-                        .session(Matchers.notNullValue(String.class))
-                        .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                        .detail(Details.USERNAME, "test-user@localhost")
-                        .detail(Details.SIGNATURE_REQUIRED, "true")
-                        .detail(Details.SIGNATURE_ALGORITHM, sigAlg)
-                        .assertEvent();
+                EventAssertion.assertSuccess(events.poll()).type(EventType.USER_INFO_REQUEST)
+                        .hasSessionId()
+                        .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                        .details(Details.USERNAME, "test-user@localhost")
+                        .details(Details.SIGNATURE_REQUIRED, "true")
+                        .details(Details.SIGNATURE_ALGORITHM, sigAlg);
 
-                Assert.assertEquals(200, response.getStatus());
-                Assert.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);
+                Assertions.assertEquals(200, response.getStatus());
+                Assertions.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);
                 String signedResponse = response.readEntity(String.class);
                 response.close();
 
@@ -1048,14 +1085,14 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
                 UserInfo userInfo = JsonSerialization.readValue(jwsInput.getContent(), UserInfo.class);
 
-                Assert.assertNotNull(userInfo);
-                Assert.assertNotNull(userInfo.getSubject());
-                Assert.assertEquals("test-user@localhost", userInfo.getEmail());
-                Assert.assertEquals("test-user@localhost", userInfo.getPreferredUsername());
+                Assertions.assertNotNull(userInfo);
+                Assertions.assertNotNull(userInfo.getSubject());
+                Assertions.assertEquals("test-user@localhost", userInfo.getEmail());
+                Assertions.assertEquals("test-user@localhost", userInfo.getPreferredUsername());
 
-                Assert.assertTrue(userInfo.hasAudience("test-app"));
+                Assertions.assertTrue(userInfo.hasAudience("test-app"));
                 String expectedIssuer = Urls.realmIssuer(new URI(AUTH_SERVER_ROOT), "test");
-                Assert.assertEquals(expectedIssuer, userInfo.getIssuer());
+                Assertions.assertEquals(expectedIssuer, userInfo.getIssuer());
 
             } finally {
                 client.close();
@@ -1076,7 +1113,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
-        setTimeOffset(1);
+        timeOffSet.set(1);
 
         oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN).open();
 
@@ -1139,8 +1176,8 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .build("POST")
                     .invoke();
 
-            Assert.assertEquals(200, response.getStatus());
-            Assert.assertEquals("OK", response.getStatusInfo().toString());
+            Assertions.assertEquals(200, response.getStatus());
+            Assertions.assertEquals("OK", response.getStatusInfo().toString());
 
         } finally {
             client.close();

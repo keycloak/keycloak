@@ -17,7 +17,10 @@
 
 package org.keycloak.protocol.oid4vc;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
@@ -28,11 +31,13 @@ import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -41,16 +46,20 @@ import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCSubjectIdMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCUserAttributeMapper;
+import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.ProofType;
+import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.VCFormat.SD_JWT_VC;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
@@ -66,6 +75,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_T
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONTEXTS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_DISPLAY;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_EXPIRY_IN_SECONDS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_EXPIRY_IN_SECONDS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT;
@@ -92,6 +102,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
 	public static final String PROTOCOL_ID = OID4VCIConstants.OID4VC_PROTOCOL;
     public static final String CREDENTIAL_TYPE_NATURAL_PERSON = "natural_person";
+    public static final String NATURAL_PERSON_SCOPE_CONSENT_TEXT = "${naturalPersonScopeConsentText}";
 
 	private final Map<String, ProtocolMapperModel> builtins = new HashMap<>();
 
@@ -136,6 +147,8 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
                 LOGGER.debugf("Add client scope: %s", scopeName);
                 clientScope = newRealm.addClientScope(String.format("%s_%s", OID4VC_PROTOCOL, scopeName));
                 clientScope.setDescription("OID4VCI credential scope that represents a natural person in format: " + format);
+                clientScope.setDisplayOnConsentScreen(true);
+                clientScope.setConsentScreenText(NATURAL_PERSON_SCOPE_CONSENT_TEXT);
                 clientScope.setProtocol(OID4VC_PROTOCOL);
                 clientScope.addProtocolMapper(builtins.get(SUBJECT_ID_MAPPER));
                 clientScope.addProtocolMapper(builtins.get(EMAIL_MAPPER));
@@ -147,6 +160,16 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
                         VC_BINDING_REQUIRED, "true",
                         VC_BINDING_REQUIRED_PROOF_TYPES, ProofType.JWT + "," + ProofType.ATTESTATION
                 )));
+
+                try {
+                    DisplayObject display = new DisplayObject();
+                    display.setName("Natural person verifiable credential");
+                    display.setLocale(Locale.ENGLISH.toLanguageTag());
+                    String displayStr = JsonSerialization.writeValueAsString(List.of(display));
+                    clientScopeRep.getAttributes().put(VC_DISPLAY, displayStr);
+                } catch (IOException ioe) {
+                    LOGGER.warnf(ioe, "Failed to initialize display in credential scope '%s'", scopeName);
+                }
 
                 addClientScopeDefaults(clientScopeRep);
                 RepresentationToModel.updateClientScope(clientScopeRep, clientScope);
@@ -204,6 +227,8 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
                     "OID4VC protocol cannot be used when Verifiable Credentials is disabled for the realm",
                     Response.Status.BAD_REQUEST);
         }
+
+        validateOID4VCIRefreshInterval(clientScope);
     }
 
     @Override
@@ -248,5 +273,65 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         }
     }
 
+    @Override
+    public boolean allowAsClientProtocol() {
+        return false;
+    }
+
+    @Override
+    public void onConsentRevoked(KeycloakSession session, ClientModel client, UserModel user) {
+        boolean oid4vciEnabled = Boolean.parseBoolean(client.getAttributes().get(OID4VCI_ENABLED_ATTRIBUTE_KEY));
+        if (oid4vciEnabled) {
+            List<IssuedVerifiableCredentialModel> issuedCreds = OID4VCUtil.getIssuedVerifiableCredentialsByUserAndClient(session, user, client);
+            if (!issuedCreds.isEmpty()) {
+                LOGGER.tracef("Revoking %d issued verifiable credentials of user '%s' for wallet client '%s'", issuedCreds.size(), user.getUsername(), client.getClientId());
+            }
+            for (IssuedVerifiableCredentialModel issuedCred : issuedCreds) {
+                session.users().removeIssuedVerifiableCredential(issuedCred.getId());
+            }
+        }
+    }
+
     // Private ---------------------------------------------------------------------------------------------------------
+    /**
+     * Validates that the refresh interval does not exceed the credential lifetime.
+     *
+     * @param clientScope the client scope representation to validate
+     * @throws ErrorResponseException if refresh interval > credential lifetime
+     */
+    private void validateOID4VCIRefreshInterval(ClientScopeRepresentation clientScope) throws ErrorResponseException {
+        if (clientScope.getAttributes() == null) {
+            return;
+        }
+
+        String expiryStr = clientScope.getAttributes().get(CredentialScopeModel.VC_EXPIRY_IN_SECONDS);
+        String refreshIntervalStr = clientScope.getAttributes().get(CredentialScopeModel.VC_REFRESH_INTERVAL_IN_SECONDS);
+
+        // If either is not set, use defaults
+        final int expiry;
+        final int refreshInterval;
+        try {
+            expiry = expiryStr != null ? Integer.parseInt(expiryStr) : CredentialScopeModel.VC_EXPIRY_IN_SECONDS_DEFAULT;
+            // Smart default: if refresh interval is not set, use the smaller of 7 days or the credential lifetime
+            // This ensures backward compatibility with existing tests that set short lifetimes
+            if (refreshIntervalStr != null) {
+                refreshInterval = Integer.parseInt(refreshIntervalStr);
+            } else {
+                refreshInterval = Math.min(CredentialScopeModel.VC_REFRESH_INTERVAL_IN_SECONDS_DEFAULT, expiry);
+            }
+        } catch (NumberFormatException ex) {
+            throw ErrorResponse.error("Credential lifetime and refresh interval must be valid integer values in seconds.", Response.Status.BAD_REQUEST);
+        }
+        if (expiry <= 0 || refreshInterval <= 0) {
+            throw ErrorResponse.error("Credential lifetime and refresh interval must be greater than 0 seconds.", Response.Status.BAD_REQUEST);
+        }
+
+        if (refreshInterval > expiry) {
+            throw ErrorResponse.error(
+                    String.format("Credential refresh interval (%d seconds) cannot exceed credential lifetime (%d seconds). " +
+                                    "The refresh token expires with the credential lifetime, so a longer refresh interval would be unusable.",
+                            refreshInterval, expiry),
+                    Response.Status.BAD_REQUEST);
+        }
+    }
 }

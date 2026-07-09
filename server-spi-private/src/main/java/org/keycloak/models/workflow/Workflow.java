@@ -129,6 +129,7 @@ public class Workflow {
         ComponentModel component = getWorkflowComponent(this.id, WorkflowProvider.class.getName());
         component.setConfig(config);
         realm.updateComponent(component);
+        this.config = config;
 
         // check if there are steps to be updated as well
         if (steps != null) {

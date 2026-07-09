@@ -38,6 +38,11 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.StringUtil;
 
+import static org.keycloak.models.Constants.DEFAULT_ACCESS_CODE_LIFESPAN;
+import static org.keycloak.models.Constants.DEFAULT_ACCESS_CODE_LIFESPAN_LOGIN;
+import static org.keycloak.models.Constants.DEFAULT_ACCESS_CODE_LIFESPAN_USER_ACTION;
+import static org.keycloak.models.Constants.DEFAULT_SESSION_IDLE_TIMEOUT;
+import static org.keycloak.models.Constants.DEFAULT_SESSION_MAX_LIFESPAN;
 import static org.keycloak.models.UserModel.IS_TEMP_ADMIN_ATTR_NAME;
 
 /**
@@ -78,17 +83,17 @@ public class ApplianceBootstrap {
         realm.setEnabled(true);
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         realm.setDefaultSignatureAlgorithm(Constants.DEFAULT_SIGNATURE_ALGORITHM);
-        realm.setSsoSessionIdleTimeout(1800);
+        realm.setSsoSessionIdleTimeout(DEFAULT_SESSION_IDLE_TIMEOUT);
         realm.setAccessTokenLifespan(60);
         realm.setAccessTokenLifespanForImplicitFlow(Constants.DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT);
-        realm.setSsoSessionMaxLifespan(36000);
+        realm.setSsoSessionMaxLifespan(DEFAULT_SESSION_MAX_LIFESPAN);
         realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
         // KEYCLOAK-7688 Offline Session Max for Offline Token
         realm.setOfflineSessionMaxLifespanEnabled(false);
         realm.setOfflineSessionMaxLifespan(Constants.DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN);
-        realm.setAccessCodeLifespan(60);
-        realm.setAccessCodeLifespanUserAction(300);
-        realm.setAccessCodeLifespanLogin(1800);
+        realm.setAccessCodeLifespan(DEFAULT_ACCESS_CODE_LIFESPAN);
+        realm.setAccessCodeLifespanUserAction(DEFAULT_ACCESS_CODE_LIFESPAN_USER_ACTION);
+        realm.setAccessCodeLifespanLogin(DEFAULT_ACCESS_CODE_LIFESPAN_LOGIN);
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setRegistrationAllowed(false);
         realm.setRegistrationEmailAsUsername(false);

@@ -181,3 +181,9 @@ If you prefer to not include `scope` parameter in your requests, you can instead
 This is useful if you want to always apply the audience for all the authentication request of OIDC client `frontend-client`.
 
 NOTE: Both the _Audience_ and _Audience Resolve_ protocol mappers add the audiences to the access token only, by default. The ID Token typically contains only a single audience, the client ID for which the token was issued, a requirement of the OpenID Connect specification. However, the access token does not necessarily have the client ID, which was the token issued for, unless the _Audience_ mapper added it.
+
+== Token introspection audience validation
+
+The OAuth2 token introspection endpoint validates that the authenticated client is present in the token's audience (`aud`) claim before allowing introspection. This prevents clients from introspecting tokens that were not intended for them.
+
+If you need to disable this validation during migration, you can enable a backwards compatibility option in *OpenID Connect Compatibility Modes* by enabling *Allow token introspection without audience check* on the client that performs the introspection. See link:https://www.keycloak.org/server/all-provider-config#_openid_connect[OpenID Connect provider configuration] for the server-wide option.

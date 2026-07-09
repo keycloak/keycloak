@@ -77,6 +77,7 @@ import { JWTAuthorizationGrantAssertionSettings } from "./JWTAuthorizationGrantA
 import JWTAuthorizationGrantSettings from "./JWTAuthorizationGrantSettings";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { GroupResourceContext } from "../../context/group-resource/GroupResourceContext";
+import DefaultTrustSettings from "./DefaultTrustSettings";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -148,7 +149,9 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
         fromUrl: metadataDescriptorUrl,
       });
       if (result.signingCertificate) {
-        setValue(`config.signingCertificate`, result.signingCertificate);
+        setValue(`config.signingCertificate`, result.signingCertificate, {
+          shouldDirty: true,
+        });
         addAlert(t("importKeysSuccess"), AlertVariant.success);
       } else {
         addError("importKeysError", t("importKeysErrorNoSigningCertificate"));
@@ -267,7 +270,13 @@ export default function DetailSettings() {
   const { alias, providerId } = useParams<IdentityProviderParams>();
   const isFeatureEnabled = useIsFeatureEnabled();
   const form = useForm<IdentityProviderRepresentation>();
-  const { handleSubmit, getValues, reset, control } = form;
+  const {
+    handleSubmit,
+    getValues,
+    reset,
+    control,
+    formState: { isDirty },
+  } = form;
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
   const [selectedMapper, setSelectedMapper] =
     useState<IdPWithMapperAttributes>();
@@ -353,11 +362,11 @@ export default function DetailSettings() {
 
     try {
       await adminClient.identityProviders.update(
-        { alias },
+        { alias: provider?.alias || alias },
         {
           ...p,
           config: { ...provider?.config, ...p.config },
-          alias,
+          alias: provider?.alias || alias,
           providerId,
         },
       );
@@ -430,10 +439,11 @@ export default function DetailSettings() {
   const isJWTAuthorizationGrant = provider.providerId!.includes(
     "jwt-authorization-grant",
   );
+  const isDefaultTrust = provider.providerId === "default-trust";
   const isSocial = !isOIDC && !isSAML && !isOAuth2;
   const isJWTAuthorizationGrantSupported =
     (isOAuth2 || isOIDC) &&
-    !!provider?.types?.includes(IdentityProviderType.JWT_AUTHORIZATION_GRANT) &&
+    !!provider.types?.includes(IdentityProviderType.JWT_AUTHORIZATION_GRANT) &&
     isFeatureEnabled(Feature.JWTAuthorizationGrant);
   const groupResource = provider.organizationId
     ? adminClient.organizations.groups(provider.organizationId)
@@ -467,7 +477,8 @@ export default function DetailSettings() {
   const sections = [
     {
       title: t("generalSettings"),
-      isHidden: isSPIFFE || isKubernetes || isJWTAuthorizationGrant,
+      isHidden:
+        isSPIFFE || isKubernetes || isJWTAuthorizationGrant || isDefaultTrust,
       panel: (
         <FormAccess
           role="manage-identity-providers"
@@ -549,7 +560,12 @@ export default function DetailSettings() {
           onSubmit={handleSubmit(save)}
         >
           <SpiffeSettings />
-          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
+          <FixedButtonsGroup
+            name="idp-details"
+            isSubmit
+            reset={reset}
+            isDisabled={!isDirty}
+          />
         </Form>
       ),
     },
@@ -563,7 +579,12 @@ export default function DetailSettings() {
           onSubmit={handleSubmit(save)}
         >
           <JWTAuthorizationGrantSettings />
-          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
+          <FixedButtonsGroup
+            name="idp-details"
+            isSubmit
+            reset={reset}
+            isDisabled={!isDirty}
+          />
         </Form>
       ),
     },
@@ -577,7 +598,31 @@ export default function DetailSettings() {
           onSubmit={handleSubmit(save)}
         >
           <KubernetesSettings />
-          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
+          <FixedButtonsGroup
+            name="idp-details"
+            isSubmit
+            reset={reset}
+            isDisabled={!isDirty}
+          />
+        </Form>
+      ),
+    },
+    {
+      title: t("generalSettings"),
+      isHidden: !isDefaultTrust,
+      panel: (
+        <Form
+          isHorizontal
+          className="pf-v5-u-py-lg"
+          onSubmit={handleSubmit(save)}
+        >
+          <DefaultTrustSettings />
+          <FixedButtonsGroup
+            name="idp-details"
+            isSubmit
+            reset={reset}
+            isDisabled={!isDirty}
+          />
         </Form>
       ),
     },
@@ -601,7 +646,8 @@ export default function DetailSettings() {
     },
     {
       title: t("advancedSettings"),
-      isHidden: isSPIFFE || isKubernetes || isJWTAuthorizationGrant,
+      isHidden:
+        isSPIFFE || isKubernetes || isJWTAuthorizationGrant || isDefaultTrust,
       panel: (
         <FormAccess
           role="manage-identity-providers"
@@ -614,7 +660,12 @@ export default function DetailSettings() {
             isOAuth2={isOAuth2!}
           />
 
-          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
+          <FixedButtonsGroup
+            name="idp-details"
+            isSubmit
+            reset={reset}
+            isDisabled={!isDirty}
+          />
         </FormAccess>
       ),
     },
@@ -653,7 +704,12 @@ export default function DetailSettings() {
           </Tab>
           <Tab
             id="mappers"
-            isHidden={isSPIFFE || isKubernetes || isJWTAuthorizationGrant}
+            isHidden={
+              isSPIFFE ||
+              isKubernetes ||
+              isJWTAuthorizationGrant ||
+              isDefaultTrust
+            }
             data-testid="mappers-tab"
             title={<TabTitleText>{t("mappers")}</TabTitleText>}
             {...mappersTab}
@@ -741,7 +797,7 @@ export default function DetailSettings() {
               <PermissionsTab id={alias} type="identityProviders" />
             </Tab>
           )}
-          {realmRepresentation?.adminEventsEnabled &&
+          {realmRepresentation.adminEventsEnabled &&
             hasAccess("view-events") && (
               <Tab
                 data-testid="admin-events-tab"

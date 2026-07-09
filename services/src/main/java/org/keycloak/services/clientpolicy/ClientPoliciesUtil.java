@@ -417,6 +417,10 @@ public class ClientPoliciesUtil {
             policyModel.setName(policyRep.getName());
             policyModel.setDescription(policyRep.getDescription());
             policyModel.setEnable(true);
+            ClientPolicyMode mode = policyRep.getMode() == null
+                    ? ClientPolicyMode.DEFAULT
+                    : Enum.valueOf(ClientPolicyMode.class, policyRep.getMode().toUpperCase());
+            policyModel.setMode(mode);
 
             List<ClientPolicyConditionProvider> conditions = new ArrayList<>();
             if (policyRep.getConditions() != null) {
@@ -518,6 +522,16 @@ public class ClientPoliciesUtil {
             policyRep.setName(proposedPolicyRep.getName());
             policyRep.setDescription(proposedPolicyRep.getDescription());
             policyRep.setEnabled(proposedPolicyRep.isEnabled() != null ? proposedPolicyRep.isEnabled() : Boolean.FALSE);
+
+            // Check if mode is valid
+            try {
+                if (proposedPolicyRep.getMode() != null) {
+                    Enum.valueOf(ClientPolicyMode.class, proposedPolicyRep.getMode());
+                }
+                policyRep.setMode(proposedPolicyRep.getMode());
+            } catch (IllegalArgumentException iae) {
+                throw new ClientPolicyException("Policy " + proposedPolicyRep.getName() + " has invalid mode");
+            }
 
             policyRep.setConditions(new ArrayList<>());
             if (proposedPolicyRep.getConditions() != null) {

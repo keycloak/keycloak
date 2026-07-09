@@ -3,13 +3,13 @@ package org.keycloak.tests.utils;
 import java.util.LinkedList;
 
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 
 public abstract class LegacyRealmConfig implements RealmConfig {
 
     @Override
-    public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+    public RealmBuilder configure(RealmBuilder realm) {
         RealmRepresentation realmRepresentation = realm.build();
         if (realmRepresentation.getUsers() == null) {
             realmRepresentation.setUsers(new LinkedList<>());
@@ -22,7 +22,7 @@ public abstract class LegacyRealmConfig implements RealmConfig {
             realmRepresentation.setGroups(new LinkedList<>());
         }
         configureTestRealm(realmRepresentation);
-        return RealmConfigBuilder.update(realmRepresentation);
+        return RealmBuilder.update(realmRepresentation);
     }
 
     public abstract void configureTestRealm(RealmRepresentation testRealm);

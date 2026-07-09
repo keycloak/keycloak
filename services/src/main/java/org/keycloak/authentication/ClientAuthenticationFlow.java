@@ -77,7 +77,8 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
             if (client != null) {
                 String expectedClientAuthType = client.getClientAuthenticatorType();
 
-                // Fallback to secret just in case (for backwards compatibility). Also for public clients, ignore the "clientAuthenticatorType", which is set to them and stick to the
+                // Fallback to secret just in case (for backwards compatibility).
+                // Also for public clients, ignore the "clientAuthenticatorType", which is set to them and stick to the
                 // default, which set the client just based on "client_id" parameter
                 if (expectedClientAuthType == null || client.isPublicClient()) {
                     if (expectedClientAuthType == null) {

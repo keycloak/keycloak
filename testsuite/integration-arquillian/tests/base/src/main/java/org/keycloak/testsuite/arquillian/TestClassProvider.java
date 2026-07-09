@@ -17,7 +17,9 @@ public class TestClassProvider {
 
     public static final String[] PERMITTED_PACKAGES = new String[] {
             "/org/keycloak/testsuite",
+            "/org/keycloak/testframework",
             "/org/junit",
+            "/org/opentest4j",
             "/org/hamcrest",
             "/org/keycloak/admin/client",
             "/org/jboss/resteasy/client",
@@ -28,7 +30,9 @@ public class TestClassProvider {
             "/com/webauthn4j",
             "/com/fasterxml/jackson/dataformat/cbor",
             "/org/slf4j",
-            "/org/apache"
+            "/org/apache",
+            "/org/keycloak/util/ldap",
+            "/kerberos"
     };
 
     private Undertow server;

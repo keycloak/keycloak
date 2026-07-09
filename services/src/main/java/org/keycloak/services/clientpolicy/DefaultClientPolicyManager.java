@@ -103,8 +103,16 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
                     }
                 }
                 if (vote == ClientPolicyVote.ABSTAIN) {
-                    logger.tracev("CONDITION SKIP :: policy name = {0}, condition name = {1}, provider id = {2}", policy.getName(), condition.getName(), condition.getProviderId());
-                    continue;
+                    if (logger.isTraceEnabled()) {
+                        String modeMessage = policy.getMode() == ClientPolicyMode.STRICT ? "(NEGATIVE due the STRICT mode)" : "";
+                        logger.tracev("CONDITION SKIP {0}:: policy name = {1}, condition name = {2}, provider id = {3}",
+                                modeMessage, policy.getName(), condition.getName(), condition.getProviderId());
+                    }
+                    if (policy.getMode() == ClientPolicyMode.STRICT) {
+                        return false;
+                    } else {
+                        continue;
+                    }
                 } else if (vote == ClientPolicyVote.NO) {
                     logger.tracev("CONDITION NEGATIVE :: policy name = {0}, condition name = {1}, provider id = {2}", policy.getName(), condition.getName(), condition.getProviderId());
                     return false;

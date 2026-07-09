@@ -22,8 +22,6 @@ package org.keycloak.models.jpa.entities;
  */
 public interface RealmAttributes {
 
-    String DISPLAY_NAME = "displayName";
-
     String DISPLAY_NAME_HTML = "displayNameHtml";
 
     String ACTION_TOKEN_GENERATED_BY_ADMIN_LIFESPAN = "actionTokenGeneratedByAdminLifespan";
@@ -46,12 +44,14 @@ public interface RealmAttributes {
     String WEBAUTHN_POLICY_ATTESTATION_CONVEYANCE_PREFERENCE = "webAuthnPolicyAttestationConveyancePreference";
     String WEBAUTHN_POLICY_AUTHENTICATOR_ATTACHMENT = "webAuthnPolicyAuthenticatorAttachment";
     String WEBAUTHN_POLICY_REQUIRE_RESIDENT_KEY = "webAuthnPolicyRequireResidentKey";
+    String WEBAUTHN_POLICY_RESIDENT_KEY = "webAuthnPolicyResidentKey";
     String WEBAUTHN_POLICY_USER_VERIFICATION_REQUIREMENT = "webAuthnPolicyUserVerificationRequirement";
     String WEBAUTHN_POLICY_CREATE_TIMEOUT = "webAuthnPolicyCreateTimeout";
     String WEBAUTHN_POLICY_AVOID_SAME_AUTHENTICATOR_REGISTER = "webAuthnPolicyAvoidSameAuthenticatorRegister";
     String WEBAUTHN_POLICY_ACCEPTABLE_AAGUIDS = "webAuthnPolicyAcceptableAaguids";
     String WEBAUTHN_POLICY_EXTRA_ORIGINS = "webAuthnPolicyExtraOrigins";
     String WEBAUTHN_POLICY_PASSKEYS_ENABLED = "webAuthnPolicyPasskeysEnabled";
+    String WEBAUTHN_POLICY_MEDIATION = "webAuthnPolicyMediation";
 
     String ADMIN_EVENTS_EXPIRATION = "adminEventsExpiration";
 

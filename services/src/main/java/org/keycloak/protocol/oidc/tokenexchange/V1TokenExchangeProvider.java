@@ -80,10 +80,6 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
 
     private static final Logger logger = Logger.getLogger(V1TokenExchangeProvider.class);
 
-    @Override
-    public int getVersion() {
-        return 1;
-    }
 
     @Override
     public boolean supports(TokenExchangeContext context) {
@@ -282,10 +278,10 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
             targetClientScopes.addAll(targetClient.getClientScopes(true).keySet());
             targetClientScopes.addAll(targetClient.getClientScopes(false).keySet());
             //from return scope remove scopes that are not default or optional scopes for targetClient
-            scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
+            scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
         } else if (token != null && token.getScope() != null) {
             String subjectTokenScopes = token.getScope();
-            if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
                 Set<String> subjectTokenScopesSet = Arrays.stream(subjectTokenScopes.split(" ")).map(s -> s.split(":")[0]).collect(Collectors.toSet());
                 scope = Arrays.stream(scope.split(" ")).filter(sc -> subjectTokenScopesSet.contains(sc.split(":")[0])).collect(Collectors.joining(" "));
             } else {
@@ -297,7 +293,7 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
             targetClientScopes.addAll(targetClient.getClientScopes(true).keySet());
             targetClientScopes.addAll(targetClient.getClientScopes(false).keySet());
             //from return scope remove scopes that are not default or optional scopes for targetClient
-            scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
+            scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
         }
         return scope;
     }

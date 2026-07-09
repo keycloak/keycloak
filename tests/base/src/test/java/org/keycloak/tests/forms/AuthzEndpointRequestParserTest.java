@@ -8,8 +8,8 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
@@ -21,7 +21,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test for default configuration of OIDC login protocol factory
@@ -95,8 +94,7 @@ public class AuthzEndpointRequestParserTest {
         loginPage.fillLogin("test-user", "password");
         loginPage.submit();
 
-        assertTrue(driver.page().getPageSource().contains("Happy days"));
-        // String currentUrl = driver.getCurrentUrl();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         String state = oauth.parseLoginResponse().getState();
         Assertions.assertEquals(stateExpected, state);
 
@@ -107,7 +105,7 @@ public class AuthzEndpointRequestParserTest {
     private static class TestUserConfig implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder user) {
+        public UserBuilder configure(UserBuilder user) {
             user.username("test-user");
             user.password("password");
             user.name("My", "Test");

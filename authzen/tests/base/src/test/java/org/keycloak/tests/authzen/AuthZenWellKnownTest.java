@@ -70,6 +70,7 @@ public class AuthZenWellKnownTest {
         assertNotNull(response);
         assertEquals(expectedRealmUrl, response.policyDecisionPoint());
         assertEquals(expectedRealmUrl + "/authzen/access/v1/evaluation", response.accessEvaluationEndpoint());
+        assertEquals(expectedRealmUrl + "/authzen/access/v1/evaluations", response.accessEvaluationsEndpoint());
     }
 
     private String realmUrl() {

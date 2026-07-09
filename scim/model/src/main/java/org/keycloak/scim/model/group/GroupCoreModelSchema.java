@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.TriConsumer;
@@ -25,10 +26,15 @@ import org.keycloak.scim.resource.schema.AbstractModelSchema;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.utils.KeycloakSessionUtil;
 
+import static org.keycloak.utils.StringUtil.isBlank;
+
 public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, Group> {
 
-    public GroupCoreModelSchema() {
+    private final KeycloakSession session;
+
+    public GroupCoreModelSchema(KeycloakSession session) {
         super(Group.SCHEMA);
+        this.session = session;
     }
 
     @Override
@@ -59,7 +65,15 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
             case "members" -> {
                 KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
                 RealmModel realm = session.getContext().getRealm();
-                yield session.users().getGroupMembersStream(realm, model).toList();
+                Permissions permissions = session.getContext().getPermissions();
+                Stream<UserModel> members = Stream.empty();
+
+                if (permissions.hasPermission(model, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW_MEMBERS)) {
+                    members = session.users().getGroupMembersStream(realm, model)
+                            .filter(this::canViewUser);
+                }
+
+                yield members.toList();
             }
             default -> null;
         };
@@ -76,7 +90,7 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
     }
 
     @Override
-    protected Map<String, Attribute<GroupModel, Group>> doGetAttributes() {
+    protected Map<String, Attribute<GroupModel, Group>> getAttributeMappers() {
         List<Attribute<GroupModel, Group>> attributes = new ArrayList<>(Attribute.<GroupModel, Group>simple("displayName")
                     .notCaseExact()
                     .modelAttributeResolver((attribute) -> {
@@ -85,7 +99,11 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
                         }
                         return null;
                     })
-                    .withModelSetter(GroupModel::setName)
+                    .withModelSetter((m, name) -> {
+                        if (name != null) {
+                            m.setName(name);
+                        }
+                    })
                     .build());
         attributes.addAll(Attribute.<GroupModel, Group>simple("externalId")
                 .immutable()
@@ -112,6 +130,10 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
                     }
                 }, (BiConsumer<Group, Collection<UserModel>>) (group, users) -> {
                     for (UserModel user : Optional.ofNullable(users).orElse(List.of())) {
+                        if (!canViewUser(user)) {
+                            throw new ModelValidationException("User with id " + user.getId() + " not found");
+                        }
+
                         Member member = new Member();
                         member.setValue(user.getId());
                         member.setDisplay(user.getUsername());
@@ -126,7 +148,7 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
 
                     for (Member member : values) {
                         UserModel user = session.users().getUserById(realm, member.getValue());
-                        if (user == null) {
+                        if (user == null || !canViewUser(user)) {
                             throw new ModelValidationException("User with id " + member.getValue() + " not found");
                         }
                         checkRequireManageGroupMembership(session.getContext().getPermissions(), user);
@@ -140,7 +162,7 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
 
                     for (Member member : values) {
                         UserModel user = session.users().getUserById(realm, member.getValue());
-                        if (user == null) {
+                        if (user == null || !canViewUser(user)) {
                             throw new ModelValidationException("User with id " + member.getValue() + " not found");
                         }
                         checkRequireManageGroupMembership(session.getContext().getPermissions(), user);
@@ -163,6 +185,13 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
         setTimestamps(resource, model);
     }
 
+    @Override
+    public void validate(Group representation) throws ModelValidationException {
+        if (isBlank(representation.getDisplayName())) {
+            throw new ModelValidationException("Display name is required");
+        }
+    }
+
     private void setTimestamps(Group resource, GroupModel model) {
         Long createdTimestamp = model.getCreatedTimestamp();
         if (createdTimestamp != null) {
@@ -178,6 +207,9 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
         if (GroupModel.Type.ORGANIZATION.equals(group.getType()) && group.getOrganization() != null) {
             throw new ModelValidationException("Cannot access organization related group via non Organization API.");
         }
+        if (permissions.isAdminGroup(group)) {
+            throw new ForbiddenException();
+        }
         if (!permissions.hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.MANAGE_MEMBERSHIP)) {
             throw new ForbiddenException();
         }
@@ -187,5 +219,10 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
         if (!permissions.hasPermission(model, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP)) {
             throw new ForbiddenException();
         }
+    }
+
+    private boolean canViewUser(UserModel u) {
+        Permissions permissions = session.getContext().getPermissions();
+        return permissions.hasPermission(u, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
     }
 }

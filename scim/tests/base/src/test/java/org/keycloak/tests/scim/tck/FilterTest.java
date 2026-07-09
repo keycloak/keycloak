@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.models.UserModel;
@@ -24,11 +23,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.scim.model.user.AbstractUserModelSchema.ANNOTATION_SCIM_SCHEMA_ATTRIBUTE;
+import static org.keycloak.scim.filter.FilterUtils.MAX_FILTER_DEPTH;
+import static org.keycloak.scim.filter.FilterUtils.MAX_FILTER_LENGTH;
 import static org.keycloak.scim.resource.Scim.ENTERPRISE_USER_SCHEMA;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -429,6 +430,38 @@ public class FilterTest extends AbstractScimTest {
         assertThat(ce.getError().getScimType(), is("invalidFilter"));
     }
 
+    @Test
+    public void testFilterExceedingMaxLength() {
+        String longFilter = "userName eq \"" + "a".repeat(MAX_FILTER_LENGTH) + "\"";
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().getAll(longFilter));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+        assertThat(ce.getError().getDetail(), containsString("maximum allowed length"));
+
+        // POST .search should also reject oversized filters
+        ce = assertThrows(ScimClientException.class,
+                () -> client.users().search(longFilter));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+    }
+
+    @Test
+    public void testFilterExceedingMaxDepth() {
+        String deepFilter = "(".repeat(MAX_FILTER_DEPTH + 1) + "userName eq \"a\"" + ")".repeat(MAX_FILTER_DEPTH + 1);
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().getAll(deepFilter));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+        assertThat(ce.getError().getDetail(), containsString("maximum allowed nesting depth"));
+
+        // POST .search should also reject deeply nested filters
+        ce = assertThrows(ScimClientException.class,
+                () -> client.users().search(deepFilter));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+    }
+
     // Tests with rich user objects
 
     @Test
@@ -617,24 +650,7 @@ public class FilterTest extends AbstractScimTest {
 
     @Test
     public void testSearchEnterpriseUsers() {
-        UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
-
-        // update user profile configuration
-        configuration.addOrReplaceAttribute(new UPAttribute("department", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".department")));
-        configuration.addOrReplaceAttribute(new UPAttribute("division", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".division")));
-        configuration.addOrReplaceAttribute(new UPAttribute("costCenter", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".costCenter")));
-        configuration.addOrReplaceAttribute(new UPAttribute("employeeNumber", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".employeeNumber")));
-        configuration.addOrReplaceAttribute(new UPAttribute("organization", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".organization")));
-        configuration.addOrReplaceAttribute(new UPAttribute("manager", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.value")));
-        configuration.addOrReplaceAttribute(new UPAttribute("managerName", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.displayName")));
-        realm.admin().users().userProfile().update(configuration);
+        addEnterpriseUserUserProfileAttributes();
 
         User user1 = createEnterpriseUser("user1", "Engineering", "E1234", "Bruce Wayne");
         User user2 = createEnterpriseUser("user2", "QE", "E7763", "Lucius Fox");
@@ -706,6 +722,8 @@ public class FilterTest extends AbstractScimTest {
         user.setFirstName(givenName);
         user.setLastName(familyName);
         user = client.users().create(user);
+        assertNotNull(user);
+        user = client.users().get(user.getId());
         userIdsToRemove.add(user.getId());
         return user;
     }

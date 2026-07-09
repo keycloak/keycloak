@@ -38,6 +38,8 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
+import org.keycloak.authorization.client.util.HttpResponseException;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -45,6 +47,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
@@ -52,8 +55,8 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 
@@ -65,17 +68,19 @@ import org.apache.http.message.BasicNameValuePair;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE;
+import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -423,7 +428,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
 
         UserRepresentation userRepresentation = getRealm().users().search("marta").get(0);
-        UserRepresentation updatedUser = UserBuilder.edit(userRepresentation).enabled(false).build();
+        UserRepresentation updatedUser = UserBuilder.update(userRepresentation).enabled(false).build();
         getRealm().users().get(userRepresentation.getId()).update(updatedUser);
 
         PermissionRequest permissions = new PermissionRequest("Resource A", "ScopeA", "ScopeB");
@@ -442,7 +447,66 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         try (CloseableHttpResponse response = oauth.httpClient().get().execute(post)) {
             assertEquals(400, response.getStatusLine().getStatusCode());
+            // Signature is valid (token was issued by Keycloak), so CORS headers should be set
+            // even though token validation failed due to the user being disabled (KEYCLOAK-15429)
             assertEquals("http://localhost", response.getFirstHeader("Access-Control-Allow-Origin").getValue());
+        }
+    }
+
+    @Test
+    public void testCORSHeadersSetForExpiredToken() throws Exception {
+        AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
+
+        PermissionRequest permissions = new PermissionRequest("Resource A", "ScopeA", "ScopeB");
+        String ticket = getAuthzClient().protection().permission().create(Arrays.asList(permissions)).getTicket();
+
+        String tokenEndpoint = getAuthzClient().getServerConfiguration().getTokenEndpoint();
+        HttpPost post = new HttpPost(tokenEndpoint);
+        post.addHeader("Origin", "http://localhost");
+        post.addHeader("Authorization", "Bearer " + accessTokenResponse.getToken());
+        List<NameValuePair> parameters = new LinkedList<>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE));
+        parameters.add(new BasicNameValuePair("ticket", ticket));
+
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+        post.setEntity(formEntity);
+
+        // Advance server time past access token lifespan to force expiration
+        try {
+            timeOffSet.set(600);
+
+            try (CloseableHttpResponse response = oauth.httpClient().get().execute(post)) {
+                assertEquals(400, response.getStatusLine().getStatusCode());
+                // Signature is still valid on expired tokens, so CORS headers should be set (KEYCLOAK-15429)
+                assertEquals("http://localhost", response.getFirstHeader("Access-Control-Allow-Origin").getValue());
+            }
+        } finally {
+            timeOffSet.set(0);
+        }
+    }
+
+    @Test
+    public void testCORSHeadersNotSetForForgedToken() throws Exception {
+        // CVE-2026-37977: CORS headers must not be set when the JWT signature is invalid
+        PermissionRequest permissions = new PermissionRequest("Resource A", "ScopeA", "ScopeB");
+        String ticket = getAuthzClient().protection().permission().create(Arrays.asList(permissions)).getTicket();
+
+        String tokenEndpoint = getAuthzClient().getServerConfiguration().getTokenEndpoint();
+        HttpPost post = new HttpPost(tokenEndpoint);
+        post.addHeader("Origin", "http://localhost");
+        // Forged token: valid structure but signed with an unknown key
+        post.addHeader("Authorization", "Bearer eyJhbGciOiJSUzI1NiJ9.eyJhenAiOiJyZXNvdXJjZS1zZXJ2ZXItdGVzdCJ9.invalidsignature");
+        List<NameValuePair> parameters = new LinkedList<>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE));
+        parameters.add(new BasicNameValuePair("ticket", ticket));
+
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+        post.setEntity(formEntity);
+
+        try (CloseableHttpResponse response = oauth.httpClient().get().execute(post)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            // Invalid signature: CORS headers must not be set based on unverified claims
+            assertNull(response.getFirstHeader("Access-Control-Allow-Origin"));
         }
     }
 
@@ -616,6 +680,52 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "true");
         client.update(clientRepresentation);
+    }
+
+    @Test
+    public void testUsingBigSubjectToken() {
+        AuthzClient authzClient = getAuthzClient();
+
+        // Request 1: Using service-account credentials works
+        AuthorizationRequest request = new AuthorizationRequest();
+        AuthorizationResponse response = authzClient.authorization().authorize(request);
+        assertNotNull(response.getToken());
+
+        // Request 2: Using invalid subject_token should fail
+        request = new AuthorizationRequest();
+        request.setSubjectToken(SecretGenerator.getInstance().randomString(10));
+        try {
+            authzClient.authorization().authorize(request);
+            fail("should fail, invalid subject_token");
+        } catch (Exception e) {
+            Throwable expected = e.getCause();
+            assertEquals(400, HttpResponseException.class.cast(expected).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected).toString().contains("unauthorized_client"));
+        }
+
+        // Request 3: Using invalid subject_token with length bigger than 4000 characters should fail
+        request = new AuthorizationRequest();
+        request.setSubjectToken(SecretGenerator.getInstance().randomString(DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE + 10));
+        try {
+            authzClient.authorization().authorize(request);
+            fail("should fail, invalid subject_token of length " + DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE + 10);
+        } catch (Exception e) {
+            Throwable expected = e.getCause();
+            assertEquals(400, HttpResponseException.class.cast(expected).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected).toString().contains("unauthorized_client"));
+        }
+
+        // Request 4: Using invalid subject_token with length bigger than 20000 characters should fail
+        request = new AuthorizationRequest();
+        request.setSubjectToken(SecretGenerator.getInstance().randomString(DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE + 10));
+        try {
+            authzClient.authorization().authorize(request);
+            fail("should fail, invalid subject_token of length " + DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE + 10);
+        } catch (Exception e) {
+            Throwable expected = e.getCause();
+            assertEquals(400, HttpResponseException.class.cast(expected).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected).toString().contains("invalid_request"));
+        }
     }
 
     private String getIdToken(String username, String password) {

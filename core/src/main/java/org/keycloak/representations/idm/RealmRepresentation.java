@@ -139,6 +139,7 @@ public class RealmRepresentation {
     protected String webAuthnPolicyAttestationConveyancePreference;
     protected String webAuthnPolicyAuthenticatorAttachment;
     protected String webAuthnPolicyRequireResidentKey;
+    protected String webAuthnPolicyResidentKey;
     protected String webAuthnPolicyUserVerificationRequirement;
     protected Integer webAuthnPolicyCreateTimeout;
     protected Boolean webAuthnPolicyAvoidSameAuthenticatorRegister;
@@ -153,12 +154,14 @@ public class RealmRepresentation {
     protected String webAuthnPolicyPasswordlessAttestationConveyancePreference;
     protected String webAuthnPolicyPasswordlessAuthenticatorAttachment;
     protected String webAuthnPolicyPasswordlessRequireResidentKey;
+    protected String webAuthnPolicyPasswordlessResidentKey;
     protected String webAuthnPolicyPasswordlessUserVerificationRequirement;
     protected Integer webAuthnPolicyPasswordlessCreateTimeout;
     protected Boolean webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister;
     protected List<String> webAuthnPolicyPasswordlessAcceptableAaguids;
     protected List<String> webAuthnPolicyPasswordlessExtraOrigins;
     protected Boolean webAuthnPolicyPasswordlessPasskeysEnabled;
+    protected String webAuthnPolicyPasswordlessMediation;
 
     // Client Policies/Profiles
 
@@ -1139,12 +1142,28 @@ public class RealmRepresentation {
         this.webAuthnPolicyAuthenticatorAttachment = webAuthnPolicyAuthenticatorAttachment;
     }
 
+    /**
+     * @deprecated Use {@link #getWebAuthnPolicyResidentKey()} instead. Planned to be removed in the future.
+     */
+    @Deprecated
     public String getWebAuthnPolicyRequireResidentKey() {
         return webAuthnPolicyRequireResidentKey;
     }
 
+    /**
+     * @deprecated Use {@link #setWebAuthnPolicyResidentKey(String)} instead. Planned to be removed in the future.
+     */
+    @Deprecated
     public void setWebAuthnPolicyRequireResidentKey(String webAuthnPolicyRequireResidentKey) {
         this.webAuthnPolicyRequireResidentKey = webAuthnPolicyRequireResidentKey;
+    }
+
+    public String getWebAuthnPolicyResidentKey() {
+        return webAuthnPolicyResidentKey;
+    }
+
+    public void setWebAuthnPolicyResidentKey(String webAuthnPolicyResidentKey) {
+        this.webAuthnPolicyResidentKey = webAuthnPolicyResidentKey;
     }
 
     public String getWebAuthnPolicyUserVerificationRequirement() {
@@ -1230,12 +1249,28 @@ public class RealmRepresentation {
         this.webAuthnPolicyPasswordlessAuthenticatorAttachment = webAuthnPolicyPasswordlessAuthenticatorAttachment;
     }
 
+    /**
+     * @deprecated Use {@link #getWebAuthnPolicyPasswordlessResidentKey()} instead. Planned to be removed in the future.
+     */
+    @Deprecated
     public String getWebAuthnPolicyPasswordlessRequireResidentKey() {
         return webAuthnPolicyPasswordlessRequireResidentKey;
     }
 
+    /**
+     * @deprecated Use {@link #setWebAuthnPolicyPasswordlessResidentKey(String)} instead. Planned to be removed in the future.
+     */
+    @Deprecated
     public void setWebAuthnPolicyPasswordlessRequireResidentKey(String webAuthnPolicyPasswordlessRequireResidentKey) {
         this.webAuthnPolicyPasswordlessRequireResidentKey = webAuthnPolicyPasswordlessRequireResidentKey;
+    }
+
+    public String getWebAuthnPolicyPasswordlessResidentKey() {
+        return webAuthnPolicyPasswordlessResidentKey;
+    }
+
+    public void setWebAuthnPolicyPasswordlessResidentKey(String webAuthnPolicyPasswordlessResidentKey) {
+        this.webAuthnPolicyPasswordlessResidentKey = webAuthnPolicyPasswordlessResidentKey;
     }
 
     public String getWebAuthnPolicyPasswordlessUserVerificationRequirement() {
@@ -1284,6 +1319,14 @@ public class RealmRepresentation {
 
     public void setWebAuthnPolicyPasswordlessPasskeysEnabled(Boolean webAuthnPolicyPasswordlessPasskeysEnabled) {
         this.webAuthnPolicyPasswordlessPasskeysEnabled = webAuthnPolicyPasswordlessPasskeysEnabled;
+    }
+
+    public String getWebAuthnPolicyPasswordlessMediation() {
+        return webAuthnPolicyPasswordlessMediation;
+    }
+
+    public void setWebAuthnPolicyPasswordlessMediation(String webAuthnPolicyPasswordlessMediation) {
+        this.webAuthnPolicyPasswordlessMediation = webAuthnPolicyPasswordlessMediation;
     }
 
     // Client Policies/Profiles

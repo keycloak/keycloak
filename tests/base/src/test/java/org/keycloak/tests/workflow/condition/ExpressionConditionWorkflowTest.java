@@ -17,15 +17,19 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.GroupConfigBuilder;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.keycloak.models.workflow.expression.EvaluatorUtils.MAX_EXPRESSION_DEPTH;
+import static org.keycloak.models.workflow.expression.EvaluatorUtils.MAX_EXPRESSION_LENGTH;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -48,8 +52,8 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
     public void testExpressionCondition() {
 
         // create a couple of groups
-        managedRealm.admin().groups().add(GroupConfigBuilder.create().name("engineering").build()).close();
-        managedRealm.admin().groups().add(GroupConfigBuilder.create().name("contractors").build()).close();
+        managedRealm.admin().groups().add(GroupBuilder.create().name("engineering").build()).close();
+        managedRealm.admin().groups().add(GroupBuilder.create().name("contractors").build()).close();
 
         // create a few users with different attributes, roles and group memberships
         addUser("bwayne", "Bruce", "Wayne", List.of("developer", "admin"), List.of("engineering"),
@@ -118,13 +122,42 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
         assertThat(workflowId, nullValue());
     }
 
+    @Test
+    public void testExpressionLengthLimit() {
+        // an expression exceeding the max length should be rejected
+        String expression = "has-role(" + "a".repeat(MAX_EXPRESSION_LENGTH) + ")";
+        String workflowId = createWorkflow(expression, false);
+        assertThat(workflowId, nullValue());
+
+        // an expression at the max length should be accepted
+        String padding = "a".repeat(MAX_EXPRESSION_LENGTH - "has-role()".length());
+        expression = "has-role(" + padding + ")";
+        workflowId = createWorkflow(expression);
+        assertNotNull(workflowId);
+        managedRealm.admin().workflows().workflow(workflowId).delete().close();
+    }
+
+    @Test
+    public void testExpressionDepthLimit() {
+        // an expression exceeding the max nesting depth should be rejected
+        String expression = "(".repeat(MAX_EXPRESSION_DEPTH + 1) + "has-role(admin)" + ")".repeat(MAX_EXPRESSION_DEPTH + 1);
+        String workflowId = createWorkflow(expression, false);
+        assertThat(workflowId, nullValue());
+
+        // an expression at the max nesting depth should be accepted
+        expression = "(".repeat(MAX_EXPRESSION_DEPTH) + "has-role(admin)" + ")".repeat(MAX_EXPRESSION_DEPTH);
+        workflowId = createWorkflow(expression);
+        assertNotNull(workflowId);
+        managedRealm.admin().workflows().workflow(workflowId).delete().close();
+    }
+
     public void checkWorkflowRunsForUser(String username, boolean shouldHaveAttribute) {
 
         // step 1 - login with the user
         oauth.openLoginForm();
         loginPage.fillLogin(username, username);
         loginPage.submit();
-        assertTrue(driver.page().getPageSource().contains("Happy days"));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // step 2 - use time offset to trigger the scheduled step for those users who match the condition
         // set offset to 6 days to trigger the scheduled step (which is set to run after 5 days)
@@ -148,7 +181,7 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
     }
 
     public void addUser(String username, String firstName, String lastName, List<String> roles, List<String> groups, Map<String, List<String>> attributes) {
-        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                 .username(username)
                 .email(username + "@gotham.com")
                 .name(firstName, lastName)
@@ -220,7 +253,7 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
             RolesResource roles = managedRealm.admin().clients().get(clients.get(0).getId()).roles();
 
             if (roles.list(clientRoleName, -1, -1).isEmpty()) {
-                roles.create(RoleConfigBuilder.create()
+                roles.create(RoleBuilder.create()
                         .name(clientRoleName)
                         .build());
             }
@@ -230,7 +263,7 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
             RolesResource roles = managedRealm.admin().roles();
 
             if (roles.list(roleName, -1, -1).isEmpty()) {
-                roles.create(RoleConfigBuilder.create()
+                roles.create(RoleBuilder.create()
                         .name(roleName)
                         .build());
             }

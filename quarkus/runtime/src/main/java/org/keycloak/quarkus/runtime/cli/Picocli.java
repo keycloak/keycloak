@@ -352,7 +352,7 @@ public class Picocli {
                 if (newValue == null || oldValue == null) {
                     changed = true;
                 } else if (!warnedTimestampChanged && timestampChanged(oldValue, newValue)) {
-                    if (Configuration.getOptionalBooleanKcValue("run-in-container").orElse(false)) {
+                    if (Environment.isRunInContainer()) {
                         warnedTimestampChanged = true;
                         warn(PROVIDER_TIMESTAMP_WARNING);
                     } else {
@@ -672,10 +672,10 @@ public class Picocli {
 
     private String getCommandNameForHelp() {
         // enforce kc.sh for ALL mode to ensure consistent line wrapping
-        if (getCommandMode() == CommandMode.ALL) {
-            return "kc.sh";
-        }
-        return Environment.getCommand();
+        return switch (getCommandMode()) {
+        case WIN -> "kc.bat";
+        default -> "kc.sh";
+        };
     }
 
     private void configureUsageHelpWidth(CommandLine cmd) {

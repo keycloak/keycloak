@@ -41,7 +41,7 @@ import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
@@ -144,7 +144,7 @@ public class LaxSecurityProfileTest {
     @Test
     public void testCreateConfidentialOpenIdConnectClientSecure() {
         RealmResource realm = masterRealm;
-        ClientRepresentation clientRep = ClientConfigBuilder.create()
+        ClientRepresentation clientRep = ClientBuilder.create()
                 .name("test-client-policy-app")
                 .clientId("test-client-policy-app")
                 .protocol("openid-connect")
@@ -189,7 +189,7 @@ public class LaxSecurityProfileTest {
     public void testCreateSamlClientSecure() {
         RealmResource realm = masterRealm;
         // setup a perfect client for SAML secure
-        ClientRepresentation clientRep = ClientConfigBuilder.create()
+        ClientRepresentation clientRep = ClientBuilder.create()
                 .name("test-client-policy-app")
                 .clientId("test-client-policy-app")
                 .protocol("saml")

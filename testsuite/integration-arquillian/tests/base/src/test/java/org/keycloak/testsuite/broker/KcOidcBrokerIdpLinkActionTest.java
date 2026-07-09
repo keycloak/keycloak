@@ -37,10 +37,11 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.testsuite.Assert;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.IdpLinkActionPage;
@@ -48,11 +49,12 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.utils.BrokerUtil;
 
-import org.hamcrest.Matchers;
+import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 
@@ -140,8 +142,8 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         assertUserLinkedToIDP(true);
 
         assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
-            assertProviderEventsSuccess(providerRealmId, providerUserId);
-            assertConsumerSuccessLinkEvents(consumerRealmId, consumerUserId, consumerUsername);
+            assertProviderEventsSuccess(providerUserId);
+            assertConsumerSuccessLinkEvents(consumerUserId, consumerUsername);
         });
     }
 
@@ -172,8 +174,8 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         assertUserLinkedToIDP(true);
 
         assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
-            assertProviderEventsSuccess(providerRealmId, providerUserId);
-            assertConsumerSuccessLinkEvents(consumerRealmId, consumerUserId, consumerUsername);
+            assertProviderEventsSuccess(providerUserId);
+            assertConsumerSuccessLinkEvents(consumerUserId, consumerUsername);
         });
     }
 
@@ -197,24 +199,20 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         assertUserLinkedToIDP(false);
 
         assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
-            events.expect(EventType.CUSTOM_REQUIRED_ACTION_ERROR)
-                    .realm(consumerRealmId)
-                    .client("broker-app")
-                    .user(consumerUserId)
-                    .detail(Details.CUSTOM_REQUIRED_ACTION, IdpLinkAction.PROVIDER_ID)
-                    .detail(Details.USERNAME, consumerUsername)
-                    .error(Errors.REJECTED_BY_USER)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION_ERROR)
+                    .clientId("broker-app")
+                    .userId(consumerUserId)
+                    .details(Details.CUSTOM_REQUIRED_ACTION, IdpLinkAction.PROVIDER_ID)
+                    .details(Details.USERNAME, consumerUsername)
+                    .error(Errors.REJECTED_BY_USER);
 
-            events.expect(EventType.LOGIN)
-                    .realm(consumerRealmId)
-                    .client("broker-app")
-                    .user(consumerUserId)
-                    .session(Matchers.any(String.class))
-                    .detail(Details.USERNAME, consumerUsername)
-                    .assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN)
+                    .clientId("broker-app")
+                    .userId(consumerUserId)
+                    .hasSessionId()
+                    .details(Details.USERNAME, consumerUsername);
 
-            events.assertEmpty();
+            Assertions.assertNull(events.poll());
         });
     }
 
@@ -241,19 +239,17 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
         assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
             // Provider login - rejected consent screen
-            events.expect(EventType.LOGIN_ERROR)
-                    .realm(providerRealmId)
-                    .user(providerUserId)
-                    .client(bc.getIDPClientIdInProviderRealm())
-                    .session((String)null)
-                    .detail(Details.USERNAME, bc.getUserLogin())
-                    .error(Errors.REJECTED_BY_USER)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR)
+                    .userId(providerUserId)
+                    .clientId(bc.getIDPClientIdInProviderRealm())
+                    .sessionId(null)
+                    .details(Details.USERNAME, bc.getUserLogin())
+                    .error(Errors.REJECTED_BY_USER);
 
             // Consumer - rejected provider consent screen event propagated
-            assertConsumerFailedLinkEvents(consumerRealmId, consumerUserId, consumerUsername, Errors.REJECTED_BY_USER, true);
+            assertConsumerFailedLinkEvents(consumerUserId, consumerUsername, Errors.REJECTED_BY_USER, true);
 
-            events.assertEmpty();
+            Assertions.assertNull(events.poll());
         });
     }
 
@@ -262,7 +258,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
     public void testAccountLinkingDifferentUserLinked() throws Exception {
         // Link IDP to user "user2"
         Response response = AccountHelper.addIdentityProvider(adminClient.realm(bc.consumerRealmName()), "user2", adminClient.realm(bc.providerRealmName()), bc.getUserLogin(), bc.getIDPAlias());
-        Assert.assertEquals(204, response.getStatus());
+        Assertions.assertEquals(204, response.getStatus());
 
         // Linking the user "user1" to same IDP should fail
         loginToConsumer();
@@ -278,17 +274,17 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         grantPage.accept();
 
         errorPage.assertCurrent();
-        Assert.assertEquals("Federated identity returned by " + bc.getIDPAlias() + " is already linked to another user.", errorPage.getError());
-        Assert.assertEquals(bc.createConsumerClients().get(0).getBaseUrl(), errorPage.getBackToApplicationLink());
+        Assertions.assertEquals("Federated identity returned by " + bc.getIDPAlias() + " is already linked to another user.", errorPage.getError());
+        Assertions.assertEquals(bc.createConsumerClients().get(0).getBaseUrl(), errorPage.getBackToApplicationLink());
 
         // Check that user is not linked to the IDP
         assertUserLinkedToIDP(false);
 
         assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
-            assertProviderEventsSuccess(providerRealmId, providerUserId);
-            assertConsumerFailedLinkEvents(consumerRealmId, consumerUserId, consumerUsername, Messages.IDENTITY_PROVIDER_ALREADY_LINKED, false);
+            assertProviderEventsSuccess(providerUserId);
+            assertConsumerFailedLinkEvents(consumerUserId, consumerUsername, Messages.IDENTITY_PROVIDER_ALREADY_LINKED, false);
 
-            events.assertEmpty();
+            Assertions.assertNull(events.poll());
         });
     }
 
@@ -317,9 +313,9 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         assertUserLinkedToIDP(false);
 
         assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
-            assertConsumerFailedLinkEvents(consumerRealmId, consumerUserId, consumerUsername, Errors.NOT_ALLOWED, true);
+            assertConsumerFailedLinkEvents(consumerUserId, consumerUsername, Errors.NOT_ALLOWED, true);
 
-            events.assertEmpty();
+            Assertions.assertNull(events.poll());
         });
 
     }
@@ -358,8 +354,8 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         assertUserLinkedToIDP(true);
 
         assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
-            assertProviderEventsSuccess(providerRealmId, providerUserId);
-            assertConsumerSuccessLinkEvents(consumerRealmId, consumerUserId, consumerUsername);
+            assertProviderEventsSuccess(providerUserId);
+            assertConsumerSuccessLinkEvents(consumerUserId, consumerUsername);
         });
     }
 
@@ -397,8 +393,8 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         assertUserLinkedToIDP(true);
 
         assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
-            assertProviderEventsSuccess(providerRealmId, providerUserId);
-            assertConsumerSuccessLinkEvents(consumerRealmId, consumerUserId, consumerUsername);
+            assertProviderEventsSuccess(providerUserId);
+            assertConsumerSuccessLinkEvents(consumerUserId, consumerUsername);
         });
     }
 
@@ -408,9 +404,9 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
         // Link IDP to user "user1"
         Response response = AccountHelper.addIdentityProvider(adminClient.realm(bc.consumerRealmName()), "user1", adminClient.realm(bc.providerRealmName()), bc.getUserLogin(), bc.getIDPAlias());
-        Assert.assertEquals(204, response.getStatus());
+        Assertions.assertEquals(204, response.getStatus());
 
-        setTimeOffset(2);
+        timeOffSet.set(2);
 
         // Enforce re-authentication on "consumer" realm. Try to do re-authentication with the use of IDP, but reject consent screen on IDP side
         oauth.loginForm().maxAge(1).open();
@@ -424,26 +420,24 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
         // Should be redirected back to "consumer" login
         loginPage.assertCurrent(bc.consumerRealmName());
-        Assert.assertEquals("Access denied when authenticating with kc-oidc-idp", loginPage.getError());
+        Assertions.assertEquals("Access denied when authenticating with kc-oidc-idp", loginPage.getError());
 
         assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
             // Provider login - rejected consent screen
-            events.expect(EventType.LOGIN_ERROR)
-                    .realm(providerRealmId)
-                    .user(providerUserId)
-                    .client(bc.getIDPClientIdInProviderRealm())
-                    .session((String)null)
-                    .detail(Details.USERNAME, bc.getUserLogin())
-                    .error(Errors.REJECTED_BY_USER)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR)
+                    .userId(providerUserId)
+                    .clientId(bc.getIDPClientIdInProviderRealm())
+                    .sessionId(null)
+                    .details(Details.USERNAME, bc.getUserLogin())
+                    .error(Errors.REJECTED_BY_USER);
 
-            events.assertEmpty();
+            Assertions.assertNull(events.poll());
         });
     }
 
     private String loginToConsumer() {
         // Login to "consumer" realm with password
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         loginPage.login("user1", "password");
         appPage.assertCurrent();
@@ -467,12 +461,12 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
     private void assertKcActionParams(String expectedKcAction, String expectedKcActionStatus) throws Exception {
         MultivaluedHashMap<String, String> params = UriUtils.decodeQueryString(new URL(driver.getCurrentUrl()).getQuery());
-        Assert.assertEquals(expectedKcAction, params.getFirst(Constants.KC_ACTION));
-        Assert.assertEquals(expectedKcActionStatus, params.getFirst(Constants.KC_ACTION_STATUS));
+        Assertions.assertEquals(expectedKcAction, params.getFirst(Constants.KC_ACTION));
+        Assertions.assertEquals(expectedKcActionStatus, params.getFirst(Constants.KC_ACTION_STATUS));
     }
 
     private void assertUserLinkedToIDP(boolean expectedLinked) {
-        Assert.assertThat(expectedLinked, is(AccountHelper.isIdentityProviderLinked(adminClient.realm(bc.consumerRealmName()), "user1", bc.getIDPAlias())));
+        MatcherAssert.assertThat(expectedLinked, is(AccountHelper.isIdentityProviderLinked(adminClient.realm(bc.consumerRealmName()), "user1", bc.getIDPAlias())));
     }
 
     @FunctionalInterface
@@ -495,73 +489,59 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         assertImpl.accept(providerRealmId, providerUserId, consumerRealmId, consumerUserId, username);
     }
 
-    private void assertProviderEventsSuccess(String providerRealmId, String providerUserId) {
-        events.expect(EventType.LOGIN)
-                .realm(providerRealmId)
-                .user(providerUserId)
-                .client(bc.getIDPClientIdInProviderRealm())
-                .session(Matchers.any(String.class))
-                .detail(Details.USERNAME, bc.getUserLogin())
-                .assertEvent();
+    private void assertProviderEventsSuccess(String providerUserId) {
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN)
+                .userId(providerUserId)
+                .clientId(bc.getIDPClientIdInProviderRealm())
+                .hasSessionId()
+                .details(Details.USERNAME, bc.getUserLogin());
 
-        events.expect(EventType.CODE_TO_TOKEN)
-                .session(Matchers.any(String.class))
-                .realm(providerRealmId)
-                .user(providerUserId)
-                .client(bc.getIDPClientIdInProviderRealm())
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN)
+                .hasSessionId()
+                .userId(providerUserId)
+                .clientId(bc.getIDPClientIdInProviderRealm());
 
-        events.expect(EventType.USER_INFO_REQUEST)
-                .session(Matchers.any(String.class))
-                .realm(providerRealmId)
-                .user(providerUserId)
-                .client(bc.getIDPClientIdInProviderRealm())
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.USER_INFO_REQUEST)
+                .hasSessionId()
+                .userId(providerUserId)
+                .clientId(bc.getIDPClientIdInProviderRealm());
     }
 
-    private void assertConsumerSuccessLinkEvents(String consumerRealmId, String consumerUserId, String username) {
-        events.expect(EventType.FEDERATED_IDENTITY_LINK)
-                .realm(consumerRealmId)
-                .client("broker-app")
-                .user(consumerUserId)
-                .detail(Details.USERNAME, username)
-                .detail(Details.IDENTITY_PROVIDER, IDP_OIDC_ALIAS)
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
-                .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID,  Matchers.startsWith(bc.getIDPAlias()))
-                .assertEvent();
+    private void assertConsumerSuccessLinkEvents(String consumerUserId, String username) {
+        EventRepresentation eventRep = EventAssertion.assertSuccess(events.poll()).type(EventType.FEDERATED_IDENTITY_LINK)
+                .clientId("broker-app")
+                .userId(consumerUserId)
+                .details(Details.USERNAME, username)
+                .details(Details.IDENTITY_PROVIDER, IDP_OIDC_ALIAS)
+                .details(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin()).getEvent();
+        Assertions.assertTrue(eventRep.getDetails().get(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID).startsWith(bc.getIDPAlias()));
 
-        events.expect(EventType.LOGIN)
-                .realm(consumerRealmId)
-                .client("broker-app")
-                .user(consumerUserId)
-                .session(Matchers.any(String.class))
-                .detail(Details.USERNAME, username)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN)
+                .clientId("broker-app")
+                .userId(consumerUserId)
+                .hasSessionId()
+                .details(Details.USERNAME, username);
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
-    private void assertConsumerFailedLinkEvents(String consumerRealmId, String consumerUserId, String consumerUsername, String expectedError, boolean expectLoginEvent) {
-        events.expect(EventType.FEDERATED_IDENTITY_LINK_ERROR)
-                .realm(consumerRealmId)
-                .client("broker-app")
-                .user(consumerUserId)
-                .detail(Details.USERNAME, consumerUsername)
-                .detail(Details.IDENTITY_PROVIDER, IDP_OIDC_ALIAS)
-                .error(expectedError)
-                .assertEvent();
+    private void assertConsumerFailedLinkEvents(String consumerUserId, String consumerUsername, String expectedError, boolean expectLoginEvent) {
+        EventAssertion.assertError(events.poll()).type(EventType.FEDERATED_IDENTITY_LINK_ERROR)
+                .clientId("broker-app")
+                .userId(consumerUserId)
+                .details(Details.USERNAME, consumerUsername)
+                .details(Details.IDENTITY_PROVIDER, IDP_OIDC_ALIAS)
+                .error(expectedError);
 
         if (expectLoginEvent) {
-            events.expect(EventType.LOGIN)
-                    .realm(consumerRealmId)
-                    .client("broker-app")
-                    .user(consumerUserId)
-                    .session(Matchers.any(String.class))
-                    .detail(Details.USERNAME, consumerUsername)
-                    .assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN)
+                    .clientId("broker-app")
+                    .userId(consumerUserId)
+                    .hasSessionId()
+                    .details(Details.USERNAME, consumerUsername);
         }
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
 

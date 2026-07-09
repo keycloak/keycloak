@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -164,6 +165,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
     @Test
     public void testUserSessionPropagationBetweenSites() throws InterruptedException {
         assumeFalse("Run only if Infinispan caches are used for storing/caching sessions", MultiSiteUtils.isMultiSiteEnabled() && MultiSiteUtils.isPersistentSessionsEnabled());
+        assumeFalse("The Sessions caches are disabled", Profile.isFeatureEnabled(Profile.Feature.STATELESS));
         AtomicInteger index = new AtomicInteger();
         AtomicReference<String> userSessionId = new AtomicReference<>();
         AtomicReference<List<Boolean>> containsSession = new AtomicReference<>(new LinkedList<>());

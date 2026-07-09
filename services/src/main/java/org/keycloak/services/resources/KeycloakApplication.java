@@ -18,14 +18,15 @@ package org.keycloak.services.resources;
 
 import java.io.File;
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
+import java.time.Instant;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.core.Application;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.Time;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.KeycloakSession;
@@ -36,6 +37,7 @@ import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 
+import io.quarkus.runtime.Quarkus;
 import org.jboss.logging.Logger;
 
 /**
@@ -51,63 +53,45 @@ public abstract class KeycloakApplication extends Application {
 
     private static volatile DefaultKeycloakSessionFactory sessionFactory;
 
-    public KeycloakApplication() {
-        try {
-            initTmpDirectory();
-            logger.debugv("Application: {0}", this.getClass().getName());
-            initAndStart();
-        } catch (Throwable t) {
-            exit(t);
-        }
-    }
-
+    /**
+     * Get the temp directory as initialized by the current KeycloakApplication.
+     * <br>
+     * The directory is not guaranteed to exist
+     */
     public static String getTmpDirectory() {
-        return System.getProperty(KC_TMPDIR, System.getProperty("java.io.tmpdir"));
+        return Optional.ofNullable(System.getProperty(KC_TMPDIR)).orElseThrow(() -> new RuntimeException("No temporary directory was configured."));
     }
 
     protected void initTmpDirectory() {
         String dataDir = getDataDir();
-        File tmpDir = new File(dataDir, "tmp");
-        tmpDir.mkdirs();
-        if (tmpDir.isDirectory()) {
-            logger.debugf("Using server tmp directory: %s", tmpDir.getAbsolutePath());
-        } else {
-            logger.warnf("Temporary directory %s does not exist and it was not possible to create it.", tmpDir.getAbsolutePath());
+        if (dataDir != null) {
+            File tmpDir = new File(dataDir, "tmp");
+            System.setProperty(KC_TMPDIR, tmpDir.getAbsolutePath());
         }
-        System.setProperty(KC_TMPDIR, tmpDir.getAbsolutePath());
     }
-
-    protected abstract void exit(Throwable t);
 
     protected abstract String getDataDir();
 
-    protected void startup() {
+    // synchronized to prevent shutdown while running bootstrapping
+    protected synchronized void startup() {
+        logger.debugv("Application: {0}", this.getClass().getName());
+        initTmpDirectory();
         Profile.getInstance().logUnsupportedFeatures();
         CryptoIntegration.init(KeycloakApplication.class.getClassLoader());
         KeycloakApplication.sessionFactory = createSessionFactory();
-
-        if (supportsAsyncInitialization()) {
-            final var executor = Executors.newSingleThreadExecutor();
-            CompletableFuture.runAsync(() -> runBootstrap(KeycloakApplication.sessionFactory), executor)
-                    .exceptionally(throwable -> {
-                        exit(throwable);
-                        return null;
-                    })
-                    .thenRun(executor::shutdown);
-            return;
-        }
-
         runBootstrap(KeycloakApplication.sessionFactory);
     }
 
-    protected boolean supportsAsyncInitialization() {
-        return false;
-    }
-
-    private synchronized void runBootstrap(DefaultKeycloakSessionFactory keycloakSessionFactory) {
+    private void runBootstrap(DefaultKeycloakSessionFactory keycloakSessionFactory) {
         var startTime = System.nanoTime();
 
         keycloakSessionFactory.init();
+
+        if ("exit_before_bootstrap".equals(System.getProperty("kc.launch.mode"))) {
+            Quarkus.asyncExit(0);
+            return;
+        }
+
         setTransactionTimeout(keycloakSessionFactory);
         var exportImportManager = KeycloakModelUtils.runJobInTransactionWithResult(keycloakSessionFactory, session -> {
             DBLockManager dbLockManager = new DBLockManager(session);
@@ -146,6 +130,13 @@ public abstract class KeycloakApplication extends Application {
         }
     }
 
+    protected synchronized void shutdownDelayInitiated() {
+        if (sessionFactory == null) {
+            return;
+        }
+        sessionFactory.publish(new ShutdownDelayInitiatedEvent(Instant.ofEpochMilli(Time.currentTimeMillis())));
+    }
+
     // Bootstrap master realm, import realms and create admin user.
     protected ExportImportManager bootstrap(KeycloakSession session) {
         logger.debug("bootstrap");
@@ -173,10 +164,12 @@ public abstract class KeycloakApplication extends Application {
 
     protected abstract void createTemporaryAdmin(KeycloakSession session);
 
-    protected abstract void initAndStart();
-
     protected abstract DefaultKeycloakSessionFactory createSessionFactory();
 
+    /**
+     * WARNING: This method is for use by test logic. Will return null if there is no current KeycloakApplication, or if the
+     * startup has not yet reached the point of setting this value.
+     */
     public static DefaultKeycloakSessionFactory getSessionFactory() {
         return sessionFactory;
     }

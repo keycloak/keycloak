@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -129,6 +130,7 @@ public class ResourceSetService {
         AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
 
         requireManage();
+        validateUris(resource);
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         ResourceOwnerRepresentation owner = resource.getOwner();
 
@@ -164,6 +166,7 @@ public class ResourceSetService {
     public Response update(@PathParam("resource-id") String id, ResourceRepresentation resource) {
         AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
         requireManage();
+        validateUris(resource);
         resource.setId(id);
         getResource(id);
         toModel(resource, resourceServer, authorization);
@@ -402,7 +405,7 @@ public class ResourceSetService {
                          @QueryParam("exactName") Boolean exactName,
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
-                         @QueryParam("max") Integer maxResult) {
+                         @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResult) {
         return find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer, authorization, deep1));
     }
 
@@ -416,7 +419,7 @@ public class ResourceSetService {
                          @QueryParam("exactName") Boolean exactName,
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
-                         @QueryParam("max") Integer maxResult,
+                         @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResult,
                          BiFunction<Resource, Boolean, ?> toRepresentation) {
         requireView();
 
@@ -539,6 +542,23 @@ public class ResourceSetService {
             adminEvent.operation(operation).resourcePath(session.getContext().getUri(), id).representation(resource).success();
         } else {
             adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(resource).success();
+        }
+    }
+
+    private static void validateUris(ResourceRepresentation resource) {
+        Set<String> uris = resource.getUris();
+
+        if (uris == null) {
+            return;
+        }
+
+        for (String uri : uris) {
+            String error = PathMatcher.validateTemplate(uri);
+            if (error != null) {
+                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
+                        "URI [" + uri + "] is not a valid template: " + error,
+                        Status.BAD_REQUEST);
+            }
         }
     }
 }

@@ -66,6 +66,33 @@ public class StringUtil {
     }
 
     /**
+     * Removes ANSI escape codes and control characters from a string to prevent log injection attacks.
+     * This method:
+     * 1. Removes URL-encoded ANSI escape sequences (e.g., %1B[31m)
+     * 2. Removes literal ANSI escape sequences (e.g., \u001b[31m)
+     * 3. Removes URL-encoded control characters (e.g., %0D, %0A, %7F)
+     * 4. Removes any remaining literal control characters
+     *
+     * Note: This method does NOT decode legitimate URL-encoded characters (e.g., %20, %2F)
+     * to preserve the original encoding for use cases like redirect URI validation.
+     *
+     * @param str The string to sanitize
+     * @return The sanitized string without ANSI codes and control characters
+     */
+    public static String removeControlCharacters(String str) {
+        if (str == null || str.isEmpty()) {
+            return str;
+        }
+        str = str.replaceAll("\u001B\\[([0-9;]*)[a-zA-Z]", "");
+        str = str.replaceAll("(?i)%1B\\[([0-9;]*)[a-zA-Z]", "");
+        str = str.replaceAll("(?i)%0[0-9A-F]|(?i)%1[0-9A-F]|(?i)%7F", "");
+        str = str.replaceAll("[\u0000-\u001F\u007F]+", "");
+        str = str.replaceAll("\\[([0-9;]*)m", "");
+        return str;
+    }
+
+
+    /**
      * Utility method that substitutes any isWhitespace char to common space ' ' or character 20.
      * The idea is removing any weird space character in the string like \t, \n, \r.
      * If quotes character is passed the quotes char is escaped to mark is not the end

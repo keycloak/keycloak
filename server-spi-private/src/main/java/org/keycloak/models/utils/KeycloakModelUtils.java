@@ -59,7 +59,6 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.constants.OID4VCIConstants;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -85,7 +84,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CertificateRepresentation;
@@ -120,6 +118,8 @@ public final class KeycloakModelUtils {
 
     public static final int DEFAULT_RSA_KEY_SIZE = 4096;
     public static final int DEFAULT_CERTIFICATE_VALIDITY_YEARS = 3;
+
+    private static final ThreadLocal<Integer> timeouts = new ThreadLocal<Integer>();
 
     private KeycloakModelUtils() {
     }
@@ -251,11 +251,19 @@ public final class KeycloakModelUtils {
     }
 
     public static String generateSecret(ClientModel client) {
-        int secretLength = getSecretLengthByAuthenticationType(client.getClientAuthenticatorType(), client.getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG));
+        int secretLength = getRequiredClientSecretLength();
         String secret = SecretGenerator.getInstance().randomString(secretLength);
         client.setSecret(secret);
         client.setAttribute(ClientSecretConstants.CLIENT_SECRET_CREATION_TIME, String.valueOf(Time.currentTime()));
         return secret;
+    }
+
+    /**
+     * Returns the required length for a client secret in alphanumeric characters.
+     * Always generated at HS512-level entropy to cover all HMAC signature use cases.
+     */
+    public static int getRequiredClientSecretLength() {
+        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_512_BITS, SecretGenerator.ALPHANUM.length);
     }
 
     public static String getDefaultClientAuthenticatorType() {
@@ -501,12 +509,22 @@ public final class KeycloakModelUtils {
                 try {
                     // If timeout is set to 0, reset to default transaction timeout
                     lookup.getTransactionManager().setTransactionTimeout(timeoutInSeconds);
+
+                    if (timeoutInSeconds == 0) {
+                        timeouts.remove();
+                    } else {
+                        timeouts.set(timeoutInSeconds);
+                    }
                 } catch (SystemException e) {
                     // Shouldn't happen for Wildfly transaction manager
                     throw new RuntimeException(e);
                 }
             }
         }
+    }
+
+    public static Optional<Integer> getTransactionLimit() {
+        return Optional.ofNullable(timeouts.get());
     }
 
     public static Function<KeycloakSessionFactory, ComponentModel> componentModelGetter(String realmId, String componentId) {
@@ -1218,8 +1236,8 @@ public final class KeycloakModelUtils {
         ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
 
         if (clientScope == null) {
-            // as fallback we try to resolve dynamic scopes
-            clientScope = client.getDynamicClientScope(clientScopeId);
+            // as fallback we try to resolve parameterized scopes
+            clientScope = client.getParameterizedClientScope(clientScopeId);
         }
 
         if (clientScope != null) {
@@ -1293,22 +1311,12 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * @param clientAuthenticatorType
-     * @return secret size based on authentication type
+     * @param clientAuthenticatorType ignored, kept for backwards compatibility
+     * @param signingAlg ignored, kept for backwards compatibility
+     * @return secret size in alphanumeric characters with HS512-level entropy
      */
     public static int getSecretLengthByAuthenticationType(String clientAuthenticatorType, String signingAlg) {
-        if (clientAuthenticatorType != null)
-            switch (clientAuthenticatorType) {
-                case AUTH_TYPE_CLIENT_SECRET_JWT: {
-                    if (Algorithm.HS384.equals(signingAlg))
-                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_384_BITS, SecretGenerator.ALPHANUM.length);
-                    else if (Algorithm.HS512.equals(signingAlg))
-                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_512_BITS, SecretGenerator.ALPHANUM.length);
-                    else
-                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_256_BITS, SecretGenerator.ALPHANUM.length);
-                }
-            }
-        return SecretGenerator.SECRET_LENGTH_256_BITS;
+        return getRequiredClientSecretLength();
     }
 
     /**

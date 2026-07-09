@@ -14,9 +14,30 @@ import static org.junit.Assert.assertTrue;
 public class KcAdmV2CompleterTest {
 
     @Test
-    public void testEmptyInputShowsResourceGroups() {
+    public void testEmptyInputShowsResourceGroupsAndConnectionOptions() {
         List<String> candidates = complete("");
-        assertTrue("Should suggest 'client'", candidates.contains("client"));
+        assertTrue("Should suggest 'client', but found: " + candidates, candidates.contains("client"));
+        assertTrue("Should suggest '-r' (connection option), but found: " + candidates, candidates.contains("-r"));
+    }
+
+    @Test
+    public void testRootDashSuggestsConnectionOptions() {
+        List<String> candidates = complete("--");
+        assertTrue("Should suggest '--config', but found: " + candidates, candidates.contains("--config"));
+        assertTrue("Should suggest '--server', but found: " + candidates, candidates.contains("--server"));
+        assertTrue("Should suggest '--realm', but found: " + candidates, candidates.contains("--realm"));
+        assertTrue("Should suggest '--token', but found: " + candidates, candidates.contains("--token"));
+        assertTrue("Should suggest '--user', but found: " + candidates, candidates.contains("--user"));
+        assertTrue("Should suggest '--password', but found: " + candidates, candidates.contains("--password"));
+        assertTrue("Should suggest '--secret', but found: " + candidates, candidates.contains("--secret"));
+        assertTrue("Should suggest '--no-config', but found: " + candidates, candidates.contains("--no-config"));
+        assertTrue("Should suggest '--truststore', but found: " + candidates, candidates.contains("--truststore"));
+        assertTrue("Should suggest '--trustpass', but found: " + candidates, candidates.contains("--trustpass"));
+        assertTrue("Should suggest '--insecure', but found: " + candidates, candidates.contains("--insecure"));
+        assertTrue("Should suggest '--keystore', but found: " + candidates, candidates.contains("--keystore"));
+        assertTrue("Should suggest '--storepass', but found: " + candidates, candidates.contains("--storepass"));
+        assertTrue("Should suggest '--keypass', but found: " + candidates, candidates.contains("--keypass"));
+        assertTrue("Should suggest '--alias', but found: " + candidates, candidates.contains("--alias"));
     }
 
     @Test
@@ -38,8 +59,9 @@ public class KcAdmV2CompleterTest {
         assertTrue("Should suggest 'create'", candidates.contains("create"));
         assertTrue("Should suggest 'get'", candidates.contains("get"));
         assertTrue("Should suggest 'patch'", candidates.contains("patch"));
-        assertTrue("Should suggest 'update'", candidates.contains("update"));
+        assertTrue("Should suggest 'apply'", candidates.contains("apply"));
         assertTrue("Should suggest 'delete'", candidates.contains("delete"));
+        assertTrue("Should suggest 'edit'", candidates.contains("edit"));
     }
 
     @Test
@@ -50,26 +72,26 @@ public class KcAdmV2CompleterTest {
     }
 
     @Test
-    public void testDashSuggestsOptions() {
+    public void testLeafDashSuggestsOnlyLeafOptions() {
         List<String> candidates = complete("client", "list", "--");
-        assertTrue("Should suggest '--config'", candidates.contains("--config"));
-        assertTrue("Should suggest '--compressed'", candidates.contains("--compressed"));
-        assertTrue("Should suggest '--truststore'", candidates.contains("--truststore"));
-        assertTrue("Should suggest '--trustpass'", candidates.contains("--trustpass"));
-        assertTrue("Should suggest '--insecure'", candidates.contains("--insecure"));
-        assertTrue("Should suggest '--password'", candidates.contains("--password"));
-        assertTrue("Should suggest '--secret'", candidates.contains("--secret"));
-        assertTrue("Should suggest '--no-config'", candidates.contains("--no-config"));
-        assertTrue("Should suggest '--keystore'", candidates.contains("--keystore"));
-        assertTrue("Should suggest '--storepass'", candidates.contains("--storepass"));
-        assertTrue("Should suggest '--keypass'", candidates.contains("--keypass"));
-        assertTrue("Should suggest '--alias'", candidates.contains("--alias"));
+        assertTrue("Should suggest '--compressed', but found: " + candidates, candidates.contains("--compressed"));
+        assertFalse("Should not suggest '--config' (connection option), but found: " + candidates, candidates.contains("--config"));
+        assertFalse("Should not suggest '--truststore' (connection option), but found: " + candidates, candidates.contains("--truststore"));
+        assertFalse("Should not suggest '--trustpass' (connection option), but found: " + candidates, candidates.contains("--trustpass"));
+        assertFalse("Should not suggest '--insecure' (connection option), but found: " + candidates, candidates.contains("--insecure"));
+        assertFalse("Should not suggest '--password' (connection option), but found: " + candidates, candidates.contains("--password"));
+        assertFalse("Should not suggest '--secret' (connection option), but found: " + candidates, candidates.contains("--secret"));
+        assertFalse("Should not suggest '--no-config' (connection option), but found: " + candidates, candidates.contains("--no-config"));
+        assertFalse("Should not suggest '--keystore' (connection option), but found: " + candidates, candidates.contains("--keystore"));
+        assertFalse("Should not suggest '--storepass' (connection option), but found: " + candidates, candidates.contains("--storepass"));
+        assertFalse("Should not suggest '--keypass' (connection option), but found: " + candidates, candidates.contains("--keypass"));
+        assertFalse("Should not suggest '--alias' (connection option), but found: " + candidates, candidates.contains("--alias"));
     }
 
     @Test
     public void testDoubleDashSuggestsLongOptionsForVariant() {
         List<String> candidates = complete("client", "create", "oidc", "--");
-        assertTrue("Should suggest '--client-id'", candidates.contains("--client-id"));
+        assertFalse("Should not suggest '--client-id' (use positional)", candidates.contains("--client-id"));
         assertTrue("Should suggest '--login-flows'", candidates.contains("--login-flows"));
         assertTrue("Should suggest '--help'", candidates.contains("--help"));
         assertFalse("Should not suggest short options", candidates.contains("-f"));
@@ -80,12 +102,6 @@ public class KcAdmV2CompleterTest {
         List<String> candidates = complete("client", "create", "");
         assertTrue("Should suggest 'oidc'", candidates.contains("oidc"));
         assertTrue("Should suggest 'saml'", candidates.contains("saml"));
-    }
-
-    @Test
-    public void testFileOptionInAutocompleteForCreateOidc() {
-        List<String> candidates = complete("client", "create", "oidc", "-");
-        assertTrue("Should suggest '-f'", candidates.contains("-f"));
     }
 
     @Test
@@ -103,6 +119,7 @@ public class KcAdmV2CompleterTest {
         assertTrue("Should suggest '--web-origins'", candidates.contains("--web-origins"));
         assertTrue("Should suggest '--auth-method'", candidates.contains("--auth-method"));
         assertFalse("Should not suggest '--sign-documents'", candidates.contains("--sign-documents"));
+        assertFalse("Should not suggest '--uuid' on create: " + candidates, candidates.contains("--uuid"));
     }
 
     @Test
@@ -138,19 +155,29 @@ public class KcAdmV2CompleterTest {
     }
 
     @Test
-    public void testUpdateVariantsInAutocomplete() {
-        List<String> candidates = complete("client", "update", "");
+    public void testApplyVariantsInAutocomplete() {
+        List<String> candidates = complete("client", "apply", "");
         assertTrue("Should suggest 'oidc'", candidates.contains("oidc"));
         assertTrue("Should suggest 'saml'", candidates.contains("saml"));
     }
 
     @Test
-    public void testUpdateOidcOptionsInAutocomplete() {
-        List<String> candidates = complete("client", "update", "oidc", "--");
-        assertTrue("Should suggest '--client-id'", candidates.contains("--client-id"));
+    public void testApplyOidcOptionsInAutocomplete() {
+        List<String> candidates = complete("client", "apply", "oidc", "--");
+        assertFalse("Should not suggest '--client-id' (use positional)", candidates.contains("--client-id"));
         assertTrue("Should suggest '--login-flows'", candidates.contains("--login-flows"));
         assertTrue("Should suggest '--compressed'", candidates.contains("--compressed"));
         assertFalse("Should not suggest '--sign-documents'", candidates.contains("--sign-documents"));
+        assertFalse("Should not suggest '--uuid' on apply: " + candidates, candidates.contains("--uuid"));
+    }
+
+    @Test
+    public void testEditOptionsInAutocomplete() {
+        List<String> candidates = complete("client", "edit", "--");
+        assertTrue("Should suggest '--compressed', but found: " + candidates, candidates.contains("--compressed"));
+        assertFalse("Should not suggest '--config' (connection option), but found: " + candidates, candidates.contains("--config"));
+        assertFalse("Should not suggest '--file', but found: " + candidates, candidates.contains("--file"));
+        assertFalse("Should not suggest '--client-id', but found: " + candidates, candidates.contains("--client-id"));
     }
 
     @Test
@@ -158,6 +185,14 @@ public class KcAdmV2CompleterTest {
         List<String> candidates = complete("config", "");
         assertTrue("Should suggest 'credentials'", candidates.contains("credentials"));
         assertTrue("Should suggest 'openapi'", candidates.contains("openapi"));
+        assertTrue("Should suggest 'editor'", candidates.contains("editor"));
+    }
+
+    @Test
+    public void testConfigEditorOptionsInAutocomplete() {
+        List<String> candidates = complete("config", "editor", "--");
+        assertTrue("Should suggest '--config': " + candidates, candidates.contains("--config"));
+        assertTrue("Should suggest '--help': " + candidates, candidates.contains("--help"));
     }
 
     @Test
@@ -200,7 +235,7 @@ public class KcAdmV2CompleterTest {
     }
 
     private void assertSubcommandsDoNotContain(List<String> candidates) {
-        for (String name : new String[]{"create", "get", "patch", "update", "delete"}) {
+        for (String name : new String[]{"create", "get", "patch", "apply", "delete"}) {
             if (candidates.contains(name)) {
                 throw new AssertionError("Should not contain '" + name + "' but did");
             }
