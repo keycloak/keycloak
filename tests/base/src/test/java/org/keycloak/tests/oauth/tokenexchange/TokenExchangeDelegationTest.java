@@ -1,4 +1,4 @@
-package org.keycloak.tests.oauth;
+package org.keycloak.tests.oauth.tokenexchange;
 
 import java.io.IOException;
 import java.util.Arrays;
