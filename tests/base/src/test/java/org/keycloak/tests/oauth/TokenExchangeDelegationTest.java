@@ -6,7 +6,6 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
@@ -49,12 +48,14 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.testsuite.util.oauth.ciba.AuthenticationRequestAcknowledgement;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -92,15 +93,24 @@ public class TokenExchangeDelegationTest {
     @InjectPage
     protected OAuthGrantPage grantPage;
 
+    @AfterEach
+    public void afterEach() {
+        AccountHelper.logout(realm.admin(), USERNAME);
+        List<Map<String, Object>> consents = AccountHelper.getUserConsents(realm.admin(), USERNAME);
+        if (consents.stream().anyMatch(m -> oauth.getClientId().equals(m.get("clientId")))) {
+            AccountHelper.revokeConsents(realm.admin(), USERNAME, oauth.getClientId());
+        }
+    }
+
     @Test
     public void delegationNoImpersonation() {
-        // request delegation with a user that cannot impersonate
+        // request delegation with a user that cannot impersonate — scope is silently dropped
         final String scope = OIDCLoginProtocolFactory.DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + administrator.getUsername();
         oauth.scope(scope).openLoginForm();
         oauth.fillLoginForm(USERNAME, PASSWORD);
         grantPage.assertCurrent();
         List<String> grants = grantPage.getDisplayedGrants();
-        MatcherAssert.assertThat(grants, Matchers.hasItem("Delegate token to administrator administrator?"));
+        MatcherAssert.assertThat(grants, Matchers.not(Matchers.hasItem(Matchers.containsString("Delegate token"))));
         grantPage.accept();
 
         EventRepresentation loginEvent = events.poll();
@@ -110,7 +120,7 @@ public class TokenExchangeDelegationTest {
                 .details(Details.USERNAME, USERNAME)
                 .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
 
-        // get the code and obtain the scope, should not be present as cannot impersonate
+        // delegation scope should not be present as user cannot impersonate
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
@@ -231,8 +241,8 @@ public class TokenExchangeDelegationTest {
     }
 
     @Test
-    public void cibaDelegationNoImpersonation() {
-        // client Backchannel Authentication Request
+    public void cibaDelegationNoImpersonation() throws Exception {
+        // request delegation with a user that cannot impersonate — scope is silently dropped
         final String scope = OIDCLoginProtocolFactory.DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + administrator.getUsername();
         oauth.scope(scope);
         AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(USERNAME)
@@ -240,8 +250,24 @@ public class TokenExchangeDelegationTest {
                 .clientNotificationToken("client-notification-token")
                 .additionalParams(Map.of("user_device", "mobile"))
                 .send();
-        Assertions.assertFalse(response.isSuccess());
-        Assertions.assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
+        Assertions.assertTrue(response.isSuccess());
+        Assertions.assertNotNull(response.getAuthReqId());
+
+        CibaProvider.CibaAuthenticationChannelRequest clientAuthenticationChannelReq = ciba.getAuthChannel("asdfghjkl");
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(),
+                oauth.ciba().doAuthenticationChannelCallback(clientAuthenticationChannelReq.getBearerToken(), AuthenticationChannelResponse.Status.SUCCEED));
+
+        ClientNotificationEndpointRequest pushedClientNotification = ciba.getPushedCibaClientNotification("client-notification-token");
+        Assertions.assertEquals(pushedClientNotification.getAuthReqId(), response.getAuthReqId());
+
+        // delegation scope should not be present as user cannot impersonate
+        AccessTokenResponse res = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
+        Assertions.assertTrue(res.isSuccess());
+        assertScopeNotContains(res.getScope(), scope);
+        assertMayActNotPresent(oauth.verifyToken(res.getAccessToken()));
+
+        LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+        Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
     }
 
     @Test

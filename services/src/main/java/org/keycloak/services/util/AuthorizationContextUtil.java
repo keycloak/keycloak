@@ -80,7 +80,11 @@ public class AuthorizationContextUtil {
      * @return an {@link AuthorizationRequestContext} with scope entries and a ClientModel
      */
     public static AuthorizationRequestContext getAuthorizationRequestContextFromScopesWithClient(KeycloakSession session, ClientModel client, String scope) {
-        AuthorizationRequestContext authorizationRequestContext = getAuthorizationRequestContextFromScopes(session, client, null, scope);
+        return getAuthorizationRequestContextFromScopesWithClient(session, client, null, scope);
+    }
+
+    public static AuthorizationRequestContext getAuthorizationRequestContextFromScopesWithClient(KeycloakSession session, ClientModel client, UserModel user, String scope) {
+        AuthorizationRequestContext authorizationRequestContext = getAuthorizationRequestContextFromScopes(session, client, user, scope);
         authorizationRequestContext.getAuthorizationDetailEntries().add(new AuthorizationDetails(client));
         return authorizationRequestContext;
     }
@@ -93,7 +97,11 @@ public class AuthorizationContextUtil {
      * @return a Stream of {@link AuthorizationDetails} containing a ClientModel
      */
     public static Stream<AuthorizationDetails> getAuthorizationRequestsStreamFromScopesWithClient(KeycloakSession session, ClientModel client, String scope) {
-        AuthorizationRequestContext authorizationRequestContext = getAuthorizationRequestContextFromScopesWithClient(session, client, scope);
+        return getAuthorizationRequestsStreamFromScopesWithClient(session, client, null, scope);
+    }
+
+    public static Stream<AuthorizationDetails> getAuthorizationRequestsStreamFromScopesWithClient(KeycloakSession session, ClientModel client, UserModel user, String scope) {
+        AuthorizationRequestContext authorizationRequestContext = getAuthorizationRequestContextFromScopesWithClient(session, client, user, scope);
         return authorizationRequestContext.getAuthorizationDetailEntries().stream();
     }
 
@@ -104,7 +112,11 @@ public class AuthorizationContextUtil {
      * @return see description
      */
     public static Stream<ClientScopeModel> getClientScopesStreamFromAuthorizationRequestContextWithClient(KeycloakSession session, ClientModel client, String scope) {
-        return getAuthorizationRequestContextFromScopesWithClient(session, client, scope).getAuthorizationDetailEntries().stream()
+        return getClientScopesStreamFromAuthorizationRequestContextWithClient(session, client, null, scope);
+    }
+
+    public static Stream<ClientScopeModel> getClientScopesStreamFromAuthorizationRequestContextWithClient(KeycloakSession session, ClientModel client, UserModel user, String scope) {
+        return getAuthorizationRequestContextFromScopesWithClient(session, client, user, scope).getAuthorizationDetailEntries().stream()
                 .filter(authorizationDetails -> authorizationDetails.getSource() == AuthorizationRequestSource.SCOPE)
                 .map(AuthorizationDetails::getClientScope);
     }
