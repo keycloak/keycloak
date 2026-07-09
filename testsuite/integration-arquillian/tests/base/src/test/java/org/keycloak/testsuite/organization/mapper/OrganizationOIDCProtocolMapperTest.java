@@ -46,6 +46,7 @@ import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -78,6 +79,7 @@ import org.junit.jupiter.api.Assertions;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -100,6 +102,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         setMapperConfig(ProtocolMapperUtils.MULTIVALUED, null);
         setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, null);
         setMapperConfig(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, null);
+        setMapperConfig(OrganizationMembershipMapper.INCLUDE_EMPTY_CLAIM, null);
     }
 
     @Test
@@ -1596,6 +1599,60 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    public void testEmptyOrganizationClaimMappedWhenConfigured() throws Exception {
+        OrganizationRepresentation orgARep = createOrganization("orga", true);
+        OrganizationResource orgA = managedRealm.admin().organizations().get(orgARep.getId());
+        MemberRepresentation member = addMember(orgA, "member@" + orgARep.getDomains().iterator().next().getName());
+        orgA.members().member(member.getId()).delete().close();
+
+        setMapperConfig(OrganizationMembershipMapper.INCLUDE_EMPTY_CLAIM, Boolean.TRUE.toString());
+        setMapperConfig(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, Boolean.TRUE.toString());
+        addOrganizationDefaultClientScope("direct-grant");
+
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(member.getEmail(), memberPassword);
+        assertThat(response.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims(), hasKey(OAuth2Constants.ORGANIZATION));
+        assertThat((List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION), hasSize(0));
+
+        IDToken idToken = TokenVerifier.create(response.getIdToken(), IDToken.class).getToken();
+        assertThat(idToken.getOtherClaims(), hasKey(OAuth2Constants.ORGANIZATION));
+        assertThat((List<String>) idToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION), hasSize(0));
+
+        UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).send();
+        assertThat(userInfoResponse.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+        assertThat(userInfoResponse.getUserInfo().getOtherClaims(), hasKey(OAuth2Constants.ORGANIZATION));
+        assertThat((List<String>) userInfoResponse.getUserInfo().getOtherClaims().get(OAuth2Constants.ORGANIZATION),
+                hasSize(0));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testEmptyOrganizationClaimMappedAsJsonWhenConfigured() throws Exception {
+        OrganizationRepresentation orgARep = createOrganization("orga", true);
+        OrganizationResource orgA = managedRealm.admin().organizations().get(orgARep.getId());
+        MemberRepresentation member = addMember(orgA, "member@" + orgARep.getDomains().iterator().next().getName());
+        orgA.members().member(member.getId()).delete().close();
+
+        setMapperConfig(OrganizationMembershipMapper.INCLUDE_EMPTY_CLAIM, Boolean.TRUE.toString());
+        setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "JSON");
+        addOrganizationDefaultClientScope("direct-grant");
+
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(member.getEmail(), memberPassword);
+        assertThat(response.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims(), hasKey(OAuth2Constants.ORGANIZATION));
+        assertThat((Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION), anEmptyMap());
+    }
+
+    @Test
     public void testOrganizationsClaimMappedIfScopeInTokenDisabled() throws Exception {
         OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(managedRealm.admin().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
@@ -1801,6 +1858,22 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(token.getOtherClaims(), not(hasKey(OAuth2Constants.ORGANIZATION)));
         assertThat(token.getOtherClaims(), hasKey("my_orgs"));
         assertThat(token.getOtherClaims().get("my_orgs"), notNullValue());
+    }
+
+    private void addOrganizationDefaultClientScope(String clientId) {
+        ClientRepresentation clientRep = managedRealm.admin().clients().findByClientId(clientId).get(0);
+        ClientResource client = managedRealm.admin().clients().get(clientRep.getId());
+        ClientScopeRepresentation orgScopeRep = client.getOptionalClientScopes().stream()
+                .filter(scope -> "organization".equals(scope.getName()))
+                .findAny()
+                .orElseThrow();
+
+        client.removeOptionalClientScope(orgScopeRep.getId());
+        client.addDefaultClientScope(orgScopeRep.getId());
+        getCleanup().addCleanup(() -> {
+            client.removeDefaultClientScope(orgScopeRep.getId());
+            client.addOptionalClientScope(orgScopeRep.getId());
+        });
     }
 
     @Test

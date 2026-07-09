@@ -50,6 +50,7 @@ import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
+import org.keycloak.utils.JsonUtils;
 
 import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.JSON_TYPE;
 import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME;
@@ -60,6 +61,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
     public static final String ADD_ORGANIZATION_ATTRIBUTES = "addOrganizationAttributes";
     public static final String ADD_ORGANIZATION_ID = "addOrganizationId";
     public static final String ADD_ORGANIZATION_DOMAIN = "addOrganizationDomain";
+    public static final String INCLUDE_EMPTY_CLAIM = "includeEmptyClaim";
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -94,6 +96,13 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         property.setDefaultValue(Boolean.FALSE.toString());
         property.setHelpText(ADD_ORGANIZATION_DOMAIN + ".help");
+        properties.add(property);
+        property = new ProviderConfigProperty();
+        property.setName(INCLUDE_EMPTY_CLAIM);
+        property.setLabel(INCLUDE_EMPTY_CLAIM + ".label");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue(Boolean.FALSE.toString());
+        property.setHelpText(INCLUDE_EMPTY_CLAIM + ".help");
         properties.add(property);
         return properties;
     }
@@ -144,6 +153,11 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
             return;
         }
 
+        if (isEmptyClaim(claim)) {
+            mapEmptyClaim(token, effectiveModel, claim);
+            return;
+        }
+
         OIDCAttributeMapperHelper.mapClaim(token, effectiveModel, claim);
     }
 
@@ -160,7 +174,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
     private Object resolveValue(ProtocolMapperModel model, UserModel user, List<OrganizationModel> organizations) {
         if (organizations.isEmpty()) {
-            return null;
+            return resolveEmptyValue(model);
         }
 
         if (!OIDCAttributeMapperHelper.isMultivalued(model)) {
@@ -195,7 +209,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         }
 
         if (value.isEmpty()) {
-            return null;
+            return resolveEmptyValue(model);
         }
 
         if (isJsonType(model)) {
@@ -203,6 +217,32 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         }
 
         return value.keySet();
+    }
+
+    private Object resolveEmptyValue(ProtocolMapperModel model) {
+        if (!isIncludeEmptyClaim(model)) {
+            return null;
+        }
+
+        if (isJsonType(model)) {
+            return Map.of();
+        }
+
+        if (OIDCAttributeMapperHelper.isMultivalued(model)) {
+            return List.of();
+        }
+
+        return null;
+    }
+
+    private boolean isEmptyClaim(Object claim) {
+        return claim instanceof Map && ((Map<?, ?>) claim).isEmpty()
+                || claim instanceof List && ((List<?>) claim).isEmpty();
+    }
+
+    private void mapEmptyClaim(IDToken token, ProtocolMapperModel model, Object claim) {
+        JsonUtils.mapClaim(JsonUtils.splitClaimPath(model.getConfig().get(TOKEN_CLAIM_NAME)), claim, token.getOtherClaims(),
+                OIDCAttributeMapperHelper.isMultivalued(model));
     }
 
     private static boolean isJsonType(ProtocolMapperModel model) {
@@ -253,6 +293,10 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
     private boolean isAddOrganizationDomain(ProtocolMapperModel model) {
         return Boolean.parseBoolean(model.getConfig().getOrDefault(ADD_ORGANIZATION_DOMAIN, Boolean.FALSE.toString()));
+    }
+
+    private boolean isIncludeEmptyClaim(ProtocolMapperModel model) {
+        return Boolean.parseBoolean(model.getConfig().getOrDefault(INCLUDE_EMPTY_CLAIM, Boolean.FALSE.toString()));
     }
 
     public static ProtocolMapperModel create(String name, boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
