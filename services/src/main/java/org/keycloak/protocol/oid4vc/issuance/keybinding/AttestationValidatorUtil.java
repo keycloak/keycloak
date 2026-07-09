@@ -64,6 +64,7 @@ import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
+import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.SupportedProofTypeData;
@@ -97,8 +98,10 @@ public class AttestationValidatorUtil {
      *                                        {@code jwt} proof type (embedded {@code key_attestation} header).
      * @param proofTypeKeyForSigningAlgPolicy {@link org.keycloak.protocol.oid4vc.model.ProofType} value
      *                                        ({@code jwt} or {@code attestation}) to resolve
-     *                                        {@code proof_signing_alg_values_supported}; if {@code null}, only
-     *                                        FAPI {@code ALLOWED_ALGORITHMS} is enforced.
+     *                                        {@code proof_signing_alg_values_supported} and
+     *                                        {@code key_attestations_required}; if {@code null}, falls back to
+     *                                        {@code ProofType.JWT} for attestation requirements and FAPI
+     *                                        {@code ALLOWED_ALGORITHMS} for signing algorithms.
      */
     public static KeyAttestationJwtBody validateAttestationJwt(
             String attestationJwt,
@@ -229,10 +232,13 @@ public class AttestationValidatorUtil {
             return null;
         }
 
+        // Fall back to "jwt" when proofTypeKey is null (backward compatibility).
+        String effectiveKey = proofTypeKey != null ? proofTypeKey : ProofType.JWT;
+
         SupportedProofTypeData proofTypeData = vcIssuanceContext.getCredentialConfig()
                 .getProofTypesSupported()
                 .getSupportedProofTypes()
-                .get(proofTypeKey);
+                .get(effectiveKey);
 
         return proofTypeData != null ? proofTypeData.getKeyAttestationsRequired() : null;
     }
