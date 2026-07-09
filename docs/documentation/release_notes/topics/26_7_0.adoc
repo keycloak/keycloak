@@ -216,7 +216,7 @@ The reverse proxy documentation has been significantly expanded with dedicated s
 
 For more details, see the link:https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] guide.
 
-== Simplified multi-cluster high availability without external caches (experimental)
+== Simplified multi-cluster high availability without external caches (preview)
 // https://github.com/keycloak/keycloak/issues/49469
 
 The existing multi-cluster setup for {project_name} requires deploying and managing an external {jdgserver_name} cluster for cross-site session replication, along with vendor-specific fencing infrastructure for automated failover. This adds significant operational complexity and limits deployments to specific environments.
