@@ -1,9 +1,14 @@
 package org.keycloak.tests.oauth;
 
+import java.util.List;
+
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.mappers.ParameterizedScopeMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -29,6 +34,7 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -178,6 +184,67 @@ public class ParameterizedScopesIsolationTest {
         AccessTokenResponse refreshResponse2 = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken());
         assertTrue(refreshResponse2.isSuccess());
         assertScopeNotContains(refreshResponse2.getScope(), requestedScope);
+    }
+
+    @Test
+    public void longestPrefixScopeMatchWins() {
+        createParameterizedScopeWithMapper("read", "read_param");
+        createParameterizedScopeWithMapper("read:account", "read_account_param");
+
+        // "read:account:victim" should bind to "read:account" (longest prefix), not "read"
+        AuthorizationEndpointResponse authResponse = oauth.loginForm()
+                .scope("read:account:victim")
+                .doLogin(USERNAME, PASSWORD);
+        assertTrue(authResponse.isRedirected());
+
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authResponse.getCode());
+        assertTrue(tokenResponse.isSuccess());
+
+        AccessToken token = oauth.parseToken(tokenResponse.getAccessToken(), AccessToken.class);
+        assertScopeContains(token.getScope(), "read:account:victim");
+        Assertions.assertEquals(List.of("victim"), token.getOtherClaims().get("read_account_param"),
+                "Longest prefix scope 'read:account' should match with parameter 'victim'");
+        Assertions.assertNull(token.getOtherClaims().get("read_param"),
+                "Shorter prefix scope 'read' should not match when a longer prefix exists");
+
+        // "read:service:payment" has no "read:service" scope, so it should bind to "read"
+        AuthorizationEndpointResponse authResponse2 = oauth.loginForm()
+                .scope("read:service:payment")
+                .doLoginWithCookie();
+        assertTrue(authResponse2.isRedirected());
+
+        AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(authResponse2.getCode());
+        assertTrue(tokenResponse2.isSuccess());
+
+        AccessToken token2 = oauth.parseToken(tokenResponse2.getAccessToken(), AccessToken.class);
+        assertScopeContains(token2.getScope(), "read:service:payment");
+        Assertions.assertEquals(List.of("service:payment"), token2.getOtherClaims().get("read_param"),
+                "Only matching prefix scope 'read' should match with parameter 'service:payment'");
+        Assertions.assertNull(token2.getOtherClaims().get("read_account_param"),
+                "Non-matching scope 'read:account' should not match 'read:service:payment'");
+    }
+
+    private void createParameterizedScopeWithMapper(String name, String claimName) {
+        ClientScopeRepresentation scopeRep = ParameterizedScopeBuilder.create(name)
+                .parameterizedScopeType("string")
+                .build();
+
+        String scopeId;
+        try (Response response = realm.admin().clientScopes().create(scopeRep)) {
+            assertEquals(201, response.getStatus(), "Parameterized scope creation should succeed");
+            scopeId = ApiUtil.getCreatedId(response);
+        }
+
+        ProtocolMapperModel mapper = ParameterizedScopeMapper.create(
+                name + "-param-mapper", claimName, "String", true, false, true);
+        try (Response response = realm.admin().clientScopes().get(scopeId).getProtocolMappers()
+                .createMapper(ModelToRepresentation.toRepresentation(mapper))) {
+            assertEquals(201, response.getStatus(), "Mapper creation should succeed");
+        }
+
+        String clientId = realm.admin().clients().findByClientId(oauth.getClientId()).get(0).getId();
+        realm.cleanup().add(r -> r.clientScopes().get(scopeId).remove());
+        realm.admin().clients().get(clientId).addOptionalClientScope(scopeId);
     }
 
     private static void assertScopeContains(String scopeString, String expectedScope) {

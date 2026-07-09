@@ -120,3 +120,4 @@ Parameterized client scopes have the following constraints:
 
 * A parameterized scope can only be an *optional* client scope. It cannot be assigned as a default client scope for a client.
 * A parameterized scope cannot be assigned as a realm default scope. It can be assigned as a realm optional scope.
+* When multiple parameterized scopes with overlapping name prefixes are assigned to the same client, the most specific (longest prefix) scope is matched. For example, if a client has both `read` and `read:account` as parameterized scopes, a request for `read:account:victim` binds to `read:account` with parameter `victim`, not to `read` with parameter `account:victim`.
