@@ -26,10 +26,10 @@ public class AttestationValidatorUtilTest extends AbstractUtilSessionTest {
                 .setUserAuthentication(List.of("pin"));
 
         VCIssuanceContext ctx = createContextWithAttestation(
-                jwtAttestation,           // under "jwt" key
+                jwtAttestation,
                 new KeyAttestationsRequired()
                         .setKeyStorage(List.of("tpm"))
-                        .setUserAuthentication(List.of("fingerprint"))  // different under "attestation"
+                        .setUserAuthentication(List.of("fingerprint"))
         );
 
         KeyAttestationsRequired result = AttestationValidatorUtil.getAttestationRequirements(ctx, ProofType.JWT);
@@ -50,8 +50,8 @@ public class AttestationValidatorUtilTest extends AbstractUtilSessionTest {
         VCIssuanceContext ctx = createContextWithAttestation(
                 new KeyAttestationsRequired()
                         .setKeyStorage(List.of("hardware"))
-                        .setUserAuthentication(List.of("pin")),  // different under "jwt"
-                attestationAttestation  // under "attestation" key
+                        .setUserAuthentication(List.of("pin")),
+                attestationAttestation
         );
 
         KeyAttestationsRequired result = AttestationValidatorUtil.getAttestationRequirements(ctx, ProofType.ATTESTATION);
@@ -95,7 +95,8 @@ public class AttestationValidatorUtilTest extends AbstractUtilSessionTest {
     }
 
     @Test
-    public void testGetAttestationRequirements_ReturnsNullWhenSupportedProofTypesIsNull() {
+    public void testGetAttestationRequirements_ReturnsNullWhenSupportedProofTypesIsEmpty() {
+        // supportedProofTypes is always an initialized HashMap (never null), so this covers the empty-map case.
         VCIssuanceContext ctx = new VCIssuanceContext();
         SupportedCredentialConfiguration config = new SupportedCredentialConfiguration();
         config.setProofTypesSupported(new ProofTypesSupported());
@@ -103,12 +104,27 @@ public class AttestationValidatorUtilTest extends AbstractUtilSessionTest {
 
         KeyAttestationsRequired result = AttestationValidatorUtil.getAttestationRequirements(ctx, ProofType.JWT);
 
-        assertNull(result, "Should return null when supportedProofTypes map is empty/null");
+        assertNull(result, "Should return null when supportedProofTypes map is empty");
+    }
+
+    @Test
+    public void testGetAttestationRequirements_ReturnsJwtFallbackWhenProofTypeKeyIsNull() {
+        // null proofTypeKey falls back to "jwt" for backward compatibility.
+        KeyAttestationsRequired jwtReq = new KeyAttestationsRequired()
+                .setKeyStorage(List.of("hardware"))
+                .setUserAuthentication(List.of("pin"));
+
+        VCIssuanceContext ctx = createContextWithAttestation(jwtReq, null);
+
+        KeyAttestationsRequired result = AttestationValidatorUtil.getAttestationRequirements(ctx, null);
+
+        Assertions.assertNotNull(result, "Should return attestation requirements using JWT fallback when proofTypeKey is null");
+        assertEquals(List.of("hardware"), result.getKeyStorage());
+        assertEquals(List.of("pin"), result.getUserAuthentication());
     }
 
     @Test
     public void testGetAttestationRequirements_JwtAndAttestationProduceDifferentResults() {
-        // Prove that the two proof types return different attestation requirements
         KeyAttestationsRequired jwtReq = new KeyAttestationsRequired()
                 .setKeyStorage(List.of("hardware"));
         KeyAttestationsRequired attestationReq = new KeyAttestationsRequired()
@@ -127,11 +143,9 @@ public class AttestationValidatorUtilTest extends AbstractUtilSessionTest {
 
     @Test
     public void testGetAttestationRequirements_ReturnsNullWhenProofTypeEntryHasNoAttestationRequired() {
-        // A proof type entry exists but has null key_attestations_required
         VCIssuanceContext ctx = new VCIssuanceContext();
         SupportedCredentialConfiguration config = new SupportedCredentialConfiguration();
         ProofTypesSupported proofTypesSupported = new ProofTypesSupported();
-        // Put an entry with no keyAttestationsRequired
         proofTypesSupported.getSupportedProofTypes().put(ProofType.JWT,
                 new SupportedProofTypeData(List.of("ES256"), null));
         config.setProofTypesSupported(proofTypesSupported);
