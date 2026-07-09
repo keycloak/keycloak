@@ -26,6 +26,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
@@ -44,6 +45,9 @@ import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.ClientModel;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
@@ -63,6 +67,8 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.admin.client.v2.ClientApiV2Test.ClientProviderEventListener.ClientEvent;
+import org.keycloak.tests.admin.client.v2.ClientApiV2Test.ClientProviderEventListener.EventType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.http.client.methods.HttpGet;
@@ -201,6 +207,32 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         }
     }
 
+    public static class ClientProviderEventListener implements ProviderEventListener {
+
+        public enum EventType {
+            CREATE,
+            UPDATE,
+            REMOVED
+        }
+        
+        public record ClientEvent(EventType type, String clientId) {};
+        
+        public static ClientProviderEventListener INSTANCE = new ClientProviderEventListener();
+        
+        public ConcurrentLinkedQueue<ClientEvent> events = new ConcurrentLinkedQueue<>();
+
+        @Override
+        public void onEvent(ProviderEvent event) {
+            if (event instanceof ClientModel.ClientCreationEvent e) {
+                this.events.add(new ClientEvent(EventType.CREATE, e.getCreatedClient().getClientId()));
+            } else if (event instanceof ClientModel.ClientUpdatedEvent e) {
+                this.events.add(new ClientEvent(EventType.UPDATE, e.getUpdatedClient().getClientId()));
+            } else if (event instanceof ClientModel.ClientRemovedEvent e) {
+                this.events.add(new ClientEvent(EventType.REMOVED, e.getClient().getClientId()));
+            }
+        }
+    }
+
     @Test
     public void putCreateOrUpdates() {
         var clientId = "other";
@@ -209,19 +241,39 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setClientId(clientId);
         rep.setDescription("I'm new");
 
-        try (var response = getClientsApi().client(clientId).createOrUpdateClient(rep)) {
-            assertEquals(201, response.getStatus());
-            OIDCClientRepresentation client = response.readEntity(OIDCClientRepresentation.class);
-            assertEquals("I'm new", client.getDescription());
-            assertClientUuid(client);
-        }
+        runOnServer.run(session -> {
 
-        rep.setDescription("I'm updated");
-        try (var response = getClientsApi().client(clientId).createOrUpdateClient(rep)) {
-            assertEquals(200, response.getStatus());
-            OIDCClientRepresentation client = response.readEntity(OIDCClientRepresentation.class);
-            assertEquals("I'm updated", client.getDescription());
-            assertClientUuid(client);
+            session.getKeycloakSessionFactory().register(ClientProviderEventListener.INSTANCE);
+
+        });
+
+        try {
+
+            try (var response = getClientsApi().client(clientId).createOrUpdateClient(rep)) {
+                assertEquals(201, response.getStatus());
+                OIDCClientRepresentation client = response.readEntity(OIDCClientRepresentation.class);
+                assertEquals("I'm new", client.getDescription());
+                assertClientUuid(client);
+            }
+
+            rep.setDescription("I'm updated");
+            try (var response = getClientsApi().client(clientId).createOrUpdateClient(rep)) {
+                assertEquals(200, response.getStatus());
+                OIDCClientRepresentation client = response.readEntity(OIDCClientRepresentation.class);
+                assertEquals("I'm updated", client.getDescription());
+                assertClientUuid(client);
+            }
+
+            List<ClientEvent> events = List.of(runOnServer.fetch(session -> ClientProviderEventListener.INSTANCE.events, ClientEvent[].class));
+
+            assertEquals(List.of(new ClientEvent(EventType.CREATE, "other"), new ClientEvent(EventType.UPDATE, "other")), events);
+
+        } finally {
+            runOnServer.run(session -> {
+
+                session.getKeycloakSessionFactory().unregister(ClientProviderEventListener.INSTANCE);
+
+            });
         }
     }
 
