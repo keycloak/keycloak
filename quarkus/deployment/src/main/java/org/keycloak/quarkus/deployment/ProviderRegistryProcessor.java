@@ -64,7 +64,7 @@ class ProviderRegistryProcessor {
 
     private static final Logger logger = Logger.getLogger(ProviderRegistryProcessor.class);
 
-    private static final DotName KEYCLOAK_PROVIDER = DotName.createSimple(KeycloakProvider.class.getName());
+    private static final DotName KEYCLOAK_PROVIDER = DotName.createSimple(KeycloakProvider.class);
 
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
