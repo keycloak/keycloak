@@ -1,18 +1,21 @@
-package org.keycloak.admin.api;
+package org.keycloak.services.client;
 
 import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.keycloak.admin.api.SortField;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 
 /**
  * Sortable fields for Client Admin API v2 list queries ({@code sort}).
  * API names map to scalar {@code CLIENT} table columns.
  */
-public enum ClientField {
+public enum ClientField implements SortField {
     CLIENT_ID("clientId", stringKey(BaseClientRepresentation::getClientId)),
     DISPLAY_NAME("displayName", stringKey(BaseClientRepresentation::getDisplayName)),
     DESCRIPTION("description", stringKey(BaseClientRepresentation::getDescription)),
@@ -22,6 +25,9 @@ public enum ClientField {
     CREATED_TIMESTAMP("createdTimestamp", longKey(BaseClientRepresentation::getCreatedTimestamp)),
     UPDATED_TIMESTAMP("updatedTimestamp", longKey(BaseClientRepresentation::getUpdatedTimestamp));
 
+    private static final Map<String, ClientField> API_NAME_TO_CLIENT_FIELD = EnumSet.allOf(ClientField.class).stream()
+            .collect(Collectors.toMap(f -> f.apiName, Function.identity()));
+
     private final String apiName;
     private final ComparatorFactory comparatorFactory;
 
@@ -30,10 +36,12 @@ public enum ClientField {
         this.comparatorFactory = comparatorFactory;
     }
 
+    @Override
     public String getApiName() {
         return apiName;
     }
 
+    @Override
     public String toQueryValue() {
         return apiName;
     }
@@ -47,7 +55,7 @@ public enum ClientField {
     }
 
     public static Optional<ClientField> fromApiName(String apiName) {
-        return Stream.of(values()).filter(field -> field.apiName.equals(apiName)).findFirst();
+        return Optional.ofNullable(API_NAME_TO_CLIENT_FIELD.get(apiName));
     }
 
     public static String allowedApiNames() {

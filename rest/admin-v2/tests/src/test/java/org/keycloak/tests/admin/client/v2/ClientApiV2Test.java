@@ -33,7 +33,6 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
-import org.keycloak.admin.api.ClientField;
 import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.admin.api.SortOption;
@@ -47,6 +46,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
+import org.keycloak.services.client.ClientField;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectClient;

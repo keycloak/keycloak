@@ -22,7 +22,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.stream.StreamSupport;
 
-import org.keycloak.admin.api.ClientField;
+import org.keycloak.services.client.ClientField;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
