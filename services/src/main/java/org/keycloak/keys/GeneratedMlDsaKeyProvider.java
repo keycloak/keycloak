@@ -56,7 +56,7 @@ public class GeneratedMlDsaKeyProvider extends AbstractMlDsaKeyProvider {
 
             return createKeyWrapper(keyPair, algorithm);
         } catch (Exception e) {
-            logger.warnf("Exception loading ML-DSA public key. %s", e.toString());
+            logger.warnf("Exception loading ML-DSA key pair. %s", e.toString());
             return null;
         }
     }
