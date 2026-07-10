@@ -395,12 +395,20 @@ public enum OrganizationScope {
         }
 
         Set<ClientScopeModel> organizationScopes = session.getAttributeOrDefault(ORGANIZATION_SCOPES_SESSION_ATTRIBUTE, Set.of());
+        ClientScopeModel cachedScope = null;
 
-        for (ClientScopeModel clientScope : organizationScopes) {
-            if (scope.equals(clientScope.getName()) || scope.startsWith(clientScope.getName() + VALUE_SEPARATOR)) {
-                // scope already processed and supports organizations
-                return clientScope;
+        for (ClientScopeModel candidate : organizationScopes) {
+            boolean matches = scope.equals(candidate.getName()) || scope.startsWith(candidate.getName() + VALUE_SEPARATOR);
+
+            // prefer the longest matching cached name, consistent with resolveParameterizedClientScope below
+            if (matches && (cachedScope == null || candidate.getName().length() > cachedScope.getName().length())) {
+                cachedScope = candidate;
             }
+        }
+
+        if (cachedScope != null) {
+            // scope already processed and supports organizations
+            return cachedScope;
         }
 
         ClientScopeModel clientScope = getClientScope(client, scope);
