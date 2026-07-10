@@ -142,6 +142,17 @@ export const PageHandler = ({
 
   const onSubmit = async (formData: ComponentRepresentation) => {
     try {
+      if (
+        (storageType === "CLIENT" && !params.clientId) ||
+        (storageType === "USER" && !params.userId) ||
+        (storageType === "GROUP" && !params.groupId) ||
+        (storageType === "IDENTITY_PROVIDER" && !params.providerId) ||
+        (storageType === "CUSTOM" && !page.metadata.endpoint)
+      ) {
+        throw new Error(
+          `Missing required parameters for storageType: ${storageType}`,
+        );
+      }
       switch (storageType) {
         case "CLIENT":
           if (params.clientId) {
