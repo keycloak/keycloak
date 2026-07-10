@@ -179,7 +179,7 @@ For {project_name}, high-risk content collected by JFR can be removed with the f
 [source]
 ----
 jfr scrub \
-  --exclude-events jdk.InitialEnvironmentVariable,jdk.JVMInformation,jdk.OldObjectSample \
+  --exclude-events jdk.InitialEnvironmentVariable,jdk.JVMInformation,jdk.ProcessStart,jdk.OldObjectSample \
   recording.jfr recording-scrubbed.jfr
 ----
 
@@ -187,23 +187,26 @@ The following table lists events that can reveal sensitive information:
 
 [%autowidth]
 |===
-| JFR Event Name | Risk | Explanation
+| JFR Event Types | Risk Level | {project_name}-Specific Security Risk & Information Contained
 
-| `jdk.InitialEnvironmentVariable` | High | Environment variables can contain secrets passed to {project_name} during startup. For example: `KC_DB_PASSWORD`.
-| `jdk.JVMInformation` | High | JVM information can contain secrets in CLI arguments passed to {project_name} during startup. For example: `--db-password`.
-| `jdk.OldObjectSample` | High | Serialized Java objects can include sensitive in-memory information.
+| `jdk.InitialEnvironmentVariable`, `jdk.JVMInformation`, `jdk.ProcessStart`| *Critical* | Direct secrets exposure. Environment variables and CLI arguments can contain secrets passed to {project_name} during startup. For example: `KC_DB_PASSWORD`, `--db-password`.
+| `jdk.OldObjectSample` | *High* | Serialized Java objects can include sensitive in-memory information.
+| `jdk.SocketRead`, `jdk.SocketWrite`, `jdk.TLSHandshake` | Medium-High | Infrastructure mapping. These events may expose hostnames, URL parameters, IP addresses and ports of 3rd-party services, or make it possible to assess the TLS strength used to secure user-facing login pages.
+| `jdk.ExceptionThrown`, `jdk.JavaErrorThrown` | Medium | Failed authentication attempts, invalid token errors, or connection timeouts to user directories can leak specific user IDs, Client IDs, or realm names in the exception message.
+| `jdk.FileRead`, `jdk.FileWrite` | Medium | Paths to potentially sensitive deployment files, or custom SPI `.jar` deployments.
+| `jdk.ThreadDump`, `jdk.SystemProcess` | Medium-Low | Thread dumps expose the exact execution path of custom Authenticator SPIs, User Storage Providers, or Protocol Mappers.
 | `jdk.InitialSystemProperty` | Low | {project_name} by default does not pass sensitive information here.
 |===
 
-WARNING: Other flight recorder events may contain information like host names, file paths or URL parameters.
-To analyze the contents for sensitive information, use `jfr print recording.jfr` or `jfr print --json recording.jfr` to review the contents.
+WARNING: The above list is not exhaustive. Other flight recorder events may contain sensitive information.
+To review and analyze the contents in detail use `jfr print recording.jfr` or `jfr print --json recording.jfr`.
 You can also use `jfr scrub --include-events ...` to only share a subset of the events for troubleshooting.
 
 === Include only specific information
 
-Use `jfr scrub --include-events ...` to only include data relevant to a particular performance problem.
+Instead of excluding data it is possible to use an inverse scrub approach. Using `jfr scrub --include-events ...` it is possible to scrub a recording using an explicitly defined allowlist.
 
-Example:
+The following example shows an allowlist that substatially reduces security risk while still remaining useful for inverstigating performance issues:
 [source]
 ----
 jfr scrub \
