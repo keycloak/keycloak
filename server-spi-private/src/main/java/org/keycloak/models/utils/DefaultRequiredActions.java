@@ -86,7 +86,8 @@ public class DefaultRequiredActions {
         WEBAUTHN_PASSWORDLESS_REGISTER("webauthn-register-passwordless", DefaultRequiredActions::addWebAuthnPasswordlessRegisterAction, () -> isFeatureEnabled(Profile.Feature.WEB_AUTHN)),
         VERIFY_USER_PROFILE(UserModel.RequiredAction.VERIFY_PROFILE.name(), DefaultRequiredActions::addVerifyProfile),
         IDP_LINK_ACCOUNT("idp_link", DefaultRequiredActions::addIdpLink),
-        VERIFIABLE_CREDENTIAL_OFFER(VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID, DefaultRequiredActions::addVerifiableCredentialOfferAction, () -> isFeatureEnabled(Profile.Feature.OID4VC_VCI));
+        VERIFIABLE_CREDENTIAL_OFFER(VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID, DefaultRequiredActions::addVerifiableCredentialOfferAction, () -> isFeatureEnabled(Profile.Feature.OID4VC_VCI)),
+        TRUST_DEVICE("trust_device", DefaultRequiredActions::addTrustedDevice);
 
         private final String alias;
         private final Consumer<RealmModel> addAction;
@@ -236,6 +237,19 @@ public class DefaultRequiredActions {
             idpLink.setDefaultAction(false);
             idpLink.setPriority(120);
             realm.addRequiredActionProvider(idpLink);
+        }
+    }
+
+    public static void addTrustedDevice(RealmModel realm) {
+        if (realm.getRequiredActionProviderByAlias("trust_device") == null) {
+            RequiredActionProviderModel trustDevice = new RequiredActionProviderModel();
+            trustDevice.setEnabled(true);
+            trustDevice.setAlias("trust_device");
+            trustDevice.setName("Trust device");
+            trustDevice.setProviderId("trust_device");
+            trustDevice.setDefaultAction(false);
+            trustDevice.setPriority(140);
+            realm.addRequiredActionProvider(trustDevice);
         }
     }
 

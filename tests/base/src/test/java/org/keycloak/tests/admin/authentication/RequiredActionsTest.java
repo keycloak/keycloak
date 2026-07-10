@@ -77,6 +77,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         addRequiredAction(expected, "delete_account", "Delete Account", false, false, null);
         addRequiredAction(expected, "delete_credential", "Delete Credential", true, false, null);
         addRequiredAction(expected, "idp_link", "Linking Identity Provider", true, false, null);
+        addRequiredAction(expected, "trust_device", "Trust device", true, false, null);
         addRequiredAction(expected, "update_user_locale", "Update User Locale", true, false, null);
         addRequiredAction(expected, "webauthn-register", "Webauthn Register", true, false, null);
         addRequiredAction(expected, "webauthn-register-passwordless", "Webauthn Register Passwordless", true, false, null);
