@@ -41,6 +41,18 @@ public class CryptoUtilsTest extends AbstractUtilSessionTest {
     }
 
     @Test
+    public void jwsAlgorithmsCanBeParsedFromWireNames() {
+        assertEquals(org.keycloak.jose.jws.Algorithm.ML_DSA_44,
+                org.keycloak.jose.jws.Algorithm.fromName(Algorithm.ML_DSA_44));
+        assertEquals(org.keycloak.jose.jws.Algorithm.ML_DSA_65,
+                org.keycloak.jose.jws.Algorithm.fromName(Algorithm.ML_DSA_65));
+        assertEquals(org.keycloak.jose.jws.Algorithm.ML_DSA_87,
+                org.keycloak.jose.jws.Algorithm.fromName(Algorithm.ML_DSA_87));
+        assertEquals(org.keycloak.jose.jws.Algorithm.none,
+                org.keycloak.jose.jws.Algorithm.fromName(org.keycloak.jose.jws.Algorithm.none.getName()));
+    }
+
+    @Test
     public void mldsaSignaturesCanBeCreatedAndVerified() throws Exception {
         byte[] data = "ML-DSA signature test".getBytes(StandardCharsets.UTF_8);
         byte[] differentData = "tampered ML-DSA signature test".getBytes(StandardCharsets.UTF_8);

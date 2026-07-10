@@ -70,7 +70,7 @@ public class CibaClientValidation {
 
     private static boolean isSupportedBackchannelAuthenticationRequestSigningAlg(KeycloakSession session, String alg) {
         // Consider removing 'none' . Not sure if we should allow him based on the CIBA specification...
-        if (Algorithm.none.equals(alg)) {
+        if (Algorithm.none.getName().equals(alg)) {
             return true;
         }
 

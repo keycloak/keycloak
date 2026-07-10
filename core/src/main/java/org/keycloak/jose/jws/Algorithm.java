@@ -78,4 +78,13 @@ public enum Algorithm {
     public String getName() {
         return name != null ? name : name();
     }
+
+    public static Algorithm fromName(String name) {
+        for (Algorithm algorithm : values()) {
+            if (algorithm.getName().equals(name)) {
+                return algorithm;
+            }
+        }
+        throw new IllegalArgumentException("No enum constant " + Algorithm.class.getCanonicalName() + "." + name);
+    }
 }
