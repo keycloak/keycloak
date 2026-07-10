@@ -58,4 +58,16 @@ public class OrganizationsValidationTest {
     public void validateAliasRejectsDoubleQuote() {
         OrganizationsValidation.validateAlias("acme\"alias");
     }
+
+    @Test(expected = OrganizationValidationException.class)
+    public void validateAliasRejectsReservedAllOrganizationsWildcard() {
+        // "*" is reserved by OrganizationScope.ALL to mean "every organization the user belongs to"
+        OrganizationsValidation.validateAlias("*");
+    }
+
+    @Test
+    public void validateAliasAcceptsWildcardCharacterWithinAlias() {
+        // only the literal alias "*" is reserved; the character remains valid elsewhere in an alias
+        OrganizationsValidation.validateAlias("acme*corp");
+    }
 }

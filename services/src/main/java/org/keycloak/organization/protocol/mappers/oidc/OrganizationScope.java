@@ -175,7 +175,8 @@ public enum OrganizationScope {
 
     private static final String ORGANIZATION_SCOPES_SESSION_ATTRIBUTE = "kc.org.client.scope";
     private static final String UNSUPPORTED_ORGANIZATION_SCOPES_ATTRIBUTE = "kc.org.client.scope.unsupported";
-    private static final Pattern SCOPE_PATTERN = Pattern.compile("(.*)" + VALUE_SEPARATOR + "(.*)");
+    // non-greedy first group: splits on the first separator so alias values may themselves contain VALUE_SEPARATOR
+    private static final Pattern SCOPE_PATTERN = Pattern.compile("(.*?)" + VALUE_SEPARATOR + "(.*)");
     private static final String EMPTY_SCOPE = "";
 
     /**
