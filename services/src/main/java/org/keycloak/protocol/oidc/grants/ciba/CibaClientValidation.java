@@ -68,7 +68,7 @@ public class CibaClientValidation {
         }
     }
 
-    private static boolean isSupportedBackchannelAuthenticationRequestSigningAlg(KeycloakSession session, String alg) {
+    static boolean isSupportedBackchannelAuthenticationRequestSigningAlg(KeycloakSession session, String alg) {
         // Consider removing 'none' . Not sure if we should allow him based on the CIBA specification...
         if (Algorithm.none.getName().equals(alg)) {
             return true;
@@ -76,7 +76,7 @@ public class CibaClientValidation {
 
         // Only asymmetric algorithms supported for CIBA signed request according to the specification
         SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, alg);
-        return signatureProvider.isAsymmetricAlgorithm();
+        return signatureProvider != null && signatureProvider.isAsymmetricAlgorithm();
     }
 
 }
