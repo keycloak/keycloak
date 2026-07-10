@@ -7,4 +7,5 @@ export default interface PasswordPolicyTypeRepresentation {
   configType?: string;
   defaultValue?: string;
   multipleSupported?: boolean;
+  helpText?: string;
 }
