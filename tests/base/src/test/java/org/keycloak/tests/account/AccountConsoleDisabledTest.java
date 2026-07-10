@@ -13,9 +13,8 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @KeycloakIntegrationTest(config = AccountConsoleDisabledTest.ServerConfig.class)
 public class AccountConsoleDisabledTest {
@@ -31,7 +30,7 @@ public class AccountConsoleDisabledTest {
         HttpGet request = new HttpGet(realm.getBaseUrl() + "/account/");
 
         try (CloseableHttpResponse response = httpClient.execute(request)) {
-            assertEquals(404, response.getStatusLine().getStatusCode(),
+            Assertions.assertEquals(404, response.getStatusLine().getStatusCode(),
                     "Account console should return 404 when ACCOUNT_V3 feature is disabled");
         }
     }

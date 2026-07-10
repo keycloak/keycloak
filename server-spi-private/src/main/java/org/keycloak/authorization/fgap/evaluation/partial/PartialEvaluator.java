@@ -58,6 +58,12 @@ public final class PartialEvaluator {
             return storage == null ? List.of() : storage.getFilters(new PartialEvaluationContext(storage, builder, queryBuilder, path));
         }
 
+        // check before getUser() to avoid infinite recursion when called from a runWithoutAuthorization block
+        // (e.g. isReadOnlyOrganizationMember -> getByMember -> applyAuthorizationFilters -> getPredicates -> getUser -> getUserById -> validateUser -> isReadOnlyOrganizationMember -> ...)
+        if (isSkipEvaluation(session)) {
+            return List.of();
+        }
+
         UserModel adminUser = session.getContext().getUser();
 
         if (shouldSkipPartialEvaluation(session, adminUser, resourceType)) {
@@ -276,7 +282,6 @@ public final class PartialEvaluator {
     }
 
     private boolean hasAnyQueryAdminRole(ClientModel client, UserModel user) {
-        boolean result = false;
         for (String adminRole : List.of(AdminRoles.QUERY_CLIENTS, AdminRoles.QUERY_GROUPS, AdminRoles.QUERY_USERS, AdminRoles.QUERY_ORGANIZATIONS)) {
             RoleModel role = client.getRole(adminRole);
 
@@ -285,11 +290,10 @@ public final class PartialEvaluator {
             }
 
             if (user.hasRole(role)) {
-                result = true;
-                break;
+                return true;
             }
         }
 
-        return result;
+        return false;
     }
 }

@@ -21,11 +21,13 @@ import org.keycloak.ssf.stream.DeliveryMethodFamily;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.stream.StreamStatusValue;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
+import org.keycloak.ssf.transmitter.stream.ManagedBy;
 import org.keycloak.ssf.transmitter.stream.SsfEventsConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationConfig;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfUtil;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.vault.VaultStringSecret;
 
@@ -36,11 +38,11 @@ public class ClientStreamStore implements SsfStreamStore {
     protected static final Logger log = Logger.getLogger(ClientStreamStore.class);
 
     // ----- Receiver-level configuration (survives stream delete) -------------
-    public static final String SSF_ENABLED_KEY = "ssf.enabled";
+    public static final String SSF_ENABLED_KEY = SsfUtil.SSF_ENABLED_KEY;
     public static final String SSF_PROFILE_KEY = "ssf.profile";
     public static final String SSF_AUTO_VERIFY_STREAM_KEY = "ssf.autoVerifyStream";
     public static final String SSF_VERIFICATION_DELAY_MILLIS_KEY = "ssf.verificationDelayMillis";
-    public static final String SSF_LAST_VERIFIED_AT_KEY = "ssf.lastVerifiedAt";
+    public static final String SSF_LAST_VERIFIED_AT_KEY = "ssf.stream.lastVerifiedAt";
     public static final String SSF_STREAM_AUDIENCE_KEY = "ssf.streamAudience";
     public static final String SSF_STREAM_SUPPORTED_EVENTS_KEY = "ssf.supportedEvents";
 
@@ -152,12 +154,12 @@ public class ClientStreamStore implements SsfStreamStore {
      * check tolerates minutes of lag on. Consumed by the drainer's
      * inactivity-check pass alongside {@link #SSF_INACTIVITY_TIMEOUT_SECONDS_KEY}.
      */
-    public static final String SSF_LAST_ACTIVITY_TIMESLOT_KEY = "ssf.lastActivityTimeslot";
+    public static final String SSF_LAST_ACTIVITY_TIMESLOT_KEY = "ssf.stream.lastActivityTimeslot";
 
     // ----- Per-stream state (cleared on stream delete) -----------------------
-    public static final String SSF_STREAM_ID_KEY = "ssf.streamId";
-    public static final String SSF_STATUS_KEY = "ssf.status";
-    public static final String SSF_STATUS_REASON_KEY = "ssf.status_reason";
+    public static final String SSF_STREAM_ID_KEY = "ssf.stream.id";
+    public static final String SSF_STATUS_KEY = "ssf.stream.status";
+    public static final String SSF_STATUS_REASON_KEY = "ssf.stream.statusReason";
 
     /**
      * Legacy single-blob storage key. Previously the whole {@link StreamConfig}
@@ -191,6 +193,13 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_STREAM_DEFAULT_SUBJECTS_KEY = "ssf.stream.defaultSubjects";
     public static final String SSF_STREAM_CREATED_AT_KEY = "ssf.stream.createdAt";
     public static final String SSF_STREAM_UPDATED_AT_KEY = "ssf.stream.updatedAt";
+    /**
+     * Persisted {@link org.keycloak.ssf.transmitter.stream.ManagedBy}
+     * marker — set at creation time, immutable. Absent / unparseable
+     * values resolve to {@code RECEIVER} so streams persisted before
+     * the marker was introduced keep their original ownership semantic.
+     */
+    public static final String SSF_STREAM_MANAGED_BY_KEY = "ssf.stream.managedBy";
 
     private static final String EVENT_SET_DELIMITER = ",";
 
@@ -222,7 +231,8 @@ public class ClientStreamStore implements SsfStreamStore {
             SSF_STREAM_FORMAT_KEY,
             SSF_STREAM_DEFAULT_SUBJECTS_KEY,
             SSF_STREAM_CREATED_AT_KEY,
-            SSF_STREAM_UPDATED_AT_KEY);
+            SSF_STREAM_UPDATED_AT_KEY,
+            SSF_STREAM_MANAGED_BY_KEY);
 
     protected final KeycloakSession session;
 
@@ -302,7 +312,10 @@ public class ClientStreamStore implements SsfStreamStore {
         if (streamConfig == null || !streamId.equals(streamConfig.getStreamId())) {
             return null;
         }
-        if (!Boolean.parseBoolean(client.getAttribute(SSF_ENABLED_KEY))) {
+        // Config-only gate: admin flows (read, delete + outbox cascade) must
+        // still resolve a disabled client's stream — the delivery gate lives
+        // on findStreamsForSsfReceiverClients, not this shared lookup.
+        if (!SsfUtil.isReceiverClient(client)) {
             return null;
         }
         return streamConfig;
@@ -321,7 +334,9 @@ public class ClientStreamStore implements SsfStreamStore {
             return List.of();
         }
 
-        if (!Boolean.parseBoolean(receiverClient.getAttribute("ssf.enabled"))) {
+        // Config-only gate — see getStream; this lookup also backs management
+        // flows (e.g. the one-stream-per-receiver check at create time).
+        if (!SsfUtil.isReceiverClient(receiverClient)) {
             return List.of();
         }
 
@@ -334,6 +349,11 @@ public class ClientStreamStore implements SsfStreamStore {
         Map<String, String> attributes = Map.of(SSF_ENABLED_KEY, "true");
         return session.clients()
                 .searchClientsByAttributes(realm, attributes, null, null)
+                // The attribute search already matches ssf.enabled=true, but it
+                // cannot express the client on/off state — filter disabled
+                // receivers out here so the dispatcher and event listener never
+                // see their streams.
+                .filter(SsfUtil::isReceiverEnabled)
                 .map(this::extractStreamConfig)
                 .filter(Objects::nonNull)
                 .toList();
@@ -392,7 +412,7 @@ public class ClientStreamStore implements SsfStreamStore {
                 .searchClientsByAttributes(realm, Map.of(SSF_STREAM_ID_KEY, streamId), 0, 2)
                 .toList();
         if (matches.size() > 1) {
-            log.warnf("Refusing to resolve SSF stream — multiple clients hold ssf.streamId=%s in realm=%s. "
+            log.warnf("Refusing to resolve SSF stream — multiple clients hold ssf.stream.id=%s in realm=%s. "
                             + "Matching clientIds: %s. Strip the duplicate via a client update/delete "
                             + "before dispatch can resume for this stream.",
                     streamId, realm.getName(),
@@ -481,6 +501,9 @@ public class ClientStreamStore implements SsfStreamStore {
                 client.getAttribute(SSF_STREAM_DEFAULT_SUBJECTS_KEY), null));
         streamConfig.setCreatedAt(parseIntAttribute(client, SSF_STREAM_CREATED_AT_KEY));
         streamConfig.setUpdatedAt(parseIntAttribute(client, SSF_STREAM_UPDATED_AT_KEY));
+        // Absent / unparseable attribute → RECEIVER (legacy default).
+        streamConfig.setManagedBy(ManagedBy.parseOrDefault(
+                client.getAttribute(SSF_STREAM_MANAGED_BY_KEY), ManagedBy.RECEIVER));
 
         String deliveryMethod = client.getAttribute(SSF_STREAM_DELIVERY_METHOD_KEY);
         if (deliveryMethod != null) {
@@ -636,6 +659,8 @@ public class ClientStreamStore implements SsfStreamStore {
                 streamConfig.getDefaultSubjects() != null ? streamConfig.getDefaultSubjects().name() : null);
         setIntOrRemove(client, SSF_STREAM_CREATED_AT_KEY, streamConfig.getCreatedAt());
         setIntOrRemove(client, SSF_STREAM_UPDATED_AT_KEY, streamConfig.getUpdatedAt());
+        setOrRemove(client, SSF_STREAM_MANAGED_BY_KEY,
+                streamConfig.getManagedBy() == null ? null : streamConfig.getManagedBy().name());
 
         StreamDeliveryConfig delivery = streamConfig.getDelivery();
         if (delivery != null) {

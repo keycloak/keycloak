@@ -24,8 +24,12 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.keycloak.models.workflow.expression.EvaluatorUtils.MAX_EXPRESSION_DEPTH;
+import static org.keycloak.models.workflow.expression.EvaluatorUtils.MAX_EXPRESSION_LENGTH;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -118,13 +122,42 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
         assertThat(workflowId, nullValue());
     }
 
+    @Test
+    public void testExpressionLengthLimit() {
+        // an expression exceeding the max length should be rejected
+        String expression = "has-role(" + "a".repeat(MAX_EXPRESSION_LENGTH) + ")";
+        String workflowId = createWorkflow(expression, false);
+        assertThat(workflowId, nullValue());
+
+        // an expression at the max length should be accepted
+        String padding = "a".repeat(MAX_EXPRESSION_LENGTH - "has-role()".length());
+        expression = "has-role(" + padding + ")";
+        workflowId = createWorkflow(expression);
+        assertNotNull(workflowId);
+        managedRealm.admin().workflows().workflow(workflowId).delete().close();
+    }
+
+    @Test
+    public void testExpressionDepthLimit() {
+        // an expression exceeding the max nesting depth should be rejected
+        String expression = "(".repeat(MAX_EXPRESSION_DEPTH + 1) + "has-role(admin)" + ")".repeat(MAX_EXPRESSION_DEPTH + 1);
+        String workflowId = createWorkflow(expression, false);
+        assertThat(workflowId, nullValue());
+
+        // an expression at the max nesting depth should be accepted
+        expression = "(".repeat(MAX_EXPRESSION_DEPTH) + "has-role(admin)" + ")".repeat(MAX_EXPRESSION_DEPTH);
+        workflowId = createWorkflow(expression);
+        assertNotNull(workflowId);
+        managedRealm.admin().workflows().workflow(workflowId).delete().close();
+    }
+
     public void checkWorkflowRunsForUser(String username, boolean shouldHaveAttribute) {
 
         // step 1 - login with the user
         oauth.openLoginForm();
         loginPage.fillLogin(username, username);
         loginPage.submit();
-        assertTrue(driver.page().getPageSource().contains("Happy days"));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // step 2 - use time offset to trigger the scheduled step for those users who match the condition
         // set offset to 6 days to trigger the scheduled step (which is set to run after 5 days)

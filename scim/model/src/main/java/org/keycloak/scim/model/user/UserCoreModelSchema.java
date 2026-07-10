@@ -174,7 +174,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                     for (GroupMembership membership : values) {
                         GroupModel group = session.groups().getGroupById(realm, membership.getValue());
 
-                        if (group == null) {
+                        if (group == null || !canViewGroup(group)) {
                             throw new ModelValidationException("Group with id " + membership.getValue() + " not found");
                         }
 
@@ -207,7 +207,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                     for (GroupMembership membership : values) {
                         GroupModel group = session.groups().getGroupById(realm, membership.getValue());
 
-                        if (group == null) {
+                        if (group == null || !canViewGroup(group)) {
                             throw new ModelValidationException("Group with id " + membership.getValue() + " not found");
                         }
 
@@ -223,7 +223,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                     for (GroupMembership membership : values) {
                         GroupModel group = session.groups().getGroupById(realm, membership.getValue());
 
-                        if (group == null) {
+                        if (group == null || !canViewGroup(group)) {
                             throw new ModelValidationException("Group with id " + membership.getValue() + " not found");
                         }
 
@@ -257,6 +257,9 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
     private static void checkGroupMembershipPermission(Permissions permissions, GroupModel group) {
         if (GroupModel.Type.ORGANIZATION.equals(group.getType()) && group.getOrganization() != null) {
             throw new ModelValidationException("Cannot access organization related group via non Organization API.");
+        }
+        if (permissions.isAdminGroup(group)) {
+            throw new ForbiddenException();
         }
         if (!permissions.hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.MANAGE_MEMBERSHIP)) {
             throw new ForbiddenException();

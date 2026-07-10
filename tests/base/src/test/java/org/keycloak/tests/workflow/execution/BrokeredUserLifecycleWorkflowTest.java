@@ -67,7 +67,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests the usage of workflows to manage the lifecycle of brokered users. The idea is to track the user's activity through
@@ -207,7 +206,7 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
         consumerRealmOAuth.openLoginForm();
         loginPage.fillLogin(bobFromConsumerRealm.getUsername(), bobFromConsumerRealm.getPassword());
         loginPage.submit();
-        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        Assertions.assertTrue(consumerRealmOAuth.parseLoginResponse().isSuccess());
 
         List<WorkflowRepresentation> scheduledWorkflows = consumerRealm.admin().workflows().getScheduledWorkflows(bobFromConsumerRealm.getId());
         assertThat(scheduledWorkflows, hasSize(0));
@@ -326,7 +325,7 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
         loginPage.submit();
         consentPage.assertCurrent();
         consentPage.confirm();
-        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        Assertions.assertTrue(consumerRealmOAuth.parseLoginResponse().isSuccess());
     }
 
     private static IdentityProviderRepresentation setUpIdentityProvider() {

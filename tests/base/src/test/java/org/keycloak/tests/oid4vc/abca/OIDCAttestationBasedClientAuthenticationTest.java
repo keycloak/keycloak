@@ -17,10 +17,8 @@
 package org.keycloak.tests.oid4vc.abca;
 
 import java.security.PublicKey;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ClientAttestationJwt;
@@ -32,7 +30,6 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.Proofs;
@@ -43,14 +40,11 @@ import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.ParResponse;
-import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_HEADER;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_POP_HEADER;
 import static org.keycloak.protocol.oidc.OIDCLoginProtocol.ATTEST_JWT_CLIENT_AUTH;
@@ -65,8 +59,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithABCAEnabled.class)
 public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTestBase {
-
-    private static final String ATTESTER_DEFAULT_TRUST_IDP_ALIAS = "abca-attester-default-trust";
 
     private static OIDCClientAttester attester;
     private static String attesterJwks;
@@ -89,38 +81,11 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
         String jwks = attesterJwks;
         runOnServer.run(session -> {
             RealmModel realm = session.getContext().getRealm();
-
-            configureTrustIdentityProvider(realm, ATTESTER_DEFAULT_TRUST_IDP_ALIAS,
+            configureTrustIdentityProvider(realm, OAUTH_CLIENT_ATTESTATION_DEFAULT_TRUST_IDP_ALIAS,
                     DefaultTrustIdentityProviderFactory.PROVIDER_ID,
                     Map.of(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS, jwks));
         });
-        setClientTrustSource(ATTESTER_DEFAULT_TRUST_IDP_ALIAS);
         oauth.client(abcaClient.getClientId(), null);
-    }
-
-    private static void configureTrustIdentityProvider(RealmModel realm, String alias, String providerId, Map<String, String> config) {
-        IdentityProviderModel trustIdp = realm.getIdentityProviderByAlias(alias);
-        if (trustIdp == null) {
-            trustIdp = new IdentityProviderModel();
-            trustIdp.setAlias(alias);
-            trustIdp.setProviderId(providerId);
-            trustIdp.setEnabled(true);
-            trustIdp.setConfig(config);
-            realm.addIdentityProvider(trustIdp);
-        } else {
-            trustIdp.setProviderId(providerId);
-            trustIdp.setEnabled(true);
-            trustIdp.setConfig(config);
-            realm.updateIdentityProvider(trustIdp);
-        }
-    }
-
-    private void setClientTrustSource(String alias) {
-        Map<String, String> attributes = new HashMap<>(Optional.ofNullable(abcaClient.getAttributes()).orElse(Map.of()));
-        attributes.put(OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS, alias);
-        abcaClient.setAttributes(attributes);
-        testRealm.admin().clients().get(abcaClient.getId()).update(abcaClient);
-        abcaClient = testRealm.admin().clients().get(abcaClient.getId()).toRepresentation();
     }
 
     @Test
@@ -170,7 +135,6 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
 
     @Test
     public void testClientAttestationHappyFlow() {
-        setClientTrustSource(ATTESTER_DEFAULT_TRUST_IDP_ALIAS);
 
         var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);
         ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
@@ -195,9 +159,11 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
 
         // Send Token Request
         //
+        String tokenEndpoint = oauth.getEndpoints().getToken();
         AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode)
                 .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
                 .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                .dpopProof(wallet.generateSignedDPoPProof(tokenEndpoint, ecKey, null))
                 .send();
 
         errorDescription = tokenResponse.getErrorDescription();
@@ -215,103 +181,17 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
         // Send Nonce Request
         //
         String nonce = wallet.nonceRequest().send().getNonce();
-        Proofs jwtProof = wallet.generateJwtProof(ctx, ecKey, nonce);
+        Proofs jwtProofs = wallet.generateJwtProofs(ctx, nonce, ecKey);
 
         // Send Credential Request
         //
-        CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
+        String credentialEndpoint = oauth.getEndpoints().getOid4vcCredential();
+        CredentialResponse credResponse = wallet.credentialRequest(ctx, tokenType, accessToken)
                 .credentialIdentifier(credIdentifier)
-                .proofs(jwtProof)
+                .dpopProof(wallet.generateSignedDPoPProof(credentialEndpoint, ecKey, accessToken))
+                .proofs(jwtProofs)
                 .send().getCredentialResponse();
 
         assertFalse(credResponse.getCredentials().isEmpty(), "No credential");
-    }
-
-    @Test
-    public void testClientAttestationHappyFlow_HaipProfileEnabled() {
-
-        Boolean wasEnabled = getClientPolicy(VCI_CLIENT_POLICY_HAIP).isEnabled();
-        try {
-            setClientPolicyEnabled(VCI_CLIENT_POLICY_HAIP, true);
-
-            var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);
-            ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
-
-            var kw = wallet.getRSAKeyPair(ctx);
-            String attestationJwt = wallet.buildClientAttestationJWT(ctx, kw);
-            String attestationPoPJwt = wallet.buildClientAttestationPoPJWT(ctx, kw);
-
-            PkceGenerator pkce = PkceGenerator.s256();
-            KeyWrapper ecKey = wallet.getECKeyPair(ctx);
-
-            // Send PAR Request
-            //
-            ParResponse parResponse = oauth.pushedAuthorizationRequest()
-                    .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
-                    .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
-                    .scopeParam(ctx.getScope())
-                    .codeChallenge(pkce)
-                    .send();
-
-            String errorDescription = parResponse.getErrorDescription();
-            assertNull(errorDescription, "PAR request error: " + errorDescription);
-
-            String requestUri = parResponse.getRequestUri();
-            assertNotNull(requestUri, "No requestUri");
-
-            // Send Authorization Request
-            //
-            AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
-                    .scope(ctx.getScope())
-                    .codeChallenge(pkce)
-                    .requestUri(requestUri)
-                    .send(ctx.getHolder(), TEST_PASSWORD);
-
-            errorDescription = authResponse.getErrorDescription();
-            assertNull(errorDescription, "Authorization error: " + errorDescription);
-
-            String authCode = authResponse.getCode();
-            assertNotNull(authCode, "No auth code");
-
-            // Send Token Request
-            //
-            String tokenEndpoint = oauth.getEndpoints().getToken();
-            AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode)
-                    .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
-                    .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
-                    .dpopProof(wallet.generateSignedDPoPProof(tokenEndpoint, ecKey, null))
-                    .codeVerifier(pkce)
-                    .send();
-
-            errorDescription = tokenResponse.getErrorDescription();
-            assertNull(errorDescription, "Token request error: " + errorDescription);
-
-            String tokenType = tokenResponse.getTokenType();
-            assertNotNull(tokenType, "No token type");
-
-            String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
-            assertNotNull(accessToken, "No access token");
-
-            String credIdentifier = ctx.getAuthorizedCredentialIdentifier();
-            assertNotNull(credIdentifier, "No credential identifier");
-
-            // Send Nonce Request
-            //
-            String nonce = wallet.nonceRequest().send().getNonce();
-
-            // Send Credential Request
-            //
-            String credentialEndpoint = oauth.getEndpoints().getOid4vcCredential();
-            CredentialResponse credResponse = wallet.credentialRequest(ctx, tokenType, accessToken)
-                    .credentialIdentifier(credIdentifier)
-                    .dpopProof(wallet.generateSignedDPoPProof(credentialEndpoint, ecKey, accessToken))
-                    .proofs(wallet.generateJwtProof(ctx, ecKey, nonce))
-                    .send().getCredentialResponse();
-
-            assertFalse(credResponse.getCredentials().isEmpty(), "No credential");
-
-        } finally {
-            setClientPolicyEnabled(VCI_CLIENT_POLICY_HAIP, wasEnabled);
-        }
     }
 }

@@ -5,7 +5,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.Permissions;
 import org.keycloak.models.UserModel;
 import org.keycloak.scim.resource.schema.AbstractModelSchema;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
@@ -63,7 +66,15 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
             return String.valueOf(model.isEnabled());
         }
         if ("groups".equals(name)) {
-            return model.getGroupsStream().toList();
+            Permissions permissions = session.getContext().getPermissions();
+
+            if (permissions.hasPermission(model, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW)) {
+                return model.getGroupsStream()
+                        .filter(this::canViewGroup)
+                        .toList();
+            }
+
+            return List.of();
         }
         if (UserModel.EMAIL.equals(name)) {
             return model.getEmail() == null ? List.of() : List.of(model.getEmail());
@@ -106,5 +117,9 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
 
     protected UserProfile getUserProfile() {
         return session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, Map.of());
+    }
+
+    protected boolean canViewGroup(GroupModel group) {
+        return session.getContext().getPermissions().hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
     }
 }

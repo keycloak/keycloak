@@ -12,15 +12,16 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
 @Entity
 @Table(name="USER_VER_CREDENTIAL", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"USER_ID", "CREDENTIAL_SCOPE_ID"})
+        @UniqueConstraint(columnNames = {"USER_ID", "CLIENT_SCOPE_ID"})
 })
 @NamedQueries({
         @NamedQuery(name="verifiableCredentialsByUser", query="select vc from UserVerifiableCredentialEntity vc where vc.user.id = :userId"),
         @NamedQuery(name="deleteVerifiableCredentialsByRealm", query="delete from UserVerifiableCredentialEntity vc where vc.user IN (select user from UserEntity user where user.realmId = :realmId)"),
-        @NamedQuery(name="deleteVerifiableCredentialsByClientScope", query="delete from UserVerifiableCredentialEntity vc where vc.credentialScopeName = :scopeName"),
+        @NamedQuery(name="deleteVerifiableCredentialsByClientScope", query="delete from UserVerifiableCredentialEntity vc where vc.clientScopeId = :scopeId"),
         @NamedQuery(name="deleteVerifiableCredentialsByUser", query="delete from UserVerifiableCredentialEntity vc where vc.user = :user"),
 })
 public class UserVerifiableCredentialEntity {
@@ -34,8 +35,8 @@ public class UserVerifiableCredentialEntity {
     @JoinColumn(name="USER_ID")
     protected UserEntity user;
 
-    @Column(name="CREDENTIAL_SCOPE_NAME")
-    protected String credentialScopeName;
+    @Column(name="CLIENT_SCOPE_ID")
+    protected String clientScopeId;
 
     @Column(name="REVISION")
     protected String revision;
@@ -45,6 +46,13 @@ public class UserVerifiableCredentialEntity {
 
     @Column(name = "CREATED_DATE")
     private Long createdDate;
+
+    @Column(name = "UPDATED_DATE")
+    private Long updatedDate;
+
+    @Version
+    @Column(name = "VERSION")
+    private int version;
 
     public String getId() {
         return id;
@@ -62,12 +70,12 @@ public class UserVerifiableCredentialEntity {
         this.user = user;
     }
 
-    public String getCredentialScopeName() {
-        return credentialScopeName;
+    public String getClientScopeId() {
+        return clientScopeId;
     }
 
-    public void setCredentialScopeName(String credentialScopeName) {
-        this.credentialScopeName = credentialScopeName;
+    public void setClientScopeId(String clientScopeId) {
+        this.clientScopeId = clientScopeId;
     }
 
     public String getRevision() {
@@ -89,6 +97,14 @@ public class UserVerifiableCredentialEntity {
     public String getUserAttributes() { return userAttributes; }
 
     public void setUserAttributes(String userAttributes) { this.userAttributes = userAttributes; }
+
+    public Long getUpdatedDate() { return updatedDate; }
+
+    public void setUpdatedDate(Long updatedDate) { this.updatedDate = updatedDate; }
+
+    public int getVersion() { return version; }
+
+    public void setVersion(int version) { this.version = version; }
 
     @Override
     public boolean equals(Object o) {

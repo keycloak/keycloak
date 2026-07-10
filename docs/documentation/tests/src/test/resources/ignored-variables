@@ -36,6 +36,16 @@ $evaluation.grant()
 {$v
 location.origin
 keycloak.token
+server
+realm
+groupId
+groupIdA
+groupIdB
+userId
+userId1
+userId2
+param
+...
 11
 1
 2

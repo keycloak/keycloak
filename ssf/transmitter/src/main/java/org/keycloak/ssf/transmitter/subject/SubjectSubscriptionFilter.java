@@ -1,12 +1,12 @@
 package org.keycloak.ssf.transmitter.subject;
 
 
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.ssf.event.stream.SsfStreamUpdatedEvent;
 import org.keycloak.ssf.event.stream.SsfStreamVerificationEvent;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
@@ -218,16 +218,13 @@ public class SubjectSubscriptionFilter {
         if (userTombstone != null && now - userTombstone < graceSeconds) {
             return true;
         }
-        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
-            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            if (orgProvider != null) {
-                return orgProvider.getByMember(user)
-                        .anyMatch(org -> {
-                            Long orgTombstone = SsfNotifyAttributes.getRemovedAtForOrganization(org, receiverClientId);
-                            return orgTombstone != null
-                                    && now - orgTombstone < graceSeconds;
-                        });
-            }
+        if (Organizations.isEnabled(session)) {
+            return session.getProvider(OrganizationProvider.class).getByMember(user)
+                    .anyMatch(org -> {
+                        Long orgTombstone = SsfNotifyAttributes.getRemovedAtForOrganization(org, receiverClientId);
+                        return orgTombstone != null
+                                && now - orgTombstone < graceSeconds;
+                    });
         }
         return false;
     }
@@ -285,14 +282,10 @@ public class SubjectSubscriptionFilter {
      * "is the user excluded *via* one of their orgs" question.
      */
     protected boolean isOrganizationExcluded(UserModel user, String receiverClientId, KeycloakSession session) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+        if (!Organizations.isEnabled(session)) {
             return false;
         }
-        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-        if (orgProvider == null) {
-            return false;
-        }
-        return orgProvider.getByMember(user)
+        return session.getProvider(OrganizationProvider.class).getByMember(user)
                 .anyMatch(org -> subjectInclusionResolver.isOrganizationExcluded(session, org, receiverClientId));
     }
 
@@ -301,14 +294,10 @@ public class SubjectSubscriptionFilter {
      * per the {@link #subjectInclusionResolver}.
      */
     protected boolean isOrganizationNotified(UserModel user, String receiverClientId, KeycloakSession session) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+        if (!Organizations.isEnabled(session)) {
             return false;
         }
-        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-        if (orgProvider == null) {
-            return false;
-        }
-        return orgProvider.getByMember(user)
+        return session.getProvider(OrganizationProvider.class).getByMember(user)
                 .anyMatch(org -> subjectInclusionResolver.isOrganizationNotified(session, org, receiverClientId));
     }
 }

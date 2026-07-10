@@ -51,7 +51,9 @@ import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -175,16 +177,6 @@ public class UserInfoEndpoint {
                 .event(EventType.USER_INFO_REQUEST)
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
 
-        try {
-            session.clientPolicy().triggerOnEvent(new UserInfoRequestContext(tokenForUserInfo));
-        } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
-            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
-            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
-            event.error(cpe.getError());
-            throw error.error(cpe.getError()).errorDescription(cpe.getErrorDetail()).status(cpe.getErrorStatus()).build();
-        }
-
         if (tokenForUserInfo.getToken() == null) {
             event.detail(Details.REASON, "Missing token");
             event.error(Errors.INVALID_TOKEN);
@@ -199,7 +191,12 @@ public class UserInfoEndpoint {
 
             verifier = DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenForUserInfo.getToken()));
 
-            SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+            JWSHeader header = verifier.getHeader();
+            Algorithm algorithm = header.getAlgorithm();
+            if (algorithm == null) {
+                throw new VerificationException("Missing token algorithm");
+            }
+            SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, algorithm.name()).verifier(header.getKeyId());
             verifier.verifierContext(verifierContext);
 
             token = verifier.verify().getToken();
@@ -279,10 +276,9 @@ public class UserInfoEndpoint {
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
         if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseMtlsHokToken()) {
             if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(token, request, session)) {
-                String errorMessage = "Client certificate missing, or its thumbprint and one in the refresh token did NOT match";
-                event.detail(Details.REASON, errorMessage);
+                event.detail(Details.REASON, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC);
                 event.error(Errors.NOT_ALLOWED);
-                throw error.invalidToken(errorMessage);
+                throw error.invalidToken(MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC);
             }
         }
 
@@ -314,6 +310,16 @@ public class UserInfoEndpoint {
 
         // Existence of authenticatedClientSession for our client already handled before
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientModel.getId());
+
+        try {
+            session.clientPolicy().triggerOnEvent(new UserInfoRequestContext(clientSession, tokenForUserInfo));
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw error.error(cpe.getError()).errorDescription(cpe.getErrorDetail()).status(cpe.getErrorStatus()).build();
+        }
 
         // Retrieve by access token scope parameter
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, token.getScope(), session);

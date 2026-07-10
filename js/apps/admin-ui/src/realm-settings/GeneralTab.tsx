@@ -214,7 +214,7 @@ function RealmSettingsGeneralTabForm({
         // a toast but doesn't block the disable — outbox-pending-max-age
         // backstops any leftover PENDING rows.
         try {
-          await deleteRealmSsfQueuedEvents(adminClient, realmName);
+          await deleteRealmSsfQueuedEvents(adminClient);
           addAlert(t("ssfTransmitterDisableEventsCleared"));
         } catch (error) {
           addError("ssfTransmitterDisableEventsClearFailed", error);
@@ -415,16 +415,6 @@ function RealmSettingsGeneralTabForm({
                       serverBaseUrl,
                     )}.well-known/openid-credential-issuer/realms/${realmName}`}
                     title={t("oid4vcIssuerMetadata")}
-                  />
-                </StackItem>
-              )}
-              {isScimApiEnabled && realm.scimApiEnabled && (
-                <StackItem>
-                  <FormattedLink
-                    href={`${addTrailingSlash(
-                      serverBaseUrl,
-                    )}realms/${realmName}/scim/v2`}
-                    title={t("SCIM Endpoint")}
                   />
                 </StackItem>
               )}

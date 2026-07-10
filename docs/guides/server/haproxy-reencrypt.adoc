@@ -15,7 +15,7 @@ HAProxy operates at Layer 7 (HTTP). Unlike passthrough, end-to-end TLS encryptio
 
 For a general overview of TLS re-encrypt and how it compares to passthrough, see the <@links.server id="reverseproxy"/> {section}.
 
-A ready-to-run example with Docker Compose is available in the link:https://github.com/keycloak/keycloak-quickstarts/tree/main/proxy/haproxy/reencrypt[quickstart repository].
+A ready-to-run example with a Compose file is available in the link:https://github.com/keycloak/keycloak-quickstarts/tree/main/proxy/haproxy/reencrypt[quickstart repository].
 
 [[haproxy-configuration-reencrypt]]
 == HAProxy configuration
@@ -46,6 +46,12 @@ frontend https_front
     http-request del-header x-forwarded-.* -m reg
     http-request del-header x-original-.* -m reg
     http-request del-header x-real-ip
+
+    # Prevent external spoofing of client certificate headers
+    # These must be deleted unconditionally, because the set-header directives below
+    # are conditional
+    http-request del-header Client-Cert
+    http-request del-header Client-Cert-Chain
 
     # Prevent external tracing context injection (W3C Trace Context / Baggage)
     http-request del-header traceparent
@@ -85,9 +91,9 @@ backend keycloak_back
     option httpchk GET /health/ready # <8>
     http-check expect status 200
 
-    server keycloak1 keycloak1:8443 ssl verify required crt /path/to/haproxy-internal-certificate ca-file /path/to/keycloak-1-certificate check port 9000 check-ssl verify none inter 5s fall 3 rise 2 # <9>
+    server keycloak1 keycloak1:8443 ssl verify required crt /path/to/haproxy-internal-certificate ca-file /path/to/keycloak-1-certificate check port 9000 check-ssl verify none inter 5s fall 3 rise 2 slowstart 60s # <9>
 
-    server keycloak2 keycloak2:8443 ssl verify required crt /path/to/haproxy-internal-certificate ca-file /path/to/keycloak-2-certificate check port 9000 check-ssl verify none inter 5s fall 3 rise 2
+    server keycloak2 keycloak2:8443 ssl verify required crt /path/to/haproxy-internal-certificate ca-file /path/to/keycloak-2-certificate check port 9000 check-ssl verify none inter 5s fall 3 rise 2 slowstart 60s
 
 ----
 
@@ -124,6 +130,10 @@ The management port is separate from the main application port (`8443`), as desc
 Configures the link:https://docs.haproxy.org/3.2/configuration.html#5.2-inter[health check frequency]:
 poll every 5 seconds, mark a server as down after 3 consecutive failures, and mark it as up again after 2 consecutive successes.
 These values affect how quickly HAProxy detects that a {project_name} instance is shutting down (see <<graceful-shutdown-considerations-haproxy-reencrypt>>).
+
+`slowstart 60s`::
+Gradually increases the server's weight from 0 to its full value over 60 seconds after the server becomes available.
+This gives {project_name} and the JVM time to warm up (JIT compilation, class loading, cache population) before receiving full traffic, preventing performance degradation and timeouts during the warmup phase.
 
 [[keycloak-configuration-haproxy-reencrypt]]
 == {project_name} configuration
@@ -170,6 +180,76 @@ If the number of intermediate certificates in your certificate chain is longer t
 `certificate-chain-length` option to an appropriate value. Otherwise, the provider will discard the request.
 
 See <@links.server id="reverseproxy" /> for more details.
+
+[[admin-dedicated-port-haproxy-reencrypt]]
+== Optional: Admin UI and Admin API on a dedicated hostname and port
+
+By default, the Admin UI and Admin API are served on the same port as the public endpoints, protected only by the source IP filtering (`is_allowed_src`).
+For stricter network-level isolation, you can move them to a dedicated hostname and port so they can be independently firewalled.
+
+Because the admin port and the public port share the same HAProxy frontend, the header filtering and client certificate forwarding described above apply to both automatically.
+
+To enable this, add the configurations outlined in the following subsections.
+
+=== {project_name} configuration
+
+`+--hostname-admin=https://...+`::
+Add the full admin URL with its hostname and the port (if it is a non-standard port) to the {project_name} configuration.
+
+[NOTE]
+====
+Setting `hostname-admin` only changes the URLs {project_name} generates for the Admin Console and Admin API.
+It does not stop the Admin API from also answering on the public frontend URL — restricting administration access to the dedicated port must be enforced at the reverse proxy, which is what the rules below do.
+See the <@links.server id="hostname"/> {section}.
+====
+
+=== HAProxy configuration
+
+TLS certificate::
+If you choose to have a different hostname for the admin API, update your certificate to include the admin hostname as an additional Subject Alternative Name in the certificate, or issue a separate certificate.
+
+`haproxy.cfg`::
+* Add the second `bind *:8444 ...`, which makes the frontend also listen on the admin port.
+If you choose a different port, replace `8444` in the examples below with your chosen port.
+* Replace the default `http-request deny unless is_public_path or is_allowed_src` rule with the three isolation rules:
++
+[source,haproxy]
+----
+acl is_admin_port dst_port 8444
+http-request deny if !is_admin_port !is_public_path
+http-request deny if is_admin_port !is_allowed_src
+----
+
+These rules route by destination port:
+
+* *Public port:* only the public paths (`/realms/`, `/resources/`, `/.well-known/`) are served; any other path, including the Admin Console and Admin API, is denied.
+* *Admin port:* all paths are served, but only to the allowed source IP ranges.
+
+[NOTE]
+====
+With this setup, any request to an admin path on the public port is denied with an HTTP 403 response.
+====
+
+[[isolating-master-realm-haproxy-reencrypt]]
+== Isolating the master realm from the public internet
+
+As a security best practice, restrict access to the administrative `master` realm endpoints from public IP addresses.
+Use the following steps to allow access to these URLs only from allowed internal IP addresses.
+
+=== HAProxy configuration
+
+[source,haproxy]
+----
+# Config for isolating the master realm from public internet.
+acl is_master_realm path /realms/master
+acl is_master_realm path_beg /realms/master/
+http-request deny if is_master_realm !is_allowed_src
+----
+
+This configuration targets requests matching the administrative paths `/realms/master` or starting with `/realms/master/`.
+This rule matches core management traffic (such as token requests, logins, or console lookups inside the master realm) while letting other user realm paths pass through unhindered.
+
+HAProxy evaluates `http-request` rules from top to bottom, so place this deny rule before any broader allow/deny rules that would otherwise permit `/realms/` traffic from external clients.
 
 [[graceful-shutdown-considerations-haproxy-reencrypt]]
 == Graceful shutdown considerations

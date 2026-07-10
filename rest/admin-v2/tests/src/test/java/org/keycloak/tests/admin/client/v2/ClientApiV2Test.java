@@ -19,7 +19,10 @@ package org.keycloak.tests.admin.client.v2;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -32,14 +35,18 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.PatchTypeNames;
+import org.keycloak.admin.api.SortOption;
+import org.keycloak.admin.api.SortOrder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Time;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
+import org.keycloak.services.client.ClientField;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectClient;
@@ -52,6 +59,8 @@ import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
@@ -59,6 +68,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
@@ -93,14 +103,14 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     @InjectRealm(config = NoAccessRealmConfig.class, ref = "testRealm")
     ManagedRealm testRealm;
 
-    @InjectRealm(attachTo = "master", ref = "master")
-    ManagedRealm masterRealm;
-
     @InjectAdminClient(ref = "noAccessClient", realmRef = "testRealm", client = "myclient", mode = InjectAdminClient.Mode.MANAGED_REALM)
     Keycloak noAccessAdminClient;
 
     @InjectClient(realmRef = "testRealm", config = TestClientConfig.class)
     ManagedClient testClient;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @Override
     public String getRealmName() {
@@ -237,6 +247,108 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
+    public void clientTimestamps() throws JsonProcessingException {
+        var clientId = "timestamp-client";
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setDescription("Timestamp test client");
+
+        long beforeCreate = runOnServer.fetch(session -> Time.currentTimeMillis(), Long.class);
+        OIDCClientRepresentation created;
+        try (var response = getClientsApi().createClient(rep)) {
+            assertThat(response.getStatus(), is(201));
+            created = response.readEntity(OIDCClientRepresentation.class);
+        }
+        long afterCreate = runOnServer.fetch(session -> Time.currentTimeMillis(), Long.class);
+
+        assertThat(created.getCreatedTimestamp(), notNullValue());
+        assertThat(created.getUpdatedTimestamp(), notNullValue());
+        // During initial create the entity can be persisted and then updated again (e.g. for filling
+        // additional fields), which may bump updatedTimestamp slightly above createdTimestamp.
+        assertThat(created.getUpdatedTimestamp() >= created.getCreatedTimestamp(), is(true));
+        assertThat(created.getCreatedTimestamp() >= beforeCreate, is(true));
+        assertThat(created.getCreatedTimestamp() <= afterCreate, is(true));
+
+        try {
+            setServerTimeOffset(1);
+
+            OIDCClientRepresentation patch = new OIDCClientRepresentation();
+            patch.setDescription("Updated description");
+            BaseClientRepresentation updated = getClientsApi().client(clientId)
+                    .patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
+            assertThat(updated.getDescription(), is("Updated description"));
+            assertThat(updated.getCreatedTimestamp(), is(created.getCreatedTimestamp()));
+            assertThat(updated.getUpdatedTimestamp(), notNullValue());
+            assertThat(updated.getUpdatedTimestamp() >= updated.getCreatedTimestamp(), is(true));
+            assertThat(updated.getUpdatedTimestamp() > created.getUpdatedTimestamp(), is(true));
+        } finally {
+            setServerTimeOffset(0);
+        }
+    }
+
+    @Test
+    public void clientTimestampsAreServerManaged() throws JsonProcessingException {
+        var clientId = "server-managed-timestamp-client";
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setDescription("Server managed timestamp test client");
+
+        try (var response = getClientsApi().createClient(rep)) {
+            assertThat(response.getStatus(), is(201));
+        }
+
+        // the persisted timestamps may be bumped slightly after creation (e.g. for filling additional
+        // fields), so fetch the authoritative values instead of relying on the create response
+        OIDCClientRepresentation persisted = (OIDCClientRepresentation) getClientsApi().client(clientId).getClient();
+
+        // PUT with a modified createdTimestamp fails
+        OIDCClientRepresentation putRep = new OIDCClientRepresentation();
+        putRep.setEnabled(true);
+        putRep.setClientId(clientId);
+        putRep.setCreatedTimestamp(persisted.getCreatedTimestamp() + 1000);
+        putRep.setUpdatedTimestamp(persisted.getUpdatedTimestamp());
+        try (var response = getClientsApi().client(clientId).createOrUpdateClient(putRep)) {
+            assertThat(response.getStatus(), is(400));
+            var body = response.readEntity(ViolationExceptionResponse.class);
+            assertThat(body.violations(), hasItem("createdTimestamp: createdTimestamp is server-managed and must not be user-specified"));
+        }
+
+        // PUT with a modified updatedTimestamp fails
+        putRep.setCreatedTimestamp(persisted.getCreatedTimestamp());
+        putRep.setUpdatedTimestamp(persisted.getUpdatedTimestamp() + 1000);
+        try (var response = getClientsApi().client(clientId).createOrUpdateClient(putRep)) {
+            assertThat(response.getStatus(), is(400));
+            var body = response.readEntity(ViolationExceptionResponse.class);
+            assertThat(body.violations(), hasItem("updatedTimestamp: updatedTimestamp is server-managed and must not be user-specified"));
+        }
+
+        // PUT with the unmodified (persisted) timestamps succeeds
+        putRep.setCreatedTimestamp(persisted.getCreatedTimestamp());
+        putRep.setUpdatedTimestamp(persisted.getUpdatedTimestamp());
+        try (var response = getClientsApi().client(clientId).createOrUpdateClient(putRep)) {
+            assertThat(response.getStatus(), is(200));
+        }
+
+        // PATCH with a modified createdTimestamp fails
+        OIDCClientRepresentation createdPatch = new OIDCClientRepresentation();
+        createdPatch.setCreatedTimestamp(persisted.getCreatedTimestamp() + 1000);
+        BadRequestException createdEx = assertThrows(BadRequestException.class,
+                () -> getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(createdPatch))));
+        var createdBody = createdEx.getResponse().readEntity(ViolationExceptionResponse.class);
+        assertThat(createdBody.violations(), hasItem("createdTimestamp: createdTimestamp is server-managed and must not be user-specified"));
+
+        // PATCH with a modified updatedTimestamp fails
+        OIDCClientRepresentation updatedPatch = new OIDCClientRepresentation();
+        updatedPatch.setUpdatedTimestamp(persisted.getUpdatedTimestamp() + 1000);
+        BadRequestException updatedEx = assertThrows(BadRequestException.class,
+                () -> getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(updatedPatch))));
+        var updatedBody = updatedEx.getResponse().readEntity(ViolationExceptionResponse.class);
+        assertThat(updatedBody.violations(), hasItem("updatedTimestamp: updatedTimestamp is server-managed and must not be user-specified"));
+    }
+
+    @Test
     public void deleteClient() {
         var clientIdToDelete = "to-delete";
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
@@ -277,7 +389,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(201, response.getStatus());
             OIDCClientRepresentation created = response.readEntity(OIDCClientRepresentation.class);
             assertThat(created, notNullValue());
-            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
 
         // Create a SAML client with SAML-specific fields
@@ -296,7 +408,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(201, response.getStatus());
             SAMLClientRepresentation created = response.readEntity(SAMLClientRepresentation.class);
             assertThat(created, notNullValue());
-            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
 
         // Get all clients - this should work with mixed protocols
@@ -368,6 +480,176 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     public void invalidFieldProjection() {
         BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(new ListOptions().fields(Set.of("unknown!"))));
         assertEquals("{\"error\":\"unknown! is an unknown field\"}", e.getResponse().readEntity(String.class));
+        
+        // ensure that multiple fields are interpreted correctly
+        e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(new ListOptions().fields(new LinkedHashSet<>(List.of("clientId","unknown!")))));
+        assertEquals("{\"error\":\"unknown! is an unknown field\"}", e.getResponse().readEntity(String.class));
+    }
+
+    @Test
+    public void getClientsSortByMultipleFields() {
+        createSortTestClient("sort-b", "B", "beta");
+        createSortTestClient("sort-a", "A", "alpha");
+        createSortTestClient("sort-c", "A", "gamma");
+
+        ListOptions listOptions = new ListOptions();
+        listOptions.setFields(Set.of("clientId", "displayName"));
+        listOptions.setSort(List.of(SortOption.of(ClientField.DISPLAY_NAME), SortOption.of(ClientField.CLIENT_ID)));
+
+        try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
+            List<String> sortTestClientIds = clients
+                    .map(BaseClientRepresentation::getClientId)
+                    .filter(id -> id.startsWith("sort-"))
+                    .toList();
+            assertThat(sortTestClientIds, is(List.of("sort-a", "sort-c", "sort-b")));
+        }
+    }
+
+    @Test
+    public void getClientsSortByCreatedTimestamp() {
+        try {
+            setServerTimeOffset(0);
+            createSortTestClient("sort-created-b", "A", "alpha");
+            setServerTimeOffset(1);
+            createSortTestClient("sort-created-a", "B", "beta");
+            setServerTimeOffset(2);
+            createSortTestClient("sort-created-c", "C", "gamma");
+
+            ListOptions listOptions = new ListOptions();
+            listOptions.setFields(Set.of("clientId"));
+            listOptions.setSort(List.of(SortOption.of(ClientField.CREATED_TIMESTAMP)));
+
+            try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
+                List<String> sortTestClientIds = clients
+                        .map(BaseClientRepresentation::getClientId)
+                        .filter(id -> id.startsWith("sort-created-"))
+                        .toList();
+                assertThat(sortTestClientIds, is(List.of("sort-created-b", "sort-created-a", "sort-created-c")));
+            }
+        } finally {
+            setServerTimeOffset(0);
+        }
+    }
+
+    @Test
+    public void getClientsSortByUpdatedTimestamp() throws JsonProcessingException {
+        try {
+            setServerTimeOffset(0);
+            createSortTestClient("sort-updated-a", "A", "alpha");
+            setServerTimeOffset(1);
+            createSortTestClient("sort-updated-b", "B", "beta");
+            setServerTimeOffset(2);
+            createSortTestClient("sort-updated-c", "C", "gamma");
+
+            setServerTimeOffset(10);
+            patchSortTestClient("sort-updated-c", "gamma updated");
+            setServerTimeOffset(11);
+            patchSortTestClient("sort-updated-a", "alpha updated");
+            setServerTimeOffset(12);
+            patchSortTestClient("sort-updated-b", "beta updated");
+
+            ListOptions listOptions = new ListOptions();
+            listOptions.setFields(Set.of("clientId"));
+            listOptions.setSort(List.of(SortOption.of(ClientField.UPDATED_TIMESTAMP)));
+
+            try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
+                List<String> sortTestClientIds = clients
+                        .map(BaseClientRepresentation::getClientId)
+                        .filter(id -> id.startsWith("sort-updated-"))
+                        .toList();
+                assertThat(sortTestClientIds, is(List.of("sort-updated-c", "sort-updated-a", "sort-updated-b")));
+            }
+        } finally {
+            setServerTimeOffset(0);
+        }
+    }
+
+    @Test
+    public void getClientsSortByMultipleFieldsDesc() {
+        createSortTestClient("sort-b", "B", "beta");
+        createSortTestClient("sort-a", "A", "alpha");
+        createSortTestClient("sort-c", "A", "gamma");
+
+        ListOptions listOptions = new ListOptions();
+        listOptions.setFields(Set.of("clientId", "displayName"));
+        listOptions.setSort(List.of(SortOption.of(ClientField.DISPLAY_NAME, SortOrder.DESC), SortOption.of(ClientField.CLIENT_ID, SortOrder.DESC)));
+
+        try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
+            List<String> sortTestClientIds = clients
+                    .map(BaseClientRepresentation::getClientId)
+                    .filter(id -> id.startsWith("sort-"))
+                    .toList();
+            assertThat(sortTestClientIds, is(List.of("sort-b", "sort-c", "sort-a")));
+        }
+    }
+
+    @Test
+    public void getClientsSortByInvalidField() throws IOException, URISyntaxException {
+        URI uri = new URIBuilder(getClientsApiUrl()).addParameter("fields", "clientId")
+                .addParameter("sort", "displayName|desc,unknown").build();
+        HttpGet request = new HttpGet(uri);
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            assertThat(EntityUtils.toString(response.getEntity()), containsString("unknown is not a sortable field"));
+        }
+    }
+
+    @Test
+    public void getClientsSortByMultipleFieldsViaHttp() throws IOException {
+        createSortTestClient("sort-b", "B", "beta");
+        createSortTestClient("sort-a", "A", "alpha");
+        createSortTestClient("sort-c", "A", "gamma");
+
+        HttpGet request = new HttpGet(getClientsApiUrl() + "?fields=clientId,displayName&sort=displayName,clientId");
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            String responseBody = EntityUtils.toString(response.getEntity());
+            assertEquals(200, response.getStatusLine().getStatusCode(), "Response body: " + responseBody);
+            List<BaseClientRepresentation> clients = mapper.readValue(
+                    responseBody,
+                    mapper.getTypeFactory().constructCollectionType(List.class, BaseClientRepresentation.class));
+            List<String> sortTestClientIds = clients.stream()
+                    .map(BaseClientRepresentation::getClientId)
+                    .filter(id -> id.startsWith("sort-"))
+                    .toList();
+            assertThat(sortTestClientIds, is(List.of("sort-a", "sort-c", "sort-b")));
+        }
+    }
+
+    @Test
+    public void getClientsInvalidSortDirectionReturns400() throws IOException, URISyntaxException {
+        URI uri = new URIBuilder(getClientsApiUrl()).addParameter("sort", "clientId|what").build();
+
+        HttpGet request = new HttpGet(uri);
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            assertThat(EntityUtils.toString(response.getEntity()), containsString("sort direction must be asc or desc"));
+        }
+    }
+
+    private void setServerTimeOffset(int offset) {
+        runOnServer.run(session -> Time.setOffset(offset));
+    }
+
+    private void createSortTestClient(String clientId, String displayName, String description) {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setDisplayName(displayName);
+        rep.setDescription(description);
+        try (var response = getClientsApi().createClient(rep)) {
+            assertEquals(201, response.getStatus());
+            BaseClientRepresentation created = response.readEntity(BaseClientRepresentation.class);
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+        }
+    }
+
+    private void patchSortTestClient(String clientId, String description) throws JsonProcessingException {
+        OIDCClientRepresentation patch = new OIDCClientRepresentation();
+        patch.setDescription(description);
+        getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
     }
 
     @Test
@@ -622,7 +904,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("client-invalid-fragment");
         rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
-        assertClientCreationFailsWithError(rep, "Redirect URIs must not contain an URI fragment");
+        assertClientCreationFailsWithError(rep, "A redirect URI must not contain an URL fragment");
     }
 
     @Test
@@ -650,7 +932,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-invalid-fragment");
         rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
-        assertClientCreationFailsWithError(rep, "{\"error\":\"Redirect URIs must not contain an URI fragment\"}");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"A redirect URI must not contain an URL fragment\"}");
     }
 
     @Test
@@ -678,7 +960,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("client-update-invalid-fragment");
         rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
-        assertClientUpdateFailsWithError(rep, "Redirect URIs must not contain an URI fragment");
+        assertClientUpdateFailsWithError(rep, "A redirect URI must not contain an URL fragment");
     }
 
     @Test
@@ -706,7 +988,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-update-invalid-fragment");
         rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
-        assertClientCreationFailsWithError(rep, "{\"error\":\"Redirect URIs must not contain an URI fragment\"}");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"A redirect URI must not contain an URL fragment\"}");
     }
 
     @Test
@@ -1051,7 +1333,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertThat(response.getStatus(), is(201));
             BaseClientRepresentation created = response.readEntity(BaseClientRepresentation.class);
             assertThat(created, notNullValue());
-            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
 
         // Now try to update with invalid data

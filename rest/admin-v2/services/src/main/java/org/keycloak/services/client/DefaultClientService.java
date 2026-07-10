@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -23,7 +24,6 @@ import org.keycloak.events.admin.v2.AdminEventV2Builder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -41,6 +41,8 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.RolesService;
 import org.keycloak.services.ServiceException;
+import org.keycloak.services.client.query.ClientQueryEvaluator;
+import org.keycloak.services.client.query.QueryParseUtils;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisteredContext;
@@ -70,6 +72,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.util.EntityUtils;
 
 import static org.keycloak.representations.admin.v2.validators.ClientSecretNotBlankValidator.isClientSecret;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
@@ -77,7 +80,7 @@ import static org.keycloak.utils.StringUtil.isBlank;
  */
 public class DefaultClientService implements ClientService {
     private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
-    private static final ClientModelMappers MAPPERS = new ClientModelMappers();
+    public static final ClientModelMappers MAPPERS = new ClientModelMappers();
 
     private final KeycloakSession session;
     private final AdminPermissionEvaluator permissions;
@@ -98,6 +101,11 @@ public class DefaultClientService implements ClientService {
     @Override
     public Optional<BaseClientRepresentation> getClient(@Nonnull RealmModel realm,
                                                         @Nonnull String clientId) throws ServiceException {
+        return getClient(realm, clientId, true);
+    }
+
+    public Optional<BaseClientRepresentation> getClient(@Nonnull RealmModel realm,
+                                                        @Nonnull String clientId, boolean includeReadOnlyFields) throws ServiceException {
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             return Optional.empty();
@@ -106,7 +114,7 @@ public class DefaultClientService implements ClientService {
         
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientViewContext(client, permissions.adminAuth()));
-            return Optional.ofNullable(getMapper(client.getProtocol()).fromModel(client));
+            return Optional.ofNullable(getMapper(client.getProtocol()).fromModel(client, includeReadOnlyFields));
         } catch (ClientPolicyException e) {
             throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
@@ -114,16 +122,16 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public Stream<BaseClientRepresentation> getClients(@Nonnull RealmModel realm,
-                                                       ClientProjectionOptions projectionOptions,
+                                                       @Nonnull ClientProjectionOptions projectionOptions,
                                                        ClientSearchOptions searchOptions,
-                                                       ClientSortAndSliceOptions sortAndSliceOptions) {
+                                                       @Nonnull ClientSortAndSliceOptions sortAndSliceOptions) {
         permissions.clients().requireList();
-        
+
         // TODO: this check is weak
         //  a stronger check is whether the remaining fields have repSetters
         //  however this highlights an issue we may hit with polymorphism a field may
         //  be projectable in one subtype, but fixed in another
-        
+
         projectionOptions.getFields().forEach(s -> {
             if (!MAPPERS.isKnownField(s)) {
                 throw new ServiceException("%s is an unknown field".formatted(s), Response.Status.BAD_REQUEST);
@@ -133,15 +141,49 @@ public class DefaultClientService implements ClientService {
         // When FGAP is enabled, authorization filtering is applied at the JPA layer (via PartialEvaluator predicates), so we trust the DB results.
         // When disabled, we fall back to in-memory filtering by VIEW_CLIENTS role.
         boolean canView = AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || permissions.clients().canView();
+        boolean hasQuery = searchOptions != null && searchOptions.query() != null && !searchOptions.query().isBlank();
+        boolean useJpaPagination = canView && !hasQuery;
+        int offset = sortAndSliceOptions.offset();
+        int limit = sortAndSliceOptions.limit();
+
+        Comparator<BaseClientRepresentation> sortComparator = sortAndSliceOptions.getSortComparator();
         try {
-            return realm.getClientsStream()
+            Stream<ClientModel> clientModels = useJpaPagination
+                    ? realm.getClientsStream(offset, limit)
+                    : realm.getClientsStream();
+
+            Stream<BaseClientRepresentation> stream = clientModels
                     .filter(client -> canView || permissions.clients().canView(client))
                     .filter(client -> client.getProtocol() != null)
-                    .map(client -> getMapper(client.getProtocol()).fromModel(client, projectionOptions.getFields()))
-                    .filter(java.util.Objects::nonNull);
+                    .map(client -> getMapper(client.getProtocol()).fromModel(client))
+                    .filter(Objects::nonNull);
+
+            stream = applySearchFilter(stream, searchOptions).sorted(sortComparator);
+            if (!useJpaPagination) {
+                stream = paginatedStream(stream, offset, limit);
+            }
+            return applyProjection(stream, projectionOptions);
+
         } catch (ModelException e) {
             throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
         }
+    }
+
+    protected Stream<BaseClientRepresentation> applySearchFilter(Stream<BaseClientRepresentation> stream, ClientSearchOptions searchOptions) {
+        if (searchOptions != null && searchOptions.query() != null && !searchOptions.query().isBlank()) {
+            var queryCtx = QueryParseUtils.parse(searchOptions.query());
+            QueryParseUtils.validate(queryCtx);
+            return stream.filter(client -> ClientQueryEvaluator.matches(queryCtx, client));
+        }
+        return stream;
+    }
+
+    protected Stream<BaseClientRepresentation> applyProjection(Stream<BaseClientRepresentation> stream, ClientProjectionOptions projectionOptions) {
+        if (projectionOptions.getFields().isEmpty()) return stream;
+        return stream.map(rep -> {
+            MAPPERS.applyProjection(rep, projectionOptions.getFields());
+            return rep;
+        });
     }
 
     @Override
@@ -163,10 +205,7 @@ public class DefaultClientService implements ClientService {
 
         permissions.clients().requireManage(client);
         try {
-            AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
             session.clientPolicy().triggerOnEvent(new AdminClientUnregisterContext(client, permissions.adminAuth()));
-        } catch (ModelValidationException e) {
-            throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
         } catch (ClientPolicyException e) {
             throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
@@ -183,7 +222,7 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, InputStream patch) throws ServiceException {
-        Supplier<BaseClientRepresentation> getOriginalClient = () -> getClient(realm, clientId)
+        Supplier<BaseClientRepresentation> getOriginalClient = () -> getClient(realm, clientId, false)
                 .orElseThrow(() -> new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND));
 
         BaseClientRepresentation updated;
@@ -260,6 +299,9 @@ public class DefaultClientService implements ClientService {
             model = realm.getClientByClientId(clientId);
         }
         boolean alreadyExists = model != null;
+        if (isBlank(client.getProtocol())) {
+            throw new ServiceException("protocol is required", Response.Status.BAD_REQUEST);
+        }
         ClientModelMapper mapper = getMapper(client.getProtocol());
 
         try {
@@ -290,6 +332,9 @@ public class DefaultClientService implements ClientService {
             } else {
                 // Check permissions, execute validations and trigger client policies
                 permissions.clients().requireManage();
+                if (strategy == CreateOrUpdateStrategy.PUT && client.getUuid() != null && realm.getClientById(client.getUuid()) != null) {
+                    throw new ServiceException("uuid already exists, but with a different clientId", Response.Status.BAD_REQUEST);
+                }
                 validator.validate(client, strategy.getValidationGroup(), Default.class);
                 var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper);
                 session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(proposedRepresentation, permissions.adminAuth()));
@@ -363,10 +408,10 @@ public class DefaultClientService implements ClientService {
         }
     }
 
-    // TODO we should find a way on how to evoke it on the mapper level?
     private void generateClientSecretIfNeeded(BaseClientRepresentation client, ClientModel model, CreateOrUpdateStrategy strategy, boolean patchExplicitNullSecret) {
-        if (client.getProtocol().equals(OIDCClientRepresentation.PROTOCOL)) {
-            var auth = ((OIDCClientRepresentation) client).getAuth();
+        if (client instanceof OIDCClientRepresentation oidcClient
+                && OIDCClientRepresentation.PROTOCOL.equals(client.getProtocol())) {
+            var auth = oidcClient.getAuth();
             if (auth != null && isClientSecret(auth.getMethod()) && isBlank(auth.getSecret())) {
                 if (strategy == CreateOrUpdateStrategy.PATCH && patchExplicitNullSecret) {
                     auth.setSecret(KeycloakModelUtils.generateSecret(model));

@@ -1,4 +1,3 @@
-import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import {
   HelpItem,
@@ -30,10 +29,9 @@ import { useAdminClient } from "../../../admin-client";
 import CodeEditor from "../../../components/form/CodeEditor";
 import { FormAccess } from "../../../components/form/FormAccess";
 import { useRealm } from "../../../context/realm-context/RealmContext";
-import { addTrailingSlash } from "../../../util";
-import { getAuthorizationHeaders } from "../../../utils/getAuthorizationHeaders";
 import { toSsfClientTab } from "../../routes/ClientSsfTab";
 import type { SsfClientStream } from "./StreamTab";
+import { NetworkError } from "@keycloak/keycloak-admin-client";
 
 type SsfEmitResult = {
   status: string;
@@ -60,6 +58,23 @@ type EmitEventsFormValues = {
  */
 const substitutePayloadPlaceholders = (raw: string): string =>
   raw.replace(/__now__/g, String(Math.floor(Date.now() / 1000)));
+
+type EmitErrorBody = {
+  error?: string;
+  error_description?: string;
+  params?: Record<string, string>;
+};
+
+const parseEmitErrorBody = (error: unknown): EmitErrorBody | null => {
+  if (!(error instanceof NetworkError)) {
+    return null;
+  }
+  const body = error.responseData;
+  if (!body || typeof body !== "object") {
+    return null;
+  }
+  return body as EmitErrorBody;
+};
 
 export type EmitEventsTabProps = {
   client: ClientRepresentation;
@@ -173,29 +188,56 @@ export const EmitEventsTab = ({
       // resulting SET matches the shape native events for this
       // receiver would have. Org subjects produce a complex tenant-
       // only subject for org-scoped routing.
-      const response = await fetchWithError(
-        `${addTrailingSlash(adminClient.baseUrl)}admin/realms/${realm}/ssf/clients/${client.clientId}/events/emit`,
+      const result = (await adminClient.ssf.emitEvent(
+        { clientId: client.clientId! },
         {
-          method: "POST",
-          headers: {
-            ...getAuthorizationHeaders(await adminClient.getAccessToken()),
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            eventType: values.emitEventType,
-            subjectType: values.emitSubjectType,
-            subjectValue: values.emitSubjectValue.trim(),
-            event: parsedPayload,
-          }),
+          eventType: values.emitEventType,
+          subjectType: values.emitSubjectType,
+          subjectValue: values.emitSubjectValue.trim(),
+          event: parsedPayload as Record<string, unknown>,
         },
-      );
-      const result = (await response.json()) as SsfEmitResult;
+      )) as SsfEmitResult;
       setEmitResult(result);
     } catch (error) {
-      setEmitError(error instanceof Error ? error.message : String(error));
+      setEmitError(translateEmitError(error, values));
       setEmitResult(null);
     }
   };
+
+  /**
+   * Builds a translated, user-facing message from the failure response.
+   * Switches on the server's machine-readable {@code error} code so the
+   * "subject not found" case can render with the form's own
+   * {@code subjectType}/{@code subjectValue} (avoiding a re-parse of
+   * the server's English description). Unknown codes and non-NetworkError
+   * exceptions fall through to {@code error_description} or the raw
+   * thrown message.
+   */
+  function translateEmitError(
+    error: unknown,
+    values: EmitEventsFormValues,
+  ): string {
+    const body = parseEmitErrorBody(error);
+    const detail =
+      body?.error_description ??
+      (error instanceof Error ? error.message : String(error));
+    switch (body?.error) {
+      case "subject_not_found":
+        // Prefer server-supplied params so the message reflects the
+        // values that actually failed validation, not whatever the user
+        // may have typed into the form while the request was in flight.
+        return t("ssfEmitErrorSubjectNotFound", {
+          type: body.params?.subjectType ?? values.emitSubjectType,
+          value: body.params?.subjectValue ?? values.emitSubjectValue.trim(),
+        });
+      case "invalid_request":
+        return t("ssfEmitErrorInvalidRequest", { detail });
+      case "no_delivery_config":
+        return t("ssfEmitErrorNoDeliveryConfig");
+      default:
+        return t("ssfEmitErrorUnknown", { detail });
+    }
+  }
 
   const eventSearchPath = (jti: string) => {
     // The route's :clientId path param is the client's internal UUID

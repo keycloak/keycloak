@@ -17,6 +17,8 @@
 package org.keycloak.services.resources;
 
 import java.net.URI;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.Consumes;
@@ -54,7 +56,6 @@ import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAu
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.TriFunction;
@@ -989,7 +990,7 @@ public class LoginActionsService {
     }
 
     private void configureOrganization(BrokeredIdentityContext brokerContext) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (Organizations.isEnabled(session)) {
             String organizationId = brokerContext.getIdpConfig().getOrganizationId();
 
             if (organizationId != null) {
@@ -1018,12 +1019,18 @@ public class LoginActionsService {
         return Response.status(302).location(redirect).build();
     }
 
-    private boolean checkGranted(AuthorizationDetails details, UserConsentModel grantedConsent) {
+    private boolean checkGranted(AuthorizationDetails details, UserConsentModel grantedConsent, List<String> alwaysConsent) {
         ClientScopeModel clientScope = details.getClientScope();
-        String parameter = details.getDynamicScopeParam();
-        if (!grantedConsent.isClientScopeGranted(clientScope, parameter) && clientScope.isDisplayOnConsentScreen()) {
+        String parameter = details.getParameterizedScopeParam();
+        if (clientScope.isDisplayOnConsentScreen() && !clientScope.isAlwaysConsent()
+                && !grantedConsent.isClientScopeGranted(clientScope, parameter)) {
             grantedConsent.addGrantedClientScope(clientScope, parameter);
             return true;
+        } else if (clientScope.isAlwaysConsent()) {
+            String scope = parameter != null
+                    ? clientScope.getName() + ClientScopeModel.VALUE_SEPARATOR + parameter
+                    : clientScope.getName();
+            alwaysConsent.add(scope);
         }
         return false;
     }
@@ -1082,12 +1089,17 @@ public class LoginActionsService {
         }
 
         // Update may not be required if all clientScopes were already granted (May happen for example with prompt=consent)
+        List<String> alwaysConsent = new LinkedList<>();
         Boolean updateConsentRequired = AuthenticationManager.getClientScopeModelStream(session, client)
-                .map(d -> checkGranted(d, grantedConsent))
+                .map(d -> checkGranted(d, grantedConsent, alwaysConsent))
                 .reduce(Boolean::logicalOr).orElse(Boolean.FALSE);
 
         if (updateConsentRequired) {
             UserConsentManager.updateConsent(session, realm, user, grantedConsent);
+        }
+
+        if (!alwaysConsent.isEmpty()) {
+            authSession.setClientNote(OIDCLoginProtocol.CONSENT_NOTE, String.join(" ", alwaysConsent));
         }
 
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);

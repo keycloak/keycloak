@@ -65,6 +65,10 @@
         <class>org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.DefaultClientScopeRealmMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.ClientInitialAccessEntity</class>
+        <class>org.keycloak.authentication.jpa.AuthenticationSessionEntity</class>
+        <class>org.keycloak.authentication.jpa.RootAuthenticationSessionEntity</class>
+        <class>org.keycloak.singleobject.jpa.SingleUseObjectEntity</class>
+        <class>org.keycloak.loginfailures.jpa.LoginFailureEntity</class>
 
         <!-- JpaAuditProviders -->
         <class>org.keycloak.events.jpa.EventEntity</class>
@@ -72,6 +76,9 @@
         <class>org.keycloak.events.hooks.jpa.EventHookTargetEntity</class>
         <class>org.keycloak.events.hooks.jpa.EventHookMessageEntity</class>
         <class>org.keycloak.events.hooks.jpa.EventHookLogEntity</class>
+
+        <!-- Cluster Events -->
+        <class>org.keycloak.cluster.jpa.ClusterEventEntity</class>
 
         <!-- Authorization -->
         <class>org.keycloak.authorization.jpa.entities.ResourceServerEntity</class>
@@ -91,6 +98,8 @@
         <class>org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserRoleMappingEntity</class>
+        <class>org.keycloak.storage.jpa.entity.FederatedUserVerifiableCredentialEntity</class>
+        <class>org.keycloak.storage.jpa.entity.FederatedUserIssuedVerifiableCredentialEntity</class>
 
         <!-- Organization -->
         <class>org.keycloak.models.jpa.entities.OrganizationEntity</class>

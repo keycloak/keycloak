@@ -298,7 +298,7 @@
             <column name="ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
-            <column name="CREDENTIAL_SCOPE_NAME" type="VARCHAR(255)">
+            <column name="CLIENT_SCOPE_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
             <column name="USER_ID" type="VARCHAR(36)">
@@ -308,13 +308,51 @@
                 <constraints nullable="false"/>
             </column>
             <column name="CREATED_DATE" type="BIGINT"/>
+            <column name="UPDATED_DATE" type="BIGINT"/>
             <column name="USER_ATTRIBUTES" type="TEXT">
                 <constraints nullable="true"/>
             </column>
+            <column name="VERSION" type="INT"/>
         </createTable>
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_VCRED_PM" tableName="USER_VER_CREDENTIAL"/>
         <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="USER_VER_CREDENTIAL" constraintName="FK_VCRED_USER" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
-        <addUniqueConstraint columnNames="CREDENTIAL_SCOPE_NAME, USER_ID" constraintName="UK_KKUWUVD67ONTGSUGOGM8UEWRE" tableName="USER_VER_CREDENTIAL"/>
+        <addUniqueConstraint columnNames="USER_ID, CLIENT_SCOPE_ID" constraintName="UK_KKUWUVD67ONTGSUGOGM8UEWRE" tableName="USER_VER_CREDENTIAL"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-federated-verifiable-credentials-1">
+        <createTable tableName="FED_USER_VER_CREDENTIAL">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="PK_FED_USER_VER_CREDENTIAL"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STORAGE_PROVIDER_ID" type="VARCHAR(36)"/>
+            <column name="CLIENT_SCOPE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REVISION" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ATTRIBUTES" type="TEXT"/>
+            <column name="CREATED_DATE" type="BIGINT"/>
+            <column name="UPDATED_DATE" type="BIGINT"/>
+            <column name="VERSION" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint tableName="FED_USER_VER_CREDENTIAL"
+                             columnNames="USER_ID, CLIENT_SCOPE_ID"
+                             constraintName="UK_FED_USER_VC"/>
+
+        <createIndex tableName="FED_USER_VER_CREDENTIAL" indexName="IDX_FED_USER_VC_REALM_USER">
+            <column name="REALM_ID"/>
+            <column name="USER_ID"/>
+        </createIndex>
     </changeSet>
 
     <changeSet author="keycloak" id="26.7.0-outbox">
@@ -411,7 +449,7 @@
             <column name="USER_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
-            <column name="CREDENTIAL_TYPE" type="VARCHAR(255)">
+            <column name="VER_CREDENTIAL_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
             <column name="ISSUED_AT" type="BIGINT">
@@ -431,9 +469,240 @@
                                  referencedColumnNames="ID"
                                  referencedTableName="USER_ENTITY"/>
 
+        <addForeignKeyConstraint baseColumnNames="VER_CREDENTIAL_ID"
+                                 baseTableName="ISSUED_VER_CREDENTIAL"
+                                 constraintName="FK_ISSUED_VER_CREDENTIAL_VC"
+                                 referencedColumnNames="ID"
+                                 referencedTableName="USER_VER_CREDENTIAL"/>
+
+        <!-- Index for listing user's credentials -->
         <createIndex tableName="ISSUED_VER_CREDENTIAL" indexName="IDX_ISSUED_VER_CREDENTIAL_USER">
             <column name="USER_ID"/>
             <column name="ISSUED_AT"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-issued-ver-credential-expires-at-index">
+        <createIndex tableName="ISSUED_VER_CREDENTIAL" indexName="IDX_ISSUED_VER_CREDENTIAL_EXPIRES_AT">
+            <column name="EXPIRES_AT"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-issued-ver-credential-vc-id-index">
+        <createIndex tableName="ISSUED_VER_CREDENTIAL" indexName="IDX_ISSUED_VER_CREDENTIAL_VC">
+            <column name="VER_CREDENTIAL_ID"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-federated-issued-ver-credential">
+        <createTable tableName="FED_ISSUED_VER_CREDENTIAL">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_FED_ISSUED_VER_CREDENTIAL"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STORAGE_PROVIDER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VER_CREDENTIAL_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ISSUED_AT" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="EXPIRES_AT" type="BIGINT"/>
+            <column name="CLIENT_ID" type="VARCHAR(36)"/>
+            <column name="REVISION" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="VER_CREDENTIAL_ID"
+                                 baseTableName="FED_ISSUED_VER_CREDENTIAL"
+                                 constraintName="FK_FED_ISSUED_VC_VER_CRED"
+                                 referencedColumnNames="ID"
+                                 referencedTableName="FED_USER_VER_CREDENTIAL"/>
+
+        <createIndex tableName="FED_ISSUED_VER_CREDENTIAL" indexName="IDX_FED_ISSUED_VC_USER">
+            <column name="USER_ID"/>
+            <column name="REALM_ID"/>
+            <column name="ISSUED_AT"/>
+        </createIndex>
+
+        <createIndex tableName="FED_ISSUED_VER_CREDENTIAL" indexName="IDX_FED_ISSUED_VC_EXPIRES">
+            <column name="EXPIRES_AT"/>
+        </createIndex>
+
+        <createIndex tableName="FED_ISSUED_VER_CREDENTIAL" indexName="IDX_FED_ISSUED_VC_CRED_ID">
+            <column name="VER_CREDENTIAL_ID"/>
+        </createIndex>
+
+        <createIndex tableName="FED_ISSUED_VER_CREDENTIAL" indexName="IDX_FED_ISSUED_VC_STORAGE">
+            <column name="STORAGE_PROVIDER_ID"/>
+        </createIndex>
+
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-persistent-auth-session-root-table">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <tableExists tableName="ROOT_AUTH_SESSION"/>
+            </not>
+        </preConditions>
+        <createTable tableName="ROOT_AUTH_SESSION">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_ROOT_AUTH_SESSION"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TIMESTAMP" type="BIGINT"/>
+            <column name="VERSION" type="INT"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-persistent-auth-session-root-index">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <indexExists indexName="IDX_ROOT_AUTH_SESSION_REALM"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="ROOT_AUTH_SESSION" indexName="IDX_ROOT_AUTH_SESSION_REALM">
+            <column name="REALM_ID"/>
+            <column name="TIMESTAMP"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-persistent-auth-session-table">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <tableExists tableName="AUTH_SESSION"/>
+            </not>
+        </preConditions>
+        <createTable tableName="AUTH_SESSION">
+            <column name="ROOT_AUTH_SESSION_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TAB_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CLIENT_UUID" type="VARCHAR(255)"/>
+            <column name="AUTH_USER_ID" type="VARCHAR(255)"/>
+            <column name="TIMESTAMP" type="BIGINT"/>
+            <column name="VERSION" type="INT"/>
+            <column name="REDIRECT_URI" type="TEXT"/>
+            <column name="ACTION" type="VARCHAR(255)"/>
+            <column name="PROTOCOL" type="VARCHAR(255)"/>
+            <column name="CLIENT_SCOPES" type="TEXT"/>
+            <column name="EXECUTION_STATUS" type="TEXT"/>
+            <column name="CLIENT_NOTES" type="TEXT"/>
+            <column name="AUTH_NOTES" type="TEXT"/>
+            <column name="REQUIRED_ACTIONS" type="TEXT"/>
+            <column name="USER_SESSION_NOTES" type="TEXT"/>
+        </createTable>
+
+        <addPrimaryKey tableName="AUTH_SESSION" columnNames="ROOT_AUTH_SESSION_ID, TAB_ID" constraintName="PK_AUTH_SESSION" />
+
+        <addForeignKeyConstraint baseColumnNames="ROOT_AUTH_SESSION_ID"
+                                 baseTableName="AUTH_SESSION"
+                                 constraintName="FK_AUTH_SESSION_ROOT"
+                                 referencedColumnNames="ID"
+                                 referencedTableName="ROOT_AUTH_SESSION"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-single-use-object-table">
+        <createTable tableName="SINGLE_USE_OBJECT">
+            <!-- cannot use varchar larger than 255, see org.keycloak.connections.jpa.updater.liquibase.MySQL8VarcharType -->
+            <!-- MySQL/MariaDB don't like it and fails with: BLOB/TEXT column 'ID' used in key specification without a key length -->
+            <column name="ID" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SINGLE_USE_OBJECT"/>
+            </column>
+            <column name="NOTES" type="TEXT"/>
+            <column name="EXPIRE" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-single-use-object-index">
+        <createIndex tableName="SINGLE_USE_OBJECT" indexName="IDX_SINGLE_USE_OBJ_EXPIRE">
+            <column name="EXPIRE"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-login-failure-table">
+        <createTable tableName="LOGIN_FAILURE">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="FAILED_LOGIN_NOT_BEFORE" type="BIGINT" defaultValueNumeric="0"/>
+            <column name="NUM_FAILURES" type="INT" defaultValueNumeric="0"/>
+            <column name="NUM_TEMPORARY_LOCKOUTS" type="INT" defaultValueNumeric="0"/>
+            <column name="LAST_FAILURE" type="BIGINT" defaultValueNumeric="0"/>
+            <column name="LAST_IP_FAILURE" type="VARCHAR(255)"/>
+            <column name="NUM_SECONDARY_AUTH_FAILURES" type="INT" defaultValueNumeric="0"/>
+        </createTable>
+        <addPrimaryKey columnNames="REALM_ID, USER_ID" constraintName="PK_LOGIN_FAILURE" tableName="LOGIN_FAILURE"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-login-failure-index">
+        <createIndex tableName="LOGIN_FAILURE" indexName="IDX_LOGIN_FAILURE_EXPIRE">
+            <column name="LAST_FAILURE"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-add-timestamps-client">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="CLIENT" columnName="CREATED_TIMESTAMP"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="CLIENT">
+            <column name="CREATED_TIMESTAMP" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-add-last-modified-timestamp-client">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="CLIENT" columnName="LAST_MODIFIED_TIMESTAMP"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="CLIENT">
+            <column name="LAST_MODIFIED_TIMESTAMP" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-cluster-event">
+        <createTable tableName="CLUSTER_EVENT">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TARGET_CLUSTER" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SENDER_CLUSTER" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="EVENT_DATA" type="BLOB">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREATED_AT" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey columnNames="ID,TARGET_CLUSTER" constraintName="PK_CLUSTER_EVENT" tableName="CLUSTER_EVENT"/>
+        <createIndex tableName="CLUSTER_EVENT" indexName="IDX_CLUSTER_EVENT_TARGET">
+            <column name="TARGET_CLUSTER"/>
+            <column name="CREATED_AT"/>
         </createIndex>
     </changeSet>
 

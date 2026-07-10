@@ -61,6 +61,7 @@ import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginUsernamePage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -186,6 +187,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testSearch() {
         // create some organizations with different names and domains.
         createOrganization("acme", "acme.org", "acme.net");
@@ -285,6 +287,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testSearchByAttributes() {
         List<OrganizationRepresentation> expected = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
@@ -687,14 +690,22 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testCount() {
+    public void testCountAndExists() {
+        // Call hasOrganizations to cache the data
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            assertFalse(orgProvider.hasOrganizations());
+        });
+
         List<String> orgIds = IntStream.range(0, 10)
                 .mapToObj(i -> createOrganization("kc.org." + i).getId())
                 .collect(Collectors.toList());
 
         String firstOrgId = orgIds.get(0);
+        orgIds.remove(firstOrgId);
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            assertTrue(orgProvider.hasOrganizations());
             assertEquals(10, orgProvider.count());
 
             OrganizationModel org = orgProvider.getById(firstOrgId);
@@ -702,6 +713,25 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
             assertEquals(9, orgProvider.count());
         });
+
+        // Remove all all entries and check if hasOrganizations changes
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            assertTrue(orgProvider.hasOrganizations());
+            orgIds.forEach(s -> {
+                OrganizationModel org = orgProvider.getById(s);
+                orgProvider.remove(org);
+            });
+            assertFalse(orgProvider.hasOrganizations());
+        });
+
+        // Call again to see if the cache was invalidated
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            assertFalse(orgProvider.hasOrganizations());
+            assertEquals(0, orgProvider.count());
+        });
+
     }
 
     @Test

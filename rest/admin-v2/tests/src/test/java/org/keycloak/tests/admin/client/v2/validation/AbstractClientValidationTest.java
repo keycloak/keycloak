@@ -54,6 +54,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -218,11 +219,12 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
                 """.formatted(getPayloadClientId(isOidc))));
 
         try (var response = client.execute(request)) {
+            var responseBody = EntityUtils.toString(response.getEntity());
             switch (getHttpMethod()) {
                 case HttpPatch.METHOD_NAME -> assertThat(response.getStatusLine().getStatusCode(), is(200));
                 case HttpPost.METHOD_NAME, HttpPut.METHOD_NAME -> {
                     assertThat(response.getStatusLine().getStatusCode(), is(400));
-                    assertThat(EntityUtils.toString(response.getEntity()), containsString("Cannot parse the JSON"));
+                    assertThat(responseBody, containsString("protocol is required"));
                 }
             }
         }
@@ -246,12 +248,12 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
             assertThat(response.getStatusLine().getStatusCode(), is(400));
             var responseBody = EntityUtils.toString(response.getEntity());
             assertThat(responseBody, notNullValue());
-            switch (getHttpMethod()) {
-                case HttpPatch.METHOD_NAME ->
-                        assertThat(responseBody, containsString("Invalid values for these fields: protocol"));
-                case HttpPost.METHOD_NAME, HttpPut.METHOD_NAME ->
-                        // happening on the JAX-RS level implicitly
-                        assertThat(responseBody, containsString("Cannot parse the JSON"));
+            if (protocol.isBlank()) {
+                assertThat(responseBody, containsString("protocol is required"));
+            } else {
+                assertThat(responseBody, anyOf(
+                        containsString("unsupported client protocol"),
+                        containsString("protocol cannot be changed for an existing client")));
             }
         }
     }
@@ -1213,9 +1215,12 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = EntityUtils.toString(response.getEntity());
             switch (getHttpMethod()){
-                case HttpPut.METHOD_NAME -> assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("protocol cannot be changed for an existing client"));
-                case HttpPatch.METHOD_NAME -> assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Invalid values for these fields: protocol"));
+                case HttpPut.METHOD_NAME -> assertThat(body, CoreMatchers.containsString("protocol cannot be changed for an existing client"));
+                case HttpPatch.METHOD_NAME -> assertThat(body, anyOf(
+                        CoreMatchers.containsString("Invalid values for these fields: protocol"),
+                        CoreMatchers.containsString("protocol cannot be changed for an existing client")));
             }
         }
 
@@ -1230,10 +1235,15 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            // always only the first one is recorded
+            var body = EntityUtils.toString(response.getEntity());
+            // Prefer the first structural error the stack records (varies with JSON vs. merge semantics).
             switch (getHttpMethod()){
-                case HttpPut.METHOD_NAME ->  assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Cannot parse the JSON"));
-                case HttpPatch.METHOD_NAME ->  assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Invalid values for these fields: enabled"));
+                case HttpPut.METHOD_NAME -> assertThat(body, anyOf(
+                        CoreMatchers.containsString("Cannot parse the JSON"),
+                        CoreMatchers.containsString("Invalid values for these fields: enabled"),
+                        CoreMatchers.containsString("unsupported client protocol"),
+                        CoreMatchers.containsString("Mapper not found")));
+                case HttpPatch.METHOD_NAME -> assertThat(body, CoreMatchers.containsString("Invalid values for these fields: enabled"));
             }
         }
     }

@@ -30,8 +30,8 @@ import {
   ClientScope,
   addClientScope,
   changeClientScope,
-  DynamicScopeLabel,
-  isDynamicScope,
+  ParameterizedScopeLabel,
+  isParameterizedScope,
   removeClientScope,
 } from "../../components/client-scope/ClientScopeTypes";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
@@ -378,7 +378,8 @@ export const ClientScopes = ({
               }
               return (
                 <>
-                  {row.name} {isDynamicScope(row) && <DynamicScopeLabel />}
+                  {row.name}{" "}
+                  {isParameterizedScope(row) && <ParameterizedScopeLabel />}
                 </>
               );
             },

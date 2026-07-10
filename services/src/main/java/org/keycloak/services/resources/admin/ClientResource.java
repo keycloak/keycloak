@@ -39,7 +39,6 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.admin.AuthorizationService;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
@@ -260,8 +259,6 @@ public class ClientResource {
             throw new NotFoundException("Could not find client");
         }
 
-        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
-
         ClientRepresentation clientRepresentation = new ClientRepresentation();
         clientRepresentation.setId(client.getId());
         clientRepresentation.setClientId(client.getClientId());
@@ -425,10 +422,10 @@ public class ClientResource {
         if (clientScope == null) {
             throw new jakarta.ws.rs.NotFoundException("Client scope not found");
         }
-        // Dynamic scopes currently require the caller to explicitly provide the scope parameter (e.g. "scope_name:value"),
+        // Parameterized scopes currently require the caller to explicitly provide the scope parameter (e.g. "scope_name:value"),
         // so they cannot be included automatically as default scopes. This restriction may be lifted in the future.
-        if (defaultScope && clientScope.isDynamicScope()) {
-            throw new ErrorResponseException("invalid_request", "Can't assign a Dynamic Scope to a Client as a Default Scope", Response.Status.BAD_REQUEST);
+        if (defaultScope && clientScope.isParameterizedScope()) {
+            throw new ErrorResponseException("invalid_request", "Can't assign a Parameterized Scope to a Client as a Default Scope", Response.Status.BAD_REQUEST);
         }
 
         validateClientScopeAssignment(session, clientScope, defaultScope, realm);

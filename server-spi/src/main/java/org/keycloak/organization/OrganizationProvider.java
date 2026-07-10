@@ -420,4 +420,13 @@ public interface OrganizationProvider extends Provider {
      * @return the invitation manager
      */
     InvitationManager getInvitationManager();
+
+    /**
+     * Used to provide an optimized check if any organization exists in the realm.
+     *
+     * @return true if any organization exists in the realm
+     */
+    default boolean hasOrganizations() {
+        return count() > 0;
+    }
 }

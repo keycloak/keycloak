@@ -3,13 +3,13 @@ package org.keycloak.ssf.transmitter.emit;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.event.SsfEvent;
 import org.keycloak.ssf.event.SsfEventRegistry;
@@ -20,12 +20,12 @@ import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.ssf.subject.SubjectUserLookup;
-import org.keycloak.ssf.transmitter.SsfTransmitter;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.subject.SsfSubjectInclusionResolver;
+import org.keycloak.ssf.transmitter.support.SsfUtil;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
@@ -106,9 +106,16 @@ public class EventEmitterService {
         // routes through the same gate, so a request targeting a
         // non-SSF client surfaces this as a 500 with the message —
         // intentional: the caller's configuration is wrong.
-        if (!isSsfReceiverClient(receiverClient)) {
+        if (!SsfUtil.isReceiverClient(receiverClient)) {
             throw new SsfException("Client '" + receiverClient.getClientId()
                     + "' is not an SSF Receiver");
+        }
+        // A disabled receiver keeps its stream config but is off the air —
+        // mirror the dispatch-path gate (SsfUtil#isReceiverEnabled)
+        // so synthetic emit doesn't deliver to a client the operator has
+        // switched off. Re-enabling the client resumes delivery
+        if (!receiverClient.isEnabled()) {
+            return EmitEventResult.dropped(EmitEventStatus.RECEIVER_DISABLED);
         }
         if (eventTypeAliasOrUri == null || eventTypeAliasOrUri.isBlank()) {
             return EmitEventResult.dropped(EmitEventStatus.INVALID_REQUEST);
@@ -143,6 +150,15 @@ public class EventEmitterService {
         StreamConfig stream = streamStore.getStreamForClient(receiverClient);
         if (stream == null) {
             return EmitEventResult.dropped(EmitEventStatus.STREAM_NOT_FOUND);
+        }
+        // ... with a delivery configuration. Without one the dispatcher
+        // has nowhere to send the SET and would skip delivery before the
+        // outbox enqueue — the emitter would see a "dispatched" result
+        // (and a jti) for an event that never existed anywhere. Fail
+        // early with an explicit status instead.
+        if (stream.getDelivery() == null) {
+            return EmitEventResult.dropped(EmitEventStatus.NO_DELIVERY_CONFIG,
+                    "Stream has no delivery method configured — configure push or poll delivery for the stream first");
         }
 
         // 4. Event type must be in the receiver's events_requested
@@ -248,16 +264,13 @@ public class EventEmitterService {
     }
 
     protected OrganizationModel resolveOrganization(SubjectId tenantFacet) {
-        if (tenantFacet == null || !Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+        if (tenantFacet == null || !Organizations.isEnabled(session)) {
             return null;
         }
         if (!(tenantFacet instanceof OpaqueSubjectId opaque) || opaque.getId() == null) {
             return null;
         }
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-        if (orgProvider == null) {
-            return null;
-        }
         // Prefer alias (matches the admin shorthand 'org-alias' convention),
         // then fall back to UUID for emitters that prefer stable identifiers.
         OrganizationModel org = orgProvider.getByAlias(opaque.getId());
@@ -265,13 +278,6 @@ public class EventEmitterService {
             org = orgProvider.getById(opaque.getId());
         }
         return org;
-    }
-
-    protected boolean isSsfReceiverClient(ClientModel client) {
-        // Delegates to the public helper so anyone (REST callers,
-        // extensions, tests) shares one definition of "is this client
-        // an SSF Receiver."
-        return SsfTransmitter.isReceiverClient(client);
     }
 
     protected boolean isStreamEvent(String eventTypeUri) {

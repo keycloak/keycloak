@@ -256,6 +256,9 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .transformer(DatabasePropertyMappers::toDatabaseKind)
                         .paramLabel("vendor")
                         .build(),
+                fromOption(DatabaseOptions.DB_HEALTH_EXCLUDE)
+                        .to("quarkus.datasource.\"<datasource>\".health-exclude")
+                        .build(),
                 fromOption(DatabaseOptions.DB_POOL_MAX_LIFETIME)
                         .to("quarkus.datasource.jdbc.max-lifetime")
                         .mapFrom(DB, DatabasePropertyMappers::transformPoolMaxLifetime)
@@ -423,7 +426,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         return String.valueOf(DurationConverter.parseDuration(value).toSeconds());
     }
 
-    private static String getDatabaseUrl(String name, String value, ConfigSourceInterceptorContext c) {        
+    private static String getDatabaseUrl(String name, String value, ConfigSourceInterceptorContext c) {
         return Database.getDefaultUrl(option -> getDatasourceOptionValue(option, name).orElse(null), name, value).orElse(null);
     }
 

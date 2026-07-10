@@ -298,6 +298,13 @@ Default: `10s`.
 
 == Preparing for PostgreSQL
 
+=== Asynchronous commits
+
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use PostgreSQL's async commit feature.
+Logouts will still force a synchronous commit.
+
+You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
+
 === Writer and reader instances
 
 When running PostgreSQL reader and writer instances, {project_name} needs to always connect to the writer instance to do its work.
@@ -337,6 +344,8 @@ Secure the connection by adding the options:
 
 [[preparing-keycloak-for-amazon-aurora-postgresql]]
 == Preparing for Amazon Aurora PostgreSQL
+
+Asynchronous commits, an optimization for PostgreSQL databases, are disabled when logical replication is enabled as they might conflict with Debezium change data capture.
 
 When using Amazon Aurora PostgreSQL, the https://github.com/awslabs/aws-advanced-jdbc-wrapper[Amazon Web Services JDBC Driver] offers additional features like transfer of database connections when a writer instance changes in a Multi-AZ setup.
 This driver is not part of the distribution and needs to be installed before it can be used.
@@ -699,7 +708,7 @@ In the example above, the `org.your.extension.UserEntity` JPA entity will be man
 ==== 2. Required properties
 
 Once you have set up your `persistence.xml`, the minimal configuration on the {project_name} side is the setup of the DB kind/vendor for the specified datasource.
-You need to specify the build time option `db-kind-<name>`, where the `<name>` is the name of your datasource and must be the **same** as specified in the `persistence.xml` file.
+You need to specify the build time option `db-kind-<datasource>`, where the `<datasource>` is the name of your datasource and must be the **same** as specified in the `persistence.xml` file.
 
 Therefore, you can enable the additional datasource `user-store` as follows (`postgres` as an example):
 
@@ -752,6 +761,11 @@ WARNING: Use Quarkus properties **without quotation** for the datasource name, a
 Therefore, use `quarkus.datasource.user-store.db-kind=h2`, instead of `quarkus.datasource."user-store".db-kind=h2` to prevent any issues.
 
 <@opts.printRelevantOptions includedOptions="db db-* transaction-xa-enabled transaction-default-timeout transaction-setup-timeout" excludedOptions="db-*-<datasource>">
+
+=== Health checks
+
+Additional datasources are included by default in the readiness health check endpoint. If the additional datasource is not critical to your usage, you may exclude it from
+the health check with `db-health-exclude-<datasource>` set to `true`. 
 
 === Additional datasources options
 <@opts.includeOptions includedOptions="*-<datasource>"/>

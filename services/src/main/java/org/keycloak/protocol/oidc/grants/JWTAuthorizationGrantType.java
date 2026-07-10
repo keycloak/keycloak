@@ -125,9 +125,6 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
                 throw new RuntimeException("Identity Provider is not configured for JWT Authorization Grant");
             }
 
-            // assign the provider and perform validations associated to the jwt grant provider
-            authorizationGrantContext.validateTokenActive(jwtAuthorizationGrantProvider.getAllowedClockSkew(), jwtAuthorizationGrantProvider.getMaxAllowedExpiration(), jwtAuthorizationGrantProvider.isAssertionReuseAllowed());
-
             // assign the signature alg and validate
             authorizationGrantContext.validateSignatureAlgorithm(jwtAuthorizationGrantProvider.getAssertionSignatureAlg());
 
@@ -136,6 +133,8 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             if (brokeredIdentityContext == null) {
                 throw new RuntimeException("Error validating JWT with identity provider");
             }
+
+            authorizationGrantContext.validateTokenActive(jwtAuthorizationGrantProvider.getAllowedClockSkew(), jwtAuthorizationGrantProvider.getMaxAllowedExpiration(), jwtAuthorizationGrantProvider.isAssertionReuseAllowed());
 
             //user must exist in keycloak
             FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(identityProviderModel.getAlias(), brokeredIdentityContext.getId(), brokeredIdentityContext.getUsername(), brokeredIdentityContext.getToken());

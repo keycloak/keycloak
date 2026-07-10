@@ -28,6 +28,8 @@ import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenIdGenerator;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.util.SecretGenerator;
@@ -48,6 +50,9 @@ import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
+import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
+import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
+import org.keycloak.protocol.oidc.par.endpoints.request.AuthzEndpointParParser;
 import org.keycloak.protocol.oidc.utils.LogoutUtil;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
@@ -99,6 +104,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String CLAIMS_PARAM = "claims";
     public static final String ACR_PARAM = "acr_values";
     public static final String ID_TOKEN_HINT = "id_token_hint";
+    public static final String CONSENT_NOTE = "session_consent";
 
     public static final String LOGOUT_STATE_PARAM = "OIDC_LOGOUT_STATE_PARAM";
     public static final String LOGOUT_REDIRECT_URI = "OIDC_LOGOUT_REDIRECT_URI";
@@ -575,7 +581,19 @@ public class OIDCLoginProtocol implements LoginProtocol {
     }
 
     @Override
-    public void close() {
+    public void authenticationComplete(AuthenticationSessionModel authSession) {
+        // Authorization servers that enforce one-time use of request_uri values do so at the point of authorization,
+        // not at the point of visiting the authorization endpoint
+        String requestUri = authSession.getAuthNote(Constants.AUTHORIZATION_REQUEST_URI);
+        RequestUriType requestUriType = Optional.ofNullable(requestUri)
+                .map(AuthorizationEndpointRequestParserProcessor::getRequestUriType)
+                .orElse(null);
+        if (requestUriType == RequestUriType.PAR && AuthzEndpointParParser.removeRequestObject(session, requestUri) == null) {
+            throw new AuthenticationFlowException("PAR not found, not issued or used multiple times.", AuthenticationFlowError.INTERNAL_ERROR);
+        }
+    }
 
+    @Override
+    public void close() {
     }
 }

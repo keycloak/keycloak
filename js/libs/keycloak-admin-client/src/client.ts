@@ -14,6 +14,7 @@ import { Organizations } from "./resources/organizations.js";
 import { Workflows } from "./resources/workflows.js";
 import { Roles } from "./resources/roles.js";
 import { ServerInfo } from "./resources/serverInfo.js";
+import { Ssf } from "./resources/ssf.js";
 import { Users } from "./resources/users.js";
 import { UserStorageProvider } from "./resources/userStorageProvider.js";
 import { WhoAmI } from "./resources/whoAmI.js";
@@ -63,6 +64,7 @@ export class KeycloakAdminClient {
   public attackDetection: AttackDetection;
   public authenticationManagement: AuthenticationManagement;
   public cache: Cache;
+  public ssf: Ssf;
 
   // Members
   public baseUrl: string;
@@ -108,6 +110,7 @@ export class KeycloakAdminClient {
     this.whoAmI = new WhoAmI(this);
     this.attackDetection = new AttackDetection(this);
     this.cache = new Cache(this);
+    this.ssf = new Ssf(this);
   }
 
   public async auth(credentials: Credentials) {

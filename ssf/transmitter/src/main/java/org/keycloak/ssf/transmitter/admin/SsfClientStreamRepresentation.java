@@ -2,6 +2,7 @@ package org.keycloak.ssf.transmitter.admin;
 
 import java.util.Set;
 
+import org.keycloak.ssf.transmitter.stream.ManagedBy;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -35,6 +36,15 @@ public class SsfClientStreamRepresentation {
     private Integer updatedAt;
 
     private Integer lastVerifiedAt;
+
+    /**
+     * Origin / ownership marker — see
+     * {@link ManagedBy}. Set at creation time and immutable thereafter.
+     * Surfaced to the admin UI so the Stream tab can render the
+     * "managed by" badge and warn operators when an admin save is
+     * about to override a receiver-managed configuration.
+     */
+    private ManagedBy managedBy;
 
     public String getStreamId() {
         return streamId;
@@ -130,5 +140,13 @@ public class SsfClientStreamRepresentation {
 
     public void setLastVerifiedAt(Integer lastVerifiedAt) {
         this.lastVerifiedAt = lastVerifiedAt;
+    }
+
+    public ManagedBy getManagedBy() {
+        return managedBy;
+    }
+
+    public void setManagedBy(ManagedBy managedBy) {
+        this.managedBy = managedBy;
     }
 }

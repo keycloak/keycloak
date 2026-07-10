@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,6 +48,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -55,6 +57,8 @@ import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
@@ -104,7 +108,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 @KeycloakIntegrationTest
-@DatabaseTest
 public class GroupTest extends AbstractGroupTest {
 
     @InjectRealm(config = GroupTestRealmConfig.class)
@@ -121,6 +124,7 @@ public class GroupTest extends AbstractGroupTest {
 
     
     @Test
+    @DatabaseTest
     @DisabledForDatabases("mssql")
     public void createMultiDeleteMultiReadMulti() {
         // create multiple groups
@@ -210,6 +214,7 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    @DatabaseTest
     // KEYCLOAK-16888 Error messages for groups with same name in the same level
     public void doNotAllowSameGroupNameAtSameLevel() {
         RealmResource realm = managedRealm.admin();
@@ -248,6 +253,7 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    @DatabaseTest
     // KEYCLOAK-11412 Unintended Groups with same names
     public void doNotAllowSameGroupNameAtSameLevelWhenUpdatingName() {
         RealmResource realm = managedRealm.admin();
@@ -301,6 +307,7 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    @DatabaseTest
     public void doNotAllowSameGroupNameAtTopLevel() {
         // creating "/test-group"
         GroupRepresentation topGroup = new GroupRepresentation();
@@ -315,6 +322,7 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    @DatabaseTest
     public void doNotAllowSameGroupNameAtTopLevelInDatabase() {
         String realmName = managedRealm.getName();
         final String id = runOnServer.fetch(session -> {
@@ -650,6 +658,7 @@ public class GroupTest extends AbstractGroupTest {
 
 
     @Test
+    @DatabaseTest
     //KEYCLOAK-6300 List of group members is not sorted alphabetically
     public void groupMembershipUsersOrder() {
         RealmResource realm = managedRealm.admin();
@@ -838,6 +847,7 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    @DatabaseTest
     public void defaultMaxResults() {
         GroupsResource groups = managedRealm.admin().groups();
         Response response = groups.add(GroupBuilder.create().name("test").build());
@@ -965,6 +975,72 @@ public class GroupTest extends AbstractGroupTest {
         } finally {
             cfg.setUnmanagedAttributePolicy(null);
             upResource.update(cfg);
+        }
+    }
+
+    @Test
+    public void testGroupMembersRespectsUserProfileAttributePermissions() {
+        RealmResource realm = managedRealm.admin();
+        String groupName = "profile-perm-group";
+        String userName = "profile-perm-user";
+
+        UserProfileResource upResource = realm.users().userProfile();
+        UPConfig originalCfg = upResource.getConfiguration();
+
+        try {
+            // Restrict email and firstName to user-role only — admins (USER_API context) cannot view them
+            UPConfig cfg = upResource.getConfiguration();
+
+            UPAttribute emailAttr = cfg.getAttribute(UserModel.EMAIL);
+            if (emailAttr == null) {
+                emailAttr = new UPAttribute(UserModel.EMAIL);
+            }
+            emailAttr.setPermissions(new UPAttributePermissions(Set.of("user"), Set.of("user")));
+            cfg.addOrReplaceAttribute(emailAttr);
+
+            UPAttribute firstNameAttr = cfg.getAttribute(UserModel.FIRST_NAME);
+            if (firstNameAttr == null) {
+                firstNameAttr = new UPAttribute(UserModel.FIRST_NAME);
+            }
+            firstNameAttr.setPermissions(new UPAttributePermissions(Set.of("user"), Set.of("user")));
+            cfg.addOrReplaceAttribute(firstNameAttr);
+
+            upResource.update(cfg);
+            adminEvents.poll(); // consume the user profile UPDATE event
+
+            String groupId = createGroup(managedRealm, GroupBuilder.create().name(groupName).build());
+            GroupResource group = managedRealm.admin().groups().group(groupId);
+
+            UserRepresentation userRep = UserBuilder.create()
+                    .username(userName)
+                    .firstName("Test")
+                    .email(userName + "@test.com")
+                    .build();
+            UsersResource users = realm.users();
+            Response response = users.create(userRep);
+            String userUuid = ApiUtil.getCreatedId(response);
+            managedRealm.cleanup().add(r -> r.users().get(userUuid).remove());
+            adminEvents.poll(); // consume CREATE USER event
+            users.get(userUuid).joinGroup(groupId);
+            adminEvents.poll(); // consume GROUP_MEMBERSHIP event
+
+            // Group members endpoint must respect user profile attribute permissions
+            for (Boolean briefRep : List.of(Boolean.TRUE, Boolean.FALSE)) {
+                List<UserRepresentation> members = group.members(null, null, briefRep);
+                assertEquals(1, members.size());
+                assertNull(members.get(0).getEmail());
+                assertNull(members.get(0).getFirstName());
+                assertNull(members.get(0).getUserProfileMetadata());
+            }
+
+            // User list endpoint must show the same filtering (parity check)
+            List<UserRepresentation> userList = realm.users().search(userName, true);
+            assertEquals(1, userList.size());
+            assertNull(userList.get(0).getEmail());
+            assertNull(userList.get(0).getFirstName());
+
+        } finally {
+            upResource.update(originalCfg);
         }
     }
 

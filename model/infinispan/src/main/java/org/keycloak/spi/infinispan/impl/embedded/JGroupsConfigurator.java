@@ -36,6 +36,7 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.TrustManager;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.config.CachingOptions;
@@ -188,6 +189,7 @@ public final class JGroupsConfigurator {
         readConfigAndSet(config, RACK_NAME, transport::rackId);
         readConfigAndSet(config, MACHINE_NAME, transport::machineId);
         readConfigAndSet(config, NODE_NAME, transport::nodeName);
+        readConfigAndSet(config, DefaultCacheEmbeddedConfigProviderFactory.CLUSTER_NAME, transport::clusterName);
     }
 
     static void createJGroupsProperties(ProviderConfigurationBuilder builder) {
@@ -243,6 +245,14 @@ public final class JGroupsConfigurator {
         var stackXmlAttribute = transportStackOf(holder);
         if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get())) {
             logger.debugf("Custom stack configured (%s). JDBC_PING discovery disabled.", stackXmlAttribute.get());
+            if (Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
+                if (Objects.equals("test", stackXmlAttribute.get())) {
+                    // TODO: Remove this case once the model tests have been migrated
+                    logger.error("The stateless feature must hast JDBC_PING discovery enabled");
+                } else {
+                    throw new RuntimeException("The stateless feature must have JDBC_PING discovery enabled");
+                }
+            }
             return;
         }
 

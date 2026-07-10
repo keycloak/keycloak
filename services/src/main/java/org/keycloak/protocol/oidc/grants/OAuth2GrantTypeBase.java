@@ -52,6 +52,7 @@ import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
 import org.keycloak.protocol.oidc.rar.InvalidAuthorizationDetailsException;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.protocol.oidc.utils.ClientHostUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
@@ -163,7 +164,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
     }
 
     protected Response createTokenResponse(TokenManager.AccessTokenResponseBuilder responseBuilder, ClientSessionContext clientSessionCtx, boolean code) {
-        AccessTokenResponse res = null;
+        AccessTokenResponse res;
         if (code) {
             try {
                 res = responseBuilder.build();
@@ -181,6 +182,10 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
 
         // Extension point for subclasses to add custom claims
         addCustomTokenResponseClaims(res, clientSessionCtx);
+
+        // Sanitize authorization details before they are sent as part of the Token Response
+        var authDetailsProcessor = new AuthorizationDetailsProcessorManager(session);
+        authDetailsProcessor.sanitizeBeforeSendingTokenResponse(res);
 
         event.success();
 
@@ -214,7 +219,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         }
     }
 
-    protected void updateClientSession(AuthenticatedClientSessionModel clientSession) {
+    public void updateClientSession(AuthenticatedClientSessionModel clientSession) {
 
         if(clientSession == null) {
             ServicesLogger.LOGGER.clientSessionNull();
@@ -232,14 +237,26 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
                 clientSession.setNote(AdapterConstants.CLIENT_SESSION_STATE, adapterSessionId);
             }
 
-            String oldClientSessionHost = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);
-            if (!Objects.equals(adapterSessionHost, oldClientSessionHost)) {
-                clientSession.setNote(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
+            if ((adapterSessionHost != null) && (!adapterSessionHost.trim().isEmpty())) {
+                // CVE-2026-4874 - client_session_host requires validation as an external field that is stored in client
+                // session and can be used to generate logout callback URL.
+                if (!ClientHostUtils.isHostAllowedForClient(adapterSessionHost, client, session)) {
+                    logger.warnf("Adapter Session '%s' not valid in ClientSession for client '%s'. Host is '%s' and has been removed.",
+                            adapterSessionId, client.getClientId(), adapterSessionHost);
+                    return;
+                }
+
+                String oldClientSessionHost = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);
+                if (!Objects.equals(adapterSessionHost, oldClientSessionHost)) {
+                    clientSession.setNote(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
+                    logger.debugf("Adapter Session '%s' saved in ClientSession for client '%s'. Host is '%s'",
+                            adapterSessionId, client.getClientId(), adapterSessionHost);
+                }
             }
         }
     }
 
-    protected void updateUserSessionFromClientAuth(UserSessionModel userSession) {
+    public void updateUserSessionFromClientAuth(UserSessionModel userSession) {
         for (Map.Entry<String, String> attr : clientAuthAttributes.entrySet()) {
             userSession.setNote(attr.getKey(), attr.getValue());
         }
@@ -283,7 +300,6 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      * Hook method called after authorization_details are processed and before the token response is created.
      * This allows authorization details processors to perform post-processing actions (e.g., creating state objects).
      * Processors can store information in session notes during processing, and this hook allows them to act on it.
-     * Default implementation does nothing.
      *
      * @param userSession                  the user session
      * @param clientSessionCtx             the client session context
@@ -291,8 +307,10 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      */
     protected void afterAuthorizationDetailsProcessed(UserSessionModel userSession, ClientSessionContext clientSessionCtx,
                                                       List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponse) {
-        // Default: do nothing
-        // Subclasses or processors can override/extend this to perform post-processing
+        if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
+            new AuthorizationDetailsProcessorManager(session)
+                    .afterAuthorizationDetailsProcessed(userSession, clientSessionCtx, authorizationDetailsResponse);
+        }
     }
 
     /**

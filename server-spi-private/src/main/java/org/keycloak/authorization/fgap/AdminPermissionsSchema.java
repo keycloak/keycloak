@@ -23,6 +23,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -72,8 +73,10 @@ import org.keycloak.representations.idm.authorization.ResourceType;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
-public class AdminPermissionsSchema extends AuthorizationSchema {
+import org.jboss.logging.Logger;
 
+public class AdminPermissionsSchema extends AuthorizationSchema {
+    private static final Logger LOGGER = Logger.getLogger(AdminPermissionsSchema.class);
     public static final String REALMS_RESOURCE_TYPE = "Realms";
 
     public static final String CLIENTS_RESOURCE_TYPE = "Clients";
@@ -257,7 +260,14 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     }
 
     private Optional<OrganizationModel> resolveOrganization(KeycloakSession session, String id) {
-        return Optional.ofNullable(session.getProvider(OrganizationProvider.class).getById(id));
+        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+            return Optional.empty();
+        }
+        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+        if (provider == null || !provider.isEnabled()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(provider.getById(id));
     }
 
     private Optional<ClientModel> resolveClient(KeycloakSession session, String id) {
@@ -582,6 +592,29 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     }
 
     /**
+     * <p>Disables authorization and evaluation of permissions for realm resource types when executing the given {@code supplier}
+     * in the context of the given {@code session}, returning the supplier's result.
+     *
+     * @param session the session. If {@code null}, the supplier is executed directly without modifying authorization state
+     * @param supplier the supplier to execute
+     * @param <T> the return type
+     * @return the result of the supplier
+     * @see AdminPermissionsSchema#runWithoutAuthorization(KeycloakSession, Runnable)
+     */
+    public static <T> T runWithoutAuthorization(KeycloakSession session, Supplier<T> supplier) {
+        if (isSkipEvaluation(session)) {
+            return supplier.get();
+        }
+
+        try {
+            session.setAttribute(SKIP_EVALUATION, Boolean.TRUE.toString());
+            return supplier.get();
+        } finally {
+            session.removeAttribute(SKIP_EVALUATION);
+        }
+    }
+
+    /**
      * Returns if authorization is disabled in the context of the given {@code session} at the moment that this method is called.
      *
      * @param session the session
@@ -622,6 +655,14 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             return;
         }
 
+        ResourceStore resourceStore = storeFactory.getResourceStore();
+        Resource resourceTypeResource = resourceStore.findByName(resourceServer, resourceType);
+
+        if (resourceTypeResource == null) {
+            LOGGER.warnf("Scope creation skipped, because resource type '%s' not found!", resourceType);
+            return;
+        }
+
         ScopeStore scopeStore = storeFactory.getScopeStore();
         Scope newScope = scopeStore.findByName(resourceServer, scopeName);
 
@@ -629,8 +670,6 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             newScope = scopeStore.create(resourceServer, scopeName);
         }
 
-        ResourceStore resourceStore = storeFactory.getResourceStore();
-        Resource resourceTypeResource = resourceStore.findByName(resourceServer, resourceType);
         Set<Scope> newScopes = new HashSet<>(resourceTypeResource.getScopes());
 
         newScopes.add(newScope);

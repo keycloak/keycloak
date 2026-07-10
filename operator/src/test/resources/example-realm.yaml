@@ -51,6 +51,7 @@ spec:
     quickLoginCheckMilliSeconds: 1000
     maxDeltaTimeSeconds: 43200
     failureFactor: 30
+    maxSecondaryAuthFailures: 100
     roles:
       realm:
       - id: c118f6c0-db44-4b29-a439-573b0d828e61

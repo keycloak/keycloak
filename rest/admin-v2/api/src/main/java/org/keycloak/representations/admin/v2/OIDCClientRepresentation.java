@@ -57,9 +57,12 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
     @JsonPropertyDescription("Roles assigned to the service account")
     private Set<@NotBlank @Size(max = 255) String> serviceAccountRoles = new LinkedHashSet<>();
 
-    public OIDCClientRepresentation() {}
+    public OIDCClientRepresentation() {
+        this.protocol = PROTOCOL;
+    }
 
     public OIDCClientRepresentation(String clientId) {
+        this.protocol = PROTOCOL;
         this.clientId = clientId;
     }
 
@@ -95,17 +98,12 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
         this.serviceAccountRoles = serviceAccountRoles;
     }
 
-    @Override
-    public String getProtocol() {
-        return PROTOCOL;
-    }
-
     @ClientSecretNotBlank(groups = PutClient.class, affectedFieldNames = {"secret"})
     public static class Auth extends BaseRepresentation {
 
         @NotBlank
         @ValidAuthMethod
-        @JsonPropertyDescription("Which authentication method is used for this client")
+        @JsonPropertyDescription("Client authentication method (e.g. `client-secret`, `client-secret-jwt`)")
         private String method;
 
         @Size(min = 6, max = 255)

@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
@@ -46,7 +47,6 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.A
 public class InfinispanStickySessionEncoderProviderFactory implements StickySessionEncoderProviderFactory, EnvironmentDependentProviderFactory, StickySessionEncoderProvider {
 
     private static final Logger log = Logger.getLogger(InfinispanStickySessionEncoderProviderFactory.class);
-    private static final char SEPARATOR = '.';
 
     private boolean shouldAttachRoute;
     private boolean clustered;
@@ -71,6 +71,10 @@ public class InfinispanStickySessionEncoderProviderFactory implements StickySess
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        if (Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
+            clustered = false;
+            return;
+        }
         try (var session = factory.create()) {
             var provider = session.getProvider(InfinispanConnectionProvider.class);
             authenticationCache = provider.getCache(AUTHENTICATION_SESSIONS_CACHE_NAME);
@@ -119,18 +123,7 @@ public class InfinispanStickySessionEncoderProviderFactory implements StickySess
     public String encodeSessionId(String message, String sessionId) {
         Objects.requireNonNull(message);
         String route = sessionIdRoute(sessionId);
-        return route == null ? message : message + SEPARATOR + route;
-    }
-
-    @Override
-    public SessionIdAndRoute decodeSessionIdAndRoute(String encodedSessionId) {
-        int index = encodedSessionId.indexOf(SEPARATOR);
-        int length = encodedSessionId.length();
-        if (index == -1 || index == (length - 1)) {
-            //route not present
-            return new SessionIdAndRoute(encodedSessionId, null);
-        }
-        return new SessionIdAndRoute(encodedSessionId.substring(0, index), encodedSessionId.substring(index + 1, length));
+        return route == null ? message : message + DEFAULT_SEPARATOR + route;
     }
 
     @Override
