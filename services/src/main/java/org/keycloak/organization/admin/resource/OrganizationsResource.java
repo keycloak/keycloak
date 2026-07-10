@@ -108,7 +108,6 @@ public class OrganizationsResource {
         }
 
         try {
-            OrganizationsValidation.validateAlias(organization.getAlias());
             OrganizationsValidation.validateUrl(organization.getRedirectUrl());
 
             OrganizationModel model = provider.create(organization.getName(), organization.getAlias());

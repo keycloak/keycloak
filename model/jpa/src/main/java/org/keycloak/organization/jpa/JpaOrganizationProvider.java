@@ -104,12 +104,13 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         }
 
         if (StringUtil.isBlank(alias)) {
-            try {
-                OrganizationsValidation.validateAlias(name);
-            } catch (OrganizationsValidation.OrganizationValidationException e) {
-                throw new ModelValidationException("Name cannot be used as alias: " + e.getMessage());
-            }
             alias = name;
+        }
+
+        try {
+            OrganizationsValidation.validateAlias(alias);
+        } catch (OrganizationsValidation.OrganizationValidationException e) {
+            throw new ModelValidationException(e.getMessage());
         }
 
         if (getByName(name) != null) {

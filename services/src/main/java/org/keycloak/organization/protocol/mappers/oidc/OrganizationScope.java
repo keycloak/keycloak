@@ -23,8 +23,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
@@ -175,8 +173,6 @@ public enum OrganizationScope {
 
     private static final String ORGANIZATION_SCOPES_SESSION_ATTRIBUTE = "kc.org.client.scope";
     private static final String UNSUPPORTED_ORGANIZATION_SCOPES_ATTRIBUTE = "kc.org.client.scope.unsupported";
-    // non-greedy first group: splits on the first separator so alias values may themselves contain VALUE_SEPARATOR
-    private static final Pattern SCOPE_PATTERN = Pattern.compile("(.*?)" + VALUE_SEPARATOR + "(.*)");
     private static final String EMPTY_SCOPE = "";
 
     /**
@@ -366,19 +362,15 @@ public enum OrganizationScope {
     private static String parseScopeValue(KeycloakSession session, String scope) {
         ClientScopeModel clientScope = resolveClientScope(session, scope);
 
-        if (clientScope != null) {
-            if (scope.equals(clientScope.getName())) {
-                return "";
-            }
+        if (clientScope == null) {
+            return null;
         }
 
-        Matcher matcher = SCOPE_PATTERN.matcher(scope);
-
-        if (matcher.matches()) {
-            return matcher.group(2);
+        if (scope.equals(clientScope.getName())) {
+            return "";
         }
 
-        return null;
+        return scope.substring(clientScope.getName().length() + VALUE_SEPARATOR.length());
     }
 
     private static Stream<String> parseScopeParameter(KeycloakSession session, String rawScope) {
@@ -411,15 +403,17 @@ public enum OrganizationScope {
             }
         }
 
-        Matcher matcher = SCOPE_PATTERN.matcher(scope);
-
-        if (matcher.matches()) {
-            scope = matcher.group(1);
-        }
-
         ClientScopeModel clientScope = getClientScope(client, scope);
 
+        if (clientScope == null) {
+            // the scope may be a parameterized "name:value" pair; resolve the client-scope name
+            // against the client's actual scopes (longest prefix first) instead of assuming where
+            // the separator is, since both the scope name and the value may contain VALUE_SEPARATOR
+            clientScope = resolveParameterizedClientScope(client, scope);
+        }
+
         if (clientScope != null) {
+            scope = clientScope.getName();
             Stream<String> mappers = clientScope.getProtocolMappersStream().map(ProtocolMapperModel::getProtocolMapper);
 
             if (mappers.noneMatch(OrganizationMembershipMapper.PROVIDER_ID::equals)) {
@@ -458,5 +452,23 @@ public enum OrganizationScope {
         }
 
         return clientScope;
+    }
+
+    // tries progressively shorter prefixes so the longest matching client scope name wins, since both the
+    // scope name and the value may themselves contain VALUE_SEPARATOR
+    private static ClientScopeModel resolveParameterizedClientScope(ClientModel client, String scope) {
+        int separatorIndex = scope.lastIndexOf(VALUE_SEPARATOR);
+
+        while (separatorIndex > 0) {
+            ClientScopeModel clientScope = getClientScope(client, scope.substring(0, separatorIndex));
+
+            if (clientScope != null) {
+                return clientScope;
+            }
+
+            separatorIndex = scope.lastIndexOf(VALUE_SEPARATOR, separatorIndex - 1);
+        }
+
+        return null;
     }
 }
