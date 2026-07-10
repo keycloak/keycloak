@@ -32,7 +32,7 @@ public abstract class AbstractMlDsaKeyProviderFactory implements KeyProviderFact
 
     protected static final String MLDSA_PRIVATE_KEY_KEY = "mldsaPrivateKey";
     protected static final String MLDSA_PUBLIC_KEY_KEY = "mldsaPublicKey";
-    protected static final String MLDSA_ALGORITHM_KEY = "mldsaAlgorithmKey";
+    public static final String MLDSA_ALGORITHM_KEY = "mldsaAlgorithmKey";
     public static final String DEFAULT_MLDSA_ALGORITHM = Algorithm.ML_DSA_65;
 
     protected static ProviderConfigProperty MLDSA_ALGORITHM_PROPERTY = new ProviderConfigProperty(MLDSA_ALGORITHM_KEY,

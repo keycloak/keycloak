@@ -20,7 +20,7 @@ package org.keycloak.crypto;
 import java.util.Set;
 import org.keycloak.models.KeycloakSession;
 
-public class MLDSA87SignatureProviderFactory implements SignatureProviderFactory {
+public class MLDSA87SignatureProviderFactory implements SignatureProviderFactory, MLDSAEnvironmentDependentProviderFactory {
 
     public static final String ID = Algorithm.ML_DSA_87;
 

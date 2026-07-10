@@ -26,20 +26,23 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Set;
 
+import org.keycloak.Config;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.MLDSAEnvironmentDependentProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfigurationValidationHelper;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import org.jboss.logging.Logger;
 
-public class GeneratedMlDsaKeyProviderFactory extends AbstractMlDsaKeyProviderFactory {
+public class GeneratedMlDsaKeyProviderFactory extends AbstractMlDsaKeyProviderFactory implements EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(GeneratedMlDsaKeyProviderFactory.class);
 
@@ -93,6 +96,12 @@ public class GeneratedMlDsaKeyProviderFactory extends AbstractMlDsaKeyProviderFa
     @Override
     public String getId() {
         return ID;
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return List.of(Algorithm.ML_DSA_44, Algorithm.ML_DSA_65, Algorithm.ML_DSA_87).stream()
+                .allMatch(MLDSAEnvironmentDependentProviderFactory::isAlgorithmSupported);
     }
 
     @Override

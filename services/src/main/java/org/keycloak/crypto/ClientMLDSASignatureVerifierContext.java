@@ -34,6 +34,10 @@ public class ClientMLDSASignatureVerifierContext extends AsymmetricSignatureVeri
         if (key == null) {
             throw new VerificationException("Key not found");
         }
+        return validateKey(key, input);
+    }
+
+    static KeyWrapper validateKey(KeyWrapper key, JWSInput input) throws VerificationException {
         if (!KeyType.AKP.equals(key.getType())) {
             throw new VerificationException("Key Type is not AKP: " + key.getType());
         }

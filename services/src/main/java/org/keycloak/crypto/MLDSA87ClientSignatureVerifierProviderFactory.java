@@ -19,7 +19,7 @@ package org.keycloak.crypto;
 
 import org.keycloak.models.KeycloakSession;
 
-public class MLDSA87ClientSignatureVerifierProviderFactory implements ClientSignatureVerifierProviderFactory {
+public class MLDSA87ClientSignatureVerifierProviderFactory implements ClientSignatureVerifierProviderFactory, MLDSAEnvironmentDependentProviderFactory {
 
     public static final String ID = Algorithm.ML_DSA_87;
 

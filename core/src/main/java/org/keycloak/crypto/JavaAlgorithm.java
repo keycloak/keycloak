@@ -131,11 +131,9 @@ public class JavaAlgorithm {
                 }
                 return SHA512;
             case Algorithm.ML_DSA_44:
-                return SHA256;
             case Algorithm.ML_DSA_65:
-                return SHA384;
             case Algorithm.ML_DSA_87:
-                return SHA512;
+                return SHAKE256;
             case Algorithm.AES:
                 return AES;
             default:
