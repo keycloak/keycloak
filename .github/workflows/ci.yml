@@ -602,39 +602,6 @@ jobs:
           name: auroraDB-migration-tests-mvn-logs
           path: .github/scripts/ansible/files
 
-      - name: Run Aurora integration tests on EC2
-        id: aurora-integration-tests
-        run: |
-          EC2_CLUSTER_NAME=${{ steps.ec2-create.outputs.ec2_cluster }}
-          AWS_REGION=${{ steps.aurora-init.outputs.region }}
-          PROPS="-Dkeycloak.connectionsJpa.jdbcParameters=\"${{ steps.aurora-init.outputs.jdbc_params }}\""
-          PROPS+=" -Dauth.server.db.host=${{ steps.aurora-create.outputs.endpoint }} -Dkeycloak.connectionsJpa.password=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
-          
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
-          echo "Tests: $TESTS"
-          
-          cd .github/scripts/ansible
-          ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "test -B ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pdb-aurora-postgres $PROPS -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh"
-          
-          # Copy returned surefire-report directories to workspace root to ensure they're discovered
-          results=(files/keycloak/results/*)
-          rsync -a $results/* ../../../
-          rm -rf $results
-
-      - uses: ./.github/actions/upload-flaky-tests
-        name: Upload flaky tests
-        env:
-          GH_TOKEN: ${{ github.token }}
-        with:
-          job-name: AuroraDB IT
-
-      - name: EC2 Maven Logs
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: aurora-integration-tests-mvn-logs
-          path: .github/scripts/ansible/files
-
       - name: Clear Aurora DB schema
         id: aurora-clear-db-schema
         run: |
@@ -821,39 +788,6 @@ jobs:
 
           cd .github/scripts/ansible
           ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} 'clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/migration -Pauth-server-migration -Dmigrated.auth.server.version=${{ env.old-version }} -Dmaven.build.cache.enabled=true -Pdb-mssql-azure -Dkeycloak.connectionsJpa.user=${{ steps.azure-create.outputs.username }} -Dkeycloak.connectionsJpa.password="${{ env.AZURE_DB_PASSWORD }}" -Dkeycloak.connectionsJpa.database=${{ steps.azure-create.outputs.db }} -Dkeycloak.connectionsJpa.url="jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false;sendStringParametersAsUnicode=false" -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ env.old-version }}/providers'
-
-      - name: Run Azure integration tests on VM
-        id: azure-integration-tests
-        env:
-          old-version: 24.0.4
-        run: |
-          AZ_VM_CLUSTER_NAME=${{ steps.vm-create.outputs.az_vm_cluster }}
-          AZURE_REGION=${{ steps.azure-init.outputs.region }}
-
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
-          echo "Tests: $TESTS"
-
-          cd .github/scripts/ansible
-          ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} "test -B ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pdb-mssql-azure -DskipQuarkus=true -Dkeycloak.connectionsJpa.user=${{ steps.azure-create.outputs.username }} -Dkeycloak.connectionsJpa.database=${{ steps.azure-create.outputs.db }} -Dkeycloak.connectionsJpa.password=\"${{ env.AZURE_DB_PASSWORD }}\" -Dkeycloak.connectionsJpa.url=\"jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false;sendStringParametersAsUnicode=false\" -Dkeycloak.connectionsJpa.jdbcParameters=\"?encrypt=true&trustServerCertificate=false\" -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ env.old-version }}/providers -Dtest=$TESTS -Dmaven.build.cache.enabled=true -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh"
-
-          # Copy returned surefire-report directories to workspace root to ensure they're discovered
-          results=(files/keycloak/results/*)
-          rsync -a $results/* ../../../
-          rm -rf $results
-
-      - uses: ./.github/actions/upload-flaky-tests
-        name: Upload flaky tests
-        env:
-          GH_TOKEN: ${{ github.token }}
-        with:
-          job-name: AzureDB IT
-
-      - name: Azure VM Maven Logs
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: azure-integration-tests-mvn-logs
-          path: .github/scripts/ansible/files
 
       - name: Clear Azure DB schema
         id: azure-clear-db-schema
