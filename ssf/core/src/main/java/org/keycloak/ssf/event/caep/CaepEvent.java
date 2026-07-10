@@ -27,12 +27,9 @@ public abstract class CaepEvent extends SsfEvent {
     protected SubjectId subjectId;
 
     /**
-     * The time of the event (UNIX timestamp). Nullable so events that do
-     * not carry a timestamp — e.g. {@code ssf/event-type/verification}
-     * (SSF §8.1.4 carries only {@code state}) and other stream-management
-     * events — are omitted from the wire JSON instead of being serialized
-     * as {@code "event_timestamp": 0} (the default value of a primitive
-     * {@code long}, which Jackson always emits).
+     * The time of the event (UNIX timestamp). Nullable so an absent timestamp
+     * is omitted from wire JSON rather than serialized as
+     * {@code "event_timestamp": 0}.
      */
     @JsonProperty("event_timestamp")
     protected Long eventTimestamp;

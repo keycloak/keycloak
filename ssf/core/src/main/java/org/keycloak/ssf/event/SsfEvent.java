@@ -140,7 +140,15 @@ public abstract class SsfEvent {
         Map<String, Object> fields = new LinkedHashMap<>();
         appendFields(fields);
         if (attributes != null && !attributes.isEmpty()) {
-            fields.putIfAbsent("attributes", attributes);
+            Map<String, Object> renderedAttributes = new LinkedHashMap<>();
+            for (var entry : attributes.entrySet()) {
+                if (entry.getValue() != null) {
+                    renderedAttributes.put(entry.getKey(), entry.getValue());
+                }
+            }
+            if (!renderedAttributes.isEmpty()) {
+                fields.putIfAbsent("attributes", renderedAttributes);
+            }
         }
         StringJoiner rendered = new StringJoiner(", ");
         for (Map.Entry<String, Object> entry : fields.entrySet()) {
