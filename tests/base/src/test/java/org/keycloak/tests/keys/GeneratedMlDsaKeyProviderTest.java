@@ -22,16 +22,24 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.GeneratedMlDsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.common.BasicRealmWithUserConfig;
 import org.keycloak.tests.suites.DatabaseTest;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 
 import org.junit.jupiter.api.Test;
 
@@ -43,8 +51,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DatabaseTest
 public class GeneratedMlDsaKeyProviderTest {
 
-    @InjectRealm
+    private static final String MLDSA_ALGORITHM_KEY = "mldsaAlgorithmKey";
+
+    @InjectRealm(config = BasicRealmWithUserConfig.class)
     ManagedRealm realm;
+
+    @InjectOAuthClient
+    OAuthClient oauth;
 
     @Test
     public void createsAndRotatesEveryMlDsaParameterSet() {
@@ -65,7 +78,7 @@ public class GeneratedMlDsaKeyProviderTest {
             assertNotNull(original.getPublicKey());
 
             ComponentRepresentation stored = realm.admin().components().component(id).toRepresentation();
-            stored.getConfig().putSingle(GeneratedMlDsaKeyProviderFactory.MLDSA_ALGORITHM_KEY, replacement);
+            stored.getConfig().putSingle(MLDSA_ALGORITHM_KEY, replacement);
             realm.admin().components().component(id).update(stored);
 
             KeyMetadataRepresentation rotated = findKey(id);
@@ -73,6 +86,29 @@ public class GeneratedMlDsaKeyProviderTest {
             assertNotEquals(original.getKid(), rotated.getKid());
             assertNotEquals(original.getPublicKey(), rotated.getPublicKey());
         }
+    }
+
+    @Test
+    public void issuesMlDsaAccessTokenAcceptedByUserInfo() throws Exception {
+        ComponentRepresentation component = createComponent(Algorithm.ML_DSA_44);
+        Response response = realm.admin().components().add(component);
+        String id = ApiUtil.getCreatedId(response);
+        realm.cleanup().add(r -> r.components().component(id).remove());
+        response.close();
+
+        ClientRepresentation client = realm.admin().clients().findByClientId(oauth.getClientId()).get(0);
+        client.getAttributes().put(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG, Algorithm.ML_DSA_44);
+        realm.admin().clients().get(client.getId()).update(client);
+
+        AccessTokenResponse tokenResponse = oauth.scope("openid")
+                .doPasswordGrantRequest(BasicRealmWithUserConfig.USERNAME, BasicRealmWithUserConfig.PASSWORD);
+        assertEquals(200, tokenResponse.getStatusCode());
+        assertEquals(Algorithm.ML_DSA_44,
+                new JWSInput(tokenResponse.getAccessToken()).getHeader().getRawAlgorithm());
+
+        UserInfoResponse userInfo = oauth.doUserInfoRequest(tokenResponse.getAccessToken());
+        assertEquals(200, userInfo.getStatusCode());
+        assertEquals(BasicRealmWithUserConfig.USERNAME, userInfo.getUserInfo().getPreferredUsername());
     }
 
     private ComponentRepresentation createComponent(String algorithm) {
@@ -83,7 +119,7 @@ public class GeneratedMlDsaKeyProviderTest {
         component.setProviderType(KeyProvider.class.getName());
         component.setConfig(new MultivaluedHashMap<>());
         component.getConfig().putSingle(Attributes.PRIORITY_KEY, Long.toString(System.currentTimeMillis()));
-        component.getConfig().putSingle(GeneratedMlDsaKeyProviderFactory.MLDSA_ALGORITHM_KEY, algorithm);
+        component.getConfig().putSingle(MLDSA_ALGORITHM_KEY, algorithm);
         return component;
     }
 

@@ -63,14 +63,14 @@ public class CibaClientValidation {
         }
 
         Algorithm alg = cibaConfig.getBackchannelAuthRequestSigningAlg(client);
-        if (alg != null && !isSupportedBackchannelAuthenticationRequestSigningAlg(context.getSession(), alg.name())) {
+        if (alg != null && !isSupportedBackchannelAuthenticationRequestSigningAlg(context.getSession(), alg.getName())) {
             context.addError("cibaBackchannelAuthRequestSigningAlg", "Unsupported requested CIBA Backchannel Authentication Request Signing Algorithm", "invalidCibaBackchannelAuthRequestSigningAlg");
         }
     }
 
     private static boolean isSupportedBackchannelAuthenticationRequestSigningAlg(KeycloakSession session, String alg) {
         // Consider removing 'none' . Not sure if we should allow him based on the CIBA specification...
-        if (Algorithm.none.name().equals(alg)) {
+        if (Algorithm.none.equals(alg)) {
             return true;
         }
 
