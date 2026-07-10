@@ -193,7 +193,7 @@ public class Organizations {
                 .withChecks(TokenVerifier.IS_ACTIVE,
                         new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(context.getUri().getBaseUri(), realm.getName())));
 
-        SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+        SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, verifier.getHeader().getRawAlgorithm()).verifier(verifier.getHeader().getKeyId());
         verifier.verifierContext(verifierContext);
 
         return verifier.verify().getToken();

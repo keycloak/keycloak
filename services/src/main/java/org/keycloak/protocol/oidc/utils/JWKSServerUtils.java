@@ -49,9 +49,13 @@ import org.keycloak.models.RealmModel;
 
 
     public static JWK toJwk(KeyWrapper key) {
+        String algorithm = key.getAlgorithmOrDefault();
+        if (KeyType.AKP.equals(key.getType()) && algorithm == null) {
+            throw new IllegalArgumentException("An algorithm is required for AKP keys");
+        }
         JWKBuilder b = JWKBuilder.create()
                 .kid(key.getKid())
-                .algorithm(key.getAlgorithmOrDefault());
+                .algorithm(algorithm);
         List<X509Certificate> certificates = Optional.ofNullable(key.getCertificateChain())
                 .filter(certs -> !certs.isEmpty())
                 .orElseGet(() -> Optional.ofNullable(key.getCertificate())

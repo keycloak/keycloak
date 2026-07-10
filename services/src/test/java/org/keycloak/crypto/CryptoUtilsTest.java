@@ -5,6 +5,8 @@ import java.security.KeyPair;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.utils.AbstractUtilSessionTest;
 
 import org.junit.jupiter.api.Test;
@@ -21,9 +23,9 @@ public class CryptoUtilsTest extends AbstractUtilSessionTest {
     @Test
     public void getSignatureProviderReturnsProviderForSupportedAlgorithm() throws VerificationException {
         assertNotNull(CryptoUtils.getSignatureProvider(session, "RS256"));
-        assertNotNull(CryptoUtils.getSignatureProvider(session, "ML-DSA-44"));
-        assertNotNull(CryptoUtils.getSignatureProvider(session, "ML-DSA-65"));
-        assertNotNull(CryptoUtils.getSignatureProvider(session, "ML-DSA-87"));
+        assertNotNull(CryptoUtils.getSignatureProvider(session, Algorithm.ML_DSA_44));
+        assertNotNull(CryptoUtils.getSignatureProvider(session, Algorithm.ML_DSA_65));
+        assertNotNull(CryptoUtils.getSignatureProvider(session, Algorithm.ML_DSA_87));
     }
 
     @Test
@@ -40,10 +42,17 @@ public class CryptoUtilsTest extends AbstractUtilSessionTest {
             key.setPublicKey(keyPair.getPublic());
 
             SignatureProvider provider = CryptoUtils.getSignatureProvider(session, algorithm);
-            byte[] signature = provider.signer(key).sign(data);
+            SignatureSignerContext signer = provider.signer(key);
+            byte[] signature = signer.sign(data);
 
             assertTrue(provider.verifier(key).verify(data, signature), algorithm);
             assertFalse(provider.verifier(key).verify(differentData, signature), algorithm);
+
+            String encoded = new JWSBuilder().content(data).sign(signer);
+            JWSInput input = new JWSInput(encoded);
+            assertTrue(provider.verifier(key).verify(input.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8),
+                    input.getSignature()), algorithm);
+            assertThat(input.getHeader().getRawAlgorithm(), containsString(algorithm));
         }
     }
 

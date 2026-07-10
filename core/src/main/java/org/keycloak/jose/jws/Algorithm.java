@@ -20,6 +20,8 @@ package org.keycloak.jose.jws;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.jose.jws.crypto.SignatureProvider;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -42,15 +44,27 @@ public enum Algorithm {
     ES512(AlgorithmType.ECDSA, null),
     EdDSA(AlgorithmType.EDDSA, null),
     Ed25519(AlgorithmType.EDDSA, null),
-    Ed448(AlgorithmType.EDDSA, null)
+    Ed448(AlgorithmType.EDDSA, null),
+    @JsonProperty("ML-DSA-44")
+    ML_DSA_44(AlgorithmType.MLDSA, null, "ML-DSA-44"),
+    @JsonProperty("ML-DSA-65")
+    ML_DSA_65(AlgorithmType.MLDSA, null, "ML-DSA-65"),
+    @JsonProperty("ML-DSA-87")
+    ML_DSA_87(AlgorithmType.MLDSA, null, "ML-DSA-87")
     ;
 
-    private AlgorithmType type;
-    private SignatureProvider provider;
+    private final AlgorithmType type;
+    private final SignatureProvider provider;
+    private final String name;
 
     Algorithm(AlgorithmType type, SignatureProvider provider) {
+        this(type, provider, null);
+    }
+
+    Algorithm(AlgorithmType type, SignatureProvider provider, String name) {
         this.type = type;
         this.provider = provider;
+        this.name = name;
     }
 
     public AlgorithmType getType() {
@@ -59,5 +73,9 @@ public enum Algorithm {
 
     public SignatureProvider getProvider() {
         return provider;
+    }
+
+    public String getName() {
+        return name != null ? name : name();
     }
 }

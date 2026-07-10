@@ -24,6 +24,7 @@ import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.List;
+import java.util.Set;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -128,30 +129,18 @@ public class GeneratedMlDsaKeyProviderFactory extends AbstractMlDsaKeyProviderFa
         }
     }
 
-    private String getAlgorithmFromPublicKey(String publicKeyBase64) {
-        X509EncodedKeySpec publicKeySpec;
+    static String getAlgorithmFromPublicKey(String publicKeyBase64) {
         try {
-            publicKeySpec = new X509EncodedKeySpec(Base64.getMimeDecoder().decode(publicKeyBase64));
+            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getMimeDecoder().decode(publicKeyBase64));
+            KeyFactory keyFactory = CryptoIntegration.getProvider().getKeyFactory("ML-DSA");
+            PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
+            String algorithm = publicKey.getAlgorithm();
+            if (Set.of(Algorithm.ML_DSA_44, Algorithm.ML_DSA_65, Algorithm.ML_DSA_87).contains(algorithm)) {
+                return algorithm;
+            }
+            throw new ComponentValidationException("Unsupported ML-DSA algorithm in public key: " + algorithm);
         } catch (Exception e) {
             throw new ComponentValidationException("Failed to determine ML-DSA algorithm from its public key", e);
         }
-
-        Exception firstException = null;
-        for (String alg : List.of(Algorithm.ML_DSA_44, Algorithm.ML_DSA_65, Algorithm.ML_DSA_87)) {
-            try {
-                KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory(alg);
-                PublicKey pubKey = kf.generatePublic(publicKeySpec);
-                if (pubKey != null) {
-                    return alg;
-                }
-            } catch (Exception e) {
-                if (firstException == null) {
-                    firstException = e;
-                } else {
-                    firstException.addSuppressed(e);
-                }
-            }
-        }
-        throw new ComponentValidationException("Failed to determine ML-DSA algorithm from its public key", firstException);
     }
 }

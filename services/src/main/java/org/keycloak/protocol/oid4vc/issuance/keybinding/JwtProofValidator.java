@@ -149,7 +149,7 @@ public class JwtProofValidator extends AbstractProofValidator {
         Map<String, Object> headerClaims = JsonSerialization.mapper.convertValue(jwsHeader,
                 new TypeReference<>() {
                 });
-        String algorithm = jwsHeader.getAlgorithm().name();
+        String algorithm = jwsHeader.getRawAlgorithm();
         validateNoPrivateKeyInHeaderClaims(algorithm, headerClaims);
         KeyAttestationInfo attestationInfo = resolveHeaderAttestation(vcIssuanceContext, headerClaims);
 
@@ -175,7 +175,7 @@ public class JwtProofValidator extends AbstractProofValidator {
                 }
             }
         } else if (jwsHeader.getX5c() != null && !jwsHeader.getX5c().isEmpty()) {
-            jwk = AttestationValidatorUtil.resolveJwkFromValidatedX5c(jwsHeader.getX5c(), jwsHeader.getAlgorithm().name());
+            jwk = AttestationValidatorUtil.resolveJwkFromValidatedX5c(jwsHeader.getX5c(), jwsHeader.getRawAlgorithm());
         } else {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing binding key. JWT must contain either jwk, kid, or x5c in header.");
         }
@@ -194,7 +194,7 @@ public class JwtProofValidator extends AbstractProofValidator {
         AccessToken proofPayload = JsonSerialization.readValue(jwsInput.getContent(), AccessToken.class);
         validateProofPayload(vcIssuanceContext, proofPayload);
 
-        SignatureVerifierContext signatureVerifierContext = getVerifier(jwk, jwsHeader.getAlgorithm().name());
+        SignatureVerifierContext signatureVerifierContext = getVerifier(jwk, jwsHeader.getRawAlgorithm());
         if (signatureVerifierContext == null) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "No verifier configured for " + jwsHeader.getAlgorithm());
         }

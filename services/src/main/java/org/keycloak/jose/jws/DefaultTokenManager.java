@@ -97,7 +97,7 @@ public class DefaultTokenManager implements TokenManager {
         try {
             JWSInput jws = new JWSInput(token);
 
-            String signatureAlgorithm = jws.getHeader().getAlgorithm().name();
+            String signatureAlgorithm = jws.getHeader().getRawAlgorithm();
 
             SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
             if (signatureProvider == null) {
@@ -176,7 +176,7 @@ public class DefaultTokenManager implements TokenManager {
 
     private <T> T verifyJWS(ClientModel client, Class<T> clazz, JWSInput jws, boolean allowNoneAlgorithm) {
         try {
-            String signatureAlgorithm = jws.getHeader().getAlgorithm().name();
+            String signatureAlgorithm = jws.getHeader().getRawAlgorithm();
             ClientSignatureVerifierProvider signatureProvider = session.getProvider(ClientSignatureVerifierProvider.class, signatureAlgorithm);
 
             if (signatureProvider == null) {
