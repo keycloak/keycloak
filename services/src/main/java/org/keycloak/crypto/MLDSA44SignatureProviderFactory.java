@@ -36,6 +36,6 @@ public class MLDSA44SignatureProviderFactory implements SignatureProviderFactory
 
     @Override
     public Set<String> getJwkPrivateKeyClaims() {
-        return OKP_PRIVATE_JWK_CLAIMS;
+        return AKP_PRIVATE_JWK_CLAIMS;
     }
 }

@@ -27,6 +27,7 @@ public interface SignatureProviderFactory extends ProviderFactory<SignatureProvi
     Set<String> RSA_PRIVATE_JWK_CLAIMS = Set.of("d", "p", "q", "dp", "dq", "qi", "oth");
     Set<String> EC_PRIVATE_JWK_CLAIMS = Set.of("d");
     Set<String> OKP_PRIVATE_JWK_CLAIMS = Set.of("d");
+    Set<String> AKP_PRIVATE_JWK_CLAIMS = Set.of("priv");
     Set<String> OCT_PRIVATE_JWK_CLAIMS = Set.of("k");
 
     @Override
