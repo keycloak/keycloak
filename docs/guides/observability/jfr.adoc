@@ -7,13 +7,13 @@ summary="Create Java Flight Recorder (JFR) recordings of a {project_name} server
 
 == What is Java Flight Recorder
 
-Java Flight Recorder (JFR) is a standard monitoring tool for collecting diagnostic and profiling data about a running Java application. It is built into a JVM and designed to have a low performance impact.
+Java Flight Recorder (JFR) is a standard monitoring tool for collecting diagnostic and profiling data about a running Java application. It is built into the JVM and designed to have a low performance impact.
 
 The most common way to run JFR for {project_name} is a fixed-time recording.
 This guide demonstrates creating a fixed-time flight recording using the `jcmd` tool.
-Collecting data continuously is outside the scope for this guide.
+Collecting data continuously is outside the scope of this guide.
 
-WARNING: Some of the diagnostic data collected by Java Flight Recorder may be security-sensitive like confidential environment variables or memory samples.
+WARNING: Some of the diagnostic data collected by Java Flight Recorder may be security-sensitive, such as confidential environment variables or memory samples.
 Before sharing it outside your trust boundary, sanitize it using the `jfr scrub` command. See the <<scrub-sensitive-data>> section below.
 Disabling the collection of certain types of data at the time of collection is outside the scope of this guide.
 
@@ -37,7 +37,7 @@ Example output:
 897052 jdk.jcmd/sun.tools.jcmd.JCmd
 896224 io.quarkus.bootstrap.runner.QuarkusEntryPoint start ... #<1>
 ----
-<1> Assuming {project_name} is the only Quarkus-based application running on the system, its PID in this example would be `896224`. It is also possible to use the main class `QuarkusEntryPoint` instead of the PID.
+<1> Assuming {project_name} is the only Quarkus-based application running on the system, its PID is `896224`. It is also possible to use the main class `QuarkusEntryPoint` instead of the PID.
 
 Example: Running a `JFR.check` diagnostic command using the PID:
 [source]
@@ -63,7 +63,7 @@ Use jcmd 896224 JFR.start to start a recording.
 [[create-a-fixed-time-recording]]
 == Create a fixed-time recording
 
-A fixed-time recording can be created by executing the `JFR.start` command with the `duration` parameter. After the requested interval elapses the recording will be stopped and its data automatically dumped into a file.
+A fixed-time recording can be created by executing the `JFR.start` command with the `duration` parameter. After the requested interval elapses, the recording will be stopped and its data automatically dumped into a file.
 
 [source]
 ----
@@ -72,10 +72,9 @@ jcmd QuarkusEntryPoint JFR.start \
   settings=profile \ #<2>
   filename=recording.jfr #<3>
 ----
-<1> Intended duration of the recording. A 2-minute recording is usually sufficient for diagnosing most performance issues. With the `profile` configuration, expect roughly 1-5 MB per minute under load.
-<2> Name of a JFR configuration file. For fixed-time recordings we recommend `profile` which will have an overhead of about 2%.
-+
-NOTE: JFR's `ExecutionSample` event uses safepoint-based sampling, which means it can overrepresent time spent in methods that frequently reach safepoints and underrepresent time in tight computational loops. This is a known limitation of JFR in JDK 21 and earlier versions.
+<1> Intended duration of the recording. A 2-minute recording is usually sufficient for diagnosing most performance issues.
+<2> Name of a JFR configuration file. For fixed-time recordings, we recommend `profile`, which has an overhead of about 2%. With the `profile` configuration, expect roughly 1-5 MB per minute under load.
+<3> The `filename` parameter is optional. If not provided, the name will be generated automatically based on PID and timestamp. If an absolute path is not provided, the file will be created in the current working directory of the target application.
 
 Use the `JFR.check` command shortly after to verify that the recording was started:
 [source]
@@ -83,24 +82,24 @@ Use the `JFR.check` command shortly after to verify that the recording was start
 jcmd QuarkusEntryPoint JFR.check
 ----
 
-Expected output (example):
+Example output:
 [source]
 ----
 896224:
 Recording 1: name=1 duration=2m (running)
 ----
 
-== View recording
+== View a recording
 
-Once the recording is dumped into a file it can be viewed and manipulated using the standard `jfr` tool.
+Once the recording is dumped into a file, it can be viewed and manipulated using the standard `jfr` tool.
 
-To print the content of a recording in a human-readable form use the `jfr print` command:
+To print the content of a recording in a human-readable form, use the `jfr print` command:
 [source]
 ----
 jfr print recording.jfr
 ----
 
-To get a general overview of the content use the `jfr summary` command:
+To get a general overview of the content, use the `jfr summary` command:
 [source]
 ----
 jfr summary recording.jfr
@@ -135,15 +134,15 @@ Example output:
  ...
 ----
 
-To display aggregated content of the recording in a tabular form use the `jfr view` command.
+To display aggregated content of the recording in a tabular form, use the `jfr view` command.
 
-To get a list of available views use `jfr view types` command:
+To get a list of available views, use the `jfr view types` command:
 [source]
 ----
 jfr view types recording.jfr
 ----
 
-To get a specific view use `jfr view <event-type>` command. For example:
+To get a specific view, use the `jfr view <event-type>` command. For example:
 [source]
 ----
 jfr view CPULoad recording.jfr
@@ -168,15 +167,15 @@ Time                         JVM User           JVM System           Machine Tot
 [[scrub-sensitive-data]]
 == Scrub sensitive data
 
-Once a recording is dumped into a file it is important to scrub it for potentially sensitive data like confidential environment variables or memory samples to prevent security leaks. This can be done using a standard `jfr scrub` command.
+Once a recording is dumped into a file, it is important to scrub it for potentially sensitive data, such as confidential environment variables or memory samples, to prevent security leaks. This can be done using the standard `jfr scrub` command.
 
-NOTE: The `jfr scrub` command is available starting from JDK 20.
+NOTE: The `jfr scrub` command is available starting from JDK 20. On earlier versions, use `jfr print --json` to review the recording contents and share only the relevant output.
 
 === Exclude sensitive information
 
 Use `jfr scrub --exclude-events ...` to exclude security-sensitive data.
 
-For {project_name}, high-risk content collected by JFR can be removed by the following command:
+For {project_name}, high-risk content collected by JFR can be removed with the following command:
 [source]
 ----
 jfr scrub \
@@ -184,7 +183,7 @@ jfr scrub \
   recording.jfr recording-scrubbed.jfr
 ----
 
-See below for events that can reveal sensitive information:
+The following table lists events that can reveal sensitive information:
 
 [%autowidth]
 |===
