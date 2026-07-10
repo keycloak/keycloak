@@ -18,6 +18,7 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -41,14 +42,17 @@ import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.model.JwtCNonce;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.saml.RandomSecret;
 
+import org.apache.commons.codec.binary.Hex;
 import org.jboss.logging.Logger;
 
 /**
@@ -61,6 +65,10 @@ public class JwtCNonceHandler implements CNonceHandler {
     public static final int NONCE_DEFAULT_LENGTH = 50;
 
     public static final int NONCE_LENGTH_RANDOM_OFFSET = 15;
+
+    private static final String C_NONCE_REPLAY_CACHE_PREFIX = "oid4vci.cnonce.";
+
+    private static final String VERIFIED_C_NONCE_SESSION_ATTR_PREFIX = "oid4vci.verified.cnonce.";
 
     private static final Logger logger = Logger.getLogger(JwtCNonceHandler.class);
 
@@ -168,6 +176,24 @@ public class JwtCNonceHandler implements CNonceHandler {
                                                                     .verifier(signingKey);
         verifier.verifierContext(signatureVerifier);
         verifier.verify(); // throws a VerificationException on failure
+        verifySingleUse(cNonce, verifier.getToken());
+    }
+
+    private void verifySingleUse(String cNonce, JsonWebToken jwt) throws VerificationException {
+        long lifespanInSeconds = Math.max(1L, jwt.getExp() - Time.currentTime());
+        String hashString = Hex.encodeHexString(HashUtils.hash("SHA1", cNonce.getBytes(StandardCharsets.UTF_8)));
+        String sessionAttribute = VERIFIED_C_NONCE_SESSION_ATTR_PREFIX + hashString;
+        // A single credential request can validate the same c_nonce more than once, e.g. for an embedded key attestation
+        // and the containing JWT proof. Treat it as consumed for later requests while allowing local revalidation.
+        if (keycloakSession.getAttribute(sessionAttribute) != null) {
+            return;
+        }
+
+        SingleUseObjectProvider singleUseCache = keycloakSession.singleUseObjects();
+        if (!singleUseCache.putIfAbsent(C_NONCE_REPLAY_CACHE_PREFIX + hashString, lifespanInSeconds)) {
+            throw new VerificationException("c_nonce has already been used");
+        }
+        keycloakSession.setAttribute(sessionAttribute, Boolean.TRUE);
     }
 
     protected boolean checkAttributeEquality(String key, Object object, Object actualValue) throws VerificationException {
