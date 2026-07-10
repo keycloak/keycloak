@@ -102,9 +102,12 @@ public class RestInfinispanManagement implements InfinispanManagement {
         }
         var container = restClient.container();
         var stage = CompletionStages.aggregateCompletionStage();
+        // the rest response is not important.
+        // keycloak will try to take offline in each round.
         remoteSites.stream()
                 .distinct()
                 .map(container::takeOffline)
+                .peek(rsp -> rsp.thenAccept(RestResponse::close))
                 .forEach(stage::dependsOn);
         CompletionStages.await(stage.freeze());
     }
@@ -124,8 +127,7 @@ public class RestInfinispanManagement implements InfinispanManagement {
     }
 
     private static void copyHostName(org.infinispan.client.hotrod.configuration.Configuration from, RestClientConfigurationBuilder to) {
-        var server = from.servers().get(0);
-        to.addServer().host(server.host()).port(server.port());
+        from.servers().forEach(server -> to.addServer().host(server.host()).port(server.port()));
     }
 
     private static void copyAuthentication(org.infinispan.client.hotrod.configuration.Configuration from, RestClientConfigurationBuilder to) {

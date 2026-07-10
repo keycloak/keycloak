@@ -18,8 +18,8 @@
 package org.keycloak.infinispan.health.remote;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Arrays;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -28,6 +28,9 @@ import org.keycloak.infinispan.health.ClusterHealth;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.impl.InternalRemoteCache;
 import org.jboss.logging.Logger;
+
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.skipSessionsCacheIfRequired;
 
 /**
  * Health check for the external Infinispan cluster, verifying connectivity by pinging each remote cache.
@@ -67,15 +70,9 @@ public class RemoteCacheHealthImpl implements ClusterHealth {
             return;
         }
         try {
-            Set<String> cacheNames;
-            try {
-                cacheNames = remoteCacheManager.getCacheNames();
-            } catch (Exception e) {
-                logger.debugf(e, "Failed to retrieve remote cache names");
-                healthy = false;
-                return;
-            }
-            for (var name : cacheNames) {
+            var it = skipSessionsCacheIfRequired(Arrays.stream(CLUSTERED_CACHE_NAMES)).iterator();
+            while (it.hasNext()) {
+                var name = it.next();
                 try {
                     var cache = remoteCacheManager.getCache(name);
                     if (cache instanceof InternalRemoteCache<?, ?> internalCache) {
