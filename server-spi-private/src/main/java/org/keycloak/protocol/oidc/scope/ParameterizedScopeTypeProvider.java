@@ -18,10 +18,22 @@ import org.keycloak.provider.ProviderFactory;
  */
 public interface ParameterizedScopeTypeProvider extends Provider, ProviderFactory<ParameterizedScopeTypeProvider> {
 
+    int MAX_PARAMETER_LENGTH = 255;
+
     /**
      * @return the unique type name, also used as the provider ID
      */
     String getTypeName();
+
+    /**
+     * Whether this scope type allows the same parameterized scope to appear multiple times
+     * in a single request with different parameter values (e.g., {@code scope:val1 scope:val2}).
+     *
+     * @return {@code true} if multiple parameter values are allowed, {@code false} otherwise
+     */
+    default boolean isRepeatable() {
+        return true;
+    }
 
     /**
      * Validates the captured parameter value at request time (no authenticated user yet).

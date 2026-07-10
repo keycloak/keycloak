@@ -75,6 +75,9 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         }
 
         if (PolicyEnforcementMode.PERMISSIVE.equals(enforcementMode)) {
+            if (resource != null && resource.isOwnerManagedAccess()) {
+                return;
+            }
             grantAndComplete(permission, authorizationProvider, executionContext, decision);
         }
     }

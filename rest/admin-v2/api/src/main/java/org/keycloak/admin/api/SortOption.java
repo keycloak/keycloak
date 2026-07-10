@@ -2,25 +2,25 @@ package org.keycloak.admin.api;
 
 import java.util.Objects;
 
-public final class SortOption {
+public final class SortOption<F extends SortField> {
 
-    private final ClientField field;
+    private final F field;
     private final SortOrder order;
 
-    private SortOption(ClientField field, SortOrder order) {
+    private SortOption(F field, SortOrder order) {
         this.field = Objects.requireNonNull(field, "field cannot be null");
         this.order = order == null ? SortOrder.ASC : order;
     }
 
-    public static SortOption of(ClientField field) {
-        return new SortOption(field, SortOrder.ASC);
+    public static <F extends SortField> SortOption<F> of(F field) {
+        return new SortOption<>(field, SortOrder.ASC);
     }
 
-    public static SortOption of(ClientField field, SortOrder order) {
-        return new SortOption(field, order);
+    public static <F extends SortField> SortOption<F> of(F field, SortOrder order) {
+        return new SortOption<>(field, order);
     }
 
-    public ClientField field() {
+    public F field() {
         return field;
     }
 
@@ -47,8 +47,8 @@ public final class SortOption {
         if (!(obj instanceof SortOption)) {
             return false;
         }
-        SortOption other = (SortOption) obj;
-        return field == other.field && order == other.order;
+        SortOption<?> other = (SortOption<?>) obj;
+        return Objects.equals(field, other.field) && order == other.order;
     }
 
     @Override

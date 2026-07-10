@@ -564,6 +564,22 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
     }
 
+    @Test
+    public void secretExpirationWithLargeOffsetDoesNotOverflow() throws Exception {
+        long fiftyYearsInSeconds = TimeUnit.DAYS.toSeconds(365 * 50);
+        doConfigProfileAndPolicy(new ClientProfileBuilder(),
+                getClientProfileConfiguration(fiftyYearsInSeconds, TimeUnit.DAYS.toSeconds(2), TimeUnit.DAYS.toSeconds(10)));
+
+        String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
+        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
+
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
+                clientResource.toRepresentation());
+        long expirationTime = wrapper.getClientSecretExpirationTime();
+
+        assertThat(expirationTime, is(greaterThan((long) Integer.MAX_VALUE)));
+    }
+
     /**
      * After rotate the secret the endpoint must return the rotated secret
      *
@@ -754,7 +770,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
     @NotNull
     private ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
-            int expirationPeriod, int rotatedExpirationPeriod, int remainExpirationPeriod) {
+            long expirationPeriod, long rotatedExpirationPeriod, long remainExpirationPeriod) {
         ClientSecretRotationExecutor.Configuration profileConfig = new ClientSecretRotationExecutor.Configuration();
         profileConfig.setExpirationPeriod(expirationPeriod);
         profileConfig.setRotatedExpirationPeriod(rotatedExpirationPeriod);

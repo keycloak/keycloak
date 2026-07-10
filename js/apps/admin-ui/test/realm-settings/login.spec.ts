@@ -54,4 +54,8 @@ test.describe.serial("Realm settings tabs tests", () => {
       true,
     );
   });
+
+  test("Toggle passkeys enabled switch", async ({ page }) => {
+    await testToggle(page, "passkeys-enabled-switch", true);
+  });
 });

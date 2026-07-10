@@ -175,7 +175,4 @@ public class JavaAlgorithm {
         return getJavaAlgorithm(algorithm).contains("Ed");
     }
 
-    public static boolean isHMACJavaAlgorithm(String algorithm) {
-        return getJavaAlgorithm(algorithm).contains("HMAC");
-    }
 }

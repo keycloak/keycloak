@@ -61,6 +61,7 @@ import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginUsernamePage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -186,6 +187,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testSearch() {
         // create some organizations with different names and domains.
         createOrganization("acme", "acme.org", "acme.net");
@@ -285,6 +287,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testSearchByAttributes() {
         List<OrganizationRepresentation> expected = new ArrayList<>();
         for (int i = 0; i < 4; i++) {

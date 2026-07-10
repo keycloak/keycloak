@@ -1,2 +1,4 @@
 org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorsPostProcessorFactory
 org.keycloak.organization.protocol.mappers.oidc.OrganizationTokenPostProcessorFactory
+org.keycloak.protocol.oid4vc.refresh.OID4VCITokenPostProcessorProviderFactory
+org.keycloak.services.resources.admin.AdminRoleTokenPostProcessorFactory

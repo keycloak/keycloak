@@ -101,7 +101,7 @@ public final class Configuration {
 
     public static synchronized SmallRyeConfig getConfig() {
         if (config == null) {
-            config = ConfigUtils.emptyConfigBuilder().addDiscoveredSources().build();
+            config = ConfigUtils.emptyConfigBuilder().addDiscoveredSources().withCustomizers(new ConfigBuilderCustomizer()).build();
         }
         return config;
     }

@@ -1717,9 +1717,10 @@ public class OID4VCIssuerEndpoint {
         Instant normalizedIssuance = timeClaimNormalizer.normalize(issuance);
 
         // Compute expiration date from client scope configuration and normalize it
+        // Note: The IssuedVerifiableCredentialModel.expiresAt and refresh token still use the full credential lifetime
         CredentialScopeModel clientScopeModel = credentialScopeModel;
-        Integer expiryInSeconds = clientScopeModel.getExpiryInSeconds();
-        Instant expiration = normalizedIssuance.plusSeconds(expiryInSeconds);
+        Integer refreshIntervalInSeconds = clientScopeModel.getRefreshIntervalInSeconds();
+        Instant expiration = normalizedIssuance.plusSeconds(refreshIntervalInSeconds);
         Instant normalizedExpiration = timeClaimNormalizer.normalize(expiration);
 
         // set the required claims

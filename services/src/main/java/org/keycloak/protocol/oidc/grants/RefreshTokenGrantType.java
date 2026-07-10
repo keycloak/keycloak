@@ -28,8 +28,6 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
 import org.keycloak.protocol.oidc.refresh.RefreshTokenContext;
@@ -81,7 +79,7 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
         try {
             RefreshToken oldRefreshToken = tokenManager.verifyRefreshToken(session, realm, client, request, refreshToken, true);
 
-            RefreshTokenContext refreshTokenCtx = new RefreshTokenContext(oldRefreshToken, tokenManager, clientConnection, realm, client, event, headers, scopeParameter, resourceParameter);
+            RefreshTokenContext refreshTokenCtx = new RefreshTokenContext(oldRefreshToken, context, this, tokenManager, scopeParameter, resourceParameter);
 
             RefreshTokenProvider refreshTokenProvider = session.getKeycloakSessionFactory()
                     .getProviderFactoriesStream(RefreshTokenProvider.class)
@@ -89,10 +87,7 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
                     .map(f -> session.getProvider(RefreshTokenProvider.class, f.getId()))
                     .filter(p -> p.supports(refreshTokenCtx))
                     .findFirst()
-                    .orElseThrow(() -> {
-                        event.error(Errors.INVALID_REQUEST);
-                        return new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "No provider available to handle refresh token", Response.Status.BAD_REQUEST);
-                    });
+                    .orElseThrow(() -> new OAuthErrorException(Errors.INVALID_REQUEST, "No provider available to handle refresh token"));
 
             TokenManager.AccessTokenResponseBuilder responseBuilder = refreshTokenProvider.refreshAccessToken(refreshTokenCtx);
 
@@ -101,13 +96,6 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
             session.clientPolicy().triggerOnEvent(new TokenRefreshResponseContext(formParams, responseBuilder));
 
             res = responseBuilder.build();
-
-            if (!responseBuilder.isOfflineToken()) {
-                UserSessionModel userSession = session.sessions().getUserSession(realm, res.getSessionState());
-                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-                updateClientSession(clientSession);
-                updateUserSessionFromClientAuth(userSession);
-            }
         } catch (OAuthErrorException e) {
             logger.trace(e.getMessage(), e);
             // KEYCLOAK-6771 Certificate Bound Token

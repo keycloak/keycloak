@@ -4,6 +4,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
@@ -11,6 +12,7 @@ import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 public class KcAdminInvocations {
 
     private final BlockingQueue<LogoutAction> adminLogoutActions = new LinkedBlockingQueue<>();
+    private final BlockingQueue<LogoutToken> frontChannelLogoutTokens = new LinkedBlockingQueue<>();
     private final BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions = new LinkedBlockingQueue<>();
     private final BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction = new LinkedBlockingQueue<>();
 
@@ -41,8 +43,17 @@ public class KcAdminInvocations {
         adminLogoutActions.add(action);
     }
 
+    public LogoutToken getFrontChannelLogoutToken() throws InterruptedException {
+        return frontChannelLogoutTokens.poll(10, TimeUnit.SECONDS);
+    }
+
+    void add(LogoutToken token) {
+        frontChannelLogoutTokens.add(token);
+    }
+
     public void clear() {
         adminLogoutActions.clear();
+        frontChannelLogoutTokens.clear();
         adminPushNotBeforeActions.clear();
         adminTestAvailabilityAction.clear();
     }
