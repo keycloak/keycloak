@@ -13,9 +13,14 @@ The most common way to run JFR for {project_name} is a fixed-time recording.
 This guide demonstrates creating a fixed-time flight recording using the `jcmd` tool.
 Collecting data continuously is outside the scope of this guide.
 
-WARNING: Some of the diagnostic data collected by Java Flight Recorder may be security-sensitive, such as confidential environment variables or memory samples.
-Before sharing it outside your trust boundary, sanitize it using the `jfr scrub` command. See the <<scrub-sensitive-data>> section below.
-Disabling the collection of certain types of data at the time of collection is outside the scope of this guide.
+[WARNING]
+====
+Some of the diagnostic data collected by Java Flight Recorder is security-sensitive, such as confidential environment variables, network information or messages from exceptions.
+
+Do not share it outside your trust boundary.
+
+Sanitizing it using the `jfr scrub` command or disabling the collection of certain types of data at the time of collection is outside the scope of this guide.
+====
 
 == Find the {project_name} server process
 
@@ -93,6 +98,8 @@ Recording 1: name=1 duration=2m (running)
 
 Once the recording is dumped into a file, it can be viewed and manipulated using the standard `jfr` tool.
 
+Analyzing {project_name}'s behavior based on the recording is outside of scope for this guide.
+
 To print the content of a recording in a human-readable form, use the `jfr print` command:
 [source]
 ----
@@ -136,88 +143,5 @@ Example output:
 
 To display aggregated content of the recording in a tabular form, use the `jfr view` command.
 
-To get a list of available views, use the `jfr view types` command:
-[source]
-----
-jfr view types recording.jfr
-----
-
-To get a specific view, use the `jfr view <event-type>` command. For example:
-[source]
-----
-jfr view CPULoad recording.jfr
-----
-
-Example output:
-[source]
-----
-                                     CPU Load
-
-Time                         JVM User           JVM System           Machine Total
------------------- ------------------ -------------------- -----------------------
-10:32:07                        0.02%                0.01%                   4.26%
-10:32:08                        0.05%                0.00%                   2.25%
-10:32:09                        0.10%                0.05%                   2.20%
-10:32:10                        0.05%                0.00%                   3.05%
-10:32:11                        0.05%                0.00%                   2.56%
-10:32:12                        0.05%                0.05%                   2.55%
- ...
-----
-
-[[scrub-sensitive-data]]
-== Scrub sensitive data
-
-Once a recording is dumped into a file, it is important to scrub it for potentially sensitive data, such as confidential environment variables or memory samples, to prevent security leaks. This can be done using the standard `jfr scrub` command.
-
-NOTE: The `jfr scrub` command is available starting from JDK 20. On earlier versions, use `jfr print --json` to review the recording contents and share only the relevant output.
-
-=== Exclude sensitive information
-
-Use `jfr scrub --exclude-events ...` to exclude security-sensitive data.
-
-For {project_name}, high-risk content collected by JFR can be removed with the following command:
-[source]
-----
-jfr scrub \
-  --exclude-events jdk.InitialEnvironmentVariable,jdk.JVMInformation,jdk.OldObjectSample \
-  recording.jfr recording-scrubbed.jfr
-----
-
-The following table lists events that can reveal sensitive information:
-
-[%autowidth]
-|===
-| JFR Event Name | Risk | Explanation
-
-| `jdk.InitialEnvironmentVariable` | High | Environment variables can contain secrets passed to {project_name} during startup. For example: `KC_DB_PASSWORD`.
-| `jdk.JVMInformation` | High | JVM information can contain secrets in CLI arguments passed to {project_name} during startup. For example: `--db-password`.
-| `jdk.OldObjectSample` | High | Serialized Java objects can include sensitive in-memory information.
-| `jdk.InitialSystemProperty` | Low | {project_name} by default does not pass sensitive information here.
-|===
-
-WARNING: Other flight recorder events may contain information like host names, file paths or URL parameters.
-To analyze the contents for sensitive information, use `jfr print recording.jfr` or `jfr print --json recording.jfr` to review the contents.
-You can also use `jfr scrub --include-events ...` to only share a subset of the events for troubleshooting.
-
-=== Include only specific information
-
-Use `jfr scrub --include-events ...` to only include data relevant to a particular performance problem.
-
-Example:
-[source]
-----
-jfr scrub \
-  --include-events jdk.ExecutionSample,jdk.CPULoad,jdk.GarbageCollection,jdk.GCHeapSummary,jdk.GCPhasePause,jdk.MetaspaceSummary,jdk.JavaMonitorEnter,jdk.ThreadPark \
-  recording.jfr recording-scrubbed.jfr
-----
-
-[%autowidth]
-|===
-| Diagnostics Area	| JFR Event Name	| What It Troubleshoots	| Why It Is Safe
-
-| CPU Profiling	| `jdk.ExecutionSample`, `jdk.CPULoad`	| Finds "hot methods," high CPU utilization, and thread distribution.	| Captures sample counts, CPU percentages, and stack frames (method names), but no variable data or string values.
-| Garbage Collection	| `jdk.GarbageCollection`, `jdk.GCHeapSummary`, `jdk.GCPhasePause`, `jdk.MetaspaceSummary`	| Heavy GC pauses, memory exhaustion, improper heap sizing.	| Strictly statistical. It records numbers, byte sizes, timestamps, and durations. It never looks at object contents.
-| Threading & Locks	| `jdk.JavaMonitorEnter`, `jdk.ThreadPark`	| Thread blockages, lock contention, and concurrency bottlenecks.	| Only captures the duration a thread spent waiting to acquire a lock and the class name of the monitor object.
-|===
 
 </@tmpl.guide>
