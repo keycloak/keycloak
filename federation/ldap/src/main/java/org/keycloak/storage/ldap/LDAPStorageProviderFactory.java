@@ -28,9 +28,11 @@ import javax.naming.NamingException;
 import javax.naming.spi.NamingManager;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.config.MetricsOptions;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.impl.KerberosServerSubjectAuthenticator;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
@@ -75,6 +77,8 @@ import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.utils.CredentialHelper;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import org.jboss.logging.Logger;
 
 /**
@@ -91,7 +95,9 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     private static final String SECURE_REFERRAL = "secureReferral";
     private static final boolean SECURE_REFERRAL_DEFAULT = true;
 
+    private static final String METRICS_ENABLED = "metricsEnabled";
     private LDAPIdentityStoreRegistry ldapStoreRegistry;
+    private MeterRegistry meterRegistry;
 
     protected static final List<ProviderConfigProperty> configProperties;
 
@@ -240,7 +246,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     public LDAPStorageProvider create(KeycloakSession session, ComponentModel model) {
         Map<ComponentModel, LDAPConfigDecorator> configDecorators = getLDAPConfigDecorators(session, model);
 
-        LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(session, model, configDecorators);
+        LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(session, model, configDecorators, meterRegistry);
         return new LDAPStorageProvider(this, session, model, ldapIdentityStore);
     }
 
@@ -341,6 +347,12 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         }
 
         this.ldapStoreRegistry = new LDAPIdentityStoreRegistry();
+        boolean metricsEnabled = Profile.isFeatureEnabled(Profile.Feature.LDAP_METRICS)
+                && config.getBoolean(METRICS_ENABLED, true)
+                && config.root().getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), false);
+        if (metricsEnabled) {
+            this.meterRegistry = Metrics.globalRegistry;
+        }
     }
 
     @Override

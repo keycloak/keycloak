@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import javax.naming.AuthenticationException;
 import javax.naming.Binding;
 import javax.naming.Context;
@@ -46,7 +47,6 @@ import javax.naming.ldap.PagedResultsResponseControl;
 import javax.naming.ldap.StartTlsResponse;
 import javax.net.ssl.SSLSocketFactory;
 
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -66,7 +66,9 @@ import org.keycloak.truststore.TruststoreProvider;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Timer;
 import org.jboss.logging.Logger;
 
 /**
@@ -89,16 +91,29 @@ public class LDAPOperationManager {
 
     private final KeycloakSession session;
     private final LDAPConfig config;
+    private final MeterRegistry meterRegistry;
 
+    @Deprecated
     public LDAPOperationManager(KeycloakSession session, LDAPConfig config) {
-        this.session = session;
-        this.config = config;
+        this(session, config, null);
     }
 
-    private static void recordLdapRequest(String operation, boolean success) {
-        if (Profile.isFeatureEnabled(Profile.Feature.LDAP_METRICS)) {
-            LDAP_REQUESTS.withTags("operation", operation, "outcome", success ? "success" : "error").increment();
+    public LDAPOperationManager(KeycloakSession session, LDAPConfig config, MeterRegistry meterRegistry) {
+        this.session = session;
+        this.config = config;
+        this.meterRegistry = meterRegistry;
+    }
+
+    private void recordLdapRequest(String operation, boolean success, long startTimeNanos) {
+        if (meterRegistry == null) {
+            return;
         }
+        Timer.builder("keycloak.ldap.requests")
+                .description("Time taken for LDAP requests")
+                .tag("operation", operation)
+                .tag("outcome", success ? "success" : "error")
+                .register(meterRegistry)
+                .record(System.nanoTime() - startTimeNanos, TimeUnit.NANOSECONDS);
     }
 
     /**
@@ -511,6 +526,7 @@ public class LDAPOperationManager {
         var tracing = session.getProvider(TracingProvider.class);
         tracing.startSpan(LDAPOperationManager.class, "authenticate");
 
+        long startTimeNanos = System.nanoTime();
         boolean success = false;
 
         try {
@@ -582,6 +598,7 @@ public class LDAPOperationManager {
             tracing.error(e);
             throw new AuthenticationException("Unexpected exception when validating password of user");
         } finally {
+            recordLdapRequest("authenticate", success, startTimeNanos);
             if (tlsResponse != null) {
                 try {
                     tlsResponse.close();
@@ -597,7 +614,6 @@ public class LDAPOperationManager {
                     e.printStackTrace();
                 }
             }
-            recordLdapRequest("authenticate", success);
             tracing.endSpan();
         }
     }
@@ -781,10 +797,12 @@ public class LDAPOperationManager {
         if (perfLogger.isDebugEnabled()) {
             start = Time.currentTimeMillis();
         }
+        long startTimeNanos = System.nanoTime();
+        boolean success = false;
 
         var tracing = session.getProvider(TracingProvider.class);
         var span = tracing.startSpan(LDAPOperationManager.class, "execute");
-        boolean success = false;
+
 
         try {
             if (span.isRecording()) {
@@ -804,7 +822,7 @@ public class LDAPOperationManager {
             tracing.error(e);
             throw e;
         } finally {
-            recordLdapRequest("execute", success);
+            recordLdapRequest("execute", success, startTimeNanos);
             tracing.endSpan();
             if (perfLogger.isDebugEnabled()) {
                 long took = Time.currentTimeMillis() - start;
