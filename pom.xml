@@ -126,7 +126,7 @@
 
         <!-- Others -->
         <apacheds.version>2.0.0.AM26</apacheds.version>
-        <apacheds.codec.version>2.0.0</apacheds.codec.version>
+        <apacheds.codec.version>2.1.8</apacheds.codec.version>
         <google.zxing.version>3.4.0</google.zxing.version>
         <freemarker.version>2.3.32</freemarker.version>
         <sundrio.version>0.200.0</sundrio.version>
@@ -728,6 +728,73 @@
                 <artifactId>api-ldap-codec-standalone</artifactId>
                 <version>${apacheds.codec.version}</version>
             </dependency>
+            <!-- BEGIN: CVE-2026-35563: override transitive org.apache.directory.api versions from ApacheDS to enforce TLS hostname verification -->
+            <dependency>
+                <groupId>org.apache.directory.api</groupId>
+                <artifactId>api-ldap-client-api</artifactId>
+                <version>${apacheds.codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.directory.api</groupId>
+                <artifactId>api-ldap-model</artifactId>
+                <version>${apacheds.codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.directory.api</groupId>
+                <artifactId>api-ldap-codec-core</artifactId>
+                <version>${apacheds.codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.directory.api</groupId>
+                <artifactId>api-ldap-schema-data</artifactId>
+                <version>${apacheds.codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.directory.api</groupId>
+                <artifactId>api-ldap-extras-codec-api</artifactId>
+                <version>${apacheds.codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.directory.api</groupId>
+                <artifactId>api-ldap-extras-sp</artifactId>
+                <version>${apacheds.codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.directory.api</groupId>
+                <artifactId>api-ldap-extras-trigger</artifactId>
+                <version>${apacheds.codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.directory.api</groupId>
+                <artifactId>api-ldap-extras-util</artifactId>
+                <version>${apacheds.codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.directory.api</groupId>
+                <artifactId>api-ldap-extras-aci</artifactId>
+                <version>${apacheds.codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.directory.api</groupId>
+                <artifactId>api-util</artifactId>
+                <version>${apacheds.codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.directory.api</groupId>
+                <artifactId>api-i18n</artifactId>
+                <version>${apacheds.codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.directory.api</groupId>
+                <artifactId>api-asn1-api</artifactId>
+                <version>${apacheds.codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.directory.api</groupId>
+                <artifactId>api-asn1-ber</artifactId>
+                <version>${apacheds.codec.version}</version>
+            </dependency>
+            <!-- END: CVE-2026-35563: override transitive org.apache.directory.api versions from ApacheDS to enforce TLS hostname verification -->
             <dependency>
                 <groupId>org.apache.jmeter</groupId>
                 <artifactId>ApacheJMeter_java</artifactId>
