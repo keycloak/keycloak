@@ -780,19 +780,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         orgDomain.setName("acme.com");
         org.addDomain(orgDomain);
 
-        org.setAlias("acme&@#!");
-        try (Response response = realm.admin().organizations().create(org)) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-        }
-
-        // blank alias will be replaced with org name, which is valid
-        org.setAlias("");
-        try (Response response = realm.admin().organizations().create(org)) {
-            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
-            String id = ApiUtil.getCreatedId(response);
-            realm.cleanup().add(r -> r.organizations().get(id).delete().close());
-        }
-
+        // whitespace and backslash are not valid OAuth 2.0 scope characters (RFC 6749, Section 3.3) and remain forbidden
         org.setAlias(" ");
         try (Response response = realm.admin().organizations().create(org)) {
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
@@ -803,8 +791,33 @@ public class OrganizationTest extends AbstractOrganizationTest {
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
 
-        // when alias is empty, name is used as alias
-        org.setName("acme@");
+        org.setAlias("acme\\alias");
+        try (Response response = realm.admin().organizations().create(org)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // '&', '@', '#', '!', '/' and ':' are valid OAuth 2.0 scope characters (RFC 6749, Section 3.3)
+        // and are therefore allowed in the alias
+        org.setAlias("acme&@#!/:");
+        try (Response response = realm.admin().organizations().create(org)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            String id = ApiUtil.getCreatedId(response);
+            realm.cleanup().add(r -> r.organizations().get(id).delete().close());
+        }
+
+        // blank alias will be replaced with org name, which is valid
+        org.setName("acme-2");
+        org.getDomains().clear();
+        org.addDomain(new OrganizationDomainRepresentation("acme-2.com"));
+        org.setAlias("");
+        try (Response response = realm.admin().organizations().create(org)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            String id = ApiUtil.getCreatedId(response);
+            realm.cleanup().add(r -> r.organizations().get(id).delete().close());
+        }
+
+        // when alias is empty, name is used as alias and must still reject forbidden characters
+        org.setName("acme\\backslash");
         org.setAlias("");
         try (Response response = realm.admin().organizations().create(org)) {
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());

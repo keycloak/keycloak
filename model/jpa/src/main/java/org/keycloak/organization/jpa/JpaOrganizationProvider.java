@@ -63,11 +63,11 @@ import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity;
-import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.models.OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE;
@@ -105,8 +105,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         if (StringUtil.isBlank(alias)) {
             try {
-                ReservedCharValidator.validateNoSpace(name);
-            } catch (ReservedCharValidator.ReservedCharException e) {
+                OrganizationsValidation.validateAlias(name);
+            } catch (OrganizationsValidation.OrganizationValidationException e) {
                 throw new ModelValidationException("Name cannot be used as alias: " + e.getMessage());
             }
             alias = name;

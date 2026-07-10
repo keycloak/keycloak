@@ -16,12 +16,24 @@
  */
 package org.keycloak.organization.validation;
 
+import java.util.regex.Pattern;
+
 import org.keycloak.validate.BuiltinValidators;
 
 public class OrganizationsValidation {
+
+    // RFC 6749, Section 3.3: scope-token = 1*( %x21 / %x23-5B / %x5D-7E )
+    private static final Pattern ALIAS_INVALID_CHARS_PATTERN = Pattern.compile("[^\\x21\\x23-\\x5B\\x5D-\\x7E]");
+
     public static void validateUrl(String redirectUrl) {
         if (!BuiltinValidators.uriValidator().validate(redirectUrl).isValid()) {
             throw new OrganizationValidationException("Organization redirect URL is not valid.");
+        }
+    }
+
+    public static void validateAlias(String alias) {
+        if (alias != null && ALIAS_INVALID_CHARS_PATTERN.matcher(alias).find()) {
+            throw new OrganizationValidationException("Organization alias contains invalid characters.");
         }
     }
 
