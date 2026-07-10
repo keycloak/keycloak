@@ -1,5 +1,7 @@
 package org.keycloak.ssf.event.caep;
 
+import java.util.Map;
+
 import org.keycloak.ssf.event.SsfEventValidationException;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -15,8 +17,7 @@ public class CaepCredentialChange extends CaepEvent {
     /**
      * See: https://openid.github.io/sharedsignals/openid-caep-1_0.html#name-credential-change
      */
-    public static final String TYPE = "https://schemas.openid.net/secevent/caep/event-type/credential-change";
-
+    public static final String TYPE = CaepEvent.EVENT_TYPE_BASE_URI + "credential-change";
 
     /**
      * This MUST be one of the following strings, or any other credential type supported mutually by the Transmitter and the Receiver.
@@ -205,14 +206,13 @@ public class CaepCredentialChange extends CaepEvent {
     }
 
     @Override
-    public String toString() {
-        return "CredentialChange{" +
-               "credentialType=" + credentialType +
-               ", changeType=" + changeType +
-               ", friendlyName='" + friendlyName + '\'' +
-               ", x509Issuer='" + x509Issuer + '\'' +
-               ", x509Serial='" + x509Serial + '\'' +
-               ", fido2Aaguid='" + fido2Aaguid + '\'' +
-               '}';
+    protected void appendFields(Map<String, Object> fields) {
+        super.appendFields(fields);
+        fields.put("credentialType", credentialType);
+        fields.put("changeType", changeType);
+        fields.put("friendlyName", friendlyName);
+        fields.put("x509Issuer", x509Issuer);
+        fields.put("x509Serial", x509Serial);
+        fields.put("fido2Aaguid", fido2Aaguid);
     }
 }

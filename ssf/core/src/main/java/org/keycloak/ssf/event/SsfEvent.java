@@ -3,28 +3,28 @@ package org.keycloak.ssf.event;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import org.keycloak.ssf.subject.SubjectId;
-import org.keycloak.ssf.subject.SubjectIdJsonDeserializer;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * Represents a generic SSF event.
- *
+ * <p>
  * See: https://datatracker.ietf.org/doc/html/rfc8417
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class SsfEvent {
+
+    private static final ConcurrentMap<Class<?>, Set<String>> DECLARED_JSON_PROPERTIES = new ConcurrentHashMap<>();
 
     /**
      * Internal (shorter) alias for the event type.
@@ -32,88 +32,26 @@ public abstract class SsfEvent {
     @JsonIgnore
     protected String alias;
 
-    @JsonProperty("subject")
-    @JsonDeserialize(using = SubjectIdJsonDeserializer.class)
-    protected SubjectId subjectId;
-
+    /**
+     * The event type URI
+     */
     @JsonIgnore
     protected String eventType;
 
     /**
-     * The time of the event (UNIX timestamp). Nullable so events that do
-     * not carry a timestamp — e.g. {@code ssf/event-type/verification}
-     * (SSF §8.1.4 carries only {@code state}) and other stream-management
-     * events — are omitted from the wire JSON instead of being serialized
-     * as {@code "event_timestamp": 0} (the default value of a primitive
-     * {@code long}, which Jackson always emits).
+     * Additional unmapped event-specific fields.
      */
-    @JsonProperty("event_timestamp")
-    protected Long eventTimestamp;
-
-    /**
-     * The entity that initiated the event
-     */
-    @JsonProperty("initiating_entity")
-    protected InitiatingEntity initiatingEntity;
-
-    /**
-     * A localized administrative message intended for logging and auditing.
-     * key is language code, value is message.
-     */
-    @JsonProperty("reason_admin")
-    protected Map<String, String> reasonAdmin;
-
-    /**
-     * A localized message intended for the end user.
-     * key is language code, value is message.
-     */
-    @JsonProperty("reason_user")
-    protected Map<String, String> reasonUser;
-
     @JsonIgnore
     protected Map<String, Object> attributes = new HashMap<>();
 
     public SsfEvent(String eventType) {
+        this(eventType, null);
+    }
+
+    public SsfEvent(String eventType, String alias) {
         this.eventType = eventType;
-
         // use the simple class name as the default alias
-        this.alias = getClass().getSimpleName();
-    }
-
-    public SubjectId getSubjectId() {
-        return subjectId;
-    }
-
-    public Long getEventTimestamp() {
-        return eventTimestamp;
-    }
-
-    public void setEventTimestamp(long eventTimestamp) {
-        this.eventTimestamp = eventTimestamp;
-    }
-
-    public InitiatingEntity getInitiatingEntity() {
-        return initiatingEntity;
-    }
-
-    public void setInitiatingEntity(InitiatingEntity initiatingEntity) {
-        this.initiatingEntity = initiatingEntity;
-    }
-
-    public Map<String, String> getReasonAdmin() {
-        return reasonAdmin;
-    }
-
-    public void setReasonAdmin(Map<String, String> reasonAdmin) {
-        this.reasonAdmin = reasonAdmin;
-    }
-
-    public Map<String, String> getReasonUser() {
-        return reasonUser;
-    }
-
-    public void setReasonUser(Map<String, String> reasonUser) {
-        this.reasonUser = reasonUser;
+        this.alias = alias == null ? getClass().getSimpleName() : alias;
     }
 
     public String getEventType() {
@@ -141,12 +79,10 @@ public abstract class SsfEvent {
         if (declaredJsonPropertyNames(getClass()).contains(key)) {
             throw new IllegalArgumentException(
                     "Custom attribute key '" + key + "' collides with a declared @JsonProperty on "
-                            + getClass().getName());
+                    + getClass().getName());
         }
         attributes.put(key, value);
     }
-
-    private static final ConcurrentMap<Class<?>, Set<String>> DECLARED_JSON_PROPERTIES = new ConcurrentHashMap<>();
 
     private static Set<String> declaredJsonPropertyNames(Class<?> type) {
         return DECLARED_JSON_PROPERTIES.computeIfAbsent(type, t -> {
@@ -165,10 +101,6 @@ public abstract class SsfEvent {
 
     public void setEventType(String eventType) {
         this.eventType = eventType;
-    }
-
-    public void setSubjectId(SubjectId subjectId) {
-        this.subjectId = subjectId;
     }
 
     public String getAlias() {
@@ -201,5 +133,37 @@ public abstract class SsfEvent {
      */
     public void validate() {
         // no-op — overridden by event subclasses that have spec-required fields
+    }
+
+    @Override
+    public String toString() {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        appendFields(fields);
+        if (attributes != null && !attributes.isEmpty()) {
+            fields.putIfAbsent("attributes", attributes);
+        }
+        StringJoiner rendered = new StringJoiner(", ");
+        for (Map.Entry<String, Object> entry : fields.entrySet()) {
+            Object value = entry.getValue();
+            if (value == null) {
+                continue;
+            }
+            rendered.add(entry.getKey() + "=" + (value instanceof String ? "'" + value + '\'' : value));
+        }
+        String name = alias != null ? alias : getClass().getSimpleName();
+        return rendered.length() == 0 ? name : name + "::" + rendered;
+    }
+
+    /**
+     * Contributes the fields of this level of the event hierarchy to the
+     * {@link #toString()} output; insertion order is the render order.
+     * Subclasses override this (calling {@code super.appendFields(fields)} first)
+     * instead of {@code toString()} itself. Values may be put unconditionally —
+     * {@code null} entries are filtered and {@link String} values quoted centrally
+     * when rendering, and the extension {@link #attributes} map is appended
+     * automatically when non-empty.
+     */
+    protected void appendFields(Map<String, Object> fields) {
+        fields.put("eventType", eventType);
     }
 }
