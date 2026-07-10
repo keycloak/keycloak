@@ -1,15 +1,17 @@
 package org.keycloak.ssf.event.stream;
 
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * SSF Verification event.
- *
+ * <p>
  * See: https://openid.net/specs/openid-sharedsignals-framework-1_0-final.html#name-verification
  */
 public class SsfStreamVerificationEvent extends SsfStreamEvent {
 
-    public static final String TYPE = "https://schemas.openid.net/secevent/ssf/event-type/verification";
+    public static final String TYPE = SsfStreamEvent.EVENT_TYPE_BASE_URI + "verification";
 
     @JsonProperty("state")
     protected String state;
@@ -27,12 +29,8 @@ public class SsfStreamVerificationEvent extends SsfStreamEvent {
     }
 
     @Override
-    public String toString() {
-        // Render absent state as an empty object rather than "state='null'"
-        // so the log representation matches what Jackson actually puts on
-        // the wire (omitted thanks to @JsonInclude(NON_NULL)).
-        return state == null
-                ? "VerificationEvent{}"
-                : "VerificationEvent{state='" + state + "'}";
+    protected void appendFields(Map<String, Object> fields) {
+        super.appendFields(fields);
+        fields.put("state", state);
     }
 }
