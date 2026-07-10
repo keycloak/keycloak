@@ -1,5 +1,7 @@
 package org.keycloak.ssf.event.stream;
 
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -24,6 +26,15 @@ public class SsfStreamVerificationEvent extends SsfStreamEvent {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    @Override
+    public Map<String, Object> createAdminDetails() {
+        var adminRepresentation = super.createAdminDetails();
+        if (state != null) {
+            adminRepresentation.put("state", state);
+        }
+        return adminRepresentation;
     }
 
     @Override
