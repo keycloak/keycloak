@@ -50,7 +50,6 @@ public interface UiTabProviderFactory<T> extends ComponentFactory<T, UiTabProvid
      *   <li>{@link StorageType#USER} - Store on user attributes (requires userId param)</li>
      *   <li>{@link StorageType#GROUP} - Store on group attributes (requires groupId param)</li>
      *   <li>{@link StorageType#IDENTITY_PROVIDER} - Store on IdP config (requires providerId param)</li>
-     *   <li>{@link StorageType#REALM} - Store on realm attributes</li>
      *   <li>{@link StorageType#CUSTOM} - Use custom endpoint (requires {@link #getEndpoint()})</li>
      * </ul>
      *
