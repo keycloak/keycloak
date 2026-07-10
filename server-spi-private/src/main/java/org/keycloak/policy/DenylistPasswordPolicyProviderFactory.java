@@ -416,7 +416,6 @@ public class DenylistPasswordPolicyProviderFactory implements PasswordPolicyProv
 
         /**
          * Fast path: deserialise a pre-computed Bloom filter binary (.bloom).
-         * Emits a warning when the stored false-positive probability differs from the configured value.
          *
          * @return the deserialised {@link BloomFilter}
          * @throws IOException if the binary file cannot be read
