@@ -70,11 +70,15 @@ class SsfEventsTest {
         assertEquals(Map.of("a", 1), generic.getAttributes().get("nested"),
                 "nested payload objects must be preserved as maps");
 
+        generic.setAttributeValue("unset", null);
+
         String rendered = assertDoesNotThrow(generic::toString);
         assertTrue(rendered.contains(unknownType),
                 "toString should render the preserved event type URI: " + rendered);
         assertTrue(rendered.contains("foo=bar"),
                 "toString should render the preserved attributes: " + rendered);
+        assertFalse(rendered.contains("unset="),
+                "toString should omit null-valued attributes: " + rendered);
     }
 
     @Test
