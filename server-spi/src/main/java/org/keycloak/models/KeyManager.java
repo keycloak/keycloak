@@ -40,6 +40,22 @@ public interface KeyManager {
     KeyWrapper getKey(RealmModel realm, String kid, KeyUse use, String algorithm);
 
     /**
+     * Returns the key for the given kid regardless of the key status, so unlike
+     * {@link #getKey(RealmModel, String, KeyUse, String)} it also returns disabled keys. Useful for
+     * features that reserve a dedicated realm key which should not serve regular realm signing.
+     */
+    default KeyWrapper getKeyIncludingDisabled(RealmModel realm, String kid, KeyUse use, String algorithm) {
+        if (kid == null) {
+            return null;
+        }
+        return getKeysStream(realm)
+                .filter(key -> kid.equals(key.getKid()) && use.equals(key.getUse())
+                        && algorithm.equals(key.getAlgorithmOrDefault()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
      * Returns all {@code KeyWrapper} for the given realm.
      * @param realm {@code RealmModel}.
      * @return Stream of all {@code KeyWrapper} in the realm. Never returns {@code null}.
