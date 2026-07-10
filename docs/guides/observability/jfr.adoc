@@ -9,22 +9,13 @@ summary="Create Java Flight Recorder (JFR) recordings of a {project_name} server
 
 Java Flight Recorder (JFR) is a standard monitoring tool for collecting diagnostic and profiling data about a running Java application. It is built into a JVM and designed to have a low performance impact.
 
-JFR can be started on JVM startup by providing parameters via the `-XX:StartFlightRecording` argument, or it can be started later during application runtime by sending the `JFR.start` command using the `jcmd` tool.
+The most common way to run JFR for {project_name} is a fixed-time recording.
+This guide demonstrates creating a fixed-time flight recording using the `jcmd` tool.
+Collecting data continuously is outside the scope for this guide.
 
-Recording can either be started in a continuous mode in which case the `JFR.dump` command is needed to export the diagnostic data into a file, or it can be started in a fixed-time mode, in which case the data will be exported automatically after the requested interval elapses.
-
-This guide further demonstrates creating a fixed-time flight recording using the `jcmd` tool.
-
-=== Security considerations
-
-Some of the diagnostic data collected by Java Flight Recorder may be security-sensitive.
-
-WARNING: It is not recommended to share JFR recordings without sanitizing them for potentially sensitive information.
-
-There are several approaches to sanitizing a JFR recording:
-
-* Proactively, by disabling the collection of certain types of data when starting a JFR recording. This can be done by using custom JFR settings. See the <<create-a-fixed-time-recording>> section on how to apply custom settings.
-* Retroactively, by scrubbing a recording for certain types of data after it has been saved to a file. This can be done by the `jfr scrub` command, either by excluding certain types of data, or by including only those types of data that are relevant for investigating a particular performance problem and known to be safe. See the <<scrub-sensitive-data>> section for details.
+WARNING: Some of the diagnostic data collected by Java Flight Recorder may be security-sensitive like confidential environment variables or memory samples.
+Before sharing it outside your trust boundary, sanitize it using the `jfr scrub` command. See the <<scrub-sensitive-data>> section below.
+Disabling the collection of certain types of data at the time of collection is outside the scope of this guide.
 
 == Find the {project_name} server process
 
@@ -81,11 +72,10 @@ jcmd QuarkusEntryPoint JFR.start \
   settings=profile \ #<2>
   filename=recording.jfr #<3>
 ----
-<1> Intended duration of the recording.
-<2> Name of a JFR configuration file. A Java installation comes with two configurations in the `$JAVA_HOME/lib/jfr/` directory: `default.jfc` and `profile.jfc`.
+<1> Intended duration of the recording. A 2-minute recording is usually sufficient for diagnosing most performance issues. With the `profile` configuration, expect roughly 1-5 MB per minute under load.
+<2> Name of a JFR configuration file. For fixed-time recordings we recommend `profile` which will have an overhead of about 2%.
 +
-The `default` configuration has a lower performance overhead and is suitable for continuous recording. The `profile` configuration provides more diagnostic data but has a higher impact on performance. It is recommended only for short periods of time. It is also possible to create a custom configuration using `jfr configure --interactive` command. For configuration files outside of the default location it is necessary to provide a full path.
-<3> The `filename` parameter is optional. If not provided the name will be generated automatically based on PID and timestamp. If an absolute path is not provided the file will be created in the current working directory of the target application.
+NOTE: JFR's `ExecutionSample` event uses safepoint-based sampling, which means it can overrepresent time spent in methods that frequently reach safepoints and underrepresent time in tight computational loops. This is a known limitation of JFR in JDK 21 and earlier versions.
 
 Use the `JFR.check` command shortly after to verify that the recording was started:
 [source]
@@ -100,9 +90,7 @@ Expected output (example):
 Recording 1: name=1 duration=2m (running)
 ----
 
-== View and manipulate a dumped recording
-
-IMPORTANT: Once a recording is dumped into a file it is important to sanitize it for potentially sensitive data using the `jfr scrub` command. See the <<scrub-sensitive-data>> section below.
+== View recording
 
 Once the recording is dumped into a file it can be viewed and manipulated using the standard `jfr` tool.
 
@@ -144,7 +132,7 @@ Example output:
  jdk.CompilerStatistics                    120          3840
  jdk.ExceptionStatistics                   120          1440
  jdk.JavaThreadStatistics                  120          1560
- ⋯
+ ...
 ----
 
 To display aggregated content of the recording in a tabular form use the `jfr view` command.
@@ -174,17 +162,19 @@ Time                         JVM User           JVM System           Machine Tot
 10:32:10                        0.05%                0.00%                   3.05%
 10:32:11                        0.05%                0.00%                   2.56%
 10:32:12                        0.05%                0.05%                   2.55%
- ⋯
+ ...
 ----
 
 [[scrub-sensitive-data]]
-== Scrub sensitive data from a flight recording
+== Scrub sensitive data
 
-Once a recording is dumped into a file it is important to scrub it for potentially sensitive data to prevent security leaks. This can be done using a standard `jfr scrub` command.
+Once a recording is dumped into a file it is important to scrub it for potentially sensitive data like confidential environment variables or memory samples to prevent security leaks. This can be done using a standard `jfr scrub` command.
+
+NOTE: The `jfr scrub` command is available starting from JDK 20.
 
 === Exclude sensitive information
 
-Use `jfr scrub --exclude-events ⋯` to exclude security-sensitive data.
+Use `jfr scrub --exclude-events ...` to exclude security-sensitive data.
 
 For {project_name}, high-risk content collected by JFR can be removed by the following command:
 [source]
@@ -212,7 +202,7 @@ You can also use `jfr scrub --include-events ...` to only share a subset of the 
 
 === Include only specific information
 
-Use `jfr scrub --include-events ⋯` to only include data relevant to a particular perfromance problem.
+Use `jfr scrub --include-events ...` to only include data relevant to a particular performance problem.
 
 Example:
 [source]
