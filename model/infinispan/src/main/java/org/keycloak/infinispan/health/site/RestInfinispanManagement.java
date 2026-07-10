@@ -70,14 +70,20 @@ public class RestInfinispanManagement implements InfinispanManagement {
     public Map<String, String> siteStatus() throws ExecutionException, InterruptedException {
         CompletionStage<Map<String, String>> stage = restClient.container().backupStatuses()
                 .thenApply(restResponse -> {
-                    checkResponse(restResponse);
-                    var data = Json.read(restResponse.body()).asMap();
-                    if (data.isEmpty()) {
-                        return Map.of();
+                    try {
+                        checkResponse(restResponse);
+                        var data = Json.read(restResponse.body()).asMap();
+                        if (data.isEmpty()) {
+                            return Map.of();
+                        }
+                        return data.entrySet().stream()
+                                .collect(Collectors.toMap(Map.Entry::getKey,
+                                        entry -> Json.make(entry.getValue()).at("status").asString()));
+                    } finally {
+                        if (restResponse != null) {
+                            restResponse.close();
+                        }
                     }
-                    return data.entrySet().stream()
-                            .collect(Collectors.toMap(Map.Entry::getKey,
-                                    entry -> Json.make(entry.getValue()).at("status").asString()));
                 });
         return CompletionStages.await(stage);
     }
@@ -86,11 +92,17 @@ public class RestInfinispanManagement implements InfinispanManagement {
     public SiteConnection siteConnection() throws ExecutionException, InterruptedException {
         var stage = restClient.container().info()
                 .thenApply(restResponse -> {
-                    checkResponse(restResponse);
-                    var data = Json.read(restResponse.body());
-                    var localSite = data.at("local_site").isNull() ? null : data.at("local_site").asString();
-                    var sites = data.at("sites_view").asJsonList().stream().map(Json::asString).collect(Collectors.toSet());
-                    return new SiteConnection(localSite, sites);
+                    try {
+                        checkResponse(restResponse);
+                        var data = Json.read(restResponse.body());
+                        var localSite = data.at("local_site").isNull() ? null : data.at("local_site").asString();
+                        var sites = data.at("sites_view").asJsonList().stream().map(Json::asString).collect(Collectors.toSet());
+                        return new SiteConnection(localSite, sites);
+                    } finally {
+                        if (restResponse != null) {
+                            restResponse.close();
+                        }
+                    }
                 });
         return CompletionStages.await(stage);
     }
@@ -102,12 +114,18 @@ public class RestInfinispanManagement implements InfinispanManagement {
         }
         var container = restClient.container();
         var stage = CompletionStages.aggregateCompletionStage();
-        // the rest response is not important.
-        // keycloak will try to take offline in each round.
         remoteSites.stream()
                 .distinct()
                 .map(container::takeOffline)
-                .peek(rsp -> rsp.thenAccept(RestResponse::close))
+                .map(responseStage -> responseStage.thenAccept(response -> {
+                    try {
+                        checkResponse(response);
+                    } finally {
+                        if (response != null) {
+                            response.close();
+                        }
+                    }
+                }))
                 .forEach(stage::dependsOn);
         CompletionStages.await(stage.freeze());
     }
