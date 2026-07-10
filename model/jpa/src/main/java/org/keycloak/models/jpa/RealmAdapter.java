@@ -231,18 +231,52 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     @Override
     public void setAttribute(String name, String value) {
+        RealmAttributeEntity existing = null;
         for (RealmAttributeEntity attr : realm.getAttributes()) {
             if (attr.getName().equals(name)) {
-                attr.setValue(value);
-                return;
+                existing = attr;
+                break;
             }
         }
-        RealmAttributeEntity attr = new RealmAttributeEntity();
-        attr.setName(name);
-        attr.setValue(value);
-        attr.setRealm(realm);
-        em.persist(attr);
-        realm.getAttributes().add(attr);
+        if (existing != null) {
+            if (Objects.equals(existing.getValue(), value)) {
+                return;
+            }
+            existing.setValue(value);
+        } else {
+            RealmAttributeEntity attr = new RealmAttributeEntity();
+            attr.setName(name);
+            attr.setValue(value);
+            attr.setRealm(realm);
+            em.persist(attr);
+            realm.getAttributes().add(attr);
+        }
+        publishRealmAttributeUpdateEvent(name, value);
+    }
+
+    private void publishRealmAttributeUpdateEvent(String name, String value) {
+        session.getKeycloakSessionFactory().publish(new RealmModel.RealmAttributeUpdateEvent() {
+
+            @Override
+            public RealmModel getRealm() {
+                return RealmAdapter.this;
+            }
+
+            @Override
+            public String getAttributeName() {
+                return name;
+            }
+
+            @Override
+            public String getAttributeValue() {
+                return value;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
     }
 
     @Override
@@ -1306,30 +1340,11 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         boolean isAdminPermissionsAlreadyEnabled = getAdminPermissionsClient() != null;
         setAttribute(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, adminPermissionsEnabled);
 
-        // sending an event if we are enabling the permissions and it was not enabled already
+        // sending an event if we are enabling the permissions and it was not enabled already.
+        // setAttribute above only publishes when the attribute value changed, so this covers
+        // the case where the attribute is already "true" but the admin permissions client is missing.
         if (adminPermissionsEnabled && !isAdminPermissionsAlreadyEnabled) {
-            session.getKeycloakSessionFactory().publish(new RealmModel.RealmAttributeUpdateEvent() {
-
-                @Override
-                public RealmModel getRealm() {
-                    return RealmAdapter.this;
-                }
-
-                @Override
-                public String getAttributeName() {
-                    return RealmAttributes.ADMIN_PERMISSIONS_ENABLED;
-                }
-
-                @Override
-                public String getAttributeValue() {
-                    return String.valueOf(adminPermissionsEnabled);
-                }
-
-                @Override
-                public KeycloakSession getKeycloakSession() {
-                    return session;
-                }
-            });
+            publishRealmAttributeUpdateEvent(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, String.valueOf(adminPermissionsEnabled));
         }
     }
 
