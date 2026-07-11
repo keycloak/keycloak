@@ -455,7 +455,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 @Override
                 public String getEmail() {
                     if (UserModel.EMAIL.equalsIgnoreCase(userModelAttrName)) {
-                        return ldapUser.getAttributeAsString(ldapAttrName);
+                        String email = ldapUser.getAttributeAsString(ldapAttrName);
+                        if (ldapProvider.getModel().isImportEnabled()) {
+                            return KeycloakModelUtils.toLowerCaseSafe(email);
+                        }
+                        return email;
                     } else {
                         return super.getEmail();
                     }
