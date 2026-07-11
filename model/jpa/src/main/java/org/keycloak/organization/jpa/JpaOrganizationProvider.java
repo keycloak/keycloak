@@ -103,7 +103,9 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             throw new ModelValidationException("Name can not be null");
         }
 
-        if (StringUtil.isBlank(alias)) {
+        if (StringUtil.isNullOrEmpty(alias)) {
+            // no alias was provided at all; default to the name. A non-empty but blank (e.g.
+            // whitespace-only) alias is not defaulted here and is rejected below instead.
             alias = name;
         }
 
