@@ -1,14 +1,6 @@
-AccountRestServiceTest
-AuthorizationCodeTest
 DeployedScriptAuthenticatorTest
-ExportImportTest
 KcOidcBrokerTest
 KerberosLdapTest
 LDAPUserLoginTest
-LoginTest
-MutualTLSClientTest
-PasswordPolicyTest
-SSOTest
-SamlClientTest
 X509BrowserLoginTest
 ThemeResourceProviderTest

@@ -52,6 +52,7 @@ import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition;
 import org.keycloak.services.clientpolicy.condition.ClientAttributesCondition;
+import org.keycloak.services.clientpolicy.condition.ClientProtocolCondition;
 import org.keycloak.services.clientpolicy.condition.ClientRolesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientScopesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextCondition;
@@ -84,7 +85,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public final class ClientPoliciesUtil {
 
@@ -428,6 +429,12 @@ public final class ClientPoliciesUtil {
     public static ClientAccessTypeCondition.Configuration createClientAccessTypeConditionConfig(List<String> types) {
         ClientAccessTypeCondition.Configuration config = new ClientAccessTypeCondition.Configuration();
         config.setType(types);
+        return config;
+    }
+
+    public static ClientProtocolCondition.Configuration createClientProtocolConditionConfig(String protocol) {
+        ClientProtocolCondition.Configuration config = new ClientProtocolCondition.Configuration();
+        config.setProtocol(protocol);
         return config;
     }
 

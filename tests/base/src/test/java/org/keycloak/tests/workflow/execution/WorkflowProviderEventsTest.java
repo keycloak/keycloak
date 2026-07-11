@@ -19,8 +19,8 @@ import org.keycloak.representations.workflows.WorkflowConstants;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.GroupConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
@@ -111,7 +111,7 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
 
         // create a test user to trigger the workflow
         String userId;
-        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                 .username("generic-user").email("generic-user@example.com").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
@@ -174,7 +174,7 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
 
         // create a test user - should not trigger workflow and thus no events should have been fired
         String userId;
-        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                 .username("generic-user").email("generic-user@example.com").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
@@ -241,7 +241,7 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
 
         // create a test user to trigger the workflow
         String userId;
-        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                 .username("generic-user").email("generic-user@example.com").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
@@ -332,7 +332,7 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
 
         // create a test user to trigger the workflow
         String userId;
-        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                 .username("generic-user").email("generic-user@example.com").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
@@ -389,7 +389,7 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
 
         // create a test group in the realm
         String groupId;
-        try (Response response = managedRealm.admin().groups().add(GroupConfigBuilder.create().name("mygroup").build())) {
+        try (Response response = managedRealm.admin().groups().add(GroupBuilder.create().name("mygroup").build())) {
             groupId = ApiUtil.getCreatedId(response);
         }
 
@@ -412,7 +412,7 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
 
         // create a test user to trigger the workflow
         String userId;
-        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                 .username("generic-user").email("generic-user@example.com").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
@@ -476,7 +476,7 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
 
         // create a test group in the realm
         String groupId;
-        try (Response response = managedRealm.admin().groups().add(GroupConfigBuilder.create().name("mygroup").build())) {
+        try (Response response = managedRealm.admin().groups().add(GroupBuilder.create().name("mygroup").build())) {
             groupId = ApiUtil.getCreatedId(response);
         }
 
@@ -499,7 +499,7 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
 
         // create a test user to trigger the workflow
         String userId;
-        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                 .username("generic-user").email("generic-user@example.com").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
@@ -579,7 +579,7 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
         response.close();
 
         // create a user to trigger the first workflow
-        response = managedRealm.admin().users().create(UserConfigBuilder.create()
+        response = managedRealm.admin().users().create(UserBuilder.create()
                 .username("generic-user").email("generic-user@example.com").build());
         String userId = ApiUtil.getCreatedId(response);
         response.close();

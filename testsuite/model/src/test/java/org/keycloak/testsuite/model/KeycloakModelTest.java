@@ -313,7 +313,7 @@ public abstract class KeycloakModelTest {
      * testing of several parallel session factories which can be used to simulate several servers
      * running in parallel.
      */
-    public static KeycloakSessionFactory createKeycloakSessionFactory() {
+    public static synchronized KeycloakSessionFactory createKeycloakSessionFactory() {
         int factoryIndex = FACTORY_COUNT.incrementAndGet();
         String threadName = Thread.currentThread().getName();
         CONFIG.reset();
@@ -553,11 +553,16 @@ public abstract class KeycloakModelTest {
 
     @After
     public final void cleanEnvironment() {
-        if (getFactory() == null) {
+        try {
+            if (getFactory() == null) {
+                reinitializeKeycloakSessionFactory();
+            }
+            setTimeOffset(0);
+            KeycloakModelUtils.runJobInTransaction(getFactory(), this::cleanEnvironment);
+        } catch (Exception e) {
+            LOG.warnf(e, "Failed to clean environment after test, reinitializing factory");
             reinitializeKeycloakSessionFactory();
         }
-        setTimeOffset(0);
-        KeycloakModelUtils.runJobInTransaction(getFactory(), this::cleanEnvironment);
     }
 
     protected static <T> Stream<T> getParameters(Class<T> clazz) {

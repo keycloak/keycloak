@@ -41,9 +41,11 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.annotations.TestOnServer;
 
 import org.junit.jupiter.api.Assertions;
@@ -448,12 +450,12 @@ public class UserSessionProviderOfflineTest {
     public static class UserSessionProviderOfflineRealm implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.name("test");
-            realm.addClient("test-app");
-            realm.addClient("third-party");
-            realm.addUser("user1").email("user1@localhost");
-            realm.addUser("user2").email("user2@localhost");
+            realm.clients(ClientBuilder.create("test-app"));
+            realm.clients(ClientBuilder.create("third-party"));
+            realm.users(UserBuilder.create("user1").email("user1@localhost"));
+            realm.users(UserBuilder.create("user2").email("user2@localhost"));
             return realm;
         }
 

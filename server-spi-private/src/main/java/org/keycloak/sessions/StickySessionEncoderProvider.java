@@ -26,6 +26,8 @@ import org.keycloak.provider.Provider;
  */
 public interface StickySessionEncoderProvider extends Provider {
 
+    char DEFAULT_SEPARATOR = '.';
+
     /**
      * @return Encoded value to be used as the value of sticky session cookie (AUTH_SESSION_ID cookie)
      * @deprecated Use {@link #encodeSessionId(String, String)} instead.
@@ -65,9 +67,18 @@ public interface StickySessionEncoderProvider extends Provider {
      *
      * @param encodedSessionId The encoded session ID.
      * @return The {@link SessionIdAndRoute} with the session ID and the route component. The route may be {@code null}.
-     * @throws NullPointerException if {@code encodeSessionId} is {@code null}.
+     * @throws NullPointerException if {@code encodedSessionId} is {@code null}.
      */
-    SessionIdAndRoute decodeSessionIdAndRoute(String encodedSessionId);
+    default SessionIdAndRoute decodeSessionIdAndRoute(String encodedSessionId) {
+        // default implementation format: <session>.<route>
+        var index = encodedSessionId.indexOf(DEFAULT_SEPARATOR);
+        var length = encodedSessionId.length();
+        if (index == -1 || index == (length - 1)) {
+            //route not present
+            return new SessionIdAndRoute(encodedSessionId, null);
+        }
+        return new SessionIdAndRoute(encodedSessionId.substring(0, index), encodedSessionId.substring(index + 1, length));
+    }
 
     /**
      * @return true if information about route should be attached to the sticky session cookie by Keycloak. Otherwise,

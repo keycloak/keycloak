@@ -11,7 +11,7 @@ export const AddOrganizationRoute: AppRouteObject = {
   path: "/:realm/organizations/new",
   element: <NewOrganization />,
   handle: {
-    access: "manage-users",
+    access: "manage-organizations",
     breadcrumb: (t) => t("createOrganization"),
   },
 };

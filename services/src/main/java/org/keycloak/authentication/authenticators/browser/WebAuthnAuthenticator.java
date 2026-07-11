@@ -103,7 +103,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         boolean isUserIdentified = false;
         if (user != null) {
             // in 2 Factor Scenario where the user has already been identified
-            WebAuthnAuthenticatorsBean authenticators = new WebAuthnAuthenticatorsBean(context.getSession(), context.getRealm(), user, getCredentialType());
+            WebAuthnMetadataService metadataService = getCredentialProvider(context.getSession()).getMetadataService();
+            WebAuthnAuthenticatorsBean authenticators = new WebAuthnAuthenticatorsBean(context.getSession(), context.getRealm(), user, getCredentialType(), metadataService);
             if (authenticators.getAuthenticators().isEmpty()) {
                 // require the user to register webauthn authenticator
                 return null;
@@ -120,6 +121,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         String userVerificationRequirement = policy.getUserVerificationRequirement();
         form.setAttribute(WebAuthnConstants.USER_VERIFICATION, userVerificationRequirement);
         form.setAttribute(WebAuthnConstants.SHOULD_DISPLAY_AUTHENTICATORS, shouldDisplayAuthenticators(context));
+        form.setAttribute(WebAuthnConstants.MEDIATION, policy.getMediation());
+        form.setAttribute(WebAuthnConstants.AUTHENTICATOR_ATTACHMENT, policy.getAuthenticatorAttachment());
 
         return form;
     }
@@ -168,8 +171,12 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         String rpId = getRpID(context);
 
         Origin origin = new Origin(baseUrl);
-        Challenge challenge = new DefaultChallenge(context.getAuthenticationSession().getAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE));
-        ServerProperty server = new ServerProperty(origin, rpId, challenge, null);
+        final String challengeNote = context.getAuthenticationSession().getAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE);
+        if (challengeNote != null) {
+            context.getAuthenticationSession().removeAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE);
+        }
+        Challenge challenge = new DefaultChallenge(challengeNote);
+        ServerProperty server = new ServerProperty(origin, rpId, challenge);
 
         byte[] credentialId = Base64Url.decode(params.getFirst(WebAuthnConstants.CREDENTIAL_ID));
         byte[] clientDataJSON = Base64Url.decode(params.getFirst(WebAuthnConstants.CLIENT_DATA_JSON));
@@ -358,7 +365,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         LoginFormsProvider provider = context.form().setError(errorCase, "");
         UserModel user = context.getUser();
         if (user != null) {
-            WebAuthnAuthenticatorsBean authenticators = new WebAuthnAuthenticatorsBean(context.getSession(), context.getRealm(), user, getCredentialType());
+            WebAuthnMetadataService metadataService = getCredentialProvider(context.getSession()).getMetadataService();
+            WebAuthnAuthenticatorsBean authenticators = new WebAuthnAuthenticatorsBean(context.getSession(), context.getRealm(), user, getCredentialType(), metadataService);
             if (authenticators.getAuthenticators() != null) {
                 provider.setAttribute(WebAuthnConstants.ALLOWED_AUTHENTICATORS, authenticators);
             }

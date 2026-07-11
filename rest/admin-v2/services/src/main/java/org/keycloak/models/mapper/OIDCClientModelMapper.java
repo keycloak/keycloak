@@ -2,58 +2,51 @@ package org.keycloak.models.mapper;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
+import org.keycloak.representations.admin.v2.OIDCClientRepresentation.Auth;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class OIDCClientModelMapper extends BaseClientModelMapper<OIDCClientRepresentation> {
-    public OIDCClientModelMapper(KeycloakSession session) {
-        super(session);
-    }
-
     @Override
     protected OIDCClientRepresentation createClientRepresentation() {
         return new OIDCClientRepresentation();
     }
-
-    @Override
-    protected void fromModelSpecific(ClientModel model, OIDCClientRepresentation rep) {
-        rep.setLoginFlows(createLoginFlows(model));
-
-        if (!model.isPublicClient()) {
-            OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
-            auth.setMethod(model.getClientAuthenticatorType());
-            auth.setSecret(model.getSecret());
-            rep.setAuth(auth);
-            // TODO: auth.certificate
-        }
-
-        rep.setWebOrigins(new HashSet<>(model.getWebOrigins()));
-        rep.setServiceAccountRoles(getServiceAccountRoles(model));
+    
+    public OIDCClientModelMapper() {
+        addMapping("loginFlows", OIDCClientRepresentation::getLoginFlows, OIDCClientRepresentation::setLoginFlows, model -> createLoginFlows(model), (model, flows) -> setModelFromFlows(flows, model));
+        addMapping("auth", OIDCClientRepresentation::getAuth, OIDCClientRepresentation::setAuth, model -> getAuth(model), (model, auth) -> setAuth(model, auth));
+        addMapping("webOrigins", OIDCClientRepresentation::getWebOrigins, OIDCClientRepresentation::setWebOrigins, model -> new LinkedHashSet<>(model.getWebOrigins()), (model, webOrigins) -> model.setWebOrigins(new LinkedHashSet<>(webOrigins)));
+        addMapping("serviceAccountRoles", OIDCClientRepresentation::getServiceAccountRoles, OIDCClientRepresentation::setServiceAccountRoles, model -> getServiceAccountRoles(model), null);
     }
 
-    @Override
-    protected void toModelSpecific(OIDCClientRepresentation rep, ClientModel model) {
-        if (rep.getAuth() != null) {
+    private OIDCClientRepresentation.Auth getAuth(ClientModel model) {
+        OIDCClientRepresentation.Auth auth = null;
+        if (!model.isPublicClient()) {
+            auth = new OIDCClientRepresentation.Auth();
+            auth.setMethod(model.getClientAuthenticatorType());
+            auth.setSecret(model.getSecret());
+            // TODO: auth.certificate
+        }
+        return auth;
+    }
+
+    private void setAuth(ClientModel model, Auth auth) {
+        if (auth != null) {
             model.setPublicClient(false);
-            model.setClientAuthenticatorType(rep.getAuth().getMethod());
-            model.setSecret(rep.getAuth().getSecret());
+            model.setClientAuthenticatorType(auth.getMethod());
+            model.setSecret(auth.getSecret());
         } else {
             model.setPublicClient(true);
         }
-
-        setModelFromFlows(rep.getLoginFlows(), model);
-
-        model.setWebOrigins(new HashSet<>(rep.getWebOrigins()));
-
-        // Service account roles are not handled here
     }
 
     private Set<OIDCClientRepresentation.Flow> createLoginFlows(ClientModel model) {
@@ -82,7 +75,7 @@ public class OIDCClientModelMapper extends BaseClientModelMapper<OIDCClientRepre
 
     private Set<String> getServiceAccountRoles(ClientModel client) {
         if (client.isServiceAccountsEnabled()) {
-            var serviceAccount = session.users().getServiceAccount(client);
+            var serviceAccount = KeycloakSessionUtil.getKeycloakSession().users().getServiceAccount(client);
             if (serviceAccount != null) {
                 return serviceAccount.getRoleMappingsStream()
                         .map(RoleModel::getName)

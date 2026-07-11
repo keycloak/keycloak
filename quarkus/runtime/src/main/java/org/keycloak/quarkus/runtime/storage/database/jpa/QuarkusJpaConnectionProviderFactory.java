@@ -37,6 +37,7 @@ import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.database.Database;
+import org.keycloak.connections.jpa.AsyncCommitIntegrator;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModelManager;
@@ -101,6 +102,9 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         super.postInit(factory);
+        if (config.getBoolean("asyncCommit", true)) {
+            AsyncCommitIntegrator.registerListeners(entityManagerFactory);
+        }
 
         checkMySQLWaitTimeout();
         checkMSSQLIsolationLevel();
@@ -148,6 +152,8 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
         } catch (Exception e) {
             logErrorSettingMigrationTransactionTimeout(e);
         }
+
+        checkMissingIndexes(factory);
     }
 
     @Override
@@ -170,6 +176,12 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
                 .name("migrationExport")
                 .type("string")
                 .helpText("Path for where to write manual database initialization/migration file.")
+                .add()
+                .property()
+                .name("asyncCommit")
+                .type("boolean")
+                .helpText("If enabled, transactions that only modify ephemeral entities (such as authentication sessions or events) use asynchronous commit on PostgreSQL, skipping the WAL fsync wait. This improves throughput but means the last few milliseconds of such transactions may be lost on a crash. Automatically disabled on Aurora PostgreSQL when logical replication is active.")
+                .defaultValue(true)
                 .add()
                 .build();
     }
@@ -433,5 +445,11 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
 
     private static void logInvalidEncoding(Database.Vendor vendor, String encoding, String recommendedEncoding) {
         logger.warnf("Invalid %s charset encoding '%s'. It is recommended to use %s", vendor, encoding, recommendedEncoding);
+    }
+
+    private void checkMissingIndexes(KeycloakSessionFactory factory) {
+        var thread = new Thread(new DatabaseIndexChecker(this::getConnection, factory, getSchema()), "db-index-checker");
+        thread.setDaemon(true);
+        thread.start();
     }
 }

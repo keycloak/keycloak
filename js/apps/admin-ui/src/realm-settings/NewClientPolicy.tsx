@@ -3,6 +3,7 @@ import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/li
 import {
   HelpItem,
   KeycloakTextArea,
+  SelectControl,
   TextControl,
   useAlerts,
   useFetch,
@@ -57,10 +58,13 @@ type FormFields = Required<ClientPolicyRepresentation>;
 const defaultValues: FormFields = {
   name: "",
   description: "",
+  mode: "DEFAULT",
   conditions: [],
   enabled: true,
   profiles: [],
 };
+
+const CLIENT_POLICY_MODES = ["DEFAULT", "STRICT"];
 
 type PolicyDetailAttributes = {
   idx: number;
@@ -346,6 +350,10 @@ export default function NewClientPolicy() {
     if (currentPolicy?.description !== undefined) {
       form.setValue("description", currentPolicy.description);
     }
+
+    if (currentPolicy?.mode !== undefined) {
+      form.setValue("mode", currentPolicy.mode);
+    }
   };
 
   const toggleModal = () => {
@@ -501,6 +509,15 @@ export default function NewClientPolicy() {
                 {...form.register("description")}
               />
             </FormGroup>
+            <SelectControl
+              name="mode"
+              label={t("mode")}
+              labelIcon={t("clientPolicyModeHelp")}
+              controller={{
+                defaultValue: "DEFAULT",
+              }}
+              options={CLIENT_POLICY_MODES}
+            />
             <ActionGroup>
               <Button
                 variant="primary"

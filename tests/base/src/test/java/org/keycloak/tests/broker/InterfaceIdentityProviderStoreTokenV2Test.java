@@ -13,8 +13,8 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
@@ -92,7 +92,7 @@ public interface InterfaceIdentityProviderStoreTokenV2Test extends InterfaceIden
         AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         Assertions.assertTrue(internalTokens.isSuccess());
 
-        realm.admin().clients().create(ClientConfigBuilder.create()
+        realm.admin().clients().create(ClientBuilder.create()
                 .clientId("test-app-other")
                 .attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, Boolean.TRUE.toString())
                 .attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_IDP, IDP_ALIAS)
@@ -336,7 +336,7 @@ public interface InterfaceIdentityProviderStoreTokenV2Test extends InterfaceIden
 
     static class ExternalClientConfig implements ClientConfig {
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId("test-app")
                 .serviceAccountsEnabled(true)
                 .directAccessGrantsEnabled(true)

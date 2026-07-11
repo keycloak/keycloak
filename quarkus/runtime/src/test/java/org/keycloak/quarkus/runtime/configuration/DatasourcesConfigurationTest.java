@@ -643,10 +643,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         // make sure we don't overwrite anything from the user input
         var property = tlsJdbcProperties.keySet().iterator().next();
         var urlProperty = "?%s=bar".formatted(property);
-        // oracle does not support --db-url-properties
-        var arg = "oracle".equals(dbKind) ?
-                "--db-url-full-users=" + dbUrl + urlProperty :
-                "--db-url-properties-users=%s".formatted(urlProperty);
+        var arg = "--db-url-properties-users=%s".formatted(urlProperty);
 
         config = createConfigFromCliArguments("--db=dev-mem", "--db-kind-users=" + dbKind, "--db-url-host-users=myhost", "--db-tls-mode-users=verify-server", arg);
         assertEquals(h2Url, config.getConfigValue("quarkus.datasource.jdbc.url").getValue());

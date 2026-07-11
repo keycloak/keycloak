@@ -17,14 +17,22 @@
 
 package org.keycloak.services.resources.admin;
 
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
@@ -32,12 +40,13 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.CollectionUtil;
-import org.keycloak.common.util.TriFunction;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
@@ -50,18 +59,23 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
+import org.keycloak.saml.common.util.TransformerUtil;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -73,6 +87,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+import org.w3c.dom.Document;
 
 import static org.keycloak.protocol.ProtocolMapperUtils.isEnabled;
 
@@ -93,7 +108,7 @@ public class ClientScopeEvaluateResource {
     private final ClientConnection clientConnection;
 
     public ClientScopeEvaluateResource(KeycloakSession session, UriInfo uriInfo, RealmModel realm, AdminPermissionEvaluator auth,
-                                 ClientModel client, ClientConnection clientConnection) {
+                                       ClientModel client, ClientConnection clientConnection) {
         this.uriInfo = uriInfo;
         this.realm = realm;
         this.client = client;
@@ -138,16 +153,16 @@ public class ClientScopeEvaluateResource {
     @Operation(summary = "Return list of all protocol mappers, which will be used when generating tokens issued for particular client.",
             description = "This means protocol mappers assigned to this client directly and protocol mappers assigned to all client scopes of this client.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ProtocolMapperEvaluationRepresentation.class, type = SchemaType.ARRAY))),
-        @APIResponse(responseCode = "403", description = "Forbidden")
+            @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ProtocolMapperEvaluationRepresentation.class, type = SchemaType.ARRAY))),
+            @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<ProtocolMapperEvaluationRepresentation> getGrantedProtocolMappers(@QueryParam("scope") String scopeParam) {
         auth.clients().requireView(client);
 
         return TokenManager.getRequestedClientScopes(session, scopeParam, client, null)
                 .flatMap(mapperContainer -> mapperContainer.getProtocolMappersStream()
-                    .filter(current -> isEnabled(session, current) && Objects.equals(current.getProtocol(), client.getProtocol()))
-                    .map(current -> toProtocolMapperEvaluationRepresentation(current, mapperContainer)));
+                        .filter(current -> isEnabled(session, current) && Objects.equals(current.getProtocol(), client.getProtocol()))
+                        .map(current -> toProtocolMapperEvaluationRepresentation(current, mapperContainer)));
     }
 
     private ProtocolMapperEvaluationRepresentation toProtocolMapperEvaluationRepresentation(ProtocolMapperModel mapper,
@@ -183,8 +198,8 @@ public class ClientScopeEvaluateResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation(summary = "Create JSON with payload of example user info")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Map.class))),
-        @APIResponse(responseCode = "403", description = "Forbidden")
+            @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Map.class))),
+            @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Map<String, Object> generateExampleUserinfo(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId) {
         auth.clients().requireView(client);
@@ -193,7 +208,7 @@ public class ClientScopeEvaluateResource {
 
         logger.debugf("generateExampleUserinfo invoked. User: %s", user.getUsername());
 
-        return sessionAware(user, scopeParam, "", (userSession, clientSessionCtx, audienceClients) -> {
+        return sessionAware(OIDCLoginProtocol.LOGIN_PROTOCOL, user, scopeParam, "", (userSession, clientSessionCtx, audienceClients, authSession) -> {
             AccessToken userInfo = new AccessToken();
             TokenManager tokenManager = new TokenManager();
 
@@ -214,9 +229,9 @@ public class ClientScopeEvaluateResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation(summary = "Create JSON with payload of example id token")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = IDToken.class))),
-        @APIResponse(responseCode = "403", description = "Forbidden"),
-        @APIResponse(responseCode = "404", description = "Not Found")
+            @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = IDToken.class))),
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "404", description = "Not Found")
     })
     public IDToken generateExampleIdToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId, @QueryParam("audience") String audience) {
         auth.clients().requireView(client);
@@ -225,7 +240,7 @@ public class ClientScopeEvaluateResource {
 
         logger.debugf("generateExampleIdToken invoked. User: %s, Scope param: %s, Target Audience: %s", user.getUsername(), scopeParam);
 
-        return sessionAware(user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients) ->
+        return sessionAware(OIDCLoginProtocol.LOGIN_PROTOCOL, user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients, authSession) ->
         {
             TokenManager tokenManager = new TokenManager();
             TokenManager.AccessTokenResponseBuilder response = tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
@@ -252,9 +267,9 @@ public class ClientScopeEvaluateResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation(summary = "Create JSON with payload of example access token")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = AccessToken.class))),
-        @APIResponse(responseCode = "403", description = "Forbidden"),
-        @APIResponse(responseCode = "404", description = "Not Found")
+            @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = AccessToken.class))),
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "404", description = "Not Found")
     })
     public AccessToken generateExampleAccessToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId, @QueryParam("audience") String audience) {
         auth.clients().requireView(client);
@@ -263,7 +278,7 @@ public class ClientScopeEvaluateResource {
 
         logger.debugf("generateExampleAccessToken invoked. User: %s, Scope param: %s, Target Audience: %s", user.getUsername(), scopeParam, audience);
 
-        return sessionAware(user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients) ->
+        return sessionAware(OIDCLoginProtocol.LOGIN_PROTOCOL, user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients, authSession) ->
         {
             TokenManager tokenManager = new TokenManager();
             AccessToken accessToken =  tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
@@ -273,7 +288,75 @@ public class ClientScopeEvaluateResource {
         });
     }
 
-    private<R> R sessionAware(UserModel user, String scopeParam, String audienceParam, TriFunction<UserSessionModel, ClientSessionContext, ClientModel[], R> function) {
+    /**
+     * Create SAMLResponse for the given user and the current client.
+     *
+     * @return
+     */
+    @GET
+    @Path("generate-example-saml-response")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Create JSON with an example SAML response as payload")
+    public SamlExampleResponse generateExampleSamlResponse(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId, @QueryParam("audience") String audience) {
+        auth.clients().requireView(client);
+
+        UserModel user = getUserModel(userId);
+
+        logger.debugf("generateExampleSamlResponse invoked. User: %s, Scope param: %s", user.getUsername(), scopeParam);
+
+        if (audience == null) {
+            // if no audience is given, fallback to current client
+            audience = client.getClientId();
+        }
+
+        return sessionAware(SamlProtocol.LOGIN_PROTOCOL, user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients, authSession) ->
+        {
+            // Capture the SAML response document right before it gets encoded into a (redirect/POST) binding,
+            // so we avoid the deflate/base64/URL round-trip and work regardless of the client's binding or signing config.
+            AtomicReference<Document> capturedDocument = new AtomicReference<>();
+
+            SamlProtocol samlProtocol = new SamlProtocol() {
+                @Override
+                protected Response buildAuthenticatedResponse(AuthenticatedClientSessionModel clientSession, String redirectUri,
+                                                              Document samlDocument, JaxrsSAML2BindingBuilder bindingBuilder) {
+                    capturedDocument.set(samlDocument);
+                    return Response.ok().build(); // discarded; we only want the document
+                }
+            };
+            samlProtocol.setSession(session);
+            samlProtocol.setRealm(realm);
+            samlProtocol.setUriInfo(uriInfo);
+
+            String baseUrl = ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), client.getBaseUrl());
+            authSession.setRedirectUri(baseUrl);
+
+            try (Response ignored = samlProtocol.authenticated(authSession, userSession, clientSessionCtx)) {
+                Document samlDocument = capturedDocument.get();
+                if (samlDocument == null) {
+                    // e.g. NameID could not be resolved or a mapper failed -> authenticated() returned an error page
+                    throw new NotFoundException("Could not generate a SAML response for the given user and client");
+                }
+                return new SamlExampleResponse(prettyPrintSamlResponseDocument(samlDocument));
+            }
+        });
+    }
+
+    private static String prettyPrintSamlResponseDocument(Document document) {
+        try {
+            Transformer transformer = TransformerUtil.getTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            Writer out = new StringWriter();
+            transformer.transform(new DOMSource(document), new StreamResult(out));
+            return out.toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private<R> R sessionAware(String protocol, UserModel user, String scopeParam, String audienceParam, ProtocolResponseGenerator<R> function) {
         AuthenticationSessionModel authSession = null;
         UserSessionModel userSession = null;
         AuthenticationSessionManager authSessionManager = new AuthenticationSessionManager(session);
@@ -283,7 +366,7 @@ public class ClientScopeEvaluateResource {
             authSession = rootAuthSession.createAuthenticationSession(client);
 
             authSession.setAuthenticatedUser(user);
-            authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            authSession.setProtocol(protocol);
             authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
             authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scopeParam);
 
@@ -298,7 +381,7 @@ public class ClientScopeEvaluateResource {
                 clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, audienceClients);
             }
 
-            return function.apply(userSession, clientSessionCtx, audienceClients);
+            return function.generateProtocolResponse(userSession, clientSessionCtx, audienceClients, authSession);
 
         } finally {
             if (authSession != null) {
@@ -322,7 +405,7 @@ public class ClientScopeEvaluateResource {
         }
         return clients.toArray(ClientModel[]::new);
     }
-    
+
     private void validateAudience(AccessToken accessToken, ClientModel[] requestedAudience) {
         List<String> requestedAudienceClientIds = Stream.of(requestedAudience)
                 .map(ClientModel::getClientId)
@@ -340,9 +423,17 @@ public class ClientScopeEvaluateResource {
         }
 
         UserModel user = session.users().getUserById(realm, userId);
+
+        try {
+            auth.users().requireView(user);
+        } catch (ForbiddenException e) {
+            throw new ForbiddenException("You have no access to this user");
+        }
+
         if (user == null) {
             throw new NotFoundException("No user found");
         }
+
         return user;
     }
 
@@ -413,5 +504,24 @@ public class ClientScopeEvaluateResource {
         public void setProtocolMapper(String protocolMapper) {
             this.protocolMapper = protocolMapper;
         }
+    }
+
+    public static class SamlExampleResponse {
+
+        private final String samlResponse;
+
+        public SamlExampleResponse(String samlResponse) {
+            this.samlResponse = samlResponse;
+        }
+
+        @JsonValue
+        public String getSamlResponse() {
+            return samlResponse;
+        }
+    }
+
+    interface ProtocolResponseGenerator<T> {
+
+        T generateProtocolResponse(UserSessionModel userSessionModel, ClientSessionContext clientSessionContext, ClientModel[] audienceClients, AuthenticationSessionModel authSession);
     }
 }

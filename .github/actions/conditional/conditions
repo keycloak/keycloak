@@ -34,6 +34,8 @@ model/                                      ci-store
 testsuite/model/                            ci-store
 operator/                                   operator
 
+testsuite/integration-arquillian/tests/other/sssd/   ci-sssd
+
 docs/guides/                                guides
 docs/documentation/                         documentation
 
@@ -57,7 +59,5 @@ js/libs/ui-shared/                          ci ci-webauthn
 ## CodeQL TypeScript
 *.ts                                        codeql-typescript
 *.tsx                                       codeql-typescript
-
-testsuite::database-suite                   ci-store
 
 rest/admin-v2/                              admin-v2

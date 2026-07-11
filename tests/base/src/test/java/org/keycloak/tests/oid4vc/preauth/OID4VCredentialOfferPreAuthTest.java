@@ -5,11 +5,13 @@ import java.util.List;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
@@ -21,6 +23,7 @@ import org.keycloak.util.JsonSerialization;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -62,6 +65,41 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         } finally {
             userRep.setEnabled(true);
             userResource.update(userRep);
+        }
+    }
+
+    @Test
+    public void testPreAuthOffer_DisabledClient() throws Exception {
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        // Create Pre-Authorized CredentialOffer
+        //
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        // Disable the client
+        ClientRepresentation clientRep = testRealm.admin().clients().get(ctx.getClient().getId()).toRepresentation();
+        clientRep.setEnabled(false);
+        testRealm.admin().clients().get(ctx.getClient().getId()).update(clientRep);
+
+        try {
+            // Attempt to redeem Pre-Authorized Code for AccessToken should fail
+            //
+            AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+            assertFalse(tokenResponse.isSuccess(), "Token request should have failed for disabled client");
+            assertEquals("invalid_request", tokenResponse.getError());
+            assertTrue(tokenResponse.getErrorDescription().contains("disabled"),
+                    "Error description should mention disabled: " + tokenResponse.getErrorDescription());
+        } finally {
+            // Re-enable client
+            clientRep.setEnabled(true);
+            testRealm.admin().clients().get(ctx.getClient().getId()).update(clientRep);
         }
     }
 
@@ -161,7 +199,7 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         assertEquals("did:web:test.org", jsonWebToken.getIssuer());
         Object vc = jsonWebToken.getOtherClaims().get("vc");
         VerifiableCredential credential = JsonSerialization.mapper.convertValue(vc, VerifiableCredential.class);
-        assertEquals(List.of(scope), credential.getType());
+        assertEquals(List.of(CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE, scope), credential.getType());
         assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
         assertEquals(expUser + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
     }

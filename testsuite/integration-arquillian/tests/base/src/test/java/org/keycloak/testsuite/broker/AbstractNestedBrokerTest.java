@@ -29,7 +29,7 @@ public abstract class AbstractNestedBrokerTest extends AbstractBaseBrokerTest {
     /** Logs in subconsumer realm via consumer IDP via provider IDP and updates account information */
     protected void logInAsUserInNestedIDPForFirstTime() {
         String redirectUri = getAuthServerRoot() + "realms/" + nbc.subConsumerRealmName() + "/account";
-        oauth.clientId("account").redirectUri(redirectUri);
+        oauth.client("account").redirectUri(redirectUri);
         loginPage.open(nbc.subConsumerRealmName());
 
         waitForPage(driver, "sign in to", true);

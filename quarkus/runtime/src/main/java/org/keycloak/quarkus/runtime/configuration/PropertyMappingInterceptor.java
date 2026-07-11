@@ -27,7 +27,6 @@ import java.util.stream.StreamSupport;
 import jakarta.annotation.Priority;
 
 import org.keycloak.config.OptionCategory;
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
@@ -38,7 +37,6 @@ import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Priorities;
 import org.apache.commons.collections4.IteratorUtils;
 
-import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 /**
@@ -63,6 +61,8 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
     private static final ThreadLocal<Boolean> disable = new ThreadLocal<>();
+
+    private Boolean augmenting;
 
     public static void disable() {
         disable.set(true);
@@ -93,7 +93,7 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
         final Set<PropertyMapper<?>> mappersWithoutValues = PropertyMappers.getMappers();
 
-        boolean filterRuntime = isRebuild() || Boolean.getBoolean(Environment.KC_TEST_REBUILD);
+        boolean filterRuntime = isAugmenting(context);
 
         // this will return different iterations when our configuration is initialized vs not.
         // when the configuration is not initialized, we only need to worry about providing
@@ -153,6 +153,14 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
         return IteratorUtils.chainedIterator(baseStream.iterator(), inferredValueStream.iterator());
     }
 
+    private boolean isAugmenting(ConfigSourceInterceptorContext context) {
+        if (augmenting == null) {
+            // see BuildTimeConfigurationReader - if a sys properties are excluded, then we're augmenting
+            augmenting = context.proceed("file.separator") == null;
+        }
+        return augmenting;
+    }
+
     private void appendWildcardsMappedFrom(ConfigSourceInterceptorContext context, String name,
             final PropertyMapper<?> mapper, List<String> names) {
         var wildCards = PropertyMappers.getWildcardsMappedFrom(mapper.getOption());
@@ -210,6 +218,6 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
         }
 
         // Call through NestedPropertyMappingInterceptor to track what we are currently getting the value for
-        return NestedPropertyMappingInterceptor.getValueFromPropertyMappers(context, name);
+        return NestedPropertyMappingInterceptor.getValueFromPropertyMappers(context, name, isAugmenting(context));
     }
 }

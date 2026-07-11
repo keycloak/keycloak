@@ -67,7 +67,7 @@ public class KcSamlBrokerAllowedClockSkewTest extends AbstractInitializedBaseBro
 
           .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
 
-          .addStep(() -> KcSamlBrokerAllowedClockSkewTest.this.setTimeOffset(-30)) // offset to the past to invalidate the request
+          .addStep(() -> KcSamlBrokerAllowedClockSkewTest.this.timeOffSet.set(-30)) // offset to the past to invalidate the request
           .processSamlResponse(SamlClient.Binding.POST)    // Response from producer IdP should fail
             .build()
             .execute(hr -> assertThat(hr, statusCodeIsHC(Response.Status.BAD_REQUEST)));
@@ -93,7 +93,7 @@ public class KcSamlBrokerAllowedClockSkewTest extends AbstractInitializedBaseBro
 
               .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
 
-              .addStep(() -> KcSamlBrokerAllowedClockSkewTest.this.setTimeOffset(-30)) // offset to the past but inside the clock skew
+              .addStep(() -> KcSamlBrokerAllowedClockSkewTest.this.timeOffSet.set(-30)) // offset to the past but inside the clock skew
               .processSamlResponse(SamlClient.Binding.POST)    // Response from producer IdP expired but valid with the clock skew
                 .build()
 

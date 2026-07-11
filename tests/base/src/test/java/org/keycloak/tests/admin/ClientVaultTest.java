@@ -26,9 +26,11 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -104,28 +106,28 @@ class ClientVaultTest {
 
     public static class ClientTestRealmConfig implements RealmConfig {
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.addClient("myclient")
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.clients(ClientBuilder.create("myclient")
                     .publicClient(false)
                     .directAccessGrantsEnabled(true)
-                    .secret("${vault.client_secret}");
+                    .secret("${vault.client_secret}"));
 
-            realm.addClient("myclient-with-invalid-vault-reference")
+            realm.clients(ClientBuilder.create("myclient-with-invalid-vault-reference")
                     .publicClient(false)
                     .directAccessGrantsEnabled(true)
-                    .secret("${vault.non_existing_client_secret}");
+                    .secret("${vault.non_existing_client_secret}"));
 
-            realm.addClient("myclient-jwt-client-secret-authenticator")
+            realm.clients(ClientBuilder.create("myclient-jwt-client-secret-authenticator")
                     .publicClient(false)
                     .directAccessGrantsEnabled(true)
                     .authenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID)
-                    .secret("${vault.client_secret}");
+                    .secret("${vault.client_secret}"));
 
-            realm.addUser("test-user@localhost")
+            realm.users(UserBuilder.create("test-user@localhost")
                     .email("test-user@localhost")
                     .password("password")
                     .name("first", "last")
-                    .enabled(true);
+                    .enabled(true));
             return realm;
         }
     }

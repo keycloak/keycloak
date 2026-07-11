@@ -67,7 +67,7 @@ public class ManagedClient extends ManagedTestResource {
         // cleanup().resetToOriginalRepresentation(rep);
         dirty();
 
-        ClientConfigBuilder configBuilder = ClientConfigBuilder.update(rep);
+        ClientBuilder configBuilder = ClientBuilder.update(rep);
         for (ManagedClient.ClientUpdate update : updates) {
             configBuilder = update.update(configBuilder);
         }
@@ -98,7 +98,7 @@ public class ManagedClient extends ManagedTestResource {
 
     public interface ClientUpdate {
 
-        ClientConfigBuilder update(ClientConfigBuilder client);
+        ClientBuilder update(ClientBuilder client);
 
     }
 

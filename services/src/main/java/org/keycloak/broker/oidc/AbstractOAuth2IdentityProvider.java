@@ -732,7 +732,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             
             if (state == null) {
                 logErroneousRedirectUrlError("Redirection URL does not contain a state parameter", providerConfig);
-                return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_MISSING_STATE_ERROR);
+                return errorIdentityProviderLogin(Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_MISSING_STATE_ERROR);
             }
 
             try {
@@ -755,7 +755,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 if (authorizationCode == null) {
                     logErroneousRedirectUrlError("Redirection URL neither contains a code nor error parameter",
                             providerConfig);
-                    return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_MISSING_CODE_OR_ERROR_ERROR);
+                    return errorIdentityProviderLogin(Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_MISSING_CODE_OR_ERROR_ERROR);
                 }
 
                 SimpleHttpRequest simpleHttp = generateTokenRequest(authorizationCode);
@@ -768,7 +768,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     if (!success) {
                         logger.errorf("Unexpected response from token endpoint %s. status=%s, response=%s",
                                 simpleHttp.getUrl(), status, response);
-                        return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                        return errorIdentityProviderLogin(Response.Status.BAD_GATEWAY, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                     }
                 }
 
@@ -788,13 +788,13 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 return e.getResponse();
             } catch (IdentityBrokerException e) {
                 if (e.getMessageCode() != null) {
-                    return errorIdentityProviderLogin(e.getMessageCode());
+                    return errorIdentityProviderLogin(Response.Status.BAD_GATEWAY, e.getMessageCode());
                 }
                 logger.error("Failed to make identity provider oauth callback", e);
-                return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                return errorIdentityProviderLogin(Response.Status.BAD_GATEWAY, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             } catch (Exception e) {
                 logger.error("Failed to make identity provider oauth callback", e);
-                return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                return errorIdentityProviderLogin(Response.Status.INTERNAL_SERVER_ERROR, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
         }
 
@@ -805,10 +805,10 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             logger.errorf("%s. providerId=%s, redirectionUrl=%s", mainMessage, providerId, redirectionUrl);
         }
 
-        private Response errorIdentityProviderLogin(String message) {
+        private Response errorIdentityProviderLogin(Response.Status status, String message) {
             event.event(EventType.IDENTITY_PROVIDER_LOGIN);
             event.error(Errors.IDENTITY_PROVIDER_LOGIN_FAILURE);
-            return ErrorPage.error(session, null, Response.Status.BAD_GATEWAY, message);
+            return ErrorPage.error(session, null, status, message);
         }
 
         public SimpleHttpRequest generateTokenRequest(String authorizationCode) {
@@ -928,18 +928,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     final public BrokeredIdentityContext exchangeExternal(TokenExchangeProvider tokenExchangeProvider, TokenExchangeContext tokenExchangeContext) {
         if (!supportsExternalExchange()) return null;
 
-        BrokeredIdentityContext context;
-        int teVersion = tokenExchangeProvider.getVersion();
-        switch (teVersion) {
-            case 1:
-                context = exchangeExternalTokenV1Impl(tokenExchangeContext.getEvent(), tokenExchangeContext.getFormParams());
-                break;
-            case 2:
-                context = exchangeExternalTokenV2Impl(tokenExchangeContext);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported token exchange version " + teVersion);
-        }
+        BrokeredIdentityContext context = exchangeExternalImpl(tokenExchangeContext.getEvent(), tokenExchangeContext.getFormParams());
 
         if (context != null) {
             context.setIdp(this);
@@ -948,27 +937,15 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     /**
-     * Usage with token-exchange V1
+     * Usage with external-internal token-exchange
      *
      * @param event event builder
      * @param params parameters of the token-exchange request
      * @return brokered identity context with the details about user from the IDP
      */
-    protected BrokeredIdentityContext exchangeExternalTokenV1Impl(EventBuilder event, MultivaluedMap<String, String> params) {
+    protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
         return exchangeExternalUserInfoValidationOnly(event, params);
 
-    }
-
-    /**
-     * Usage with external-internal token-exchange v2.
-     *
-     * @param tokenExchangeContext data about token-exchange request
-     * @return brokered identity context with the details about user from the IDP
-     */
-    protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
-        // Needs to be properly implemented for every provider to make sure it verifies external-token in appropriate way to validate user and also if the external-token
-        // was issued to the proper audience
-        throw new UnsupportedOperationException("Not yet supported to verify the external token of the identity provider " + getConfig().getAlias());
     }
 
     /**

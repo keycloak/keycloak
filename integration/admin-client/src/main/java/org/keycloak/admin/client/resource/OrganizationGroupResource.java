@@ -43,6 +43,15 @@ public interface OrganizationGroupResource {
     @Produces(MediaType.APPLICATION_JSON)
     GroupRepresentation toRepresentation(@QueryParam("subGroupsCount") boolean subGroupsCount);
 
+    /**
+     * Role mapping resource.
+     *
+     * @return a role mapping resource.
+     * @since Keycloak server 26.7.0
+     */
+    @Path("role-mappings")
+    RoleMappingResource roles();
+
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     Response update(GroupRepresentation rep);

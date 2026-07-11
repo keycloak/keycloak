@@ -11,7 +11,7 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
@@ -42,7 +42,7 @@ public class RemoveUserAttributeStepTest extends AbstractWorkflowTest {
                 ).build());
 
         // create user with attributes a, b and c
-        UserRepresentation user = UserConfigBuilder.create().username("attruser").attribute("a", "1").attribute("b", "2").attribute("c", "3").build();
+        UserRepresentation user = UserBuilder.create().username("attruser").attribute("a", "1").attribute("b", "2").attribute("c", "3").build();
 
         String userId;
         try (Response response = managedRealm.admin().users().create(user)) {

@@ -5,6 +5,7 @@ import java.util.List;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Root;
 
+import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.filter.ScimFilterParserBaseVisitor;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
@@ -106,37 +107,12 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
     public JPAFilterResult visitComparisonExpression(ScimFilterParser.ComparisonExpressionContext ctx) {
         String scimAttrPath = resolveAttrPath(ctx.ATTRPATH().getText());
         String operator = ctx.compareOp().getText().toLowerCase();
-        String value = extractValue(ctx.compValue());
+        String value = FilterUtils.extractCompValue(ctx.compValue());
 
         return predicateProvider.createPredicate(scimAttrPath, operator, value);
     }
 
     private String resolveAttrPath(String attrPath) {
         return parentPath != null ? parentPath + "." + attrPath : attrPath;
-    }
-
-    private String extractValue(ScimFilterParser.CompValueContext ctx) {
-        if (ctx.STRING() != null) {
-            // Remove quotes and unescape per JSON string rules
-            String raw = ctx.STRING().getText();
-            return unescapeJsonString(raw.substring(1, raw.length() - 1));
-        }
-        if (ctx.TRUE() != null) return "true";
-        if (ctx.FALSE() != null) return "false";
-        if (ctx.NULL() != null) return null;
-        if (ctx.NUMBER() != null) return ctx.NUMBER().getText();
-        return null;
-    }
-
-    private String unescapeJsonString(String s) {
-        return s.replace("\\\"", "\"")
-                .replace("\\\\", "\\")
-                .replace("\\/", "/")
-                .replace("\\b", "\b")
-                .replace("\\f", "\f")
-                .replace("\\n", "\n")
-                .replace("\\r", "\r")
-                .replace("\\t", "\t");
-        // Note: Unicode escape sequences (backslash-u followed by 4 hex digits) are handled by ANTLR lexer
     }
 }

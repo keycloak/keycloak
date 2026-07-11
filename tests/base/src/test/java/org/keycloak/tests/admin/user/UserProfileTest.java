@@ -37,7 +37,7 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
 
@@ -167,6 +167,7 @@ public class UserProfileTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void defaultMaxResults() {
         UserProfileResource upResource = managedRealm.admin().users().userProfile();
         UPConfig upConfig = upResource.getConfiguration();
@@ -178,7 +179,7 @@ public class UserProfileTest extends AbstractUserTest {
             UsersResource users = managedRealm.admin().users();
 
             for (int i = 0; i < 110; i++) {
-                users.create(UserConfigBuilder.create().username("test2-" + i).attribute("aName", "aValue").build()).close();
+                users.create(UserBuilder.create().username("test2-" + i).attribute("aName", "aValue").build()).close();
             }
 
             List<UserRepresentation> result = users.search("test2", null, null);
@@ -198,6 +199,7 @@ public class UserProfileTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void defaultMaxResultsBrief() {
         UserProfileResource upResource = managedRealm.admin().users().userProfile();
         UPConfig upConfig = upResource.getConfiguration();
@@ -209,7 +211,7 @@ public class UserProfileTest extends AbstractUserTest {
             UsersResource users = managedRealm.admin().users();
 
             for (int i = 0; i < 110; i++) {
-                users.create(UserConfigBuilder.create().username("test-" + i).attribute("aName", "aValue").build()).close();
+                users.create(UserBuilder.create().username("test-" + i).attribute("aName", "aValue").build()).close();
             }
 
             List<UserRepresentation> result = users.search("test", null, null, true);
@@ -232,7 +234,7 @@ public class UserProfileTest extends AbstractUserTest {
 
         try {
             UsersResource users = managedRealm.admin().users();
-            UserRepresentation user = UserConfigBuilder.create().username("test-user").attribute("aName", "aValue").build();
+            UserRepresentation user = UserBuilder.create().username("test-user").attribute("aName", "aValue").build();
             try (Response response = users.create(user)) {
                 user.setId(ApiUtil.getCreatedId(response));
             }

@@ -33,4 +33,5 @@ public final class WorkflowConstants {
     public static final String CONFIG_SCHEDULE_AFTER = "schedule." + CONFIG_AFTER;
     public static final String CONFIG_BATCH_SIZE = "batch-size";
     public static final String CONFIG_SCHEDULE_BATCH_SIZE = "schedule." + CONFIG_BATCH_SIZE;
+    public static final String CONFIG_LAST_SCHEDULE_RUN = "schedule.lastRun";
 }

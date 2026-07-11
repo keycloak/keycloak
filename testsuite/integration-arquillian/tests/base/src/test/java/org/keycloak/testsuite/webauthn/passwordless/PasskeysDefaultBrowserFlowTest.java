@@ -28,6 +28,7 @@ import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
@@ -44,7 +45,6 @@ import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
-import static org.hamcrest.Matchers.nullValue;
 
 /**
  *
@@ -156,12 +156,11 @@ public class PasskeysDefaultBrowserFlowTest extends AbstractWebAuthnVirtualTest 
         appPage.assertCurrent();
 
         // expect success login
-        events.expectLogin()
-                .user(user.getId())
-                .detail(Details.USERNAME, user.getUsername())
-                .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
-                .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .userId(user.getId())
+                .details(Details.USERNAME, user.getUsername())
+                .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
 
         logout();
     }
@@ -178,11 +177,10 @@ public class PasskeysDefaultBrowserFlowTest extends AbstractWebAuthnVirtualTest 
         // login using password
         loginPage.login(USERNAME, getPassword(USERNAME));
         appPage.assertCurrent();
-        events.expectLogin()
-                .user(user.getId())
-                .detail(Details.USERNAME, USERNAME)
-                .detail(Details.CREDENTIAL_TYPE, nullValue())
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .userId(user.getId())
+                .details(Details.USERNAME, USERNAME)
+                .details(Details.CREDENTIAL_TYPE, null);
 
         logout();
     }
@@ -204,11 +202,10 @@ public class PasskeysDefaultBrowserFlowTest extends AbstractWebAuthnVirtualTest 
         oneTimeCodePage.sendCode(new TimeBasedOTP().generateTOTP(totpSecret));
         appPage.assertCurrent();
 
-        events.expectLogin()
-                .user(user.getId())
-                .detail(Details.USERNAME, USERNAME)
-                .detail(Details.CREDENTIAL_TYPE, nullValue())
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .userId(user.getId())
+                .details(Details.USERNAME, USERNAME)
+                .details(Details.CREDENTIAL_TYPE, null);
 
         logout();
     }

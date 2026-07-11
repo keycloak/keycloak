@@ -68,7 +68,7 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
             // It shouldn't be possible to register the authenticator
             getVirtualAuthManager().useAuthenticator(DEFAULT_BLE.getOptions());
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmData.getAuthenticatorAttachment(), is(AuthenticatorAttachment.PLATFORM.getValue()));
             assertThat(realmData.getUserVerificationRequirement(), is(UserVerificationRequirement.DISCOURAGED.getValue()));
 
@@ -100,7 +100,7 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
                 .setWebAuthnPolicyAuthenticatorAttachment(attachment.getValue())
                 .update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmData.getAuthenticatorAttachment(), is(attachment.getValue()));
 
             registerDefaultUser(shouldSuccess);

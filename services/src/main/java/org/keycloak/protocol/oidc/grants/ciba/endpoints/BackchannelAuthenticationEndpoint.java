@@ -30,6 +30,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -53,6 +54,7 @@ import org.keycloak.protocol.oidc.grants.ciba.resolvers.CIBALoginUserResolver;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -180,7 +182,8 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "missing parameter : scope",
                     Response.Status.BAD_REQUEST);
         }
-        if (!TokenManager.isValidScope(session, scope, client, user)) {
+        // User is only identified (login_hint), not authenticated yet — validate without user to prevent username enumeration via scope parameters
+        if (!TokenManager.isValidScope(session, scope, client)) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_SCOPE, "Invalid scopes: " + scope,
                     Response.Status.BAD_REQUEST);
         }
@@ -290,8 +293,16 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
                     "invalid user hint", Response.Status.BAD_REQUEST);
         }
 
-        if (user == null || !user.isEnabled())
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid user", Response.Status.BAD_REQUEST);
+
+        BruteForceProtector protector = session.getProvider(BruteForceProtector.class);
+        boolean isInvalidUser = (user == null || !user.isEnabled());
+        if (!isInvalidUser && AuthenticatorUtils.getDisabledByBruteForceEventError(protector, session, realm, user) != null) {
+            isInvalidUser = true;
+        }
+
+        if (isInvalidUser) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_user", Response.Status.BAD_REQUEST);
+        }
 
         return user;
     }

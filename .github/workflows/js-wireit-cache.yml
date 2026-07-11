@@ -1,0 +1,34 @@
+name: Warm JS Wireit cache
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'js/**'
+      - 'services/**'
+      - 'rest/admin-ui-ext/**'
+      - 'themes/**'
+      - '.github/actions/pnpm-setup/**'
+      - '.github/workflows/js-wireit-cache.yml'
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: read
+
+jobs:
+  warm-wireit-cache:
+    name: Warm Wireit cache on main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - uses: ./.github/actions/pnpm-setup
+
+      - name: Build Keycloak Admin Client
+        run: pnpm --fail-if-no-match --filter @keycloak/keycloak-admin-client build
+        working-directory: js

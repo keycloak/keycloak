@@ -3,6 +3,7 @@ package org.keycloak.admin.internal.openapi;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -11,7 +12,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.keycloak.OAuth2Constants;
+import org.keycloak.services.client.ClientField;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -22,6 +23,7 @@ import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.media.Discriminator;
 import org.eclipse.microprofile.openapi.models.media.Schema;
+import org.eclipse.microprofile.openapi.models.parameters.Parameter;
 import org.eclipse.microprofile.openapi.models.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.models.security.SecurityScheme;
 import org.jboss.jandex.AnnotationInstance;
@@ -35,14 +37,25 @@ import static org.keycloak.utils.StringUtil.isNullOrEmpty;
 
 public class OASModelFilter implements OASFilter {
 
+    private static final String SORT_PARAMETER_NAME = "sort";
+    private static final String ALLOWED_FIELDS_MARKER = " Allowed fields: ";
+    private static final String CLIENTS_LIST_PATH_SUFFIX = "/clients/v2";
+    private static final Map<String, Supplier<String>> SORT_ALLOWED_FIELDS_BY_PATH_SUFFIX = Map.of(
+            CLIENTS_LIST_PATH_SUFFIX, ClientField::allowedApiNames
+    );
+
     private final Logger log = Logger.getLogger(OASModelFilter.class);
+    private final IndexView indexView;
     private final Map<String, ClassInfo> simpleNameToClassInfoMap = new HashMap<>();
+    private final ValidationAnnotationScanner validationScanner;
 
     public static final String REF_PREFIX = "#/components/schemas/";
 
     public OASModelFilter(IndexView indexView) {
         log.debug("Index size: " + indexView.getKnownClasses().size());
+        this.indexView = indexView;
 
+        this.validationScanner = new ValidationAnnotationScanner(indexView);
         indexView.getKnownClasses().forEach(classInfo -> {
             simpleNameToClassInfoMap.put(classInfo.simpleName(), classInfo);
         });
@@ -82,6 +95,9 @@ public class OASModelFilter implements OASFilter {
 
         addDescriptionsToSchemasProperties(openAPI);
         addSecurityScheme(openAPI);
+
+        addJavaExampleExtensions(openAPI);
+        enhanceSortParameterDescriptions(openAPI);
     }
 
     /**
@@ -226,7 +242,7 @@ public class OASModelFilter implements OASFilter {
         SecurityScheme bearerScheme = OASFactory.createSecurityScheme()
                 .type(SecurityScheme.Type.HTTP)
                 .scheme("bearer")
-                .bearerFormat(OAuth2Constants.JWT)
+                .bearerFormat("JWT")
                 .description("Bearer token authentication using a Keycloak access token");
 
         if (openAPI.getComponents() == null) {
@@ -285,16 +301,104 @@ public class OASModelFilter implements OASFilter {
             if (schema.getProperties() != null) {
                 ClassInfo classInfo = simpleNameToClassInfoMap.get(schemaName);
                 if (classInfo == null) {
-                    log.debugf("No Java class found for schema '%s' — property descriptions from  the '%s' annotation will not be added", schemaName, JsonPropertyDescription.class.getName());
+                    log.debugf("No Java class found for schema '%s' — property descriptions from the '%s' annotation will not be added", schemaName, JsonPropertyDescription.class.getName());
                 } else {
+                    // Get class-level validation descriptions (e.g., @ServerManagedFieldUnmodified, @ClientSecretNotBlank)
+                    Map<String, String> classLevelValidations = validationScanner.buildClassLevelDescriptions(classInfo);
+
                     schema.getProperties().forEach((propertyName, propertySchema) -> {
+                        // First, ensure we have the base description from @JsonPropertyDescription
                         if (isNullOrEmpty(propertySchema.getDescription())) {
                             propertySchema.setDescription(findJsonPropertyDescription(classInfo, propertyName));
+                        }
+
+                        // Add machine-readable validation schema properties
+                        validationScanner.applySchemaProperties(classInfo, propertyName, propertySchema);
+
+                        // Build validation description from field-level annotations
+                        String fieldValidation = validationScanner.buildDescription(classInfo, propertyName);
+
+                        // Include class-level validation if this field is affected
+                        String classLevelValidation = classLevelValidations.get(propertyName);
+                        if (classLevelValidation != null) {
+                            fieldValidation = fieldValidation != null
+                                    ? fieldValidation + "; " + classLevelValidation
+                                    : classLevelValidation;
+                        }
+
+                        // Append validation description if any (strip prior suffix: SmallRye may invoke the filter repeatedly)
+                        if (fieldValidation != null) {
+                            fieldValidation = dedupeConstraintPhrases(fieldValidation);
+                            String existingDesc = propertySchema.getDescription();
+                            String base = stripValidationSuffix(existingDesc);
+                            String newDesc = isNullOrEmpty(base)
+                                    ? "Validation: " + fieldValidation
+                                    : base + ". Validation: " + fieldValidation;
+                            propertySchema.setDescription(collapseMirroredValidationClause(newDesc));
+                            log.debugf("Added validation description to '%s.%s': %s", schemaName, propertyName, fieldValidation);
                         }
                     });
                 }
             }
         });
+    }
+
+    /**
+     * Removes validation clauses previously appended by this filter so repeated OpenAPI filter passes
+     * do not stack duplicate {@code Validation:} text.
+     */
+    private static String stripValidationSuffix(String description) {
+        if (isNullOrEmpty(description)) {
+            return description;
+        }
+        int idx = description.indexOf(". Validation: ");
+        if (idx >= 0) {
+            return description.substring(0, idx);
+        }
+        if (description.startsWith("Validation: ")) {
+            return "";
+        }
+        return description;
+    }
+
+    private static String dedupeConstraintPhrases(String joined) {
+        if (joined == null) {
+            return null;
+        }
+        String[] parts = joined.split("; ");
+        Set<String> seen = new LinkedHashSet<>();
+        for (String part : parts) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                seen.add(trimmed);
+            }
+        }
+        return String.join("; ", seen);
+    }
+
+    /**
+     * Collapses {@code X. Validation: X} when {@code X} is repeated verbatim (duplicate filter passes).
+     */
+    private static String collapseMirroredValidationClause(String description) {
+        if (isNullOrEmpty(description)) {
+            return description;
+        }
+        String marker = ". Validation: ";
+        String current = description;
+        while (true) {
+            int i = current.indexOf(marker);
+            if (i <= 0) {
+                break;
+            }
+            String first = current.substring(0, i);
+            String second = current.substring(i + marker.length());
+            if (first.equals(second)) {
+                current = first;
+            } else {
+                break;
+            }
+        }
+        return current;
     }
 
     private String findJsonPropertyDescription(ClassInfo classInfo, String fieldName) {
@@ -311,4 +415,65 @@ public class OASModelFilter implements OASFilter {
     private static boolean hasNoSchemas(OpenAPI openAPI) {
         return openAPI.getComponents() == null || openAPI.getComponents().getSchemas() == null;
     }
+
+    private void addJavaExampleExtensions(OpenAPI openAPI) {
+        new JavaDocExampleGenerator(indexView).generate(openAPI);
+    }
+
+    private void enhanceSortParameterDescriptions(OpenAPI openAPI) {
+        if (openAPI.getPaths() == null || openAPI.getPaths().getPathItems().isEmpty()) {
+            return;
+        }
+
+        openAPI.getPaths().getPathItems().forEach((path, pathItem) -> {
+            Supplier<String> allowedFields = resolveSortAllowedFields(path);
+            if (allowedFields == null) {
+                return;
+            }
+            String allowedApiNames = allowedFields.get();
+            enhanceSortParameters(pathItem.getParameters(), allowedApiNames);
+            pathItem.getOperations().forEach((method, operation) ->
+                    enhanceSortParameters(operation.getParameters(), allowedApiNames));
+        });
+    }
+
+    private static Supplier<String> resolveSortAllowedFields(String path) {
+        for (Map.Entry<String, Supplier<String>> entry : SORT_ALLOWED_FIELDS_BY_PATH_SUFFIX.entrySet()) {
+            if (path.endsWith(entry.getKey())) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
+    private static void enhanceSortParameters(List<Parameter> parameters, String allowedApiNames) {
+        if (parameters == null) {
+            return;
+        }
+        for (Parameter parameter : parameters) {
+            if (SORT_PARAMETER_NAME.equals(parameter.getName())) {
+                parameter.setDescription(enhanceSortParameterDescription(parameter.getDescription(), allowedApiNames));
+            }
+        }
+    }
+
+    private static String enhanceSortParameterDescription(String description, String allowedApiNames) {
+        String base = stripAllowedFieldsSuffix(description);
+        if (isNullOrEmpty(base)) {
+            return "Allowed fields: " + allowedApiNames + ".";
+        }
+        return base + ALLOWED_FIELDS_MARKER + allowedApiNames + ".";
+    }
+
+    private static String stripAllowedFieldsSuffix(String description) {
+        if (isNullOrEmpty(description)) {
+            return description;
+        }
+        int idx = description.indexOf(ALLOWED_FIELDS_MARKER);
+        if (idx >= 0) {
+            return description.substring(0, idx);
+        }
+        return description;
+    }
+
 }

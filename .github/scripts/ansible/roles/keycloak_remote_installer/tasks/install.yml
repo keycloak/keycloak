@@ -41,6 +41,7 @@
   file:
     path: "{{ kc_home }}"
     state: directory
+    owner: "{{ ansible_ssh_user }}"
 
 - name: Install Keycloak src on the remote hosts
   unarchive:
@@ -51,6 +52,5 @@
 - name: Install Maven repository on the remote hosts
   unarchive:
     src: "{{ maven_archive }}"
-    creates: "{{ kc_home }}"
-    dest: "{{ kc_home }}"
+    dest: "/home/{{ ansible_ssh_user }}"
     owner: "{{ ansible_ssh_user }}"

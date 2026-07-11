@@ -20,6 +20,9 @@ package org.keycloak.protocol.oid4vc.issuance;
 import java.io.IOException;
 import java.security.PublicKey;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -48,6 +51,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
+import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -64,6 +68,7 @@ import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -87,6 +92,7 @@ import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerException;
 import org.keycloak.protocol.oid4vc.model.AttestationProof;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer.BatchCredentialIssuance;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
@@ -104,7 +110,7 @@ import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
-import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
+import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
@@ -133,6 +139,7 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+import static org.keycloak.constants.OID4VCIConstants.BATCH_CREDENTIAL_ISSUANCE_DEFAULT_MAX_BATCH_SIZE;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.getSupportedCredentials;
 import static org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant.AUTH_CODE_GRANT_TYPE;
@@ -174,7 +181,11 @@ public class OID4VCIssuerEndpoint {
     private AuthenticationManager.AuthResult cachedAuthResult;
 
     public static final String CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY = "credentialOfferLifespanS";
-    public static final int DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S = 30;
+
+    /**
+     * Default credential-offer lifespan is same as default "User-Initiated Action Lifespan" (5 minutes)
+     */
+    public static final int DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S = Constants.DEFAULT_ACCESS_CODE_LIFESPAN_USER_ACTION;
 
     public static final String DEFLATE_COMPRESSION = "DEF";
     public static final String NONCE_PATH = "nonce";
@@ -266,6 +277,29 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
+     * Validates if the REST credential offer feature is enabled.
+     * If disabled, logs the status and throws
+     * a {@link CorsErrorResponseException}.
+     */
+    private void checkRestCredentialOfferEnabled(EventBuilder eventBuilder) {
+        if (!Profile.isFeatureEnabled(org.keycloak.common.Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER)) {
+            LOGGER.debugf("REST credential offer endpoint is disabled. Feature oid4vci-rest-credential-offer is not enabled.");
+            if (eventBuilder != null) {
+                eventBuilder.error(ErrorType.INVALID_CLIENT.getValue());
+            }
+            if (cors == null) {
+                configureCors(false);
+            }
+            throw new CorsErrorResponseException(
+                    cors,
+                    ErrorType.INVALID_CLIENT.getValue(),
+                    "REST credential offer functionality is not enabled",
+                    Response.Status.FORBIDDEN
+            );
+        }
+    }
+
+    /**
      * Validates whether the authenticated client is enabled for OID4VCI features.
      * <p>
      * If the client is not enabled, this method logs the status and throws a
@@ -279,9 +313,18 @@ public class OID4VCIssuerEndpoint {
         ClientModel client = clientSession.getClient();
 
         boolean oid4vciEnabled = Boolean.parseBoolean(client.getAttributes().get(OID4VCI_ENABLED_ATTRIBUTE_KEY));
+        boolean clientEnabled = client.isEnabled();
+        String errorDescription = null;
 
         if (!oid4vciEnabled) {
             LOGGER.debugf("Client '%s' is not enabled for OID4VCI features.", client.getClientId());
+            errorDescription = "Client not enabled for OID4VCI";
+        }
+        if (!clientEnabled) {
+            LOGGER.debugf("Client '%s' disabled.", client.getClientId());
+            errorDescription = "Client not enabled for OID4VCI";
+        }
+        if (!oid4vciEnabled || !clientEnabled) {
             if (eventBuilder != null) {
                 eventBuilder.client(client).error(ErrorType.INVALID_CLIENT.getValue());
             }
@@ -291,7 +334,7 @@ public class OID4VCIssuerEndpoint {
             throw new CorsErrorResponseException(
                     cors,
                     ErrorType.INVALID_CLIENT.getValue(),
-                    "Client not enabled for OID4VCI",
+                    errorDescription,
                     Response.Status.FORBIDDEN
             );
         }
@@ -331,8 +374,10 @@ public class OID4VCIssuerEndpoint {
 
         eventBuilder.success();
 
+        // RFC7231 recommends Date on origin server responses; OID4VCI conformance checks this explicitly.
         Response.ResponseBuilder responseBuilder = Response.ok()
                 .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
                 .entity(nonceResponse);
 
         if (headerDPoPNonce != null) {
@@ -455,8 +500,9 @@ public class OID4VCIssuerEndpoint {
                 .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
                 .detail(Details.USERNAME, targetUser);
 
-        cors.allowedOrigins(session, clientModel);
+        cors.checkAllowedOrigins(session, clientModel);
         checkIsOid4vciEnabled(eventBuilder);
+        checkRestCredentialOfferEnabled(eventBuilder);
         checkClientEnabled(eventBuilder);
 
         // Verify required credConfigId
@@ -535,7 +581,10 @@ public class OID4VCIssuerEndpoint {
         // Respond with QR-Code as 'image/png'
         if (responseType == OfferResponseType.QR) {
             byte[] qrBytes = generateQrCode(credOfferURI, width, height);
-            return cors.add(Response.ok().type(RESPONSE_TYPE_IMG_PNG).entity(qrBytes));
+            return cors.add(Response.ok()
+                    .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
+                    .type(RESPONSE_TYPE_IMG_PNG)
+                    .entity(qrBytes));
         }
 
         // Respond with URI + QR-Code as 'application/json'
@@ -543,11 +592,17 @@ public class OID4VCIssuerEndpoint {
             byte[] qrBytes = generateQrCode(credOfferURI, width, height);
             String encodedBytes = Base64.getEncoder().encodeToString(qrBytes);
             credOfferURI.setQrCode("data:image/png;base64," + encodedBytes);
-            return cors.add(Response.ok().type(MediaType.APPLICATION_JSON).entity(credOfferURI));
+            return cors.add(Response.ok()
+                    .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(credOfferURI));
         }
 
         // Respond with URI as 'application/json'
-        return cors.add(Response.ok().type(MediaType.APPLICATION_JSON).entity(credOfferURI));
+        return cors.add(Response.ok()
+                .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
+                .type(MediaType.APPLICATION_JSON)
+                .entity(credOfferURI));
     }
 
     private byte[] generateQrCode(CredentialOfferURI credOfferURI, int width, int height) {
@@ -641,7 +696,9 @@ public class OID4VCIssuerEndpoint {
         LOGGER.debugf("Responding with offer: %s", JsonSerialization.valueAsString(credOffer));
 
         eventBuilder.success();
-        return cors.add(Response.ok().entity(credOffer));
+        return cors.add(Response.ok()
+                .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
+                .entity(credOffer));
     }
 
     private void checkScope(CredentialScopeModel requestedCredential) {
@@ -671,6 +728,33 @@ public class OID4VCIssuerEndpoint {
         }
     }
 
+    private void checkUserHasVerifiableCredential(UserModel user, CredentialScopeModel requestedCredential, EventBuilder event) {
+        if (!OID4VCUtil.hasVerifiableCredential(session, user, requestedCredential)) {
+            String errorMessage = String.format("User '%s' does not have requested verifiable credential '%s'", user.getUsername(), requestedCredential.getCredentialConfigurationId());
+            LOGGER.debugf(errorMessage);
+            event.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+            throw new CorsErrorResponseException(cors,
+                    ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(),
+                    errorMessage,
+                    Response.Status.BAD_REQUEST);
+        }
+    }
+
+    private void checkUserHasIssuedVerifiableCredential(UserModel user, CredentialScopeModel requestedCredential, String issuedCredentialId, ClientModel client, EventBuilder event) {
+        try {
+            OID4VCUtil.checkIssuedVerifiableCredential(session, user, issuedCredentialId, requestedCredential, client);
+        } catch (IllegalStateException ise) {
+            String errorMessage = String.format("User '%s' does not have valid requested issued verifiable credential with ID '%s'. Details: %s",
+                    user.getUsername(), issuedCredentialId, ise.getMessage());
+            LOGGER.debugf(errorMessage);
+            event.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+            throw new CorsErrorResponseException(cors,
+                    ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(),
+                    errorMessage,
+                    Response.Status.BAD_REQUEST);
+        }
+    }
+
     /**
      * Returns a verifiable credential
      */
@@ -696,7 +780,7 @@ public class OID4VCIssuerEndpoint {
 
         cors = Cors.builder().auth().allowedMethods(HttpPost.METHOD_NAME).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
-        CredentialIssuer issuerMetadata = (CredentialIssuer) new OID4VCIssuerWellKnownProvider(session).getConfig();
+        CredentialIssuer issuerMetadata = new OID4VCIssuerWellKnownProvider(session).getIssuerMetadata();
 
         // Validate request encryption
         CredentialRequest credentialRequest = validateRequestEncryption(requestPayload, issuerMetadata, eventBuilder);
@@ -720,48 +804,32 @@ public class OID4VCIssuerEndpoint {
                 .map(CredentialResponseEncryptionMetadata::getEncryptionRequired)
                 .orElse(false);
 
-        // Check if encryption is required but not provided
-        if (isEncryptionRequired && encryptionParams == null) {
-            String errorMessage = "Response encryption is required by the Credential Issuer, but no encryption parameters were provided.";
-            LOGGER.debug(errorMessage);
-            eventBuilder.detail(Details.REASON, errorMessage)
-                    .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
-        }
-
         // Validate encryption parameters if provided
-        if (encryptionParams != null) {
-            validateEncryptionParameters(encryptionParams);
+        if (isEncryptionRequired || encryptionParams != null) {
 
-            // Select and validate alg
-            String selectedAlg = selectKeyManagementAlg(encryptionMetadata, encryptionParams.getJwk());
-            if (selectedAlg == null) {
-                String errorMessage = String.format("No supported key management algorithm (alg) for provided JWK (kty=%s)",
-                        encryptionParams.getJwk().getKeyType());
+            // Check if encryption is required but not provided
+            if (encryptionParams == null) {
+                String errorMessage = "Response encryption is required by the Credential Issuer, but no encryption parameters were provided.";
                 LOGGER.debug(errorMessage);
-                eventBuilder.detail(Details.REASON, errorMessage)
-                        .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
+                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
 
+            validateEncryptionParameters(encryptionParams);
+
             // Check if enc is supported
             if (!encryptionMetadata.getEncValuesSupported().contains(encryptionParams.getEnc())) {
-                String errorMessage = String.format("Unsupported content encryption algorithm: enc=%s",
-                        encryptionParams.getEnc());
+                String errorMessage = String.format("Unsupported content encryption algorithm: enc=%s", encryptionParams.getEnc());
                 LOGGER.debug(errorMessage);
-                eventBuilder.detail(Details.REASON, errorMessage)
-                        .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
+                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
 
             // Check compression (unchanged)
-            if (encryptionParams.getZip() != null &&
-                    !isSupportedCompression(encryptionMetadata, encryptionParams.getZip())) {
-                String errorMessage = String.format("Unsupported compression parameter: zip=%s",
-                        encryptionParams.getZip());
+            if (encryptionParams.getZip() != null && !isSupportedCompression(encryptionMetadata, encryptionParams.getZip())) {
+                String errorMessage = String.format("Unsupported compression parameter: zip=%s", encryptionParams.getZip());
                 LOGGER.debug(errorMessage);
-                eventBuilder.detail(Details.REASON, errorMessage)
-                        .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
+                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
         }
@@ -862,7 +930,7 @@ public class OID4VCIssuerEndpoint {
 
         // Validate that authorization_details from the token matches the offer state
         // This ensures the correct access token is being used for the credential request
-        if (offerState != null && !List.of(tokenAuthDetail).equals(offerState.getAuthorizationDetails())) {
+        if (offerState != null && !offerState.matchAuthorizationDetails(List.of(tokenAuthDetail))) {
             var errorMessage = "Authorization details in access token do not match the credential offer state. " +
                     "The access token may not be the one issued for this credential offer.";
             LOGGER.debug(errorMessage);
@@ -910,7 +978,7 @@ public class OID4VCIssuerEndpoint {
 
         // Find credential client scope by requested/authorized credential_configuration_id
         //
-        CredentialScopeModel authorizedCredentialScope = CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId(
+        CredentialScopeModel authorizedCredentialScope = CredentialScopeUtils.findCredentialScopeModelByConfigurationId(
                 realmModel, () -> clientModel.getClientScopes(false).values().stream(), authorizedCredentialConfigurationId);
 
         if (authorizedCredentialScope == null) {
@@ -923,6 +991,8 @@ public class OID4VCIssuerEndpoint {
         eventBuilder.detail(Details.CREDENTIAL_TYPE, authorizedCredentialConfigurationId);
 
         checkScope(authorizedCredentialScope);
+        checkUserHasVerifiableCredential(userModel, authorizedCredentialScope, eventBuilder);
+        checkUserHasIssuedVerifiableCredential(userModel, authorizedCredentialScope, tokenAuthDetail.getIssuedCredentialId(), clientModel, eventBuilder);
 
         SupportedCredentialConfiguration supportedCredential =
                 OID4VCIssuerWellKnownProvider.toSupportedCredentialConfiguration(session, authorizedCredentialScope);
@@ -931,6 +1001,8 @@ public class OID4VCIssuerEndpoint {
 
         // Get the list of all proofs (handles single proof, multiple proofs, or none)
         List<String> allProofs = getAllProofs(credentialRequest);
+        if (allProofs.stream().anyMatch(p -> p == null || p.isBlank()))
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF, "Proof values must not be null or blank"));
 
         // Generate credential response
         CredentialResponse responseVO = new CredentialResponse();
@@ -945,6 +1017,16 @@ public class OID4VCIssuerEndpoint {
             // Determine the proof type from the original proofs
             String proofType = originalProofs.getProofType();
 
+            if (allProofs.size() > 1) {
+                Integer maxBatchSize = Optional.ofNullable(issuerMetadata.getBatchCredentialIssuance())
+                        .map(BatchCredentialIssuance::getBatchSize)
+                        .orElse(BATCH_CREDENTIAL_ISSUANCE_DEFAULT_MAX_BATCH_SIZE);
+                if (allProofs.size() > maxBatchSize) {
+                    LOGGER.warnf("Reducing credential batch size to: %d", maxBatchSize);
+                    allProofs = allProofs.subList(0, maxBatchSize);
+                }
+            }
+
             for (String currentProof : allProofs) {
                 Proofs proofForIteration = Proofs.create(proofType, currentProof);
                 // Creating credential with keybinding to the current proof
@@ -958,19 +1040,24 @@ public class OID4VCIssuerEndpoint {
         // Encrypt all responses if encryption parameters are provided, except for error credential responses
         Response response;
         if (encryptionParams != null && !responseVO.getCredentials().isEmpty()) {
-            String jwe = encryptCredentialResponse(responseVO, encryptionParams, encryptionMetadata);
+            String jwe = encryptCredentialResponse(eventBuilder, responseVO, encryptionParams, encryptionMetadata);
             response = Response.ok()
                     .type(MediaType.APPLICATION_JWT)
+                    .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
                     .entity(jwe)
                     .build();
         } else {
-            response = Response.ok().entity(responseVO).build();
+            response = Response.ok()
+                    .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
+                    .entity(responseVO)
+                    .build();
         }
 
         // Mark event as successful
         eventBuilder.detail(Details.SCOPE, supportedCredential.getScope())
                 .detail(Details.VERIFIABLE_CREDENTIAL_FORMAT, supportedCredential.getFormat())
                 .detail(Details.VERIFIABLE_CREDENTIALS_ISSUED, String.valueOf(responseVO.getCredentials().size()));
+
         eventBuilder.success();
 
         // Clean up offer state after successful credential issuance
@@ -1002,6 +1089,18 @@ public class OID4VCIssuerEndpoint {
             contentType = contentType.split(";")[0].trim(); // Handle parameters like charset
         }
         boolean contentTypeIsJwt = MediaType.APPLICATION_JWT.equalsIgnoreCase(contentType);
+        boolean payloadLooksLikeJwe = isCompactJwePayload(requestPayload);
+
+        // OID4VCI Section 10: encrypted request payloads MUST use application/jwt media type.
+        if (payloadLooksLikeJwe && !contentTypeIsJwt) {
+            String errorMessage = "Encrypted Credential Request must use Content-Type application/jwt.";
+            LOGGER.debug(errorMessage);
+            if (eventBuilder != null) {
+                eventBuilder.detail(Details.REASON, errorMessage)
+                        .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
+            }
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+        }
 
         if (isRequestEncryptionRequired || contentTypeIsJwt) {
             if (requestEncryptionMetadata == null && contentTypeIsJwt) {
@@ -1040,6 +1139,17 @@ public class OID4VCIssuerEndpoint {
 
         try {
             CredentialRequest credentialRequest = JsonSerialization.mapper.readValue(requestPayload, CredentialRequest.class);
+            // OID4VCI 1.0 Section 8.2:
+            // If credential_response_encryption is requested, Credential Request encryption MUST be used.
+            if (credentialRequest.getCredentialResponseEncryption() != null) {
+                String errorMessage = "credential_response_encryption requires encrypted Credential Request (JWE) on top of TLS.";
+                LOGGER.debug(errorMessage);
+                if (eventBuilder != null) {
+                    eventBuilder.detail(Details.REASON, errorMessage)
+                            .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
+                }
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+            }
             normalizeProofFields(credentialRequest);
             return credentialRequest;
         } catch (JsonProcessingException e) {
@@ -1203,30 +1313,30 @@ public class OID4VCIssuerEndpoint {
         validateProofTypes(credentialRequest.getProofs());
     }
 
-    private String selectKeyManagementAlg(CredentialResponseEncryptionMetadata metadata, JWK jwk) {
+    private String selectKeyManagementAlg(EventBuilder eventBuilder, CredentialResponseEncryptionMetadata metadata, JWK jwk) {
+
         List<String> supportedAlgs = metadata.getAlgValuesSupported();
         if (supportedAlgs == null || supportedAlgs.isEmpty()) {
+            LOGGER.warn("No supported encryption algorithms");
             return null;
         }
 
         // The alg parameter MUST be present in the JWK
         String jwkAlg = jwk.getAlgorithm();
         if (jwkAlg == null) {
-            // If alg is missing from JWK, this is invalid
-            LOGGER.debugf("JWK is missing required 'alg' parameter for key type: %s", jwk.getKeyType());
+            LOGGER.warnf("JWK is missing required 'alg' parameter for key type: %s", jwk.getKeyType());
             return null;
         }
 
         // Verify the alg is supported by the server
-        if (supportedAlgs.contains(jwkAlg)) {
-            return jwkAlg;
+        if (!supportedAlgs.contains(jwkAlg)) {
+            String errorMessage = String.format("JWK algorithm '%s' is not supported. Supported algorithms: %s", jwkAlg, supportedAlgs);
+            LOGGER.debug(errorMessage);
+            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
         }
 
-        // If the JWK's alg is not supported, we cannot proceed
-        LOGGER.debugf("JWK algorithm '%s' is not supported by the server. Supported algorithms: %s",
-                jwkAlg, supportedAlgs);
-        throw new IllegalArgumentException(String.format("JWK algorithm '%s' is not supported. Supported algorithms: %s", jwkAlg, supportedAlgs));
-
+        return jwkAlg;
     }
 
     private List<String> getAllProofs(CredentialRequest credentialRequestVO) {
@@ -1281,13 +1391,13 @@ public class OID4VCIssuerEndpoint {
     /**
      * Encrypts a CredentialResponse as a JWE using the provided encryption parameters.
      *
-     * @param response The CredentialResponse to encrypt
+     * @param response         The CredentialResponse to encrypt
      * @param encryptionParams The encryption parameters (alg, enc, jwk)
      * @return The compact JWE serialization
-     * @throws BadRequestException If encryption parameters are invalid
+     * @throws BadRequestException     If encryption parameters are invalid
      * @throws WebApplicationException If encryption fails due to server issues
      */
-    private String encryptCredentialResponse(CredentialResponse response,
+    private String encryptCredentialResponse(EventBuilder eventBuilder, CredentialResponse response,
                                              CredentialResponseEncryption encryptionParams,
                                              CredentialResponseEncryptionMetadata metadata) {
         validateEncryptionParameters(encryptionParams);
@@ -1298,21 +1408,22 @@ public class OID4VCIssuerEndpoint {
 
         // Parse public key
         PublicKey publicKey;
-        try {
-            publicKey = JWKParser.create(jwk).toPublicKey();
-            if (publicKey == null) {
-                LOGGER.debug("Invalid JWK: Failed to parse public key");
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS,
-                        "Invalid JWK: Failed to parse public key."));
+        {
+            String message = "Invalid JWK: Failed to parse public key";
+            try {
+                publicKey = JWKParser.create(jwk).toPublicKey();
+                if (publicKey == null) {
+                    LOGGER.debug(message);
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, message));
+                }
+            } catch (Exception e) {
+                LOGGER.debug(message);
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, message));
             }
-        } catch (Exception e) {
-            LOGGER.debugf("Failed to parse JWK: %s", e.getMessage());
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS,
-                    "Invalid JWK: Failed to parse public key."));
         }
 
         // Select alg
-        String selectedAlg = selectKeyManagementAlg(metadata, jwk);
+        String selectedAlg = selectKeyManagementAlg(eventBuilder, metadata, jwk);
 
         // Perform encryption
         try {
@@ -1414,6 +1525,21 @@ public class OID4VCIssuerEndpoint {
         return metadata != null &&
                 metadata.getZipValuesSupported() != null &&
                 metadata.getZipValuesSupported().contains(zip);
+    }
+
+    /**
+     * Detect whether payload is a compact JWE by delegating to Keycloak JOSE parser.
+     */
+    private boolean isCompactJwePayload(String payload) {
+        if (payload == null || payload.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            JWE jwe = new JWE(payload.trim());
+            return jwe.getHeader() != null;
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private AuthenticatedClientSessionModel getAuthenticatedClientSession() {
@@ -1567,6 +1693,7 @@ public class OID4VCIssuerEndpoint {
         errorResponse.setError(errorType).setErrorDescription(errorDescription);
         return Response
                 .status(Response.Status.BAD_REQUEST)
+                .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
                 .entity(errorResponse)
                 .type(MediaType.APPLICATION_JSON);
     }
@@ -1590,9 +1717,10 @@ public class OID4VCIssuerEndpoint {
         Instant normalizedIssuance = timeClaimNormalizer.normalize(issuance);
 
         // Compute expiration date from client scope configuration and normalize it
+        // Note: The IssuedVerifiableCredentialModel.expiresAt and refresh token still use the full credential lifetime
         CredentialScopeModel clientScopeModel = credentialScopeModel;
-        Integer expiryInSeconds = clientScopeModel.getExpiryInSeconds();
-        Instant expiration = normalizedIssuance.plusSeconds(expiryInSeconds);
+        Integer refreshIntervalInSeconds = clientScopeModel.getRefreshIntervalInSeconds();
+        Instant expiration = normalizedIssuance.plusSeconds(refreshIntervalInSeconds);
         Instant normalizedExpiration = timeClaimNormalizer.normalize(expiration);
 
         // set the required claims

@@ -40,7 +40,6 @@ import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.RestartLoginCookie;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
@@ -168,7 +167,7 @@ public class SessionCodeChecks {
             authSession = authSessionManager.getAuthenticationSessionByEncodedIdAndClient(realm, authSessionId, client, tabId);
         AuthenticationSessionModel authSessionCookie = authSessionManager.getCurrentAuthenticationSession(realm, client, tabId);
 
-        if (authSession != null && authSessionCookie != null && !authSession.getParentSession().getId().equals(authSessionCookie.getParentSession().getId())) {
+        if (authSession != null && (authSessionCookie == null || !authSession.getParentSession().getId().equals(authSessionCookie.getParentSession().getId()))) {
             event.detail(Details.REASON, "cookie does not match auth_session query parameter");
             event.error(Errors.INVALID_CODE);
             response = ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_CODE);
@@ -451,14 +450,11 @@ public class SessionCodeChecks {
                 flowPath = LoginActionsService.AUTHENTICATE_PATH;
             }
 
-            //set redirect uri and other notes from client data parameter
+            // set redirect uri from client_data parameter if valid.
             try {
                 ClientData clientData = ClientData.decodeClientDataFromParameter(clientDataString);
                 if (RedirectUtils.verifyRedirectUri(session, clientData.getRedirectUri(), authSession.getClient()) != null) {
                     authSession.setRedirectUri(clientData.getRedirectUri());
-                    authSession.setClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, clientData.getResponseType());
-                    authSession.setClientNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM, clientData.getResponseMode());
-                    authSession.setClientNote(OIDCLoginProtocol.STATE_PARAM, clientData.getState());
                 }
             } catch (Exception e) {
                 logger.debugf(e, "ClientData parameter in invalid format. ClientData parameter was %s", clientDataString);
