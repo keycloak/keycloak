@@ -323,7 +323,7 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
     public void testManageGroupMembership() {
         // myadmin shouldn't be able to manage group membership of the user just yet
         try {
-            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup("no-such");
+            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup(topGroup.getId());
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(ForbiddenException.class));
@@ -475,6 +475,75 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         realmAdminClient.realm(realm.getName()).users().get(userJdoe.getId()).impersonate();
         realmAdminClient.tokenManager().logout();
+    }
+
+    /**
+     * Tests that a limited admin with ONLY group-level manage-membership permission
+     * (no user-level manage-group-membership) should be able to add a user to the group.
+     * In FGAP V2, the group-level permission alone must be sufficient.
+     */
+    @Test
+    public void testJoinGroupWithOnlyGroupPermission() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, client, "Only My Admin Policy", myadmin.getId());
+        GroupRepresentation target = createGroup("target");
+        UserRepresentation userBob = createUser("bob");
+
+        // myadmin should not be able to add bob to the group without any permission
+        try {
+            realmAdminClient.realm(realm.getName()).users().get(userBob.getId()).joinGroup(target.getId());
+            fail("Expected ForbiddenException was not thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+
+        // Grant ONLY group-level manage-membership permission — no user-level permission granted
+        createAllPermission(client, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, allowMyAdminPermission, Set.of(MANAGE_MEMBERSHIP));
+
+        // myadmin should now be able to add bob to the group with only the group-level permission
+        realmAdminClient.realm(realm.getName()).users().get(userBob.getId()).joinGroup(target.getId());
+
+        // Verify bob is actually a member of the group
+        assertTrue(
+                realm.admin().users().get(userBob.getId()).groups().stream().anyMatch(g -> target.getId().equals(g.getId())),
+                "Expected bob to be a member of target group after joinGroup"
+        );
+    }
+
+    /**
+     * Tests that a limited admin with ONLY group-level manage-membership permission
+     * (no user-level manage-group-membership) should be able to remove a user from the group.
+     * In FGAP V2, the group-level permission alone must be sufficient.
+     */
+    @Test
+    public void testLeaveGroupWithOnlyGroupPermission() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, client, "Only My Admin Policy", myadmin.getId());
+        GroupRepresentation target = createGroup("target");
+        UserRepresentation userBob = createUser("bob");
+
+        // Pre-condition: add bob to target using the super-admin
+        realm.admin().users().get(userBob.getId()).joinGroup(target.getId());
+
+        // myadmin should not be able to remove bob from the group without any permission
+        try {
+            realmAdminClient.realm(realm.getName()).users().get(userBob.getId()).leaveGroup(target.getId());
+            fail("Expected ForbiddenException was not thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+
+        // Grant ONLY group-level manage-membership permission — no user-level permission granted
+        createAllPermission(client, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, allowMyAdminPermission, Set.of(MANAGE_MEMBERSHIP));
+
+        // myadmin should now be able to remove bob from the group with only the group-level permission
+        realmAdminClient.realm(realm.getName()).users().get(userBob.getId()).leaveGroup(target.getId());
+
+        // Verify bob is no longer a member of the group
+        assertTrue(
+                realm.admin().users().get(userBob.getId()).groups().stream().noneMatch(g -> target.getId().equals(g.getId())),
+                "Expected bob to no longer be a member of target group after leaveGroup"
+        );
     }
 
     private ScopePermissionRepresentation createAllGroupsPermission(UserPolicyRepresentation policy, Set<String> scopes) {
