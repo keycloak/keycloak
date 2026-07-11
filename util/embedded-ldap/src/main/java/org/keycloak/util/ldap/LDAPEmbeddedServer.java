@@ -86,6 +86,7 @@ public class LDAPEmbeddedServer {
     public static final String PROPERTY_SET_CONFIDENTIALITY_REQUIRED = "setConfidentialityRequired";
     public static final String PROPERTY_PPOLICY_ENABLED = "ppolicy.enabled";
     public static final String PROPERTY_PPOLICY_MUST_CHANGE = "ppolicy.mustChange";
+    public static final String PROPERTY_PPOLICY_MAX_AGE = "ppolicy.maxAge";
 
     private static final String DEFAULT_BASE_DN = "dc=keycloak,dc=org";
     private static final String DEFAULT_BIND_HOST = "localhost";
@@ -117,6 +118,7 @@ public class LDAPEmbeddedServer {
     protected String certPassword;
     protected boolean ppolicyEnabled = false;
     protected boolean ppolicyMustChange = false;
+    protected int ppolicyMaxAge = 0;
 
     protected DirectoryService directoryService;
     protected LdapServer ldapServer;
@@ -176,6 +178,8 @@ public class LDAPEmbeddedServer {
         this.certPassword = readProperty(PROPERTY_CERTIFICATE_PASSWORD, null);
         this.ppolicyEnabled = Boolean.valueOf(readProperty(PROPERTY_PPOLICY_ENABLED, "false"));
         this.ppolicyMustChange = Boolean.valueOf(readProperty(PROPERTY_PPOLICY_MUST_CHANGE, "false"));
+        String ppolicyMaxAge = readProperty(PROPERTY_PPOLICY_MAX_AGE, "0");
+        this.ppolicyMaxAge = Integer.parseInt(ppolicyMaxAge);
     }
 
     protected String readProperty(String propertyName, String defaultValue) {
@@ -443,6 +447,7 @@ public class LDAPEmbeddedServer {
                 .getInterceptor(InterceptorEnum.AUTHENTICATION_INTERCEPTOR.getName());
         PasswordPolicyConfiguration policyConfig = new PasswordPolicyConfiguration();
         policyConfig.setPwdMustChange(ppolicyMustChange);
+        policyConfig.setPwdMaxAge(ppolicyMaxAge);
 
         PpolicyConfigContainer policyContainer = new PpolicyConfigContainer();
         Dn defaultPolicyDn = new Dn( ldapServer.getDirectoryService().getSchemaManager(), "cn=defaultPasswordPolicy" );
@@ -466,4 +471,16 @@ public class LDAPEmbeddedServer {
         }
     }
 
+    public void setPwdChangedTime(String userDn, String value) {
+        // pwdChangedTime is a ppolicy operational attribute that can only be modified via the
+        // embedded server's internal admin session, not through the LDAP protocol.
+        try {
+            Dn dn = new Dn(directoryService.getSchemaManager(), userDn);
+            directoryService.getAdminSession().modify(dn,
+                    new DefaultModification(ModificationOperation.REPLACE_ATTRIBUTE,
+                            "pwdChangedTime", value));
+        } catch (LdapException e) {
+            throw new RuntimeException("Failed to set pwdChangedTime for " + userDn, e);
+        }
+    }
 }

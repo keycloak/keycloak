@@ -37,7 +37,11 @@ public class PasswordPolicyControl implements Control {
 
     private static final int ERROR_CHANGE_AFTER_RESET = 2;
 
+    private static final int ERROR_PASSWORD_EXPIRED = 0;
+
     private boolean changeAfterReset;
+
+    private boolean passwordExpired;
 
     /*
      * https://datatracker.ietf.org/doc/html/draft-behera-ldap-password-policy-11#section-6.2
@@ -74,6 +78,7 @@ public class PasswordPolicyControl implements Control {
             if (ber.isNextTag(BERDecoder.TAG_CLASS_CONTEXT_SPECIFIC, BERDecoder.TAG_FORM_PRIMITIVE, 1)) { // error   [1] ENUMERATED
                 int error = new BigInteger(ber.drainElementValue()).intValue();
                 this.changeAfterReset = error == ERROR_CHANGE_AFTER_RESET;
+                this.passwordExpired = error == ERROR_PASSWORD_EXPIRED;
             }
 
         } catch (BERDecoder.DecodeException ignored) {
@@ -83,6 +88,10 @@ public class PasswordPolicyControl implements Control {
 
     public boolean changeAfterReset() {
         return changeAfterReset;
+    }
+
+    public boolean passwordExpired() {
+        return passwordExpired;
     }
 
     @Override

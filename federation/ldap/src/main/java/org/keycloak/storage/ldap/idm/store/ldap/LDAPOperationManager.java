@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import javax.naming.AuthenticationException;
 import javax.naming.Binding;
 import javax.naming.Context;
@@ -532,25 +533,21 @@ public class LDAPOperationManager {
             // Send bind request. Throws AuthenticationException when authentication fails.
             authCtx.reconnect(getControls());
 
-            // Check for password policy response control in the response.
+            // Check for password policy response control in successful bind response.
             // If present and forced password change is required, throw an exception.
-            Control[] responseControls = authCtx.getResponseControls();
-            if (responseControls != null) {
-                for (Control control : responseControls) {
-                    if (control instanceof PasswordPolicyControl) {
-                        PasswordPolicyControl response = (PasswordPolicyControl) control;
-                        if (response.changeAfterReset()) {
-                            throw new PasswordPolicyPasswordChangeException();
-                        }
-                    }
-                }
-            }
+            checkPasswordPolicy(authCtx, PasswordPolicyControl::changeAfterReset);
 
         } catch (AuthenticationException ae) {
             if (logger.isDebugEnabled()) {
                 logger.debugf(ae, "Authentication failed for DN [%s]", dn);
             }
+
             tracing.error(ae);
+
+            // Check for password policy response control in failed bind response.
+            // If present and indicate an expired password, throw an exception.
+            checkPasswordPolicy(authCtx, PasswordPolicyControl::passwordExpired);
+
             throw ae;
         } catch(RuntimeException re){
             if (logger.isDebugEnabled()) {
@@ -805,5 +802,45 @@ public class LDAPOperationManager {
         result.add(LDAPConstants.OBJECT_CLASS);
 
         return result;
+    }
+
+
+    /**
+     * Reads the LDAP response controls after a bind operation and evaluates the
+     * password policy using a supplied rule.
+     *
+     * If the rule evaluates to true for any PasswordPolicyControl, a
+     * PasswordPolicyPasswordChangeException is thrown.
+     *
+     * @param authCtx The LDAP context to read response controls from
+     * @param rule  A predicate representing the password policy condition to test
+     * @throws AuthenticationException If reading the LDAP response controls fails
+     * @throws PasswordPolicyPasswordChangeException If the policy condition is true
+     */
+    private void checkPasswordPolicy(LdapContext authCtx, Predicate<PasswordPolicyControl> rule)
+            throws AuthenticationException, PasswordPolicyPasswordChangeException {
+
+        if (authCtx == null) {
+            return;
+        }
+
+        Control[] responseControls;
+        try {
+            responseControls = authCtx.getResponseControls();
+        } catch (NamingException e) {
+            throw new AuthenticationException("Could not get LDAP response controls");
+        }
+        if (responseControls == null) {
+            return;
+        }
+
+        for (Control control : responseControls) {
+            if (control instanceof PasswordPolicyControl) {
+                PasswordPolicyControl response = (PasswordPolicyControl) control;
+                if (rule.test(response)) {
+                    throw new PasswordPolicyPasswordChangeException();
+                }
+            }
+        }
     }
 }
