@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -470,7 +471,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     @Override
     public boolean canManage(RoleModel role) {
         if (role.getContainer() instanceof RealmModel) {
-            return root.realm().canManageRealm();
+            return root.realm().canManageRealm() && !isRealmAdminRole(role);
         } else if (role.getContainer() instanceof ClientModel) {
             ClientModel client = (ClientModel)role.getContainer();
             return root.clients().canConfigure(client);
@@ -667,5 +668,8 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
             resourceServer = session.getProvider(AuthorizationProvider.class).getStoreFactory().getResourceServerStore().findById(container.getId());
         }
         return resourceServer;
+    }
+    private boolean isRealmAdminRole(RoleModel role) {
+        return role.getContainer() instanceof RealmModel && List.of(AdminRoles.ADMIN, AdminRoles.CREATE_REALM).contains(role.getName());
     }
 }
