@@ -20,6 +20,7 @@ package org.keycloak.services.clientpolicy.executor;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.keycloak.OAuthErrorException;
@@ -94,13 +95,30 @@ public class SecureRedirectUrisEnforcerExecutorTest {
     }
 
     @Test
-    public void emptyPostLogoutRedirectUriListValueIsIgnored() {
+    public void blankPostLogoutRedirectUriListValuesAreIgnored() {
         setupConfiguration(configuration);
 
         ClientRepresentation client = new ClientRepresentation();
         client.setClientId("test-client");
         client.setRedirectUris(Collections.singletonList("https://keycloak.org/callback"));
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(Collections.singletonList(""));
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(List.of("", " "));
+
+        try {
+            executor.executeOnEvent(new AdminClientRegisterContext(client, null));
+        } catch (ClientPolicyException e) {
+            fail(e.getErrorDetail());
+        }
+    }
+
+    @Test
+    public void blankPostLogoutRedirectUriIsIgnoredAlongsideValidValue() {
+        setupConfiguration(configuration);
+
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("test-client");
+        client.setRedirectUris(Collections.singletonList("https://keycloak.org/callback"));
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(
+                List.of("", "https://keycloak.org/post-logout"));
 
         try {
             executor.executeOnEvent(new AdminClientRegisterContext(client, null));
