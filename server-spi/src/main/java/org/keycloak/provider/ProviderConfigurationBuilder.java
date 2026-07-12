@@ -42,7 +42,7 @@ public class ProviderConfigurationBuilder {
     }
 
     public ProviderConfigPropertyBuilder property() {
-        return new ProviderConfigPropertyBuilder();
+        return new ProviderConfigPropertyBuilder(this);
     }
 
     public ProviderConfigurationBuilder property(ProviderConfigProperty property) {
@@ -73,7 +73,7 @@ public class ProviderConfigurationBuilder {
         return properties;
     }
 
-    public class ProviderConfigPropertyBuilder {
+    public static class ProviderConfigPropertyBuilder {
 
         private String name;
         private String label;
@@ -83,6 +83,27 @@ public class ProviderConfigurationBuilder {
         private List<String> options;
         private boolean secret;
         private boolean required;
+
+        private final ProviderConfigurationBuilder parent;
+
+        /**
+         * Creates a standalone property builder that is not attached to a {@link ProviderConfigurationBuilder}.
+         * Use {@link #build()} to obtain the resulting {@link ProviderConfigProperty} in this case, since
+         * {@link #add()} requires a parent builder to add the property to.
+         */
+        public ProviderConfigPropertyBuilder() {
+            this(null);
+        }
+
+        /**
+         * Creates a property builder attached to the given parent {@link ProviderConfigurationBuilder}.
+         * This constructor is public (rather than package-private) to preserve binary compatibility.
+         *
+         * @param parent the parent builder this property will be added to via {@link #add()}
+         */
+        public ProviderConfigPropertyBuilder(ProviderConfigurationBuilder parent) {
+            this.parent = parent;
+        }
 
         public ProviderConfigPropertyBuilder name(String name) {
             this.name = name;
@@ -184,11 +205,29 @@ public class ProviderConfigurationBuilder {
         }
 
         /**
-         * Add the current property, and start building the next one
+         * Add the current property to the parent builder, and start building the next one.
          *
-         * @return
+         * @return the parent {@link ProviderConfigurationBuilder}
+         * @throws IllegalStateException if this builder was created standalone, i.e. without a parent
+         *      {@link ProviderConfigurationBuilder}. Use {@link #build()} instead in that case.
          */
         public ProviderConfigurationBuilder add() {
+            if (parent == null) {
+                throw new IllegalStateException("This " + ProviderConfigPropertyBuilder.class.getSimpleName()
+                        + " has no parent " + ProviderConfigurationBuilder.class.getSimpleName()
+                        + " to add to. Use build() instead");
+            }
+            parent.add(build());
+            return parent;
+        }
+
+        /**
+         * Builds the {@link ProviderConfigProperty} from the values configured so far, without adding it
+         * to a parent {@link ProviderConfigurationBuilder}. Useful when using this builder standalone.
+         *
+         * @return the built property
+         */
+        public ProviderConfigProperty build() {
             ProviderConfigProperty property = new ProviderConfigProperty();
             property.setName(name);
             property.setLabel(label);
@@ -198,18 +237,17 @@ public class ProviderConfigurationBuilder {
             property.setOptions(options);
             property.setSecret(secret);
             property.setRequired(required);
-            ProviderConfigurationBuilder.this.add(property);
-            return ProviderConfigurationBuilder.this;
+            return property;
         }
 
     }
 
-  private boolean add(ProviderConfigProperty property) {
-    String name = property.getName();
-    if (!propertyNames.add(name)) {
-      throw new ProviderConfigPropertyNameNotUniqueException("ProviderConfigProperty with name '" + name + "' already exists.");
+    private boolean add(ProviderConfigProperty property) {
+        String name = property.getName();
+        if (!propertyNames.add(name)) {
+            throw new ProviderConfigPropertyNameNotUniqueException("ProviderConfigProperty with name '" + name + "' already exists.");
+        }
+        return properties.add(property);
     }
-    return properties.add(property);
-  }
 
 }
