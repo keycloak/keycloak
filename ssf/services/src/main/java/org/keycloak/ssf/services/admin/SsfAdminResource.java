@@ -950,7 +950,12 @@ public class SsfAdminResource {
      * {@code default_subjects} / {@code ssf.notify.<clientId>}
      * configuration. The dispatch outcome (dispatched vs. drop reason)
      * is reported in the response so emitter integrations can debug
-     * their wiring without enabling verbose logging.
+     * their wiring without enabling verbose logging. Complex subjects
+     * that name both a user and a tenant are additionally required to
+     * be internally consistent — the user must be a member of the
+     * tenant organization — so a subscribed tenant facet cannot carry
+     * an unrelated, unsubscribed user subject past the subject filter
+     * (keycloak/keycloak#50812).
      *
      * <p>Console-only convenience: callers with {@code manage-clients}
      * on the receiver bypass the {@code allowEmitEvents} opt-in and
@@ -1148,6 +1153,9 @@ public class SsfAdminResource {
             case SUBJECT_NOT_FOUND:
                 return invalidRequest(emitErrorCode, emitMessage,
                         "Subject referenced by the request does not exist");
+            case SUBJECT_MISMATCH:
+                return invalidRequest(emitErrorCode, emitMessage,
+                        "User subject is not a member of the tenant organization");
             case STREAM_NOT_FOUND:
                 // Defensive — the early stream check above usually catches
                 // this before emit() runs, but emit() can also return it
