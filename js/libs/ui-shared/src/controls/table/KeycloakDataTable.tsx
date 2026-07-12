@@ -78,8 +78,10 @@ type DataTableProps<T> = {
   isRadio?: boolean;
 };
 
-const getExpandableRowKey = <T,>(row: Row<T>, index: number) =>
-  String(get(row.data, "id") ?? `row-${index}`);
+const getExpandableRowKey = <T,>(row: Row<T>, index: number) => {
+  const id = get(row.data, "id") as string | number | null | undefined;
+  return id === null || id === undefined ? `row-${index}` : String(id);
+};
 
 type CellRendererProps = {
   row: IRow;
