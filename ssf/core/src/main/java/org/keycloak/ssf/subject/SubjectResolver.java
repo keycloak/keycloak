@@ -71,7 +71,17 @@ public class SubjectResolver {
         return SubjectResolution.UNSUPPORTED_FORMAT;
     }
 
-    private static SubjectResolution resolveOrganization(KeycloakSession session, SubjectId tenantSubject) {
+    /**
+     * Resolves a tenant subject to an organization. This is the shared
+     * contract for tenant facets — {@code opaque} (org id or alias),
+     * {@code iss_sub} (sub as org id), {@code email} (org domain or
+     * alias) and {@code uri} ({@code urn:keycloak:org:<alias>} or last
+     * path segment) are all understood. Callers that gate on "the
+     * supplied tenant facet must resolve" (e.g. the synthetic event
+     * emitter) must use this rather than a narrower lookup so a tenant
+     * format accepted elsewhere is not rejected there.
+     */
+    public static SubjectResolution resolveOrganization(KeycloakSession session, SubjectId tenantSubject) {
         if (!Organizations.isEnabled(session)) {
             log.debugf("Organization feature is disabled — cannot resolve tenant subject");
             return SubjectResolution.UNSUPPORTED_FORMAT;
