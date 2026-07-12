@@ -128,6 +128,25 @@ public class SecureRedirectUrisEnforcerExecutorTest {
     }
 
     @Test
+    public void blankPostLogoutRedirectUriDoesNotSkipInvalidValue() {
+        setupConfiguration(configuration);
+
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("test-client");
+        client.setRedirectUris(Collections.singletonList("https://keycloak.org/callback"));
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(
+                List.of("", "https://keycloak.org\n"));
+
+        try {
+            executor.executeOnEvent(new AdminClientRegisterContext(client, null));
+            fail("Expected the non-blank invalid redirect URI to be rejected");
+        } catch (ClientPolicyException e) {
+            assertEquals(OAuthErrorException.INVALID_REQUEST, e.getMessage());
+            assertEquals(SecureRedirectUrisEnforcerExecutor.ERR_GENERAL, e.getErrorDetail());
+        }
+    }
+
+    @Test
     public void failValidatePrivateUseUriScheme() {
         // default config
         checkFail("myapp:/oauth.redirect", false, SecureRedirectUrisEnforcerExecutor.ERR_PRIVATESCHEME);
