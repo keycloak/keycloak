@@ -231,6 +231,15 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     @Override
     public void setAttribute(String name, String value) {
+        updateAttribute(name, value);
+    }
+
+    /**
+     * Sets the attribute and publishes a {@link RealmModel.RealmAttributeUpdateEvent} if the value changed.
+     *
+     * @return {@code true} if the value changed and the event was published, {@code false} for a no-op write
+     */
+    private boolean updateAttribute(String name, String value) {
         RealmAttributeEntity existing = null;
         for (RealmAttributeEntity attr : realm.getAttributes()) {
             if (attr.getName().equals(name)) {
@@ -240,7 +249,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         }
         if (existing != null) {
             if (Objects.equals(existing.getValue(), value)) {
-                return;
+                return false;
             }
             existing.setValue(value);
         } else {
@@ -252,6 +261,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
             realm.getAttributes().add(attr);
         }
         publishRealmAttributeUpdateEvent(name, value);
+        return true;
     }
 
     private void publishRealmAttributeUpdateEvent(String name, String value) {
@@ -1342,13 +1352,12 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     @Override
     public void setAdminPermissionsEnabled(boolean adminPermissionsEnabled) {
-        setAttribute(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, adminPermissionsEnabled);
+        boolean published = updateAttribute(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, String.valueOf(adminPermissionsEnabled));
 
-        // setAttribute publishes the update event when the value changed, and listeners react to it
-        // synchronously by creating the admin permissions client. If the client is still missing at
-        // this point (the attribute was already "true" but the client is gone), publish explicitly
-        // so listeners can repair it.
-        if (adminPermissionsEnabled && getAdminPermissionsClient() == null) {
+        // updateAttribute already published the update if the value changed. This explicit publish
+        // covers only the repair case where the attribute was already "true" but the admin
+        // permissions client is missing, keeping one event per change.
+        if (!published && adminPermissionsEnabled && getAdminPermissionsClient() == null) {
             publishRealmAttributeUpdateEvent(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, String.valueOf(adminPermissionsEnabled));
         }
     }
