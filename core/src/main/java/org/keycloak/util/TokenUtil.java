@@ -30,6 +30,7 @@ import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.json.KeycloakJsonMapperFactory;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 
@@ -123,7 +124,7 @@ public class TokenUtil {
      */
     public static RefreshToken getRefreshToken(byte[] decodedToken) throws JWSInputException {
         try {
-            return JsonSerialization.readValue(decodedToken, RefreshToken.class);
+            return KeycloakJsonMapperFactory.mapper().readValue(decodedToken, RefreshToken.class);
         } catch (IOException e) {
             throw new JWSInputException(e);
         }
@@ -148,7 +149,7 @@ public class TokenUtil {
 
     public static String jweDirectEncode(Key aesKey, Key hmacKey, JsonWebToken jwt) throws JWEException {
         try {
-            byte[] contentBytes = JsonSerialization.writeValueAsBytes(jwt);
+            byte[] contentBytes = KeycloakJsonMapperFactory.mapper().writeValueAsBytes(jwt);
             return jweDirectEncode(aesKey, hmacKey, contentBytes);
         } catch (IOException ioe) {
             throw new JWEException(ioe);
@@ -159,7 +160,7 @@ public class TokenUtil {
     public static <T extends JsonWebToken> T jweDirectVerifyAndDecode(Key aesKey, Key hmacKey, String jweStr, Class<T> expectedClass) throws JWEException {
         byte[] contentBytes = jweDirectVerifyAndDecode(aesKey, hmacKey, jweStr);
         try {
-            return JsonSerialization.readValue(contentBytes, expectedClass);
+            return KeycloakJsonMapperFactory.mapper().readValue(contentBytes, expectedClass);
         } catch (IOException ioe) {
             throw new JWEException(ioe);
         }
