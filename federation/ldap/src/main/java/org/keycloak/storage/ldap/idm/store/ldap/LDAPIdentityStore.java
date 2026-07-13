@@ -63,6 +63,8 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.IdentityStore;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Timer;
 import org.jboss.logging.Logger;
 
 /**
@@ -81,8 +83,12 @@ public class LDAPIdentityStore implements IdentityStore {
     private final LDAPOperationManager operationManager;
 
     public LDAPIdentityStore(KeycloakSession session, LDAPConfig config) {
+        this(session, config, null);
+    }
+
+    public LDAPIdentityStore(KeycloakSession session, LDAPConfig config, Meter.MeterProvider<Timer> requestTimer) {
         this.config = config;
-        this.operationManager = new LDAPOperationManager(session, config);
+        this.operationManager = new LDAPOperationManager(session, config, requestTimer);
     }
 
     @Override
