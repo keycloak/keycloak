@@ -12,6 +12,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { getEventCoordinates } from "@dnd-kit/utilities";
+import { snapCenterToCursor } from "./drag-modifiers";
 import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
@@ -138,6 +139,10 @@ const findHoveredRow = (
   let match: HoveredRow | null = null;
 
   for (const row of rows) {
+    if (!row.isConnected) {
+      continue;
+    }
+
     const rect = row.getBoundingClientRect();
     if (
       pointerX < rect.left ||
@@ -256,12 +261,6 @@ export default function FlowDetails() {
     );
   }, []);
 
-  const scheduleRefreshDragRows = useCallback(() => {
-    requestAnimationFrame(() => {
-      refreshDragRows();
-    });
-  }, [refreshDragRows]);
-
   const updateDropInfo = useCallback((info: DropInfo) => {
     dropInfoRef.current = info;
     setDropInfo(info);
@@ -376,9 +375,8 @@ export default function FlowDetails() {
       subflow.isCollapsed = false;
       autoExpandedIdsRef.current.add(subflowId);
       setExecutionList(executionList.clone());
-      scheduleRefreshDragRows();
     },
-    [executionList, findExecutionById, scheduleRefreshDragRows],
+    [executionList, findExecutionById],
   );
 
   const scheduleSubflowExpand = useCallback(
@@ -418,7 +416,6 @@ export default function FlowDetails() {
     setLiveText(t("onDragStart", { item: item.displayName }));
     collapseSnapshotRef.current = executionList.snapshotCollapseState();
     autoExpandedIdsRef.current.clear();
-    refreshDragRows();
 
     if (collapseRafRef.current !== null) {
       cancelAnimationFrame(collapseRafRef.current);
@@ -427,7 +424,9 @@ export default function FlowDetails() {
       collapseRafRef.current = null;
       executionList.collapseAllSubflows();
       setExecutionList(executionList.clone());
-      scheduleRefreshDragRows();
+      requestAnimationFrame(() => {
+        refreshDragRows();
+      });
     });
   };
 
@@ -439,6 +438,7 @@ export default function FlowDetails() {
 
     const { active } = event;
     const { x: pointerX, y: pointerY } = pointer;
+    refreshDragRows();
     const hoveredRow = findHoveredRow(
       dragRowsRef.current,
       active.id as string,
@@ -950,6 +950,7 @@ export default function FlowDetails() {
                 </Table>
                 <DragOverlay
                   dropAnimation={null}
+                  modifiers={[snapCenterToCursor]}
                   style={{ pointerEvents: "none" }}
                 >
                   {activeExecution ? (
