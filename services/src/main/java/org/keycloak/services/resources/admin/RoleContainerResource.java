@@ -481,13 +481,13 @@ public class RoleContainerResource extends RoleResource {
     public void deleteComposites(
                                    final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName,
                                    @Parameter(description = "roles to remove") List<RoleRepresentation> roles) {
-
+        // realm/client roles by name
         auth.roles().requireManage(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
-        deleteComposites(adminEvent, uriInfo, roles, role);
+        deleteComposites(auth, adminEvent, uriInfo, roles, role);
     }
 
     /**
