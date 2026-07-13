@@ -233,7 +233,7 @@ Install the Operator cluster-wide by using the `cluster-wide` kustomization:
 [source,bash,subs="attributes+"]
 ----
 kubectl create namespace keycloak-operator
-kubectl apply -k 'github.com/keycloak/keycloak-k8s-resources/cluster-wide?ref={version}'
+kubectl apply -k 'github.com/keycloak/keycloak-k8s-resources/kubernetes/cluster-wide?ref={version}'
 ----
 
 This installs the Operator into the `keycloak-operator` namespace and configures it to watch resources in all namespaces.
@@ -251,7 +251,7 @@ kind: Kustomization
 namespace: custom-namespace
 
 resources:
-  - github.com/keycloak/keycloak-k8s-resources/cluster-wide?ref={version}
+  - github.com/keycloak/keycloak-k8s-resources/kubernetes/cluster-wide?ref={version}
 EOF
 
 kubectl apply -k ./
