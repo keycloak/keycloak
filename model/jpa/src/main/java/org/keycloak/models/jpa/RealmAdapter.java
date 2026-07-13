@@ -281,13 +281,18 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     @Override
     public void removeAttribute(String name) {
+        boolean removed = false;
         Iterator<RealmAttributeEntity> it = realm.getAttributes().iterator();
         while (it.hasNext()) {
             RealmAttributeEntity attr = it.next();
             if (attr.getName().equals(name)) {
                 it.remove();
                 em.remove(attr);
+                removed = true;
             }
+        }
+        if (removed) {
+            publishRealmAttributeUpdateEvent(name, null);
         }
     }
 
@@ -1337,13 +1342,13 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     @Override
     public void setAdminPermissionsEnabled(boolean adminPermissionsEnabled) {
-        boolean isAdminPermissionsAlreadyEnabled = getAdminPermissionsClient() != null;
         setAttribute(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, adminPermissionsEnabled);
 
-        // sending an event if we are enabling the permissions and it was not enabled already.
-        // setAttribute above only publishes when the attribute value changed, so this covers
-        // the case where the attribute is already "true" but the admin permissions client is missing.
-        if (adminPermissionsEnabled && !isAdminPermissionsAlreadyEnabled) {
+        // setAttribute publishes the update event when the value changed, and listeners react to it
+        // synchronously by creating the admin permissions client. If the client is still missing at
+        // this point (the attribute was already "true" but the client is gone), publish explicitly
+        // so listeners can repair it.
+        if (adminPermissionsEnabled && getAdminPermissionsClient() == null) {
             publishRealmAttributeUpdateEvent(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, String.valueOf(adminPermissionsEnabled));
         }
     }
