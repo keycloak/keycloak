@@ -39,6 +39,7 @@ import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
@@ -52,6 +53,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCProviderConfig;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
+import org.keycloak.protocol.oidc.refresh.RefreshTokenException;
 import org.keycloak.protocol.oidc.token.TokenInterceptorException;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
@@ -73,6 +75,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import static org.keycloak.OAuth2Constants.UMA_GRANT_TYPE;
+import static org.keycloak.events.Details.REASON;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 
 /**
@@ -140,7 +143,7 @@ public class TokenEndpoint {
         try {
             grant.preProcess(session, formParams);
         } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(REASON, Details.CLIENT_POLICY_ERROR);
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
@@ -171,6 +174,10 @@ public class TokenEndpoint {
             return grant.process(context);
         } catch (TokenInterceptorException e) {
             throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
+        } catch (RefreshTokenException e) {
+            event.detail(REASON, e.getErrorDescription());
+            event.error(Errors.INVALID_TOKEN);
+            throw new CorsErrorResponseException(cors, e.getError(), e.getErrorDescription(), Response.Status.BAD_REQUEST);
         }
     }
 

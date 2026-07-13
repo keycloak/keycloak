@@ -343,7 +343,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         testClientUriValidation("Root URL must not contain an URL fragment",
                 null,
                 null,
-                "Redirect URIs must not contain an URI fragment",
+                "A redirect URI must not contain an URL fragment",
                 "http://redhat.com/abcd#someFragment"
         );
     }

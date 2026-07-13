@@ -31,6 +31,8 @@ import org.keycloak.Config;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorMetadata;
 import org.keycloak.authentication.authenticators.browser.WebAuthnMetadataService;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Enablement;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
@@ -87,8 +89,8 @@ public class KeycloakRecorder {
         }
     }
 
-    public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features) {
-        Profile.init(profileName, features);
+    public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features, Map<Feature, Enablement> enablements) {
+        Profile.init(profileName, features, enablements);
     }
 
     // default handler for redirecting to specific path

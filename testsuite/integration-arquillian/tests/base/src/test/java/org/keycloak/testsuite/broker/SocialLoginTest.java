@@ -36,6 +36,7 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.login.UpdateAccount;
@@ -383,6 +384,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     @Test
     public void twitterLogin() {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.TWITTER_BROKER);
         setTestProvider(TWITTER);
         performLogin();
         assertUpdateProfile(false, false, true);

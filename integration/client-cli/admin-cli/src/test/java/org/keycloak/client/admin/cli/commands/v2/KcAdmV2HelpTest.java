@@ -236,31 +236,49 @@ public class KcAdmV2HelpTest {
     }
 
     @Test
-    public void testLeafDoesNotHaveConnectionOptions() {
+    public void testLeafShowsConnectionOptions() {
         String help = getSubcommandHelp("client", "list");
-        assertFalse("leaf should not have 'Connection options:' heading", help.contains("Connection options:"));
-        assertFalse("leaf should not have --config", help.contains("--config"));
-        assertFalse("leaf should not have -r", help.contains("-r,"));
-        assertFalse("leaf should not have --target-realm", help.contains("--target-realm"));
-        assertFalse("leaf should not have --token", help.contains("--token"));
-        assertFalse("leaf should not have --insecure", help.contains("--insecure"));
+        assertTrue("leaf should have 'Connection options' heading but found: " + help, help.contains("Connection options"));
+        assertTrue("leaf should explain placement but found: " + help, help.contains("must precede the subcommand"));
+        assertTrue("leaf should have --config but found: " + help, help.contains("--config"));
+        assertTrue("leaf should have --no-config but found: " + help, help.contains("--no-config"));
+        assertTrue("leaf should describe no-config purpose but found: " + help, help.contains("Don't use config file"));
+        assertTrue("leaf should have --target-realm but found: " + help, help.contains("--target-realm"));
+        assertTrue("leaf should have --token but found: " + help, help.contains("--token"));
+        assertTrue("leaf should have --insecure but found: " + help, help.contains("--insecure"));
+        assertTrue("leaf should have --keystore but found: " + help, help.contains("--keystore"));
+        assertTrue("leaf should have --storepass but found: " + help, help.contains("--storepass"));
+        assertTrue("leaf should have --keypass but found: " + help, help.contains("--keypass"));
+        assertTrue("leaf should have --alias but found: " + help, help.contains("--alias"));
+        assertTrue("leaf should mention KC_CLI_STORE_PASSWORD but found: " + help, help.contains("KC_CLI_STORE_PASSWORD"));
     }
 
     @Test
-    public void testLeafDoesNotHaveKeystoreOptions() {
-        String help = getSubcommandHelp("client", "list");
-        assertFalse("leaf should not have --keystore", help.contains("--keystore"));
-        assertFalse("leaf should not have --storepass", help.contains("--storepass"));
-        assertFalse("leaf should not have --keypass", help.contains("--keypass"));
-        assertFalse("leaf should not have --alias", help.contains("--alias"));
-        assertFalse("leaf should not mention KC_CLI_STORE_PASSWORD", help.contains("KC_CLI_STORE_PASSWORD"));
+    public void testVariantShowsConnectionOptions() {
+        String help = getVariantHelp("create", "oidc");
+        assertTrue("variant should have 'Connection options' heading but found: " + help, help.contains("Connection options"));
+        assertTrue("variant should explain placement but found: " + help, help.contains("must precede the subcommand"));
+        assertTrue("variant should have --config but found: " + help, help.contains("--config"));
+        assertTrue("variant should have --realm but found: " + help, help.contains("--realm"));
+        assertTrue("variant should have --server but found: " + help, help.contains("--server"));
     }
 
     @Test
-    public void testLeafDoesNotHaveConfigOptions() {
-        String help = getSubcommandHelp("client", "list");
-        assertFalse("leaf should not have --no-config", help.contains("--no-config"));
-        assertFalse("leaf should not describe no-config purpose", help.contains("Don't use config file"));
+    public void testVariantParentShowsConnectionOptions() {
+        String help = getVariantParentHelp("create");
+        assertTrue("variant parent should have 'Connection options' heading but found: " + help, help.contains("Connection options"));
+        assertTrue("variant parent should explain placement but found: " + help, help.contains("must precede the subcommand"));
+        assertTrue("create parent should show --config: " + help, help.contains("--config"));
+        assertTrue("create parent should show --server: " + help, help.contains("--server"));
+    }
+
+    @Test
+    public void testEditShowsConnectionOptions() {
+        String help = getSubcommandHelp("client", "edit");
+        assertTrue("edit should have 'Connection options' heading but found: " + help, help.contains("Connection options"));
+        assertTrue("edit should explain placement but found: " + help, help.contains("must precede the subcommand"));
+        assertTrue("edit should have --config but found: " + help, help.contains("--config"));
+        assertTrue("edit should have --realm but found: " + help, help.contains("--realm"));
     }
 
     @Test
@@ -329,13 +347,6 @@ public class KcAdmV2HelpTest {
         assertTrue("group synopsis should contain: " + prefix + ", got: " + help, help.contains(prefix));
     }
 
-    @Test
-    public void testVariantDoesNotHaveConnectionOptions() {
-        String help = getVariantHelp("create", "oidc");
-        assertFalse("variant should not have --config", help.contains("--config"));
-        assertFalse("variant should not have --realm", help.contains("--realm"));
-        assertFalse("variant should not have --server", help.contains("--server"));
-    }
 
     @Test
     public void testCreateVariantFailsWhenNoIdProvided() {
@@ -446,7 +457,7 @@ public class KcAdmV2HelpTest {
 
             int exitCode = cli.execute("client", "list", "--help");
             assertEquals("--help should exit with 0", 0, exitCode);
-            assertFalse("--help should not show connection options", out.toString().contains("--config"));
+            assertTrue("--help should show connection options", out.toString().contains("--config"));
             assertTrue("--help should show output options", out.toString().contains("--compressed"));
         } finally {
             Globals.help = false;
@@ -533,12 +544,6 @@ public class KcAdmV2HelpTest {
         assertFalse("create parent should not show --sign-documents: " + help, help.contains("--sign-documents"));
     }
 
-    @Test
-    public void testVariantParentDoesNotShowConnectionOptions() {
-        String help = getVariantParentHelp("create");
-        assertFalse("create parent should not show --config: " + help, help.contains("--config"));
-        assertFalse("create parent should not show --server: " + help, help.contains("--server"));
-    }
 
     @Test
     public void testHelpFlagOnVariantParent() {
@@ -586,13 +591,6 @@ public class KcAdmV2HelpTest {
         assertFalse("edit should not have --client-id option", help.contains("--client-id"));
     }
 
-    @Test
-    public void testEditDoesNotHaveConnectionOptions() {
-        String help = getSubcommandHelp("client", "edit");
-        assertFalse("edit should not have --config", help.contains("--config"));
-        assertFalse("edit should not have --realm", help.contains("--realm"));
-        assertTrue("edit should have Output options", help.contains("Output options:"));
-    }
 
     @Test
     public void testConfigEditorHelpShowsUsage() {
@@ -626,12 +624,16 @@ public class KcAdmV2HelpTest {
     }
 
     @Test
-    public void testGroupCommandHelpOmitsConnectionOptions() {
+    public void testGroupCommandShowsConnectionOptions() {
         CommandLine cli = createCli();
         String help = cli.getSubcommands().get("client").getUsageMessage();
-        assertFalse("group command should not show --config", help.contains("--config"));
-        assertFalse("group command should not show --server", help.contains("--server"));
-        assertFalse("group command should not show --password", help.contains("--password"));
+        assertTrue("group command should show 'Connection options' heading but found: " + help,
+                help.contains("Connection options"));
+        assertTrue("group command should explain placement but found: " + help,
+                help.contains("must precede the subcommand"));
+        assertTrue("group command should show --config but found: " + help, help.contains("--config"));
+        assertTrue("group command should show --server but found: " + help, help.contains("--server"));
+        assertTrue("group command should show --password but found: " + help, help.contains("--password"));
     }
 
     @Test

@@ -4,8 +4,8 @@ import jakarta.annotation.Nonnull;
 
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
 import org.keycloak.utils.StringUtil;
 
 /**
@@ -15,13 +15,14 @@ public class UsernameScopeType implements ParameterizedScopeTypeProvider {
 
     public static final String TYPE = "username";
 
-    private UserProvider users;
+    protected final KeycloakSession session;
 
     public UsernameScopeType() {
+        this.session = null;
     }
 
     public UsernameScopeType(KeycloakSession session) {
-        this.users = session.getProvider(UserProvider.class);
+        this.session = session;
     }
 
     @Override
@@ -39,7 +40,6 @@ public class UsernameScopeType implements ParameterizedScopeTypeProvider {
         if (StringUtil.isBlank(parameter)) {
             throw new InvalidScopeParameterException("Username parameter must not be blank");
         }
-        resolveUser(scope, parameter);
     }
 
     @Override
@@ -50,10 +50,14 @@ public class UsernameScopeType implements ParameterizedScopeTypeProvider {
         }
     }
 
-    private UserModel resolveUser(ClientScopeModel scope, String parameter) throws InvalidScopeParameterException {
-        UserModel targetUser = users.getUserByUsername(scope.getRealm(), parameter);
+    protected UserModel resolveUser(ClientScopeModel scope, String parameter) throws InvalidScopeParameterException {
+        RealmModel realm = scope.getRealm();
+        UserModel targetUser = session.users().getUserByUsername(realm, parameter);
+        if (targetUser == null && realm.isLoginWithEmailAllowed() && parameter.contains("@")) {
+            targetUser = session.users().getUserByEmail(realm, parameter);
+        }
         if (targetUser == null) {
-            throw new InvalidScopeParameterException(String.format("User '%s' not found in realm '%s'", parameter, scope.getRealm().getName()));
+            throw new InvalidScopeParameterException(String.format("User '%s' not found in realm '%s'", parameter, realm.getName()));
         }
         if (!targetUser.isEnabled()) {
             throw new InvalidScopeParameterException(String.format("User '%s' is disabled in realm '%s'", parameter, scope.getRealm().getName()));
