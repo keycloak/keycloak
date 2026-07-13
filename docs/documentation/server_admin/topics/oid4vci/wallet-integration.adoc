@@ -3,7 +3,7 @@
 
 [NOTE]
 ====
-This section describes a manual interoperability test with Valera Wallet. It is not an automated compatibility test. Wallet behavior can change between wallet versions, and results should be verified again when upgrading either the wallet or {project_name}.
+This section describes a manual interoperability test with Valera Wallet. It is not an automated compatibility test, and this integration is not officially supported. Wallet behavior can change between wallet versions, and results should be verified again when upgrading either the wallet or {project_name}.
 ====
 
 Valera Wallet by A-SIT Plus is a demo wallet that can be used to test OpenID4VCI credential issuance. The test below was performed with a locally running {project_name} server exposed to the mobile wallet through an HTTPS tunnel. A production deployment is not required for this manual test, but the wallet must be able to reach the issuer through an HTTPS URL.
@@ -42,7 +42,7 @@ If {project_name} listens locally with HTTPS on port `8443`, start the tunnel fo
 
 [source,bash]
 ----
-ngrok http 8443
+ngrok http https://localhost:8443
 ----
 
 Use the public HTTPS tunnel hostname consistently for the credential offer and the issuer metadata seen by the wallet. The wallet must see credential offers, issuer metadata, authorization endpoints, token endpoints, and credential endpoints under the same public HTTPS hostname.
@@ -167,6 +167,7 @@ image::images/oid4vci/valera-cred-details.webp[Valera Wallet credential details,
 Use this flow when the holder should authenticate with {project_name} and approve issuance interactively.
 
 . Ensure that the user has an available `IdentityCredential` credential in {project_name}.
+. If you generate the offer through the REST credential-offer endpoint, the dedicated experimental `oid4vc-vci-rest-credential-offer` feature must also be enabled.
 . Generate a credential offer for the Valera client without `pre_authorized=true`. The offer contains an `authorization_code` grant and an `issuer_state` value.
 . Display the credential offer as a QR code or deep link and follow the <<_oid4vci_valera_wallet_claim_credential,Valera Wallet claiming steps>>.
 . Valera starts the Authorization Code Flow. During this test, Valera used PAR and then redirected the user to {project_name} for authentication.
@@ -190,6 +191,8 @@ The test succeeded with Valera Wallet 5.8.0. The final credential request used t
 ==== Pre-Authorized Code Flow Test
 
 Use this flow when the user has already been authenticated by the issuer and the wallet can redeem a pre-authorized credential offer without starting an interactive login flow on the phone.
+
+This flow requires the dedicated experimental `oid4vc-vci-preauth-code` feature in addition to OID4VCI.
 
 . Ensure that the user has an available `IdentityCredential` credential in {project_name}.
 . Generate a credential offer for the Valera client with `pre_authorized=true` and the target user set to the user who owns the credential.
