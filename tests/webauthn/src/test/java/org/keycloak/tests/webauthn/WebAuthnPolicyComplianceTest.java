@@ -47,6 +47,16 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
+    public void omittedAuthenticatorAttachment() {
+        managedRealm.updateWithCleanup(r -> r
+                .webAuthnPolicyAuthenticatorAttachment(AUTHENTICATOR_ATTACHMENT_CROSS_PLATFORM));
+
+        registerAndExpectError("attach-omit",
+                tamperFormField("authenticatorAttachment", ""),
+                "Authenticator attachment is required by the policy but was not provided by the client.");
+    }
+
+    @Test
     public void tamperedSignatureAlgorithm() {
         // Policy: ES512 only. Tamper pubKeyCredParams to ES256.
         managedRealm.updateWithCleanup(r -> r
