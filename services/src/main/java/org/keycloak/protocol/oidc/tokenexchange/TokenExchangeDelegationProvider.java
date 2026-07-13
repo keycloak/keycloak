@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  *  and other contributors as indicated by the @author tags.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -81,7 +81,7 @@ public class TokenExchangeDelegationProvider extends StandardTokenExchangeProvid
         String actorTokenType = context.getParams().getActorTokenType();
         if (!OAuth2Constants.ACCESS_TOKEN_TYPE.equals(actorTokenType)) {
             event.detail(Details.REASON, "actor_token_type invalid");
-            event.error(Errors.INVALID_TOKEN);
+            event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid actor token type", Response.Status.BAD_REQUEST);
         }
 
@@ -96,6 +96,7 @@ public class TokenExchangeDelegationProvider extends StandardTokenExchangeProvid
         UserSessionModel actorSession = actorAuthResult.session();
         actorAccessToken = actorAuthResult.token();
 
+        event.detail(Details.ACTOR_ID, actorUser.getId());
         event.detail(Details.ACTOR, actorUser.getUsername());
         if (actorAccessToken.getSessionId() != null) {
             event.detail(Details.ACTOR_SESSION_ID, actorSession.getId());
@@ -142,37 +143,31 @@ public class TokenExchangeDelegationProvider extends StandardTokenExchangeProvid
         }
 
         Object mayActObject = subjectAccessToken.getOtherClaims().get(IDToken.MAY_ACT);
-        if (!(mayActObject instanceof Map)) {
+        if (!(mayActObject instanceof Map mayActMap)) {
             event.detail(Details.REASON, "Invalid may_act claim in the subject_token");
             event.error(Errors.INVALID_TOKEN);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid may_act claim in the subject_token", Response.Status.BAD_REQUEST);
         }
 
-        Map mayActMap = (Map) mayActObject;
-
         Object issObject = mayActMap.get(OIDCLoginProtocol.ISSUER);
-        if (issObject instanceof String iss
-                && !iss.equals(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()))) {
+        if (issObject != null && !issObject.equals(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()))) {
             event.detail(Details.REASON, "Invalid issuer in the may_act claim of the subject_token");
             event.error(Errors.INVALID_TOKEN);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid issuer in the may_act claim of the subject_token", Response.Status.BAD_REQUEST);
         }
 
         Object subjectObject = mayActMap.get(JsonWebToken.SUBJECT);
-        if (!(subjectObject instanceof String)) {
+        if (!(subjectObject instanceof String subject)) {
             event.detail(Details.REASON, "Invalid may_act claim in the subject_token");
             event.error(Errors.INVALID_TOKEN);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid may_act claim in the subject_token", Response.Status.BAD_REQUEST);
         }
 
-        String subject = (String) subjectObject;
         if (!actorUser.getId().equals(subject)) {
             event.detail(Details.REASON, "Actor user is not allowed by the may_act claim inside the subject_token");
             event.error(Errors.INVALID_TOKEN);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Actor user is not allowed by the may_act claim inside the subject_token", Response.Status.BAD_REQUEST);
         }
-
-        // TODO: check more things???
     }
 
     @Override
@@ -180,7 +175,7 @@ public class TokenExchangeDelegationProvider extends StandardTokenExchangeProvid
         super.checkRequestedAudiences(responseBuilder);
 
         // add the "act" claim using the "may_act" claim sent in the subjectToken, chain current actor if present
-        Map act = new HashMap((Map) subjectAccessToken.getOtherClaims().get(IDToken.MAY_ACT)); // shold be present at this point
+        Map act = new HashMap((Map) subjectAccessToken.getOtherClaims().get(IDToken.MAY_ACT)); // should be present at this point
         Object prevAct = actorAccessToken.getOtherClaims().get(IDToken.ACT);
         if (prevAct != null) {
             act.put(IDToken.ACT, prevAct);

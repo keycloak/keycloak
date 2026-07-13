@@ -121,6 +121,12 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
     }
 
     protected AuthenticationManager.AuthResult processSubjectToken() {
+        if (!OAuth2Constants.ACCESS_TOKEN_TYPE.equals(context.getParams().getSubjectTokenType())) {
+            event.detail(Details.REASON, "subject_token_type invalid");
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid subject token type", Response.Status.BAD_REQUEST);
+        }
+
         String subjectToken = context.getParams().getSubjectToken();
 
         event.detail(Details.REQUESTED_TOKEN_TYPE, context.getParams().getRequestedTokenType());

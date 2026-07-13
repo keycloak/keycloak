@@ -46,6 +46,7 @@ public interface Details {
     String REGISTER_METHOD = "register_method";
     String USERNAME = "username";
     String ACTOR = "actor";
+    String ACTOR_ID = "actor_id";
     String ACTOR_SESSION_ID = "actor_session_id";
     String FIRST_NAME = "first_name";
     String LAST_NAME = "last_name";

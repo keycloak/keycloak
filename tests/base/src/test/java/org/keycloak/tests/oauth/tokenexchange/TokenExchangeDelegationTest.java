@@ -505,8 +505,10 @@ public class TokenExchangeDelegationTest {
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.TOKEN_EXCHANGE)
                 .clientId("test-app")
+                .hasUserId()
                 .details(Details.USERNAME, USERNAME)
                 .details(Details.ACTOR, administrator.getUsername())
+                .details(Details.ACTOR_ID, administrator.getId())
                 .details(Details.REQUESTED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
                 .details(Details.SUBJECT_TOKEN_CLIENT_ID, "test-app");
 
