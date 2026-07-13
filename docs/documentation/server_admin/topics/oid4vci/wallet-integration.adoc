@@ -192,7 +192,7 @@ The test succeeded with Valera Wallet 5.8.0. The final credential request used t
 
 Use this flow when the user has already been authenticated by the issuer and the wallet can redeem a pre-authorized credential offer without starting an interactive login flow on the phone.
 
-This flow requires the dedicated experimental `oid4vc-vci-preauth-code` feature in addition to OID4VCI.
+This flow requires the dedicated experimental `oid4vc-vci-preauth-code` feature in addition to OID4VCI. Generating the offer with the `pre_authorized` and target user parameters in the following steps also requires the experimental `oid4vc-vci-rest-credential-offer` feature.
 
 . Ensure that the user has an available `IdentityCredential` credential in {project_name}.
 . Generate a credential offer for the Valera client with `pre_authorized=true` and the target user set to the user who owns the credential.
