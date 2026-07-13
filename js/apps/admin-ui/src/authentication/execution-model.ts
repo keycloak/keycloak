@@ -341,7 +341,7 @@ export class ExecutionList {
       const change =
         vertical === "into"
           ? new LevelChange(
-              hover.executionList?.length || 0,
+              this.#siblingIndexAtEndOfSubflow(draggedId, hover),
               this.#siblingIndexAtEndOfSubflow(draggedId, hover),
               hover,
             )
