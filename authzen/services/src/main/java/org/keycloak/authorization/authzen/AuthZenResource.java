@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 import jakarta.ws.rs.BadRequestException;
@@ -45,6 +46,7 @@ import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -133,7 +135,9 @@ public class AuthZenResource {
         if (authResult == null) {
             throw new NotAuthorizedException("Bearer");
         }
-        if (!authResult.client().getId().equals(authResult.user().getServiceAccountClientLink())) {
+        // The evaluation of policies must only be called from a confidential client with its service account user.
+        // Only with that, we ensure that reveal an authorization result to the appropriate caller.
+        if (!authResult.client().getId().equals(authResult.user().getServiceAccountClientLink()) || !Objects.equals(authResult.session().getAuthMethod(), ServiceAccountConstants.CLIENT_AUTH)) {
             throw new NotAuthorizedException("Bearer");
         }
         return authResult.token();
