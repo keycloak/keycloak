@@ -45,11 +45,11 @@ export async function editSAMLSettings(page: Page, samlProviderName: string) {
 
   // Toggle SAML switches
   const switches = [
-    "config.loginHint",
-    "config.loginQueryHint",
     "config.allowCreate",
     "config.wantAssertionsEncrypted",
     "config.forceAuthn",
+    "config.loginHint",
+    "config.loginQueryHint",
   ];
   for (const switchId of switches) {
     await switchOn(page, `[data-testid="${switchId}"]`);
