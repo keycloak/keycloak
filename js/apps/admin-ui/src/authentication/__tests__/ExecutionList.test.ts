@@ -365,7 +365,7 @@ describe("ExecutionList", () => {
 
     it("nests into subflow via into vertical", () => {
       const list = new ExecutionList(list2Data);
-      const resolved = list.resolveDropTarget("1", "2", "into", 1);
+      const resolved = list.resolveDropTarget("1", "2", "into");
 
       expect(resolved).not.toBeNull();
       expect(resolved!.kind).toBe("level-change");
@@ -377,20 +377,61 @@ describe("ExecutionList", () => {
       expect(resolved!.preview.targetParentId).toBe("2");
     });
 
-    it("moves out to parent level when dropping after subflow with level 1 indent", () => {
+    it("reorders at same level when dropping after a row", () => {
       const list = new ExecutionList(list2Data);
-      const resolved = list.resolveDropTarget("6", "7", "before", 1);
+      const resolved = list.resolveDropTarget("3", "4", "after");
+
+      expect(resolved).not.toBeNull();
+      expect(resolved!.preview.mode).toBe("reorder-after");
+      expect(resolved!.preview.targetLevel).toBe(1);
+      expect(resolved!.preview.targetParentId).toBe("2");
+    });
+
+    it("inserts between children in expanded subflow at hover position", () => {
+      const list = new ExecutionList(list2Data);
+      const subflow2 = list.expandableList.find((ex) => ex.id === "2")!;
+      subflow2.isCollapsed = false;
+
+      const resolved = list.resolveDropTarget("1", "3", "after");
+
+      expect(resolved).not.toBeNull();
+      expect(resolved!.preview.mode).toBe("reorder-after");
+      expect(resolved!.kind).toBe("level-change");
+      const levelChange = resolved!.change as LevelChange;
+      expect(levelChange.parent?.id).toBe("2");
+      expect(levelChange.newIndex).toBe(1);
+    });
+
+    it("inserts before first child in expanded subflow", () => {
+      const list = new ExecutionList(list2Data);
+      const subflow2 = list.expandableList.find((ex) => ex.id === "2")!;
+      subflow2.isCollapsed = false;
+
+      const resolved = list.resolveDropTarget("1", "3", "before");
 
       expect(resolved).not.toBeNull();
       expect(resolved!.preview.mode).toBe("reorder-before");
-      expect(resolved!.preview.targetLevel).toBe(1);
-      expect(resolved!.preview.targetParentId).toBe("2");
-      expect(resolved!.kind).toBe("level-change");
+      const levelChange = resolved!.change as LevelChange;
+      expect(levelChange.parent?.id).toBe("2");
+      expect(levelChange.newIndex).toBe(0);
+    });
+
+    it("reorders within expanded subflow without moving to end", () => {
+      const list = new ExecutionList(list2Data);
+      const subflow2 = list.expandableList.find((ex) => ex.id === "2")!;
+      subflow2.isCollapsed = false;
+
+      const resolved = list.resolveDropTarget("4", "3", "before");
+
+      expect(resolved).not.toBeNull();
+      expect(resolved!.kind).toBe("reorder");
+      expect(resolved!.change).toBeInstanceOf(IndexChange);
+      expect((resolved!.change as IndexChange).newIndex).toBe(0);
     });
 
     it("reorders at same level without level change", () => {
       const list = new ExecutionList(list2Data);
-      const resolved = list.resolveDropTarget("7", "1", "after", 0);
+      const resolved = list.resolveDropTarget("7", "1", "after");
 
       expect(resolved).not.toBeNull();
       expect(resolved!.kind).toBe("reorder");
@@ -399,22 +440,11 @@ describe("ExecutionList", () => {
       expect(resolved!.preview.targetParentId).toBeNull();
     });
 
-    it("nests deeper when targetLevel is hoverLevel + 1", () => {
-      const list = new ExecutionList(list2Data);
-      const resolved = list.resolveDropTarget("1", "4", "after", 2);
-
-      expect(resolved).not.toBeNull();
-      expect(resolved!.kind).toBe("level-change");
-      expect((resolved!.change as LevelChange).parent?.id).toBe("4");
-      expect(resolved!.preview.targetLevel).toBe(2);
-      expect(resolved!.preview.targetParentId).toBe("4");
-    });
-
     it("preview insertIndex is before hover row for reorder-before", () => {
       const list = new ExecutionList(list2Data);
       const visualOrder = list.order();
       const hoverIndex = visualOrder.findIndex((ex) => ex.id === "7");
-      const resolved = list.resolveDropTarget("1", "7", "before", 0);
+      const resolved = list.resolveDropTarget("1", "7", "before");
 
       expect(resolved!.preview.insertIndex).toBe(hoverIndex);
       expect(resolved!.preview.mode).toBe("reorder-before");
@@ -422,7 +452,45 @@ describe("ExecutionList", () => {
 
     it("returns null for into on non-subflow", () => {
       const list = new ExecutionList(list2Data);
-      expect(list.resolveDropTarget("1", "1", "into", 1)).toBeNull();
+      expect(list.resolveDropTarget("1", "1", "into")).toBeNull();
+    });
+  });
+
+  describe("collapse helpers", () => {
+    const list2Data = [
+      { id: "1", index: 0, level: 0 },
+      {
+        id: "2",
+        index: 1,
+        level: 0,
+        authenticationFlow: true,
+        displayName: "Subflow 2",
+      },
+      { id: "3", index: 0, level: 1 },
+      { id: "7", index: 2, level: 0 },
+    ];
+
+    it("collapses all subflows", () => {
+      const list = new ExecutionList(list2Data);
+      const subflow2 = list.expandableList.find((ex) => ex.id === "2")!;
+      subflow2.isCollapsed = false;
+
+      list.collapseAllSubflows();
+
+      expect(subflow2.isCollapsed).toBe(true);
+    });
+
+    it("restores collapse state from snapshot", () => {
+      const list = new ExecutionList(list2Data);
+      const subflow2 = list.expandableList.find((ex) => ex.id === "2")!;
+      subflow2.isCollapsed = false;
+      const snapshot = list.snapshotCollapseState();
+
+      list.collapseAllSubflows();
+      expect(subflow2.isCollapsed).toBe(true);
+
+      list.restoreCollapseState(snapshot);
+      expect(subflow2.isCollapsed).toBe(false);
     });
   });
 

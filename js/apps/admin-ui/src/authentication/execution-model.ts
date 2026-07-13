@@ -211,11 +211,39 @@ export class ExecutionList {
     return insertIndex;
   }
 
+  #siblingIndexAtEndOfSubflow(
+    draggedId: string,
+    parent: ExpandableExecution,
+  ): number {
+    const children =
+      parent.executionList?.filter((child) => child.id !== draggedId) ?? [];
+    return children.length;
+  }
+
+  #siblingIndexRelativeToHover(
+    draggedId: string,
+    hoverId: string,
+    vertical: DropVertical,
+  ): number {
+    const parent = this.#findParentOf(hoverId);
+    const siblings = parent?.executionList ?? this.expandableList;
+    const hoverIdx = siblings.findIndex((s) => s.id === hoverId);
+    if (hoverIdx === -1) {
+      return 0;
+    }
+
+    let targetIdx = vertical === "before" ? hoverIdx : hoverIdx + 1;
+    const draggedIdx = siblings.findIndex((s) => s.id === draggedId);
+    if (draggedIdx !== -1 && draggedIdx < targetIdx) {
+      targetIdx--;
+    }
+    return targetIdx;
+  }
+
   resolveDropTarget(
     draggedId: string,
     hoverId: string,
     vertical: DropVertical,
-    targetLevel: number,
   ): ResolvedDrop | null {
     const visualOrder = this.order();
     const hoverIndex = visualOrder.findIndex((ex) => ex.id === hoverId);
@@ -248,8 +276,7 @@ export class ExecutionList {
     } else {
       dropMode = vertical === "before" ? "reorder-before" : "reorder-after";
       insertIndex = vertical === "before" ? hoverIndex : hoverIndex + 1;
-      const maxLevel = hoverLevel + 1;
-      clampedLevel = Math.max(0, Math.min(targetLevel, maxLevel));
+      clampedLevel = hoverLevel;
     }
 
     const targetParent =
@@ -307,21 +334,22 @@ export class ExecutionList {
       }
 
       const change =
-        clampedLevel > 0
+        vertical === "into"
           ? new LevelChange(
-              parent!.executionList?.length || 0,
-              this.#siblingIndexInOrder(
-                draggedId,
-                clampedLevel,
-                parent!.id,
-                order,
-              ),
-              parent,
+              hover.executionList?.length || 0,
+              this.#siblingIndexAtEndOfSubflow(draggedId, hover),
+              hover,
             )
-          : new LevelChange(
-              this.expandableList.length,
-              this.#siblingIndexInOrder(draggedId, 0, undefined, order),
-            );
+          : clampedLevel > 0
+            ? new LevelChange(
+                parent!.executionList?.length || 0,
+                this.#siblingIndexRelativeToHover(draggedId, hoverId, vertical),
+                parent,
+              )
+            : new LevelChange(
+                this.expandableList.length,
+                this.#siblingIndexRelativeToHover(draggedId, hoverId, vertical),
+              );
 
       return {
         kind: "level-change",
@@ -446,6 +474,72 @@ export class ExecutionList {
       oldLocation.index!,
       this.#siblingIndexInOrder(changedId, oldLevel, currentParent?.id, order),
     );
+  }
+
+  findParentOf(id: string): ExpandableExecution | undefined {
+    return this.#findParentOf(id);
+  }
+
+  ancestorPathIds(id: string): Set<string> {
+    const ancestors = new Set<string>();
+    let current = this.#findParentOf(id);
+    while (current?.id) {
+      ancestors.add(current.id);
+      current = this.#findParentOf(current.id);
+    }
+    return ancestors;
+  }
+
+  collapseAllSubflows() {
+    this.#applyCollapseState(this.expandableList, new Set());
+  }
+
+  collapseAllExceptAncestorPath(draggedId: string) {
+    const keepExpanded = this.ancestorPathIds(draggedId);
+    this.#applyCollapseState(this.expandableList, keepExpanded);
+  }
+
+  #applyCollapseState(list: ExpandableExecution[], keepExpanded: Set<string>) {
+    for (const ex of list) {
+      if (ex.executionList?.length) {
+        ex.isCollapsed = !keepExpanded.has(ex.id!);
+        this.#applyCollapseState(ex.executionList, keepExpanded);
+      }
+    }
+  }
+
+  snapshotCollapseState(): Map<string, boolean> {
+    const map = new Map<string, boolean>();
+    this.#collectCollapseState(this.expandableList, map);
+    return map;
+  }
+
+  #collectCollapseState(
+    list: ExpandableExecution[],
+    map: Map<string, boolean>,
+  ) {
+    for (const ex of list) {
+      if (ex.executionList?.length && ex.id) {
+        map.set(ex.id, ex.isCollapsed);
+        this.#collectCollapseState(ex.executionList, map);
+      }
+    }
+  }
+
+  restoreCollapseState(snapshot: Map<string, boolean>) {
+    this.#restoreCollapseState(this.expandableList, snapshot);
+  }
+
+  #restoreCollapseState(
+    list: ExpandableExecution[],
+    snapshot: Map<string, boolean>,
+  ) {
+    for (const ex of list) {
+      if (ex.executionList?.length && ex.id && snapshot.has(ex.id)) {
+        ex.isCollapsed = snapshot.get(ex.id)!;
+        this.#restoreCollapseState(ex.executionList, snapshot);
+      }
+    }
   }
 
   clone() {
