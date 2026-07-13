@@ -70,6 +70,11 @@ tr.keycloak__authentication__drop-line--after {
   cursor: grabbing;
 }
 
+.keycloak__authentication__drag-handle:focus-visible {
+  outline: 2px solid var(--pf-v5-global--active-color--100);
+  outline-offset: 2px;
+}
+
 .keycloak__authentication__drag-overlay {
   display: inline-flex;
   align-items: center;

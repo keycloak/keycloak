@@ -34,7 +34,7 @@ import {
   TableIcon,
 } from "@patternfly/react-icons";
 import { Table, Tbody } from "@patternfly/react-table";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
@@ -122,7 +122,7 @@ const getPointerCoordinates = (
 };
 
 const findHoveredRow = (
-  rows: NodeListOf<Element>,
+  rows: readonly Element[],
   activeId: string,
   pointerX: number,
   pointerY: number,
@@ -247,6 +247,25 @@ export default function FlowDetails() {
   const expandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingExpandIdRef = useRef<string | null>(null);
   const collapseRafRef = useRef<number | null>(null);
+  const dropInfoRef = useRef<DropInfo>(emptyDropInfo());
+  const dragRowsRef = useRef<Element[]>([]);
+
+  const refreshDragRows = useCallback(() => {
+    dragRowsRef.current = Array.from(
+      document.querySelectorAll("tr[data-execution-id]"),
+    );
+  }, []);
+
+  const scheduleRefreshDragRows = useCallback(() => {
+    requestAnimationFrame(() => {
+      refreshDragRows();
+    });
+  }, [refreshDragRows]);
+
+  const updateDropInfo = useCallback((info: DropInfo) => {
+    dropInfoRef.current = info;
+    setDropInfo(info);
+  }, []);
 
   const visualIndexById = useMemo(() => {
     const map = new Map<string, number>();
@@ -300,6 +319,15 @@ export default function FlowDetails() {
     setPendingExpandId(null);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      clearExpandTimer();
+      if (collapseRafRef.current !== null) {
+        cancelAnimationFrame(collapseRafRef.current);
+      }
+    };
+  }, [clearExpandTimer]);
+
   const restoreDragState = useCallback(() => {
     clearExpandTimer();
     if (collapseRafRef.current !== null) {
@@ -348,8 +376,9 @@ export default function FlowDetails() {
       subflow.isCollapsed = false;
       autoExpandedIdsRef.current.add(subflowId);
       setExecutionList(executionList.clone());
+      scheduleRefreshDragRows();
     },
-    [executionList, findExecutionById],
+    [executionList, findExecutionById, scheduleRefreshDragRows],
   );
 
   const scheduleSubflowExpand = useCallback(
@@ -389,6 +418,7 @@ export default function FlowDetails() {
     setLiveText(t("onDragStart", { item: item.displayName }));
     collapseSnapshotRef.current = executionList.snapshotCollapseState();
     autoExpandedIdsRef.current.clear();
+    refreshDragRows();
 
     if (collapseRafRef.current !== null) {
       cancelAnimationFrame(collapseRafRef.current);
@@ -397,6 +427,7 @@ export default function FlowDetails() {
       collapseRafRef.current = null;
       executionList.collapseAllSubflows();
       setExecutionList(executionList.clone());
+      scheduleRefreshDragRows();
     });
   };
 
@@ -408,9 +439,8 @@ export default function FlowDetails() {
 
     const { active } = event;
     const { x: pointerX, y: pointerY } = pointer;
-    const rows = document.querySelectorAll("tr[data-execution-id]");
     const hoveredRow = findHoveredRow(
-      rows,
+      dragRowsRef.current,
       active.id as string,
       pointerX,
       pointerY,
@@ -457,7 +487,7 @@ export default function FlowDetails() {
         vertical,
       );
       if (resolved) {
-        setDropInfo(resolved.preview);
+        updateDropInfo(resolved.preview);
         if (dragged) {
           if (resolved.preview.mode === "drop-into") {
             const parent = findExecutionById(resolved.preview.targetParentId!);
@@ -472,10 +502,10 @@ export default function FlowDetails() {
           }
         }
       } else {
-        setDropInfo(emptyDropInfo());
+        updateDropInfo(emptyDropInfo());
       }
     } else {
-      setDropInfo(emptyDropInfo());
+      updateDropInfo(emptyDropInfo());
       if (dragged) {
         setLiveText(t("onDragMove", { item: dragged.displayName }));
       }
@@ -486,8 +516,8 @@ export default function FlowDetails() {
     const { active } = event;
     setActiveId(null);
 
-    const currentDropInfo = dropInfo;
-    setDropInfo(emptyDropInfo());
+    const currentDropInfo = dropInfoRef.current;
+    updateDropInfo(emptyDropInfo());
 
     if (!executionList) {
       restoreDragState();
@@ -541,7 +571,7 @@ export default function FlowDetails() {
 
   const handleDragCancel = () => {
     setActiveId(null);
-    setDropInfo(emptyDropInfo());
+    updateDropInfo(emptyDropInfo());
     restoreDragState();
     setLiveText(t("onDragCancel"));
   };
