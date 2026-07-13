@@ -101,6 +101,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
+
 
 /**
  * Base resource class for managing one particular client of a realm.
@@ -112,7 +114,6 @@ import org.jboss.resteasy.reactive.NoCache;
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ClientResource {
     protected static final Logger logger = Logger.getLogger(ClientResource.class);
-    private static final String HIDDEN_USER_PLACEHOLDER = "(hidden)";
     protected final RealmModel realm;
     private final AdminPermissionEvaluator auth;
     private final AdminEventBuilder adminEvent;
@@ -573,9 +574,11 @@ public class ClientResource {
     @Operation( summary = "Get user sessions for client. Returns a list of user sessions associated with this client.\n")
     public Stream<UserSessionRepresentation> getUserSessions(@Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult, @Parameter(description = "Maximum results size.") @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults) {
         auth.clients().requireView(client);
-        return session.sessions()
-                .readOnlyStreamUserSessions(client.getRealm(), client, computeFirstResult(firstResult), computeMaxResults(maxResults))
-                .map(userSession -> hideUserInfoIfNeeded(ModelToRepresentation.toRepresentation(userSession), userSession.getUser()));
+        return paginatedStream(session.sessions()
+                        .readOnlyStreamUserSessions(client.getRealm(), client, -1, -1)
+                        .filter(userSession -> auth.users().canView(userSession.getUser())),
+                computeFirstResult(firstResult), computeMaxResults(maxResults))
+                .map(ModelToRepresentation::toRepresentation);
     }
 
     /**
@@ -620,9 +623,11 @@ public class ClientResource {
     @Operation( summary = "Get offline sessions for client. Returns a list of offline user sessions associated with this client")
     public Stream<UserSessionRepresentation> getOfflineUserSessions(@Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult, @Parameter(description = "Maximum results size.") @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults) {
         auth.clients().requireView(client);
-        return session.sessions()
-                .readOnlyStreamOfflineUserSessions(client.getRealm(), client, computeFirstResult(firstResult), computeMaxResults(maxResults))
-                .map(userSession -> hideUserInfoIfNeeded(toUserSessionRepresentation(userSession), userSession.getUser()));
+        return paginatedStream(session.sessions()
+                        .readOnlyStreamOfflineUserSessions(client.getRealm(), client, -1, -1)
+                        .filter(userSession -> auth.users().canView(userSession.getUser())),
+                computeFirstResult(firstResult), computeMaxResults(maxResults))
+                .map(this::toUserSessionRepresentation);
     }
 
     /**
@@ -884,29 +889,6 @@ public class ClientResource {
         var clientSession = userSession.getAuthenticatedClientSessionByClient(client.getClientId());
         if (clientSession != null) {
             rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
-        }
-        return rep;
-    }
-
-    /**
-     * Masks the user identifying fields of a session representation when the caller does not have
-     * permission to view the user owning that session. The session entry is still returned, but
-     * {@code userId} and {@code username} are replaced with a placeholder so that {@code view-clients}
-     * alone cannot be used to enumerate which users are logged into a client.
-     * <p>
-     * The check is performed per session against the specific user, reusing the same per-user
-     * {@code canView} check as {@code SessionsResource.clientSessions} in the admin-ui-ext module,
-     * but masking the identity fields rather than filtering the session out, so that a caller with
-     * fine-grained view access to only some users still sees those users while the rest stay masked.
-     *
-     * @param rep  the session representation to mask in place.
-     * @param user the user owning the session, already resolved while building {@code rep}.
-     * @return the (possibly masked) representation.
-     */
-    private UserSessionRepresentation hideUserInfoIfNeeded(UserSessionRepresentation rep, UserModel user) {
-        if (user == null || !auth.users().canView(user)) {
-            rep.setUserId(HIDDEN_USER_PLACEHOLDER);
-            rep.setUsername(HIDDEN_USER_PLACEHOLDER);
         }
         return rep;
     }

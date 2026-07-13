@@ -13,6 +13,10 @@ In minor or patch releases, {project_name} will only introduce breaking changes 
 
 When calling {project_name}'s experimental AuthZEN endpoints, the caller now needs to be an authenticated confidential client's access token. Previously, it could be called with a user's access token.
 
+=== Client session listings filter sessions by user visibility
+
+The Admin REST API endpoints for listing client sessions (`GET /admin/realms/\{realm}/clients/\{id}/user-sessions` and `GET /admin/realms/\{realm}/clients/\{id}/offline-sessions`) now filter out sessions belonging to users that the caller does not have permission to view. Previously, any caller with the `view-clients` role could see all user sessions for a client, potentially exposing user identities to callers without the `view-users` role. After upgrading, callers without `view-users` permission will see fewer results from these endpoints.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
