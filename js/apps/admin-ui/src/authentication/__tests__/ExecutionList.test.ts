@@ -440,6 +440,18 @@ describe("ExecutionList", () => {
       expect(resolved!.preview.targetParentId).toBeNull();
     });
 
+    it("reorder preview matches kind when no subflow parent applies", () => {
+      const list = new ExecutionList(list2Data);
+      const subflow2 = list.expandableList.find((ex) => ex.id === "2")!;
+      subflow2.isCollapsed = false;
+
+      const resolved = list.resolveDropTarget("4", "3", "before");
+
+      expect(resolved!.kind).toBe("reorder");
+      expect(resolved!.preview.targetParentId).toBe("2");
+      expect(resolved!.preview.targetLevel).toBe(1);
+    });
+
     it("preview insertIndex is before hover row for reorder-before", () => {
       const list = new ExecutionList(list2Data);
       const visualOrder = list.order();

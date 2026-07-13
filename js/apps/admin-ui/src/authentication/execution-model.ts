@@ -325,10 +325,15 @@ export class ExecutionList {
             : undefined;
 
       if (clampedLevel > 0 && !parent?.authenticationFlow) {
+        const reorderPreview: DropInfo = {
+          ...preview,
+          targetLevel: hoverLevel,
+          targetParentId: null,
+        };
         return {
           kind: "reorder",
           change: this.getChange(dragged, order),
-          preview,
+          preview: reorderPreview,
           order,
         };
       }
