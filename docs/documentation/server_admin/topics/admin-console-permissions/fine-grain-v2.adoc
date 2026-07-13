@@ -423,7 +423,7 @@ Create user permission permission, allowing to view and manage all users in the 
 
 * Navigate to the *Permissions* tab in the administration console.
 * Click *Create permission* and choose *Users* resource type.
-* Fill in the name, such as `Disallow managing test-admins`.
+* Fill in the name, such as `Allow managing test-admins`.
 * Choose *view* and *manage* authorization scopes, keep checked *All Users*.
 * Create a condition, which needs to be met to get an access by clicking *Create new policy*.
 * Fill in the name `Allow test-admins`, select *Group* as *Policy type*.

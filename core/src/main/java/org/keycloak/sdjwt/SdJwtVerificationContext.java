@@ -108,9 +108,10 @@ public class SdJwtVerificationContext {
      * @param issuerSignedJwtVerificationOpts Options to parameterize the Issuer-Signed JWT verification.
      * @param presentationRequirements        If set, the presentation requirements will be enforced upon fully
      *                                        disclosing the Issuer-signed JWT during the verification.
+     * @return the disclosed payload
      * @throws VerificationException if verification failed
      */
-    public void verifyIssuance(List<SignatureVerifierContext> issuerVerifyingKeys,
+    public JsonNode verifyIssuance(List<SignatureVerifierContext> issuerVerifyingKeys,
                                IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
                                PresentationRequirements presentationRequirements)
             throws VerificationException
@@ -131,6 +132,8 @@ public class SdJwtVerificationContext {
         if (presentationRequirements != null) {
             presentationRequirements.checkIfSatisfiedBy(disclosedPayload);
         }
+
+        return disclosedPayload;
     }
 
     /**
@@ -150,9 +153,10 @@ public class SdJwtVerificationContext {
      *                                        to check Key Binding.
      * @param presentationRequirements        If set, the presentation requirements will be enforced upon fully
      *                                        disclosing the Issuer-signed JWT during the verification.
+     * @return the fully disclosed Issuer-signed payload
      * @throws VerificationException if verification failed
      */
-    public void verifyPresentation(List<SignatureVerifierContext> issuerVerifyingKeys,
+    public JsonNode verifyPresentation(List<SignatureVerifierContext> issuerVerifyingKeys,
                                    IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
                                    KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts,
                                    PresentationRequirements presentationRequirements)
@@ -165,12 +169,15 @@ public class SdJwtVerificationContext {
         }
 
         // Upon receiving a Presentation, in addition to the checks in {@link #verifyIssuance}...
-        verifyIssuance(issuerVerifyingKeys, issuerSignedJwtVerificationOpts, presentationRequirements);
+        JsonNode disclosedPayload =
+                verifyIssuance(issuerVerifyingKeys, issuerSignedJwtVerificationOpts, presentationRequirements);
 
         // Validate Key Binding JWT if required
         if (keyBindingJwtVerificationOpts.isKeyBindingRequired()) {
             validateKeyBindingJwt(keyBindingJwtVerificationOpts);
         }
+
+        return disclosedPayload;
     }
 
     /**
@@ -365,12 +372,19 @@ public class SdJwtVerificationContext {
                         // Mark salt as visited
                         markSaltAsVisited(decodedDisclosure.getSaltValue(), visitedSalts);
 
+                        // If the claim name already exists at the level of the _sd key,
+                        // the SD-JWT MUST be rejected (selective-disclosure-jwt, verification
+                        // of the Issuer-signed JWT). Otherwise a Disclosure could silently
+                        // shadow a claim that is present in plaintext or added by another Disclosure.
+                        String claimName = decodedDisclosure.getClaimName();
+                        if (currentObjectNode.has(claimName)) {
+                            throw new VerificationException(
+                                    "Disclosure claim name already present in the payload: " + claimName);
+                        }
+
                         // Insert, at the level of the _sd key, a new claim using the claim name
                         // and claim value from the Disclosure
-                        currentObjectNode.set(
-                                decodedDisclosure.getClaimName(),
-                                decodedDisclosure.getClaimValue()
-                        );
+                        currentObjectNode.set(claimName, decodedDisclosure.getClaimValue());
                     }
                 }
             }

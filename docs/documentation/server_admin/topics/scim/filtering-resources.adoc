@@ -1,6 +1,6 @@
 [id="scim-filtering-resources_{context}"]
 
-[[_scim_filtering_resources_]]
+[[_scim_filtering_resources]]
 = Filtering resources
 [role="_abstract"]
 
@@ -90,7 +90,7 @@ Filters can be combined using logical operators:
 | At least one condition must be true.
 
 | `not`
-| Negates the following condition (must be enclosed in parentheses).
+| Negates the following expression. Parentheses are optional but recommended for clarity.
 |===
 
 === Examples

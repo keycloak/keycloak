@@ -3,32 +3,49 @@
 
 This release features new capabilities for users and administrators of {project_name}. The highlights of this release are:
 
+* Automate user provisioning with the SCIM API (preview)
+* Simplified multi-cluster high availability without external caches (preview)
+* Enhanced reverse proxy guides with blueprints for HAProxy and Traefik
+* Step-up authentication for SAML clients
+
+Read on to learn more about each new feature.
+If you are upgrading from a previous release, https://www.keycloak.org/docs/latest/upgrading/index.html[also review the changes listed in the upgrading guide].
+
 = Security and Standards
 
-== Identity Brokering API: V2 promoted to supported, V1 deprecated
+== Stronger security for the Identity Brokering API
+// https://github.com/keycloak/keycloak/issues/47339
 
-The Identity Brokering API, which allows applications to retrieve tokens from external identity providers, now has V2 *supported but disabled by default* and V1 *deprecated but still enabled by default* for backward compatibility.
+The Identity Brokering API allows applications to retrieve tokens obtained from external identity providers during federated login. Version 2 of this API replaces the legacy V1 with a more secure and standards-compliant design:
 
-In a future release, V1 will be removed and V2 will become the default. Users are encouraged to migrate to V2 now.
+* *Client-level authorization* — access to external tokens is controlled per client using dedicated settings (*Allow retrieve external tokens* and an identity provider allow list) instead of assigning broker roles to individual users.
+* *Confidential clients only* — public clients are rejected, ensuring that only authenticated clients can retrieve external tokens.
+* *OAuth 2.0 compliant* — the endpoint uses `POST` and returns standard JSON responses with `access_token`, `error`, and `error_description` fields.
+* *Session-based token storage* — a new *Store token in session* option keeps tokens in the user session for faster access, with automatic cleanup on session expiry. Database storage remains available for persistence across sessions.
+
+V2 is now supported but disabled by default. V1 is deprecated but still enabled by default for backward compatibility. In a future release, V1 will be removed and V2 will become the default.
 
 For more information, see the link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] chapter in the {developerguide_name}.
 
-== OID4VCI Improvements
+== Progress on Verifiable Credentials (OID4VCI) (experimental)
+// https://github.com/keycloak/keycloak/issues/50035
 
-https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OID4VCI] still remains experimental feature. However there is big progress on this feature with lots of contributions from the {project_name} community members as well
-as from the {project_name} core team. Some highlights include:
+https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[Verifiable Credentials (OID4VCI)] allow organizations to issue tamper-proof, cryptographically signed credentials — such as employee badges, academic diplomas, or professional certifications — that users can store in a digital wallet and present to third parties without involving the issuer.
 
-* Polishing of existing functionality and improving configuration. Everything configurable in admin UI now in addition to admin REST API
-* Lots of bugs fixed. Improved specification compliance
+OID4VCI remains an experimental feature in {project_name}, but this release brings substantial improvements from both the core team and the community:
+
+* Polishing of existing functionality and improving configuration. Everything is now configurable in the admin UI in addition to the admin REST API.
+* Lots of bugs fixed. Improved specification compliance.
 * Conformance with the https://openid.net/specs/openid4vc-high-assurance-interoperability-profile-1_0.html[OpenID4VC High Assurance Interoperability Profile (HAIP)].
-This work involves introduction of the dedicated {project_name} experimental feature `client-auth-abca` for https://datatracker.ietf.org/doc/html/draft-ietf-oauth-attestation-based-client-auth-07[Attestation based client authentication (ABCA)]
-* Management of verifiable credentials for individual users. This involves ability for administrator to create verifiable credential for user
-to indicate that this user can retrieve verifiable credential as well as ability for users to start issuance of verifiable credential from the {project_name} account console
+This work involves the introduction of the dedicated {project_name} experimental feature `client-auth-abca` for https://datatracker.ietf.org/doc/html/draft-ietf-oauth-attestation-based-client-auth-07[Attestation based client authentication (ABCA)].
+* Management of verifiable credentials for individual users. This involves the ability for an administrator to create a verifiable credential for a user
+to indicate that this user can retrieve a verifiable credential, as well as the ability for users to start issuance of a verifiable credential from the {project_name} account console.
 * https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-pre-authorized-code-flow[Pre-authorized code grant] support is still experimental and was moved to the dedicated experimental feature `oid4vc-vci-preauth-code`
+* Support for credential refresh interval. Administrators can now configure a separate refresh interval (`vc.refresh_interval_in_seconds`) in the client scope settings that controls how often wallets must refresh the credential, independent of the credential lifetime. When not explicitly set, defaults to 7 days or the credential lifetime, whichever is smaller. This enables regular credential rotation for enhanced security while maintaining user convenience through automatic refresh using the refresh token. For more information, see the link:{adminguide_link}#_oid4vci_client_scope[Create Client Scopes with Mappers] section in the OID4VCI configuration guide.
 * Documentation updated and improved
 
 ifeval::[{project_community}==true]
-Lots of community members was involved in the related development. Many thanks to https://github.com/Awambeng[Awambeng],
+Many community members were involved in the development. Many thanks to https://github.com/Awambeng[Awambeng],
 https://github.com/Captain-P-Goldfish[Pascal Knüppel], https://github.com/dominikschlosser[Dominik Schlosser], https://github.com/forkimenjeckayang[forkimenjeckayang],
 https://github.com/IngridPuppet[Ingrid Kamga], https://github.com/keshavprashantdeshpande[Keshav Deshpande], https://github.com/namanONcode[Naman Jain],
 https://github.com/officialasishkumar[Asish Kumar], https://github.com/Ogenbertrand[Ogen Bertrand], https://github.com/Oluwatobi-Mustapha[Oluwatobi Mustapha],
@@ -36,11 +53,108 @@ https://github.com/pulsastrix[Hugo Hakim Damer], https://github.com/rameshkumark
 https://github.com/Vitalisn4[Palpable] for the contributions!
 endif::[]
 
+== Cross-domain token exchange with Identity Assertion JWT Grant (experimental)
+// https://github.com/keycloak/keycloak/issues/50437
+
+When two organizations each run their own authorization server, users often need to re-authenticate when crossing between them — even though their identity was already verified. The https://datatracker.ietf.org/doc/html/draft-ietf-oauth-identity-assertion-authz-grant[Identity Assertion JWT Authorization Grant (ID-JAG)] solves this by allowing one authorization server to present a signed identity assertion to another, which then issues an access token without requiring the user to log in again.
+
+{project_name} provides partial experimental support for the Identity Assertion JWT Authorization Grant. It currently implements only the receiving authorization server role, accepting ID-JAG assertions at the token endpoint and issuing access tokens in return. Other parts of the ID-JAG specification are not yet implemented, so the complete flow is not currently supported.
+
+To try it out, start {project_name} with the feature `identity-assertion-jwt` enabled.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/bucchi[Yutaka Obuchi] for the contribution of this feature!
+endif::[]
+
+== Automate user provisioning with the SCIM API (preview)
+// https://github.com/keycloak/keycloak/issues/47590
+
+https://datatracker.ietf.org/doc/html/rfc7644[SCIM] (System for Cross-domain Identity Management) is a standard protocol for reading and writing identity resources such as users and groups across multiple systems. It enables organizations to automate user provisioning and deprovisioning using widely available tooling — for example, integrating with identity governance platforms, HR systems, or other identity providers.
+
+{project_name} has SCIM APIs for managing users and groups within a realm. The implementation covers full CRUD and PATCH operations, filtering and pagination, schema extensions including the Enterprise User extension, and schema discovery endpoints.
+
+In this release, the SCIM API is being promoted to a preview feature. In the default profile it is disabled by default; to try it out, enable the `scim-api` feature.
+
+For more details, see the link:{adminguide_link}#_managing_scim[Managing users and groups through SCIM] documentation.
+
+== Real-time security signals to downstream applications (experimental)
+// https://github.com/keycloak/keycloak/issues/48901
+
+When a user logs out, changes credentials, or gets disabled in {project_name}, downstream applications typically don't learn about it until the next token refresh — leaving a window where stale sessions remain active. The https://openid.net/specs/openid-sharedsignals-framework-1_0-final.html[OpenID Shared Signals Framework (SSF)] closes this gap by letting identity providers push security events to relying parties in near real time.
+
+{project_name} can now act as an SSF Transmitter, delivering signed https://www.rfc-editor.org/info/rfc8417/[Security Event Tokens (SETs)] to registered receivers. It supports https://openid.net/specs/openid-caep-1_0-final.html[CAEP 1.0] and https://openid.net/specs/openid-risc-1_0-final.html[RISC 1.0] event profiles with both push (https://www.rfc-editor.org/info/rfc8935/[RFC 8935]) and poll (https://www.rfc-editor.org/info/rfc8936/[RFC 8936]) delivery methods. Events are persisted to a durable outbox so that no signal is lost across restarts, and a cluster-aware background drainer handles retries and exponential backoff. Each realm can opt in individually, and streams, subjects, and event types are managed through the admin console and REST API.
+
+To enable SSF, start {project_name} with the feature `ssf` enabled.
+
+For more details, see the link:{securing_apps_base_link}/ssf-support[Shared Signals Framework] guide.
+
+== Standardized authorization decisions with AuthZen (experimental)
+// https://github.com/keycloak/keycloak/issues/47629
+
+Applications that need fine-grained authorization typically call {project_name}'s proprietary authorization API, coupling them to its internal model. The https://openid.net/specs/authorization-api-1_0.html[OpenID AuthZEN Authorization API 1.0] defines a vendor-neutral protocol between Policy Decision Points (PDPs) and Policy Enforcement Points (PEPs), enabling applications to request authorization decisions through a standard interface.
+
+{project_name} now implements the AuthZEN Evaluation API as a PDP. Applications send evaluation requests describing a subject, resource, and action, and {project_name} returns a permit or deny decision based on its configured authorization policies. Both single and batch evaluation endpoints are available.
+
+To enable AuthZen, start {project_name} with the feature `authzen` enabled.
+
+For more details, see the link:{securing_apps_base_link}/authzen-authorization[AuthZen Authorization] guide.
+
+== Authorize AI tools and MCP servers
+// https://github.com/keycloak/keycloak/issues/50261
+
+The Model Context Protocol (MCP) is becoming the standard way for AI applications to connect to external tools and data sources. As MCP adoption grows, securing these connections with proper OAuth 2.0 authorization is critical.
+
+{project_name} continues to improve its MCP authorization server capabilities. This release adds integration documentation for Claude Code as an MCP client, alongside the existing Visual Studio Code integration. Both use OAuth Client ID Metadata Document (CIMD) for dynamic client registration with PKCE-secured public client flows and localhost callbacks.
+
+For setup instructions, see the link:{securing_apps_base_link}/mcp-authz-server[Integrating with Model Context Protocol (MCP)] guide.
+
+== Delegate access across services with Token Exchange Delegation (experimental)
+// https://github.com/keycloak/keycloak/issues/49954
+
+In multi-service architectures, a backend service sometimes needs to act on behalf of a user at another service — for example, when a gateway delegates work to a downstream API. Standard Token Exchange handles client-to-client token swaps, but verifying that the requester is authorized to impersonate a specific user requires additional checks.
+
+{project_name} introduces token exchange delegation as an experimental feature. It adds a new `delegation` parameterized scope type that validates whether the requesting user is authorized to act on behalf of the target user before the exchange is granted. The delegation scope requires user consent and is automatically reassessed on token refresh, so revoked impersonation rights take effect immediately.
+
+To enable token exchange delegation, start {project_name} with the feature `token-exchange-delegation` enabled.
+
+== Step-up authentication for SAML clients
+// https://github.com/keycloak/keycloak/issues/46543
+
+Step-up authentication allows applications to require a stronger level of authentication for sensitive operations. Previously, this capability was only available for OpenID Connect clients.
+
+{project_name} now extends step-up authentication to the SAML protocol, enabling SAML service providers to request a specific authentication context class in their authentication requests. The feature `step-up-authentication-saml` has been promoted from preview to supported in this release.
+
+For more information, see the link:{adminguide_link}#_step-up-authentication-saml[{adminguide_name}].
+
 = Administration
 
-== Delegated administration for organizations
+== Declarative client management with Admin API v2 (experimental)
+// https://github.com/keycloak/keycloak/discussions/50186
 
-{project_name} now supports delegated organization administration without requiring the broad `manage-realm` role. This is achieved through new dedicated admin roles and Fine-Grained Admin Permissions support for organizations.
+{project_name} introduces a new REST API for managing OIDC and SAML clients.
+The new API provides strict validation, support for declarative configuration, and an accurate OpenAPI specification that enables reliable client generation.
+This addresses long-standing limitations of the original Admin REST API.
+This is the first resource in the Admin API v2, with additional resources to follow in future releases.
+
+The API can be consumed through a Java client, an auto-generated JavaScript client, and a CLI.
+The {project_name} Operator uses it to manage clients declaratively via `KeycloakOIDCClient` and `KeycloakSAMLClient` custom resources.
+
+Enabling this feature also enables the OpenAPI specification endpoint on the management interface, which the CLI uses to adapt its commands to the connected server version.
+
+To try it out, enable the `client-admin-api:v2` feature.
+
+For more details, see the https://www.keycloak.org/nightly/admin-api/admin-api-v2[Admin API v2] guide and the https://www.keycloak.org/nightly/operator/managing-clients[Managing Keycloak Clients] operator guide.
+Feedback is welcome in the https://github.com/keycloak/keycloak/discussions/50186[Client Admin API v2] GitHub Discussion.
+
+ifeval::[{project_community}==true]
+Thanks to https://github.com/robson90[Robin Meese] for contributing the OpenAPI endpoint on the management interface and the Java admin client,
+and to https://github.com/sschu[Sebastian Schuster] for his participation in the Admin API working group and the Go client analysis.
+endif::[]
+
+== Fine-grained delegation for organization administration
+// https://github.com/keycloak/keycloak/issues/45497
+
+Managing organizations in {project_name} previously required the `manage-realm` role — a high-privilege role that grants far more access than most organization administrators need. This release introduces dedicated admin roles and Fine-Grained Admin Permissions for organizations, allowing administrators to delegate organization management without over-provisioning access.
 
 New realm admin roles provide coarse-grained delegation:
 
@@ -52,59 +166,75 @@ The `manage-realm` role continues to implicitly grant full organization manageme
 
 For per-organization granularity, organizations are now a first-class resource type in Fine-Grained Admin Permissions. Administrators can create permissions to control which specific organizations a delegated administrator can view or manage — for example, granting access to manage one organization without giving access to all organizations in the realm. When Fine-Grained Admin Permissions is enabled, organization member queries also respect user-level permissions, returning only members the administrator is permitted to view.
 
-== Role mappings on organization groups
+== Automatic role inheritance through organization groups
+// https://github.com/keycloak/keycloak/issues/47327
 
-Organization groups now support realm and client role assignments. Roles assigned to organization groups are automatically included in `realm_access` and `resource_access` token claims for group members. Additionally, the *Organization Group Membership* protocol mapper (OIDC and SAML) can optionally include these roles within the `organization` claim, organized per organization, by enabling the *Add group role mappings* configuration option.
+Assigning roles to individual organization members does not scale well when an organization has hundreds of users who all need the same permissions. Organization groups now support realm and client role assignments, so administrators can assign a role once to the organization group and have it automatically appear in `realm_access` and `resource_access` token claims for all group members.
+
+Additionally, the *Organization Group Membership* protocol mapper (OIDC and SAML) can include these roles within the `organization` claim, organized per organization, by enabling the *Add group role mappings* configuration option.
 
 For more details, see the link:{adminguide_link}#pass:a[_managing_groups_][Managing organization groups] guide.
 
-== Passkey authenticator icons in login and account console
+== Better passkey compatibility with new WebAuthn policy options
+// https://github.com/keycloak/keycloak/issues/42513
 
-The login page and account console now display vendor-specific icons for registered passkeys and security keys.
-When a user wants to authenticate with Passkeys, {project_name} shows the authenticator's icon alongside its label, making it easier to identify the correct device.
+Passkeys let users sign in with biometrics or a security key instead of a password. To work correctly, the server must tell the browser whether it prefers a discoverable credential (a passkey stored on the device) or not — and the previous Yes/No option could not express the increasingly common `preferred` value.
 
-As part of this change, the passkey authentication page in the login theme and the signing-in page in the account console were updated.
-If you use a custom theme that overrides these pages, verify that your customizations work as expected with this release.
+The WebAuthn Policy and WebAuthn Passwordless Policy now provide a `Discoverable credential` option that follows the current https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-residentkey[WebAuthn specification], supporting `required`, `preferred`, and `discouraged` values. This improves compatibility with passkey providers such as iCloud Keychain, Google Password Manager, and 1Password. The previous `Require Discoverable Credential` option is now deprecated and planned for removal in a future release.
 
-== New `Discoverable credential` option in the WebAuthn policies
+== Easier realm discovery by display name search
+// https://github.com/keycloak/keycloak/issues/45292
 
-The WebAuthn Policy and WebAuthn Passwordless Policy provide a new `Discoverable credential` option that follows the current WebAuthn specification.
-In addition to requiring or discouraging discoverable credentials (passkeys), it supports the `preferred` value, which was not possible with the previous Yes/No option.
-The new option is sent to the browser as `authenticatorSelection.residentKey` when registering WebAuthn credentials, which improves compatibility with passkey providers.
-The previous `Require Discoverable Credential` option is now deprecated, and it is planned to be removed in future.
+Administrators often give realms short technical names (like `acme-prod`) but set a human-readable display name (like `Acme Corporation`). Previously, the admin console search only matched against the technical realm name, making it harder to find realms in large multi-tenant deployments.
 
-== Unified button layout in login theme
+Realm search now matches against the display name in addition to the realm name, so administrators can find realms by whichever name they remember.
 
-Action buttons across login theme pages now use a consistent horizontal layout. If you use a custom theme that overrides these pages, verify that your customizations work as expected with this release.
+== Type-safe validation for parameterized scopes (experimental)
+// https://github.com/keycloak/keycloak/issues/49532
 
-== Realm search now matches by display name
+Parameterized scopes allow OAuth clients to request context-specific access — for example, `project:12345` to request access to a particular project, or `account:savings` to scope a token to a specific bank account. Previously, the parameter value was validated only by an optional regex, making it easy to pass invalid or unexpected values.
 
-When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.
-
-As part of this change, the `displayName` attribute has been promoted from a realm attribute to a dedicated column on the realm entity.
-
-Before migrating, check the current value of the `displayName` attribute for your realms. If the current value of `displayName` attribute
-exceeds 255 characters, it will be truncated during migration.
-
-== Dynamic Scopes feature renamed to Parameterized Scopes
-
-The experimental feature previously known as `dynamic-scopes` has been renamed to `parameterized-scopes` to better describe its purpose.
-If you enabled this feature using `--features=dynamic-scopes`, update your configuration to use `--features=parameterized-scopes`.
-
-== Typed parameters for parameterized scopes
-
-Parameterized scopes can now define a parameter type that validates the captured value at request time. Built-in types include `string`, `integer`, `boolean`, `username`, and `custom` (validated against an admin-defined regex). The type is required when creating parameterized scopes with the feature enabled.
+Parameterized scopes can now define a parameter type that validates the captured value at request time. Built-in types include `string`, `integer`, `boolean`, `username`, and `custom` (validated against an admin-defined regex). The type is required when creating parameterized scopes with the feature enabled, ensuring that tokens always carry well-formed scope parameters.
 
 For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
+== Additional datasources may be excluded from health checks
+// https://github.com/keycloak/keycloak/issues/49248
+
+When using multiple datasources, a failing non-critical datasource can cause the health check endpoint to report the entire deployment as unhealthy. Individual datasources can now be excluded from health checks, so optional or secondary datasources do not trigger unnecessary alerts or affect load balancer routing.
+
+Read more about it in the link:https://www.keycloak.org/server/db#multiple-datasources[Configure multiple datasources] guide.
+
 = Configuring and Running
 
-== Deprecation of SHA1 hashing functions in {project_name} 27
+== Enhanced reverse proxy guides with blueprints for HAProxy and Traefik
+// https://github.com/keycloak/keycloak/issues/48002
 
-NIST is going to fully https://www.nist.gov/news-events/news/2022/12/nist-retires-sha-1-cryptographic-algorithm[retire] SHA1 hashing function in 2030. {project_name} will remove all uses of SHA1 in version 27.
+Running {project_name} in production requires a reverse proxy, but configuring TLS termination, certificate forwarding, and admin API security correctly across different proxies is error-prone.
 
-[NOTE]
-====
-Consider SHA1 hashing retired in all uses within {project_name}. Users should configure other secure hashing functions as soon as possible (for example SHA2, SHA3).
-====
+The reverse proxy documentation has been significantly expanded with dedicated step-by-step guides for HAProxy and Traefik covering both TLS passthrough and re-encrypt modes, and also explain the concepts so they can be applied for other proxies as well.
 
+For more details, see the link:https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] guide.
+
+== Simplified multi-cluster high availability without external caches (preview)
+// https://github.com/keycloak/keycloak/issues/49469
+
+The existing multi-cluster setup for {project_name} requires deploying and managing an external {jdgserver_name} cluster for cross-site session replication, along with vendor-specific fencing infrastructure for automated failover. This adds significant operational complexity and limits deployments to specific environments.
+
+Multi-cluster v2 removes the external {jdgserver_name} requirement entirely. {project_name} instances connect directly to each other using embedded Infinispan caches and rely on the synchronously replicated database as the single source of truth. Cache invalidation across sites is handled through a database-backed outbox pattern. The load balancer can detect the downtime of a site without requiring external fencing infrastructure.
+
+To enable this setup, start {project_name} with the feature `stateless`. For architecture details and a deployment blueprint, see the link:https://www.keycloak.org/high-availability/multi-cluster-v2/introduction[Multi-cluster deployments (v2)] guide.
+
+== {project_name} Operator kustomize installation
+// https://github.com/keycloak/keycloak/issues/46981
+
+Installing the {project_name} Operator on vanilla Kubernetes clusters previously required downloading and applying individual manifest files, making upgrades and customization harder to manage. The Operator can now be installed using kustomize, providing a declarative and reproducible installation method.
+
+For installation instructions, see the link:{operatorguide_link}[{operatorguide_name}].
+
+== Cluster-wide install mode for the {project_name} Operator (preview)
+// https://github.com/keycloak/keycloak/issues/49037
+
+Organizations running multiple {project_name} instances across different Kubernetes namespaces previously needed to install a separate Operator in each namespace. The {project_name} Operator now exposes `AllNamespaces` as a supported OLM install mode, allowing a single Operator instance to reconcile `Keycloak` custom resources across all namespaces in the cluster. For non-OLM installations, cluster-wide deployment is available through the `cluster-wide` kustomization overlay.
+
+Cluster-wide installation is in preview. For installation instructions and limitations, see the link:{operatorguide_link}[{operatorguide_name}].

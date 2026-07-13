@@ -928,18 +928,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     final public BrokeredIdentityContext exchangeExternal(TokenExchangeProvider tokenExchangeProvider, TokenExchangeContext tokenExchangeContext) {
         if (!supportsExternalExchange()) return null;
 
-        BrokeredIdentityContext context;
-        int teVersion = tokenExchangeProvider.getVersion();
-        switch (teVersion) {
-            case 1:
-                context = exchangeExternalTokenV1Impl(tokenExchangeContext.getEvent(), tokenExchangeContext.getFormParams());
-                break;
-            case 2:
-                context = exchangeExternalTokenV2Impl(tokenExchangeContext);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported token exchange version " + teVersion);
-        }
+        BrokeredIdentityContext context = exchangeExternalImpl(tokenExchangeContext.getEvent(), tokenExchangeContext.getFormParams());
 
         if (context != null) {
             context.setIdp(this);
@@ -948,27 +937,15 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     /**
-     * Usage with token-exchange V1
+     * Usage with external-internal token-exchange
      *
      * @param event event builder
      * @param params parameters of the token-exchange request
      * @return brokered identity context with the details about user from the IDP
      */
-    protected BrokeredIdentityContext exchangeExternalTokenV1Impl(EventBuilder event, MultivaluedMap<String, String> params) {
+    protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
         return exchangeExternalUserInfoValidationOnly(event, params);
 
-    }
-
-    /**
-     * Usage with external-internal token-exchange v2.
-     *
-     * @param tokenExchangeContext data about token-exchange request
-     * @return brokered identity context with the details about user from the IDP
-     */
-    protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
-        // Needs to be properly implemented for every provider to make sure it verifies external-token in appropriate way to validate user and also if the external-token
-        // was issued to the proper audience
-        throw new UnsupportedOperationException("Not yet supported to verify the external token of the identity provider " + getConfig().getAlias());
     }
 
     /**

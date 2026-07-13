@@ -98,6 +98,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -594,9 +595,10 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             event.success();
             return cors.add(Response.fromResponse(response));
         } catch (Exception e) {
+            logger.errorf(e, "Failed to retrieve token from identity provider");
             event.detail(Details.REASON, e.getMessage());
             event.error(Errors.INVALID_REQUEST);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Failed to retrieve token from identity provider", Response.Status.BAD_REQUEST);
         }
     }
 
@@ -1171,7 +1173,9 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             return redirectToErrorWhenLinkingFailed(authSession, Messages.ACCOUNT_DISABLED);
         }
 
-
+        if (!Organizations.resolveHomeBroker(session, authenticatedUser).isEmpty()) {
+            return redirectToErrorWhenLinkingFailed(authSession, Messages.FEDERATED_IDENTITY_BOUND_ORGANIZATION);
+        }
 
         if (federatedUser != null) {
             if (Booleans.isTrue(context.getIdpConfig().isStoreToken())) {

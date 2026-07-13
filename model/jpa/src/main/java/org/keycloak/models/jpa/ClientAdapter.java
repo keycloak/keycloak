@@ -78,6 +78,16 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     }
 
     @Override
+    public Long getCreatedTimestamp() {
+        return entity.getCreatedTimestamp();
+    }
+
+    @Override
+    public Long getLastModifiedTimestamp() {
+        return entity.getLastModifiedTimestamp();
+    }
+
+    @Override
     public String getName() {
         return entity.getName();
     }

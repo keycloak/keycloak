@@ -13,6 +13,7 @@ import {
   Select,
   SelectList,
   SelectOption,
+  Spinner,
   TextInputGroup,
   TextInputGroupMain,
   TextInputGroupUtilities,
@@ -32,6 +33,9 @@ type UserSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: UserSelectVariant;
   isRequired?: boolean;
 };
+
+const USER_SEARCH_LIMIT = 20;
+const SHOW_MORE = "show-more";
 
 export const UserSelect = ({
   name,
@@ -53,12 +57,26 @@ export const UserSelect = ({
 
   const [open, toggleOpen, setOpen] = useToggle();
   const [selectedUsers, setSelectedUsers] = useState<UserRepresentation[]>([]);
-  const [searchedUsers, setSearchedUsers] = useState<UserRepresentation[]>([]);
+  const [pageUsers, setPageUsers] = useState<UserRepresentation[]>([]);
+  const [exactMatch, setExactMatch] = useState<UserRepresentation>();
+  const [first, setFirst] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [search, setSearch] = useState("");
   const textInputRef = useRef<HTMLInputElement>();
 
-  const debounceFn = useCallback(debounce(setSearch, 500), []);
+  const debounceFn = useCallback(
+    debounce((value: string) => {
+      setFirst(0);
+      setHasMore(false);
+      setLoadingMore(false);
+      setPageUsers([]);
+      setExactMatch(undefined);
+      setSearch(value);
+    }, 500),
+    [],
+  );
 
   useFetch(
     async () => {
@@ -82,12 +100,30 @@ export const UserSelect = ({
   );
 
   useFetch(
-    async () =>
+    () =>
       adminClient.users.find({
         username: search,
-        max: 20,
+        first,
+        max: USER_SEARCH_LIMIT + 1,
       }),
-    setSearchedUsers,
+    (page) => {
+      const more = page.length > USER_SEARCH_LIMIT;
+      const nextUsers = more ? page.slice(0, USER_SEARCH_LIMIT) : page;
+      setPageUsers((current) =>
+        first === 0 ? nextUsers : [...current, ...nextUsers],
+      );
+      setHasMore(more);
+      setLoadingMore(false);
+    },
+    [search, first],
+  );
+
+  useFetch(
+    () =>
+      search
+        ? adminClient.users.find({ username: search, exact: true, max: 1 })
+        : Promise.resolve<UserRepresentation[]>([]),
+    (matches) => setExactMatch(matches.at(0)),
     [search],
   );
 
@@ -97,6 +133,16 @@ export const UserSelect = ({
       setInputValue("");
     }
   }, [values]);
+
+  const searchedUsers = useMemo(() => {
+    if (!exactMatch) {
+      return pageUsers;
+    }
+    return [
+      exactMatch,
+      ...pageUsers.filter((user) => user.id !== exactMatch.id),
+    ];
+  }, [exactMatch, pageUsers]);
 
   const users = useMemo(
     () => [...selectedUsers, ...searchedUsers],
@@ -133,6 +179,8 @@ export const UserSelect = ({
         render={({ field }) => (
           <Select
             id={name!}
+            isScrollable
+            maxMenuHeight="300px"
             onOpenChange={toggleOpen}
             toggle={(ref) => (
               <MenuToggle
@@ -194,7 +242,13 @@ export const UserSelect = ({
                       <Button
                         variant="plain"
                         onClick={() => {
+                          debounceFn.cancel();
                           setInputValue("");
+                          setFirst(0);
+                          setHasMore(false);
+                          setLoadingMore(false);
+                          setPageUsers([]);
+                          setExactMatch(undefined);
                           setSearch("");
                           field.onChange([]);
                           textInputRef.current?.focus();
@@ -212,6 +266,11 @@ export const UserSelect = ({
             selected={field.value}
             onSelect={(_, v) => {
               const option = v?.toString();
+              if (option === SHOW_MORE) {
+                setLoadingMore(true);
+                setFirst((f) => f + USER_SEARCH_LIMIT);
+                return;
+              }
               if (variant !== "typeaheadMulti") {
                 const removed = field.value.includes(option);
 
@@ -238,7 +297,27 @@ export const UserSelect = ({
             }}
             aria-label={t(name!)}
           >
-            <SelectList>{convert(searchedUsers)}</SelectList>
+            <SelectList>
+              {convert(searchedUsers)}
+              {hasMore && (
+                <SelectOption
+                  key={SHOW_MORE}
+                  value={SHOW_MORE}
+                  isDisabled={loadingMore}
+                  aria-label={
+                    loadingMore ? t("spinnerLoading") : t("showMoreUsers")
+                  }
+                >
+                  {loadingMore ? (
+                    <>
+                      <Spinner size="sm" /> {t("spinnerLoading")}
+                    </>
+                  ) : (
+                    t("showMore")
+                  )}
+                </SelectOption>
+              )}
+            </SelectList>
           </Select>
         )}
       />

@@ -18,21 +18,26 @@
 package org.keycloak.cluster.infinispan;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import org.keycloak.cluster.ClusterEvent;
-import org.keycloak.cluster.ClusterEventStoreProvider;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ExecutionResult;
+import org.keycloak.cluster.jpa.JpaClusterEventStoreProvider;
+import org.keycloak.common.util.Retry;
 import org.keycloak.connections.infinispan.NodeInfo;
-import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import org.infinispan.commons.marshall.Marshaller;
+import org.jboss.logging.Logger;
+import org.jspecify.annotations.Nullable;
 
 
 /**
@@ -43,17 +48,21 @@ import org.infinispan.commons.marshall.Marshaller;
  */
 public class DatabaseAwareClusterProvider implements ClusterProvider {
 
+    private static final Logger logger = Logger.getLogger(DatabaseAwareClusterProvider.class);
+
     private final ClusterProvider delegate;
-    private final KeycloakSessionFactory sessionFactory;
+    private final KeycloakSession session;
     private final NodeInfo nodeInfo;
     private final Marshaller marshaller;
+    private final Duration awaitTimeout;
 
-    public DatabaseAwareClusterProvider(ClusterProvider delegate, KeycloakSessionFactory sessionFactory,
-                                        NodeInfo nodeInfo, Marshaller marshaller) {
+    public DatabaseAwareClusterProvider(ClusterProvider delegate, KeycloakSession session,
+                                        NodeInfo nodeInfo, Marshaller marshaller, Duration awaitTimeout) {
         this.delegate = delegate;
-        this.sessionFactory = sessionFactory;
+        this.session = session;
         this.nodeInfo = nodeInfo;
         this.marshaller = marshaller;
+        this.awaitTimeout = awaitTimeout;
     }
 
     @Override
@@ -63,7 +72,20 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
 
     @Override
     public <T> ExecutionResult<T> executeIfNotExecuted(String taskKey, int taskTimeoutInSeconds, Callable<T> task) {
+        if (isPrimaryClusterSupported() && !isPrimaryCluster()) {
+            return ExecutionResult.notExecuted();
+        }
         return delegate.executeIfNotExecuted(taskKey, taskTimeoutInSeconds, task);
+    }
+
+    @Override
+    public boolean isPrimaryCluster() {
+        return Objects.equals(new JpaClusterEventStoreProvider(session).getPrimaryClusterName(), nodeInfo.clusterName());
+    }
+
+    @Override
+    public boolean isPrimaryClusterSupported() {
+        return new JpaClusterEventStoreProvider(session).isUsingJdbcPing(nodeInfo.clusterName(), nodeInfo.nodeName());
     }
 
     @Override
@@ -121,12 +143,37 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
             throw new RuntimeException("Unable to serialize event", e);
         }
 
-        KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
-            ClusterEventStoreProvider store = session.getProvider(ClusterEventStoreProvider.class);
-            if (store != null) {
-                store.persist(nodeInfo.clusterName(), data);
-            }
-        });
+        String eventId = storeEvent(data);
+        awaitEventProcessing(eventId);
+    }
+
+    private @Nullable String storeEvent(byte[] data) {
+        return KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(),
+                s -> new JpaClusterEventStoreProvider(s).persist(nodeInfo.clusterName(), data));
+    }
+
+    private static class RetryException extends RuntimeException {}
+
+    private void awaitEventProcessing(String eventId) {
+        if (eventId == null) {
+            return;
+        }
+
+        long time = System.nanoTime();
+        try {
+            Retry.executeWithBackoff(iteration -> {
+                boolean exists = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), s -> {
+                    JpaClusterEventStoreProvider store = new JpaClusterEventStoreProvider(s);
+                    return store.eventExists(eventId);
+                });
+                if (exists) {
+                    throw new RetryException();
+                }
+            }, awaitTimeout, 10);
+        } catch (RetryException e) {
+            logger.warnf("Timeout after %f seconds for cluster event %s to be processed", (System.nanoTime() - time) / 1000000000.0, eventId);
+        }
+        logger.debugf("Finished waiting for cluster event %s processing in %f seconds", eventId, (System.nanoTime() - time) / 1000000000.0);
     }
 
     @Override

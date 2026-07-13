@@ -160,7 +160,7 @@ public class AcrUtils {
         Map<String, String> acrUriMap = getAcrUriMap(client.getRealm());
         return acrLoaMap.entrySet().stream()
                 .filter(e -> acrUriMap.containsKey(e.getKey()))
-                .collect(Collectors.toMap(e -> acrUriMap.get(e.getKey()), Map.Entry::getValue));
+                .collect(Collectors.toMap(e -> acrUriMap.get(e.getKey()), Map.Entry::getValue, (a, b) -> Math.max(a, b)));
     }
 
     private static Map<String, Integer> getAcrLoaMapForClientOnly(ClientModel client) {

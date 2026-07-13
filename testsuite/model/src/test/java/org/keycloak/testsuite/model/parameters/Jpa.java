@@ -22,8 +22,6 @@ import org.keycloak.authentication.jpa.JpaAuthenticationSessionProviderFactory;
 import org.keycloak.authorization.jpa.store.JPAAuthorizationStoreFactory;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderSpi;
-import org.keycloak.cluster.ClusterEventStoreSpi;
-import org.keycloak.cluster.jpa.JpaClusterEventStoreProviderFactory;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProviderFactory;
@@ -84,7 +82,6 @@ public class Jpa extends KeycloakModelParameters {
       .add(RevokedTokenSpi.class)
       .add(SingleUseObjectSpi.class)
       .add(UserLoginFailureSpi.class)
-      .add(ClusterEventStoreSpi.class)
 
       .add(DatastoreSpi.class)
 
@@ -125,7 +122,6 @@ public class Jpa extends KeycloakModelParameters {
       .add(JpaRevokedTokenProviderFactory.class)
       .add(JpaSingleUseObjectProviderFactory.class)
       .add(JpaUserLoginFailureProviderFactory.class)
-      .add(JpaClusterEventStoreProviderFactory.class)
 
       //required for migrateModel
       .add(MigrationProviderFactory.class)

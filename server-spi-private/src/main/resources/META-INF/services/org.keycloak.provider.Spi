@@ -34,7 +34,6 @@ org.keycloak.models.UserSpi
 org.keycloak.migration.MigrationSpi
 org.keycloak.events.EventListenerSpi
 org.keycloak.events.EventStoreSpi
-org.keycloak.cluster.ClusterEventStoreSpi
 org.keycloak.exportimport.ExportSpi
 org.keycloak.exportimport.ImportSpi
 org.keycloak.timer.TimerSpi
