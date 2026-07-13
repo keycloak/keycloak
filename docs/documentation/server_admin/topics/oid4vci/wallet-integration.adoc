@@ -122,6 +122,42 @@ If you create the client through the Admin REST API, the representation should c
 The credential offer must target the same client id that the wallet uses during the OAuth flow. If the wallet sends a pushed authorization request with a client id that is not registered in the realm, {project_name} rejects the request with `client_not_found`.
 ====
 
+==== Create a Credential Offer for Valera Wallet
+
+The examples in the flow sections below use the REST credential-offer endpoint. The bearer token must be issued to the Valera client for the user who creates the offer. When creating an offer for a different target user, that issuing user must have permission to create credential offers.
+
+For the Authorization Code Flow test, create an offer for the `IdentityCredential` credential configuration and request a response that includes a QR code:
+
+[source,bash]
+----
+ISSUER_BASE="https://your-tunnel-host.example/realms/{realm}"
+ACCESS_TOKEN="<access-token-issued-to-the-Valera-client>"
+
+curl -G "$ISSUER_BASE/protocol/oid4vc/create-credential-offer" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  --data-urlencode "credential_configuration_id=IdentityCredential" \
+  --data-urlencode "pre_authorized=false" \
+  --data-urlencode "type=uri_qr"
+----
+
+For the Pre-Authorized Code Flow test, create a pre-authorized offer for the user who owns the credential:
+
+[source,bash]
+----
+ISSUER_BASE="https://your-tunnel-host.example/realms/{realm}"
+ACCESS_TOKEN="<access-token-issued-to-the-Valera-client>"
+TARGET_USER="<username>"
+
+curl -G "$ISSUER_BASE/protocol/oid4vc/create-credential-offer" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  --data-urlencode "credential_configuration_id=IdentityCredential" \
+  --data-urlencode "pre_authorized=true" \
+  --data-urlencode "target_user=$TARGET_USER" \
+  --data-urlencode "type=uri_qr"
+----
+
+The JSON response contains an `issuer`, a `nonce`, and a `qr_code` data URL. Display the `qr_code` value as an image for the wallet to scan, or use the returned issuer and nonce with your offer display component to create a deep link.
+
 [[_oid4vci_valera_wallet_claim_credential]]
 ==== Claim the Credential in Valera Wallet
 
