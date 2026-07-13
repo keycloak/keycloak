@@ -773,14 +773,8 @@ public class LDAPOperationManager {
     }
 
     private <R> R execute(LdapOperation<R> operation, LDAPOperationDecorator decorator) throws NamingException {
-        long startTimeNanos = System.nanoTime();
-        boolean success = false;
         try (LDAPContextManager ldapContextManager = LDAPContextManager.create(session, config)) {
-            R result = execute(operation, ldapContextManager.getLdapContext(), decorator);
-            success = true;
-            return result;
-        } finally {
-            recordLdapRequest("execute", success, startTimeNanos);
+            return execute(operation, ldapContextManager.getLdapContext(), decorator);
         }
     }
 
@@ -795,6 +789,9 @@ public class LDAPOperationManager {
             start = Time.currentTimeMillis();
         }
 
+        long startTimeNanos = System.nanoTime();
+        boolean success = false;
+
         var tracing = session.getProvider(TracingProvider.class);
         var span = tracing.startSpan(LDAPOperationManager.class, "execute");
 
@@ -808,11 +805,14 @@ public class LDAPOperationManager {
                 decorator.beforeLDAPOperation(context, operation);
             }
 
-            return operation.execute(context);
+            R execute = operation.execute(context);
+            success = true;
+            return execute;
         } catch (NamingException e) {
             tracing.error(e);
             throw e;
         } finally {
+            recordLdapRequest("execute", success, startTimeNanos);
             tracing.endSpan();
             if (perfLogger.isDebugEnabled()) {
                 long took = Time.currentTimeMillis() - start;
