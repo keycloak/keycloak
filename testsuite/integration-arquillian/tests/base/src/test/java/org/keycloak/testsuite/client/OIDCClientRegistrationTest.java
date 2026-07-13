@@ -815,8 +815,8 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
 
     @Test
     public void testClientWithScope() throws Exception {
-        OIDCClientRepresentation clientRep = null;
-        OIDCClientRepresentation response = null;
+        OIDCClientRepresentation clientRep;
+        OIDCClientRepresentation response;
         String clientScope = "phone address";
 
         clientRep = createRep();
@@ -828,7 +828,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertTrue(clientScopes.equals(registeredClientScopes));
 
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(response.getClientId());
-        assertTrue(CollectionUtil.collectionEquals(clientResource.toRepresentation().getDefaultClientScopes(), Set.of("basic")));
+        assertTrue(CollectionUtil.collectionEquals(clientResource.toRepresentation().getDefaultClientScopes(), Set.of("web-origins", "acr", "profile", "roles", "basic", "email")));
     }
 
     @Test
