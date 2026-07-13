@@ -77,8 +77,9 @@ import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.utils.CredentialHelper;
 
-import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Timer;
 import org.jboss.logging.Logger;
 
 /**
@@ -97,7 +98,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
     private static final String METRICS_ENABLED = "metricsEnabled";
     private LDAPIdentityStoreRegistry ldapStoreRegistry;
-    private MeterRegistry meterRegistry;
+    private Meter.MeterProvider<Timer> ldapRequestTimer; // null when disabled
 
     protected static final List<ProviderConfigProperty> configProperties;
 
@@ -246,7 +247,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     public LDAPStorageProvider create(KeycloakSession session, ComponentModel model) {
         Map<ComponentModel, LDAPConfigDecorator> configDecorators = getLDAPConfigDecorators(session, model);
 
-        LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(session, model, configDecorators, meterRegistry);
+        LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(session, model, configDecorators, ldapRequestTimer);
         return new LDAPStorageProvider(this, session, model, ldapIdentityStore);
     }
 
@@ -335,6 +336,8 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
     @Override
     public void init(Config.Scope config) {
+        logger.warn("========== LDAPStorageProviderFactory.init() CALLED ==========");
+
         if (config.getBoolean(SECURE_REFERRAL, SECURE_REFERRAL_DEFAULT)) {
             setObjectFactoryBuilder();
         } else {
@@ -347,12 +350,17 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         }
 
         this.ldapStoreRegistry = new LDAPIdentityStoreRegistry();
-        boolean metricsEnabled = Profile.isFeatureEnabled(Profile.Feature.LDAP_METRICS)
-                && config.getBoolean(METRICS_ENABLED, true)
-                && config.root().getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), false);
+        boolean ldapMetricsFeature = Profile.isFeatureEnabled(Profile.Feature.LDAP_METRICS);
+        boolean metricsEnabledConfig = config.getBoolean(METRICS_ENABLED, true);
+        boolean globalMetricsEnabled = config.root().getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), false);
+        boolean metricsEnabled = ldapMetricsFeature && metricsEnabledConfig && globalMetricsEnabled;
+
         if (metricsEnabled) {
-            this.meterRegistry = Metrics.globalRegistry;
+            this.ldapRequestTimer = Timer.builder("keycloak.ldap.requests")
+                    .description("Time taken for LDAP requests")
+                    .withRegistry(Metrics.globalRegistry);
         }
+
     }
 
     @Override
@@ -801,4 +809,4 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             throw new RuntimeException("Failed to set the server JNDI ObjectFactoryBuilder", e);
         }
     }
- }
+}

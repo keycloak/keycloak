@@ -64,10 +64,7 @@ import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import org.keycloak.tracing.TracingProvider;
 import org.keycloak.truststore.TruststoreProvider;
 
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Timer;
 import org.jboss.logging.Logger;
 
@@ -83,37 +80,31 @@ public class LDAPOperationManager {
 
     private static final Logger perfLogger = Logger.getLogger(LDAPOperationManager.class, "perf");
 
-    private static final String LDAP_REQUESTS_METER_NAME = "keycloak.ldap";
-    private static final Meter.MeterProvider<Counter> LDAP_REQUESTS = Counter.builder(LDAP_REQUESTS_METER_NAME)
-            .description("Number of LDAP requests sent to the LDAP server")
-            .baseUnit("requests")
-            .withRegistry(Metrics.globalRegistry);
-
     private final KeycloakSession session;
     private final LDAPConfig config;
-    private final MeterRegistry meterRegistry;
+    private final Meter.MeterProvider<Timer> requestTimer;
 
     @Deprecated
     public LDAPOperationManager(KeycloakSession session, LDAPConfig config) {
         this(session, config, null);
     }
 
-    public LDAPOperationManager(KeycloakSession session, LDAPConfig config, MeterRegistry meterRegistry) {
+    public LDAPOperationManager(KeycloakSession session, LDAPConfig config, Meter.MeterProvider<Timer> requestTimer) {
         this.session = session;
         this.config = config;
-        this.meterRegistry = meterRegistry;
+        this.requestTimer = requestTimer;
     }
 
     private void recordLdapRequest(String operation, boolean success, long startTimeNanos) {
-        if (meterRegistry == null) {
+        if (requestTimer == null) {
+            logger.debugf("LDAP request timer is null, skipping metric recording for operation: %s", operation);
             return;
         }
-        Timer.builder("keycloak.ldap.requests")
-                .description("Time taken for LDAP requests")
-                .tag("operation", operation)
-                .tag("outcome", success ? "success" : "error")
-                .register(meterRegistry)
-                .record(System.nanoTime() - startTimeNanos, TimeUnit.NANOSECONDS);
+        long durationNanos = System.nanoTime() - startTimeNanos;
+        logger.debugf("Recording LDAP metric - operation: %s, outcome: %s, duration: %d ns",
+                operation, success ? "success" : "error", durationNanos);
+        requestTimer.withTags("operation", operation, "outcome", success ? "success" : "error")
+                .record(durationNanos, TimeUnit.NANOSECONDS);
     }
 
     /**
@@ -782,8 +773,14 @@ public class LDAPOperationManager {
     }
 
     private <R> R execute(LdapOperation<R> operation, LDAPOperationDecorator decorator) throws NamingException {
+        long startTimeNanos = System.nanoTime();
+        boolean success = false;
         try (LDAPContextManager ldapContextManager = LDAPContextManager.create(session, config)) {
-            return execute(operation, ldapContextManager.getLdapContext(), decorator);
+            R result = execute(operation, ldapContextManager.getLdapContext(), decorator);
+            success = true;
+            return result;
+        } finally {
+            recordLdapRequest("execute", success, startTimeNanos);
         }
     }
 
@@ -797,12 +794,9 @@ public class LDAPOperationManager {
         if (perfLogger.isDebugEnabled()) {
             start = Time.currentTimeMillis();
         }
-        long startTimeNanos = System.nanoTime();
-        boolean success = false;
 
         var tracing = session.getProvider(TracingProvider.class);
         var span = tracing.startSpan(LDAPOperationManager.class, "execute");
-
 
         try {
             if (span.isRecording()) {
@@ -814,15 +808,11 @@ public class LDAPOperationManager {
                 decorator.beforeLDAPOperation(context, operation);
             }
 
-            // return operation.execute(context);
-            R result = operation.execute(context);
-            success = true;
-            return result;
+            return operation.execute(context);
         } catch (NamingException e) {
             tracing.error(e);
             throw e;
         } finally {
-            recordLdapRequest("execute", success, startTimeNanos);
             tracing.endSpan();
             if (perfLogger.isDebugEnabled()) {
                 long took = Time.currentTimeMillis() - start;
