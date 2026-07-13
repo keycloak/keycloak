@@ -81,7 +81,9 @@ export const FlowRow = ({
 
   const isDropTarget = dropInfo?.targetId === execution.id;
   const dropMode = isDropTarget ? dropInfo?.mode : undefined;
-  const isParentTarget = dropInfo?.targetParentId === execution.id;
+  const isParentTarget =
+    dropInfo?.targetParentId === execution.id &&
+    dropInfo?.targetId !== execution.id;
   const isBeingDragged = isDragging || activeId === execution.id;
 
   const showDropLineBefore =

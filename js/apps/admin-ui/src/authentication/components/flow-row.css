@@ -6,53 +6,30 @@ tr.keycloak__authentication__flow-row {
   position: relative;
 }
 
-tr[data-drop-mode="drop-into"],
 tr.keycloak__authentication__drop-into {
-  outline: 4px solid var(--pf-v5-global--active-color--100) !important;
-  outline-offset: -4px;
   background-color: var(--pf-v5-global--palette--blue-100) !important;
+  box-shadow: inset 0 0 0 4px var(--pf-v5-global--active-color--100);
   z-index: 100;
 }
 
-tr.keycloak__authentication__drop-parent,
-tr[data-drop-mode="nest-parent"] {
-  outline: 3px solid var(--pf-v5-global--active-color--100) !important;
-  outline-offset: -3px;
+tr.keycloak__authentication__drop-parent {
   background-color: var(--pf-v5-global--palette--blue-50) !important;
+  box-shadow: inset 0 0 0 3px var(--pf-v5-global--active-color--100);
   z-index: 99;
 }
 
 tr.keycloak__authentication__drop-pending-expand {
-  outline: 3px dashed var(--pf-v5-global--active-color--100) !important;
-  outline-offset: -3px;
   background-color: var(--pf-v5-global--palette--blue-50) !important;
+  box-shadow: inset 0 0 0 3px var(--pf-v5-global--active-color--100);
   z-index: 98;
 }
 
-tr.keycloak__authentication__drop-line--before::before,
-tr[data-drop-mode="reorder-before"]::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background-color: var(--pf-v5-global--active-color--100);
-  z-index: 101;
-  pointer-events: none;
+tr.keycloak__authentication__drop-line--before {
+  box-shadow: inset 0 3px 0 0 var(--pf-v5-global--active-color--100);
 }
 
-tr.keycloak__authentication__drop-line--after::after,
-tr[data-drop-mode="reorder-after"]::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background-color: var(--pf-v5-global--active-color--100);
-  z-index: 101;
-  pointer-events: none;
+tr.keycloak__authentication__drop-line--after {
+  box-shadow: inset 0 -3px 0 0 var(--pf-v5-global--active-color--100);
 }
 
 .keycloak__authentication__flow-title-cell {
@@ -66,13 +43,20 @@ tr[data-drop-mode="reorder-after"]::after {
 .keycloak__authentication__drag-cell {
   padding: 0 !important;
   vertical-align: middle;
+  width: 2.75rem;
+  min-width: 2.75rem;
+  max-width: 2.75rem;
 }
 
 .keycloak__authentication__drag-handle {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--pf-v5-global--spacer--md);
+  box-sizing: border-box;
+  width: 2.75rem;
+  min-width: 2.75rem;
+  max-width: 2.75rem;
+  padding: var(--pf-v5-global--spacer--sm);
   cursor: grab;
   color: var(--pf-v5-global--Color--200);
 }
