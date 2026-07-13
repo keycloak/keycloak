@@ -184,6 +184,9 @@ public class TruststoreBuilder {
     }
 
     static KeyStore createTrustStore(TruststoreFormat truststoreType) {
+        if (!truststoreType.isJavaTrustStore()) {
+            throw new IllegalArgumentException(truststoreType.name() + " is not a Java KeyStore truststore format");
+        }
         try {
             KeyStore truststore = CryptoIntegration.isInitialised()
                     ? CryptoIntegration.getProvider().getTrustStore(truststoreType)

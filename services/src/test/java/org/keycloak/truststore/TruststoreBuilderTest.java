@@ -172,6 +172,11 @@ public class TruststoreBuilderTest {
     }
 
     @Test
+    public void testRejectsPemAsGeneratedTruststoreFormat() {
+        assertThrows(IllegalArgumentException.class, () -> TruststoreBuilder.createTrustStore(TruststoreFormat.PEM));
+    }
+
+    @Test
     public void testKubernetesCaAndServiceCaIncludedWhenFilesExist() throws Exception {
         URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
         String existingFile = new File(url.getPath()).getAbsolutePath();

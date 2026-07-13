@@ -105,7 +105,7 @@ public interface CryptoProvider {
      */
     default KeyStore getTrustStore(TruststoreFormat format) throws KeyStoreException, NoSuchProviderException {
         if (!format.isJavaTrustStore()) {
-            throw new KeyStoreException("PEM is not a Java KeyStore truststore format");
+            throw new KeyStoreException(format.name() + " is not a Java KeyStore truststore format");
         }
         return getKeyStore(KeystoreFormat.valueOf(format.name()));
     }
@@ -145,8 +145,18 @@ public interface CryptoProvider {
      * @return Preferred format for a generated system truststore.
      */
     default TruststoreFormat getPreferredGeneratedTrustStoreType() {
-        return getSupportedTrustStoreTypes()
-                .min(Comparator.comparingInt(TruststoreFormat::getPreference))
+        return Stream.of(TruststoreFormat.values())
+                .filter(TruststoreFormat::isJavaTrustStore)
+                .sorted(Comparator.comparingInt(TruststoreFormat::getPreference))
+                .filter(format -> {
+                    try {
+                        getTrustStore(format);
+                        return true;
+                    } catch (KeyStoreException | NoSuchProviderException ex) {
+                        return false;
+                    }
+                })
+                .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No Java KeyStore backed truststore types are supported"));
     }
 
