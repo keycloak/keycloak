@@ -22,6 +22,13 @@ tr[data-drop-mode="nest-parent"] {
   z-index: 99;
 }
 
+tr.keycloak__authentication__drop-pending-expand {
+  outline: 3px dashed var(--pf-v5-global--active-color--100) !important;
+  outline-offset: -3px;
+  background-color: var(--pf-v5-global--palette--blue-50) !important;
+  z-index: 98;
+}
+
 tr.keycloak__authentication__drop-line--before::before,
 tr[data-drop-mode="reorder-before"]::before {
   content: "";
@@ -48,26 +55,12 @@ tr[data-drop-mode="reorder-after"]::after {
   pointer-events: none;
 }
 
-.keycloak__authentication__flow-title-cell.keycloak__authentication__drop-indent-guide::before,
-tr.keycloak__authentication__drop-indent-guide
-  .keycloak__authentication__flow-title-cell::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: var(--drop-indent, 0);
-  width: 3px;
-  background-color: var(--pf-v5-global--active-color--100);
-  pointer-events: none;
-  z-index: 102;
-}
-
 .keycloak__authentication__flow-title-cell {
   position: relative;
 }
 
 .keycloak__authentication__flow-row.is-dragging {
-  opacity: 0.5;
+  opacity: 0;
 }
 
 .keycloak__authentication__drag-cell {
@@ -107,6 +100,7 @@ tr.keycloak__authentication__drop-indent-guide
   font-size: var(--pf-v5-global--FontSize--md);
   line-height: var(--pf-v5-global--LineHeight--md);
   cursor: grabbing;
+  pointer-events: none;
 }
 
 .keycloak__authentication__drag-overlay-handle,

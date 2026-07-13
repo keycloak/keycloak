@@ -3,7 +3,6 @@ import { useDraggable } from "@dnd-kit/core";
 import { Button, Tooltip } from "@patternfly/react-core";
 import { GripVerticalIcon, TrashIcon } from "@patternfly/react-icons";
 import { Td, TreeRowWrapper } from "@patternfly/react-table";
-import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import type { DropInfo, ExpandableExecution } from "../execution-model";
 import { AddFlowDropdown } from "./AddFlowDropdown";
@@ -22,8 +21,8 @@ type FlowRowProps = {
   execution: ExpandableExecution;
   dropInfo?: DropInfo;
   visualIndexById?: Map<string, number>;
-  indentStep?: number;
   activeId?: string | null;
+  pendingExpandId?: string | null;
   onRowClick: (execution: ExpandableExecution) => void;
   onRowChange: (execution: ExpandableExecution) => void;
   onAddExecution: (
@@ -51,8 +50,8 @@ export const FlowRow = ({
   execution,
   dropInfo,
   visualIndexById,
-  indentStep = 24,
   activeId,
+  pendingExpandId,
   onRowClick,
   onRowChange,
   onAddExecution,
@@ -94,16 +93,14 @@ export const FlowRow = ({
     dropMode === "reorder-after" &&
     visualIndex !== undefined &&
     dropInfo?.insertIndex === visualIndex + 1;
-  const showIndentGuide =
-    isDropTarget &&
-    dropInfo !== undefined &&
-    dropInfo.targetLevel !== level &&
-    dropMode !== "drop-into";
 
   const getDropClassName = () => {
     const classes = ["keycloak__authentication__flow-row"];
     if (isBeingDragged) classes.push("is-dragging");
     if (isParentTarget) classes.push("keycloak__authentication__drop-parent");
+    if (pendingExpandId === execution.id) {
+      classes.push("keycloak__authentication__drop-pending-expand");
+    }
     if (dropMode === "drop-into") {
       classes.push("keycloak__authentication__drop-into");
     }
@@ -115,12 +112,6 @@ export const FlowRow = ({
     }
     return classes.join(" ");
   };
-
-  const titleCellStyle: CSSProperties | undefined = showIndentGuide
-    ? ({
-        "--drop-indent": `${dropInfo.targetLevel * indentStep}px`,
-      } as CSSProperties)
-    : undefined;
 
   return (
     <>
@@ -149,12 +140,7 @@ export const FlowRow = ({
         </Td>
         <Td
           treeRow={treeRow}
-          className={
-            showIndentGuide
-              ? "keycloak__authentication__flow-title-cell keycloak__authentication__drop-indent-guide"
-              : "keycloak__authentication__flow-title-cell"
-          }
-          style={titleCellStyle}
+          className="keycloak__authentication__flow-title-cell"
         >
           <FlowTitle
             id={execution.id}
@@ -220,8 +206,8 @@ export const FlowRow = ({
             execution={ex}
             dropInfo={dropInfo}
             visualIndexById={visualIndexById}
-            indentStep={indentStep}
             activeId={activeId}
+            pendingExpandId={pendingExpandId}
             onRowClick={onRowClick}
             onRowChange={onRowChange}
             onAddExecution={onAddExecution}
