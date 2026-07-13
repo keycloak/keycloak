@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,7 +46,15 @@ import org.jboss.logging.Logger;
  */
 public class Profile {
 
+    private static final String FEATURES_ENABLED = "{0} features enabled: {1}";
+
     private static volatile Map<String, TreeSet<Feature>> FEATURES;
+    
+    public static enum Enablement {
+        VERSIONED,
+        UNVERSIONED,
+        DEFAULT
+    }
 
     public enum Feature {
         AUTHORIZATION("Authorization Service", Type.DEFAULT),
@@ -78,9 +87,11 @@ public class Profile {
 
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
 
+        PARAMETERIZED_SCOPES("Parameterized OAuth 2.0 client scopes", Type.EXPERIMENTAL),
+
         TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1, true, null, null),
         TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
-        TOKEN_EXCHANGE_EXTERNAL_INTERNAL_V2("External to Internal Token Exchange version 2", Type.EXPERIMENTAL, 2),
+        TOKEN_EXCHANGE_DELEGATION("Token Exchange Delegation", Type.EXPERIMENTAL, Feature.PARAMETERIZED_SCOPES),
 
         JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.DEFAULT),
 
@@ -92,12 +103,10 @@ public class Profile {
 
         PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
 
-        PARAMETERIZED_SCOPES("Parameterized OAuth 2.0 client scopes", Type.EXPERIMENTAL),
-
         CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
 
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
-        STEP_UP_AUTHENTICATION_SAML("Step-up Authentication Saml", Type.PREVIEW, Feature.STEP_UP_AUTHENTICATION),
+        STEP_UP_AUTHENTICATION_SAML("Step-up Authentication Saml", Type.DEFAULT, Feature.STEP_UP_AUTHENTICATION),
 
         CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.DEFAULT),
         CLIENT_AUTH_ABCA("Attestation-Based Client Authentication", Type.EXPERIMENTAL),
@@ -123,7 +132,7 @@ public class Profile {
 
         MULTI_SITE("Multi-site support", Type.DISABLED_BY_DEFAULT, FeatureUpdatePolicy.SHUTDOWN),
 
-        CACHELESS("Store authentication sessions, action tokens and login failure data in the database, removing the need for Infinispan caches.", Type.EXPERIMENTAL, FeatureUpdatePolicy.SHUTDOWN),
+        STATELESS("Stateless (stores authentication sessions, action tokens and login failure data in the database, allowing multiple clusters to be connected with just the database)", Type.PREVIEW, FeatureUpdatePolicy.SHUTDOWN),
 
         CLUSTERLESS("Store all session data, work cache and login failure data in an external Infinispan cluster.", Type.EXPERIMENTAL, FeatureUpdatePolicy.SHUTDOWN),
 
@@ -136,6 +145,7 @@ public class Profile {
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
         OID4VC_VCI_PREAUTH_CODE("Support for credential offers with `pre-authorized_code` grant.", Type.EXPERIMENTAL, OID4VC_VCI),
         OID4VC_VCI_REST_CREDENTIAL_OFFER("Support for the REST endpoint to create credential offers.", Type.EXPERIMENTAL, OID4VC_VCI),
+        OID4VC_VP("Support for the OID4VP protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
         OPENTELEMETRY("OpenTelemetry support", Type.DEFAULT),
         OPENTELEMETRY_LOGS("OpenTelemetry Logs support", Type.PREVIEW, OPENTELEMETRY),
@@ -179,7 +189,13 @@ public class Profile {
         @Deprecated
         INSTAGRAM_BROKER("Instagram Identity Broker", Type.DEPRECATED, 1),
 
-        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.EXPERIMENTAL),
+        /**
+         * @see <a href="https://github.com/keycloak/keycloak/issues/44013">Deprecate the Twitter IDP implementation due to old twitter4j library</a>.
+         */
+        @Deprecated
+        TWITTER_BROKER("Twitter Identity Broker", Type.DEFAULT, 1, true, null, null),
+
+        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.PREVIEW),
 
         RESOURCE_INDICATORS("Resource Indicators for OAuth 2.0", Type.EXPERIMENTAL),
 
@@ -343,6 +359,7 @@ public class Profile {
     private final ProfileName profileName;
 
     private final Map<Feature, Boolean> features;
+    private final Map<Feature, Enablement> enablements;
 
     public static Profile defaults() {
         return configure();
@@ -352,6 +369,8 @@ public class Profile {
         ProfileName profile = Arrays.stream(resolvers).map(ProfileConfigResolver::getProfileName).filter(Objects::nonNull).findFirst().orElse(ProfileName.DEFAULT);
 
         Map<Feature, Boolean> features = new LinkedHashMap<>();
+
+        Map<Feature, Enablement> enablements = new LinkedHashMap<Profile.Feature, Enablement>();
 
         for (Map.Entry<String, TreeSet<Feature>> entry : getOrderedFeatures().entrySet()) {
 
@@ -401,6 +420,10 @@ public class Profile {
                     break;
                 }
             }
+            if (enabledFeature != null) {
+                enablements.put(enabledFeature, isExplicitlyEnabledFeature ? Enablement.VERSIONED
+                        : unversionedConfig == FeatureConfig.ENABLED ? Enablement.UNVERSIONED : Enablement.DEFAULT);
+            }
             for (Feature f : entry.getValue()) {
                 features.put(f, f == enabledFeature);
             }
@@ -408,7 +431,7 @@ public class Profile {
 
         verifyConfig(features);
 
-        return init(profile, features);
+        return init(profile, features, enablements);
     }
 
     private static boolean isEnabledByDefault(ProfileName profile, Feature f) {
@@ -484,13 +507,18 @@ public class Profile {
     }
 
     public static Profile init(ProfileName profileName, Map<Feature, Boolean> features) {
-        CURRENT = new Profile(profileName, features);
+        return init(profileName, features, Collections.emptyMap());
+    }
+
+    public static Profile init(ProfileName profileName, Map<Feature, Boolean> features, Map<Feature, Enablement> enablements) {
+        CURRENT = new Profile(profileName, features, enablements);
         return CURRENT;
     }
 
-    private Profile(ProfileName profileName, Map<Feature, Boolean> features) {
+    private Profile(ProfileName profileName, Map<Feature, Boolean> features, Map<Feature, Enablement> enablements) {
         this.profileName = profileName;
         this.features = Collections.unmodifiableMap(features);
+        this.enablements = Collections.unmodifiableMap(enablements);
     }
 
     public static Profile getInstance() {
@@ -573,16 +601,25 @@ public class Profile {
     public void logUnsupportedFeatures() {
         logUnsupportedFeatures(Feature.Type.PREVIEW, getPreviewFeatures(), Logger.Level.INFO);
         logUnsupportedFeatures(Feature.Type.EXPERIMENTAL, getExperimentalFeatures(), Logger.Level.WARN);
-        logUnsupportedFeatures(Feature.Type.DEPRECATED, getDeprecatedFeatures(), Logger.Level.WARN);
+        Set<Feature> deprecatedFeatures = getDeprecatedFeatures();
+        logUnsupportedFeatures(Feature.Type.DEPRECATED, deprecatedFeatures, Logger.Level.WARN,
+                feature -> Enablement.VERSIONED.equals(enablements.get(feature)), FEATURES_ENABLED);
+        logUnsupportedFeatures(Feature.Type.DEPRECATED, deprecatedFeatures, Logger.Level.WARN,
+                feature -> !Enablement.VERSIONED.equals(enablements.get(feature)),
+                "Deprecated features {1} enabled by default. Check the upgrading guide for steps to use later versions if available.");
     }
 
     private void logUnsupportedFeatures(Feature.Type type, Set<Feature> checkedFeatures, Logger.Level level) {
-        String enabledFeaturesOfType = features.entrySet().stream()
-                .filter(e -> e.getValue() && checkedFeatures.contains(e.getKey()))
-                .map(e -> e.getKey().getVersionedKey()).sorted().collect(Collectors.joining(", "));
+        logUnsupportedFeatures(type, checkedFeatures, level, ignored -> true, FEATURES_ENABLED);
+    }
+
+    private void logUnsupportedFeatures(Feature.Type type, Set<Feature> checkedFeatures, Logger.Level level, Predicate<Feature> predicate, String message) {
+        String enabledFeaturesOfType = checkedFeatures.stream()
+                .filter(e -> Boolean.TRUE.equals(features.get(e)) && predicate.test(e))
+                .map(e -> e.getVersionedKey()).sorted().collect(Collectors.joining(", "));
 
         if (!enabledFeaturesOfType.isEmpty()) {
-            logger.logv(level, "{0} features enabled: {1}", type.getLabel(), enabledFeaturesOfType);
+            logger.logv(level, message, type.getLabel(), enabledFeaturesOfType);
         }
     }
 
@@ -593,5 +630,9 @@ public class Profile {
         ROLLING_NO_UPGRADE,
         // Always require a cluster shutdown when the Feature is enabled/disabled
         SHUTDOWN;
+    }
+
+    public Map<Feature, Enablement> getEnablements() {
+        return enablements;
     }
 }

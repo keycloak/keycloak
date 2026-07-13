@@ -472,6 +472,18 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testParameterizedScopeTypesMigration(migrationRealm);
         testLdapBinaryAttributeDecoderMigration(migrationRealm2);
         testLdapGroupAttributeDecoderMigration(migrationRealm2);
+        testAuthnContextClassRefIsPresent(migrationRealm);
+    }
+
+    private void testAuthnContextClassRefIsPresent(RealmResource realm) {
+        realm.getDefaultDefaultClientScopes().stream()
+                .filter(s -> SamlProtocolFactory.SCOPE_AUTHN_CONTEXT_CLASS_REF.equals(s.getName()))
+                .findAny().orElseThrow(() -> new AssertionError("AuthnContextClassRef not found"));
+
+        ClientRepresentation client = realm.clients().findAll().stream()
+                .filter(c -> SamlProtocol.LOGIN_PROTOCOL.equals(c.getProtocol()))
+                .findAny().orElseThrow(() -> new AssertionError("No SAML client found"));
+        assertThat(client.getDefaultClientScopes(), hasItem(SamlProtocolFactory.SCOPE_AUTHN_CONTEXT_CLASS_REF));
     }
 
     private void testParameterizedScopeTypesMigration(RealmResource realm) {

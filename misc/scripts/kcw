@@ -106,6 +106,7 @@ if [ "$INSTALL" != "" ]; then
 		echo "Installing"
 		echo "-------------------------------------------------------------------------------------------"
 
+        mkdir -p "$DL_DIR"
         cd $DL_DIR
         
         if [ -f keycloak-$VERSION.zip ]; then

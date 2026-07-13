@@ -19,6 +19,7 @@ package org.keycloak.models.utils;
 
 import java.io.IOException;
 import java.util.AbstractMap;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -62,7 +63,6 @@ import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
-import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.UriUtils;
@@ -541,8 +541,8 @@ public class RepresentationToModel {
             // Client Secret
             add(updatePropertyAction(client::setSecret, () -> determineNewSecret(client, rep)));
             // Redirect uris / Web origins
-            add(updatePropertyAction(client::setRedirectUris, () -> CollectionUtil.collectionToSet(rep.getRedirectUris()), client::getRedirectUris));
-            add(updatePropertyAction(client::setWebOrigins, () -> CollectionUtil.collectionToSet(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
+            add(updatePropertyAction(client::setRedirectUris, () -> filterEmptyValues(rep.getRedirectUris()), client::getRedirectUris));
+            add(updatePropertyAction(client::setWebOrigins, () -> filterEmptyValues(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
         }};
 
         // Extended client attributes
@@ -617,6 +617,13 @@ public class RepresentationToModel {
                 .stream()
                 .filter(uri -> uri.startsWith("http"))
                 .map(UriUtils::getOrigin)
+                .collect(Collectors.toSet());
+    }
+
+    private static Set<String> filterEmptyValues(Collection<String> collection) {
+        if (collection == null) return null;
+        return collection.stream()
+                .filter(s -> s != null && !s.isBlank())
                 .collect(Collectors.toSet());
     }
 
@@ -822,16 +829,29 @@ public class RepresentationToModel {
 
     public static void createVerifiableCredentials(UserRepresentation userRep, KeycloakSession session, UserModel user) {
         if (userRep.getVerifiableCredentials() != null) {
+            RealmModel realm = session.getContext().getRealm();
             for (UserVerifiableCredentialRepresentation verifiableCred : userRep.getVerifiableCredentials()) {
-                session.users().addVerifiableCredential(user.getId(), toModel(verifiableCred));
+                session.users().addVerifiableCredential(user.getId(), toModel(verifiableCred, realm));
             }
         }
     }
 
     public static void createIssuedVerifiableCredentials(UserRepresentation userRep, KeycloakSession session, UserModel user) {
         if (userRep.getIssuedVerifiableCredentials() != null) {
+            RealmModel realm = session.getContext().getRealm();
             for (IssuedVerifiableCredentialRepresentation issuedCred : userRep.getIssuedVerifiableCredentials()) {
-                session.users().addIssuedVerifiableCredential(toModel(issuedCred));
+                ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(realm, issuedCred.getCredentialType());
+                if (clientScope == null) {
+                    throw new ModelException("Client scope not found: " + issuedCred.getCredentialType());
+                }
+
+                UserVerifiableCredentialModel verifiableCredential = session.users()
+                        .getVerifiableCredentialByClientScope(user.getId(), clientScope.getId());
+                if (verifiableCredential == null) {
+                    throw new ModelException("User verifiable credential not found for scope: " + issuedCred.getCredentialType());
+                }
+
+                session.users().addIssuedVerifiableCredential(toModel(issuedCred, verifiableCredential.getId()));
             }
         }
     }
@@ -1025,13 +1045,22 @@ public class RepresentationToModel {
         return consentModel;
     }
 
-    public static UserVerifiableCredentialModel toModel(UserVerifiableCredentialRepresentation rep) {
-        UserVerifiableCredentialModel verifCredentialModel = new UserVerifiableCredentialModel(rep.getCredentialScopeName());
-        verifCredentialModel.setRevision(rep.getRevision());
-        verifCredentialModel.setCreatedDate(rep.getCreatedDate());
-        verifCredentialModel.setUpdatedDate(rep.getUpdatedDate());
-        verifCredentialModel.setUserAttributes(rep.getUserAttributes());
-        return verifCredentialModel;
+    public static UserVerifiableCredentialModel toModel(UserVerifiableCredentialRepresentation rep, RealmModel realm) {
+        if (rep.getCredentialScopeName() == null) {
+            throw new ModelException("credentialScopeName is required");
+        }
+
+        ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(realm, rep.getCredentialScopeName());
+        if (clientScope == null) {
+            throw new ModelException("Client scope not found: " + rep.getCredentialScopeName());
+        }
+
+        UserVerifiableCredentialModel model = new UserVerifiableCredentialModel(null, clientScope.getId());
+        model.setRevision(rep.getRevision());
+        model.setCreatedDate(rep.getCreatedDate());
+        model.setUpdatedDate(rep.getUpdatedDate());
+        model.setUserAttributes(rep.getUserAttributes());
+        return model;
     }
 
     public static AuthenticationFlowModel toModel(AuthenticationFlowRepresentation rep) {
@@ -1805,11 +1834,11 @@ public class RepresentationToModel {
         return new OrganizationDomainModel(domainRepresentation.getName(), domainRepresentation.isVerified());
     }
 
-    public static IssuedVerifiableCredentialModel toModel(IssuedVerifiableCredentialRepresentation representation) {
+    public static IssuedVerifiableCredentialModel toModel(IssuedVerifiableCredentialRepresentation representation, String verifiableCredentialId) {
         IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel();
         model.setId(representation.getId());
         model.setUserId(representation.getUserId());
-        model.setCredentialType(representation.getCredentialType());
+        model.setVerifiableCredentialId(verifiableCredentialId);
         model.setIssuedAt(representation.getIssuedAt());
         model.setExpiresAt(representation.getExpiresAt());
         model.setClientId(representation.getClientId());

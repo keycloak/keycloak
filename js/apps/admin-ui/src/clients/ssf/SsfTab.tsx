@@ -1,4 +1,3 @@
-import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { useFetch } from "@keycloak/keycloak-ui-shared";
 import { PageSection } from "@patternfly/react-core";
@@ -6,9 +5,7 @@ import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 
 import { useAdminClient } from "../../admin-client";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import { addTrailingSlash, convertAttributeNameToForm } from "../../util";
-import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
+import { convertAttributeNameToForm } from "../../util";
 import type { FormFields, SaveOptions } from "../ClientDetails";
 import type { SsfClientTab } from "../routes/ClientSsfTab";
 import { EmitEventsTab } from "./tabs/EmitEventsTab";
@@ -16,22 +13,10 @@ import { EventSearchTab } from "./tabs/EventSearchTab";
 import { ReceiverTab } from "./tabs/ReceiverTab";
 import { StreamTab, type SsfClientStream } from "./tabs/StreamTab";
 import { SubjectsTab } from "./tabs/SubjectsTab";
+import { isPollDeliveryMethod } from "./utils";
 
 const FALLBACK_DEFAULT_SUPPORTED_EVENTS =
   "CaepCredentialChange,CaepSessionRevoked";
-
-const isPollDeliveryMethod = (method: string | undefined): boolean =>
-  method === "urn:ietf:rfc:8936" ||
-  method === "https://schemas.openid.net/secevent/risc/delivery-method/poll";
-
-type SsfConfig = {
-  defaultSupportedEvents?: string[];
-  availableSupportedEvents?: string[];
-  nativelyEmittedEvents?: string[];
-  defaultPushEndpointConnectTimeoutMillis?: number;
-  defaultPushEndpointSocketTimeoutMillis?: number;
-  defaultUserSubjectFormat?: string;
-};
 
 const FALLBACK_DEFAULT_PUSH_CONNECT_TIMEOUT_MILLIS = 1000;
 const FALLBACK_DEFAULT_PUSH_SOCKET_TIMEOUT_MILLIS = 1000;
@@ -50,7 +35,6 @@ export type SsfTabProps = {
 
 export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
   const { adminClient } = useAdminClient();
-  const { realm } = useRealm();
 
   const { watch, setValue } = useFormContext<FormFields>();
 
@@ -82,18 +66,11 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
 
   useFetch(
     async () => {
-      const response = await fetchWithError(
-        `${addTrailingSlash(
-          adminClient.baseUrl,
-        )}admin/realms/${realm}/ssf/config`,
-        {
-          headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
-        },
-      );
-      if (!response.ok) {
+      try {
+        return await adminClient.ssf.getConfig();
+      } catch {
         return null;
       }
-      return (await response.json()) as SsfConfig;
     },
     (config) => {
       if (config?.availableSupportedEvents) {
@@ -177,24 +154,12 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
 
   useFetch(
     async () => {
-      if (!client.id) {
+      if (!client.clientId) {
         return null;
       }
-      // Use plain fetch instead of fetchWithError so we can handle the
-      // expected 404 (no stream registered yet) without surfacing it as a
-      // global error and redirecting away from the client details page.
-      const response = await fetch(
-        `${addTrailingSlash(
-          adminClient.baseUrl,
-        )}admin/realms/${realm}/ssf/clients/${client.clientId}/stream`,
-        {
-          headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
-        },
-      );
-      if (!response.ok) {
-        return null;
-      }
-      return (await response.json()) as SsfClientStream;
+      return (await adminClient.ssf.findClientStream({
+        clientId: client.clientId,
+      })) as SsfClientStream | null;
     },
     (stream) => {
       setClientStream(stream);

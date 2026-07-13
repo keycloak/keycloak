@@ -374,10 +374,12 @@ public class AuthenticationManager {
     public static AuthenticationSessionModel createOrJoinLogoutSession(KeycloakSession session, RealmModel realm,
             final AuthenticationSessionManager asm, UserSessionModel userSession, boolean browserCookie, boolean initiateLogout) {
         AuthenticationSessionModel logoutSession = session.getContext().getAuthenticationSession();
-        if (logoutSession != null && AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(logoutSession.getAction())) {
+        // Don't reuse logout session if it belongs to a different user session
+        if (logoutSession != null && AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(logoutSession.getAction())
+                && (userSession == null || (logoutSession.getParentSession() != null
+                && userSession.getId().equals(logoutSession.getParentSession().getId())))) {
             return logoutSession;
         }
-
         ClientModel client = session.getContext().getClient();
         if (client == null) {
             // Account management client is used as a placeholder
@@ -388,14 +390,15 @@ public class AuthenticationManager {
         RootAuthenticationSessionModel rootLogoutSession = null;
         boolean browserCookiePresent = false;
 
-        // Try to lookup current authSessionId from browser cookie. If doesn't exist, use the same as current userSession
+        // Try to lookup current authSessionId from browser cookie. If doesn't exist, use the same as current userSession if it can be reused
         if (browserCookie) {
             rootLogoutSession = asm.getCurrentRootAuthenticationSession(realm);
         }
         if (rootLogoutSession != null) {
             authSessionId = rootLogoutSession.getId();
             browserCookiePresent = true;
-        } else if (userSession != null) {
+        } else if (userSession != null && (logoutSession == null || (logoutSession.getParentSession() != null
+                && userSession.getId().equals(logoutSession.getParentSession().getId())))) {
             authSessionId = userSession.getId();
             rootLogoutSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
         } else {
@@ -685,7 +688,7 @@ public class AuthenticationManager {
                     uriInfo,
                     headers);
             clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
-            TokenManager.dettachClientSession(clientSession);
+            TokenManager.detachClientSession(clientSession);
         }
     }
 
@@ -866,7 +869,7 @@ public class AuthenticationManager {
         }
         keycloakSession.getProvider(CookieProvider.class).set(CookieType.IDENTITY, encoded, maxAge);
 
-        String sessionCookieValue = sha256UrlEncodedHash(session.getId());
+        String sessionCookieValue = sha384UrlEncodedHash(session.getId());
 
         // THIS SHOULD NOT BE A HTTPONLY COOKIE!  It is used for OpenID Connect Iframe Session support!
         // Max age should be set to the max lifespan of the session as it's used to invalidate old-sessions on re-login
@@ -1005,7 +1008,7 @@ public class AuthenticationManager {
             return false;
         }
 
-        if (cookie.equals(sha256UrlEncodedHash(sessionId))) return true;
+        if (cookie.equals(sha384UrlEncodedHash(sessionId))) return true;
 
         // Backwards compatibility
         String[] split = cookie.split("/");
@@ -1112,6 +1115,14 @@ public class AuthenticationManager {
             return response;
         }
         RealmModel realm = authSession.getRealm();
+
+        UserModel user = authSession.getAuthenticatedUser();
+        if (user != null && !user.isEnabled()) {
+            event.user(user);
+            event.detail(Details.USERNAME, user.getUsername());
+            event.error(Errors.USER_DISABLED);
+            return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.ACCOUNT_DISABLED);
+        }
 
         ClientSessionContext clientSessionCtx = AuthenticationProcessor.attachSession(authSession, userSession, session, realm, clientConnection, event);
         userSession = clientSessionCtx.getClientSession().getUserSession();
@@ -1276,7 +1287,7 @@ public class AuthenticationManager {
         //if Parameterized Scopes are enabled, get the scopes from the AuthorizationRequestContext, passing the session and scopes as parameters
         // then concat a Stream with the ClientModel, as it's discarded in the getAuthorizationRequestContext method
         if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
-            return AuthorizationContextUtil.getAuthorizationRequestsStreamFromScopesWithClient(session, client, authSession.getClientNote(OAuth2Constants.SCOPE));
+            return AuthorizationContextUtil.getAuthorizationRequestsStreamFromScopesWithClient(session, client, authSession.getAuthenticatedUser(), authSession.getClientNote(OAuth2Constants.SCOPE));
         }
         // if parameterized scopes are not enabled, we retain the old behaviour, but the ClientScopes will be wrapped in
         // AuthorizationRequest objects to standardize the code handling these.
@@ -1765,8 +1776,8 @@ public class AuthenticationManager {
         return null;
     }
 
-    public static String sha256UrlEncodedHash(String input) {
-        return HashUtils.sha256UrlEncodedHash(input, StandardCharsets.ISO_8859_1);
+    public static String sha384UrlEncodedHash(String input) {
+        return HashUtils.sha384UrlEncodedHash(input, StandardCharsets.ISO_8859_1);
     }
 
     public static String getRequestedScopes(KeycloakSession session) {

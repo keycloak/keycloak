@@ -5,12 +5,16 @@ import java.util.stream.Collectors;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.workflow.WorkflowInvalidStateException;
 import org.keycloak.models.workflow.expression.BooleanConditionParser.EvaluatorContext;
+import org.keycloak.utils.StringUtil;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 
 public class EvaluatorUtils {
+
+    public static final int MAX_EXPRESSION_LENGTH = 2048;
+    public static final int MAX_EXPRESSION_DEPTH = 10;
 
     /**
      * Creates an EvaluatorContext from the given expression. If the expression is invalid, a WorkflowInvalidStateException
@@ -20,6 +24,15 @@ public class EvaluatorUtils {
      * @return the EvaluatorContext representing the parsed expression
      */
     public static EvaluatorContext createEvaluatorContext(String expression) {
+        if (StringUtil.isBlank(expression)) {
+            throw new WorkflowInvalidStateException("Expression cannot be null or empty");
+        }
+        if (expression.length() > MAX_EXPRESSION_LENGTH) {
+            throw new WorkflowInvalidStateException(
+                    "Expression exceeds maximum allowed length of %d characters".formatted(MAX_EXPRESSION_LENGTH));
+        }
+        validateExpressionDepth(expression);
+
         // to properly validate the expression, we need to parse it.
         CharStream charStream = CharStreams.fromString(expression);
         BooleanConditionLexer lexer = new BooleanConditionLexer(charStream);
@@ -43,6 +56,50 @@ public class EvaluatorUtils {
                     expression, lineSeparator, lineSeparator, errorDetails));
         }
         return context;
+    }
+
+    /**
+     * Validates that the nesting depth of parenthesized groups does not exceed {@link #MAX_EXPRESSION_DEPTH}.
+     * Runs before ANTLR parsing to avoid building a deep parse tree that could cause a {@code StackOverflowError}.
+     * Condition call parentheses (e.g. {@code has-role(admin)}) are skipped since they don't produce recursive
+     * grammar rules.
+     */
+    private static void validateExpressionDepth(String expression) {
+        int depth = 0;
+        int maxDepth = 0;
+        boolean wasIdentChar = false;
+        for (int i = 0; i < expression.length(); i++) {
+            char c = expression.charAt(i);
+            // condition call parens, e.g. has-role(admin) — preceded by identifier chars, skip to closing ')'
+            if (c == '(' && wasIdentChar) {
+                for (i++; i < expression.length(); i++) {
+                    if (expression.charAt(i) == '\\' && i + 1 < expression.length()) {
+                        i++; // skip escaped character
+                        continue;
+                    }
+                    if (expression.charAt(i) == ')') {
+                        break;
+                    }
+                }
+                wasIdentChar = false;
+                continue;
+            }
+            // grouping parens — not preceded by identifier chars, count as nesting
+            if (c == '(') {
+                maxDepth = Math.max(maxDepth, ++depth);
+                wasIdentChar = false;
+            } else if (c == ')') {
+                depth = Math.max(0, depth - 1);
+                wasIdentChar = false;
+            } else {
+                // track whether the next '(' would be a condition call or a grouping paren
+                wasIdentChar = Character.isLetterOrDigit(c) || c == '-' || c == '_';
+            }
+        }
+        if (maxDepth > MAX_EXPRESSION_DEPTH) {
+            throw new WorkflowInvalidStateException(
+                    "Expression exceeds maximum allowed nesting depth of %d".formatted(MAX_EXPRESSION_DEPTH));
+        }
     }
 
     /**

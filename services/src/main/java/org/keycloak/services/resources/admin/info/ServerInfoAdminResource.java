@@ -78,6 +78,7 @@ import org.keycloak.representations.info.CryptoInfoRepresentation;
 import org.keycloak.representations.info.FeatureRepresentation;
 import org.keycloak.representations.info.FeatureType;
 import org.keycloak.representations.info.MemoryInfoRepresentation;
+import org.keycloak.representations.info.ParameterizedScopeTypeRepresentation;
 import org.keycloak.representations.info.ProfileInfoRepresentation;
 import org.keycloak.representations.info.ProviderRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
@@ -173,10 +174,13 @@ public class ServerInfoAdminResource {
         return info;
     }
 
-    private List<String> buildParameterizedScopeTypesList() {
+    private List<ParameterizedScopeTypeRepresentation> buildParameterizedScopeTypesList() {
         return session.getKeycloakSessionFactory()
                 .getProviderFactoriesStream(ParameterizedScopeTypeProvider.class)
-                .map(f -> session.getProvider(ParameterizedScopeTypeProvider.class, f.getId()).getTypeName())
+                .map(f -> {
+                    ParameterizedScopeTypeProvider provider = session.getProvider(ParameterizedScopeTypeProvider.class, f.getId());
+                    return new ParameterizedScopeTypeRepresentation(provider.getTypeName(), provider.isRepeatable());
+                })
                 .collect(Collectors.toList());
     }
 

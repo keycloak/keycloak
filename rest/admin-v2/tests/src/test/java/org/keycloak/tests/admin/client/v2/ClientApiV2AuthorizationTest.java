@@ -358,7 +358,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         try (var response = getClientApi(realmAdminAdminClient, getRealmName(), adminPermissionsClientRep.getClientId()).deleteClient()) {
             assertThat(response.getStatus(), is(400));
             var body = response.readEntity(String.class);
-            assertThat(body, containsString("Not supported for this client"));
+            assertThat(body, containsString("Could not delete client"));
         }
 
         // Verify the client still exists (was not deleted)

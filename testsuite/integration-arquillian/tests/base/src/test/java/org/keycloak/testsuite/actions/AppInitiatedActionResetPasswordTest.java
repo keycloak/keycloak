@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import jakarta.mail.internet.MimeMessage;
 
@@ -35,6 +37,8 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -49,6 +53,7 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.MailServer;
@@ -455,6 +460,47 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         sessions = testUser.getUserSessions();
         assertEquals(1, sessions.size());
         assertEquals(firstSessionId, sessions.get(0).getId(), "Old session is still valid");
+    }
+
+    @Test
+    public void checkLogoutSessionsBackchannelLogout() throws Exception {
+        try (ClientAttributeUpdater updater = ClientAttributeUpdater.forClient(adminClient, oauth.getRealm(), oauth.getClientId())
+                .setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, OAuthClient.APP_ROOT + "/admin/backchannelLogout")
+                .setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED, "true")
+                .update()) {
+
+            oauth.openLoginForm();
+            loginPage.login("test-user@localhost", "password");
+            String firstSessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
+
+            // remove cookies to login again
+            oauth.getDriver().navigate().to(oauth.getEndpoints().getJwks());
+            oauth.getDriver().manage().deleteAllCookies();
+
+            oauth.openLoginForm();
+            oauth.doLogin("test-user@localhost", "password");
+            String secondSessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
+
+            // remove cookies to login again
+            oauth.getDriver().navigate().to(oauth.getEndpoints().getJwks());
+            oauth.getDriver().manage().deleteAllCookies();
+
+            oauth.openLoginForm();
+            oauth.doLogin("test-user@localhost", "password");
+            EventAssertion.expectLoginSuccess(events.poll());
+
+            doAIA(); // Trigger password update with logout checkbox
+            changePasswordPage.assertCurrent();
+            changePasswordPage.checkLogoutSessions();
+            changePasswordPage.changePassword("new-password", "new-password");
+
+            List<LogoutToken> capturedLogoutTokens = List.of(
+                    testingClient.testApp().getBackChannelLogoutToken(),
+                    testingClient.testApp().getBackChannelLogoutToken());
+
+            Set<String> loggedOutSids = capturedLogoutTokens.stream().map(LogoutToken::getSid).collect(Collectors.toSet());
+            MatcherAssert.assertThat(loggedOutSids, Matchers.containsInAnyOrder(firstSessionId, secondSessionId));
+        }
     }
 
     @Test

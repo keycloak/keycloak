@@ -57,8 +57,9 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
         GroupRepresentation mapperTestGroup = new GroupRepresentation();
         mapperTestGroup.setName(MAPPER_TEST_GROUP_NAME);
 
-        Response response = adminClient.realm(bc.consumerRealmName()).groups().add(mapperTestGroup);
-        mapperGroupId = CreatedResponseUtil.getCreatedId(response);
+        try (Response response = adminClient.realm(bc.consumerRealmName()).groups().add(mapperTestGroup)) {
+            mapperGroupId = CreatedResponseUtil.getCreatedId(response);
+        }
     }
 
     protected UserRepresentation loginAsUserTwiceWithMapper(

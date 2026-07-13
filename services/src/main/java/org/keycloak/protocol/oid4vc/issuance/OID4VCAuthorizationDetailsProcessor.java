@@ -35,6 +35,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
@@ -382,7 +383,14 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
     protected IssuedVerifiableCredentialModel createIssuedVerifiableCredential(UserModel userModel, ClientModel clientModel, CredentialScopeModel credentialScope) {
         String credentialScopeName = credentialScope.getName();
         try {
-            IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(userModel.getId(), credentialScopeName, clientModel.getId());
+            // Lookup the UserVerifiableCredential by client scope ID to get its ID
+            UserVerifiableCredentialModel verifiableCredential = session.users()
+                    .getVerifiableCredentialByClientScope(userModel.getId(), credentialScope.getId());
+            if (verifiableCredential == null) {
+                throw new ModelException("User verifiable credential not found for scope: " + credentialScopeName);
+            }
+
+            IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(userModel.getId(), verifiableCredential.getId(), clientModel.getId());
 
             long issuedAt = Time.currentTimeMillis();
             model.setIssuedAt(issuedAt);
