@@ -117,7 +117,7 @@ public class OIDCClientRepresentation {
     // OIDC Dynamic Client Registration Response
     private Integer client_id_issued_at;
 
-    private Integer client_secret_expires_at;
+    private Long client_secret_expires_at;
 
     private String registration_client_uri;
 
@@ -447,10 +447,16 @@ public class OIDCClientRepresentation {
     }
 
     public Integer getClientSecretExpiresAt() {
-        return client_secret_expires_at;
+        return client_secret_expires_at == null ? null : client_secret_expires_at.intValue();
     }
 
     public void setClientSecretExpiresAt(Integer client_secret_expires_at) {
+        this.client_secret_expires_at = client_secret_expires_at == null ? null : client_secret_expires_at.longValue();
+    }
+
+    // Long overload to avoid integer overflow for timestamps beyond January 2038 (Y2K38)
+    // Jackson uses the Long field directly for serialization
+    public void setClientSecretExpiresAt(Long client_secret_expires_at) {
         this.client_secret_expires_at = client_secret_expires_at;
     }
 

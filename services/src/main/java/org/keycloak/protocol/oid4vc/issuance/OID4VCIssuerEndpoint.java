@@ -92,6 +92,7 @@ import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerException;
 import org.keycloak.protocol.oid4vc.model.AttestationProof;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer.BatchCredentialIssuance;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
@@ -138,6 +139,7 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+import static org.keycloak.constants.OID4VCIConstants.BATCH_CREDENTIAL_ISSUANCE_DEFAULT_MAX_BATCH_SIZE;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.getSupportedCredentials;
 import static org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant.AUTH_CODE_GRANT_TYPE;
@@ -999,6 +1001,8 @@ public class OID4VCIssuerEndpoint {
 
         // Get the list of all proofs (handles single proof, multiple proofs, or none)
         List<String> allProofs = getAllProofs(credentialRequest);
+        if (allProofs.stream().anyMatch(p -> p == null || p.isBlank()))
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF, "Proof values must not be null or blank"));
 
         // Generate credential response
         CredentialResponse responseVO = new CredentialResponse();
@@ -1012,6 +1016,16 @@ public class OID4VCIssuerEndpoint {
             Proofs originalProofs = credentialRequest.getProofs();
             // Determine the proof type from the original proofs
             String proofType = originalProofs.getProofType();
+
+            if (allProofs.size() > 1) {
+                Integer maxBatchSize = Optional.ofNullable(issuerMetadata.getBatchCredentialIssuance())
+                        .map(BatchCredentialIssuance::getBatchSize)
+                        .orElse(BATCH_CREDENTIAL_ISSUANCE_DEFAULT_MAX_BATCH_SIZE);
+                if (allProofs.size() > maxBatchSize) {
+                    LOGGER.warnf("Reducing credential batch size to: %d", maxBatchSize);
+                    allProofs = allProofs.subList(0, maxBatchSize);
+                }
+            }
 
             for (String currentProof : allProofs) {
                 Proofs proofForIteration = Proofs.create(proofType, currentProof);
@@ -1703,9 +1717,10 @@ public class OID4VCIssuerEndpoint {
         Instant normalizedIssuance = timeClaimNormalizer.normalize(issuance);
 
         // Compute expiration date from client scope configuration and normalize it
+        // Note: The IssuedVerifiableCredentialModel.expiresAt and refresh token still use the full credential lifetime
         CredentialScopeModel clientScopeModel = credentialScopeModel;
-        Integer expiryInSeconds = clientScopeModel.getExpiryInSeconds();
-        Instant expiration = normalizedIssuance.plusSeconds(expiryInSeconds);
+        Integer refreshIntervalInSeconds = clientScopeModel.getRefreshIntervalInSeconds();
+        Instant expiration = normalizedIssuance.plusSeconds(refreshIntervalInSeconds);
         Instant normalizedExpiration = timeClaimNormalizer.normalize(expiration);
 
         // set the required claims

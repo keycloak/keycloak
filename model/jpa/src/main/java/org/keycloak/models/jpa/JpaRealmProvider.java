@@ -506,6 +506,22 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
+    public Stream<RoleModel> getCompositeRolesStream(RealmModel realm, Set<String> parentRoleIds) {
+        if (parentRoleIds == null || parentRoleIds.isEmpty()) {
+            return Stream.empty();
+        }
+        // One query fetches the child roles for every parent in the frontier, so a composite-role
+        // tree expands with a single getChildRolesFromParentIds query per breadth-first level. The
+        // query hydrates the child RoleEntity rows, so the getRoleById calls below are served from
+        // the persistence context without extra round-trips.
+        TypedQuery<RoleEntity> query = em.createNamedQuery("getChildRolesFromParentIds", RoleEntity.class)
+                .setParameter("parentRoleIds", parentRoleIds);
+        return closing(query.getResultStream())
+                .map(roleEntity -> session.roles().getRoleById(realm, roleEntity.getId()))
+                .filter(Objects::nonNull);
+    }
+
+    @Override
     public GroupModel getGroupById(RealmModel realm, String id) {
         GroupEntity groupEntity = em.find(GroupEntity.class, id);
         if (groupEntity == null) return null;
@@ -1143,7 +1159,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             }
         });
 
-        int countRemoved = em.createNamedQuery("deleteClientScopeClientMappingByClient")
+        em.createNamedQuery("deleteClientScopeClientMappingByClient")
                 .setParameter("clientId", clientEntity.getId())
                 .executeUpdate();
         em.remove(clientEntity);  // i have no idea why, but this needs to come before deleteScopeMapping

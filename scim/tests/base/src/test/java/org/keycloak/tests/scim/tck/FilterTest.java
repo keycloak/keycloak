@@ -23,10 +23,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.scim.filter.FilterUtils.MAX_FILTER_DEPTH;
+import static org.keycloak.scim.filter.FilterUtils.MAX_FILTER_LENGTH;
 import static org.keycloak.scim.resource.Scim.ENTERPRISE_USER_SCHEMA;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -423,6 +426,38 @@ public class FilterTest extends AbstractScimTest {
 
         ce = assertThrows(ScimClientException.class,
                 () -> client.users().getAll(ResourceFilter.filter().sw("meta.created", "2026-10").build()));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+    }
+
+    @Test
+    public void testFilterExceedingMaxLength() {
+        String longFilter = "userName eq \"" + "a".repeat(MAX_FILTER_LENGTH) + "\"";
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().getAll(longFilter));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+        assertThat(ce.getError().getDetail(), containsString("maximum allowed length"));
+
+        // POST .search should also reject oversized filters
+        ce = assertThrows(ScimClientException.class,
+                () -> client.users().search(longFilter));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+    }
+
+    @Test
+    public void testFilterExceedingMaxDepth() {
+        String deepFilter = "(".repeat(MAX_FILTER_DEPTH + 1) + "userName eq \"a\"" + ")".repeat(MAX_FILTER_DEPTH + 1);
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().getAll(deepFilter));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+        assertThat(ce.getError().getDetail(), containsString("maximum allowed nesting depth"));
+
+        // POST .search should also reject deeply nested filters
+        ce = assertThrows(ScimClientException.class,
+                () -> client.users().search(deepFilter));
         assertThat(ce.getError(), is(not(nullValue())));
         assertThat(ce.getError().getScimType(), is("invalidFilter"));
     }

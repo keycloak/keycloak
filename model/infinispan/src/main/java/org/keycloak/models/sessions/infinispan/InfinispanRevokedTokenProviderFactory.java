@@ -72,6 +72,6 @@ public class InfinispanRevokedTokenProviderFactory implements RevokedTokenProvid
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return !Profile.isFeatureEnabled(Profile.Feature.CACHELESS);
+        return !Profile.isFeatureEnabled(Profile.Feature.STATELESS);
     }
 }

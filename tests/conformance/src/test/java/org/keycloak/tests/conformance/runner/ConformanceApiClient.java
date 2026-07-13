@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 
@@ -93,6 +94,16 @@ public final class ConformanceApiClient {
     }
 
     public ConformanceModuleResult run(ConformanceModuleVariant module, JsonNode suiteConfig) {
+        return run(module, suiteConfig, null);
+    }
+
+    /**
+     * Runs a module, optionally driving the system under test through {@code interaction} once the
+     * module waits for it. The issuer (VCI) modules are driven by the suite's own browser and pass
+     * {@code null}. The verifier (OID4VP) modules deliver the authorization request from here.
+     */
+    public ConformanceModuleResult run(ConformanceModuleVariant module, JsonNode suiteConfig,
+            Consumer<ModuleRun> interaction) {
         JsonNode plan = createPlan(module.plan(), suiteConfig, module.planVariant());
         String planId = requiredText(plan, "id");
 
@@ -101,6 +112,12 @@ public final class ConformanceApiClient {
         JsonNode info = waitForRunnableOrFinished(planId, moduleId);
         if ("CONFIGURED".equals(info.path("status").asText())) {
             startModule(planId, moduleId);
+        }
+        if (interaction != null) {
+            info = waitForState(planId, moduleId, List.of("WAITING", "FINISHED"), Duration.ofMinutes(4));
+            if (!"FINISHED".equals(info.path("status").asText())) {
+                interaction.accept(new ModuleRun(moduleNode, info));
+            }
         }
         info = waitForFinished(planId, moduleId);
         JsonNode logs = getLogs(planId, moduleId);
