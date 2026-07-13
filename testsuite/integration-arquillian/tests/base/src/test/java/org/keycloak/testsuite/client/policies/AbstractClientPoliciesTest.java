@@ -71,6 +71,7 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.json.RawJsonValue;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -1072,7 +1073,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         ClientPolicyExecutorRepresentation executorRep = profileRep.getExecutors().stream()
                 .filter(profileRepp -> providerId.equals(profileRepp.getExecutorProviderId()))
                 .findFirst().orElse(null);
-        return executorRep == null ? null : executorRep.getConfiguration();
+        return executorRep == null ? null : RawJsonValue.unwrap(JsonNode.class, executorRep.getConfiguration());
     }
 
     // Assertions about policies

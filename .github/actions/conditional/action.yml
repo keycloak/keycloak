@@ -52,6 +52,9 @@ outputs:
   admin-v2:
     description: Should Admin v2 tests execute
     value: ${{ steps.changes.outputs.admin-v2 }}
+  ci-jackson3:
+    description: Should Jackson 3 admin client tests execute
+    value: ${{ steps.changes.outputs.ci-jackson3 }}
 
 runs:
   using: composite

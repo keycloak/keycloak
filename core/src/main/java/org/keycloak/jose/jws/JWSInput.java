@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.jose.JOSE;
+import org.keycloak.json.KeycloakJsonMapperFactory;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -56,7 +57,7 @@ public class JWSInput implements JOSE {
 
             }
             byte[] headerBytes = Base64Url.decode(encodedHeader);
-            header = JsonSerialization.readValue(headerBytes, JWSHeader.class);
+            header = KeycloakJsonMapperFactory.mapper().readValue(headerBytes, JWSHeader.class);
         } catch (Throwable t) {
             throw new JWSInputException(t);
         }

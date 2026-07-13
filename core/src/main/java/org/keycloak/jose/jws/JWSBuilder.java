@@ -32,9 +32,8 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.json.KeycloakJsonMapperFactory;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -103,7 +102,7 @@ public class JWSBuilder {
 
     public EncodingBuilder jsonContent(Object object) {
         try {
-            this.contentBytes = JsonSerialization.writeValueAsBytes(object);
+            this.contentBytes = KeycloakJsonMapperFactory.mapper().writeValueAsBytes(object);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -137,8 +136,8 @@ public class JWSBuilder {
         }
         if (jwk != null) {
             try {
-                builder.append(",\"jwk\" : ").append(JsonSerialization.mapper.writeValueAsString(jwk));
-            } catch (JsonProcessingException e) {
+                builder.append(",\"jwk\" : ").append(KeycloakJsonMapperFactory.mapper().writeValueAsString(jwk));
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
