@@ -78,6 +78,7 @@ import static org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory.NATURAL_PE
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -243,6 +244,59 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
             }
         } finally {
             realms.realm(realmName).remove();
+        }
+    }
+
+    /**
+     * Test that creating a client scope with invalid refresh interval is rejected
+     */
+    @Test
+    public void testRefreshIntervalCannotExceedLifetime() {
+        // Given: a credential scope with refresh interval > lifetime
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("test-invalid-refresh");
+        scope.setExpiryInSeconds(86400); // 1 day
+        scope.setRefreshIntervalInSeconds(604800); // 7 days - INVALID!
+
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+
+        // When/Then: creating the scope should fail
+        try (Response response = clientScopes.create(scope)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus(),
+                    "Should reject client scope when refresh interval exceeds lifetime");
+
+            // Verify error message mentions the problem
+            String body = response.readEntity(String.class);
+            assertTrue(body.contains("refresh interval") && body.contains("exceed"),
+                    "Error message should explain the validation failure");
+        }
+    }
+
+    /**
+     * Test that updating a client scope to have invalid refresh interval is rejected
+     */
+    @Test
+    public void testUpdateToInvalidRefreshIntervalRejected() throws IOException {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("test-update-invalid");
+        scope.setExpiryInSeconds(31536000); // 365 days
+        scope.setRefreshIntervalInSeconds(604800); // 7 days - valid
+
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+        Response response = clientScopes.create(scope);
+        String scopeId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        try {
+            // When: updating to invalid values
+            CredentialScopeRepresentation retrieved = new CredentialScopeRepresentation(
+                    clientScopes.get(scopeId).toRepresentation()
+            );
+            retrieved.setExpiryInSeconds(86400); // 1 day
+            retrieved.setRefreshIntervalInSeconds(604800); // 7 days - now invalid!
+
+            // Then: update should fail with BadRequestException
+            assertThrows(jakarta.ws.rs.BadRequestException.class, () -> clientScopes.get(scopeId).update(retrieved));
+        } finally {
+            clientScopes.get(scopeId).remove();
         }
     }
 

@@ -104,12 +104,32 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     protected UserModel getModel(String id) {
         RealmModel realm = session.getContext().getRealm();
-        return session.users().getUserById(realm, id);
+        UserModel model = session.users().getUserById(realm, id);
+
+        if (model == null || model.getServiceAccountClientLink() == null) {
+            return model;
+        }
+
+        return null;
     }
 
     @Override
     protected String getRealmResourceType() {
         return AdminPermissionsSchema.USERS_RESOURCE_TYPE;
+    }
+
+    @Override
+    protected User createResourceTypeInstance(UserModel model, List<String> attributes, List<String> excludedAttributes) {
+        if (session.getContext().getPermissions().isAdminUser(model)) {
+            User user = new User();
+
+            user.addSchema(getSchema());
+            user.setId(model.getId());
+            user.setUserName(model.getUsername());
+
+            return user;
+        }
+        return super.createResourceTypeInstance(model, attributes, excludedAttributes);
     }
 
     @Override
@@ -222,5 +242,10 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             return join.get("groupId");
         }
         return null;
+    }
+
+    @Override
+    protected boolean isManageable(UserModel model) {
+        return !session.getContext().getPermissions().isAdminUser(model);
     }
 }

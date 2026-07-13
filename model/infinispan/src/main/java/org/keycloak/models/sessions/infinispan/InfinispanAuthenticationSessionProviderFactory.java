@@ -199,7 +199,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return !Profile.isFeatureEnabled(Profile.Feature.CACHELESS) && InfinispanUtils.isEmbeddedInfinispan();
+        return !Profile.isFeatureEnabled(Profile.Feature.STATELESS) && InfinispanUtils.isEmbeddedInfinispan();
     }
 
     private InfinispanChangelogBasedTransaction<String, RootAuthenticationSessionEntity> createTransaction(KeycloakSession session) {

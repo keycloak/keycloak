@@ -103,7 +103,7 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
 
         @NotBlank
         @ValidAuthMethod
-        @JsonPropertyDescription("Which authentication method is used for this client")
+        @JsonPropertyDescription("Client authentication method (e.g. `client-secret`, `client-secret-jwt`)")
         private String method;
 
         @Size(min = 6, max = 255)

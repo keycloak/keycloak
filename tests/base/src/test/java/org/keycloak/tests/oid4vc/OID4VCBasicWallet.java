@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -20,6 +21,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ClientAttestationPoPJwt;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
+import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWK;
@@ -41,8 +43,10 @@ import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.tests.oid4vc.abca.OIDCClientAttester;
 import org.keycloak.tests.oid4vc.abca.OIDCMockClientAttester;
@@ -64,6 +68,8 @@ import org.keycloak.util.DPoPGenerator;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import static org.keycloak.OAuth2Constants.DPOP_JWT_HEADER_TYPE;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
@@ -80,6 +86,7 @@ import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_URI_
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_RESPONSE_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.ISSUER_METADATA_ATTACHMENT_KEY;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -243,13 +250,35 @@ public class OID4VCBasicWallet {
 
     public Proofs generateJwtProof(OID4VCTestContext ctx) {
         String nonce = nonceRequest().send().getNonce();
-        KeyWrapper ecKey = getECKeyPair(ctx, null);
-        return generateJwtProof(ctx, ecKey, nonce);
+        KeyWrapper vcKey = getECKeyPair(ctx, null);
+        return generateJwtProofs(ctx, nonce, vcKey);
     }
 
-    public Proofs generateJwtProof(OID4VCTestContext ctx, KeyWrapper ecKey, String nonce) {
+    public Proofs generateJwtProofs(OID4VCTestContext ctx, String nonce, KeyWrapper... keys) {
         String aud = getIssuerMetadata(ctx).getCredentialIssuer();
-        return Proofs.create(ProofType.JWT, OID4VCProofTestUtils.generateJwtProof(aud, ecKey, nonce));
+        if (keys == null || keys.length == 0) {
+            throw new IllegalArgumentException("keys cannot be null or empty");
+        }
+        if (Arrays.stream(keys).anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException("keys cannot contain null elements");
+        }
+        String[] proofValues = Arrays.stream(keys)
+                .map(k -> OID4VCProofTestUtils.generateJwtProof(aud, nonce, k))
+                .toArray(String[]::new);
+        return Proofs.create(ProofType.JWT, proofValues);
+    }
+
+    /**
+     * Builds an OID4VP presentation of an issued SD-JWT VC: it discloses every claim and adds a key
+     * binding JWT signed by {@code holderKey} and bound to the verifier ({@code audience}, {@code nonce}).
+     */
+    public String present(String sdJwtVc, KeyWrapper holderKey, String audience, String nonce) {
+        ObjectNode keyBindingClaims = JsonSerialization.mapper.createObjectNode();
+        keyBindingClaims.put("aud", audience);
+        keyBindingClaims.put("nonce", nonce);
+        keyBindingClaims.put("iat", Time.currentTimeSeconds());
+        return SdJwtVP.of(sdJwtVc)
+                .present(null, true, keyBindingClaims, new ECDSASignatureSignerContext(holderKey));
     }
 
     public KeyWrapper getECKeyPair(OID4VCTestContext ctx) {
@@ -304,7 +333,7 @@ public class OID4VCBasicWallet {
                 UUID.randomUUID().toString(),
                 HttpMethod.POST,
                 htu,
-                (long) Time.currentTime(),
+                Time.currentTimeSeconds(),
                 jwsEcHeader, ecKey, accessToken);
     }
 
@@ -614,6 +643,11 @@ public class OID4VCBasicWallet {
             return this;
         }
 
+        public AuthorizationEndpointRequest dpopJkt(String dpopJkt) {
+            loginForm.dpopJkt(dpopJkt);
+            return this;
+        }
+
         public AuthorizationEndpointRequest issuerState(String issuerState) {
             loginForm.issuerState(issuerState);
             return this;
@@ -666,5 +700,18 @@ public class OID4VCBasicWallet {
             openLoginForm();
             return parseLoginResponse();
         }
+    }
+
+    public void assertAccessTokenAudience(String accessToken, String... expectedAudience) {
+        assertNotNull(accessToken);
+        assertNotNull(expectedAudience);
+
+        AccessToken token = oauth.verifyToken(accessToken);
+        assertNotNull(token);
+
+        String[] audience = token.getAudience();
+        assertNotNull(audience);
+        assertEquals(expectedAudience.length, audience.length);
+        assertArrayEquals(expectedAudience, audience, "Access token audience should be limited to credential endpoint");
     }
 }
