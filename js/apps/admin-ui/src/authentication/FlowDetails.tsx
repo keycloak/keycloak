@@ -11,9 +11,9 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { getEventCoordinates } from "@dnd-kit/utilities";
 import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
-  Alert,
   AlertVariant,
   Button,
   ButtonVariant,
@@ -34,7 +34,7 @@ import {
   TableIcon,
 } from "@patternfly/react-icons";
 import { Table, Tbody } from "@patternfly/react-table";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
@@ -68,7 +68,104 @@ export const providerConditionFilter = (
   value: AuthenticationProviderRepresentation,
 ) => value.displayName?.startsWith("Condition ");
 
-const DEFAULT_INDENT_STEP = 24;
+const SUBFLOW_EXPAND_DELAY_MS = 400;
+const ROW_EDGE_ZONE_RATIO = 0.25;
+
+type HoveredRow = {
+  hoverId: string;
+  rect: DOMRect;
+  isSubflow: boolean;
+  level: number;
+};
+
+const rowFromElement = (
+  element: Element | null,
+  activeId: string,
+): HoveredRow | null => {
+  const row = element?.closest("tr[data-execution-id]");
+  if (!row) {
+    return null;
+  }
+
+  const executionId = row.getAttribute("data-execution-id");
+  if (!executionId || executionId === activeId) {
+    return null;
+  }
+
+  return {
+    hoverId: executionId,
+    rect: row.getBoundingClientRect(),
+    isSubflow: row.getAttribute("data-is-subflow") === "true",
+    level: Number.parseInt(row.getAttribute("data-level") || "0", 10),
+  };
+};
+
+const getPointerCoordinates = (
+  event: DragMoveEvent,
+): { x: number; y: number } | null => {
+  const start = getEventCoordinates(event.activatorEvent);
+  if (start) {
+    return {
+      x: start.x + event.delta.x,
+      y: start.y + event.delta.y,
+    };
+  }
+
+  if (event.activatorEvent instanceof PointerEvent) {
+    return {
+      x: event.activatorEvent.clientX + event.delta.x,
+      y: event.activatorEvent.clientY + event.delta.y,
+    };
+  }
+
+  return null;
+};
+
+const findHoveredRow = (
+  rows: NodeListOf<Element>,
+  activeId: string,
+  pointerX: number,
+  pointerY: number,
+): HoveredRow | null => {
+  const fromPoint = rowFromElement(
+    document.elementFromPoint(pointerX, pointerY),
+    activeId,
+  );
+  if (fromPoint) {
+    return fromPoint;
+  }
+
+  let match: HoveredRow | null = null;
+
+  for (const row of rows) {
+    const rect = row.getBoundingClientRect();
+    if (
+      pointerX < rect.left ||
+      pointerX > rect.right ||
+      pointerY < rect.top ||
+      pointerY > rect.bottom
+    ) {
+      continue;
+    }
+
+    const executionId = row.getAttribute("data-execution-id");
+    if (!executionId || executionId === activeId) {
+      continue;
+    }
+
+    const level = Number.parseInt(row.getAttribute("data-level") || "0", 10);
+    if (!match || level >= match.level) {
+      match = {
+        hoverId: executionId,
+        rect,
+        isSubflow: row.getAttribute("data-is-subflow") === "true",
+        level,
+      };
+    }
+  }
+
+  return match;
+};
 
 const emptyDropInfo = (): DropInfo => ({
   targetId: null,
@@ -77,44 +174,6 @@ const emptyDropInfo = (): DropInfo => ({
   targetParentId: null,
   insertIndex: -1,
 });
-
-const measureIndentMetrics = () => {
-  const rows = document.querySelectorAll("tr[data-execution-id]");
-  let level0Left: number | undefined;
-  let level1Left: number | undefined;
-
-  for (const row of rows) {
-    const level = Number.parseInt(row.getAttribute("data-level") || "0", 10);
-    const executionId = row.getAttribute("data-execution-id");
-    if (!executionId) {
-      continue;
-    }
-    const title = document.querySelector(`[data-id="${executionId}"]`);
-    if (!title) {
-      continue;
-    }
-    const left = title.getBoundingClientRect().left;
-    if (level === 0) {
-      level0Left = level0Left === undefined ? left : Math.min(level0Left, left);
-    }
-    if (level === 1) {
-      level1Left = level1Left === undefined ? left : Math.min(level1Left, left);
-    }
-  }
-
-  const baseLeft = level0Left ?? 0;
-  const indentStep =
-    level0Left !== undefined && level1Left !== undefined
-      ? Math.max(16, level1Left - level0Left)
-      : DEFAULT_INDENT_STEP;
-
-  return { baseLeft, indentStep };
-};
-
-const targetLevelFromPointerX = (pointerX: number) => {
-  const { baseLeft, indentStep } = measureIndentMetrics();
-  return Math.max(0, Math.round((pointerX - baseLeft) / indentStep));
-};
 
 const dropModeToVertical = (mode: DropInfo["mode"]): DropVertical => {
   if (mode === "reorder-before") {
@@ -181,7 +240,13 @@ export default function FlowDetails() {
   const [bindFlowOpen, toggleBindFlow] = useToggle();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [dropInfo, setDropInfo] = useState<DropInfo>(emptyDropInfo());
-  const [indentStep, setIndentStep] = useState(DEFAULT_INDENT_STEP);
+  const [pendingExpandId, setPendingExpandId] = useState<string | null>(null);
+
+  const collapseSnapshotRef = useRef<Map<string, boolean>>(new Map());
+  const autoExpandedIdsRef = useRef<Set<string>>(new Set());
+  const expandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingExpandIdRef = useRef<string | null>(null);
+  const collapseRafRef = useRef<number | null>(null);
 
   const visualIndexById = useMemo(() => {
     const map = new Map<string, number>();
@@ -221,73 +286,166 @@ export default function FlowDetails() {
     [executionList],
   );
 
+  const activeExecution = useMemo(
+    () => (activeId ? findExecutionById(activeId) : undefined),
+    [activeId, findExecutionById],
+  );
+
+  const clearExpandTimer = useCallback(() => {
+    if (expandTimerRef.current) {
+      clearTimeout(expandTimerRef.current);
+      expandTimerRef.current = null;
+    }
+    pendingExpandIdRef.current = null;
+    setPendingExpandId(null);
+  }, []);
+
+  const restoreDragState = useCallback(() => {
+    clearExpandTimer();
+    if (collapseRafRef.current !== null) {
+      cancelAnimationFrame(collapseRafRef.current);
+      collapseRafRef.current = null;
+    }
+    autoExpandedIdsRef.current.clear();
+    if (executionList) {
+      executionList.restoreCollapseState(collapseSnapshotRef.current);
+      setExecutionList(executionList.clone());
+    }
+  }, [clearExpandTimer, executionList]);
+
+  const expandSubflowOnHover = useCallback(
+    (subflowId: string) => {
+      if (!executionList) {
+        return;
+      }
+
+      const subflow = findExecutionById(subflowId);
+      if (!subflow?.executionList?.length) {
+        return;
+      }
+
+      const ancestorIds = executionList.ancestorPathIds(subflowId);
+
+      for (const id of [...autoExpandedIdsRef.current]) {
+        if (id === subflowId || ancestorIds.has(id)) {
+          continue;
+        }
+        const node = findExecutionById(id);
+        if (node) {
+          node.isCollapsed = true;
+        }
+        autoExpandedIdsRef.current.delete(id);
+      }
+
+      for (const ancestorId of ancestorIds) {
+        const ancestor = findExecutionById(ancestorId);
+        if (ancestor?.executionList?.length) {
+          ancestor.isCollapsed = false;
+          autoExpandedIdsRef.current.add(ancestorId);
+        }
+      }
+
+      subflow.isCollapsed = false;
+      autoExpandedIdsRef.current.add(subflowId);
+      setExecutionList(executionList.clone());
+    },
+    [executionList, findExecutionById],
+  );
+
+  const scheduleSubflowExpand = useCallback(
+    (subflowId: string) => {
+      if (pendingExpandIdRef.current === subflowId) {
+        return;
+      }
+
+      clearExpandTimer();
+      pendingExpandIdRef.current = subflowId;
+      setPendingExpandId(subflowId);
+
+      expandTimerRef.current = setTimeout(() => {
+        expandTimerRef.current = null;
+        pendingExpandIdRef.current = null;
+        setPendingExpandId(null);
+        expandSubflowOnHover(subflowId);
+      }, SUBFLOW_EXPAND_DELAY_MS);
+    },
+    [clearExpandTimer, expandSubflowOnHover],
+  );
+
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    setActiveId(active.id as string);
-
-    const item = findExecutionById(active.id as string);
-    if (item) {
-      setLiveText(t("onDragStart", { item: item.displayName }));
-      setIndentStep(measureIndentMetrics().indentStep);
-      if (!item.isCollapsed && item.executionList?.length) {
-        item.isCollapsed = true;
-        setExecutionList(executionList!.clone());
-      }
-    }
-  };
-
-  const handleDragMove = (event: DragMoveEvent) => {
-    const { activatorEvent, active } = event;
-    const pointerEvent = activatorEvent as PointerEvent;
+    const draggedId = active.id as string;
+    setActiveId(draggedId);
 
     if (!executionList) {
       return;
     }
 
+    const item = findExecutionById(draggedId);
+    if (!item) {
+      return;
+    }
+
+    setLiveText(t("onDragStart", { item: item.displayName }));
+    collapseSnapshotRef.current = executionList.snapshotCollapseState();
+    autoExpandedIdsRef.current.clear();
+
+    if (collapseRafRef.current !== null) {
+      cancelAnimationFrame(collapseRafRef.current);
+    }
+    collapseRafRef.current = requestAnimationFrame(() => {
+      collapseRafRef.current = null;
+      executionList.collapseAllSubflows();
+      setExecutionList(executionList.clone());
+    });
+  };
+
+  const handleDragMove = (event: DragMoveEvent) => {
+    const pointer = getPointerCoordinates(event);
+    if (!executionList || !pointer) {
+      return;
+    }
+
+    const { active } = event;
+    const { x: pointerX, y: pointerY } = pointer;
     const rows = document.querySelectorAll("tr[data-execution-id]");
+    const hoveredRow = findHoveredRow(
+      rows,
+      active.id as string,
+      pointerX,
+      pointerY,
+    );
+
     let hoverId: string | null = null;
     let vertical: DropVertical = "after";
-    let isSubflow = false;
-    let hoverLevel = 0;
 
-    const pointerX = pointerEvent.clientX + event.delta.x;
-    const pointerY = pointerEvent.clientY + event.delta.y;
-    const targetLevelFromX = targetLevelFromPointerX(pointerX);
-    setIndentStep(measureIndentMetrics().indentStep);
+    if (hoveredRow) {
+      hoverId = hoveredRow.hoverId;
+      const { rect, isSubflow } = hoveredRow;
+      const rowHeight = rect.height;
+      const relativeY = pointerY - rect.top;
+      const edgeZone = rowHeight * ROW_EDGE_ZONE_RATIO;
 
-    for (const row of rows) {
-      const rect = row.getBoundingClientRect();
-      if (
-        pointerX >= rect.left &&
-        pointerX <= rect.right &&
-        pointerY >= rect.top &&
-        pointerY <= rect.bottom
-      ) {
-        const executionId = row.getAttribute("data-execution-id");
-        isSubflow = row.getAttribute("data-is-subflow") === "true";
-        hoverLevel = Number.parseInt(row.getAttribute("data-level") || "0", 10);
-
-        if (executionId && executionId !== active.id) {
-          hoverId = executionId;
-          const rowHeight = rect.height;
-          const relativeY = pointerY - rect.top;
-          const edgeZone = rowHeight * 0.25;
-
-          if (relativeY < edgeZone) {
-            vertical = "before";
-          } else if (relativeY > rowHeight - edgeZone) {
-            vertical = "after";
-          } else if (
-            isSubflow &&
-            Math.abs(targetLevelFromX - (hoverLevel + 1)) <= 1
-          ) {
-            vertical = "into";
-          } else {
-            vertical = "after";
-          }
+      if (relativeY < edgeZone) {
+        vertical = "before";
+        clearExpandTimer();
+      } else if (relativeY > rowHeight - edgeZone) {
+        vertical = "after";
+        clearExpandTimer();
+      } else if (isSubflow) {
+        vertical = "into";
+        const subflow = findExecutionById(hoveredRow.hoverId);
+        if (subflow?.isCollapsed) {
+          scheduleSubflowExpand(hoveredRow.hoverId);
+        } else {
+          clearExpandTimer();
         }
-        break;
+      } else {
+        vertical = "after";
+        clearExpandTimer();
       }
+    } else {
+      clearExpandTimer();
     }
 
     const dragged = findExecutionById(active.id as string);
@@ -297,23 +455,24 @@ export default function FlowDetails() {
         active.id as string,
         hoverId,
         vertical,
-        targetLevelFromX,
       );
       if (resolved) {
         setDropInfo(resolved.preview);
         if (dragged) {
-          const parent = resolved.preview.targetParentId
-            ? findExecutionById(resolved.preview.targetParentId)
-            : undefined;
-          setLiveText(
-            parent
-              ? t("onDragMoveIntoSubflow", {
-                  item: dragged.displayName,
-                  subflow: parent.displayName,
-                })
-              : t("onDragMove", { item: dragged.displayName }),
-          );
+          if (resolved.preview.mode === "drop-into") {
+            const parent = findExecutionById(resolved.preview.targetParentId!);
+            setLiveText(
+              t("onDragMoveIntoSubflow", {
+                item: dragged.displayName,
+                subflow: parent?.displayName,
+              }),
+            );
+          } else {
+            setLiveText(t("onDragMove", { item: dragged.displayName }));
+          }
         }
+      } else {
+        setDropInfo(emptyDropInfo());
       }
     } else {
       setDropInfo(emptyDropInfo());
@@ -331,6 +490,7 @@ export default function FlowDetails() {
     setDropInfo(emptyDropInfo());
 
     if (!executionList) {
+      restoreDragState();
       setLiveText(t("onDragCancel"));
       return;
     }
@@ -339,11 +499,13 @@ export default function FlowDetails() {
     const dragged = findExecutionById(activeId);
 
     if (!dragged) {
+      restoreDragState();
       setLiveText(t("onDragCancel"));
       return;
     }
 
     if (!currentDropInfo.targetId) {
+      restoreDragState();
       setLiveText(t("onDragCancel"));
       return;
     }
@@ -352,10 +514,10 @@ export default function FlowDetails() {
       activeId,
       currentDropInfo.targetId,
       dropModeToVertical(currentDropInfo.mode),
-      currentDropInfo.targetLevel,
     );
 
     if (!resolved) {
+      restoreDragState();
       setLiveText(t("onDragCancel"));
       return;
     }
@@ -367,12 +529,21 @@ export default function FlowDetails() {
       resolved.kind === "reorder";
 
     if (isNoOp) {
+      restoreDragState();
       setLiveText(t("onDragCancel"));
       return;
     }
 
+    restoreDragState();
     setLiveText(t("onDragFinish", { list: dragged.displayName }));
     void executeChange(dragged, change);
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+    setDropInfo(emptyDropInfo());
+    restoreDragState();
+    setLiveText(t("onDragCancel"));
   };
 
   useFetch(
@@ -713,12 +884,8 @@ export default function FlowDetails() {
                 onDragStart={handleDragStart}
                 onDragMove={handleDragMove}
                 onDragEnd={handleDragEnd}
+                onDragCancel={handleDragCancel}
               >
-                <Alert
-                  isInline
-                  variant="info"
-                  title={t("executionDragInstructions")}
-                />
                 <Table aria-label={t("flows")} isTreeTable>
                   <FlowHeader />
                   <>
@@ -729,8 +896,8 @@ export default function FlowDetails() {
                           execution={execution}
                           dropInfo={dropInfo}
                           visualIndexById={visualIndexById}
-                          indentStep={indentStep}
                           activeId={activeId}
+                          pendingExpandId={pendingExpandId}
                           onRowClick={(execution) => {
                             execution.isCollapsed = !execution.isCollapsed;
                             setExecutionList(executionList.clone());
@@ -751,12 +918,13 @@ export default function FlowDetails() {
                     ))}
                   </>
                 </Table>
-                <DragOverlay dropAnimation={null}>
-                  {activeId ? (
+                <DragOverlay
+                  dropAnimation={null}
+                  style={{ pointerEvents: "none" }}
+                >
+                  {activeExecution ? (
                     <DragOverlayContent
-                      execution={
-                        executionList.order().find((ex) => ex.id === activeId)!
-                      }
+                      execution={activeExecution}
                       targetParentName={
                         dropInfo.targetParentId
                           ? findExecutionById(dropInfo.targetParentId)
