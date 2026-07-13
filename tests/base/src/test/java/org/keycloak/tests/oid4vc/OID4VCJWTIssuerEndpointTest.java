@@ -847,6 +847,40 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     @Test
+    public void testRequestCredentialWithMalformedJwkCrvRejected() {
+        final String scopeName = jwtTypeCredentialScope.getName();
+        String credConfigId = jwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
+
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        String credentialIdentifier = tokenResponse.getOID4VCAuthorizationDetails().get(0).getCredentialIdentifiers().get(0);
+        String cNonce = getCNonce();
+
+        String issuer = credentialIssuer.getCredentialIssuer();
+        String validJwtProof = generateJwtProof(issuer, cNonce);
+        String malformedCrvProof = withMalformedJwkCrvInHeader(validJwtProof);
+
+        CredentialRequest request = new CredentialRequest()
+                .setCredentialIdentifier(credentialIdentifier)
+                .setProofs(new Proofs().setJwt(List.of(malformedCrvProof)));
+
+        Oid4vcCredentialResponse response = oauth.oid4vc()
+                .credentialRequest(request)
+                .bearerToken(token)
+                .send();
+
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(ErrorType.INVALID_PROOF.getValue(), response.getError());
+    }
+
+    @Test
     public void testRequestCredentialWithMissingIssuerInClientBoundFlowAllowed() {
         final String scopeName = jwtTypeCredentialScope.getName();
         String credConfigId = jwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
@@ -1850,6 +1884,20 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             });
             jwk.put("d", "fake-private-material");
             header.put("jwk", jwk);
+            parts[0] = Base64Url.encode(JsonSerialization.writeValueAsString(header).getBytes(StandardCharsets.UTF_8));
+            return String.join(".", parts);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String withMalformedJwkCrvInHeader(String jwt) {
+        try {
+            String[] parts = jwt.split("\\.");
+            Map<String, Object> header = JsonSerialization.readValue(Base64Url.decode(parts[0]), new TypeReference<>() {
+            });
+            // Replace the jwk with a malformed one where crv is an empty array instead of a string
+            header.put("jwk", Map.of("crv", List.of()));
             parts[0] = Base64Url.encode(JsonSerialization.writeValueAsString(header).getBytes(StandardCharsets.UTF_8));
             return String.join(".", parts);
         } catch (IOException e) {
