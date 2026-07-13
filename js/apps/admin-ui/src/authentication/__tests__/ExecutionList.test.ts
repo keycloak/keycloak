@@ -372,9 +372,42 @@ describe("ExecutionList", () => {
       expect(resolved!.change).toBeInstanceOf(LevelChange);
       const levelChange = resolved!.change as LevelChange;
       expect(levelChange.parent?.id).toBe("2");
+      expect(levelChange.oldIndex).toBe(2);
+      expect(levelChange.newIndex).toBe(2);
       expect(resolved!.preview.mode).toBe("drop-into");
       expect(resolved!.preview.targetLevel).toBe(1);
       expect(resolved!.preview.targetParentId).toBe("2");
+    });
+
+    it("drop-into current parent uses post-append index excluding dragged child", () => {
+      const list = new ExecutionList(list2Data);
+      const subflow2 = list.expandableList.find((ex) => ex.id === "2")!;
+      subflow2.isCollapsed = false;
+
+      const resolved = list.resolveDropTarget("3", "2", "into");
+
+      expect(resolved).not.toBeNull();
+      expect(resolved!.kind).toBe("level-change");
+      const levelChange = resolved!.change as LevelChange;
+      expect(levelChange.parent?.id).toBe("2");
+      expect(levelChange.oldIndex).toBe(1);
+      expect(levelChange.newIndex).toBe(1);
+    });
+
+    it("drop-into current parent from last child position is a no-op index", () => {
+      const list = new ExecutionList(list2Data);
+      const subflow4 = list.expandableList
+        .find((ex) => ex.id === "2")!
+        .executionList!.find((ex) => ex.id === "4")!;
+      subflow4.isCollapsed = false;
+
+      const resolved = list.resolveDropTarget("6", "4", "into");
+
+      expect(resolved).not.toBeNull();
+      const levelChange = resolved!.change as LevelChange;
+      expect(levelChange.parent?.id).toBe("4");
+      expect(levelChange.oldIndex).toBe(1);
+      expect(levelChange.newIndex).toBe(1);
     });
 
     it("reorders at same level when dropping after a row", () => {
