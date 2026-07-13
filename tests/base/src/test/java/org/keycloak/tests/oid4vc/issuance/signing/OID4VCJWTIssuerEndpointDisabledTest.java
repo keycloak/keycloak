@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Tests for OID4VCIssuerEndpoint with OID4VCI disabled.
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCJWTIssuerEndpointDisabledTest extends OID4VCIssuerEndpointTest {
 
     @InjectRunOnServer

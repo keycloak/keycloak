@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests both the authenticated create-credential-offer endpoint and the
  * session-based credential-offer/{nonce} endpoint.
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCServerConfigWithPreAuthCodeEnabled.class)
 public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
 
     private static final String VALID_CORS_URL = "http://localtest.me:8180";

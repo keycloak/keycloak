@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Extends {@link OID4VCAuthorizationCodeFlowTestBase} to inherit all common test logic while providing
  * SD-JWT-specific credential format, scope, and claim configuration.
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCSdJwtAuthorizationCodeFlowTest extends OID4VCAuthorizationCodeFlowTestBase {
 
     @Override

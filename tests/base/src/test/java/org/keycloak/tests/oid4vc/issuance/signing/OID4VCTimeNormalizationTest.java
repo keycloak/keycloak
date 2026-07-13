@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * Integration tests validating time-claim normalization configuration and effects on JWT-VC.
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCTimeNormalizationTest extends OID4VCTimeNormalizationTestBase {
 
     @Test

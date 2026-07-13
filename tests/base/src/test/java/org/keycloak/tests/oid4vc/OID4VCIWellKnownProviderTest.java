@@ -21,7 +21,7 @@ import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCIWellKnownProviderTest extends OID4VCIssuerTestBase {
 
     @InjectRunOnServer

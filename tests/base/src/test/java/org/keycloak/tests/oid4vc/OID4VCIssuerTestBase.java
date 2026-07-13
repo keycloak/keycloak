@@ -3,12 +3,17 @@ package org.keycloak.tests.oid4vc;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -38,10 +43,12 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.config.TruststoreOptions;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.def.DefaultCryptoProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.Constants;
@@ -578,31 +585,83 @@ public abstract class OID4VCIssuerTestBase {
 
     // Static Config and RunOnServer Helpers ---------------------------------------------------------------------------
 
-    public static class VCTestServerConfig implements KeycloakServerConfig {
+    /**
+     * A server config for minimal credential issuance
+     */
+    public static class VCMinimalServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.OID4VC_VCI);
         }
     }
 
-    public static class VCTestServerWithABCAEnabled implements KeycloakServerConfig {
+    /**
+     * The default VC/VP server config.
+     *
+     * It includes support for: Issuer, Verifier, ABCA
+     */
+    public static class VCDefaultServerConfig implements KeycloakServerConfig {
+
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.CLIENT_AUTH_ABCA);
+            return config
+                    .features(
+                        Profile.Feature.CLIENT_AUTH_ABCA,
+                        Profile.Feature.OID4VC_VCI,
+                        Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER,
+                        Profile.Feature.OID4VC_VCI_PREAUTH_CODE,
+                        Profile.Feature.OID4VC_VP)
+                    .option(TruststoreOptions.TRUSTSTORE_PATHS.getKey(), X5cTestCertificateChain.X5C_TEST_CERTIFICATE_CHAIN.caCertificatePath());
+        }
+
+        public record X5cTestCertificateChain(
+                String caCertificatePem,
+                String leafCertificatePem,
+                String leafPrivateKeyBase64,
+                String caCertificatePath) {
+
+            public static final X5cTestCertificateChain X5C_TEST_CERTIFICATE_CHAIN = X5cTestCertificateChain.create();
+
+            private static X5cTestCertificateChain create() {
+                try {
+                    if (!CryptoIntegration.isInitialised()) {
+                        CryptoIntegration.setProvider(new DefaultCryptoProvider());
+                    }
+
+                    KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
+                    keyGen.initialize(new ECGenParameterSpec("secp256r1"));
+                    KeyPair caKeyPair = keyGen.generateKeyPair();
+                    KeyPair leafKeyPair = keyGen.generateKeyPair();
+
+                    X509Certificate caCertificate = CertificateUtils.generateV1SelfSignedCertificate(caKeyPair,
+                            "OID4VC Test CA");
+                    X509Certificate leafCertificate = CertificateUtils.generateV3Certificate(leafKeyPair,
+                            caKeyPair.getPrivate(), caCertificate, "OID4VC Test Leaf");
+
+                    String caCertificatePem = PemUtils.addCertificateBeginEnd(PemUtils.encodeCertificate(caCertificate));
+                    String leafCertificatePem = PemUtils.addCertificateBeginEnd(PemUtils.encodeCertificate(leafCertificate));
+                    String leafPrivateKeyBase64 = Base64.getEncoder().encodeToString(leafKeyPair.getPrivate().getEncoded());
+                    Path caCertificatePath = Files.createTempFile("oid4vc-x5c-test-ca", ".pem");
+                    Files.writeString(caCertificatePath, caCertificatePem, StandardCharsets.UTF_8);
+                    caCertificatePath.toFile().deleteOnExit();
+
+                    return new X5cTestCertificateChain(caCertificatePem, leafCertificatePem, leafPrivateKeyBase64,
+                            caCertificatePath.toString());
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to create x5c test certificate chain", e);
+                }
+            }
         }
     }
 
-    public static class VCTestServerWithPreAuthCodeEnabled implements KeycloakServerConfig {
+    public static class VCServerConfigWithPreAuthCodeEnabled implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER, Profile.Feature.OID4VC_VCI_PREAUTH_CODE);
-        }
-    }
-
-    public static class VCTestServerWithRestCredentialOfferEnabled implements KeycloakServerConfig {
-        @Override
-        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER);
+            return config.features(
+                    Profile.Feature.OID4VC_VCI,
+                    Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER,
+                    Profile.Feature.OID4VC_VCI_PREAUTH_CODE
+            );
         }
     }
 

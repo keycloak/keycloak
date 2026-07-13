@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * Test for the scenarios where consent screen is required when issuing OID4VCI credentials.
  * Related specification section: <a href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-user-consent">OID4VCI 15.1</a>
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCConsentTest extends OID4VCIssuerTestBase {
 
     protected OID4VCTestContext ctx;

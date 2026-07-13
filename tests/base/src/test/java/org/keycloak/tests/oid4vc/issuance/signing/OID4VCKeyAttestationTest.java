@@ -1,8 +1,5 @@
 package org.keycloak.tests.oid4vc.issuance.signing;
 
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.cert.X509Certificate;
@@ -16,16 +13,12 @@ import org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels;
 import org.keycloak.VCFormat;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderConfig;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderFactory;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.PemUtils;
-import org.keycloak.config.TruststoreOptions;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.crypto.def.DefaultCryptoProvider;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -55,8 +48,6 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.testframework.server.KeycloakServerConfig;
-import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCProofTestUtils;
 import org.keycloak.util.JsonSerialization;
@@ -70,6 +61,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.keycloak.protocol.oid4vc.model.ProofType.ATTESTATION;
 import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
 import static org.keycloak.protocol.oidc.utils.JWKSServerUtils.toJwk;
+import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCDefaultServerConfig.X5cTestCertificateChain.X5C_TEST_CERTIFICATE_CHAIN;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.toJwks;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -82,58 +74,15 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Migrated OID4VCKeyAttestationTest to the new test framework.
  */
-@KeycloakIntegrationTest(config = OID4VCKeyAttestationTest.ServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCKeyAttestationTest.class);
 
     private static final TimeProvider TIME_PROVIDER = new OID4VCIssuerTestBase.StaticTimeProvider(1000);
-    private static final X5cTestCertificateChain X5C_TEST_CERTIFICATE_CHAIN = X5cTestCertificateChain.create();
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
-
-    public static class ServerConfig extends OID4VCIssuerTestBase.VCTestServerConfig implements KeycloakServerConfig {
-        @Override
-        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return super.configure(config)
-                    .option(TruststoreOptions.TRUSTSTORE_PATHS.getKey(), X5C_TEST_CERTIFICATE_CHAIN.caCertificatePath());
-        }
-    }
-
-    private record X5cTestCertificateChain(String caCertificatePem, String leafCertificatePem,
-                                           String leafPrivateKeyPem, String caCertificatePath) {
-
-        private static X5cTestCertificateChain create() {
-            try {
-                if (!CryptoIntegration.isInitialised()) {
-                    CryptoIntegration.setProvider(new DefaultCryptoProvider());
-                }
-
-                KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
-                keyGen.initialize(new ECGenParameterSpec("secp256r1"));
-                KeyPair caKeyPair = keyGen.generateKeyPair();
-                KeyPair leafKeyPair = keyGen.generateKeyPair();
-
-                X509Certificate caCertificate = CertificateUtils.generateV1SelfSignedCertificate(caKeyPair,
-                        "OID4VC Test CA");
-                X509Certificate leafCertificate = CertificateUtils.generateV3Certificate(leafKeyPair,
-                        caKeyPair.getPrivate(), caCertificate, "OID4VC Test Leaf");
-
-                String caCertificatePem = PemUtils.addCertificateBeginEnd(PemUtils.encodeCertificate(caCertificate));
-                String leafCertificatePem = PemUtils.addCertificateBeginEnd(PemUtils.encodeCertificate(leafCertificate));
-                String leafPrivateKeyPem = Base64.encodeBytes(leafKeyPair.getPrivate().getEncoded());
-                Path caCertificatePath = Files.createTempFile("oid4vc-x5c-test-ca", ".pem");
-                Files.writeString(caCertificatePath, caCertificatePem, StandardCharsets.UTF_8);
-                caCertificatePath.toFile().deleteOnExit();
-
-                return new X5cTestCertificateChain(caCertificatePem, leafCertificatePem, leafPrivateKeyPem,
-                        caCertificatePath.toString());
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to create x5c test certificate chain", e);
-            }
-        }
-    }
 
     private static void setupSessionContext(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(OID4VCIssuerTestBase.VCTestRealmConfig.TEST_REALM_NAME);
@@ -216,10 +165,10 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
     public void testValidX5cJwtProofWithoutAttestation() {
         String cNonce = getCNonce();
         String leafCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.leafCertificatePem();
-        String leafPrivateKeyPem = X5C_TEST_CERTIFICATE_CHAIN.leafPrivateKeyPem();
+        String leafPrivateKeyBase64 = X5C_TEST_CERTIFICATE_CHAIN.leafPrivateKeyBase64();
         runOnServer.run(session -> {
             setupSessionContext(session);
-            runValidX5cJwtProofWithoutAttestationTest(session, cNonce, leafCertificatePem, leafPrivateKeyPem);
+            runValidX5cJwtProofWithoutAttestationTest(session, cNonce, leafCertificatePem, leafPrivateKeyBase64);
         });
     }
 
@@ -284,10 +233,10 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
     public void testAttestationWithX5cCertificateChain() {
         String cNonce = getCNonce();
         String leafCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.leafCertificatePem();
-        String leafPrivateKeyPem = X5C_TEST_CERTIFICATE_CHAIN.leafPrivateKeyPem();
+        String leafPrivateKeyBase64 = X5C_TEST_CERTIFICATE_CHAIN.leafPrivateKeyBase64();
         runOnServer.run(session -> {
             setupSessionContext(session);
-            runAttestationWithX5cCertificateChain(session, cNonce, leafCertificatePem, leafPrivateKeyPem);
+            runAttestationWithX5cCertificateChain(session, cNonce, leafCertificatePem, leafPrivateKeyBase64);
         });
     }
 
@@ -840,12 +789,12 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
     }
 
     private static void runValidX5cJwtProofWithoutAttestationTest(KeycloakSession session, String cNonce,
-            String leafCertificatePem, String leafPrivateKeyPem) {
+            String leafCertificatePem, String leafPrivateKeyBase64) {
         try {
             X509Certificate leafCert = PemUtils.decodeCertificate(leafCertificatePem);
 
             KeyWrapper proofKey = new KeyWrapper();
-            proofKey.setPrivateKey(PemUtils.decodePrivateKey(leafPrivateKeyPem));
+            proofKey.setPrivateKey(PemUtils.decodePrivateKey(leafPrivateKeyBase64));
             proofKey.setPublicKey(leafCert.getPublicKey());
             proofKey.setAlgorithm("ES256");
             proofKey.setType(KeyType.EC);
@@ -1105,12 +1054,12 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
     }
 
     private static void runAttestationWithX5cCertificateChain(KeycloakSession session, String cNonce,
-            String leafCertificatePem, String leafPrivateKeyPem) {
+            String leafCertificatePem, String leafPrivateKeyBase64) {
         try {
             X509Certificate leafCert = PemUtils.decodeCertificate(leafCertificatePem);
 
             KeyWrapper signerKey = new KeyWrapper();
-            signerKey.setPrivateKey(PemUtils.decodePrivateKey(leafPrivateKeyPem));
+            signerKey.setPrivateKey(PemUtils.decodePrivateKey(leafPrivateKeyBase64));
             signerKey.setPublicKey(leafCert.getPublicKey());
             signerKey.setAlgorithm("ES256");
             signerKey.setType(KeyType.EC);

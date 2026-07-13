@@ -27,7 +27,7 @@ import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcNonceResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class NonceEndpointTest extends OID4VCIssuerTestBase {
 
     @InjectRunOnServer

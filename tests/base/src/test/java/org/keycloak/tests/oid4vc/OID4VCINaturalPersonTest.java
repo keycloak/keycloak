@@ -40,7 +40,7 @@ import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createEcKeyPair;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCINaturalPersonTest extends OID4VCIssuerTestBase {
 
     private static KeyWrapper attestationKey;

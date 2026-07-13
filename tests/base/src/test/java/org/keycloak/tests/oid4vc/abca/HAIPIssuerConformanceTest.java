@@ -65,7 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Replicates various tests in oid4vci-1_0-issuer-haip-test-plan
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithABCAEnabled.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
 
     @InjectPage

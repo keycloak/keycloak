@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * SD-JWT-specific authorization_details tests for scope + authorization_code grant.
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCSdJwtAuthorizationDetailsFlowTest extends OID4VCAuthorizationDetailsFlowTestBase {
 
     @Override

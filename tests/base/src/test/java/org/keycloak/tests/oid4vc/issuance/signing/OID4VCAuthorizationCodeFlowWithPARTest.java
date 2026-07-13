@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This test specifically verifies that when authorization_details is used in the PAR request,
  * it MUST be returned in the token response according to OID4VC specification.
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCAuthorizationCodeFlowTestBase {
 
     @Override

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.oid4vc.presentation;
+package org.keycloak.tests.oid4vc.feature;
 
 import java.util.Map;
 
@@ -23,18 +23,14 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderFactory;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@KeycloakIntegrationTest
-public class OID4VPFeatureDisabledTest {
-
-    @InjectRealm
-    ManagedRealm realm;
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCMinimalServerConfig.class)
+public class OID4VPresentationFeatureDisabledTest extends OID4VCIssuerTestBase {
 
     @Test
     public void cannotCreateProviderWhenFeatureDisabled() {
@@ -44,7 +40,7 @@ public class OID4VPFeatureDisabledTest {
         idp.setEnabled(true);
         idp.setConfig(Map.of());
 
-        try (Response response = realm.admin().identityProviders().create(idp)) {
+        try (Response response = testRealm.admin().identityProviders().create(idp)) {
             Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
     }
