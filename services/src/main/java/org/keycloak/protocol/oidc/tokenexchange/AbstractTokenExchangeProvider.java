@@ -307,7 +307,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         // this must exist so that we can obtain access token from user session if idp's store tokens is off
         String idpAlias = externalExchangeContext.idpModel().getAlias();
         userSession.setNote(UserAuthenticationIdentityProvider.EXTERNAL_IDENTITY_PROVIDER, idpAlias);
-        setFederatedAccessTokenNotes(userSession, idpAlias, subjectToken);
+        setFederatedAccessTokenNote(userSession, idpAlias, subjectToken);
 
         context.addSessionNotesToUserSession(userSession);
 
@@ -434,7 +434,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         return user;
     }
 
-    private void setFederatedAccessTokenNotes(UserSessionModel userSession, String idpAlias, String token) {
+    private void setFederatedAccessTokenNote(UserSessionModel userSession, String idpAlias, String token) {
         userSession.setNote(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN + ":" + idpAlias, token);
     }
 

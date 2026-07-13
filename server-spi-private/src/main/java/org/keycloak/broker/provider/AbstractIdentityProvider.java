@@ -234,11 +234,10 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
         return new DefaultDataMarshaller();
     }
 
-    protected String getFederatedAccessToken(UserSessionModel userSession) {
-        // First try alias-namespaced key (supports multiple linked IdPs)
-        String token = userSession.getNote(getFederatedAccessTokenKey());
-        if (token != null) {
-            return token;
+    protected String getFederatedTokenNote(UserSessionModel userSession, String namespacedKey, String legacyKey) {
+        String value = userSession.getNote(namespacedKey);
+        if (value != null) {
+            return value;
         }
         // Fallback to un-namespaced key for backward compatibility
         String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
@@ -246,9 +245,13 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
             brokerId = userSession.getNote(EXTERNAL_IDENTITY_PROVIDER);
         }
         if (getConfig().getAlias().equals(brokerId)) {
-            return userSession.getNote(FEDERATED_ACCESS_TOKEN);
+            return userSession.getNote(legacyKey);
         }
         return null;
+    }
+
+    protected String getFederatedAccessToken(UserSessionModel userSession) {
+        return getFederatedTokenNote(userSession, getFederatedAccessTokenKey(), FEDERATED_ACCESS_TOKEN);
     }
 
     protected void setFederatedAccessToken(UserSessionModel userSession, String token) {

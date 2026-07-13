@@ -139,27 +139,15 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected String getFederatedRefreshToken(UserSessionModel userSession) {
-        String token = userSession.getNote(getFederatedRefreshTokenKey());
-        if (token != null) {
-            return token;
-        }
-        return userSession.getNote(FEDERATED_REFRESH_TOKEN);
+        return getFederatedTokenNote(userSession, getFederatedRefreshTokenKey(), FEDERATED_REFRESH_TOKEN);
     }
 
     protected String getFederatedTokenExpiration(UserSessionModel userSession) {
-        String value = userSession.getNote(getFederatedTokenExpirationKey());
-        if (value != null) {
-            return value;
-        }
-        return userSession.getNote(FEDERATED_TOKEN_EXPIRATION);
+        return getFederatedTokenNote(userSession, getFederatedTokenExpirationKey(), FEDERATED_TOKEN_EXPIRATION);
     }
 
     protected String getFederatedIdToken(UserSessionModel userSession) {
-        String token = userSession.getNote(getFederatedIdTokenKey());
-        if (token != null) {
-            return token;
-        }
-        return userSession.getNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
+        return getFederatedTokenNote(userSession, getFederatedIdTokenKey(), OIDCIdentityProvider.FEDERATED_ID_TOKEN);
     }
 
     protected void setFederatedRefreshToken(UserSessionModel userSession, String token) {
