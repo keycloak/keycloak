@@ -89,6 +89,44 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testMoveGroupRequiresManagePermissionOnChild() {
+        // create two groups: parentGroup and childGroup
+        GroupRepresentation parentGroup = new GroupRepresentation();
+        parentGroup.setName("parent_group");
+        try (Response response = realm.admin().groups().add(parentGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            parentGroup.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.groups().group(parentGroup.getId()).remove());
+        }
+
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("child_group");
+        try (Response response = realm.admin().groups().add(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            childGroup.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.groups().group(childGroup.getId()).remove());
+        }
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+
+        // grant manage on parentGroup only
+        createGroupPermission(parentGroup, Set.of(VIEW, MANAGE), policy);
+
+        // moving childGroup into parentGroup should be forbidden — myadmin has no manage permission on childGroup
+        try (Response response = realmAdminClient.realm(realm.getName()).groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
+        }
+
+        // now grant manage on childGroup as well
+        createGroupPermission(childGroup, Set.of(VIEW, MANAGE), policy);
+
+        // moving childGroup into parentGroup should succeed
+        try (Response response = realmAdminClient.realm(realm.getName()).groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+        }
+    }
+
+    @Test
     public void testCanViewUserByViewGroupMembers() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
         UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());

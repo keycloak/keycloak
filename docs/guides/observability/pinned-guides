@@ -17,3 +17,4 @@ tracing
 grafana-dashboards
 exemplars
 thread-dumps
+jfr

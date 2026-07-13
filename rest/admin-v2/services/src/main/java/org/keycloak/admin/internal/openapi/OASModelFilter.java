@@ -12,7 +12,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.keycloak.admin.api.ClientField;
+import org.keycloak.services.client.ClientField;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -39,6 +39,10 @@ public class OASModelFilter implements OASFilter {
 
     private static final String SORT_PARAMETER_NAME = "sort";
     private static final String ALLOWED_FIELDS_MARKER = " Allowed fields: ";
+    private static final String CLIENTS_LIST_PATH_SUFFIX = "/clients/v2";
+    private static final Map<String, Supplier<String>> SORT_ALLOWED_FIELDS_BY_PATH_SUFFIX = Map.of(
+            CLIENTS_LIST_PATH_SUFFIX, ClientField::allowedApiNames
+    );
 
     private final Logger log = Logger.getLogger(OASModelFilter.class);
     private final IndexView indexView;
@@ -55,14 +59,6 @@ public class OASModelFilter implements OASFilter {
         indexView.getKnownClasses().forEach(classInfo -> {
             simpleNameToClassInfoMap.put(classInfo.simpleName(), classInfo);
         });
-    }
-
-    @Override
-    public Parameter filterParameter(Parameter parameter) {
-        if (parameter != null && SORT_PARAMETER_NAME.equals(parameter.getName())) {
-            parameter.setDescription(enhanceSortParameterDescription(parameter.getDescription()));
-        }
-        return parameter;
     }
 
     @Override
@@ -101,6 +97,7 @@ public class OASModelFilter implements OASFilter {
         addSecurityScheme(openAPI);
 
         addJavaExampleExtensions(openAPI);
+        enhanceSortParameterDescriptions(openAPI);
     }
 
     /**
@@ -306,7 +303,7 @@ public class OASModelFilter implements OASFilter {
                 if (classInfo == null) {
                     log.debugf("No Java class found for schema '%s' — property descriptions from the '%s' annotation will not be added", schemaName, JsonPropertyDescription.class.getName());
                 } else {
-                    // Get class-level validation descriptions (e.g., @UuidUnmodified, @ClientSecretNotBlank)
+                    // Get class-level validation descriptions (e.g., @ServerManagedFieldUnmodified, @ClientSecretNotBlank)
                     Map<String, String> classLevelValidations = validationScanner.buildClassLevelDescriptions(classInfo);
 
                     schema.getProperties().forEach((propertyName, propertySchema) -> {
@@ -423,12 +420,49 @@ public class OASModelFilter implements OASFilter {
         new JavaDocExampleGenerator(indexView).generate(openAPI);
     }
 
-    private static String enhanceSortParameterDescription(String description) {
+    private void enhanceSortParameterDescriptions(OpenAPI openAPI) {
+        if (openAPI.getPaths() == null || openAPI.getPaths().getPathItems().isEmpty()) {
+            return;
+        }
+
+        openAPI.getPaths().getPathItems().forEach((path, pathItem) -> {
+            Supplier<String> allowedFields = resolveSortAllowedFields(path);
+            if (allowedFields == null) {
+                return;
+            }
+            String allowedApiNames = allowedFields.get();
+            enhanceSortParameters(pathItem.getParameters(), allowedApiNames);
+            pathItem.getOperations().forEach((method, operation) ->
+                    enhanceSortParameters(operation.getParameters(), allowedApiNames));
+        });
+    }
+
+    private static Supplier<String> resolveSortAllowedFields(String path) {
+        for (Map.Entry<String, Supplier<String>> entry : SORT_ALLOWED_FIELDS_BY_PATH_SUFFIX.entrySet()) {
+            if (path.endsWith(entry.getKey())) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
+    private static void enhanceSortParameters(List<Parameter> parameters, String allowedApiNames) {
+        if (parameters == null) {
+            return;
+        }
+        for (Parameter parameter : parameters) {
+            if (SORT_PARAMETER_NAME.equals(parameter.getName())) {
+                parameter.setDescription(enhanceSortParameterDescription(parameter.getDescription(), allowedApiNames));
+            }
+        }
+    }
+
+    private static String enhanceSortParameterDescription(String description, String allowedApiNames) {
         String base = stripAllowedFieldsSuffix(description);
         if (isNullOrEmpty(base)) {
-            return "Allowed fields: " + ClientField.allowedApiNames() + ".";
+            return "Allowed fields: " + allowedApiNames + ".";
         }
-        return base + ALLOWED_FIELDS_MARKER + ClientField.allowedApiNames() + ".";
+        return base + ALLOWED_FIELDS_MARKER + allowedApiNames + ".";
     }
 
     private static String stripAllowedFieldsSuffix(String description) {

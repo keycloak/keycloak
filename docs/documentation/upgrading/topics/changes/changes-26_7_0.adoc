@@ -10,9 +10,9 @@ The test framework provides a number of builders to simplify creating representa
 but are also used by `RealmConfig`, `ClientConfig` and `UserConfig` implementations.
 
 Some builders had the suffix `ConfigBuilder`, while others had the shorter syntax `Builder`. They are all now renamed to use
-the shorter suffix `Builder` to keep things consistently.
+the shorter suffix `Builder` to keep things consistent.
 
-Additionally, some methods where updated for consistency across the builders:
+Additionally, some methods were updated for consistency across the builders:
 
 * `RoleBuilder` method `setSingleAttribute` renamed to `attribute`
 * `UserBuilder` method `roles` renamed to `realmRoles`
@@ -31,13 +31,6 @@ Additionally, some methods where updated for consistency across the builders:
 The alias of an Identity Provider can no longer be changed after creation via the Admin REST API. Attempts to update the alias will result in a `400 Bad Request` error.
 Previously, although the admin console UI already treated the alias as read-only, the REST API still allowed alias changes.
 
-=== User profile metadata no longer returned on user search
-
-When searching for users using the Admin REST API, the user profile metadata is no longer included for each user in the search results.
-
-This change was made to improve performance of user search operations, as fetching user profile metadata for each user can be resource-intensive.
-The user profile metadata can still be retrieved when fetching a specific user by their identifier.
-
 === Organization member query returns brief user representation by default
 
 When querying organization members using the Admin REST API (`GET /admin/realms/\{realm}/organizations/\{id}/members`), a brief user representation is now returned by default.
@@ -46,15 +39,30 @@ The single-member endpoint (`GET /admin/realms/\{realm}/organizations/\{id}/memb
 
 === X509 client authentication requires CA Subject DN
 
-Since this release, the X509 client authentication, that allows a client authenticate presenting a certificate in the mutual TLS (mTLS) handshake, requires to configure a new option called **Certificate Authority subject DN** to identify the trusted anchor CA for the client certificate. As the {project_name}'s trust-store (or mTLS store) is shared for all the realms, the new option allows to identify the correct CA of the certificate and avoids interferences with other unrelated CAs.
+Since this release, the X509 client authentication, which allows a client to authenticate by presenting a certificate in the mutual TLS (mTLS) handshake, requires configuring a new option called **Certificate Authority subject DN** to identify the trusted anchor CA for the client certificate. As the {project_name}'s trust-store (or mTLS store) is shared for all the realms, the new option allows identifying the correct CA of the certificate and avoids interference with other unrelated CAs.
 
-The new option is compulsory in the administration console when configuring X509 credentials for the client. For the moment, previous configurations without the CA subject DN still work to maintain backwards compatibility. In the next major version, the validation will be present at the server side, making any update, creation or import invalid if the new configuration option is not present. Please, if you use the X509 authenticator for clients ensure you add this new attribute to avoid issues in the future.
+The new option is compulsory in the administration console when configuring X509 credentials for the client. Currently, previous configurations without the CA subject DN still work to maintain backward compatibility. In the next major version, the validation will be present at the server side, making any update, creation, or import invalid if the new configuration option is not present. If you use the X509 authenticator for clients, ensure you add this new attribute to avoid issues in the future.
 
-Besides, the option **Allow regex pattern comparison** is deprecated. This option allows to configure a regexp instead of the exact DN of the client certificate. It is now deprecated and it will be removed in a future version. The certificate for the client should be unambiguously identified.
+Additionally, the option **Allow regex pattern comparison** is deprecated. This option allows configuring a regexp instead of the exact DN of the client certificate. It is now deprecated and will be removed in a future version. The certificate for the client should be unambiguously identified.
 
 For the link:https://www.keycloak.org/securing-apps/client-registration[client registration service], there is a new link:{adminguide_link}#_client_policies[client policy executor] named `tls-client-auth-ca-subject-dn` which can be used to assign a default CA subject DN. The executor can also enforce the configured CA DN to reject unwanted CAs.
 
-In general, all this new configuration requires {project_name} to always revalidate the trusted anchors for the client certificate. This feature can be problematic in certain configurations (for example if a proxy is configured as a TLS termination and the certificates are passed to {project_name} using headers). The trust-store or mTLS store in {project_name} should always be configured correctly to validate the client certificate chain. Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] and link:https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS], for more information if you are using a TLS termination proxy and X509 client authentication.
+In general, all this new configuration requires {project_name} to always revalidate the trusted anchors for the client certificate. This feature can be problematic in certain configurations (for example if a proxy is configured for TLS termination and the certificates are passed to {project_name} using headers). The trust-store or mTLS store in {project_name} should always be configured correctly to validate the client certificate chain. Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] and link:https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS], for more information if you are using a TLS termination proxy and X509 client authentication.
+
+=== The `view-system` admin role no longer exists
+
+The `view-system` admin role, introduced in version 26.5.4, was immediately marked as deprecated. In this release, the role
+has been removed for security reasons.
+
+Access to full server information is now restricted to users in the `master` realm holding the `manage-realm` role.
+
+If you are still relying on the `view-system` role, you should consider accessing the full server information using a user
+(or service account) from the `master` realm and granted with `manage-realm` admin roles.
+
+Before upgrading, you should check if any of your users, service accounts, or groups are still relying on the
+`view-system` role and review their access controls to ensure they have the necessary permissions to access the server
+information after the upgrade. The `manage-realm` admin role is a high-privileged role and should only be granted to
+highly-trusted accounts.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
@@ -62,9 +70,38 @@ In general, all this new configuration requires {project_name} to always revalid
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== Stricter validation of resource URI templates in Authorization Services
+
+Resource URI templates used in Authorization Services are now validated more strictly when creating or updating resources via the Admin REST API.
+The documented patterns — named placeholders like `+/api/{id}/info+`, trailing wildcards like `+/api/*+`, suffix patterns like `+/*.html+`, and combinations like `+/api/{id}/files/*+` — continue to work unchanged.
+
+The following malformed URI patterns, which previously were silently accepted but either never matched any URI or could cause runtime errors during authorization evaluation:
+
+* Empty placeholders, for example `+/api/{}/foo+`
+* Placeholder names containing a slash, for example `+/api/{client/id}/foo+`
+* Wildcards in the middle of a path, for example `+/api/*/info+`
+* Suffix patterns with an empty file extension, for example `+/*.+`
+* Stray closing braces outside a placeholder, for example `+/api/{id}/foo}/bar+`
+
+Before upgrading, you can check for affected resources by querying the Admin REST API for each client that uses Authorization Services:
+
+[source]
+----
+GET /admin/realms/{realm}/clients/{client-id}/authz/resource-server/resource
+----
+
+Inspect the `+uris+` field of each resource and verify that:
+
+* All `+{...}+` placeholders have matching braces, are not empty, and do not contain `+/+` in the parameter name.
+* Wildcards (`+*+`) appear only at the end of the URI as `+/*+` or as a suffix pattern like `+/*.html+` with a non-empty extension.
+
+Resources with malformed URI templates should be corrected before upgrading.
+After the upgrade, existing resources with malformed templates will continue to be stored, but they may not match request URIs as intended.
+Any update to such a resource will require fixing the URI template at the same time, as the stricter validation applies to all create and update operations.
+
 === Organization invitation filters use exact matching
 
-The `email`, `firstName`, and `lastName` query parameters on the organization invitations list endpoint (`GET /admin/realms/{realm}/orgs/{orgId}/invitations`) now use case-insensitive exact matching instead of substring matching.
+The `email`, `firstName`, and `lastName` query parameters on the organization invitations list endpoint (`+GET /admin/realms/{realm}/orgs/{orgId}/invitations+`) now use case-insensitive exact matching instead of substring matching.
 
 If you rely on partial matching for these fields, use the `search` query parameter instead, which performs case-insensitive substring matching across email, firstName, and lastName fields.
 
@@ -95,11 +132,11 @@ No manual action is required — the migration ensures existing scopes continue 
 
 === Verify email required before credentials setup during user self-registration
 
-When user self-registration is enabled for the realm together with *Verify Email*, then users will not see password by default
-on the registration screen. After registration of user's profile, user would be required to verify email and then he can setup password
-(or eventually other credentials like OTP or Passkey) as a subsequent step. It is possible to disable and stick to the old behavior by
-enable switch *Always set password on register form* on the realm registration flow on the *Password validation* authenticator. Note
-that this option is deprecated and exists mostly for the backwards compatibility. It may be removed in the future.
+When user self-registration is enabled for the realm together with *Verify Email*, users will not see a password field by default
+on the registration screen. After registering their profile, the user is required to verify their email and then can set up a password
+(or optionally other credentials like OTP or Passkey) as a subsequent step. It is possible to disable this and keep the old behavior by
+enabling the switch *Always set password on register form* in the realm registration flow, on the *Password validation* authenticator. Note
+that this option is deprecated and exists mostly for backward compatibility. It may be removed in the future.
 
 For the details, see the link:{adminguide_link}[{adminguide_name}].
 
@@ -119,8 +156,8 @@ This change only affects the generated system truststore. Explicit truststore fi
 
 === Configure TOTP and Update password required actions moved after Verify Email
 
-In relation to the previous point, the required actions *Configure OTP* and *Update password* are moved in the order of required actions after *Verify Email*
-required action. This is done automatically for new realm or during server update. If you prefer the old order, you can manually move required actions per your preference.
+In relation to the previous point, the required actions *Configure OTP* and *Update password* have been reordered to appear after *Verify Email*.
+This is done automatically for new realms or during a server update. If you prefer the old order, you can manually reorder them.
 
 === Shutdown timeout extended
 
@@ -129,11 +166,11 @@ Previous versions waited for one second for HTTP requests to finish during the s
 The current version extends the timeout to ten seconds by default. In setups that use distributed caches, it now also waits for caches to rebalance before shutting down, preventing a possible data loss.
 When there are no ongoing HTTP requests, and caches are already rebalanced, the shutdown will finish immediately as before. With that, we expect most customers to not observe a change in the behavior of {project_name}.
 
-As before, for any rolling update or scaling up or down, we require to do this one node at a time for all clustered setups of {project_name}.
+As before, for any rolling update or scaling up or down, this must be done one node at a time for all clustered setups of {project_name}.
 
 Use the `shutdown-timeout` option to adjust the timeout to your environment. Restore the original behavior by setting it to `1s`.
 
-=== Extensions must not restart a Keycloak transaction
+=== Extensions must not restart a {project_name} transaction
 
 This change might affect custom {project_name} extensions.
 
@@ -185,6 +222,7 @@ If you attempt to exchange a sender-constrained token using a different client, 
 For more details, see the link:{securing_apps_token_exchange_link}[Token Exchange] guide.
 
 === HAProxy certificate lookup provider
+
 The `HaProxySslClientCertificateLookup` implementation has deprecated support for configuring `--spi-x509cert-lookup--haproxy--ssl-cert-chain-prefix`
 as HAProxy does not provide a built-in mechanism to forward individual intermediate certificates as dedicated HTTP headers.
 Consequently, this solution does not work when more than one intermediate certificate is used. Existing deployments of
@@ -196,7 +234,7 @@ See the link:{client_certificate_lookup_link}[Reverse Proxy guide] for more deta
 
 === Async Custom REST Endpoints should not be used
 
-Async custom REST endpoints using `AsyncResponse` or returning an async type such as `CompletableFuture` or `CompletionState` should not be used. If you are using them, be aware that the `KeycloakSession` used to initial the request will be immediately closed - it will not remain open for the entire lifespan of the request - and that you are fully responsible for transaction management in the async work.
+Async custom REST endpoints using `AsyncResponse` or returning an async type such as `CompletableFuture` or `CompletionState` should not be used. If you are using them, be aware that the `KeycloakSession` used to initiate the request will be immediately closed - it will not remain open for the entire lifespan of the request - and that you are fully responsible for transaction management in the async work.
 
 === `KeycloakContext` refinements when no request is active
 
@@ -204,16 +242,80 @@ The `KeycloakContext` provided by `KeycloakSession` for async work will typicall
 `ContextNotActiveException` is thrown, and some of the logic is now tolerant to returning values even if no request is active. Please review places where you are
 catching `ContextNotActiveException` in your extension logic against the new JavaDocs.
 
-=== Validation of client_session_host parameter
-The `client_session_host` parameter is now validated against the client's registered nodes and management URL.
-This parameter is sent by clients during token refresh and is used when the `${application.session.host}` placeholder is present in a client's backchannel logout URL configuration.
-It was primarily used by legacy adapters that have been removed.
-This improves security by ensuring that only trusted, pre-registered hosts can be used in backchannel logout URLs.
+=== Service accounts excluded from user queries by ID
+
+When querying users by ID through the Admin REST API, service accounts are no longer included in the results. Service accounts are internal to their associated clients and should not be exposed through general user queries. This aligns with the existing behavior for user search operations. If you need to access a service account, use the dedicated client service account endpoints.
+
+=== FreeMarker configuration upgraded to version 2.3.32
+
+The FreeMarker template engine now uses `VERSION_2_3_32` defaults instead of the legacy `2.3.0` defaults. This brings improved security defaults and correctness fixes from newer FreeMarker versions. Custom themes that rely on legacy FreeMarker behavior — such as deprecated directives, undocumented template syntax, or accessing Java internals via `?api` — may be affected. Test your custom themes after upgrading.
+
+=== Client secret generation now generates longer secrets
+
+Newly generated client secrets always use 86 characters to provide enough entropy for HS512 regardless of the configured token endpoint signing algorithm. Previously, the secret length varied based on the signing algorithm, which could result in secrets with insufficient cryptographic strength for some use cases. This increases the minimum length of generated secrets. Existing client secrets are not affected — only secrets generated after upgrading use the new length. If your application imposes a maximum length on stored client secrets, you may need to increase it. See https://github.com/keycloak/keycloak/issues/49793[#49793] for more details.
+
+=== Token post-processors now respect ProviderFactory order
+
+Custom `OIDCAccessTokenResponseMapperProvider` implementations are now invoked in the order defined by their `ProviderFactory#order()` method when processing token responses. Previously, the invocation order was undefined due to a bug, which could cause incorrect results when multiple post-processors depend on each other. If your deployment uses multiple custom token post-processors, verify that their `order()` values produce the expected sequence.
+
+=== Custom provider changesets included in manual migration exports
+
+When using `--spi-connections-jpa--quarkus--migration-strategy=manual`, the generated SQL file now includes changesets from custom internal `JpaEntityProvider` implementations. Previously, only {project_name}'s built-in changesets were exported. This change ensures that manual migration scripts contain all required database changes for custom providers.
+
+=== RefreshTokenProvider SPI introduced
+
+The refresh token processing logic has been extracted from `TokenManager` into a dedicated internal `RefreshTokenProvider` SPI. This refactoring makes refresh token handling pluggable, allowing custom extensions to override the default behavior through the standard SPI mechanism. Custom extensions that previously overrode or intercepted refresh token handling through `TokenManager` should be reviewed for compatibility. The default implementation (`DefaultRefreshTokenProvider`) preserves the previous behavior.
+
+=== Default AES key size increased to 256 bits
+
+The default key size for newly generated AES key providers (aes-generated) has been increased from 128 bits to 256 bits for improved security.
+CNSA 2.0 requires AES-256 for national security systems. AES-128 is not approved for classified data in the post-quantum era.
+Existing realms are not affected - only newly created key providers use the new default.
+
+To migrate an existing realm, add a new aes-generated key provider with key size 32 and a higher priority.
+The old provider can be removed once all sessions using the old key have expired.
+
+=== Login theme changes may affect custom themes
+
+Several visual changes were made to the login theme in this release:
+
+* Action buttons across login theme pages now use a consistent horizontal layout.
+* The passkey authentication page and the signing-in page in the account console now display vendor-specific icons for registered passkeys and security keys, making it easier to identify the correct device.
+
+If you use a custom theme that overrides these pages, verify that your customizations work as expected after upgrading.
+
+=== Additional datasources may be excluded from health checks
+
+When using multiple datasources, individual datasources can now be excluded from the health check endpoint. This allows deployments with optional or non-critical datasources to avoid false negatives in health monitoring. Read more about it in the link:https://www.keycloak.org/server/db#multiple-datasources[Configure multiple datasources] guide.
+
+=== Session cookies now use SHA-384
+
+The `KC_AUTH_SESSION_HASH` and `KEYCLOAK_SESSION` cookies are now hashed with SHA-384 instead of SHA-256. Although SHA-256 is still safe, CNSA 2.0 specifies SHA-384 as the minimum required hashing algorithm for national security systems.
+
+No configuration change is required, and active sessions are not affected. After upgrading, an old `KEYCLOAK_SESSION` cookie no longer matches the new format and is silently replaced on the user's next request. Users with a valid session stay logged in; only users whose session has already expired have to log in again, as they normally would.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
 The following sections provide details on deprecated features.
+
+=== Twitter Identity Broker deprecated for removal
+
+In this release, the Twitter Identity Broker is deprecated for removal.
+It relies on Twitter's legacy OAuth 1.0a endpoints.
+
+As X (formerly Twitter) now supports OAuth 2.0, it is recommended to use the generic *OAuth v2* identity provider configured against the X OAuth 2.0 endpoints instead.
+For the migration steps, see the link:{adminguide_link}#_twitter[Twitter] section in the {adminguide_name}.
+
+The broker remains enabled by default for backward compatibility. If you no longer use it, you can disable the
+`twitter-broker` feature using the `features-disabled` server option:
+
+[source]
+----
+--features-disabled=twitter-broker
+----
+
+The `twitter-broker` feature is planned for removal in a future release.
 
 === Identity Brokering API V1 is deprecated
 
@@ -221,17 +323,26 @@ The Identity Brokering API V1 is now deprecated but remains enabled by default f
 
 === Switch Bearer-only on OpenID Connect clients is deprecated
 
-The switch **Bearer only** on OIDC clients is deprecated now and will be removed in some future version.
+The switch **Bearer only** on OIDC clients is now deprecated and will be removed in a future version.
 
-The switch was possible to be used to specify that client can act just as service, which is not able to authenticate by any grant and obtain tokens issued to itself. However bearer-only client can
-be already simulated by creating OIDC client without any grants supported.
+The switch could be used to specify that a client acts only as a service, which cannot authenticate using any grant type or obtain tokens issued to itself. However, a bearer-only client can
+already be configured by creating an OIDC client without any grants supported.
 
-The switch is already unavailable in the admin console client settings, but it was still possible to use it for example by directly updating client through admin REST API. In the
-future, this will not be possible anymore.
+The switch is already unavailable in the admin console client settings, but it was still possible to use it, for example, by directly updating a client through the admin REST API.
+In the future, this will no longer be possible.
 
 === Option Allow regex pattern comparison is deprecated for the X509 client authenticator
 
-The option **Allow regex pattern comparison** is deprecated for the X509 client authenticator. This option allows to configure a Java regular expression instead of the exact DN for the client certificate subject DN. As previously commented in the breaking changes section, this option is now deprecated and it will be removed in a future version. The certificate for the client should be unambiguously identified because of security reasons.
+The option **Allow regex pattern comparison** is deprecated for the X509 client authenticator. This option allows configuring a Java regular expression instead of the exact DN for the client certificate subject DN. As noted in the breaking changes section, this option is now deprecated and will be removed in a future version. The certificate for the client should be unambiguously identified for security reasons.
+
+=== Deprecation of SHA1 hashing functions in {project_name} 27
+
+NIST is going to fully https://www.nist.gov/news-events/news/2022/12/nist-retires-sha-1-cryptographic-algorithm[retire] SHA1 hashing function in 2030. {project_name} will remove all uses of SHA1 in version 27.
+
+[NOTE]
+====
+Consider SHA1 hashing retired in all uses within {project_name}. Users should configure other secure hashing functions as soon as possible (for example SHA2, SHA3).
+====
 
 === WebAuthn policy option `Require Discoverable Credential` deprecated in favor of `Discoverable Credential`
 
@@ -247,6 +358,10 @@ The corresponding realm representation attributes `webAuthnPolicyRequireResident
 == Removed features
 
 The following features have been removed from this release.
+
+=== Experimental `token-exchange-external-internal:v2` feature removed
+
+The experimental and undocumented feature `token-exchange-external-internal:v2` has been removed. This feature was superseded by the standard Token Exchange, which provides the same functionality. If you enabled this feature via `--features=token-exchange-external-internal:v2`, remove this configuration option and use the standard Token Exchange feature instead.
 
 === Batching option for persistent user sessions removed
 

@@ -57,6 +57,7 @@ import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -101,6 +102,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    @DatabaseTest
     public void testViewAllUsersUsingUserPolicy() {
         UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
         createAllPermission(adminPermissionsClient, usersType, policy, Set.of(VIEW));
@@ -111,6 +113,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    @DatabaseTest
     public void testDeniedResourcesPrecedenceOverGrantedResources() {
         UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
         createAllPermission(adminPermissionsClient, usersType, policy, Set.of(VIEW));
@@ -128,6 +131,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    @DatabaseTest
     public void testCountWithFilters() {
         assertThat(realmAdminClient.realm(realm.getName()).users().count("user-"), is(0));
         assertThat(realmAdminClient.realm(realm.getName()).users().count(null, null, null, "user-15"), is(0));

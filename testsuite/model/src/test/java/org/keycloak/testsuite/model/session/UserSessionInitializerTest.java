@@ -165,7 +165,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
     @Test
     public void testUserSessionPropagationBetweenSites() throws InterruptedException {
         assumeFalse("Run only if Infinispan caches are used for storing/caching sessions", MultiSiteUtils.isMultiSiteEnabled() && MultiSiteUtils.isPersistentSessionsEnabled());
-        assumeFalse("The Sessions caches are disabled", Profile.isFeatureEnabled(Profile.Feature.CACHELESS));
+        assumeFalse("The Sessions caches are disabled", Profile.isFeatureEnabled(Profile.Feature.STATELESS));
         AtomicInteger index = new AtomicInteger();
         AtomicReference<String> userSessionId = new AtomicReference<>();
         AtomicReference<List<Boolean>> containsSession = new AtomicReference<>(new LinkedList<>());
