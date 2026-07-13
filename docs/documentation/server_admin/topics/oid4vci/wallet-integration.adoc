@@ -38,7 +38,7 @@ Valera Wallet by A-SIT Plus is a demo wallet that can be used to test OpenID4VCI
 
 For local testing, {project_name} can run on the development machine as described in the previous OID4VCI setup sections. Because the wallet runs on a phone and needs an HTTPS issuer URL, expose the local {project_name} endpoint through an HTTPS tunnel, for example with `ngrok` or a similar tool.
 
-If {project_name} listens locally on `https://localhost:8443`, start the tunnel for port `8443`:
+If {project_name} listens locally with HTTPS on port `8443`, start the tunnel for that port:
 
 [source,bash]
 ----
@@ -62,7 +62,7 @@ Valera uses a fixed OAuth 2.0 client identifier and application callback URI. Cr
 | Value
 
 | Client ID
-| `https://wallet.a-sit.at/app`
+| `+https://wallet.a-sit.at/app+`
 
 | Client type
 | Public client
@@ -220,7 +220,6 @@ The test succeeded with Valera Wallet 5.8.0. Earlier testing with Valera Wallet 
 
 ==== Troubleshooting
 
-* If {project_name} logs `client_not_found` during PAR, verify that the Valera client id `https://wallet.a-sit.at/app` exists in the realm.
+* If {project_name} logs `client_not_found` during PAR, verify that the Valera client id `+https://wallet.a-sit.at/app+` exists in the realm.
 * If {project_name} logs `invalid_redirect_uri`, verify that the Valera callback `asitplus-wallet://wallet.a-sit.plus/app/callback/provisioning` is listed as a valid redirect URI for the Valera client.
 * If the final credential request fails with an `invalid_credential_request` about credential identifiers, verify that the wallet requests the credential with the `credential_identifier` returned in the token response `authorization_details`.
-
