@@ -10,7 +10,7 @@ import { ActionGroup, Button, Form, PageSection } from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -18,15 +18,15 @@ import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
 import { joinPath } from "../utils/joinPath";
 import { useParams } from "../utils/useParams";
 import { PAGE_PROVIDER, TAB_PROVIDER } from "./constants";
+import {
+  getEntityId,
+  interpolateEndpoint,
+  isEntityStorageType,
+  normalizeConfig,
+  resolveTabParams,
+  type StorageType,
+} from "./pageHandlerStorage";
 import { toPage } from "./routes";
-
-type StorageType =
-  | "COMPONENT"
-  | "CLIENT"
-  | "USER"
-  | "GROUP"
-  | "IDENTITY_PROVIDER"
-  | "CUSTOM";
 
 type PageHandlerProps = {
   id?: string;
@@ -46,7 +46,13 @@ export const PageHandler = ({
   const { realm: realmName, realmRepresentation: realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const [id, setId] = useState(idAttribute);
-  const params = useParams();
+  const routeParams = useParams();
+  const { pathname } = useLocation();
+  const tabParams = resolveTabParams(
+    pathname,
+    page.metadata.path as string | undefined,
+    routeParams,
+  );
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -55,40 +61,68 @@ export const PageHandler = ({
 
   useFetch(
     async () => {
+      const entityId = getEntityId(storageType, tabParams, pathname);
+
       switch (storageType) {
         case "CLIENT":
-          if (params.clientId) {
+          if (entityId) {
+            const attributes = (
+              await adminClient.clients.findOne({ id: entityId })
+            )?.attributes;
             return {
-              config: (
-                await adminClient.clients.findOne({ id: params.clientId })
-              )?.attributes,
+              config: normalizeConfig(
+                attributes as Record<string, unknown>,
+                page.properties,
+                "load",
+                "string-map",
+              ),
             };
           }
           return undefined;
         case "USER":
-          if (params.userId) {
+          if (entityId) {
+            const attributes = (
+              await adminClient.users.findOne({ id: entityId })
+            )?.attributes;
             return {
-              config: (await adminClient.users.findOne({ id: params.userId }))
-                ?.attributes,
+              config: normalizeConfig(
+                attributes as Record<string, unknown>,
+                page.properties,
+                "load",
+                "list-map",
+              ),
             };
           }
           return undefined;
         case "GROUP":
-          if (params.groupId) {
+          if (entityId) {
+            const attributes = (
+              await adminClient.groups.findOne({ id: entityId })
+            )?.attributes;
             return {
-              config: (await adminClient.groups.findOne({ id: params.groupId }))
-                ?.attributes,
+              config: normalizeConfig(
+                attributes as Record<string, unknown>,
+                page.properties,
+                "load",
+                "list-map",
+              ),
             };
           }
           return undefined;
         case "IDENTITY_PROVIDER":
-          if (params.providerId) {
+          if (entityId) {
+            const config = (
+              await adminClient.identityProviders.findOne({
+                alias: entityId,
+              })
+            )?.config;
             return {
-              config: (
-                await adminClient.identityProviders.findOne({
-                  alias: params.providerId,
-                })
-              )?.config,
+              config: normalizeConfig(
+                config as Record<string, unknown>,
+                page.properties,
+                "load",
+                "string-map",
+              ),
             };
           }
           return undefined;
@@ -96,7 +130,7 @@ export const PageHandler = ({
           if (page.metadata.endpoint) {
             const endpoint = interpolateEndpoint(
               page.metadata.endpoint as string,
-              params,
+              tabParams,
             );
             const response = await fetchWithError(
               joinPath(
@@ -142,79 +176,99 @@ export const PageHandler = ({
 
   const onSubmit = async (formData: ComponentRepresentation) => {
     try {
+      const entityId = getEntityId(storageType, tabParams, pathname);
+
       if (
-        (storageType === "CLIENT" && !params.clientId) ||
-        (storageType === "USER" && !params.userId) ||
-        (storageType === "GROUP" && !params.groupId) ||
-        (storageType === "IDENTITY_PROVIDER" && !params.providerId) ||
+        (isEntityStorageType(storageType) && !entityId) ||
         (storageType === "CUSTOM" && !page.metadata.endpoint)
       ) {
         throw new Error(
           `Missing required parameters for storageType: ${storageType}`,
         );
       }
+
       switch (storageType) {
         case "CLIENT":
-          if (params.clientId) {
+          if (entityId) {
             const client = await adminClient.clients.findOne({
-              id: params.clientId,
+              id: entityId,
             });
             await adminClient.clients.update(
-              { id: params.clientId },
+              { id: entityId },
               {
                 ...client,
                 attributes: {
                   ...client?.attributes,
-                  ...formData.config,
+                  ...normalizeConfig(
+                    formData.config as Record<string, unknown>,
+                    page.properties,
+                    "save",
+                    "string-map",
+                  ),
                 },
               },
             );
           }
           break;
         case "USER":
-          if (params.userId) {
-            const user = await adminClient.users.findOne({ id: params.userId });
+          if (entityId) {
+            const user = await adminClient.users.findOne({ id: entityId });
             await adminClient.users.update(
-              { id: params.userId },
+              { id: entityId },
               {
                 ...user,
                 attributes: {
                   ...user?.attributes,
-                  ...formData.config,
+                  ...normalizeConfig(
+                    formData.config as Record<string, unknown>,
+                    page.properties,
+                    "save",
+                    "list-map",
+                  ),
                 },
               },
             );
           }
           break;
         case "GROUP":
-          if (params.groupId) {
+          if (entityId) {
             const group = await adminClient.groups.findOne({
-              id: params.groupId,
+              id: entityId,
             });
             await adminClient.groups.update(
-              { id: params.groupId },
+              { id: entityId },
               {
                 ...group,
                 attributes: {
                   ...group?.attributes,
-                  ...formData.config,
+                  ...normalizeConfig(
+                    formData.config as Record<string, unknown>,
+                    page.properties,
+                    "save",
+                    "list-map",
+                  ),
                 },
               },
             );
           }
           break;
         case "IDENTITY_PROVIDER":
-          if (params.providerId) {
+          if (entityId) {
             const idp = await adminClient.identityProviders.findOne({
-              alias: params.providerId,
+              alias: entityId,
             });
             await adminClient.identityProviders.update(
-              { alias: params.providerId },
+              { alias: entityId },
               {
                 ...idp,
                 config: {
                   ...idp?.config,
-                  ...formData.config,
+                  ...normalizeConfig(
+                    formData.config as Record<string, unknown>,
+                    page.properties,
+                    "save",
+                    "string-map",
+                  ),
                 },
               },
             );
@@ -224,7 +278,7 @@ export const PageHandler = ({
           if (page.metadata.endpoint) {
             const endpoint = interpolateEndpoint(
               page.metadata.endpoint as string,
-              params,
+              tabParams,
             );
             await fetchWithError(
               joinPath(
@@ -241,7 +295,7 @@ export const PageHandler = ({
                   ),
                   "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ ...formData, ...params }),
+                body: JSON.stringify({ ...formData, ...tabParams }),
               },
             );
           }
@@ -250,7 +304,7 @@ export const PageHandler = ({
         case "COMPONENT":
         default: {
           const component = formData as ComponentRepresentation;
-          component.config = Object.assign(component.config || {}, params);
+          component.config = Object.assign(component.config || {}, tabParams);
           Object.entries(component.config).forEach(
             ([key, value]) =>
               (component.config![key] = Array.isArray(value) ? value : [value]),
@@ -324,10 +378,3 @@ export const PageHandler = ({
     </PageSection>
   );
 };
-
-function interpolateEndpoint(
-  endpoint: string,
-  params: Record<string, string>,
-): string {
-  return endpoint.replace(/\{(\w+)\}/g, (_, key) => params[key] || `{${key}}`);
-}
