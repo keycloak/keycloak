@@ -1,6 +1,6 @@
 import { PageSection, Tab, TabTitleText } from "@patternfly/react-core";
 import { Trans, useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useHref } from "react-router-dom";
 import {
   RoutableTabs,
   useRoutableTab,
@@ -10,6 +10,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
 import { AdminEvents } from "./AdminEvents";
+import { EventHooksSection } from "./hooks/EventHooksSection";
 import { UserEvents } from "./UserEvents";
 import { toEvents } from "./routes/Events";
 
@@ -23,6 +24,10 @@ export default function EventsSection() {
   const adminEventsTab = useRoutableTab(
     toEvents({ realm, tab: "admin-events" }),
   );
+  const hooksTab = {
+    eventKey: toEvents({ realm, tab: "hooks" }).pathname ?? "",
+    href: useHref(toEvents({ realm, tab: "hooks", subTab: "targets" })),
+  };
 
   return (
     <>
@@ -58,6 +63,13 @@ export default function EventsSection() {
             {...adminEventsTab}
           >
             <AdminEvents />
+          </Tab>
+          <Tab
+            title={<TabTitleText>{t("eventHooks")}</TabTitleText>}
+            data-testid="event-hooks-tab"
+            {...hooksTab}
+          >
+            <EventHooksSection />
           </Tab>
         </RoutableTabs>
       </PageSection>

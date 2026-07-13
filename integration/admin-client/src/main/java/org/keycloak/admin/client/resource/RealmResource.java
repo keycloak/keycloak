@@ -317,7 +317,9 @@ public interface RealmResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     RealmRepresentation partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
-                                             @QueryParam("exportClients") Boolean exportClients);
+                                      @QueryParam("exportClients") Boolean exportClients,
+                                      @QueryParam("exportEventHookTargets") Boolean exportEventHookTargets);
+
     @Path("authentication")
     @Consumes(MediaType.APPLICATION_JSON)
     AuthenticationManagementResource flows();

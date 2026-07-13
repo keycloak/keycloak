@@ -55,7 +55,7 @@ export const ListComponent = ({
                 key={option}
                 value={option}
               >
-                {option}
+                {t(option)}
               </SelectOption>
             ))}
           </KeycloakSelect>

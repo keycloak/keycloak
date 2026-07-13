@@ -23,7 +23,7 @@ package org.keycloak.partialimport;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public enum ResourceType {
-    USER, GROUP, CLIENT, IDP, IDP_MAPPER, REALM_ROLE, CLIENT_ROLE;
+    USER, GROUP, CLIENT, IDP, EVENT_HOOK_TARGET, IDP_MAPPER, REALM_ROLE, CLIENT_ROLE;
 
     /**
      * Used to create the admin path in events.
@@ -36,6 +36,7 @@ public enum ResourceType {
             case GROUP: return "groups";
             case CLIENT: return "clients";
             case IDP: return "identity-provider-settings";
+            case EVENT_HOOK_TARGET: return "event-hooks";
             case IDP_MAPPER: return "mappers";
             case REALM_ROLE: return "realms";
             case CLIENT_ROLE: return "clients";
@@ -50,6 +51,7 @@ public enum ResourceType {
             case GROUP: return "Group";
             case CLIENT: return "Client";
             case IDP: return "Identity Provider";
+            case EVENT_HOOK_TARGET: return "Event Hook Target";
             case IDP_MAPPER: return "Identity Provider Mapper";
             case REALM_ROLE: return "Realm Role";
             case CLIENT_ROLE: return "Client Role";

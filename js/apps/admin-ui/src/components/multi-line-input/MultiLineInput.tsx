@@ -25,6 +25,7 @@ export type MultiLineInputProps = Omit<TextInputProps, "form"> & {
   addButtonLabel?: string;
   isDisabled?: boolean;
   defaultValue?: string[];
+  options?: string[];
   stringify?: boolean;
   isRequired?: boolean;
 };
@@ -34,6 +35,7 @@ export const MultiLineInput = ({
   addButtonLabel,
   isDisabled = false,
   defaultValue,
+  options,
   stringify = false,
   isRequired = false,
   id,
@@ -52,6 +54,13 @@ export const MultiLineInput = ({
     control,
     defaultValue: defaultValue || "",
   });
+  const listId = useMemo(
+    () =>
+      options && options.length > 0
+        ? `${(id || name).replace(/[^a-zA-Z0-9-_]/g, "-")}-suggestions`
+        : undefined,
+    [id, name, options],
+  );
 
   const fields = useMemo<string[]>(() => {
     let values = stringify
@@ -111,6 +120,13 @@ export const MultiLineInput = ({
 
   return (
     <div id={id}>
+      {listId && (
+        <datalist id={listId}>
+          {options!.map((option) => (
+            <option key={option} value={option} />
+          ))}
+        </datalist>
+      )}
       {fields.map((value, index) => (
         <Fragment key={index}>
           <InputGroup>
@@ -121,6 +137,7 @@ export const MultiLineInput = ({
                 name={`${name}.${index}.value`}
                 value={value}
                 isDisabled={isDisabled}
+                list={listId}
                 {...rest}
               />
             </InputGroupItem>

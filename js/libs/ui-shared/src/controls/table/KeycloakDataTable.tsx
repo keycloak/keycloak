@@ -1,4 +1,9 @@
-import { Button, ButtonVariant, ToolbarItem } from "@patternfly/react-core";
+import {
+  Button,
+  ButtonVariant,
+  Switch,
+  ToolbarItem,
+} from "@patternfly/react-core";
 import { SyncAltIcon } from "@patternfly/react-icons";
 import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 import {
@@ -73,6 +78,11 @@ type DataTableProps<T> = {
   isRadio?: boolean;
 };
 
+const getExpandableRowKey = <T,>(row: Row<T>, index: number) => {
+  const id = get(row.data, "id") as string | number | null | undefined;
+  return id === null || id === undefined ? `row-${index}` : String(id);
+};
+
 type CellRendererProps = {
   row: IRow;
   index?: number;
@@ -126,7 +136,19 @@ function DataTable<T>({
 }: DataTableProps<T>) {
   const { t } = useTranslation();
   const [selectedRows, setSelectedRows] = useState<T[]>(selected || []);
-  const [expandedRows, setExpandedRows] = useState<boolean[]>([]);
+  const [expandedRowIds, setExpandedRowIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const rowIds = (rows as Row<T>[])
+      .filter((_, index) => !onCollapse || index % 2 === 0)
+      .map((row, index) =>
+        getExpandableRowKey(row, onCollapse ? index * 2 : index),
+      );
+
+    setExpandedRowIds((current) =>
+      current.filter((rowId) => rowIds.includes(rowId)),
+    );
+  }, [rows, onCollapse]);
 
   const rowsSelectedOnPage = useMemo(
     () =>
@@ -169,8 +191,8 @@ function DataTable<T>({
           isSelected
             ? [...selectedRows, ...rows.map((row) => row.data)]
             : selectedRows.filter(
-                (v) => !rowsSelectedOnPageIds.includes(get(v, "id")),
-              ),
+              (v) => !rowsSelectedOnPageIds.includes(get(v, "id")),
+            ),
         );
       } else {
         if (isSelected) {
@@ -201,11 +223,11 @@ function DataTable<T>({
               select={
                 !isRadio
                   ? {
-                      onSelect: (_, isSelected) => {
-                        updateState(-1, isSelected);
-                      },
-                      isSelected: rowsSelectedOnPage.length === rows.length,
-                    }
+                    onSelect: (_, isSelected) => {
+                      updateState(-1, isSelected);
+                    },
+                    isSelected: rowsSelectedOnPage.length === rows.length,
+                  }
                   : undefined
               }
             />
@@ -224,7 +246,7 @@ function DataTable<T>({
       {!onCollapse ? (
         <Tbody>
           {(rows as IRow[]).map((row, index) => (
-            <Tr key={index} isExpanded={expandedRows[index]}>
+            <Tr key={getExpandableRowKey(row as Row<T>, index)}>
               {canSelect && (
                 <Td
                   select={{
@@ -251,7 +273,13 @@ function DataTable<T>({
         </Tbody>
       ) : (
         (rows as IRow[]).map((row, index) => (
-          <Tbody key={index}>
+          <Tbody
+            key={
+              index % 2 === 0
+                ? getExpandableRowKey(row as Row<T>, index)
+                : `${getExpandableRowKey(rows[index - 1] as Row<T>, index - 1)}-detail`
+            }
+          >
             {index % 2 === 0 ? (
               <Tr>
                 <Td
@@ -259,16 +287,24 @@ function DataTable<T>({
                     rows[index + 1].cells.length === 0
                       ? undefined
                       : {
-                          isExpanded: expandedRows[index] ?? false,
-                          rowIndex: index,
-                          expandId: "expandable-row-",
-                          onToggle: (_, rowIndex, isOpen) => {
-                            onCollapse(isOpen, rowIndex);
-                            const expand = [...expandedRows];
-                            expand[index] = isOpen;
-                            setExpandedRows(expand);
-                          },
-                        }
+                        isExpanded: expandedRowIds.includes(
+                          getExpandableRowKey(row as Row<T>, index),
+                        ),
+                        rowIndex: index,
+                        expandId: "expandable-row-",
+                        onToggle: (_, rowIndex, isOpen) => {
+                          onCollapse(isOpen, rowIndex);
+                          const rowId = getExpandableRowKey(
+                            row as Row<T>,
+                            index,
+                          );
+                          setExpandedRowIds((current) =>
+                            isOpen
+                              ? [...new Set([...current, rowId])]
+                              : current.filter((value) => value !== rowId),
+                          );
+                        },
+                      }
                   }
                 />
                 <CellRenderer
@@ -279,7 +315,11 @@ function DataTable<T>({
                 />
               </Tr>
             ) : (
-              <Tr isExpanded={expandedRows[index - 1] ?? false}>
+              <Tr
+                isExpanded={expandedRowIds.includes(
+                  getExpandableRowKey(rows[index - 1] as Row<T>, index - 1),
+                )}
+              >
                 <Td />
                 <Td colSpan={columns.length}>
                   <ExpandableRowContent>
@@ -347,6 +387,9 @@ export type DataListProps<T> = Omit<
   isNotCompact?: boolean;
   isRadio?: boolean;
   isSearching?: boolean;
+  refreshKey?: number | string;
+  onRefresh?: () => void;
+  autoRefreshTimeout?: number;
 };
 
 /**
@@ -392,6 +435,9 @@ export function KeycloakDataTable<T>({
   emptyState,
   icon,
   isSearching = false,
+  refreshKey,
+  onRefresh,
+  autoRefreshTimeout,
   ...props
 }: DataListProps<T>) {
   const { t } = useTranslation();
@@ -412,9 +458,36 @@ export function KeycloakDataTable<T>({
   const prevSearch = useRef<string>();
 
   const [key, setKey] = useState(0);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const prevKey = useRef<number>();
-  const refresh = () => setKey(key + 1);
+  const prevRefreshKey = useRef<number | string | undefined>();
+  const refresh = () => setKey((current) => current + 1);
   const id = useId();
+  const autoRefreshIntervalSeconds =
+    autoRefreshTimeout && autoRefreshTimeout > 0
+      ? Math.max(1, Math.round(autoRefreshTimeout / 1000))
+      : 0;
+  const fallbackAutoRefreshLabel = `${t("refresh")} (${autoRefreshIntervalSeconds}s)`;
+  const autoRefreshLabel = t("autoRefresh", {
+    seconds: autoRefreshIntervalSeconds,
+    defaultValue: fallbackAutoRefreshLabel,
+  });
+
+  useEffect(() => {
+    if (!autoRefreshTimeout || autoRefreshTimeout <= 0 || !autoRefreshEnabled) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      if (onRefresh) {
+        onRefresh();
+      } else {
+        refresh();
+      }
+    }, autoRefreshTimeout);
+
+    return () => window.clearInterval(interval);
+  }, [autoRefreshEnabled, autoRefreshTimeout, onRefresh]);
 
   const renderCell = (columns: (Field<T> | DetailField<T>)[], value: T) => {
     return columns.map((col) => {
@@ -483,16 +556,16 @@ export function KeycloakDataTable<T>({
       search === "" || isPaginated
         ? undefined
         : convertToColumns(unPaginatedData || [])
-            .filter((row) =>
-              row.cells.some(
-                (cell) =>
-                  cell &&
-                  getNodeText(cell)
-                    .toLowerCase()
-                    .includes(search.toLowerCase()),
-              ),
-            )
-            .slice(first, first + max + 1),
+          .filter((row) =>
+            row.cells.some(
+              (cell) =>
+                cell &&
+                getNodeText(cell)
+                  .toLowerCase()
+                  .includes(search.toLowerCase()),
+            ),
+          )
+          .slice(first, first + max + 1),
     [search, first, max],
   );
 
@@ -500,6 +573,7 @@ export function KeycloakDataTable<T>({
     async () => {
       setLoading(true);
       const newSearch = prevSearch.current === "" && search !== "";
+      const externalRefresh = refreshKey !== prevRefreshKey.current;
 
       if (newSearch) {
         setFirst(0);
@@ -511,10 +585,13 @@ export function KeycloakDataTable<T>({
           : "loader" in loader
             ? loader.loader
             : async () => loader;
-      return await loaderFn(newSearch ? 0 : first, max + 1, search);
+      return typeof loader === "function" && key === prevKey.current && !externalRefresh && unPaginatedData
+        ? unPaginatedData
+        : await loaderFn(newSearch ? 0 : first, max + 1, search);
     },
     (data) => {
       prevKey.current = key;
+      prevRefreshKey.current = refreshKey;
       if (!isPaginated) {
         setUnPaginatedData(data);
         if (data.length > first) {
@@ -530,6 +607,7 @@ export function KeycloakDataTable<T>({
     },
     [
       key,
+      refreshKey,
       first,
       max,
       search,
@@ -596,10 +674,27 @@ export function KeycloakDataTable<T>({
             <>
               {toolbarItem} <ToolbarItem variant="separator" />{" "}
               <ToolbarItem>
-                <Button variant="link" onClick={refresh} data-testid="refresh">
+                <Button
+                  variant="link"
+                  onClick={() => (onRefresh ? onRefresh() : refresh())}
+                  data-testid="refresh"
+                >
                   <SyncAltIcon /> {t("refresh")}
                 </Button>
               </ToolbarItem>
+              {autoRefreshIntervalSeconds > 0 && (
+                <ToolbarItem>
+                  <div className="pf-v5-u-pt-xs">
+                    <Switch
+                      id={`${id}-auto-refresh`}
+                      label={autoRefreshLabel}
+                      labelOff={autoRefreshLabel}
+                      isChecked={autoRefreshEnabled}
+                      onChange={(_, checked) => setAutoRefreshEnabled(checked)}
+                    />
+                  </div>
+                </ToolbarItem>
+              )}
             </>
           }
           subToolbar={subToolbar}
@@ -634,12 +729,12 @@ export function KeycloakDataTable<T>({
               secondaryActions={
                 !isSearching
                   ? [
-                      {
-                        text: t("clearAllFilters"),
-                        onClick: () => setSearch(""),
-                        type: ButtonVariant.link,
-                      },
-                    ]
+                    {
+                      text: t("clearAllFilters"),
+                      onClick: () => setSearch(""),
+                      type: ButtonVariant.link,
+                    },
+                  ]
                   : []
               }
             />
