@@ -336,8 +336,6 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
     @Override
     public void init(Config.Scope config) {
-        logger.warn("========== LDAPStorageProviderFactory.init() CALLED ==========");
-
         if (config.getBoolean(SECURE_REFERRAL, SECURE_REFERRAL_DEFAULT)) {
             setObjectFactoryBuilder();
         } else {

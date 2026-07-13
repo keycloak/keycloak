@@ -84,7 +84,7 @@ public class LDAPOperationManager {
     private final LDAPConfig config;
     private final Meter.MeterProvider<Timer> requestTimer;
 
-    @Deprecated
+    @Deprecated(since = "26.8", forRemoval = true)
     public LDAPOperationManager(KeycloakSession session, LDAPConfig config) {
         this(session, config, null);
     }
