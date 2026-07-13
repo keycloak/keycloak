@@ -173,7 +173,7 @@ Use this flow when the holder should authenticate with {project_name} and approv
 . Valera starts the Authorization Code Flow. During this test, Valera used PAR and then redirected the user to {project_name} for authentication.
 . Authenticate the user in {project_name} and approve the issuance flow.
 . Valera exchanges the authorization code for a token and receives `authorization_details` containing `credential_identifiers`.
-. Valera requests the credential from the credential endpoint using `credential_identifier=IdentityCredential` and a JWT proof.
+. Valera requests the credential from the credential endpoint with `credential_identifier` set to `IdentityCredential` and a JWT proof.
 . {project_name} returns the issued `IdentityCredential` to the wallet.
 
 The test succeeded with Valera Wallet 5.8.0. The final credential request used the credential identifier returned by {project_name}:
@@ -199,7 +199,7 @@ This flow requires the dedicated experimental `oid4vc-vci-preauth-code` feature 
 . Display the credential offer as a QR code or deep link and follow the <<_oid4vci_valera_wallet_claim_credential,Valera Wallet claiming steps>>.
 . Valera exchanges the `pre-authorized_code` for an access token.
 . Valera receives `authorization_details` containing `credential_identifiers`.
-. Valera requests the credential from the credential endpoint using `credential_identifier=IdentityCredential` and a JWT proof.
+. Valera requests the credential from the credential endpoint with `credential_identifier` set to `IdentityCredential` and a JWT proof.
 . {project_name} returns the issued `IdentityCredential` to the wallet.
 
 The test succeeded with Valera Wallet 5.8.0. Earlier testing with Valera Wallet 5.7.6 failed because the JWT proof issuer claim did not match the client id used for the token request. This was no longer reproducible with the tested 5.8.0 version.
@@ -214,11 +214,11 @@ The test succeeded with Valera Wallet 5.8.0. Earlier testing with Valera Wallet 
 
 | Authorization Code Flow
 | Success
-| Valera completed PAR, user authentication, token exchange, and the final credential request with `credential_identifier=IdentityCredential`.
+| Valera completed PAR, user authentication, token exchange, and the final credential request with `credential_identifier` set to `IdentityCredential`.
 
 | Pre-Authorized Code Flow
 | Success
-| Valera exchanged the pre-authorized code and requested the credential with `credential_identifier=IdentityCredential`.
+| Valera exchanged the pre-authorized code and requested the credential with `credential_identifier` set to `IdentityCredential`.
 |===
 
 ==== Troubleshooting
