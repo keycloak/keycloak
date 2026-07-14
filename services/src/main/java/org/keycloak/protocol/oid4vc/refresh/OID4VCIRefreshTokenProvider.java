@@ -190,6 +190,49 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
         clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, clearedDetails);
     }
 
+    @Override
+    public void revokeToken(AccessToken token, UserModel user, ClientModel client, EventBuilder event) {
+        // Revoke the issued verifiable credential associated with this refresh token
+        List<AuthorizationDetailsJSONRepresentation> authorizationDetails = token.getAuthorizationDetails();
+        if (authorizationDetails == null || authorizationDetails.isEmpty()) {
+            logger.warnf("OID4VCI refresh token revoked but authorization_details is missing. " +
+                            "Realm: %s, client: %s, user: %s",
+                    session.getContext().getRealm().getName(), client.getClientId(), user.getUsername());
+            return;
+        }
+
+        for (AuthorizationDetailsJSONRepresentation detail : authorizationDetails) {
+            if (!OPENID_CREDENTIAL.equals(detail.getType())) {
+                continue;
+            }
+            OID4VCAuthorizationDetail oid4VCDetail = detail.asSubtype(OID4VCAuthorizationDetail.class);
+            String issuedCredentialId = oid4VCDetail.getIssuedCredentialId();
+            if (issuedCredentialId == null) {
+                continue;
+            }
+            boolean ownedByUserAndClient = session.users().getIssuedVerifiableCredentialsStreamByUser(user.getId())
+                    .anyMatch(issued -> issuedCredentialId.equals(issued.getId()) && client.getId().equals(issued.getClientId()));
+
+            if (!ownedByUserAndClient) {
+                logger.warnf("Issued verifiable credential '%s' referenced by revoked refresh token is not associated with current user/client. Realm: %s, client: %s, user: %s",
+                        issuedCredentialId, session.getContext().getRealm().getName(), client.getClientId(), user.getUsername());
+                continue;
+            }
+
+            boolean removed = session.users().removeIssuedVerifiableCredential(issuedCredentialId);
+
+            if (!removed) {
+                logger.warnf("Failed to remove issued verifiable credential '%s' on refresh token revocation. Realm: %s, client: %s, user: %s",
+                        issuedCredentialId, session.getContext().getRealm().getName(), client.getClientId(), user.getUsername());
+                continue;
+            }
+
+            logger.debugf("Removed issued verifiable credential '%s' on refresh token revocation. " +
+                            "Realm: %s, client: %s, user: %s",
+                    issuedCredentialId, session.getContext().getRealm().getName(),
+                    client.getClientId(), user.getUsername());
+        }
+    }
 
     // Might eventually be overridden for scenarios where a user is not available in the Keycloak DB
     protected UserModel getUser(RealmModel realm, RefreshToken oldToken) {
