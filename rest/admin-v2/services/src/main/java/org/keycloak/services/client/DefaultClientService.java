@@ -359,6 +359,13 @@ public class DefaultClientService implements ClientService {
                 // Generate random secret if applicable
                 generateClientSecretIfNeeded(client, model, strategy, patchExplicitNullSecret);
                 mapper.toModel(client, model, getFieldsOmittedFromTypedCreation(client));
+                if (client instanceof OIDCClientRepresentation oidcClient
+                        && !oidcClient.isFieldExplicitlySet("auth")
+                        && !model.isPublicClient()
+                        && model.getClientAuthenticatorType() == null) {
+                    model.setClientAuthenticatorType(KeycloakModelUtils.getDefaultClientAuthenticatorType());
+                    model.setSecret(KeycloakModelUtils.generateSecret(model));
+                }
 
                 // Validate the fully populated model
                 ValidationUtil.validateClient(session, model, true, r -> {
@@ -522,7 +529,10 @@ public class DefaultClientService implements ClientService {
      * routing through nested JAX-RS resources (which are not suited for in-process service calls).
      */
     protected void handleServiceAccount(ClientModel model, OIDCClientRepresentation rep) {
-        if (model.getType() == null || rep.isFieldExplicitlySet("loginFlows") || !isServiceAccountControlledByType(model)) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES)
+                || model.getType() == null
+                || rep.isFieldExplicitlySet("loginFlows")
+                || !isServiceAccountControlledByType(model)) {
             model.setServiceAccountsEnabled(rep.getLoginFlows().contains(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT));
         }
         boolean serviceAccountEnabled = model.isServiceAccountsEnabled();
