@@ -662,6 +662,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // CIMD (mandatory): client_id
         // RFC 7591 (mandatory): redirect_uris
         // RFC 7591 (optional): logo_uri, client_uri, tos_uri, policy_uri, jwks_uri
+        // CIBA (optional): backchannel_client_notification_endpoint
 
         List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
         verifyUriProperty(clientOIDC.getClientId(), "client_id", trustedDomains);
@@ -675,6 +676,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         verifyUriPropertyIfPresent(clientOIDC.getTosUri(), "tos_uri", trustedDomains);
         verifyUriPropertyIfPresent(clientOIDC.getPolicyUri(), "policy_uri", trustedDomains);
         verifyUriPropertyIfPresent(clientOIDC.getJwksUri(), "jwks_uri", trustedDomains);
+        verifyUriPropertyIfPresent(clientOIDC.getBackchannelClientNotificationEndpoint(), "backchannel_client_notification_endpoint", trustedDomains);
 
         URI clientIdURIfromMetadata;
         try {
@@ -762,7 +764,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 throw invalidClientIdMetadata(ERR_METADATA_URIS_SAMEDOMAIN);
             }
 
-            List<String> l = Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri())
+            List<String> l = Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri(), clientOIDC.getBackchannelClientNotificationEndpoint())
                     .filter(Objects::nonNull).toList();
             try {
                 for (String s : l) {
