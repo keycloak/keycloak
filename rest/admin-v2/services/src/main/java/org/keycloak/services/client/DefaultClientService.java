@@ -342,6 +342,10 @@ public class DefaultClientService implements ClientService {
                 }
                 validator.validate(client, strategy.getValidationGroup(), Default.class);
                 var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper);
+                if (client instanceof SAMLClientRepresentation samlClient) {
+                    proposedRepresentation.setStandardFlowEnabled(null);
+                    proposedRepresentation.setFrontchannelLogout(samlClient.getFrontChannelLogout());
+                }
                 session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(proposedRepresentation, permissions.adminAuth()));
 
                 // Add basic attributes
@@ -378,13 +382,6 @@ public class DefaultClientService implements ClientService {
     }
 
     private void setupClientDefaults(BaseClientRepresentation client, ClientModel model, ClientRepresentation proposedRepresentation) {
-        // The protocol factories still use the v1 representation to distinguish omitted values from explicit values.
-        // Preserve that distinction for fields whose model representation uses primitive values.
-        if (client instanceof SAMLClientRepresentation samlClient) {
-            proposedRepresentation.setStandardFlowEnabled(null);
-            proposedRepresentation.setFrontchannelLogout(samlClient.getFrontChannelLogout());
-        }
-
         LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory()
                 .getProviderFactory(LoginProtocol.class, client.getProtocol());
         if (factory != null) {
