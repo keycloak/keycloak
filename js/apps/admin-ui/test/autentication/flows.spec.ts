@@ -24,12 +24,15 @@ import {
   addPolicy,
   addSubFlow,
   assertDefaultSwitchPolicyEnabled,
+  assertExecutionLevel,
+  assertExecutionRequirement,
   assertRowExists,
   assertSwitchPolicyChecked,
   clickDefaultSwitchPolicy,
   clickDeleteRow,
   clickSwitchPolicy,
   dragExecutionToRow,
+  expandFlowRow,
   fillBindFlowModal,
   fillCreateForm,
   fillDuplicateFlowModal,
@@ -230,6 +233,9 @@ test.describe("Authentication flow details", () => {
     await dragExecutionToRow(page, sourceRow, subflowRow, { yRatio: 0.5 });
 
     await assertNotificationMessage(page, "Flow successfully updated");
+    await expandFlowRow(page, `${flowName} forms`);
+    await assertExecutionLevel(page, /\bCookie\b/, 1);
+    await assertExecutionRequirement(page, /\bCookie\b/, "Alternative");
   });
 
   test("edits flow details", async ({ page }) => {

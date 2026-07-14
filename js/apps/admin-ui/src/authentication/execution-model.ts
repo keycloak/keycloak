@@ -275,7 +275,12 @@ export class ExecutionList {
       );
     } else {
       dropMode = vertical === "before" ? "reorder-before" : "reorder-after";
-      insertIndex = vertical === "before" ? hoverIndex : hoverIndex + 1;
+      insertIndex =
+        vertical === "before"
+          ? hoverIndex
+          : hover.authenticationFlow
+            ? this.#insertIndexAfterSubflow(hoverIndex, hoverLevel, visualOrder)
+            : hoverIndex + 1;
       clampedLevel = hoverLevel;
     }
 

@@ -473,6 +473,19 @@ describe("ExecutionList", () => {
       expect(resolved!.preview.targetParentId).toBeNull();
     });
 
+    it("reorder-after expanded subflow places item after subtree", () => {
+      const list = new ExecutionList(list2Data);
+      const subflow2 = list.expandableList.find((ex) => ex.id === "2")!;
+      subflow2.isCollapsed = false;
+
+      const resolved = list.resolveDropTarget("1", "2", "after");
+
+      expect(resolved).not.toBeNull();
+      expect(resolved!.preview.mode).toBe("reorder-after");
+      expect(resolved!.preview.insertIndex).toBe(6);
+      expect(resolved!.order).toEqual(["2", "3", "4", "5", "6", "1", "7"]);
+    });
+
     it("reorder preview matches kind when no subflow parent applies", () => {
       const list = new ExecutionList(list2Data);
       const subflow2 = list.expandableList.find((ex) => ex.id === "2")!;
