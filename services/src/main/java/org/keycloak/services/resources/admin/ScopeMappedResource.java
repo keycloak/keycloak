@@ -230,18 +230,22 @@ public class ScopeMappedResource {
             throw new NotFoundException("Could not find client");
         }
 
+        List<RoleModel> roleModels = roles.stream().map(role -> {
+            RoleModel roleModel = realm.getRoleById(role.getId());
+            if (roleModel == null) {
+                throw new NotFoundException("Role not found");
+            }
+            auth.roles().requireMapClientScope(roleModel);
+            return roleModel;
+        }).collect(Collectors.toList());
+
         try {
             session.clientPolicy().triggerOnEvent(new ClientScopeMappingRegisterContext(scopeContainer, null, roles, auth.adminAuth()));
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
-        for (RoleRepresentation role : roles) {
-            RoleModel roleModel = realm.getRoleById(role.getId());
-            if (roleModel == null) {
-                throw new NotFoundException("Role not found");
-            }
-            auth.roles().requireMapClientScope(roleModel);
+        for (RoleModel roleModel : roleModels) {
             scopeContainer.addScopeMapping(roleModel);
         }
 

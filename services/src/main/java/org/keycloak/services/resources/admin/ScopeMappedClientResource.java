@@ -167,18 +167,22 @@ public class ScopeMappedClientResource {
     public void addClientScopeMapping(List<RoleRepresentation> roles) {
         managePermission.require();
 
+        List<RoleModel> roleModels = roles.stream().map(role -> {
+            RoleModel roleModel = scopedClient.getRole(role.getName());
+            if (roleModel == null) {
+                throw new NotFoundException("Role not found");
+            }
+            auth.roles().requireMapClientScope(roleModel);
+            return roleModel;
+        }).collect(Collectors.toList());
+
         try {
             session.clientPolicy().triggerOnEvent(new ClientScopeMappingRegisterContext(scopeContainer, scopedClient, roles, auth.adminAuth()));
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
-        for (RoleRepresentation role : roles) {
-            RoleModel roleModel = scopedClient.getRole(role.getName());
-            if (roleModel == null) {
-                throw new NotFoundException("Role not found");
-            }
-            auth.roles().requireMapClientScope(roleModel);
+        for (RoleModel roleModel : roleModels) {
             scopeContainer.addScopeMapping(roleModel);
         }
 

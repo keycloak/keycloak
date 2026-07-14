@@ -17,33 +17,54 @@
 package org.keycloak.tests.client.policies;
 
 import java.util.List;
+import java.util.Set;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.executor.RejectRequestExecutorFactory;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.admin.authz.fgap.PermissionTestUtils;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
+
 @KeycloakIntegrationTest
 public class AdminScopeMappingClientPolicyTest extends AbstractClientPoliciesTest {
 
-    @InjectRealm
+    @InjectRealm(config = ScopeMappingRealmConfig.class)
     ManagedRealm realm;
+
+    @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
+    Keycloak realmAdminClient;
 
     @Test
     public void rejectRealmScopeMappingAddAndRemove() throws Exception {
@@ -53,11 +74,24 @@ public class AdminScopeMappingClientPolicyTest extends AbstractClientPoliciesTes
         ClientScopeResource mappedScope = createClientScope("scope-remove");
         mappedScope.getScopeMappings().realmLevel().add(List.of(roleToRemove));
 
+        realmAdminClient.tokenManager().getAccessToken();
         setupRejectingPolicy();
+        grantClientScopeManagePermission();
+
+        ClientScopeResource limitedEmptyScope = realmAdminClient.realm(realm.getName()).clientScopes()
+                .get(emptyScope.toRepresentation().getId());
+        Assertions.assertThrows(ForbiddenException.class,
+                () -> limitedEmptyScope.getScopeMappings().realmLevel().add(List.of(roleToAdd)));
+        assertRoleAbsent(emptyScope.getScopeMappings().realmLevel().listAll(), roleToAdd.getName());
 
         Assertions.assertThrows(BadRequestException.class,
                 () -> emptyScope.getScopeMappings().realmLevel().add(List.of(roleToAdd)));
         assertRoleAbsent(emptyScope.getScopeMappings().realmLevel().listAll(), roleToAdd.getName());
+
+        RoleRepresentation missingRole = new RoleRepresentation(generateSuffixedName("missing-scope-add-role"), "", false);
+        missingRole.setId("missing-scope-add-role-id");
+        Assertions.assertThrows(NotFoundException.class,
+                () -> emptyScope.getScopeMappings().realmLevel().add(List.of(missingRole)));
 
         Assertions.assertThrows(BadRequestException.class,
                 () -> mappedScope.getScopeMappings().realmLevel().remove(List.of(roleToRemove)));
@@ -74,11 +108,23 @@ public class AdminScopeMappingClientPolicyTest extends AbstractClientPoliciesTes
         ClientScopeResource mappedScope = createClientScope("client-scope-remove");
         mappedScope.getScopeMappings().clientLevel(clientUuid).add(List.of(roleToRemove));
 
+        realmAdminClient.tokenManager().getAccessToken();
         setupRejectingPolicy();
+        grantClientScopeManagePermission();
+
+        ClientScopeResource limitedEmptyScope = realmAdminClient.realm(realm.getName()).clientScopes()
+                .get(emptyScope.toRepresentation().getId());
+        Assertions.assertThrows(ForbiddenException.class,
+                () -> limitedEmptyScope.getScopeMappings().clientLevel(clientUuid).add(List.of(roleToAdd)));
+        assertRoleAbsent(emptyScope.getScopeMappings().clientLevel(clientUuid).listAll(), roleToAdd.getName());
 
         Assertions.assertThrows(BadRequestException.class,
                 () -> emptyScope.getScopeMappings().clientLevel(clientUuid).add(List.of(roleToAdd)));
         assertRoleAbsent(emptyScope.getScopeMappings().clientLevel(clientUuid).listAll(), roleToAdd.getName());
+
+        RoleRepresentation missingRole = new RoleRepresentation(generateSuffixedName("missing-client-scope-add-role"), "", false);
+        Assertions.assertThrows(NotFoundException.class,
+                () -> emptyScope.getScopeMappings().clientLevel(clientUuid).add(List.of(missingRole)));
 
         Assertions.assertThrows(BadRequestException.class,
                 () -> mappedScope.getScopeMappings().clientLevel(clientUuid).remove(List.of(roleToRemove)));
@@ -133,5 +179,30 @@ public class AdminScopeMappingClientPolicyTest extends AbstractClientPoliciesTes
     private void setupRejectingPolicy() throws Exception {
         setupPolicy(realm, RejectRequestExecutorFactory.PROVIDER_ID, null,
                 AnyClientConditionFactory.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation());
+    }
+
+    private void grantClientScopeManagePermission() {
+        ClientResource adminPermissionsClient = AdminApiUtil.findClientByClientId(realm.admin(),
+                Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation onlyMyAdminUserPolicy = PermissionTestUtils.createUserPolicy(realm, adminPermissionsClient,
+                generateSuffixedName("scope-mapping-admin"), myadmin.getId());
+
+        PermissionTestUtils.createAllPermission(adminPermissionsClient, AdminPermissionsSchema.CLIENTS.getType(),
+                onlyMyAdminUserPolicy, Set.of(VIEW, MANAGE));
+    }
+
+    public static class ScopeMappingRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return realm.adminPermissionsEnabled(true)
+                    .users(UserBuilder.create("myadmin")
+                            .password("password")
+                            .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_CLIENTS))
+                    .clients(ClientBuilder.create("myclient")
+                            .secret("mysecret")
+                            .directAccessGrantsEnabled(true));
+        }
     }
 }
