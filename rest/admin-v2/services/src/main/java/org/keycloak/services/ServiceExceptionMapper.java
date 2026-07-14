@@ -21,6 +21,10 @@ public class ServiceExceptionMapper implements ExceptionMapper<ServiceException>
 
     @Override
     public Response toResponse(ServiceException exception) {
+        if (exception.getMessage() != null && exception.getParameters().isPresent()) {
+            return ErrorResponse.error(exception.getMessage(), exception.getParameters().get(),
+                    exception.getSuggestedResponseStatus().orElse(Response.Status.BAD_REQUEST)).getResponse();
+        }
         return KeycloakErrorHandler.getResponse(session, exception.toWebApplicationException());
     }
 }

@@ -7,6 +7,7 @@ import jakarta.ws.rs.core.Response;
 
 public class ServiceException extends RuntimeException {
     private Response.Status suggestedHttpResponseStatus;
+    private Object[] parameters;
 
     public ServiceException(String message) {
         super(message);
@@ -21,6 +22,11 @@ public class ServiceException extends RuntimeException {
         this.suggestedHttpResponseStatus = suggestedStatus;
     }
 
+    public ServiceException(String message, Object[] parameters, Response.Status suggestedStatus) {
+        this(message, suggestedStatus);
+        this.parameters = parameters;
+    }
+
     public ServiceException(Response.Status suggestedStatus) {
         super();
         this.suggestedHttpResponseStatus = suggestedStatus;
@@ -28,6 +34,10 @@ public class ServiceException extends RuntimeException {
 
     public Optional<Response.Status> getSuggestedResponseStatus() {
         return Optional.ofNullable(suggestedHttpResponseStatus);
+    }
+
+    public Optional<Object[]> getParameters() {
+        return Optional.ofNullable(parameters);
     }
 
     public WebApplicationException toWebApplicationException() {

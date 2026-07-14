@@ -377,7 +377,7 @@ public class DefaultClientService implements ClientService {
         } catch (ClientPolicyException e) {
             throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
         } catch (ClientTypeException e) {
-            throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
+            throw toServiceException(e);
         }
 
         // Setup roles
@@ -389,7 +389,7 @@ public class DefaultClientService implements ClientService {
             try {
                 handleServiceAccount(model, oidcClient);
             } catch (ClientTypeException e) {
-                throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
+                throw toServiceException(e);
             }
         }
 
@@ -422,8 +422,10 @@ public class DefaultClientService implements ClientService {
      */
     private ClientRepresentation getProposedOldRepresentation(RealmModel realm, BaseClientRepresentation client, ClientModelMapper mapper, boolean creating) {
         String clientId = client.getClientId();
-        SimpleClientModel tempModel = new SimpleClientModel("", realm);
+        ClientModel tempModel = new SimpleClientModel("", realm);
         if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && client.getType() != null) {
+            ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, client.getType());
+            tempModel = clientType.augment(tempModel);
             tempModel.setType(client.getType());
         }
         mapper.toModel(client, tempModel, creating ? getFieldsOmittedFromTypedCreation(client) : Collections.emptySet());
@@ -431,6 +433,10 @@ public class DefaultClientService implements ClientService {
         proposedRepresentation.setClientId(clientId);
         proposedRepresentation.setId(null);
         return proposedRepresentation;
+    }
+
+    private ServiceException toServiceException(ClientTypeException exception) {
+        return new ServiceException(exception.getMessage(), exception.getParameters(), Response.Status.BAD_REQUEST);
     }
 
     private Set<String> getFieldsOmittedFromTypedCreation(BaseClientRepresentation client) {
