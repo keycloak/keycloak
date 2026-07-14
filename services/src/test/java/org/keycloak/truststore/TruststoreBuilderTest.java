@@ -64,6 +64,7 @@ public class TruststoreBuilderTest {
     @Before
     public void before() {
         originalCryptoProvider = CryptoIntegration.isInitialised() ? CryptoIntegration.getProvider() : null;
+        CryptoIntegration.setProvider(new DefaultCryptoProvider());
         for (String key : SYSTEM_PROPERTY_KEYS) {
             originalSystemProperties.put(key, System.getProperty(key));
         }

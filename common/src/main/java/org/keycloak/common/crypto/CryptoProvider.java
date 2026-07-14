@@ -15,7 +15,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.spec.ECParameterSpec;
-import java.util.Comparator;
 import java.util.stream.Stream;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -131,33 +130,29 @@ public interface CryptoProvider {
     default Stream<TruststoreFormat> getSupportedTrustStoreTypes() {
         return Stream.of(TruststoreFormat.values())
                 .filter(TruststoreFormat::isJavaTrustStore)
-                .filter(format -> {
-                    try {
-                        getTrustStore(format);
-                        return true;
-                    } catch (KeyStoreException | NoSuchProviderException ex) {
-                        return false;
-                    }
-                });
+                .filter(format -> supportsTrustStore(this, format));
     }
 
     /**
      * @return Preferred format for a generated system truststore.
      */
     default TruststoreFormat getPreferredGeneratedTrustStoreType() {
-        return Stream.of(TruststoreFormat.values())
-                .filter(TruststoreFormat::isJavaTrustStore)
-                .sorted(Comparator.comparingInt(TruststoreFormat::getPreference))
-                .filter(format -> {
-                    try {
-                        getTrustStore(format);
-                        return true;
-                    } catch (KeyStoreException | NoSuchProviderException ex) {
-                        return false;
-                    }
-                })
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No Java KeyStore backed truststore types are supported"));
+        if (supportsTrustStore(this, TruststoreFormat.PKCS12)) {
+            return TruststoreFormat.PKCS12;
+        }
+        if (supportsTrustStore(this, TruststoreFormat.BCFKS)) {
+            return TruststoreFormat.BCFKS;
+        }
+        throw new IllegalStateException("No generated Java KeyStore backed truststore types are supported");
+    }
+
+    static boolean supportsTrustStore(CryptoProvider provider, TruststoreFormat format) {
+        try {
+            provider.getTrustStore(format);
+            return true;
+        } catch (KeyStoreException | NoSuchProviderException ex) {
+            return false;
+        }
     }
 
     CertificateFactory getX509CertFactory() throws CertificateException, NoSuchProviderException;

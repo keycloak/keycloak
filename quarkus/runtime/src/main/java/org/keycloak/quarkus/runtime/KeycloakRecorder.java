@@ -152,9 +152,6 @@ public class KeycloakRecorder {
             return; // nothing to configure, we'll just use the system default
         }
 
-        if (!CryptoIntegration.isInitialised()) {
-            setCryptoProvider(fipsMode);
-        }
         TruststoreFormat truststoreType = fipsMode == FipsMode.STRICT ? TruststoreFormat.BCFKS : null;
 
         TruststoreBuilder.setSystemTruststore(truststores.toArray(String[]::new), true, dataDir.orElseThrow(), truststoreType);

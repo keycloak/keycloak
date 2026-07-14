@@ -188,9 +188,7 @@ public class TruststoreBuilder {
             throw new IllegalArgumentException(truststoreType.name() + " is not a Java KeyStore truststore format");
         }
         try {
-            KeyStore truststore = CryptoIntegration.isInitialised()
-                    ? CryptoIntegration.getProvider().getTrustStore(truststoreType)
-                    : KeyStore.getInstance(truststoreType.name());
+            KeyStore truststore = CryptoIntegration.getProvider().getTrustStore(truststoreType);
             truststore.load(null, null);
             return truststore;
         } catch (Exception e) {
@@ -199,10 +197,7 @@ public class TruststoreBuilder {
     }
 
     static TruststoreFormat getPreferredGeneratedTrustStoreType() {
-        if (CryptoIntegration.isInitialised()) {
-            return CryptoIntegration.getProvider().getPreferredGeneratedTrustStoreType();
-        }
-        return TruststoreFormat.PKCS12;
+        return CryptoIntegration.getProvider().getPreferredGeneratedTrustStoreType();
     }
 
     /**

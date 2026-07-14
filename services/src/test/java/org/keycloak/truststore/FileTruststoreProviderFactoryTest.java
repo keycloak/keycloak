@@ -65,6 +65,7 @@ public class FileTruststoreProviderFactoryTest {
     @Before
     public void before() {
         originalCryptoProvider = CryptoIntegration.isInitialised() ? CryptoIntegration.getProvider() : null;
+        CryptoIntegration.setProvider(new DefaultCryptoProvider());
         for (String key : SYSTEM_PROPERTY_KEYS) {
             originalSystemProperties.put(key, System.getProperty(key));
         }
@@ -106,7 +107,6 @@ public class FileTruststoreProviderFactoryTest {
 
     @Test
     public void testLoadGeneratedBcfksSystemTruststore() throws Exception {
-        CryptoIntegration.setProvider(new DefaultCryptoProvider());
         URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
         KeyStore bcfksTruststore = TruststoreBuilder.createMergedTruststore(new String[] { url.getPath() }, false,
                 TruststoreFormat.BCFKS);
