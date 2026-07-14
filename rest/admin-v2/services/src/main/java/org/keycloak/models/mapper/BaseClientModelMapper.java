@@ -92,6 +92,7 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
             stream = stream.filter(e -> includeFields.contains(e.getKey()));
         }
         stream.forEach(e -> e.getValue().fromModel(model, rep));
+        rep.clearExplicitlySetFields();
 
         return rep;
     }

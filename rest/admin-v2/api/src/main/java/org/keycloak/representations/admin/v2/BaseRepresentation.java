@@ -42,4 +42,8 @@ public class BaseRepresentation {
     public boolean isFieldExplicitlySet(String fieldName) {
         return explicitlySetFields.contains(fieldName);
     }
+
+    public void clearExplicitlySetFields() {
+        explicitlySetFields.clear();
+    }
 }

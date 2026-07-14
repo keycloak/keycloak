@@ -309,7 +309,7 @@ public class InteropTest extends AbstractClientApiV2Test {
     }
 
     @Test
-    public void createWithV2AppliesClientType() {
+    public void createWithV2AppliesClientType() throws Exception {
         RealmResource realm = adminClient.realm(getRealmName());
         OIDCClientRepresentation client = new OIDCClientRepresentation("v2-client-with-type");
         client.setType(ClientTypeManager.SERVICE_ACCOUNT);
@@ -327,6 +327,12 @@ public class InteropTest extends AbstractClientApiV2Test {
 
             BaseClientRepresentation v2Client = getClientsApi().client(client.getClientId()).getClient();
             assertThat(v2Client.getType(), is(ClientTypeManager.SERVICE_ACCOUNT));
+
+            getClientsApi().client(client.getClientId()).patchClient(new ByteArrayInputStream(
+                    mapper.writeValueAsBytes(Map.of("description", "updated description"))));
+            ClientRepresentation patched = realm.clients().get(created.getId()).toRepresentation();
+            assertThat(patched.getDescription(), is("updated description"));
+            assertThat(patched.isServiceAccountsEnabled(), is(true));
         } finally {
             realm.clients().get(created.getId()).remove();
         }
