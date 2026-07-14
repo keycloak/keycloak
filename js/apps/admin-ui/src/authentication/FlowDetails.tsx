@@ -79,6 +79,11 @@ type HoveredRow = {
   level: number;
 };
 
+type ExecutionMoveSnapshot = {
+  config: AuthenticatorConfigRepresentation;
+  children: ExecutionMoveSnapshot[];
+};
+
 const rowFromElement = (
   element: Element | null,
   activeId: string,
@@ -375,8 +380,11 @@ export default function FlowDetails() {
       subflow.isCollapsed = false;
       autoExpandedIdsRef.current.add(subflowId);
       setExecutionList(executionList.clone());
+      requestAnimationFrame(() => {
+        refreshDragRows();
+      });
     },
-    [executionList, findExecutionById],
+    [executionList, findExecutionById, refreshDragRows],
   );
 
   const scheduleSubflowExpand = useCallback(
@@ -438,7 +446,6 @@ export default function FlowDetails() {
 
     const { active } = event;
     const { x: pointerX, y: pointerY } = pointer;
-    refreshDragRows();
     const hoveredRow = findHoveredRow(
       dragRowsRef.current,
       active.id as string,
@@ -553,10 +560,15 @@ export default function FlowDetails() {
     }
 
     const { change } = resolved;
+    const currentParent = executionList.findParentOf(activeId);
     const isNoOp =
-      change instanceof IndexChange &&
-      change.oldIndex === change.newIndex &&
-      resolved.kind === "reorder";
+      (change instanceof IndexChange &&
+        change.oldIndex === change.newIndex &&
+        resolved.kind === "reorder") ||
+      (change instanceof LevelChange &&
+        change.oldIndex === change.newIndex &&
+        resolved.kind === "level-change" &&
+        currentParent?.id === change.parent?.id);
 
     if (isNoOp) {
       restoreDragState();
@@ -597,26 +609,67 @@ export default function FlowDetails() {
     [key],
   );
 
+  const snapshotExecutionSubtree = async (
+    execution: ExpandableExecution,
+  ): Promise<ExecutionMoveSnapshot> => {
+    let config: AuthenticatorConfigRepresentation = {};
+    if (execution.authenticationConfig) {
+      config = await adminClient.authenticationManagement.getConfig({
+        id: execution.authenticationConfig as string,
+      });
+    }
+    const children = execution.executionList
+      ? await Promise.all(
+          execution.executionList.map((child) =>
+            snapshotExecutionSubtree(child),
+          ),
+        )
+      : [];
+    return { config, children };
+  };
+
+  const restoreExecutionRequirement = async (
+    executionId: string,
+    requirement: string,
+  ) => {
+    const executions = await adminClient.authenticationManagement.getExecutions(
+      {
+        flow: flow?.alias!,
+      },
+    );
+    const execution = executions.find((item) => item.id === executionId);
+    if (!execution) {
+      return;
+    }
+    await adminClient.authenticationManagement.updateExecution(
+      { flow: flow?.alias! },
+      { ...execution, requirement },
+    );
+  };
+
   const executeChange = async (
     ex: AuthenticationFlowRepresentation | ExpandableExecution,
     change: LevelChange | IndexChange,
+    options: { silent?: boolean; snapshot?: ExecutionMoveSnapshot } = {},
   ) => {
+    const { silent = false, snapshot } = options;
     try {
       let id = ex.id!;
+      const originalRequirement =
+        "requirement" in ex ? ex.requirement : undefined;
+
       if ("parent" in change) {
-        let config: AuthenticatorConfigRepresentation = {};
-        if ("authenticationConfig" in ex) {
-          config = await adminClient.authenticationManagement.getConfig({
-            id: ex.authenticationConfig as string,
-          });
-        }
+        const subtreeSnapshot =
+          snapshot ??
+          (await snapshotExecutionSubtree(ex as ExpandableExecution));
+        const config = subtreeSnapshot.config;
 
         try {
           await adminClient.authenticationManagement.delExecution({ id });
         } catch {
           // skipping already deleted execution
         }
-        if ("authenticationFlow" in ex) {
+        if ("authenticationFlow" in ex && ex.authenticationFlow) {
           const executionFlow = ex as ExpandableExecution;
           const result =
             await adminClient.authenticationManagement.addFlowToFlow({
@@ -627,13 +680,21 @@ export default function FlowDetails() {
               type: "basic-flow",
             });
           id = result.id!;
-          ex.executionList?.forEach((e, i) =>
-            executeChange(e, {
-              parent: { ...ex, id: result.id },
-              newIndex: i,
-              oldIndex: i,
-            }),
-          );
+
+          if (executionFlow.executionList?.length) {
+            const parentForChildren = { ...executionFlow, id: result.id };
+            for (const [i, child] of executionFlow.executionList.entries()) {
+              await executeChange(
+                child,
+                {
+                  parent: parentForChildren,
+                  newIndex: i,
+                  oldIndex: i,
+                },
+                { silent: true, snapshot: subtreeSnapshot.children[i] },
+              );
+            }
+          }
         } else {
           const result =
             await adminClient.authenticationManagement.addExecutionToFlow({
@@ -652,6 +713,10 @@ export default function FlowDetails() {
 
           id = result.id!;
         }
+
+        if (originalRequirement) {
+          await restoreExecutionRequirement(id, originalRequirement);
+        }
       }
       const times = change.newIndex - change.oldIndex;
       for (let index = 0; index < Math.abs(times); index++) {
@@ -665,9 +730,14 @@ export default function FlowDetails() {
           });
         }
       }
-      refresh();
-      addAlert(t("updateFlowSuccess"), AlertVariant.success);
+      if (!silent) {
+        refresh();
+        addAlert(t("updateFlowSuccess"), AlertVariant.success);
+      }
     } catch (error) {
+      if (silent) {
+        throw error;
+      }
       addError("updateFlowError", error);
     }
   };
