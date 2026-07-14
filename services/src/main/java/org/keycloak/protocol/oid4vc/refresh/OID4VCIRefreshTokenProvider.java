@@ -1,5 +1,6 @@
 package org.keycloak.protocol.oid4vc.refresh;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -163,7 +164,30 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
 
     @Override
     protected void afterRefreshTokenGenerated(RefreshTokenContext ctx, TokenManager.AccessTokenResponseBuilder responseBuilder) {
-        // Nothing needed for OID4VCI refresh tokens
+        ClientSessionContext clientSessionCtx = responseBuilder.getClientSessionCtx();
+        List<AuthorizationDetailsJSONRepresentation> authzDetails = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
+
+        if (authzDetails == null) {
+            return;
+        }
+
+        List<AuthorizationDetailsJSONRepresentation> clearedDetails = new ArrayList<>(authzDetails.size());
+        for (AuthorizationDetailsJSONRepresentation d : authzDetails) {
+            if (OPENID_CREDENTIAL.equals(d.getType())) {
+                OID4VCAuthorizationDetail typed = d.asSubtype(OID4VCAuthorizationDetail.class);
+                typed.setCredentialsOfferId(null);
+                clearedDetails.add(typed);
+            } else {
+                clearedDetails.add(d);
+            }
+        }
+
+        responseBuilder.getAccessToken().setAuthorizationDetails(clearedDetails);
+        if (responseBuilder.getRefreshToken() != null) {
+            responseBuilder.getRefreshToken().setAuthorizationDetails(clearedDetails);
+        }
+
+        clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, clearedDetails);
     }
 
 
