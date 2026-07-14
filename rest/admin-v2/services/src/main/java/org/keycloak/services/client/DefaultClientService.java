@@ -352,8 +352,8 @@ public class DefaultClientService implements ClientService {
                     ClientTypeManager manager = session.getProvider(ClientTypeManager.class);
                     ClientType clientType = manager.getClientType(realm, client.getType());
                     model = clientType.augment(model);
+                    model.setType(client.getType());
                 }
-                model.setType(client.getType());
                 model.setProtocol(client.getProtocol());
 
                 // Generate random secret if applicable
@@ -363,8 +363,8 @@ public class DefaultClientService implements ClientService {
                         && !oidcClient.isFieldExplicitlySet("auth")
                         && !model.isPublicClient()
                         && model.getClientAuthenticatorType() == null) {
-model.setClientAuthenticatorType(Optional.ofNullable(proposedRepresentation.getClientAuthenticatorType())
-        .orElseGet(KeycloakModelUtils::getDefaultClientAuthenticatorType));
+                    model.setClientAuthenticatorType(Optional.ofNullable(proposedRepresentation.getClientAuthenticatorType())
+                            .orElseGet(KeycloakModelUtils::getDefaultClientAuthenticatorType));
                     model.setSecret(KeycloakModelUtils.generateSecret(model));
                 }
 
@@ -424,10 +424,15 @@ model.setClientAuthenticatorType(Optional.ofNullable(proposedRepresentation.getC
     private ClientRepresentation getProposedOldRepresentation(RealmModel realm, BaseClientRepresentation client, ClientModelMapper mapper, boolean creating) {
         String clientId = client.getClientId();
         ClientModel tempModel = new SimpleClientModel("", realm);
-        if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && client.getType() != null) {
-            ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, client.getType());
+        String effectiveType = client.getType();
+        if (!creating && effectiveType == null) {
+            ClientModel existingClient = realm.getClientByClientId(clientId);
+            effectiveType = existingClient == null ? null : existingClient.getType();
+        }
+        if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && effectiveType != null) {
+            ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, effectiveType);
             tempModel = clientType.augment(tempModel);
-            tempModel.setType(client.getType());
+            tempModel.setType(effectiveType);
         }
         mapper.toModel(client, tempModel, creating ? getFieldsOmittedFromTypedCreation(client) : Collections.emptySet());
         var proposedRepresentation = ModelToRepresentation.toRepresentation(tempModel, session);
