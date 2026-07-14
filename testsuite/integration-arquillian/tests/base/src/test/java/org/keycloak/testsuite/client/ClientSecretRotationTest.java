@@ -649,6 +649,21 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         assertThat(policies.getPolicies(), is(empty()));
     }
 
+    @Test
+    public void createExecutorConfigurationWithEmptyConfigDoesNotCauseNPE() throws Exception {
+        ClientSecretRotationExecutor.Configuration emptyConfig = new ClientSecretRotationExecutor.Configuration();
+        try {
+            doConfigProfileAndPolicy(new ClientProfileBuilder(), emptyConfig);
+            fail("Should have thrown ClientPolicyException for empty configuration");
+        } catch (ClientPolicyException e) {
+            // expected - should be a proper validation error, not an NPE
+        }
+
+        ClientPoliciesPoliciesResource policiesResource = adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource();
+        ClientPoliciesRepresentation policies = policiesResource.getPolicies();
+        assertThat(policies.getPolicies(), is(empty()));
+    }
+
     /**
      * When there is a client that has a secret rotated and the policy is disabled, Rotation information must be removed after updating a client
      *
