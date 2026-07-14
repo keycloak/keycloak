@@ -29,27 +29,32 @@ public class CredentialScopeUtils {
     // Hide ctor
     private CredentialScopeUtils() {}
 
-    public static CredentialScopeModel findCredentialScopeModelByConfigurationId(RealmModel realmModel, Supplier<Stream<ClientScopeModel>> supplier, String credConfigId) {
+    public static List<CredentialScopeModel> findCredentialScopeModelsByConfigurationId(RealmModel realmModel, Supplier<Stream<ClientScopeModel>> supplier, String credConfigId) {
         if (Strings.isEmpty(credConfigId)) {
-            return null;
+            return List.of();
         }
-        List<CredentialScopeModel> credScopes = supplier.get()
+        List<CredentialScopeModel> scopesModels = supplier.get()
                 .filter(it -> it.getProtocol().equals(OID4VC_PROTOCOL))
                 .map(CredentialScopeModel::new)
                 .filter(it -> credConfigId.equals(it.getCredentialConfigurationId()))
                 .toList();
+        return scopesModels;
+    }
+
+    public static CredentialScopeModel findCredentialScopeModelByConfigurationId(RealmModel realmModel, Supplier<Stream<ClientScopeModel>> supplier, String credConfigId) {
+        List<CredentialScopeModel> credScopes = findCredentialScopeModelsByConfigurationId(realmModel, supplier, credConfigId);
         if (credScopes.size() > 1) {
             List<String> clientScopeNames = credScopes.stream().map(ClientScopeModel::getName).toList();
             log.warnf("Multiple client scopes found for credential configuration '%s' in realm '%s': %s",
                     credConfigId, realmModel.getName(), clientScopeNames);
             return null;
-        } else if (credScopes.isEmpty()) {
-            log.warnf("No client scopes found for credential configuration '%s' in realm '%s'",
+        }
+        if (credScopes.isEmpty()) {
+            log.debugf("No client scopes found for credential configuration '%s' in realm '%s'",
                     credConfigId, realmModel.getName());
             return null;
-        } else {
-            return credScopes.get(0);
         }
+        return credScopes.get(0);
     }
 
     public static CredentialScopeModel findCredentialScopeModelByName(RealmModel realmModel, Supplier<Stream<ClientScopeModel>> supplier, String scope) {
