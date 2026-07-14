@@ -650,13 +650,22 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
     }
 
     @Test
-    public void createExecutorConfigurationWithEmptyConfigDoesNotCauseNPE() throws Exception {
-        ClientSecretRotationExecutor.Configuration emptyConfig = new ClientSecretRotationExecutor.Configuration();
-        try {
-            doConfigProfileAndPolicy(new ClientProfileBuilder(), emptyConfig);
-            fail("Should have thrown ClientPolicyException for empty configuration");
-        } catch (ClientPolicyException e) {
-            // expected - should be a proper validation error, not an NPE
+    public void createExecutorConfigurationWithMissingConfigDoesNotCauseNPE() throws Exception {
+        ClientSecretRotationExecutor.Configuration missingExpirationPeriod = getClientProfileConfiguration(60, 30, 20);
+        missingExpirationPeriod.setExpirationPeriod(null);
+        ClientSecretRotationExecutor.Configuration missingRotatedExpirationPeriod = getClientProfileConfiguration(60, 30, 20);
+        missingRotatedExpirationPeriod.setRotatedExpirationPeriod(null);
+        ClientSecretRotationExecutor.Configuration missingRemainExpirationPeriod = getClientProfileConfiguration(60, 30, 20);
+        missingRemainExpirationPeriod.setRemainExpirationPeriod(null);
+
+        for (ClientSecretRotationExecutor.Configuration config : Arrays.asList(
+                missingExpirationPeriod, missingRotatedExpirationPeriod, missingRemainExpirationPeriod)) {
+            try {
+                doConfigProfileAndPolicy(new ClientProfileBuilder(), config);
+                fail("Should have rejected configuration with a missing period");
+            } catch (ClientPolicyException e) {
+                assertThat(e.getErrorDetail(), is(Status.BAD_REQUEST.getReasonPhrase()));
+            }
         }
 
         ClientPoliciesPoliciesResource policiesResource = adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource();
