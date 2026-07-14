@@ -76,12 +76,17 @@ public class AttributeMapper<M extends Model, R> {
             Class<?> complexType = attribute.getComplexType();
 
             if (complexType == null) {
+                if (value == null || value.isNull()) {
+                    modelSetter.accept(model, name, null);
+                    return;
+                }
+
                 Set<String> values;
 
                 if (value.isArray()) {
-                    values =  value.valueStream().map(JsonNode::asText).collect(Collectors.toSet());
+                    values = value.valueStream().map(AttributeMapper::asMultivaluedString).collect(Collectors.toSet());
                 } else {
-                    values = Set.of(value.asText());
+                    values = Set.of(asMultivaluedString(value));
                 }
 
                 modelSetter.accept(model, name, values);
@@ -121,5 +126,12 @@ public class AttributeMapper<M extends Model, R> {
 
     void setAttribute(Attribute<M, R> attribute) {
         this.attribute = attribute;
+    }
+
+    private static String asMultivaluedString(JsonNode node) {
+        if (node.isObject() && node.has("value")) {
+            return node.get("value").asText();
+        }
+        return node.asText();
     }
 }
