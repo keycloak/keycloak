@@ -18,6 +18,7 @@
 package org.keycloak.events.log;
 
 import java.util.Map;
+import java.util.Objects;
 
 import jakarta.enterprise.context.ContextNotActiveException;
 import jakarta.ws.rs.core.Cookie;
@@ -148,13 +149,17 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
 
         if (logger.isEnabled(level)) {
             StringBuilder sb = new StringBuilder();
+            String realmId = adminEvent.getRealmId();
+            String realmName = adminEvent.getRealmName();
+            String authRealmId = adminEvent.getAuthDetails().getRealmId();
+            String authRealmName = adminEvent.getAuthDetails().getRealmName();
 
             sb.append("operationType=");
             sanitize(sb, adminEvent.getOperationType().toString());
             sb.append(", realmId=");
-            sanitize(sb, adminEvent.getAuthDetails().getRealmId());
+            sanitize(sb, authRealmId);
             sb.append(", realmName=");
-            sanitize(sb, adminEvent.getAuthDetails().getRealmName());
+            sanitize(sb, authRealmName);
             sb.append(", clientId=");
             sanitize(sb, adminEvent.getAuthDetails().getClientId());
             sb.append(", userId=");
@@ -165,6 +170,13 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             sanitize(sb, adminEvent.getResourceTypeAsString());
             sb.append(", resourcePath=");
             sanitize(sb, adminEvent.getResourcePath());
+
+            if (!Objects.equals(realmName, authRealmName) || !Objects.equals(realmId, authRealmId)) {
+                sb.append(", targetRealmId=");
+                sanitize(sb, realmId);
+                sb.append(", targetRealmName=");
+                sanitize(sb, realmName);
+            }
 
             if (adminEvent.getError() != null) {
                 sb.append(", error=");
