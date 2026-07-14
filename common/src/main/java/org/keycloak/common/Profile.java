@@ -159,6 +159,7 @@ public class Profile {
         PASSKEYS_CONDITIONAL_UI_AUTHENTICATOR("Passkeys conditional UI authenticator", Type.DEPRECATED, FeatureUpdatePolicy.ROLLING_NO_UPGRADE, Feature.PASSKEYS),
 
         USER_EVENT_METRICS("Collect metrics based on user events", Type.DEFAULT),
+        LDAP_METRICS("Collect metrics based on LDAP interactions", Type.EXPERIMENTAL),
 
         IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL),
 

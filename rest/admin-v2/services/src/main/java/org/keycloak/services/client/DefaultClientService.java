@@ -326,6 +326,8 @@ public class DefaultClientService implements ClientService {
                             throw new ServiceException(r.getAllErrorsAsString(), Response.Status.BAD_REQUEST);
                         });
 
+                        model.updateClient();
+
                         session.clientPolicy().triggerOnEvent(new AdminClientUpdatedContext(proposedRepresentation, model, permissions.adminAuth()));
                     }
                 }
@@ -390,22 +392,18 @@ public class DefaultClientService implements ClientService {
     /**
      * Creates a temporary client to convert BaseClientRepresentation to ClientRepresentation.
      * Required because client policy contexts expect ClientRepresentation (v1), but there's no
-     * direct converter from BaseClientRepresentation (v2 API). The temp client is immediately removed.
+     * direct converter from BaseClientRepresentation (v2 API).
      * <p>
      * For more details, see the <a href="https://github.com/keycloak/keycloak/issues/47576">keycloak#47576</a>.
      */
     private ClientRepresentation getProposedOldRepresentation(RealmModel realm, BaseClientRepresentation client, ClientModelMapper mapper) {
-        String tempId = "__temp__" + client.getClientId() + "__" + System.nanoTime();
-        ClientModel tempModel = realm.addClient(tempId);
         String clientId = client.getClientId();
+        SimpleClientModel tempModel = new SimpleClientModel("", realm);
         mapper.toModel(client, tempModel);
-        try {
-            var proposedRepresentation = ModelToRepresentation.toRepresentation(tempModel, session);
-            proposedRepresentation.setClientId(clientId);
-            return proposedRepresentation;
-        } finally {
-            realm.removeClient(tempModel.getId());
-        }
+        var proposedRepresentation = ModelToRepresentation.toRepresentation(tempModel, session);
+        proposedRepresentation.setClientId(clientId);
+        proposedRepresentation.setId(null);
+        return proposedRepresentation;
     }
 
     private void generateClientSecretIfNeeded(BaseClientRepresentation client, ClientModel model, CreateOrUpdateStrategy strategy, boolean patchExplicitNullSecret) {
