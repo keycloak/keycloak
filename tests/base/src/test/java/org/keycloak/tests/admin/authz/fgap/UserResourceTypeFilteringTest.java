@@ -35,11 +35,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.resource.RolePoliciesResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
@@ -53,8 +58,10 @@ import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testframework.realm.RoleConfigBuilder;
 
@@ -63,6 +70,9 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
 
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
     Keycloak realmAdminClient;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
 
     private final String usersType = AdminPermissionsSchema.USERS.getType();
 
@@ -340,6 +350,38 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         UserRepresentation user = search.get(0);
         assertThat(user.getUsername(), Matchers.is("user-0"));
         assertThat(realmAdminClient.realm(realm.getName()).users().search("id:" + user.getId(), -1, -1), hasSize(1));
+    }
+
+    @Test
+    public void testBruteForceUserEndpointSearchByIdFilteredByViewPermission() {
+        UserRepresentation allowed = realm.admin().users().search("user-0").get(0);
+        UserRepresentation denied = realm.admin().users().search("user-1").get(0);
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, client, "Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createPermission(client, allowed.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), policy);
+
+        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            WebTarget target = httpClient.target(keycloakUrls.getBaseUrl().toString())
+                    .path("admin")
+                    .path("realms")
+                    .path(realm.getName())
+                    .path("ui-ext")
+                    .path("brute-force-user")
+                    .register(new BearerAuthFilter(realmAdminClient.tokenManager()));
+
+            Response allowedResponse = target.queryParam("search", "id:" + allowed.getId())
+                    .request(MediaType.APPLICATION_JSON).get();
+            assertThat(allowedResponse.getStatus(), is(Response.Status.OK.getStatusCode()));
+            List<UserRepresentation> allowedResult = allowedResponse.readEntity(new GenericType<>() {});
+            assertThat(allowedResult, hasSize(1));
+            assertThat(allowedResult.get(0).getUsername(), is("user-0"));
+
+            Response deniedResponse = target.queryParam("search", "id:" + denied.getId())
+                    .request(MediaType.APPLICATION_JSON).get();
+            assertThat(deniedResponse.getStatus(), is(Response.Status.OK.getStatusCode()));
+            List<UserRepresentation> deniedResult = deniedResponse.readEntity(new GenericType<>() {});
+            assertThat(deniedResult, is(empty()));
+        }
     }
 
     @Test
