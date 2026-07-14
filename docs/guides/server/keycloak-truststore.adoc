@@ -18,7 +18,7 @@ If you need an alternative path, use the `--truststore-paths` option to specify 
 
 After all applicable certs are included, the truststore will be used as the system default truststore via the `javax.net.ssl` properties, and as the default for internal usage within {project_name}.
 
-The generated system truststore type is automatically adjusted to the current FIPS mode and the active crypto provider. By default, and in FIPS non strict mode, the generated truststore remains PKCS12 when PKCS12 is supported. In FIPS strict mode, the generated truststore uses BCFKS. The `--https-trust-store-type` option applies to an explicit `--https-trust-store-file`; it does not override the generated system truststore type.
+The generated system truststore type is automatically adjusted to the current FIPS mode and the active crypto provider. By default, and in FIPS non-strict mode, the generated truststore remains PKCS12 when PKCS12 is supported. In FIPS strict mode, the generated truststore uses BCFKS. The `--https-trust-store-type` option applies to an explicit `--https-trust-store-file`; it does not override the generated system truststore type.
 
 For example:
 
