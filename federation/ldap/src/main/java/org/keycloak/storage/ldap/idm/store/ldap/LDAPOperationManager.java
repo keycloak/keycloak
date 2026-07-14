@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import javax.naming.AuthenticationException;
 import javax.naming.Binding;
 import javax.naming.Context;
@@ -63,6 +64,8 @@ import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import org.keycloak.tracing.TracingProvider;
 import org.keycloak.truststore.TruststoreProvider;
 
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Timer;
 import org.jboss.logging.Logger;
 
 /**
@@ -79,10 +82,29 @@ public class LDAPOperationManager {
 
     private final KeycloakSession session;
     private final LDAPConfig config;
+    private final Meter.MeterProvider<Timer> requestTimer;
 
+    @Deprecated(since = "26.8", forRemoval = true)
     public LDAPOperationManager(KeycloakSession session, LDAPConfig config) {
+        this(session, config, null);
+    }
+
+    public LDAPOperationManager(KeycloakSession session, LDAPConfig config, Meter.MeterProvider<Timer> requestTimer) {
         this.session = session;
         this.config = config;
+        this.requestTimer = requestTimer;
+    }
+
+    private void recordLdapRequest(String operation, boolean success, long startTimeNanos) {
+        if (requestTimer == null) {
+            logger.debugf("LDAP request timer is null, skipping metric recording for operation: %s", operation);
+            return;
+        }
+        long durationNanos = System.nanoTime() - startTimeNanos;
+        logger.debugf("Recording LDAP metric - operation: %s, outcome: %s, duration: %d ns",
+                operation, success ? "success" : "error", durationNanos);
+        requestTimer.withTags("operation", operation, "outcome", success ? "success" : "error")
+                .record(durationNanos, TimeUnit.NANOSECONDS);
     }
 
     /**
@@ -495,6 +517,9 @@ public class LDAPOperationManager {
         var tracing = session.getProvider(TracingProvider.class);
         tracing.startSpan(LDAPOperationManager.class, "authenticate");
 
+        long startTimeNanos = System.nanoTime();
+        boolean success = false;
+
         try {
             Hashtable<Object, Object> env = LDAPContextManager.getNonAuthConnectionProperties(config);
 
@@ -545,6 +570,7 @@ public class LDAPOperationManager {
                     }
                 }
             }
+            success = true;
 
         } catch (AuthenticationException ae) {
             if (logger.isDebugEnabled()) {
@@ -563,6 +589,7 @@ public class LDAPOperationManager {
             tracing.error(e);
             throw new AuthenticationException("Unexpected exception when validating password of user");
         } finally {
+            recordLdapRequest("authenticate", success, startTimeNanos);
             if (tlsResponse != null) {
                 try {
                     tlsResponse.close();
@@ -762,6 +789,9 @@ public class LDAPOperationManager {
             start = Time.currentTimeMillis();
         }
 
+        long startTimeNanos = System.nanoTime();
+        boolean success = false;
+
         var tracing = session.getProvider(TracingProvider.class);
         var span = tracing.startSpan(LDAPOperationManager.class, "execute");
 
@@ -775,11 +805,14 @@ public class LDAPOperationManager {
                 decorator.beforeLDAPOperation(context, operation);
             }
 
-            return operation.execute(context);
+            R execute = operation.execute(context);
+            success = true;
+            return execute;
         } catch (NamingException e) {
             tracing.error(e);
             throw e;
         } finally {
+            recordLdapRequest("execute", success, startTimeNanos);
             tracing.endSpan();
             if (perfLogger.isDebugEnabled()) {
                 long took = Time.currentTimeMillis() - start;
