@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication.actiontoken;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -149,14 +150,16 @@ public class DefaultActionToken extends DefaultActionTokenKey implements SingleU
      * <li>{@code issuer}: URI of the given realm</li>
      * <li>{@code audience}: URI of the given realm (same as issuer)</li>
      * </ul>
-     *
-     * @param session
-     * @param realm
-     * @param uri
-     * @return
      */
     public String serialize(KeycloakSession session, RealmModel realm, UriInfo uri) {
-        String issuerUri = getIssuer(realm, uri);
+        return serialize(session, realm, uri.getBaseUri());
+    }
+
+    /**
+     * Variant of {@link #serialize(KeycloakSession, RealmModel, UriInfo)} that takes a base URI directly.
+     */
+    public String serialize(KeycloakSession session, RealmModel realm, URI baseUri) {
+        String issuerUri = Urls.realmIssuer(baseUri, realm.getName());
         String id = getId();
 
         if (id == null) {
@@ -170,10 +173,6 @@ public class DefaultActionToken extends DefaultActionTokenKey implements SingleU
           .audience(issuerUri);
 
         return session.tokens().encode(this);
-    }
-
-    private String getIssuer(RealmModel realm, UriInfo uri) {
-        return Urls.realmIssuer(uri.getBaseUri(), realm.getName());
     }
 
 }
