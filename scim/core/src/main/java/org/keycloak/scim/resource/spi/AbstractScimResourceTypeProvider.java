@@ -23,6 +23,13 @@ import static org.keycloak.utils.StringUtil.isBlank;
 
 public abstract class AbstractScimResourceTypeProvider<M extends Model, R extends ResourceTypeRepresentation> implements ScimResourceTypeProvider<R> {
 
+    /**
+     * Maximum number of operations allowed in a single SCIM PATCH request.
+     * Exceeding this limit results in a {@code 400 Bad Request} with {@code scimType=tooMany}.
+     * This limit is not advertised via {@code /ServiceProviderConfig}.
+     */
+    public static final int MAX_PATCH_OPERATIONS = 100;
+
     protected final KeycloakSession session;
     private final ModelSchema<M, R> schema;
     private final List<ModelSchema<M, R>> schemaExtensions;
@@ -107,6 +114,12 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
     public void patch(R existing, List<PatchOperation> operations) {
         Objects.requireNonNull(existing, "existing cannot be null");
         Objects.requireNonNull(operations, "operations cannot be null");
+
+        if (operations.size() > MAX_PATCH_OPERATIONS) {
+            throw new ScimPatchException(
+                    "PATCH request exceeds maximum allowed number of %d operations".formatted(MAX_PATCH_OPERATIONS));
+        }
+
         M model = getModel(existing.getId());
 
         if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
