@@ -363,7 +363,8 @@ public class DefaultClientService implements ClientService {
                         && !oidcClient.isFieldExplicitlySet("auth")
                         && !model.isPublicClient()
                         && model.getClientAuthenticatorType() == null) {
-                    model.setClientAuthenticatorType(KeycloakModelUtils.getDefaultClientAuthenticatorType());
+model.setClientAuthenticatorType(Optional.ofNullable(proposedRepresentation.getClientAuthenticatorType())
+        .orElseGet(KeycloakModelUtils::getDefaultClientAuthenticatorType));
                     model.setSecret(KeycloakModelUtils.generateSecret(model));
                 }
 
