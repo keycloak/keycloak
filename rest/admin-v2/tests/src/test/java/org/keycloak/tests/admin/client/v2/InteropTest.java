@@ -348,7 +348,12 @@ public class InteropTest extends AbstractClientApiV2Test {
         client.setAppUrl("https://client.example.com");
         client.setRedirectUris(Set.of("https://client.example.com/callback"));
         client.setWebOrigins(Set.of("https://client.example.com"));
-        client.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.STANDARD));
+client.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.STANDARD));
+        client.setEnabled(true);
+        OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod("client-secret");
+        auth.setSecret("test-secret");
+        client.setAuth(auth);
 
         try (var response = getClientsApi().createClient(client)) {
             assertThat(response.getStatus(), is(201));
