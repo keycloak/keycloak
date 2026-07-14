@@ -352,8 +352,8 @@ public class DefaultClientService implements ClientService {
                     ClientTypeManager manager = session.getProvider(ClientTypeManager.class);
                     ClientType clientType = manager.getClientType(realm, client.getType());
                     model = clientType.augment(model);
-                    model.setType(client.getType());
                 }
+                model.setType(client.getType());
                 model.setProtocol(client.getProtocol());
 
                 // Generate random secret if applicable
