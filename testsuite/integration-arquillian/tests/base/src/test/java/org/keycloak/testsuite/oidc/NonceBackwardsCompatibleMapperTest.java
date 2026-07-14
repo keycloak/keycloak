@@ -117,7 +117,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
     }
 
     private String createNonceMapper(ClientResource testApp) {
-        ProtocolMapperModel nonceMapper = NonceBackwardsCompatibleMapper.create("nonce");
+        ProtocolMapperModel nonceMapper = NonceBackwardsCompatibleMapper.builder("nonce").build();
         ProtocolMapperRepresentation nonceMapperRep = ModelToRepresentation.toRepresentation(nonceMapper);
         try (Response res = testApp.getProtocolMappers().createMapper(nonceMapperRep)) {
             Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), res.getStatus());

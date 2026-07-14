@@ -12,6 +12,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
 import org.keycloak.protocol.oidc.mappers.ParameterizedScopeMapper;
 import org.keycloak.protocol.oidc.mappers.ParameterizedScopeUserPropertyMapper;
 import org.keycloak.representations.AccessToken;
@@ -50,6 +51,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.INTROSPECTION;
 import static org.keycloak.tests.oauth.ParameterizedScopeBuilder.create;
 
 @DatabaseTest
@@ -91,17 +94,17 @@ public class ParameterizedScopeMapperTest {
     @TestSetup
     public void setup() {
         String mainScopeId = createParameterizedScope(SCOPE_NAME);
-        addMapper(mainScopeId, ParameterizedScopeMapper.create(
-                "raw-param-mapper", RAW_PARAM_CLAIM, "String", true, false, true));
-        addMapper(mainScopeId, ParameterizedScopeUserPropertyMapper.create(
-                "user-id-mapper", "id", USER_ID_CLAIM, "String", true, false, true));
-        addMapper(mainScopeId, ParameterizedScopeUserPropertyMapper.create(
-                "user-email-mapper", "email", USER_EMAIL_CLAIM, "String", true, false, true));
+        addMapper(mainScopeId, ParameterizedScopeMapper.builder("raw-param-mapper")
+                .claimName(RAW_PARAM_CLAIM).type(ClaimType.STRING).includeIn(ACCESS_TOKEN, INTROSPECTION).build());
+        addMapper(mainScopeId, ParameterizedScopeUserPropertyMapper.builder("user-id-mapper")
+                .userAttribute("id").claimName(USER_ID_CLAIM).type(ClaimType.STRING).includeIn(ACCESS_TOKEN, INTROSPECTION).build());
+        addMapper(mainScopeId, ParameterizedScopeUserPropertyMapper.builder("user-email-mapper")
+                .userAttribute("email").claimName(USER_EMAIL_CLAIM).type(ClaimType.STRING).includeIn(ACCESS_TOKEN, INTROSPECTION).build());
         client.admin().addOptionalClientScope(mainScopeId);
 
         String secondScopeId = createParameterizedScope(SECOND_SCOPE_NAME);
-        addMapper(secondScopeId, ParameterizedScopeMapper.create(
-                "other-raw-param-mapper", SECOND_RAW_PARAM_CLAIM, "String", true, false, true));
+        addMapper(secondScopeId, ParameterizedScopeMapper.builder("other-raw-param-mapper")
+                .claimName(SECOND_RAW_PARAM_CLAIM).type(ClaimType.STRING).includeIn(ACCESS_TOKEN, INTROSPECTION).build());
         client.admin().addOptionalClientScope(secondScopeId);
     }
 
@@ -210,7 +213,8 @@ public class ParameterizedScopeMapperTest {
     @Test
     public void repeatableScopeMapsMultipleValues() {
         String repScopeId = addOptionalScopeWithCleanup("rep-scope", true,
-                ParameterizedScopeMapper.create("rep-raw-mapper", "rep_values", "String", true, false, true));
+                ParameterizedScopeMapper.builder("rep-raw-mapper")
+                        .claimName("rep_values").type(ClaimType.STRING).includeIn(ACCESS_TOKEN, INTROSPECTION).build());
 
         AccessToken token = loginWithScopeParam("rep-scope", TARGET_USERNAME, "second-target");
         assertListClaim(token, "rep_values", TARGET_USERNAME, "second-target");
@@ -219,7 +223,8 @@ public class ParameterizedScopeMapperTest {
     @Test
     public void repeatableScopeUserPropertyMapsMultipleUsers() {
         String repScopeId = addOptionalScopeWithCleanup("rep-user-scope", true,
-                ParameterizedScopeUserPropertyMapper.create("rep-user-id-mapper", "id", "rep_user_ids", "String", true, false, true, true));
+                ParameterizedScopeUserPropertyMapper.builder("rep-user-id-mapper")
+                        .userAttribute("id").claimName("rep_user_ids").type(ClaimType.STRING).includeIn(ACCESS_TOKEN, INTROSPECTION).multivalued().build());
 
         AccessToken token = loginWithScopeParam("rep-user-scope", TARGET_USERNAME, secondTargetUser.getUsername());
         assertListClaim(token, "rep_user_ids", targetUser.getId(), secondTargetUser.getId());
@@ -301,10 +306,10 @@ public class ParameterizedScopeMapperTest {
                 .attribute(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, Boolean.TRUE.toString())
                 .build();
         String id = ApiUtil.getCreatedId(realm.admin().clientScopes().create(scope));
-        addMapper(id, ParameterizedScopeMapper.create(
-                "non-param-raw-mapper", RAW_PARAM_CLAIM, "String", true, false, true));
-        addMapper(id, ParameterizedScopeUserPropertyMapper.create(
-                "non-param-user-id-mapper", "id", USER_ID_CLAIM, "String", true, false, true));
+        addMapper(id, ParameterizedScopeMapper.builder("non-param-raw-mapper")
+                .claimName(RAW_PARAM_CLAIM).type(ClaimType.STRING).includeIn(ACCESS_TOKEN, INTROSPECTION).build());
+        addMapper(id, ParameterizedScopeUserPropertyMapper.builder("non-param-user-id-mapper")
+                .userAttribute("id").claimName(USER_ID_CLAIM).type(ClaimType.STRING).includeIn(ACCESS_TOKEN, INTROSPECTION).build());
         return id;
     }
 

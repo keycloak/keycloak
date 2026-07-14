@@ -137,27 +137,22 @@ public class UserClientRoleMappingMapper extends AbstractUserRoleMappingMapper {
     }
 
 
-    public static ProtocolMapperModel create(String clientId, String clientRolePrefix,
-                                             String name,
-                                             String tokenClaimName,
-                                             boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
-        return create(clientId, clientRolePrefix, name, tokenClaimName, accessToken, idToken, introspectionEndpoint, false);
+    public static class Builder extends OIDCProtocolMapperBuilder<Builder> {
+        private Builder(String name) {
+            super(name, PROVIDER_ID);
+        }
 
+        public Builder clientId(String clientId) {
+            return config(ProtocolMapperUtils.USER_MODEL_CLIENT_ROLE_MAPPING_CLIENT_ID, clientId);
+        }
+
+        public Builder clientRolePrefix(String prefix) {
+            return config(ProtocolMapperUtils.USER_MODEL_CLIENT_ROLE_MAPPING_ROLE_PREFIX, prefix);
+        }
     }
 
-    public static ProtocolMapperModel create(String clientId, String clientRolePrefix,
-                                             String name,
-                                             String tokenClaimName,
-                                             boolean accessToken, boolean idToken, boolean introspectionEndpoint, boolean multiValued) {
-        ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, "foo",
-                tokenClaimName, "String",
-                accessToken, idToken, false, introspectionEndpoint,
-                PROVIDER_ID);
-
-        mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, String.valueOf(multiValued));
-        mapper.getConfig().put(ProtocolMapperUtils.USER_MODEL_CLIENT_ROLE_MAPPING_CLIENT_ID, clientId);
-        mapper.getConfig().put(ProtocolMapperUtils.USER_MODEL_CLIENT_ROLE_MAPPING_ROLE_PREFIX, clientRolePrefix);
-        return mapper;
+    public static Builder builder(String name) {
+        return new Builder(name);
     }
 
 }

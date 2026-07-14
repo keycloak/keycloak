@@ -19,15 +19,14 @@ package org.keycloak.protocol.oidc.mappers;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
@@ -35,6 +34,8 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
+
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ID_TOKEN;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -123,19 +124,23 @@ public class ClaimsParameterWithValueIdTokenMapper extends AbstractOIDCProtocolM
         }
 
         HardcodedClaim hardcodedClaimMapper = new HardcodedClaim();
-        hardcodedClaimMapper.setClaim(token, HardcodedClaim.create("hard", claimName, claim, "String", false, true, false), userSession);
+        hardcodedClaimMapper.setClaim(token, HardcodedClaim.builder("hard", claimName, claim)
+                .type(ClaimType.STRING)
+                .includeIn(ID_TOKEN).build(), userSession);
     }
 
-    public static ProtocolMapperModel createMapper(String name, String attributeValue, boolean idToken) {
-        ProtocolMapperModel mapper = new ProtocolMapperModel();
-        mapper.setName(name);
-        mapper.setProtocolMapper(PROVIDER_ID);
-        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<String, String>();
-        config.put(CLAIM_NAME, attributeValue);
-        if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        mapper.setConfig(config);
-        return mapper;
+    public static class Builder extends OIDCProtocolMapperBuilder<Builder> {
+        private Builder(String name) {
+            super(name, PROVIDER_ID);
+        }
+
+        public Builder attributeValue(String value) {
+            return config(CLAIM_NAME, value);
+        }
+    }
+
+    public static Builder builder(String name) {
+        return new Builder(name);
     }
 
 }

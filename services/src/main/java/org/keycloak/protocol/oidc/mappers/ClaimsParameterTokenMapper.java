@@ -18,9 +18,7 @@ package org.keycloak.protocol.oidc.mappers;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
@@ -28,12 +26,16 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCWellKnownProvider;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ID_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.USERINFO;
 
 public class ClaimsParameterTokenMapper extends AbstractOIDCProtocolMapper implements OIDCIDTokenMapper, UserInfoTokenMapper {
 
@@ -110,30 +112,30 @@ public class ClaimsParameterTokenMapper extends AbstractOIDCProtocolMapper imple
                         fullNameMapper.setClaim(token, mappingModel, userSession);
                     } else if (i.equals(IDToken.GIVEN_NAME)) {
                         UserAttributeMapper userPropertyMapper = new UserAttributeMapper();
-                        userPropertyMapper.setClaim(token, UserAttributeMapper.createClaimMapper("requested firstName", "firstName", IDToken.GIVEN_NAME, "String", false, true, false), userSession);
+                        userPropertyMapper.setClaim(token, UserAttributeMapper.builder("requested firstName")
+                                .userAttribute("firstName").claimName(IDToken.GIVEN_NAME).type(ClaimType.STRING)
+                                .includeIn(ID_TOKEN, USERINFO).build(), userSession);
                     } else if (i.equals(IDToken.FAMILY_NAME)) {
                         UserAttributeMapper userPropertyMapper = new UserAttributeMapper();
-                        userPropertyMapper.setClaim(token, UserAttributeMapper.createClaimMapper("requested lastName", "lastName", IDToken.FAMILY_NAME, "String", false, true, false), userSession);
+                        userPropertyMapper.setClaim(token, UserAttributeMapper.builder("requested lastName")
+                                .userAttribute("lastName").claimName(IDToken.FAMILY_NAME).type(ClaimType.STRING)
+                                .includeIn(ID_TOKEN, USERINFO).build(), userSession);
                     } else if (i.equals(IDToken.PREFERRED_USERNAME)) {
                         UserAttributeMapper userPropertyMapper = new UserAttributeMapper();
-                        userPropertyMapper.setClaim(token, UserAttributeMapper.createClaimMapper("requested username", "username", IDToken.PREFERRED_USERNAME, "String", false, true, false), userSession);
+                        userPropertyMapper.setClaim(token, UserAttributeMapper.builder("requested username")
+                                .userAttribute("username").claimName(IDToken.PREFERRED_USERNAME).type(ClaimType.STRING)
+                                .includeIn(ID_TOKEN, USERINFO).build(), userSession);
                     } else if (i.equals(IDToken.EMAIL)) {
                         UserAttributeMapper userPropertyMapper = new UserAttributeMapper();
-                        userPropertyMapper.setClaim(token, UserAttributeMapper.createClaimMapper("requested email", "email", IDToken.EMAIL, "String", false, true, false), userSession);
+                        userPropertyMapper.setClaim(token, UserAttributeMapper.builder("requested email")
+                                .userAttribute("email").claimName(IDToken.EMAIL).type(ClaimType.STRING)
+                                .includeIn(ID_TOKEN, USERINFO).build(), userSession);
                     }
             });
     }
 
-    public static ProtocolMapperModel createMapper(String name, boolean idToken, boolean userInfo) {
-        ProtocolMapperModel mapper = new ProtocolMapperModel();
-        mapper.setName(name);
-        mapper.setProtocolMapper(PROVIDER_ID);
-        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<String, String>();
-        if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        if (userInfo) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
-        mapper.setConfig(config);
-        return mapper;
+    public static OIDCProtocolMapperBuilder<?> builder(String name) {
+        return OIDCProtocolMapperBuilder.builder(name, PROVIDER_ID);
     }
 
 }

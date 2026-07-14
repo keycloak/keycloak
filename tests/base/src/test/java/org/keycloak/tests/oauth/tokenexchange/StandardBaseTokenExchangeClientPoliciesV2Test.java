@@ -27,6 +27,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.clientpolicy.condition.ClientScopesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
@@ -44,6 +45,10 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ID_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.INTROSPECTION;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -180,7 +185,7 @@ public class StandardBaseTokenExchangeClientPoliciesV2Test extends AbstractBaseT
         // Add protocol mapper to subject-client
         Response createMapperResponse = realm.admin().clients().get(subjectClient.getId()).getProtocolMappers().createMapper(
                 ModelToRepresentation.toRepresentation(
-                        HardcodedClaim.create(claimName, claimName, claimValue, "String", true, true, true)
+                        HardcodedClaim.builder(claimName, claimName, claimValue).type(ClaimType.STRING).includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION).build()
                 )
         );
         String mapperId = ApiUtil.getCreatedId(createMapperResponse);

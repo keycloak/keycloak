@@ -46,6 +46,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -64,6 +65,10 @@ import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 import org.keycloak.util.TokenUtil;
 
 import org.junit.jupiter.api.Test;
+
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.INTROSPECTION;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.LIGHTWEIGHT_ACCESS_TOKEN;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -679,7 +684,7 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
         //revoke exchange chain if an already exchanged token is used for token exchange
         // Create protocol mapper and save its ID for cleanup
         ProtocolMapperRepresentation mapper = ModelToRepresentation.toRepresentation(
-                AudienceProtocolMapper.createClaimMapper("requester-client-2", "requester-client-2", null, true, false, true)
+                AudienceProtocolMapper.builder("requester-client-2").clientAudience("requester-client-2").includeIn(ACCESS_TOKEN, INTROSPECTION).build()
         );
         Response createMapperResponse = realm.admin().clients().get(requesterClient.getId()).getProtocolMappers().createMapper(mapper);
         final String mapperId = ApiUtil.getCreatedId(createMapperResponse);
@@ -945,7 +950,7 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
     @Test
     public void testSenderConstrainedTokenRejection() {
         // Create a protocol mapper that adds the cnf claim
-        ProtocolMapperModel mapper = HardcodedClaim.create("test-cnf-mapper", "cnf", "{\"jkt\":\"test-thumbprint-12345\"}", "JSON", true,  false, false);
+        ProtocolMapperModel mapper = HardcodedClaim.builder("test-cnf-mapper", "cnf", "{\"jkt\":\"test-thumbprint-12345\"}").type(ClaimType.JSON).includeIn(ACCESS_TOKEN).build();
 
         Response mapperResponse =  realm.admin().clients().get(subjectClient.getId()).getProtocolMappers().createMapper(ModelToRepresentation.toRepresentation(mapper));
         String mapperId = ApiUtil.getCreatedId(mapperResponse);
@@ -970,15 +975,10 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
         subjectClient.getAttributes().put(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, "true");
         realm.admin().clients().get(subjectClient.getId()).update(subjectClient);
 
-        ProtocolMapperModel mapperModel = AudienceProtocolMapper.createClaimMapper(
-                "requester-client-jwt",
-                "requester-client",
-                null,
-                true,
-                false,
-                true,
-                true
-        );
+        ProtocolMapperModel mapperModel = AudienceProtocolMapper.builder("requester-client-jwt")
+                .clientAudience("requester-client")
+                .includeIn(ACCESS_TOKEN, INTROSPECTION, LIGHTWEIGHT_ACCESS_TOKEN)
+                .build();
 
         ProtocolMapperRepresentation mapperRep = ModelToRepresentation.toRepresentation(mapperModel);
         Response createMapperResponse = realm.admin().clients().get(subjectClient.getId()).getProtocolMappers().createMapper(mapperRep);

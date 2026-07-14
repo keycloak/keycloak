@@ -46,7 +46,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         String username = "test-user";
         createUser(testRealm, username);
         ClientRepresentation client = createClient(testRealm, "test-client", toRepresentation(
-                HardcodedRole.create("hardcoded-view-clients-mapper", Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.VIEW_CLIENTS)
+                HardcodedRole.builder("hardcoded-view-clients-mapper").role(Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.VIEW_CLIENTS).build()
         ));
         assertThrows(ForbiddenException.class, () -> {
             runAs(realmName, client.getClientId(), username, userClient -> {
@@ -69,8 +69,8 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         UserRepresentation user = createUser(testRealm, username);
         testRealm.users().get(user.getId()).joinGroup(group.getId());
         ClientRepresentation fullTokenClient = createClient(testRealm, "full-token-client",
-                toRepresentation(HardcodedRole.create("inject-manage-users",
-                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_USERS))
+                toRepresentation(HardcodedRole.builder("inject-manage-users").role(
+                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_USERS).build())
         );
 
         runAs(realmName, fullTokenClient.getClientId(), username, userClient -> {
@@ -114,8 +114,8 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         grantRealmManagementRole(testRealm, attackerName, AdminRoles.VIEW_USERS);
 
         ClientRepresentation maliciousClient = createClient(testRealm, "malicious-client",
-                toRepresentation(HardcodedRole.create("inject-manage-users",
-                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_USERS))
+                toRepresentation(HardcodedRole.builder("inject-manage-users").role(
+                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_USERS).build())
         );
 
         assertThrows(ForbiddenException.class, () -> {
@@ -133,12 +133,12 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         createUser(testRealm, attackerName);
         grantRealmManagementRole(testRealm, attackerName, AdminRoles.MANAGE_CLIENTS);
 
-        ClientRepresentation maliciousClient = createClient(testRealm, "malicious-client", toRepresentation(HardcodedRole.create("inject-manage-users",
-                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_USERS)),
-                toRepresentation(HardcodedRole.create("inject-manage-clients",
-                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_CLIENTS)),
-                toRepresentation(HardcodedRole.create("inject-manage-realm",
-                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_REALM))
+        ClientRepresentation maliciousClient = createClient(testRealm, "malicious-client", toRepresentation(HardcodedRole.builder("inject-manage-users").role(
+                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_USERS).build()),
+                toRepresentation(HardcodedRole.builder("inject-manage-clients").role(
+                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_CLIENTS).build()),
+                toRepresentation(HardcodedRole.builder("inject-manage-realm").role(
+                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_REALM).build())
         );
 
         runAs(realmName, "admin-cli", attackerName, attackerClient -> {
@@ -182,9 +182,9 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         // Attacker creates a client with a RoleNameMapper that remaps their legitimate
         // "harmless-role" into realm-management.manage-users in the token
         ClientRepresentation maliciousClient = createClient(testRealm, "malicious-client",
-                toRepresentation(RoleNameMapper.create("remap-to-manage-users",
-                        "harmless-role",
-                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_USERS))
+                toRepresentation(RoleNameMapper.builder("remap-to-manage-users")
+                        .role("harmless-role")
+                        .newRoleName(Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_USERS).build())
         );
 
         // Token now has "manage-users" under realm-management via role renaming
@@ -207,8 +207,8 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         grantRealmManagementRole(testRealm, attackerName, AdminRoles.MANAGE_CLIENTS);
 
         ClientRepresentation maliciousClient = createClient(testRealm, "malicious-client",
-                toRepresentation(HardcodedRole.create("inject-impersonation",
-                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.IMPERSONATION))
+                toRepresentation(HardcodedRole.builder("inject-impersonation").role(
+                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.IMPERSONATION).build())
         );
 
         // Attempt to impersonate the realm admin
@@ -232,8 +232,8 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         ClientRepresentation adminCli = testRealm.clients()
                 .findByClientId("admin-cli").get(0);
         ProtocolMapperRepresentation mapper = toRepresentation(
-                HardcodedRole.create("inject-manage-users",
-                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_USERS)
+                HardcodedRole.builder("inject-manage-users").role(
+                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_USERS).build()
         );
 
         runAs(realmName, "admin-cli", attackerName, attackerClient -> {
@@ -262,8 +262,8 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
 
         // Create a client that ALSO adds view-clients via mapper (redundant but shouldn't break)
         ClientRepresentation client = createClient(testRealm, "redundant-mapper-client",
-                toRepresentation(HardcodedRole.create("redundant-view-clients",
-                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.VIEW_CLIENTS))
+                toRepresentation(HardcodedRole.builder("redundant-view-clients").role(
+                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.VIEW_CLIENTS).build())
         );
 
         // The legitimate role should still work
@@ -288,8 +288,8 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         // exercise the token-stripping protection in removeTransientAdminRoles. If the injected
         // role is not stripped, canManageRealm() sees manage-realm in the token and allows the grant.
         ClientRepresentation fullTokenClient = createClient(testRealm, "full-token-client",
-                toRepresentation(HardcodedRole.create("inject-manage-realm",
-                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_REALM))
+                toRepresentation(HardcodedRole.builder("inject-manage-realm").role(
+                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_REALM).build())
         );
 
         // Even with manage-realm injected into the full token, the attacker must not be able
@@ -317,8 +317,8 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         // exercise the token-stripping protection in removeTransientAdminRoles. If the role is not
         // stripped, canMapRole() sees manage-clients in the token and allows the grant.
         ClientRepresentation fullTokenClient = createClient(testRealm, "full-token-client",
-                toRepresentation(HardcodedRole.create("inject-manage-clients",
-                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_CLIENTS))
+                toRepresentation(HardcodedRole.builder("inject-manage-clients").role(
+                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_CLIENTS).build())
         );
 
         // Even with manage-clients injected into the full token, the attacker must not be able
@@ -338,12 +338,12 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         createUser(testRealm, username);
 
         ClientRepresentation client = createClient(testRealm, "test-client",
-                toRepresentation(HardcodedRole.create("inject-view-clients",
-                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.VIEW_CLIENTS)),
-                toRepresentation(HardcodedRole.create("inject-manage-users",
-                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_USERS)),
-                toRepresentation(HardcodedRole.create("inject-manage-realm",
-                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_REALM))
+                toRepresentation(HardcodedRole.builder("inject-view-clients").role(
+                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.VIEW_CLIENTS).build()),
+                toRepresentation(HardcodedRole.builder("inject-manage-users").role(
+                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_USERS).build()),
+                toRepresentation(HardcodedRole.builder("inject-manage-realm").role(
+                        Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.MANAGE_REALM).build())
         );
 
         runAs(realmName, client.getClientId(), username, userClient -> {
@@ -372,7 +372,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
     @Test
     public void testIgnoreRealmLevelAdminRoleGrantedViaProtocolMapper() {
         ClientRepresentation client = createClient(masterRealm.admin(), "realm-level-mapper-client",
-                toRepresentation(HardcodedRole.create("inject-create-realm", AdminRoles.CREATE_REALM))
+                toRepresentation(HardcodedRole.builder("inject-create-realm").role(AdminRoles.CREATE_REALM).build())
         );
         try {
             assertThrows(ForbiddenException.class, () -> {
@@ -389,7 +389,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
     public void testLegitimateRealmLevelAdminRoleNotStrippedWhenMapperAlsoPresent() {
         grantRealmRole(masterRealm.admin(), masterUser.admin().toRepresentation(), AdminRoles.CREATE_REALM);
         ClientRepresentation client = createClient(masterRealm.admin(), "redundant-realm-mapper-client",
-                toRepresentation(HardcodedRole.create("redundant-create-realm", AdminRoles.CREATE_REALM))
+                toRepresentation(HardcodedRole.builder("redundant-create-realm").role(AdminRoles.CREATE_REALM).build())
         );
         try {
             runAs(masterRealm.getName(), client.getClientId(), masterUser.getUsername(), userClient -> {
@@ -403,8 +403,8 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
     @Test
     public void testRealmLevelAdminRolesNotInTokenWhenNotGranted() {
         ClientRepresentation client = createClient(masterRealm.admin(), "realm-level-token-test-client",
-                toRepresentation(HardcodedRole.create("inject-admin", AdminRoles.ADMIN)),
-                toRepresentation(HardcodedRole.create("inject-create-realm", AdminRoles.CREATE_REALM))
+                toRepresentation(HardcodedRole.builder("inject-admin").role(AdminRoles.ADMIN).build()),
+                toRepresentation(HardcodedRole.builder("inject-create-realm").role(AdminRoles.CREATE_REALM).build())
         );
         try {
             runAs(masterRealm.getName(), client.getClientId(), masterUser.getUsername(), userClient -> {
@@ -447,7 +447,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         createUser(testRealm, username);
 
         ClientRepresentation client = createClient(testRealm, "composite-mapper-client",
-                toRepresentation(HardcodedRole.create("inject-custom-admin", "custom-admin"))
+                toRepresentation(HardcodedRole.builder("inject-custom-admin").role("custom-admin").build())
         );
 
         runAs(realmName, client.getClientId(), username, userClient -> {
@@ -479,7 +479,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         masterRealm.admin().roles().get("cross-realm-admin").addComposites(List.of(manageUsers));
 
         ClientRepresentation client = createClient(masterRealm.admin(), "cross-realm-mapper-client",
-                toRepresentation(HardcodedRole.create("inject-cross-realm-admin", "cross-realm-admin"))
+                toRepresentation(HardcodedRole.builder("inject-cross-realm-admin").role("cross-realm-admin").build())
         );
 
         try {
@@ -520,7 +520,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         grantRealmRole(testRealm, user, "custom-admin");
 
         ClientRepresentation client = createClient(testRealm, "composite-mapper-client",
-                toRepresentation(HardcodedRole.create("redundant-custom-admin", "custom-admin"))
+                toRepresentation(HardcodedRole.builder("redundant-custom-admin").role("custom-admin").build())
         );
 
         runAs(realmName, client.getClientId(), username, userClient -> {

@@ -50,6 +50,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -83,6 +84,9 @@ import org.w3c.dom.Element;
 
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ID_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.INTROSPECTION;
 import static org.keycloak.protocol.saml.SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -136,8 +140,12 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         clientExchanger.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         clientExchanger.setFullScopeAllowed(false);
         clientExchanger.addScopeMapping(impersonateRole);
-        clientExchanger.addProtocolMapper(UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_ID));
-        clientExchanger.addProtocolMapper(UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_USERNAME));
+        clientExchanger.addProtocolMapper(UserSessionNoteMapper.builder(IMPERSONATOR_ID.getDisplayName(), IMPERSONATOR_ID.toString())
+                .claimName(IMPERSONATOR_ID.getTokenClaim()).type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION).build());
+        clientExchanger.addProtocolMapper(UserSessionNoteMapper.builder(IMPERSONATOR_USERNAME.getDisplayName(), IMPERSONATOR_USERNAME.toString())
+                .claimName(IMPERSONATOR_USERNAME.getTokenClaim()).type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION).build());
 
         ClientModel illegal = realm.addClient("illegal");
         illegal.setClientId("illegal");

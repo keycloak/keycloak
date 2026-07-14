@@ -103,39 +103,22 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, attributeValue);
     }
 
-    public static ProtocolMapperModel createClaimMapper(String name,
-                                                        String userAttribute,
-                                                        String tokenClaimName, String claimType,
-                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint, boolean multivalued) {
-        return createClaimMapper(name, userAttribute, tokenClaimName, claimType,
-                accessToken, idToken, introspectionEndpoint, multivalued, false);
-    }
-
-    public static ProtocolMapperModel createClaimMapper(String name,
-                                                        String userAttribute,
-                                                        String tokenClaimName, String claimType,
-                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint,
-                                                        boolean multivalued, boolean aggregateAttrs) {
-        ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
-                tokenClaimName, claimType,
-                accessToken, idToken, introspectionEndpoint,
-                PROVIDER_ID);
-
-        if (multivalued) {
-            mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
-        }
-        if (aggregateAttrs) {
-            mapper.getConfig().put(ProtocolMapperUtils.AGGREGATE_ATTRS, "true");
+    public static class Builder extends OIDCProtocolMapperBuilder<Builder> {
+        private Builder(String name) {
+            super(name, PROVIDER_ID);
         }
 
-        return mapper;
+        public Builder aggregateAttributes() {
+            return aggregateAttributes(true);
+        }
+
+        public Builder aggregateAttributes(boolean aggregate) {
+            return config(ProtocolMapperUtils.AGGREGATE_ATTRS, Boolean.toString(aggregate));
+        }
     }
 
-    public static ProtocolMapperModel createClaimMapper(String name,
-                                                        String userAttribute,
-                                                        String tokenClaimName, String claimType,
-                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
-        return createClaimMapper(name, userAttribute, tokenClaimName, claimType,
-                accessToken, idToken, introspectionEndpoint, false, false);
+    public static Builder builder(String name) {
+        return new Builder(name);
     }
+
 }
