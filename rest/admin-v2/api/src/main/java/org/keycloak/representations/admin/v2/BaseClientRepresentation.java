@@ -39,6 +39,10 @@ import org.hibernate.validator.constraints.URL;
         affectedFieldNames = {"protocol"},
         message = "protocol cannot be changed for an existing client",
         groups = {PutClient.class, PatchClient.class})
+@ServerManagedFieldUnmodified(
+        affectedFieldNames = {"type"},
+        message = "type cannot be changed for an existing client",
+        groups = {PutClient.class, PatchClient.class})
 @ValidRedirectUris
 public class BaseClientRepresentation extends BaseRepresentation {
     public static final String DISCRIMINATOR_FIELD = "protocol";
@@ -51,6 +55,10 @@ public class BaseClientRepresentation extends BaseRepresentation {
     @Size(min = 1, max = 255)
     @JsonPropertyDescription("ID uniquely identifying this client")
     protected String clientId;
+
+    @Size(max = 255)
+    @JsonPropertyDescription("Client type")
+    private String type;
 
     @Size(max = 255)
     @JsonPropertyDescription("Human readable name of the client")
@@ -105,11 +113,20 @@ public class BaseClientRepresentation extends BaseRepresentation {
         this.clientId = clientId;
     }
 
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
     public String getDisplayName() {
         return displayName;
     }
 
     public void setDisplayName(String displayName) {
+        markFieldAsExplicitlySet("displayName");
         this.displayName = displayName;
     }
 
@@ -118,6 +135,7 @@ public class BaseClientRepresentation extends BaseRepresentation {
     }
 
     public void setDescription(String description) {
+        markFieldAsExplicitlySet("description");
         this.description = description;
     }
 
@@ -126,6 +144,7 @@ public class BaseClientRepresentation extends BaseRepresentation {
     }
 
     public void setEnabled(Boolean enabled) {
+        markFieldAsExplicitlySet("enabled");
         this.enabled = enabled;
     }
 
@@ -134,6 +153,7 @@ public class BaseClientRepresentation extends BaseRepresentation {
     }
 
     public void setAppUrl(String appUrl) {
+        markFieldAsExplicitlySet("appUrl");
         this.appUrl = appUrl;
     }
 
@@ -142,7 +162,8 @@ public class BaseClientRepresentation extends BaseRepresentation {
     }
 
     public void setRedirectUris(Set<String> redirectUris) {
-        this.redirectUris = redirectUris;
+        markFieldAsExplicitlySet("redirectUris");
+        this.redirectUris = redirectUris == null ? new LinkedHashSet<>() : redirectUris;
     }
 
     public Set<String> getRoles() {
@@ -183,12 +204,12 @@ public class BaseClientRepresentation extends BaseRepresentation {
             return false;
         }
         BaseClientRepresentation that = (BaseClientRepresentation)o;
-        return Objects.equals(uuid, that.uuid) && Objects.equals(clientId, that.clientId) && Objects.equals(displayName, that.displayName) && Objects.equals(description, that.description) && Objects.equals(enabled, that.enabled) && Objects.equals(appUrl, that.appUrl) && Objects.equals(redirectUris, that.redirectUris) && Objects.equals(roles, that.roles) && Objects.equals(protocol, that.protocol);
+        return Objects.equals(uuid, that.uuid) && Objects.equals(clientId, that.clientId) && Objects.equals(type, that.type) && Objects.equals(displayName, that.displayName) && Objects.equals(description, that.description) && Objects.equals(enabled, that.enabled) && Objects.equals(appUrl, that.appUrl) && Objects.equals(redirectUris, that.redirectUris) && Objects.equals(roles, that.roles) && Objects.equals(protocol, that.protocol);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(uuid, clientId, displayName, description, enabled, appUrl, redirectUris, roles, protocol);
+        return Objects.hash(uuid, clientId, type, displayName, description, enabled, appUrl, redirectUris, roles, protocol);
     }
 
     @Override
@@ -196,6 +217,7 @@ public class BaseClientRepresentation extends BaseRepresentation {
         return getClass().getSimpleName() + "{" + "protocol=" + getProtocol()
         + ", uuid=" + uuid
         + ", clientId=" + clientId
+        + ", type=" + type
         + ", displayName=" + displayName
         + ", description=" + description
         + ", enabled=" + enabled

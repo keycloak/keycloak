@@ -70,6 +70,7 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
         this.addMapping("uuid", BaseClientRepresentation::getUuid, BaseClientRepresentation::setUuid, ClientModel::getId, null).readOnly = true;
         this.addMapping("enabled", BaseClientRepresentation::getEnabled, BaseClientRepresentation::setEnabled, ClientModel::isEnabled, (model, enabled) -> model.setEnabled(Boolean.TRUE.equals(enabled)));
         this.addMapping("clientId", BaseClientRepresentation::getClientId, BaseClientRepresentation::setClientId, ClientModel::getClientId, ClientModel::setClientId);
+        this.addMapping("type", BaseClientRepresentation::getType, BaseClientRepresentation::setType, ClientModel::getType, null);
         this.addMapping("description", BaseClientRepresentation::getDescription, BaseClientRepresentation::setDescription, ClientModel::getDescription, ClientModel::setDescription);
         this.addMapping("displayName", BaseClientRepresentation::getDisplayName, BaseClientRepresentation::setDisplayName, ClientModel::getName, ClientModel::setName);
         this.addMapping("appUrl", BaseClientRepresentation::getAppUrl, BaseClientRepresentation::setAppUrl, ClientModel::getBaseUrl, ClientModel::setBaseUrl);
@@ -99,6 +100,13 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
     @SuppressWarnings("unchecked")
     public void toModel(BaseClientRepresentation rep, ClientModel existingModel) {
         fields.values().forEach(m -> m.toModel(rep, existingModel));
+    }
+
+    @Override
+    public void toModel(BaseClientRepresentation rep, ClientModel existingModel, Set<String> excludedFields) {
+        fields.entrySet().stream()
+                .filter(e -> !excludedFields.contains(e.getKey()))
+                .forEach(e -> e.getValue().toModel(rep, existingModel));
     }
 
     @SuppressWarnings("unchecked")
