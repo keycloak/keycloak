@@ -1,15 +1,22 @@
 package org.keycloak.tests.scim.tck;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.schema.Schema;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.userprofile.config.UPConfigUtils;
 
 import org.junit.jupiter.api.Test;
+
+import static org.keycloak.scim.model.user.AbstractUserModelSchema.ANNOTATION_SCIM_SCHEMA_ATTRIBUTE;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -216,6 +223,51 @@ public class SchemaTest extends AbstractScimTest {
         assertEquals(1, attributeNames.size());
         // Simple string attributes
         assertAttribute(findAttribute(schema, "other"), "string", false, false, true, "readWrite", "none");
+    }
+
+    @Test
+    public void testGetCustomSchemaWithMultivaluedComplexAttribute() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+
+        UPAttribute assuranceAttribute = new UPAttribute("assurance", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ":assurance.value"));
+        assuranceAttribute.setMultivalued(true);
+        assuranceAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(assuranceAttribute);
+
+        UPAttribute affiliationAttribute = new UPAttribute("affiliation", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ":affiliation"));
+        affiliationAttribute.setMultivalued(true);
+        affiliationAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(affiliationAttribute);
+
+        realm.admin().users().userProfile().update(upConfig);
+
+        Schema schema = client.schemas().get(customSchema);
+        assertNotNull(schema);
+        assertEquals(customSchema, schema.getId());
+
+        Set<String> attributeNames = schema.getAttributes().stream()
+                .map(Schema.Attribute::getName)
+                .collect(Collectors.toSet());
+        assertEquals(2, attributeNames.size());
+        assertTrue(attributeNames.contains("assurance"));
+        assertTrue(attributeNames.contains("affiliation"));
+
+        assertAttribute(findAttribute(schema, "affiliation"), "string", true, false, true, "readWrite", "none");
+
+        Schema.Attribute assurance = findAttribute(schema, "assurance");
+        assertAttribute(assurance, "complex", true, false, false, "readWrite", "none");
+        assertNotNull(assurance.getSubAttributes(), "assurance should have sub-attributes");
+        assertEquals(1, assurance.getSubAttributes().size());
+        assertSubAttribute(assurance.getSubAttributes().get(0), "string", false, "readWrite");
+        assertEquals("value", assurance.getSubAttributes().get(0).getName());
+
+        upConfig.removeAttribute("assurance");
+        upConfig.removeAttribute("affiliation");
+        realm.admin().users().userProfile().update(upConfig);
     }
 
     @Test
