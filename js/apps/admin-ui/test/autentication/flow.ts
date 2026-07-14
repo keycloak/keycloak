@@ -115,6 +115,43 @@ export async function dragExecutionToRow(
   await page.mouse.up();
 }
 
+export async function expandFlowRow(page: Page, displayName: string) {
+  const row = page.getByRole("row").filter({
+    has: page.getByTestId(displayName),
+  });
+  if ((await row.getAttribute("aria-expanded")) === "false") {
+    await row.getByRole("button").first().click();
+  }
+}
+
+export async function assertExecutionRequirement(
+  page: Page,
+  executionName: string | RegExp,
+  requirement: string,
+) {
+  const row = page.getByRole("row", { name: executionName }).first();
+  await expect(
+    row.locator(".keycloak__authentication__requirement-dropdown"),
+  ).toHaveText(requirement);
+}
+
+export async function assertExecutionLevel(
+  page: Page,
+  executionName: string | RegExp,
+  level: number,
+) {
+  const row = page
+    .locator("tr[data-execution-id]")
+    .filter({
+      has:
+        typeof executionName === "string"
+          ? page.getByTestId(executionName)
+          : page.getByRole("row", { name: executionName }),
+    })
+    .first();
+  await expect(row).toHaveAttribute("data-level", String(level));
+}
+
 export async function fillBindFlowModal(page: Page, flowName: string) {
   await selectItem(page, page.locator("#chooseBindingType"), flowName);
 }
