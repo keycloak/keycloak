@@ -9,7 +9,6 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.organization.utils.Organizations;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.event.SsfEvent;
 import org.keycloak.ssf.event.SsfEventRegistry;
@@ -322,76 +321,49 @@ public class EventEmitterService {
     }
 
     /**
-     * Subscription gate that mirrors the native dispatcher's
-     * {@code SubjectSubscriptionFilter} but operates on a pre-resolved
-     * user / org pair so the emitter can also emit org-only events.
-     * The precedence matches the native filter's
-     * {@code evaluateSubjectSubscription}:
+     * Subscription gate for a pre-resolved user / org pair. A user
+     * subject is delegated to the dispatcher's own
+     * {@link SecurityEventTokenDispatcher#shouldDispatchForUser} so the
+     * synthetic path and the native path apply byte-for-byte the same
+     * config-aware rule: per-user include/ignore precedence, the
+     * {@code getByMember} scan across every organization the user
+     * belongs to, and the SSF §9.3 removal-grace window with its
+     * per-receiver override and transmitter-wide default. Reimplementing
+     * a subset here is what let earlier revisions drift (an org-scan
+     * bypass, a dropped grace window); delegation keeps them in lockstep.
      *
-     * <ol>
-     *     <li>Per-user explicit settings win over org state and the
-     *         {@code default_subjects} fallback — an admin who clicked
-     *         "Include" or "Ignore" on a specific user expects that
-     *         decision to stick regardless of org-level subscriptions.</li>
-     *     <li>{@code default_subjects=ALL}: deliver unless an org gate
-     *         is explicitly excluded.</li>
-     *     <li>{@code default_subjects=NONE}: deliver only when an org
-     *         gate is explicitly notified.</li>
-     * </ol>
+     * <p>Only the org-as-subject case — a tenant-only complex subject
+     * with no user facet, which the native dispatcher never produces —
+     * is handled locally, gating directly on the org's own notify
+     * attribute:
+     * <ul>
+     *     <li>{@code default_subjects=ALL}: deliver unless the org is
+     *         explicitly excluded.</li>
+     *     <li>{@code default_subjects=NONE}: deliver only when the org
+     *         is explicitly notified.</li>
+     * </ul>
      *
-     * <p>For a user subject the org gates scan every organization the
-     * user belongs to, exactly like the native filter's
-     * {@code getByMember} scan — honouring only the tenant the emitter
-     * named would let a caller pick one non-excluded membership to
-     * sidestep an exclusion on another. The emitter-named tenant is
-     * itself one of those memberships, because {@link #emit} has
-     * already rejected user+tenant subjects whose user is not a member
-     * of the org (keycloak/keycloak#50812). The direct
-     * {@code resolved.organization()} checks apply only to tenant-only
-     * subjects, where the org itself is the subject.
+     * <p>A user+tenant subject reaches the user branch; its tenant facet
+     * needs no separate allow check because {@link #emit} has already
+     * rejected the subject unless the user is a member of that org
+     * (keycloak/keycloak#50812), so the org is covered by the
+     * membership scan above.
      */
     protected boolean isSubjectDispatchable(EmitSubjectResolution resolved,
                                             StreamConfig stream,
                                             ClientModel receiverClient) {
-        String receiverClientId = receiverClient.getClientId();
-        DefaultSubjects defaultSubjects = stream.getDefaultSubjects();
-
         if (resolved.user() != null) {
-            if (subjectInclusionResolver.isUserNotified(session, resolved.user(), receiverClientId)) {
-                return true;
-            }
-            if (subjectInclusionResolver.isUserExcluded(session, resolved.user(), receiverClientId)) {
-                return false;
-            }
-            if (defaultSubjects == DefaultSubjects.ALL) {
-                return !isAnyUserOrganizationExcluded(resolved.user(), receiverClientId);
-            }
-            return isAnyUserOrganizationNotified(resolved.user(), receiverClientId);
+            return eventTokenDispatcher.shouldDispatchForUser(resolved.user(), stream);
         }
 
-        if (defaultSubjects == DefaultSubjects.ALL) {
+        String receiverClientId = receiverClient.getClientId();
+        if (stream.getDefaultSubjects() == DefaultSubjects.ALL) {
             return resolved.organization() == null
                     || !subjectInclusionResolver.isOrganizationExcluded(session, resolved.organization(), receiverClientId);
         }
 
         return resolved.organization() != null
                 && subjectInclusionResolver.isOrganizationNotified(session, resolved.organization(), receiverClientId);
-    }
-
-    protected boolean isAnyUserOrganizationExcluded(UserModel user, String receiverClientId) {
-        if (!Organizations.isEnabled(session)) {
-            return false;
-        }
-        return session.getProvider(OrganizationProvider.class).getByMember(user)
-                .anyMatch(org -> subjectInclusionResolver.isOrganizationExcluded(session, org, receiverClientId));
-    }
-
-    protected boolean isAnyUserOrganizationNotified(UserModel user, String receiverClientId) {
-        if (!Organizations.isEnabled(session)) {
-            return false;
-        }
-        return session.getProvider(OrganizationProvider.class).getByMember(user)
-                .anyMatch(org -> subjectInclusionResolver.isOrganizationNotified(session, org, receiverClientId));
     }
 
     /**

@@ -118,6 +118,10 @@ public class SsfTransmitterEventEmitterTests {
 
     static final long PUSH_WAIT_SECONDS = 5;
 
+    /** Transmitter-wide §9.3 removal grace — large enough that no
+     * wallclock drift can push the grace test past the window. */
+    static final int REMOVAL_GRACE_SECONDS = 300;
+
     @InjectRealm(config = EmitRealm.class)
     ManagedRealm realm;
 
@@ -756,6 +760,35 @@ public class SsfTransmitterEventEmitterTests {
     }
 
     @Test
+    public void emit_userInRemovalGraceWindow_dispatches() throws Exception {
+        // The emit path delegates its user gate to the dispatcher's
+        // config-aware SubjectSubscriptionFilter, so the SSF §9.3
+        // removal-grace window must apply to synthetic events too: a
+        // receiver-driven remove leaves a tombstone, and events for the
+        // subject must keep flowing until the configured grace expires —
+        // exactly as native events do. A receiver that could silence
+        // synthetic events immediately by self-removing a subject would
+        // reopen the §9.3 malicious-removal hole for this path.
+        String receiverToken = obtainReceiverManageToken();
+        String streamId = readReceiverStreamId(receiverToken);
+
+        // setup() subscribed TEST_USER via the admin add endpoint. A
+        // receiver-driven remove clears that include marker AND stamps
+        // the grace tombstone (admin removes deliberately don't).
+        receiverRemoveSubject(receiverToken, streamId, TEST_EMAIL);
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = emit(mgmtToken, "CaepCredentialChange", TEST_EMAIL,
+                Map.of("credential_type", "password", "change_type", "update"))) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals("dispatched", res.asJson().get("status").asText(),
+                    "synthetic event for a subject inside the §9.3 grace window must still dispatch");
+        }
+        Assertions.assertNotNull(pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
+                "grace-window synthetic event should reach the mock receiver");
+    }
+
+    @Test
     public void emit_streamLifecycleEvent_returnsEventTypeNotEmittable() throws Exception {
         // SsfStreamVerificationEvent + SsfStreamUpdatedEvent are
         // protocol-internal lifecycle signals owned by the transmitter.
@@ -900,6 +933,40 @@ public class SsfTransmitterEventEmitterTests {
                 .asResponse()) {
             Assertions.assertEquals(200, response.getStatus());
             return response.asJson().get("access_token").asText();
+        }
+    }
+
+    /** Reads the receiver's registered stream id via GET /streams —
+     * needed for the receiver-driven subject endpoints, which key off
+     * the stream rather than the client. */
+    protected String readReceiverStreamId(String receiverToken) throws IOException {
+        try (SimpleHttpResponse response = http.doGet(SsfTransmitterUrls.getStreamsEndpointUrl(realm.getBaseUrl()))
+                .auth(receiverToken)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus());
+            JsonNode arr = response.asJson();
+            Assertions.assertTrue(arr.isArray() && arr.size() > 0,
+                    "expected /streams to return a non-empty array for the receiver");
+            return arr.get(0).get("stream_id").asText();
+        }
+    }
+
+    /**
+     * Receiver-driven subject remove (the SSF §7.1.3.3 endpoint the
+     * receiver calls on its own stream). Unlike the admin remove
+     * endpoint the other tests use, this stamps the §9.3 grace
+     * tombstone, so it's the setup for the grace-window emit test.
+     */
+    protected void receiverRemoveSubject(String receiverToken, String streamId, String email) throws IOException {
+        String url = realm.getBaseUrl() + "/ssf/transmitter/subjects/remove";
+        try (SimpleHttpResponse res = http.doPost(url)
+                .auth(receiverToken)
+                .json(Map.of("stream_id", streamId,
+                        "subject", Map.of("format", "email", "email", email)))
+                .asResponse()) {
+            Assertions.assertEquals(204, res.getStatus(),
+                    "receiver-driven subjects/remove should succeed");
         }
     }
 
@@ -1213,6 +1280,16 @@ public class SsfTransmitterEventEmitterTests {
                     DefaultSsfTransmitterProviderFactory.CONFIG_OUTBOX_DRAINER_INTERVAL, "500ms");
             config.spiOption("ssf-transmitter", "default",
                     SsfTransmitterConfig.CONFIG_MIN_VERIFICATION_INTERVAL_SECONDS, "0");
+            // Enable the SSF §9.3 removal-grace window transmitter-wide so
+            // emit_userInRemovalGraceWindow_dispatches can prove the emit
+            // path inherits the dispatcher's grace-aware subject gate. All
+            // other tests unsubscribe via the ADMIN remove endpoint, which
+            // stamps no tombstone, so they are unaffected by a positive
+            // grace. The window is large enough that wallclock drift can't
+            // make the grace test flaky.
+            config.spiOption("ssf-transmitter", "default",
+                    SsfTransmitterConfig.CONFIG_SUBJECT_REMOVAL_GRACE_SECONDS,
+                    String.valueOf(REMOVAL_GRACE_SECONDS));
             // Test pushes to a local mock server on a loopback URL (http://127.0.0.1:NNNN/...).
             // Relax the http-scheme + private-host gate so the mock URL is accepted; the
             // per-client ssf.validPushUrls allow-list configured on each receiver below
