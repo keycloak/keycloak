@@ -151,7 +151,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
      * @return
      */
     public String refreshTokenForLogout(KeycloakSession session, UserSessionModel userSession) {
-        String refreshToken = userSession.getNote(FEDERATED_REFRESH_TOKEN);
+        String refreshToken = getFederatedRefreshToken(userSession);
         try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
             return getRefreshTokenRequest(session, refreshToken, getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret())).asString();
         } catch (IOException e) {
@@ -163,7 +163,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public void backchannelLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
         if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("") || !getConfig().isBackchannelSupported())
             return;
-        String idToken = userSession.getNote(FEDERATED_ID_TOKEN);
+        String idToken = getFederatedIdToken(userSession);
         if (idToken == null) return;
         backchannelLogout(userSession, idToken);
     }
@@ -194,7 +194,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     @Override
     public Response keycloakInitiatedBrowserLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
         if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("")) return null;
-        String idToken = userSession.getNote(FEDERATED_ID_TOKEN);
+        String idToken = getFederatedIdToken(userSession);
         if (getConfig().isBackchannelSupported()) {
             backchannelLogout(userSession, idToken);
             return null;
@@ -256,7 +256,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 updateStoredTokenModel(realm, tokenSubject, model, currentTime, newResponse, tokenResponse);
 
                 if (tokenUserSession != null) {
-                    String oldToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
+                    String oldToken = getFederatedAccessToken(tokenUserSession);
                     if (oldToken != null && oldToken.equals(tokenResponse.getToken())) {
                         updateUserSessionFromRefresh(tokenUserSession, newResponse, currentTime);
                     }
@@ -276,8 +276,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     @Override
     protected Response exchangeSessionToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
         RealmModel realm = authorizedClient != null ? authorizedClient.getRealm() : session.getContext().getRealm();
-        String refreshToken = tokenUserSession.getNote(FEDERATED_REFRESH_TOKEN);
-        String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
+        String refreshToken = getFederatedRefreshToken(tokenUserSession);
+        String accessToken = getFederatedAccessToken(tokenUserSession);
 
         if (accessToken == null) {
             if (event != null) {
@@ -288,7 +288,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
 
         try {
-            long expiration = Long.parseLong(tokenUserSession.getNote(FEDERATED_TOKEN_EXPIRATION));
+            String expirationNote = getFederatedTokenExpiration(tokenUserSession);
+            long expiration = Long.parseLong(expirationNote);
             final int currentTime = Time.currentTime();
 
             if (expiration == 0 || expiration > currentTime + getConfig().getMinValidityToken()) {
@@ -359,12 +360,13 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         final boolean isStoreTokenInSession = getConfig().isStoreTokenInSession();
         if (isStoreTokenInSession) {
             long accessTokenExpiration = newResponse.getExpiresIn() > 0 ? currentTime + newResponse.getExpiresIn() : 0;
-            tokenUserSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(accessTokenExpiration));
-            tokenUserSession.setNote(FEDERATED_REFRESH_TOKEN, newResponse.getRefreshToken());
-            tokenUserSession.setNote(FEDERATED_ACCESS_TOKEN, newResponse.getToken());
+            String expirationStr = Long.toString(accessTokenExpiration);
+            setFederatedTokenExpiration(tokenUserSession, expirationStr);
+            setFederatedRefreshToken(tokenUserSession, newResponse.getRefreshToken());
+            setFederatedAccessToken(tokenUserSession, newResponse.getToken());
         }
         if (newResponse.getIdToken() != null && (isStoreTokenInSession || getConfig().isSendIdTokenOnLogout())) {
-            tokenUserSession.setNote(FEDERATED_ID_TOKEN, newResponse.getIdToken());
+            setFederatedIdToken(tokenUserSession, newResponse.getIdToken());
         }
     }
 
@@ -855,12 +857,13 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         if (isStoreTokenInSession) {
             int currentTime = Time.currentTime();
             long expiration = tokenResponse.getExpiresIn() > 0 ? tokenResponse.getExpiresIn() + currentTime : 0;
-            authSession.setUserSessionNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(expiration));
-            authSession.setUserSessionNote(FEDERATED_REFRESH_TOKEN, tokenResponse.getRefreshToken());
-            authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, tokenResponse.getToken());
+            String expirationStr = Long.toString(expiration);
+            setFederatedTokenExpiration(authSession, expirationStr);
+            setFederatedRefreshToken(authSession, tokenResponse.getRefreshToken());
+            setFederatedAccessToken(authSession, tokenResponse.getToken());
         }
         if (isStoreTokenInSession || getConfig().isSendIdTokenOnLogout()) {
-            authSession.setUserSessionNote(FEDERATED_ID_TOKEN, tokenResponse.getIdToken());
+            setFederatedIdToken(authSession, tokenResponse.getIdToken());
         }
     }
 
