@@ -62,6 +62,7 @@ public class OID4VCPublicClientPreAuthTest extends OID4VCIssuerTestBase {
         //
         CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
             req.targetUser(ctx.getHolder());
+            req.targetClient(ctx.getClientId());
             req.preAuthorized(true);
         });
         String preAuthCode = credOffer.getPreAuthorizedCode();
