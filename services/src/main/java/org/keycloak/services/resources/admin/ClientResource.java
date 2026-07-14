@@ -102,6 +102,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
+
 
 /**
  * Base resource class for managing one particular client of a realm.
@@ -588,8 +590,10 @@ public class ClientResource {
     @Operation( summary = "Get user sessions for client. Returns a list of user sessions associated with this client.\n")
     public Stream<UserSessionRepresentation> getUserSessions(@Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult, @Parameter(description = "Maximum results size.") @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults) {
         auth.clients().requireView(client);
-        return session.sessions()
-                .readOnlyStreamUserSessions(client.getRealm(), client, computeFirstResult(firstResult), computeMaxResults(maxResults))
+        return paginatedStream(session.sessions()
+                        .readOnlyStreamUserSessions(client.getRealm(), client, -1, -1)
+                        .filter(userSession -> auth.users().canView(userSession.getUser())),
+                computeFirstResult(firstResult), computeMaxResults(maxResults))
                 .map(ModelToRepresentation::toRepresentation);
     }
 
@@ -635,8 +639,10 @@ public class ClientResource {
     @Operation( summary = "Get offline sessions for client. Returns a list of offline user sessions associated with this client")
     public Stream<UserSessionRepresentation> getOfflineUserSessions(@Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult, @Parameter(description = "Maximum results size.") @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults) {
         auth.clients().requireView(client);
-        return session.sessions()
-                .readOnlyStreamOfflineUserSessions(client.getRealm(), client, computeFirstResult(firstResult), computeMaxResults(maxResults))
+        return paginatedStream(session.sessions()
+                        .readOnlyStreamOfflineUserSessions(client.getRealm(), client, -1, -1)
+                        .filter(userSession -> auth.users().canView(userSession.getUser())),
+                computeFirstResult(firstResult), computeMaxResults(maxResults))
                 .map(this::toUserSessionRepresentation);
     }
 
