@@ -73,6 +73,10 @@ public class LoginPage extends AbstractLoginPage {
         return !driver.driver().findElements(By.id(id)).isEmpty();
     }
 
+    public boolean isPasswordInputPresent() {
+        return !driver.driver().findElements(By.id("password")).isEmpty();
+    }
+
     public void rememberMe(boolean value) {
         boolean selected = isRememberMe();
         if ((value && !selected) || !value && selected) {

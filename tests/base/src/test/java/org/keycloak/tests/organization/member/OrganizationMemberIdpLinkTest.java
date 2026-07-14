@@ -1,4 +1,4 @@
-package org.keycloak.tests.organization.admin;
+package org.keycloak.tests.organization.member;
 
 import java.util.List;
 import java.util.Map;
@@ -7,8 +7,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.http.simple.SimpleHttp;
-import org.keycloak.models.OrganizationModel;
-import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.representations.account.LinkedAccountRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -22,12 +20,9 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.CredentialBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
-import org.keycloak.testframework.realm.RealmBuilder;
-import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -36,10 +31,14 @@ import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginUsernamePage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.Test;
+
+import static org.keycloak.tests.organization.admin.AbstractOrganizationTest.IDP_ALIAS;
+import static org.keycloak.tests.organization.admin.AbstractOrganizationTest.setUpOrgBroker;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -48,17 +47,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @KeycloakIntegrationTest
 public class OrganizationMemberIdpLinkTest {
 
-    private static final String IDP_ALIAS = "org-identity-provider";
     private static final String SECOND_IDP_ALIAS = "second-identity-provider";
-    private static final String CLIENT_ID = "broker-app";
-    private static final String CLIENT_SECRET = "broker-secret";
     private static final String ORG_NAME = "testorg";
     private static final String ORG_DOMAIN = "testorg.org";
 
-    @InjectRealm(ref = "provider", config = ProviderRealmConf.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(ref = "provider", config = AbstractOrganizationTest.ProviderRealmConf.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm providerRealm;
 
-    @InjectRealm(ref = "consumer", config = ConsumerRealmConf.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(ref = "consumer", config = AbstractOrganizationTest.OrganizationRealmConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm consumerRealm;
 
     @InjectUser(ref = "alice", realmRef = "provider", config = AliceUserConf.class)
@@ -158,7 +154,7 @@ public class OrganizationMemberIdpLinkTest {
     }
 
     private OrganizationRepresentation createOrganization() {
-        setUpOrgBroker();
+        setUpOrgBroker(providerRealm, consumerRealm, ORG_DOMAIN);
 
         OrganizationRepresentation org = new OrganizationRepresentation();
         org.setName(ORG_NAME);
@@ -246,55 +242,5 @@ public class OrganizationMemberIdpLinkTest {
                     .emailVerified(true)
                     .name("Alice", "Org");
         }
-    }
-
-    static class ProviderRealmConf implements RealmConfig {
-        @Override
-        public RealmBuilder configure(RealmBuilder realm) {
-            return realm.clients(
-                    ClientBuilder.create(CLIENT_ID)
-                            .name(CLIENT_ID)
-                            .secret(CLIENT_SECRET)
-                            .redirectUris("*")
-                            .directAccessGrantsEnabled()
-            );
-        }
-    }
-
-    static class ConsumerRealmConf implements RealmConfig {
-        @Override
-        public RealmBuilder configure(RealmBuilder realm) {
-            return realm.organizationsEnabled(true);
-        }
-    }
-
-    private void setUpOrgBroker() {
-        IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
-        idp.setAlias(IDP_ALIAS);
-        idp.setProviderId("keycloak-oidc");
-        idp.setEnabled(true);
-        idp.setStoreToken(false);
-        idp.setTrustEmail(true);
-
-        String providerBaseUrl = providerRealm.getBaseUrl();
-        Map<String, String> config = Map.of(
-                "clientId", CLIENT_ID,
-                "clientSecret", CLIENT_SECRET,
-                "authorizationUrl", providerBaseUrl + "/protocol/openid-connect/auth",
-                "tokenUrl", providerBaseUrl + "/protocol/openid-connect/token",
-                "userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo",
-                "defaultScope", "email profile",
-                "syncMode", "IMPORT",
-                OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ORG_DOMAIN,
-                IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString()
-        );
-        idp.setConfig(config);
-
-        consumerRealm.admin().identityProviders().create(idp).close();
-        consumerRealm.cleanup().add(r -> {
-            try {
-                r.identityProviders().get(IDP_ALIAS).remove();
-            } catch (Exception ignored) {}
-        });
     }
 }

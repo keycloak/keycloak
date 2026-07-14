@@ -15,12 +15,15 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.organization.member;
+package org.keycloak.tests.organization.member;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
@@ -32,6 +35,7 @@ import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OrganizationModel;
@@ -44,22 +48,40 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
+import org.keycloak.testframework.admin.AdminClientFactory;
+import org.keycloak.testframework.annotations.InjectAdminClientFactory;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testframework.realm.UserConfig;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.page.LoginUpdateProfilePage;
+import org.keycloak.testframework.ui.page.LoginUsernamePage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
+import org.keycloak.tests.suites.DatabaseTest;
 
-import org.hamcrest.Matchers;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -77,18 +99,93 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+@KeycloakIntegrationTest
 public class OrganizationMemberTest extends AbstractOrganizationTest {
+
+    @InjectRealm(ref = "provider", config = AbstractOrganizationTest.ProviderRealmConf.class, lifecycle = LifeCycle.METHOD)
+    ManagedRealm providerRealm;
+
+    @InjectUser(ref = "alice", realmRef = "provider", config = AliceUserConf.class)
+    ManagedUser aliceFromProviderRealm;
+
+    @InjectWebDriver
+    ManagedWebDriver driver;
+
+    @InjectOAuthClient
+    OAuthClient oauth;
+
+    @InjectPage
+    LoginPage loginPage;
+
+    @InjectPage
+    LoginUsernamePage loginUsernamePage;
+
+    @InjectPage
+    LoginUpdateProfilePage loginUpdateProfilePage;
+
+    @InjectAdminClientFactory
+    AdminClientFactory adminClientFactory;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
+    @Test
+    public void testUserProfileAttributePermissions() {
+        OrganizationRepresentation org = createOrganization();
+        OrganizationResource orgResource = realm.admin().organizations().get(org.getId());
+        MemberRepresentation member = addMember(orgResource, memberEmail, "Test", "User");
+
+        UserProfileResource upResource = realm.admin().users().userProfile();
+        UPConfig originalCfg = upResource.getConfiguration();
+
+        try {
+            // Restrict email and firstName to user-role only: admins (USER_API context) cannot view them
+            UPConfig cfg = upResource.getConfiguration();
+
+            UPAttribute emailAttr = cfg.getAttribute(UserModel.EMAIL);
+            if (emailAttr == null) {
+                emailAttr = new UPAttribute(UserModel.EMAIL);
+            }
+            emailAttr.setPermissions(new UPAttributePermissions(Set.of("user"), Set.of("user")));
+            cfg.addOrReplaceAttribute(emailAttr);
+
+            UPAttribute firstNameAttr = cfg.getAttribute(UserModel.FIRST_NAME);
+            if (firstNameAttr == null) {
+                firstNameAttr = new UPAttribute(UserModel.FIRST_NAME);
+            }
+            firstNameAttr.setPermissions(new UPAttributePermissions(Set.of("user"), Set.of("user")));
+            cfg.addOrReplaceAttribute(firstNameAttr);
+
+            upResource.update(cfg);
+
+            // List endpoint: email and firstName must be filtered by user profile permissions
+            List<MemberRepresentation> members = orgResource.members().search(memberEmail, true, 0, 10);
+            assertEquals(1, members.size());
+            assertNull(members.get(0).getEmail());
+            assertNull(members.get(0).getFirstName());
+            assertNull(members.get(0).getUserProfileMetadata());
+
+            // Single member endpoint: same filtering must apply
+            MemberRepresentation fetched = orgResource.members().member(member.getId()).toRepresentation();
+            assertNull(fetched.getEmail());
+            assertNull(fetched.getFirstName());
+            assertNull(fetched.getUserProfileMetadata());
+
+        } finally {
+            upResource.update(originalCfg);
+        }
+    }
 
     @Test
     public void testUpdate() {
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
         UserRepresentation expected = getUserRepFromMemberRep(addMember(organization));
 
         expected.setFirstName("f");
         expected.setLastName("l");
         expected.setEmail("some@differentthanorg.com");
 
-        managedRealm.admin().users().get(expected.getId()).update(expected);
+        realm.admin().users().get(expected.getId()).update(expected);
 
         UserRepresentation existing = organization.members().member(expected.getId()).toRepresentation();
         assertEquals(expected.getId(), existing.getId());
@@ -100,10 +197,10 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testUserAlreadyMemberOfOrganization() {
-        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
         upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
-        managedRealm.admin().users().userProfile().update(upConfig);
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        realm.admin().users().userProfile().update(upConfig);
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
         UserRepresentation expected = addMember(organization, KeycloakModelUtils.generateId() + "@user.org");
 
         try (Response response = organization.members().addMember(expected.getId())) {
@@ -113,7 +210,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testGet() {
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
         UserRepresentation expected = addMember(organization);
         UserRepresentation existing = organization.members().member(expected.getId()).toRepresentation();
         assertEquals(expected.getId(), existing.getId());
@@ -123,10 +220,10 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testGetMemberOrganization() {
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
         UserRepresentation member = addMember(organization);
         OrganizationRepresentation orgB = createOrganization("orgb");
-        managedRealm.admin().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+        realm.admin().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
         OrganizationRepresentation expected = organization.toRepresentation();
         List<OrganizationRepresentation> actual = organization.members().member(member.getId()).getOrganizations(true);
         assertNotNull(actual);
@@ -134,7 +231,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(expected.getId()::equals));
         assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(orgB.getId()::equals));
 
-        actual = managedRealm.admin().organizations().members().getOrganizations(member.getId(), true);
+        actual = realm.admin().organizations().members().getOrganizations(member.getId(), true);
         assertNotNull(actual);
         assertEquals(2, actual.size());
         assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(expected.getId()::equals));
@@ -143,9 +240,9 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testGetMemberOrganizationRequiresMembershipInCurrentOrganization() {
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
         OrganizationRepresentation orgB = createOrganization("orgb");
-        OrganizationResource organizationB = managedRealm.admin().organizations().get(orgB.getId());
+        OrganizationResource organizationB = realm.admin().organizations().get(orgB.getId());
         UserRepresentation member = addMember(organizationB);
 
         try {
@@ -154,7 +251,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         } catch (NotFoundException expected) {
         }
 
-        List<OrganizationRepresentation> actual = managedRealm.admin().organizations().members().getOrganizations(member.getId(), true);
+        List<OrganizationRepresentation> actual = realm.admin().organizations().members().getOrganizations(member.getId(), true);
         assertNotNull(actual);
         assertEquals(1, actual.size());
         assertEquals(orgB.getId(), actual.get(0).getId());
@@ -162,7 +259,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testGetAll() {
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
         List<UserRepresentation> expected = new ArrayList<>();
 
         for (int i = 0; i < 15; i++) {
@@ -194,8 +291,9 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testGetAllDisabledOrganization() {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
+        OrganizationRepresentation orgRep = createOrganization(realm, organizationName,
+                createRealOrgBroker(organizationName + "-identity-provider"), organizationName + ".org");
+        OrganizationResource organization = realm.admin().organizations().get(orgRep.getId());
 
         // add some unmanaged members to the organization.
         for (int i = 0; i < 5; i++) {
@@ -203,7 +301,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         }
 
         // onboard a test user by authenticating using the organization's provider.
-        super.assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
+        loginViaBroker(aliceFromProviderRealm.getEmail(), aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getPassword());
 
         // disable the organization and check that fetching its representation has it disabled.
         orgRep.setEnabled(false);
@@ -220,7 +318,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertThat(existing, not(empty()));
         assertThat(existing, hasSize(6));
         for (UserRepresentation user : existing) {
-            if (user.getEmail().equals(bc.getUserEmail())) {
+            if (user.getEmail().equals(aliceFromProviderRealm.getEmail())) {
                 assertThat(user.isEnabled(), is(false));
             } else {
                 assertThat(user.isEnabled(), is(true));
@@ -229,11 +327,11 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
         // fetching users from the users endpoint should have the same result.
         UserRepresentation disabledUser = null;
-        List<UserRepresentation> existingUsers = managedRealm.admin().users().search("*neworg*",0, 10);
+        List<UserRepresentation> existingUsers = realm.admin().users().search("*neworg*",0, 10);
         assertThat(existingUsers, not(empty()));
         assertThat(existingUsers, hasSize(6));
         for (UserRepresentation user : existingUsers) {
-            if (user.getEmail().equals(bc.getUserEmail())) {
+            if (user.getEmail().equals(aliceFromProviderRealm.getEmail())) {
                 assertThat(user.isEnabled(), is(false));
                 disabledUser = user;
             } else {
@@ -245,7 +343,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         // try to update the disabled user (for example, try to re-enable the user) - should not be possible.
         disabledUser.setEnabled(true);
         try {
-            managedRealm.admin().users().get(disabledUser.getId()).update(disabledUser);
+            realm.admin().users().get(disabledUser.getId()).update(disabledUser);
             fail("Should not be possible to update disabled org user");
         } catch(BadRequestException ignored) {
         }
@@ -253,8 +351,9 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testGetAllDisabledOrganizationProvider() throws IOException {
-        OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
+        OrganizationRepresentation orgRep = createOrganization(realm, organizationName,
+                createRealOrgBroker(organizationName + "-identity-provider"), organizationName + ".org");
+        OrganizationResource organization = realm.admin().organizations().get(orgRep.getId());
 
         // add some unmanaged members to the organization.
         for (int i = 0; i < 5; i++) {
@@ -262,42 +361,47 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         }
 
         // onboard a test user by authenticating using the organization's provider.
-        super.assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
+        loginViaBroker(aliceFromProviderRealm.getEmail(), aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getPassword());
 
         // now fetch all users from the realm
-        List<UserRepresentation> members = managedRealm.admin().users().search("*neworg*", null, null);
-        members.stream().forEach(user -> assertThat(user.isEnabled(), is(Boolean.TRUE)));
+        List<UserRepresentation> members = realm.admin().users().search("*neworg*", null, null);
+        members.forEach(user -> assertThat(user.isEnabled(), is(Boolean.TRUE)));
 
-        // disable the organization provider
-        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin())
-                .setOrganizationsEnabled(Boolean.FALSE)
-                .update()) {
+        // disable the organization provider (cannot use updateWithCleanup, because it would prevent org cleanup - created in the beginning of the test as the org provider would be disabled)
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setOrganizationsEnabled(Boolean.FALSE);
+        realm.admin().update(realmRep);
 
+        try {
             // now fetch all members from the realm - unmanaged users should still be enabled, but managed ones should not.
-            List<UserRepresentation> existing = managedRealm.admin().users().search("*neworg*", null, null);
+            List<UserRepresentation> existing = realm.admin().users().search("*neworg*", null, null);
             assertThat(existing, hasSize(members.size()));
             for (UserRepresentation user : existing) {
-                if (user.getEmail().equals(bc.getUserEmail())) {
+                if (user.getEmail().equals(aliceFromProviderRealm.getEmail())) {
                     assertThat(user.isEnabled(), is(Boolean.FALSE));
 
                     // try to update the disabled user (for example, try to re-enable the user) - should not be possible.
                     user.setEnabled(Boolean.TRUE);
                     try {
-                        managedRealm.admin().users().get(user.getId()).update(user);
+                        realm.admin().users().get(user.getId()).update(user);
                         fail("Should not be possible to update disabled org user");
-                    } catch(BadRequestException expected) {}
+                    } catch (BadRequestException expected) {
+                    }
                 } else {
                     assertThat("User " + user.getUsername(), user.isEnabled(), is(true));
                 }
             }
+        } finally {
+            realmRep.setOrganizationsEnabled(Boolean.TRUE);
+            realm.admin().update(realmRep);
         }
     }
 
     @Test
     public void testDeleteUnmanagedMember() {
-        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
         upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
         UserRepresentation expected = addMember(organization);
         assertNull(expected.getAttributes());
         OrganizationMemberResource member = organization.members().member(expected.getId());
@@ -307,7 +411,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         }
 
         // user should exist but no longer an organization member
-        expected = managedRealm.admin().users().get(expected.getId()).toRepresentation();
+        expected = realm.admin().users().get(expected.getId()).toRepresentation();
         assertNull(expected.getAttributes());
         try {
             member.toRepresentation();
@@ -319,10 +423,10 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testUpdateEmailUnmanagedMember() {
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
         UserRepresentation expected = getUserRepFromMemberRep(addMember(organization));
         expected.setEmail("some@unknown.org");
-        UserResource userResource = managedRealm.admin().users().get(expected.getId());
+        UserResource userResource = realm.admin().users().get(expected.getId());
         userResource.update(expected);
         UserRepresentation actual = userResource.toRepresentation();
         assertEquals(expected.getId(), actual.getId());
@@ -332,7 +436,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testDeleteMembersOnOrganizationRemoval() {
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
         List<MemberRepresentation> expected = new ArrayList<>();
 
         for (int i = 0; i < 5; i++) {
@@ -350,7 +454,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
         for (MemberRepresentation member : expected) {
             // users should exist as they are not managed by the organization
-            managedRealm.admin().users().get(member.getId()).toRepresentation();
+            realm.admin().users().get(member.getId()).toRepresentation();
         }
 
         for (MemberRepresentation member : expected) {
@@ -364,10 +468,11 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testSearchMembers() {
 
         // create test users, ordered by username (e-mail).
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
         List<UserRepresentation> expected = new ArrayList<>();
         expected.add(addMember(organization, "batwoman@neworg.org", "Katherine", "Kane"));
         expected.add(addMember(organization, "brucewayne@neworg.org", "Bruce", "Wayne"));
@@ -451,8 +556,9 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testSearchMembersWithSqlWildcards() {
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
 
         // Create members with SQL wildcard characters in various fields
         UserRepresentation user1 = addMember(organization, "john_doe@test.org", "John", "Doe");
@@ -502,16 +608,17 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     @Test
     public void testAddMemberFromDifferentRealm() {
         String orgId = createOrganization().getId();
+        String providerRealmName = providerRealm.getName();
 
-        getTestingClient().server(TEST_REALM_NAME).run(session -> {
+        runOnServer.run(session -> {
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
             OrganizationModel organization = provider.getById(orgId);
 
-            RealmModel realm = session.realms().getRealmByName("master");
-            session.users().addUser(realm, "master-test-user");
+            RealmModel realm = session.realms().getRealmByName(providerRealmName);
+            session.users().addUser(realm, "provider-test-user");
             UserModel user = null;
             try {
-                user = session.users().getUserByUsername(realm, "master-test-user");
+                user = session.users().getUserByUsername(realm, "provider-test-user");
                 assertFalse(provider.addMember(organization, user));
             } finally {
                 session.users().removeUser(realm, user);
@@ -521,18 +628,30 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testUserFederatedBeforeTheIDPBoundWithAnOrgIsNotMember() {
-        // create non-org idp in a realm
+        // create non-org idp in a realm with real provider endpoints
         String idpAlias = "former-non-org-identity-provider";
-        IdentityProviderRepresentation idpRep = brokerConfigFunction.apply("former-non-org").setUpIdentityProvider();
-        idpRep.setHideOnLogin(false);
-        try (Response response = managedRealm.admin().identityProviders().create(idpRep)) {
+        IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
+        idpRep.setAlias(idpAlias);
+        idpRep.setProviderId("keycloak-oidc");
+        idpRep.setEnabled(true);
+        String providerBaseUrl = providerRealm.getBaseUrl();
+        idpRep.setConfig(new HashMap<>(Map.of(
+                "clientId", CLIENT_ID,
+                "clientSecret", CLIENT_SECRET,
+                "authorizationUrl", providerBaseUrl + "/protocol/openid-connect/auth",
+                "tokenUrl", providerBaseUrl + "/protocol/openid-connect/token",
+                "userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo",
+                "defaultScope", "email profile",
+                "syncMode", "IMPORT"
+        )));
+        try (Response response = realm.admin().identityProviders().create(idpRep)) {
             assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
-            getCleanup().addCleanup(managedRealm.admin().identityProviders().get(bc.getIDPAlias())::remove);
+            realm.cleanup().add(r -> r.identityProviders().get(idpAlias).remove());
         }
 
         loginViaNonOrgIdP(idpAlias);
 
-        List<UserRepresentation> search = managedRealm.admin().users().search(bc.getUserLogin(), Boolean.TRUE);
+        List<UserRepresentation> search = realm.admin().users().search(aliceFromProviderRealm.getUsername(), Boolean.TRUE);
         assertThat(search, hasSize(1));
 
         // create org
@@ -540,35 +659,35 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         OrganizationRepresentation orgRep = createRepresentation(organizationName, orgDomain);
         String id;
 
-        try (Response response = managedRealm.admin().organizations().create(orgRep)) {
+        try (Response response = realm.admin().organizations().create(orgRep)) {
             assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
             id = ApiUtil.getCreatedId(response);
-            getCleanup().addCleanup(() -> managedRealm.admin().organizations().get(id).delete().close());
+            realm.cleanup().add(r -> r.organizations().get(id).delete().close());
         }
 
         // assign IdP to the org
         idpRep.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomain);
         idpRep.getConfig().put(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
-        managedRealm.admin().identityProviders().get(idpRep.getAlias()).update(idpRep);
+        realm.admin().identityProviders().get(idpRep.getAlias()).update(idpRep);
 
-        try (Response response = managedRealm.admin().organizations().get(id).identityProviders().addIdentityProvider(idpAlias)) {
+        try (Response response = realm.admin().organizations().get(id).identityProviders().addIdentityProvider(idpAlias)) {
             assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
         }
 
         //check the federated user is not a member
-        assertThat(managedRealm.admin().organizations().get(id).members().list(-1, -1), hasSize(0));
+        assertThat(realm.admin().organizations().get(id).members().list(-1, -1), hasSize(0));
 
         // test again this time assigning any org domain to the identity provider
 
         idpRep.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
-        managedRealm.admin().identityProviders().get(idpRep.getAlias()).update(idpRep);
-        assertThat(managedRealm.admin().organizations().get(id).members().list(-1, -1), hasSize(0));
+        realm.admin().identityProviders().get(idpRep.getAlias()).update(idpRep);
+        assertThat(realm.admin().organizations().get(id).members().list(-1, -1), hasSize(0));
     }
 
     @Test
     public void testMemberInMultipleOrganizations() {
-        OrganizationResource orga = managedRealm.admin().organizations().get(createOrganization("org-a").getId());
-        OrganizationResource orgb = managedRealm.admin().organizations().get(createOrganization("org-b").getId());
+        OrganizationResource orga = realm.admin().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgb = realm.admin().organizations().get(createOrganization("org-b").getId());
 
         addMember(orga);
 
@@ -587,20 +706,29 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testManagedMemberOnlyRemovedFromHomeOrganization() {
-        OrganizationResource orga = managedRealm.admin().organizations().get(createOrganization("org-a").getId());
-        assertBrokerRegistration(orga, bc.getUserEmail(), "managed-org-a@org-a.org");
+        OrganizationResource orga = realm.admin().organizations().get(
+                createOrganization(realm, "org-a", createRealOrgBroker("org-a-identity-provider"), "org-a.org").getId());
+        loginViaBroker("alice@org-a.org", aliceFromProviderRealm.getUsername(),
+                aliceFromProviderRealm.getPassword(), "managed-org-a@org-a.org");
         UserRepresentation memberOrgA = orga.members().list(-1, -1).get(0);
-        realmsResouce().realm(bc.consumerRealmName()).users().get(memberOrgA.getId()).logout();
-        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+        realm.admin().users().get(memberOrgA.getId()).logout();
+        providerRealm.admin().logoutAll();
 
-        OrganizationResource orgb = managedRealm.admin().organizations().get(createOrganization("org-b").getId());
+        OrganizationResource orgb = realm.admin().organizations().get(
+                createOrganization(realm, "org-b", createRealOrgBroker("org-b-identity-provider"), "org-b.org").getId());
         UserRepresentation memberOrgB = UserBuilder.create()
                 .username("managed-org-b")
                 .password("password")
                 .enabled(true)
                 .build();
-        realmsResouce().realm(bc.providerRealmName()).users().create(memberOrgB).close();
-        assertBrokerRegistration(orgb, memberOrgB.getUsername(), "managed-org-b@org-b.org");
+        try (Response response = providerRealm.admin().users().create(memberOrgB)) {
+            memberOrgB.setId(ApiUtil.getCreatedId(response));
+        }
+        String memberOrgBProviderId = memberOrgB.getId();
+        providerRealm.cleanup().add(r -> r.users().get(memberOrgBProviderId).remove());
+
+        loginViaBroker("managed-org-b@org-b.org", memberOrgB.getUsername(),
+                "password", "managed-org-b@org-b.org");
         memberOrgB = orgb.members().list(-1, -1).get(0);
 
         orga.members().addMember(memberOrgB.getId()).close();
@@ -620,7 +748,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testMembersCount() {
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
 
         for (int i = 0; i < 10; i++) {
             addMember(organization, "user" + i +"@neworg.org", "First" + i, "Last" + i);
@@ -643,23 +771,23 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         user.setLastName("Wayne");
         user.setEmail("bwayne@neworg.org");
 
-        try (Response response = managedRealm.admin().users().create(user)) {
+        try (Response response = realm.admin().users().create(user)) {
             user.setId(ApiUtil.getCreatedId(response));
         }
-        getCleanup().addCleanup(() -> managedRealm.admin().users().get(user.getId()).remove());
+        realm.cleanup().add(r -> r.users().get(user.getId()).remove());
 
         // now update the user, unsetting the e-mail
         user.setEmail("");
-        managedRealm.admin().users().get(user.getId()).update(user);
+        realm.admin().users().get(user.getId()).update(user);
 
-        UserRepresentation updatedUser = managedRealm.admin().users().get(user.getId()).toRepresentation();
+        UserRepresentation updatedUser = realm.admin().users().get(user.getId()).toRepresentation();
         assertThat(updatedUser.getEmail(), is(nullValue()));
     }
 
     @Test
     public void testGetMemberOrganizationsBriefVsFullRepresentation() {
         // Create an organization with attributes
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
         OrganizationRepresentation orgRep = organization.toRepresentation();
         orgRep.singleAttribute("testAttribute", "testValue");
         organization.update(orgRep).close();
@@ -696,12 +824,12 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertEquals("testValue", fullRep.getAttributes().get("testAttribute").get(0));
         
         // Test the global members API endpoint as well
-        List<OrganizationRepresentation> briefOrgsGlobal = managedRealm.admin().organizations().members().getOrganizations(member.getId(), true);
+        List<OrganizationRepresentation> briefOrgsGlobal = realm.admin().organizations().members().getOrganizations(member.getId(), true);
         assertNotNull(briefOrgsGlobal);
         assertEquals(1, briefOrgsGlobal.size());
         assertNull(briefOrgsGlobal.get(0).getAttributes(), "Brief representation should not include attributes");
         
-        List<OrganizationRepresentation> fullOrgsGlobal = managedRealm.admin().organizations().members().getOrganizations(member.getId(), false);
+        List<OrganizationRepresentation> fullOrgsGlobal = realm.admin().organizations().members().getOrganizations(member.getId(), false);
         assertNotNull(fullOrgsGlobal);
         assertEquals(1, fullOrgsGlobal.size());
         assertNotNull(fullOrgsGlobal.get(0).getAttributes(), "Full representation should include attributes");
@@ -716,26 +844,31 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         OrganizationRepresentation orgB = createOrganization("orgb");
 
         // create userA and add as member of both orgs
-        OrganizationResource orgAResource = managedRealm.admin().organizations().get(orgA.getId());
-        OrganizationResource orgBResource = managedRealm.admin().organizations().get(orgB.getId());
+        OrganizationResource orgAResource = realm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = realm.admin().organizations().get(orgB.getId());
         UserRepresentation userA = addMember(orgAResource, "usera@orga.org");
         orgBResource.members().addMember(userA.getId()).close();
 
         // create userB (non-admin user)
         UserRepresentation userB = UserBuilder.create()
                 .username("userb")
+                .firstName("userb")
+                .lastName("userb")
                 .password("password")
+                .email("userb@test.org")
+                .emailVerified(true)
                 .enabled(true)
                 .build();
-        try (Response response = managedRealm.admin().users().create(userB)) {
+        try (Response response = realm.admin().users().create(userB)) {
             userB.setId(ApiUtil.getCreatedId(response));
         }
-        getCleanup().addCleanup(() -> managedRealm.admin().users().get(userB.getId()).remove());
+        realm.cleanup().add(r -> r.users().get(userB.getId()).remove());
 
         // send request as userB to OrganizationsResource.getOrganizations with member-id = userA
-        try (Keycloak userBClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
-                TEST_REALM_NAME, "userb", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
-            userBClient.realm(TEST_REALM_NAME).organizations().members().getOrganizations(userA.getId(), true);
+        try (Keycloak userBClient = adminClientFactory.create()
+                .realm(realm.getName()).username("userb").password("password")
+                .clientId(Constants.ADMIN_CLI_CLIENT_ID).build()) {
+            userBClient.realm(realm.getName()).organizations().members().getOrganizations(userA.getId(), true);
             fail("Expected ForbiddenException");
         } catch (ForbiddenException expected) {
         }
@@ -743,15 +876,15 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testSearchMembersBriefVsFullRepresentation() {
-        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
         upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
-        managedRealm.admin().users().userProfile().update(upConfig);
+        realm.admin().users().userProfile().update(upConfig);
 
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
         UserRepresentation member = addMember(organization, "member@neworg.org");
 
         // set a custom attribute on the member so we can verify it's absent in brief representation
-        UserResource userResource = managedRealm.admin().users().get(member.getId());
+        UserResource userResource = realm.admin().users().get(member.getId());
         member = userResource.toRepresentation();
         member.singleAttribute("testAttr", "testValue");
         userResource.update(member);
@@ -790,34 +923,80 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertTrue(singleMember.getAttributes().containsKey("testAttr"));
     }
 
-    private void loginViaNonOrgIdP(String idpAlias) {
-        oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+    private void loginViaBroker(String email, String username, String password) {
+        loginViaBroker(email, username, password, null);
+    }
 
-        assertTrue(loginPage.isPasswordInputPresent());
+    private void loginViaBroker(String email, String username, String password, String updateEmail) {
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(email);
+        loginUsernamePage.submit();
+
+        assertTrue(driver.getCurrentUrl().contains("/realms/" + providerRealm.getName() + "/"),
+                "Should be on provider realm login page");
+
+        loginPage.fillLogin(username, password);
+        loginPage.submit();
+
+        if (updateEmail != null) {
+            loginUpdateProfilePage.update("Firstname", "Lastname", updateEmail);
+        }
+
+        List<UserRepresentation> users = realm.admin().users().search(username);
+        assertEquals(1, users.size(), "Federated user should be created in consumer realm");
+
+        String userId = users.get(0).getId();
+        realm.cleanup().add(r -> {
+            try {
+                r.users().get(userId).remove();
+            } catch (NotFoundException ignored) {}
+        });
+    }
+
+    private void loginViaNonOrgIdP(String idpAlias) {
+        oauth.openLoginForm();
+
         assertTrue(loginPage.isSocialButtonPresent(idpAlias));
         loginPage.clickSocial(idpAlias);
 
-        waitForPage(driver, "sign in to", true);
+        assertTrue(driver.getCurrentUrl().contains("/realms/" + providerRealm.getName() + "/"),
+                "Should be on provider realm login page");
 
-        // user automatically redirected to the identity provider
-        assertThat("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.providerRealmName() + "/"));
+        loginPage.fillLogin(aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getPassword());
+        loginPage.submit();
+    }
 
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
-
-        waitForPage(driver, "update account information", false);
-        updateAccountInformationPage.assertCurrent();
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
-                "We must be on correct realm right now");
-        log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
-
-        appPage.assertCurrent();
-        assertThat(appPage.getRequestType(), equalTo(AppPage.RequestType.AUTH_RESPONSE));
+    private IdentityProviderRepresentation createRealOrgBroker(String alias) {
+        IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
+        idp.setAlias(alias);
+        idp.setProviderId("keycloak-oidc");
+        idp.setEnabled(true);
+        idp.setTrustEmail(true);
+        String providerBaseUrl = providerRealm.getBaseUrl();
+        idp.setConfig(new HashMap<>(Map.of(
+                "clientId", CLIENT_ID,
+                "clientSecret", CLIENT_SECRET,
+                "authorizationUrl", providerBaseUrl + "/protocol/openid-connect/auth",
+                "tokenUrl", providerBaseUrl + "/protocol/openid-connect/token",
+                "userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo",
+                "defaultScope", "email profile",
+                "syncMode", "IMPORT"
+        )));
+        return idp;
     }
 
     private UserRepresentation getUserRepFromMemberRep(MemberRepresentation member) {
         return new UserRepresentation(member);
+    }
+
+    static class AliceUserConf implements UserConfig {
+        @Override
+        public UserBuilder configure(UserBuilder builder) {
+            return builder.username("alice")
+                    .password("password")
+                    .email("alice@neworg.org")
+                    .emailVerified(true)
+                    .name("Alice", "Org");
+        }
     }
 }
