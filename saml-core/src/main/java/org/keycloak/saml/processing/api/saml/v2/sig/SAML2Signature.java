@@ -216,6 +216,14 @@ public class SAML2Signature {
         for (int i = 0; i < nodes.getLength(); i++) {
             configureIdAttribute((Element) nodes.item(i));
         }
+
+        String protocolNs = JBossSAMLURIConstants.PROTOCOL_NSURI.get();
+        for (JBossSAMLConstants protocolElement : JBossSAMLConstants.SIGNED_PROTOCOL_ELEMENTS) {
+            NodeList protocolNodes = document.getElementsByTagNameNS(protocolNs, protocolElement.get());
+            for (int i = 0; i < protocolNodes.getLength(); i++) {
+                configureIdAttribute((Element) protocolNodes.item(i));
+            }
+        }
     }
     
     public static void configureIdAttribute(Element element) {

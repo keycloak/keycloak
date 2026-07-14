@@ -19,6 +19,7 @@ package org.keycloak.saml.common.constants;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import javax.xml.namespace.QName;
 
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
@@ -327,4 +328,13 @@ public enum JBossSAMLConstants {
         final JBossSAMLConstants res = REVERSE_LOOKUP.from(name);
         return res == null ? UNKNOWN_VALUE : res;
     }
+
+    /**
+     *  Protocol element types that may carry independent XML signatures.
+     */
+    public static final Set<JBossSAMLConstants> SIGNED_PROTOCOL_ELEMENTS = Set.of(
+            RESPONSE__PROTOCOL,
+            LOGOUT_REQUEST,
+            LOGOUT_RESPONSE
+    );
 }
