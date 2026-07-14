@@ -33,12 +33,13 @@ import org.jboss.jandex.FieldInfo;
 import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.utils.StringUtil.isBlank;
 import static org.keycloak.utils.StringUtil.isNullOrEmpty;
 
 public class OASModelFilter implements OASFilter {
 
     private static final String SORT_PARAMETER_NAME = "sort";
-    private static final String ALLOWED_FIELDS_MARKER = " Allowed fields: ";
+    private static final String ALLOWED_FIELDS_MARKER = "Allowed fields: ";
     private static final String CLIENTS_LIST_PATH_SUFFIX = "/clients/v2";
     private static final Map<String, Supplier<String>> SORT_ALLOWED_FIELDS_BY_PATH_SUFFIX = Map.of(
             CLIENTS_LIST_PATH_SUFFIX, ClientField::allowedApiNames
@@ -460,19 +461,20 @@ public class OASModelFilter implements OASFilter {
     private static String enhanceSortParameterDescription(String description, String allowedApiNames) {
         String base = stripAllowedFieldsSuffix(description);
         if (isNullOrEmpty(base)) {
-            return "Allowed fields: " + allowedApiNames + ".";
+            return ALLOWED_FIELDS_MARKER + allowedApiNames + ".";
         }
-        return base + ALLOWED_FIELDS_MARKER + allowedApiNames + ".";
+        return base + " " + ALLOWED_FIELDS_MARKER + allowedApiNames + ".";
     }
 
     private static String stripAllowedFieldsSuffix(String description) {
-        if (isNullOrEmpty(description)) {
-            return description;
+        if (isBlank(description)) {
+            return null;
         }
-        int idx = description.indexOf(ALLOWED_FIELDS_MARKER);
-        if (idx >= 0) {
-            return description.substring(0, idx);
+        var split = description.split(ALLOWED_FIELDS_MARKER);
+        if (split.length > 1) {
+            return split[0].stripTrailing();
         }
+
         return description;
     }
 
