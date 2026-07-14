@@ -135,6 +135,12 @@ set of management operations:
 | *manage-membership-of-members* | Defines if a realm administrator can grant or deny `manage-group-membership` for members of a group.
 |===
 
+When a delegated administrator has `view` permission on a group but not on its ancestor groups, the Admin REST API returns the full group hierarchy so the administrator can understand where the group belongs. Ancestor groups without `view` permission are returned as stripped representations containing only `id`, `name`, `path`, `parentId`, and `description`. Sensitive fields such as `attributes`, `realmRoles`, `clientRoles`, and `access` are omitted from these ancestors.
+
+The `subGroupCount` field on stripped ancestors reflects the number of visible children included in the response rather than the total child count. In the admin console, non-viewable ancestor groups appear greyed out and are not clickable.
+
+NOTE: When a delegated administrator has `view` permission only on groups that are not at the top level of the hierarchy, the admin console Groups page initially appears empty because only top-level groups are loaded on the initial page load. The administrator must use the search field to find their permitted groups. The search results then display the full hierarchy with stripped ancestors as described above.
+
 ===== Clients Resource Type
 
 The *Clients* realm resource type represents the clients in a realm. You can manage permissions for clients based on the following

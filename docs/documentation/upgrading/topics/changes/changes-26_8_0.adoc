@@ -14,6 +14,14 @@ If you have delegated administrators that assign client scopes using Fine-Graine
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
+=== Group hierarchy search returns stripped ancestors under Fine-Grained Admin Permissions
+
+When Fine-Grained Admin Permissions is enabled and a delegated administrator has `view` permission on a group but not on its ancestors, the Admin REST API now returns the full group hierarchy with non-viewable ancestor groups represented as stripped representations. Stripped ancestor representations contain only `id`, `name`, `path`, `parentId`, and `description` — sensitive fields such as `attributes`, `realmRoles`, `clientRoles`, and `access` are omitted.
+
+The `subGroupCount` field on stripped ancestors reflects the number of visible children included in the response, not the total number of children in the database. This prevents leaking information about groups the administrator cannot access.
+
+In the admin console, non-viewable ancestor groups now appear greyed out and are not clickable in the group tree and breadcrumb navigation. Clicking a viewable child group navigates to its details as expected. Note that when a delegated administrator has `view` permission only on groups that are not at the top level, the Groups page initially appears empty. The administrator must use the search field to locate their permitted groups.
+
 === AuthZEN changes
 
 When calling {project_name}'s experimental AuthZEN endpoints, the caller now needs to be an authenticated confidential client's access token. Previously, it could be called with a user's access token.
