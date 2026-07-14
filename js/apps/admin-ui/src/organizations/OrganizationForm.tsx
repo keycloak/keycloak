@@ -17,12 +17,13 @@ export type OrganizationFormType = AttributeForm &
   Omit<OrganizationRepresentation, "domains" | "attributes"> & {
     domains?: string[];
   };
-
 export const convertToOrg = (
   org: OrganizationFormType,
 ): OrganizationRepresentation => ({
   ...org,
-  domains: org.domains?.map((d) => ({ name: d, verified: false })),
+  domains: org.domains
+    ?.filter((d) => d.trim() !== "")
+    .map((d) => ({ name: d, verified: false })),
   attributes: keyValueToArray(org.attributes),
 });
 
