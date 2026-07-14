@@ -29,6 +29,7 @@ import {
   clickDefaultSwitchPolicy,
   clickDeleteRow,
   clickSwitchPolicy,
+  dragExecutionToRow,
   fillBindFlowModal,
   fillCreateForm,
   fillDuplicateFlowModal,
@@ -201,19 +202,11 @@ test.describe("Authentication flow details", () => {
     const sourceRow = page.getByRole("row", {
       name: /Identity Provider Redirector/,
     });
-    const sourceHandle = sourceRow.locator(
-      ".keycloak__authentication__drag-handle",
-    );
     const targetRow = page.getByRole("row", { name: /Kerberos/ }).first();
-    const targetBox = await targetRow.boundingBox();
-    expect(targetBox).not.toBeNull();
 
-    await sourceHandle.dragTo(targetRow, {
-      steps: 20,
-      targetPosition: {
-        x: targetBox!.width / 2,
-        y: Math.max(8, targetBox!.height * 0.12),
-      },
+    await dragExecutionToRow(page, sourceRow, targetRow, {
+      yRatio: 0.12,
+      minYOffset: 8,
     });
 
     await assertNotificationMessage(page, "Flow successfully updated");
@@ -230,20 +223,11 @@ test.describe("Authentication flow details", () => {
     await clickTableRowItem(page, flowName);
 
     const sourceRow = page.getByRole("row", { name: /\bCookie\b/ }).first();
-    const sourceHandle = sourceRow.locator(
-      ".keycloak__authentication__drag-handle",
-    );
-    const subflowRow = page.getByRole("row", { name: /forms/i }).first();
-    const subflowBox = await subflowRow.boundingBox();
-    expect(subflowBox).not.toBeNull();
+    const subflowRow = page
+      .locator('tr[data-is-subflow="true"]')
+      .filter({ has: page.getByTestId(`${flowName} forms`) });
 
-    await sourceHandle.dragTo(subflowRow, {
-      steps: 25,
-      targetPosition: {
-        x: subflowBox!.width / 2,
-        y: subflowBox!.height * 0.5,
-      },
-    });
+    await dragExecutionToRow(page, sourceRow, subflowRow, { yRatio: 0.5 });
 
     await assertNotificationMessage(page, "Flow successfully updated");
   });

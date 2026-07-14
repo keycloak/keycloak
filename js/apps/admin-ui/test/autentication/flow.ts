@@ -1,4 +1,4 @@
-import { type Page, expect } from "@playwright/test";
+import { type Locator, type Page, expect } from "@playwright/test";
 import { selectItem } from "../utils/form.ts";
 import { confirmModal } from "../utils/modal.ts";
 
@@ -63,6 +63,56 @@ export async function assertRowExists(page: Page, name: string, exists = true) {
   } else {
     await expect(locator).toBeHidden();
   }
+}
+
+type DragTargetPosition = {
+  /** Horizontal offset within the target row, as a fraction of row width. */
+  xRatio?: number;
+  /** Vertical offset within the target row, as a fraction of row height. */
+  yRatio?: number;
+  /** Minimum vertical offset in pixels (applied after yRatio). */
+  minYOffset?: number;
+};
+
+/** Drags a flow row grip handle onto another row. Re-measures the drop target after drag
+ *  activation because drag start collapses expanded subflows and shifts row positions. */
+export async function dragExecutionToRow(
+  page: Page,
+  sourceRow: Locator,
+  targetRow: Locator,
+  targetPosition: DragTargetPosition = {},
+) {
+  const { xRatio = 0.5, yRatio = 0.5, minYOffset } = targetPosition;
+  const sourceHandle = sourceRow.locator(
+    ".keycloak__authentication__drag-handle",
+  );
+  const sourceBox = await sourceHandle.boundingBox();
+  expect(sourceBox).not.toBeNull();
+
+  const startX = sourceBox!.x + sourceBox!.width / 2;
+  const startY = sourceBox!.y + sourceBox!.height / 2;
+
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  // Satisfy dnd-kit PointerSensor activation distance (5px).
+  await page.mouse.move(startX + 10, startY, { steps: 5 });
+  // Drag start collapses expanded subflows asynchronously; wait for layout to settle.
+  await page.waitForTimeout(200);
+
+  const targetBox = await targetRow.boundingBox();
+  expect(targetBox).not.toBeNull();
+
+  const targetY =
+    minYOffset !== undefined
+      ? Math.max(minYOffset, targetBox!.height * yRatio)
+      : targetBox!.height * yRatio;
+
+  await page.mouse.move(
+    targetBox!.x + targetBox!.width * xRatio,
+    targetBox!.y + targetY,
+    { steps: 25 },
+  );
+  await page.mouse.up();
 }
 
 export async function fillBindFlowModal(page: Page, flowName: string) {
