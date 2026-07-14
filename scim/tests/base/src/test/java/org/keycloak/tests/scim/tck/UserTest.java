@@ -1453,4 +1453,64 @@ public class UserTest extends AbstractScimTest {
             assertNotNull(error.getDetail());
         }
     }
+
+    @Test
+    public void testGetMultivaluedCustomAttributesWithAndWithoutValueSubAttribute() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+
+        UPAttribute assuranceAttribute = new UPAttribute("scim.assurance", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ":assurance.value"));
+        assuranceAttribute.setMultivalued(true);
+        assuranceAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(assuranceAttribute);
+
+        UPAttribute affiliationAttribute = new UPAttribute("scim.affiliation", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ":affiliation"));
+        affiliationAttribute.setMultivalued(true);
+        affiliationAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(affiliationAttribute);
+
+        realm.admin().users().userProfile().update(upConfig);
+
+        UserRepresentation existing = UserBuilder.create()
+                .username(KeycloakModelUtils.generateId())
+                .email(KeycloakModelUtils.generateId() + "@keycloak.org")
+                .firstName("f")
+                .lastName("l")
+                .enabled(true)
+                .build();
+        Map<String, List<String>> attributes = new HashMap<>();
+        List<String> expectedAssuranceValues = List.of(
+                "https://refeds.org/assurance/ID/unique",
+                "https://refeds.org/assurance/IAP/low",
+                "https://aarc-project.eu/policy/authn-assurance/assam");
+        List<String> expectedAffiliationValues = List.of("member", "faculty");
+        attributes.put(assuranceAttribute.getName(), expectedAssuranceValues);
+        attributes.put(affiliationAttribute.getName(), expectedAffiliationValues);
+        existing.setAttributes(attributes);
+        try (Response response = realm.admin().users().create(existing)) {
+            String id = ApiUtil.getCreatedId(response);
+            existing.setId(id);
+        }
+
+        User user = client.users().get(existing.getId());
+        Object extension = ofNullable(user.getExtensions()).orElse(Map.of()).get(customSchema);
+        assertInstanceOf(Map.class, extension);
+        assertTrue(user.getSchemas().contains(customSchema));
+
+        Object assurance = ((Map<?, ?>) extension).get("assurance");
+        assertInstanceOf(List.class, assurance);
+        assertEquals(expectedAssuranceValues.size(), ((List<?>) assurance).size());
+        for (int i = 0; i < expectedAssuranceValues.size(); i++) {
+            Object valueNode = ((List<?>) assurance).get(i);
+            assertInstanceOf(Map.class, valueNode);
+            assertEquals(expectedAssuranceValues.get(i), ((Map<?, ?>) valueNode).get("value"));
+        }
+
+        Object affiliation = ((Map<?, ?>) extension).get("affiliation");
+        assertInstanceOf(List.class, affiliation);
+        assertEquals(expectedAffiliationValues, affiliation);
+    }
 }

@@ -91,7 +91,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                         Attribute p = new Attribute();
                         p.setName(k);
                         p.setType("complex");
-                        p.setMultiValued(false);
+                        p.setMultiValued(attribute.isMultivalued());
                         p.setMutability("readWrite");
                         p.setCaseExact(false);
                         p.setRequired(false);
