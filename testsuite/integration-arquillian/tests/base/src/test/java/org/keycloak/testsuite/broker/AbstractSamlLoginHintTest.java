@@ -1,6 +1,9 @@
 package org.keycloak.testsuite.broker;
 
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -19,25 +22,7 @@ public abstract class AbstractSamlLoginHintTest extends AbstractInitializedBaseB
     // KEYCLOAK-13950
     @Test
     public void testPassLoginHintShouldSendSubjectAndPrefillUsername() {
-        String username = "all-info-set@localhost.com";
-        createUser(bc.providerRealmName(), username, "password");
-
-        oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
-
-        log.debug("Clicking social " + bc.getIDPAlias());
-        addLoginHintOnSocialButton(username);
-        loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "sign in to", true);
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
-                "Driver should be on the provider realm page right now");
-        log.debug("Logging in");
-
-        if (isLoginHintOptionEnabled()) {
-            assertEquals(loginPage.getUsername(), username, "Username input should contain the SAML subject");
-        } else {
-            assertEquals(loginPage.getUsername(), "", "Username input should the SAML subject");
-        }
+        assertLoginHintSubject(isLoginHintOptionEnabled());
     }
 
     // KEYCLOAK-13950
@@ -62,6 +47,43 @@ public abstract class AbstractSamlLoginHintTest extends AbstractInitializedBaseB
 
     @Test
     public void testLoginHintForwardedAsQueryParam() {
+        assertLoginHintQueryParam(isLoginQueryHintOptionEnabled());
+    }
+
+    abstract boolean isLoginHintOptionEnabled();
+
+    abstract boolean isLoginQueryHintOptionEnabled();
+
+    protected void updateLoginHintOptions(boolean loginHint, boolean loginQueryHint) {
+        IdentityProviderRepresentation idp = identityProviderResource.toRepresentation();
+        idp.getConfig().put(IdentityProviderModel.LOGIN_HINT, String.valueOf(loginHint));
+        idp.getConfig().put(SAMLIdentityProviderConfig.LOGIN_QUERY_HINT, String.valueOf(loginQueryHint));
+        identityProviderResource.update(idp);
+    }
+
+    protected void assertLoginHintSubject(boolean loginHintOptionEnabled) {
+        String username = "all-info-set@localhost.com";
+        createUser(bc.providerRealmName(), username, "password");
+
+        oauth.client("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        log.debug("Clicking social " + bc.getIDPAlias());
+        addLoginHintOnSocialButton(username);
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "sign in to", true);
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                "Driver should be on the provider realm page right now");
+        log.debug("Logging in");
+
+        if (loginHintOptionEnabled) {
+            assertEquals(loginPage.getUsername(), username, "Username input should contain the SAML subject");
+        } else {
+            assertEquals(loginPage.getUsername(), "", "Username input should the SAML subject");
+        }
+    }
+
+    protected void assertLoginHintQueryParam(boolean loginQueryHintOptionEnabled) {
         String username = "all-info-set@localhost.com";
         createUser(bc.providerRealmName(), username, "password", "FirstName");
 
@@ -76,7 +98,7 @@ public abstract class AbstractSamlLoginHintTest extends AbstractInitializedBaseB
                 "Driver should be on the provider realm page right now");
 
         String currentUrl = driver.getCurrentUrl();
-        if (!isLoginQueryHintOptionEnabled()) {
+        if (!loginQueryHintOptionEnabled) {
             // With the option disabled, SAMLIdentityProvider must NOT append login_hint to the IdP destination URL.
             // We check that the provider page URL does not contain the parameter. This is binding-agnostic.
             Assertions.assertFalse(currentUrl.contains("login_hint="),
@@ -88,10 +110,6 @@ public abstract class AbstractSamlLoginHintTest extends AbstractInitializedBaseB
                     "Provider page should contain login_hint parameter in query: expected to find '" + expected + "' in URL: " + currentUrl);
         }
     }
-
-    abstract boolean isLoginHintOptionEnabled();
-
-    abstract boolean isLoginQueryHintOptionEnabled();
 
     protected void addLoginHintOnSocialButton(String hint) {
         JavascriptExecutor executor = (JavascriptExecutor) driver;

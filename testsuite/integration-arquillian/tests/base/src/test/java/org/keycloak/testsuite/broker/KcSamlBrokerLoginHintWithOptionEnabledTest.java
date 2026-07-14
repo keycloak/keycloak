@@ -31,6 +31,12 @@ public class KcSamlBrokerLoginHintWithOptionEnabledTest extends AbstractSamlLogi
         assertEquals(loginPage.getUsername(), fishyLoginHint, "Username input should contain the SAML subject");
     }
 
+    @Test
+    public void testLoginHintSubjectEnabledQueryDisabled() {
+        updateLoginHintOptions(true, false);
+        assertLoginHintQueryParam(false);
+    }
+
     @Override
     boolean isLoginHintOptionEnabled() {
         return true;
