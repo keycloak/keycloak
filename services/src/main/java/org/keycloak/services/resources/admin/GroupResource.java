@@ -187,6 +187,7 @@ public class GroupResource {
             @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
             @Parameter(description = "Boolean which defines whether brief groups representations are returned or not (default: false)") @QueryParam("briefRepresentation") @DefaultValue("false") Boolean briefRepresentation,
             @Parameter(description = "Boolean which defines whether to return the count of subgroups for each subgroup of this group (default: true)") @QueryParam("subGroupsCount") @DefaultValue("true") Boolean subGroupsCount) {
+        this.auth.groups().requireList();
         this.auth.groups().requireView(group);
 
         Stream<GroupModel> stream = group.getSubGroupsStream(search, exact, -1, -1);
