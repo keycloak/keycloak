@@ -255,10 +255,6 @@ public class ClientRoleMappingsResource {
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).representation(effectiveRoles).success();
     }
 
-    private boolean canMapRole(RoleModel roleModel) {
-        return auth.roles().canMapRole(roleModel);
-    }
-
     private RoleModel getValidatedClientRole(RoleRepresentation role) {
         RoleModel roleModel = client.getRole(role.getName());
         if (roleModel == null || !roleModel.getId().equals(role.getId())) {

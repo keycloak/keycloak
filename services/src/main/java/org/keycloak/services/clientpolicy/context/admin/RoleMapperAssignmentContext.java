@@ -36,6 +36,13 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 public interface RoleMapperAssignmentContext extends ClientPolicyContext {
 
     /**
+     * @return the client that owns the mapped roles, or {@code null} for realm-role mappings.
+     */
+    default ClientModel getTargetClient() {
+        return getRoleContainerClient();
+    }
+
+    /**
      * @return the user or group receiving or losing the role mapping.
      */
     default RoleMapperModel getRoleMapper() {
