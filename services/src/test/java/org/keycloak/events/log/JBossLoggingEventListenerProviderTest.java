@@ -48,8 +48,6 @@ import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.handlers.WriterHandler;
 import org.jboss.resteasy.mock.MockHttpRequest;
 import org.junit.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  *
@@ -174,23 +172,31 @@ public class JBossLoggingEventListenerProviderTest {
         });
     }
 
-    @ParameterizedTest
-    @CsvSource({"realm-id,realm-name", "different-realm-id,realm-name", "realm-id,different-realm-name", "different-realm-id,different-realm-name"})
-    public void testAdminTargetRealm(String realmId, String realmName) {
-        AdminEvent adminEvent = createEvent();
-        AuthDetails authDetails = adminEvent.getAuthDetails();
-        authDetails.setRealmId("realm-id");
-        authDetails.setRealmName("realm-name");
-        adminEvent.setAuthDetails(authDetails);
-        adminEvent.setTargetRealmId(realmId);
-        adminEvent.setTargetRealmName(realmName);
-        test(Map.of("success-level", "info"), adminEvent, false, message -> {
-            MatcherAssert.assertThat(message, Matchers.startsWith("INFO "));
-            assertAdminEvent(adminEvent, message);
-            assertAdminEventKey(message, "targetRealmId", adminEvent.getTargetRealmId());
-            assertAdminEventKey(message, "targetRealmName", adminEvent.getTargetRealmName());
-        });
-    }
+    @Test
+    public void testAdminTargetRealm() {
+        String[][] cases = {
+                {"realm-id", "realm-name"},
+                {"different-realm-id", "realm-name"},
+                {"realm-id", "different-realm-name"},
+                {"different-realm-id", "different-realm-name"}
+        };
+        for (String[] c : cases) {
+            String realmId = c[0];
+            String realmName = c[1];
+            AdminEvent adminEvent = createEvent();
+            AuthDetails authDetails = adminEvent.getAuthDetails();
+            authDetails.setRealmId("realm-id");
+            authDetails.setRealmName("realm-name");
+            adminEvent.setAuthDetails(authDetails);
+            adminEvent.setTargetRealmId(realmId);
+            adminEvent.setTargetRealmName(realmName);
+            test(Map.of("success-level", "info"), adminEvent, false, message -> {
+                MatcherAssert.assertThat(message, Matchers.startsWith("INFO "));
+                assertAdminEvent(adminEvent, message);
+                assertAdminEventKey(message, "targetRealmId", adminEvent.getTargetRealmId());
+                assertAdminEventKey(message, "targetRealmName", adminEvent.getTargetRealmName());
+            });
+        }
 
     private static void test(AdminEvent adminEvent, boolean includeRepresentation, Consumer<String> assertMessage) {
         test(Map.of(), adminEvent, includeRepresentation, assertMessage);
