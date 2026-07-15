@@ -122,6 +122,10 @@ When the executor is attached to a client policy, node hostnames are validated a
 Administrators managing deployments that use the legacy adapter node registration feature should add the `secure-client-node-hostname` executor to a client policy and configure the allowed hostname patterns.
 Hostname patterns match against DNS hostnames and IPv4 addresses. Port suffixes are always rejected. Patterns are matched against the bare hostname or IP address.
 
+== Credential ID in credential update events
+
+The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry the `credential_id` detail when a credential was created or updated in the {project_name} credential store, as the `REMOVE_CREDENTIAL` event already did. The detail is omitted when an external user-storage provider handles the update because there is no {project_name} credential ID to report.
+
 = Administration
 
 == Declarative client management with Admin API v2 (preview)
