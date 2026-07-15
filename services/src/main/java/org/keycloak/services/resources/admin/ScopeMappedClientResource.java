@@ -167,18 +167,22 @@ public class ScopeMappedClientResource {
     public void addClientScopeMapping(List<RoleRepresentation> roles) {
         managePermission.require();
 
+        List<RoleModel> roleModels = roles.stream().map(role -> {
+            RoleModel roleModel = scopedClient.getRole(role.getName());
+            if (roleModel == null) {
+                throw new NotFoundException("Role not found");
+            }
+            auth.roles().requireMapClientScope(roleModel);
+            return roleModel;
+        }).collect(Collectors.toList());
+
         try {
             session.clientPolicy().triggerOnEvent(new ClientScopeMappingRegisterContext(scopeContainer, scopedClient, roles, auth.adminAuth()));
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
-        for (RoleRepresentation role : roles) {
-            RoleModel roleModel = scopedClient.getRole(role.getName());
-            if (roleModel == null) {
-                throw new NotFoundException("Role not found");
-            }
-            auth.roles().requireMapClientScope(roleModel);
+        for (RoleModel roleModel : roleModels) {
             scopeContainer.addScopeMapping(roleModel);
         }
 
@@ -197,21 +201,25 @@ public class ScopeMappedClientResource {
     public void deleteClientScopeMapping(List<RoleRepresentation> roles) {
         managePermission.require();
 
+        List<RoleModel> roleModels;
         List<RoleRepresentation> effectiveRoles;
         if (roles == null) {
-            effectiveRoles = KeycloakModelUtils.getClientScopeMappingsStream(scopedClient, scopeContainer)
+            roleModels = KeycloakModelUtils.getClientScopeMappingsStream(scopedClient, scopeContainer)
                     .filter(auth.roles()::canMapClientScope)
+                    .collect(Collectors.toList());
+            effectiveRoles = roleModels.stream()
                     .map(ModelToRepresentation::toBriefRepresentation)
                     .collect(Collectors.toList());
         } else {
-            for (RoleRepresentation role : roles) {
+            effectiveRoles = roles;
+            roleModels = roles.stream().map(role -> {
                 RoleModel roleModel = scopedClient.getRole(role.getName());
                 if (roleModel == null) {
                     throw new NotFoundException("Role not found");
                 }
                 auth.roles().requireMapClientScope(roleModel);
-            }
-            effectiveRoles = roles;
+                return roleModel;
+            }).collect(Collectors.toList());
         }
 
         try {
@@ -220,11 +228,7 @@ public class ScopeMappedClientResource {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
-        for (RoleRepresentation role : effectiveRoles) {
-            RoleModel roleModel = scopedClient.getRole(role.getName());
-            if (roleModel == null) {
-                throw new NotFoundException("Role not found");
-            }
+        for (RoleModel roleModel : roleModels) {
             scopeContainer.deleteScopeMapping(roleModel);
         }
 

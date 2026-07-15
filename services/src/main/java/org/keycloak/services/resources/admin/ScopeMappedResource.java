@@ -230,18 +230,22 @@ public class ScopeMappedResource {
             throw new NotFoundException("Could not find client");
         }
 
+        List<RoleModel> roleModels = roles.stream().map(role -> {
+            RoleModel roleModel = realm.getRoleById(role.getId());
+            if (roleModel == null) {
+                throw new NotFoundException("Role not found");
+            }
+            auth.roles().requireMapClientScope(roleModel);
+            return roleModel;
+        }).collect(Collectors.toList());
+
         try {
             session.clientPolicy().triggerOnEvent(new ClientScopeMappingRegisterContext(scopeContainer, null, roles, auth.adminAuth()));
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
-        for (RoleRepresentation role : roles) {
-            RoleModel roleModel = realm.getRoleById(role.getId());
-            if (roleModel == null) {
-                throw new NotFoundException("Role not found");
-            }
-            auth.roles().requireMapClientScope(roleModel);
+        for (RoleModel roleModel : roleModels) {
             scopeContainer.addScopeMapping(roleModel);
         }
 
@@ -265,21 +269,25 @@ public class ScopeMappedResource {
             throw new NotFoundException("Could not find client");
         }
 
+        List<RoleModel> roleModels;
         List<RoleRepresentation> effectiveRoles;
         if (roles == null) {
-            effectiveRoles = scopeContainer.getRealmScopeMappingsStream()
+            roleModels = scopeContainer.getRealmScopeMappingsStream()
                     .filter(auth.roles()::canMapClientScope)
+                    .collect(Collectors.toList());
+            effectiveRoles = roleModels.stream()
                     .map(ModelToRepresentation::toBriefRepresentation)
                     .collect(Collectors.toList());
         } else {
-            for (RoleRepresentation role : roles) {
+            effectiveRoles = roles;
+            roleModels = roles.stream().map(role -> {
                 RoleModel roleModel = realm.getRoleById(role.getId());
                 if (roleModel == null) {
                     throw new NotFoundException("Role not found");
                 }
                 auth.roles().requireMapClientScope(roleModel);
-            }
-            effectiveRoles = roles;
+                return roleModel;
+            }).collect(Collectors.toList());
         }
 
         try {
@@ -288,11 +296,7 @@ public class ScopeMappedResource {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
-        for (RoleRepresentation role : effectiveRoles) {
-            RoleModel roleModel = realm.getRoleById(role.getId());
-            if (roleModel == null) {
-                throw new NotFoundException("Role not found");
-            }
+        for (RoleModel roleModel : roleModels) {
             scopeContainer.deleteScopeMapping(roleModel);
         }
 
