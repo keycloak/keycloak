@@ -40,6 +40,7 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.WebAuthnCredentialModelInput;
 import org.keycloak.credential.WebAuthnCredentialProvider;
@@ -304,7 +305,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             WebAuthnCredentialProvider webAuthnCredProvider = (WebAuthnCredentialProvider) this.session.getProvider(CredentialProvider.class, getCredentialProviderId());
             WebAuthnCredentialModel newCredentialModel = webAuthnCredProvider.getCredentialModelFromCredentialInput(credential, label);
 
-            webAuthnCredProvider.createCredential(context.getRealm(), context.getUser(), newCredentialModel);
+            CredentialModel createdCredential = webAuthnCredProvider.createCredential(context.getRealm(), context.getUser(), newCredentialModel);
 
             String aaguid = newCredentialModel.getWebAuthnCredentialData().getAaguid();
             logger.debugv("WebAuthn credential registration success for user {0}. credentialType = {1}, publicKeyCredentialId = {2}, publicKeyCredentialLabel = {3}, publicKeyCredentialAAGUID = {4}",
@@ -312,6 +313,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             webAuthnCredProvider.dumpCredentialModel(newCredentialModel, credential);
 
             context.getEvent()
+                .detail(Details.CREDENTIAL_ID, createdCredential.getId())
                 .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, publicKeyCredentialId)
                 .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, label)
                 .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, aaguid);

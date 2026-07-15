@@ -240,6 +240,13 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
                 .filter(cred -> cred.getType().equals(credType))
                 .filter(cred -> cred.getUserLabel().equals(authenticatorLabel))
                 .collect(Collectors.toList()).size(), is(1));
+
+        String storedCredentialId = userRes.credentials().stream()
+                .filter(cred -> cred.getType().equals(credType))
+                .filter(cred -> cred.getUserLabel().equals(authenticatorLabel))
+                .map(CredentialRepresentation::getId)
+                .findFirst().orElseThrow();
+        assertThat(eventRep2.getDetails().get(Details.CREDENTIAL_ID), equalTo(storedCredentialId));
         assertThat(getVirtualAuthManager().getCurrent().getAuthenticator().getCredentials().stream()
                 .filter(cred -> cred.isResidentCredential() == withResidentKey)
                 .collect(Collectors.toList()).size(), is(1));

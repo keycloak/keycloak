@@ -199,10 +199,16 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL)
+        EventRepresentation updateCredentialEvent = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL)
                 .userId(userId)
                 .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .details(Details.USERNAME, "setuptotp");
+                .details(Details.USERNAME, "setuptotp").getEvent();
+        String storedCredentialId = managedRealm.admin().users().get(userId).credentials().stream()
+                .filter(credential -> OTPCredentialModel.TYPE.equals(credential.getType()))
+                .findFirst()
+                .orElseThrow()
+                .getId();
+        assertEquals(storedCredentialId, updateCredentialEvent.getDetails().get(Details.CREDENTIAL_ID));
 
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
