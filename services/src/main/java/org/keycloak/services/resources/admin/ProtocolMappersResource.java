@@ -143,13 +143,13 @@ public class ProtocolMappersResource {
 
         ProtocolMapperModel model = null;
         try {
-            model = RepresentationToModel.toModel(rep);
-            validateModel(model);
             try {
                 session.clientPolicy().triggerOnEvent(new ClientProtocolMapperRegisterContext(client, rep, auth.adminAuth()));
             } catch (ClientPolicyException cpe) {
                 throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
             }
+            model = RepresentationToModel.toModel(rep);
+            validateModel(model);
             model = client.addProtocolMapper(model);
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), model.getId()).representation(rep).success();
 
@@ -173,20 +173,20 @@ public class ProtocolMappersResource {
     public void createMapper(List<ProtocolMapperRepresentation> reps) {
         managePermission.require();
 
-        List<ProtocolMapperModel> models = reps.stream()
-                .map(RepresentationToModel::toModel)
-                .toList();
-
-        for (ProtocolMapperModel model : models) {
-            validateModel(model);
-        }
-
         if (!reps.isEmpty()) {
             try {
                 session.clientPolicy().triggerOnEvent(new ClientProtocolMapperRegisterContext(client, reps, auth.adminAuth()));
             } catch (ClientPolicyException cpe) {
                 throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
             }
+        }
+
+        List<ProtocolMapperModel> models = reps.stream()
+                .map(RepresentationToModel::toModel)
+                .toList();
+
+        for (ProtocolMapperModel model : models) {
+            validateModel(model);
         }
 
         for (ProtocolMapperModel model : models) {
@@ -262,15 +262,15 @@ public class ProtocolMappersResource {
 
         ProtocolMapperModel existing = client.getProtocolMapperById(id);
         if (existing == null) throw new NotFoundException("Model not found");
-        ProtocolMapperModel model = RepresentationToModel.toModel(rep);
-
-        validateModel(model);
 
         try {
             session.clientPolicy().triggerOnEvent(new ClientProtocolMapperUpdateContext(client, rep, existing, auth.adminAuth()));
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
+
+        ProtocolMapperModel model = RepresentationToModel.toModel(rep);
+        validateModel(model);
 
         client.updateProtocolMapper(model);
         adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
