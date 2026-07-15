@@ -21,6 +21,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
+import org.keycloak.services.clientpolicy.context.ClientModelContext;
 
 /**
  * Context fired by {@link org.keycloak.services.resources.admin.ClientAttributeCertificateResource}
@@ -28,13 +29,21 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
  *
  * <p>Dispatched as {@link org.keycloak.services.clientpolicy.ClientPolicyEvent#UPDATE_CLIENT_CERTIFICATE}.
  */
-public interface ClientCertificateContext extends ClientPolicyContext {
+public interface ClientCertificateContext extends ClientPolicyContext, ClientModelContext {
 
     /**
      * @return the client whose signing material is being updated.
      */
     default ClientModel getTargetClient() {
         return null;
+    }
+
+    /**
+     * @return the client whose signing material is being updated.
+     */
+    @Override
+    default ClientModel getClient() {
+        return getTargetClient();
     }
 
     /**

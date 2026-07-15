@@ -17,6 +17,7 @@
 package org.keycloak.tests.client.policies;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.MediaType;
@@ -27,11 +28,17 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.crypto.def.DefaultCryptoProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientProtocolCondition;
+import org.keycloak.services.clientpolicy.condition.ClientProtocolConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextCondition;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
+import org.keycloak.services.clientpolicy.context.admin.ClientCertificateUpdateContext;
 import org.keycloak.services.clientpolicy.executor.RejectRequestExecutorFactory;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -67,6 +74,50 @@ public class AdminClientCertificateClientPolicyTest extends AbstractClientPolici
 
         Assertions.assertThrows(BadRequestException.class, certificates::generate);
         assertCertificateUnchanged(certificates, original);
+    }
+
+    @Test
+    public void applyTargetClientProtocolCondition() throws Exception {
+        ClientAttributeCertificateResource oidcCertificates = createClient(
+                "certificate-target-oidc-client", OIDCLoginProtocol.LOGIN_PROTOCOL)
+                .getCertficateResource("jwt.credential");
+        ClientAttributeCertificateResource samlCertificates = createClient(
+                "certificate-target-saml-client", SamlProtocol.LOGIN_PROTOCOL)
+                .getCertficateResource("jwt.credential");
+        CertificateRepresentation original = oidcCertificates.generate();
+
+        setupRejectingProtocolPolicy(OIDCLoginProtocol.LOGIN_PROTOCOL);
+
+        Assertions.assertThrows(BadRequestException.class, oidcCertificates::generate);
+        assertCertificateUnchanged(oidcCertificates, original);
+        Assertions.assertNotNull(samlCertificates.generate().getCertificate());
+    }
+
+    @Test
+    public void applyAuthenticatedUpdaterCondition() throws Exception {
+        ClientAttributeCertificateResource certificates = createClient("certificate-updater-client")
+                .getCertficateResource("jwt.credential");
+        CertificateRepresentation original = certificates.generate();
+        setupRejectingUpdaterPolicy();
+
+        Assertions.assertThrows(BadRequestException.class, certificates::generate);
+        assertCertificateUnchanged(certificates, original);
+    }
+
+    @Test
+    public void omitRawJwksFromPolicyContext() {
+        CertificateRepresentation proposed = new CertificateRepresentation();
+        proposed.setJwks("{\"keys\":[{\"kty\":\"RSA\",\"d\":\"private-value\"}]}");
+        proposed.setPrivateKey("private-key");
+        proposed.setPublicKey("public-key");
+        proposed.setKid("kid");
+
+        CertificateRepresentation sanitized = new ClientCertificateUpdateContext(null, "jwt.credential", proposed, null)
+                .getProposedCertificate();
+        Assertions.assertNull(sanitized.getJwks());
+        Assertions.assertNull(sanitized.getPrivateKey());
+        Assertions.assertEquals("public-key", sanitized.getPublicKey());
+        Assertions.assertEquals("kid", sanitized.getKid());
     }
 
     @Test
@@ -118,8 +169,12 @@ public class AdminClientCertificateClientPolicyTest extends AbstractClientPolici
     }
 
     private ClientResource createClient(String clientId) {
+        return createClient(clientId, OIDCLoginProtocol.LOGIN_PROTOCOL);
+    }
+
+    private ClientResource createClient(String clientId, String protocol) {
         ClientRepresentation client = ClientBuilder.create(generateSuffixedName(clientId))
-                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                .protocol(protocol)
                 .publicClient(false)
                 .build();
 
@@ -140,5 +195,17 @@ public class AdminClientCertificateClientPolicyTest extends AbstractClientPolici
     private void setupRejectingPolicy() throws Exception {
         setupPolicy(realm, RejectRequestExecutorFactory.PROVIDER_ID, null,
                 AnyClientConditionFactory.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation());
+    }
+
+    private void setupRejectingProtocolPolicy(String protocol) throws Exception {
+        setupPolicy(realm, RejectRequestExecutorFactory.PROVIDER_ID, null,
+                ClientProtocolConditionFactory.PROVIDER_ID, new ClientProtocolCondition.Configuration(protocol));
+    }
+
+    private void setupRejectingUpdaterPolicy() throws Exception {
+        ClientUpdaterContextCondition.Configuration configuration = new ClientUpdaterContextCondition.Configuration();
+        configuration.setUpdateClientSource(List.of(ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER));
+        setupPolicy(realm, RejectRequestExecutorFactory.PROVIDER_ID, null,
+                ClientUpdaterContextConditionFactory.PROVIDER_ID, configuration);
     }
 }

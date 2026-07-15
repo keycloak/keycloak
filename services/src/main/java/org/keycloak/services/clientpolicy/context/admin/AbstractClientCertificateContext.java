@@ -82,7 +82,6 @@ abstract class AbstractClientCertificateContext implements ClientCertificateCont
 
         CertificateRepresentation sanitized = new CertificateRepresentation();
         sanitized.setCertificate(certificate.getCertificate());
-        sanitized.setJwks(certificate.getJwks());
         sanitized.setKid(certificate.getKid());
         sanitized.setPublicKey(certificate.getPublicKey());
         sanitized.setPrivateKey(null);
