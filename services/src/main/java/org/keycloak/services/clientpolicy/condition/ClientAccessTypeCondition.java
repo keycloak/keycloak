@@ -30,6 +30,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.ClientModelContext;
+import org.keycloak.services.clientpolicy.context.admin.ClientProtocolMapperContext;
 
 import org.jboss.logging.Logger;
 
@@ -71,7 +72,9 @@ public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProv
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
-        if (context instanceof ClientModelContext) {
+        if (context instanceof ClientProtocolMapperContext mapperContext) {
+            return isClientAccessTypeMatched(mapperContext.getTargetClient()) ? ClientPolicyVote.YES : ClientPolicyVote.NO;
+        } else if (context instanceof ClientModelContext) {
             ClientModel client = ((ClientModelContext) context).getClient();
             if (isClientAccessTypeMatched(client)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;

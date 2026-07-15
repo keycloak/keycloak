@@ -37,6 +37,13 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 public interface ClientProtocolMapperContext extends ClientPolicyContext {
 
     /**
+     * @return the client that hosts the mapper, or {@code null} when the mapper is hosted by a client scope.
+     */
+    default ClientModel getTargetClient() {
+        return getProtocolMapperContainer() instanceof ClientModel client ? client : null;
+    }
+
+    /**
      * @return the client or client scope that hosts the mapper.
      */
     default ProtocolMapperContainerModel getProtocolMapperContainer() {

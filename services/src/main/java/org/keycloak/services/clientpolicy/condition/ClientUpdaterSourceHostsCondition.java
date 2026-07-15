@@ -75,6 +75,9 @@ public class ClientUpdaterSourceHostsCondition extends AbstractClientPolicyCondi
         case UPDATE:
         case REGISTERED:
         case UPDATED:
+        case REGISTER_PROTOCOL_MAPPER:
+        case UPDATE_PROTOCOL_MAPPER:
+        case UNREGISTER_PROTOCOL_MAPPER:
             if (isHostMatched()) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
         default:
