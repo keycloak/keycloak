@@ -51,6 +51,7 @@ public class UserAttributeMapper extends AbstractClaimMapper {
 
     public static final String USER_ATTRIBUTE = "user.attribute";
     public static final String ALLOW_NULLABLE = "allow.nullable.property";
+    public static final String USERNAME = "username";
     public static final String EMAIL = "email";
     public static final String FIRST_NAME = "firstName";
     public static final String LAST_NAME = "lastName";
@@ -69,7 +70,7 @@ public class UserAttributeMapper extends AbstractClaimMapper {
         property = new ProviderConfigProperty();
         property.setName(USER_ATTRIBUTE);
         property.setLabel("User Attribute Name");
-        property.setHelpText("User attribute name to store claim.  Use email, lastName, and firstName to map to those predefined user properties.");
+        property.setHelpText("User attribute name to store claim.  Use username, email, lastName, and firstName to map to those predefined user properties.");
         property.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
         configProperties.add(property);
         allowNullableProperty = new ProviderConfigProperty();
@@ -122,7 +123,9 @@ public class UserAttributeMapper extends AbstractClaimMapper {
         Object value = getClaimValue(mapperModel, context);
         List<String> values = toList(value);
 
-        if (EMAIL.equalsIgnoreCase(attribute)) {
+        if (USERNAME.equalsIgnoreCase(attribute)) {
+            setIfNotBlank(context::setModelUsername, values);
+        } else if (EMAIL.equalsIgnoreCase(attribute)) {
             setIfNotEmpty(context::setEmail, values);
         } else if (FIRST_NAME.equalsIgnoreCase(attribute)) {
             setIfNotEmpty(context::setFirstName, values);
@@ -140,6 +143,12 @@ public class UserAttributeMapper extends AbstractClaimMapper {
 
     private void setIfNotEmpty(Consumer<String> consumer, List<String> values) {
         if (values != null && !values.isEmpty()) {
+            consumer.accept(values.get(0));
+        }
+    }
+
+    private void setIfNotBlank(Consumer<String> consumer, List<String> values) {
+        if (values != null && !values.isEmpty() && !values.get(0).isBlank()) {
             consumer.accept(values.get(0));
         }
     }
@@ -168,7 +177,9 @@ public class UserAttributeMapper extends AbstractClaimMapper {
         List<String> values = toList(value);
         boolean isNullableProperty = Boolean.parseBoolean(mapperModel.getConfig().getOrDefault(ALLOW_NULLABLE, Boolean.FALSE.toString()));
 
-        if (EMAIL.equalsIgnoreCase(attribute)) {
+        if (USERNAME.equalsIgnoreCase(attribute)) {
+            setIfNotBlank(user::setUsername, values);
+        } else if (EMAIL.equalsIgnoreCase(attribute)) {
             if (isNullableProperty) {
                 setNullable(user::setEmail, values);
             } else {

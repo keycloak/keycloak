@@ -1,9 +1,0 @@
-AuthorizationTest
-KcOidcBrokerTest
-LDAPUserLoginTest
-SamlClientTest
-UserProfileTest
-OidcAdvancedClaimToGroupMapperTest
-OidcAdvancedClaimToRoleMapperTest
-org.keycloak.testsuite.authz.**ManagementTest
-org.keycloak.testsuite.organization.admin.**

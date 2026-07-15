@@ -11,7 +11,7 @@ import { stringifyQueryParams } from "../utils/stringifyQueryParams.js";
 // constants
 const SLASH = "/";
 
-type Method = "GET" | "POST" | "PUT" | "DELETE";
+type Method = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
 // interface
 export interface RequestArgs {

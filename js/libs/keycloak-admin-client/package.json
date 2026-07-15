@@ -51,7 +51,7 @@
     "generate:openapi": {
       "command": "kiota generate -l typescript -d openapi.json -c AdminClient -n ApiSdk -o ./src/generated --clean-output",
       "env": {
-        "KIOTA_VERSION": "v1.31.1"
+        "KIOTA_VERSION": "v1.32.4"
       },
       "files": [
         "openapi.json"
@@ -71,12 +71,12 @@
     }
   },
   "dependencies": {
-    "@microsoft/kiota-abstractions": "^1.0.0-preview.86",
-    "@microsoft/kiota-http-fetchlibrary": "^1.0.0-preview.80",
-    "@microsoft/kiota-serialization-form": "^1.0.0-preview.74",
-    "@microsoft/kiota-serialization-json": "^1.0.0-preview.86",
-    "@microsoft/kiota-serialization-multipart": "^1.0.0-preview.67",
-    "@microsoft/kiota-serialization-text": "^1.0.0-preview.79",
+    "@microsoft/kiota-abstractions": "1.0.0-preview.103",
+    "@microsoft/kiota-http-fetchlibrary": "1.0.0-preview.103",
+    "@microsoft/kiota-serialization-form": "1.0.0-preview.103",
+    "@microsoft/kiota-serialization-json": "1.0.0-preview.103",
+    "@microsoft/kiota-serialization-multipart": "1.0.0-preview.103",
+    "@microsoft/kiota-serialization-text": "1.0.0-preview.103",
     "camelize-ts": "^3.0.0",
     "url-template": "^3.1.1"
   },
@@ -86,7 +86,7 @@
     "@types/chai": "^5.2.2",
     "@types/lodash-es": "^4.17.12",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^25.0.3",
+    "@types/node": "^26.1.0",
     "chai": "^6.2.2",
     "lodash-es": "^4.18.1",
     "mocha": "^11.7.5",

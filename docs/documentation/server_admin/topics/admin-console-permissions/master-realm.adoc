@@ -56,5 +56,17 @@ Assign the roles you want to your users and they will only be able to use that s
 
 IMPORTANT: Admins with the `manage-users` role will only be able to assign admin roles to users that they themselves have.  So, if an admin has the `manage-users` role but doesn't have the `manage-realm` role, they will not be able to assign this role.
 
+==== Granting admin roles to users
 
+When granting admin roles to users in a realm, you must explicitly assign these roles to the user, either by a direct
+role mapping (including roles granted via identity provider mappers) or by assigning the user to a group that has the appropriate role mappings.
+This is true even for users in the `master` realm.
+
+Even though you are able to create client protocol mappers for a client to map admin roles to tokens, the admin roles
+will be ignored when the user authenticates and will not be included in the token.  This is because admin roles are only
+used for authorization to access the Admin Console and Admin REST endpoints, and are not intended to be used for
+application access control.
+
+Effectively, access to the Admin API is only granted to users with admin roles explicitly assigned through direct role
+mappings or group memberships, and not to users with admin roles mapped only through client protocol mappers.
 

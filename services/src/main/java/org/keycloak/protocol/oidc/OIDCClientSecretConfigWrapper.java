@@ -3,9 +3,11 @@ package org.keycloak.protocol.oidc;
 import java.io.InvalidObjectException;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
@@ -89,12 +91,12 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
         }
     }
 
-    public int getClientSecretCreationTime() {
+    public long getClientSecretCreationTime() {
         String creationTime = getAttribute(CLIENT_SECRET_CREATION_TIME);
-        return StringUtil.isBlank(creationTime) ? 0 : Integer.parseInt(creationTime);
+        return StringUtil.isBlank(creationTime) ? 0 : Long.parseLong(creationTime);
     }
 
-    public void setClientSecretCreationTime(int creationTime) {
+    public void setClientSecretCreationTime(long creationTime) {
         setAttribute(CLIENT_SECRET_CREATION_TIME, String.valueOf(creationTime));
     }
 
@@ -111,13 +113,13 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(CLIENT_ROTATED_SECRET, secret);
     }
 
-    public int getClientRotatedSecretCreationTime() {
+    public long getClientRotatedSecretCreationTime() {
         String rotatedCreationTime = getAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME);
-        if (StringUtil.isNotBlank(rotatedCreationTime)) return Integer.parseInt(rotatedCreationTime);
+        if (StringUtil.isNotBlank(rotatedCreationTime)) return Long.parseLong(rotatedCreationTime);
         return 0;
     }
 
-    public void setClientRotatedSecretCreationTime(Integer rotatedTime) {
+    public void setClientRotatedSecretCreationTime(Long rotatedTime) {
         setAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME, rotatedTime != null ? String.valueOf(rotatedTime) : null);
     }
 
@@ -125,11 +127,11 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
     Update the creation time of a secret with current date time value
      */
     public void setClientSecretCreationTime() {
-        setClientSecretCreationTime(Time.currentTime());
+        setClientSecretCreationTime(Time.currentTimeSeconds());
     }
 
     public void setClientRotatedSecretCreationTime() {
-        setClientRotatedSecretCreationTime(Time.currentTime());
+        setClientRotatedSecretCreationTime(Time.currentTimeSeconds());
     }
 
     public void updateClientRepresentationAttributes(ClientRepresentation rep) {
@@ -144,30 +146,30 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
         return getClientSecretExpirationTime() > 0;
     }
 
-    public int getClientSecretExpirationTime() {
+    public long getClientSecretExpirationTime() {
         String expiration = getAttribute(CLIENT_SECRET_EXPIRATION);
-        return expiration == null ? 0 : Integer.parseInt(expiration);
+        return expiration == null ? 0 : Long.parseLong(expiration);
     }
 
-    public void setClientSecretExpirationTime(Integer expiration) {
+    public void setClientSecretExpirationTime(Long expiration) {
         setAttribute(ClientSecretConstants.CLIENT_SECRET_EXPIRATION, expiration != null ? String.valueOf(expiration) : null);
     }
 
     public boolean isClientSecretExpired() {
         if (hasClientSecretExpirationTime()) {
-            return getClientSecretExpirationTime() < Time.currentTime();
+            return getClientSecretExpirationTime() < Time.currentTimeSeconds();
         }
         return false;
     }
 
-    public int getClientRotatedSecretExpirationTime() {
+    public long getClientRotatedSecretExpirationTime() {
         if (hasClientRotatedSecretExpirationTime()) {
-            return Integer.valueOf(getAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
+            return Long.parseLong(getAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
         }
         return 0;
     }
 
-    public void setClientRotatedSecretExpirationTime(Integer expiration) {
+    public void setClientRotatedSecretExpirationTime(Long expiration) {
         setAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME, expiration != null ? String.valueOf(expiration) : null);
     }
 
@@ -177,7 +179,7 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
 
     public boolean isClientRotatedSecretExpired() {
         if (hasClientRotatedSecretExpirationTime()) {
-            return getClientRotatedSecretExpirationTime() < Time.currentTime();
+            return getClientRotatedSecretExpirationTime() < Time.currentTimeSeconds();
         }
         return true;
     }
@@ -229,13 +231,13 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
             map.put("clientId", getId());
             map.put("clientName", getName());
             map.put("secretCreationTimeSeconds", getClientSecretCreationTime());
-            map.put("secretCreationTime", sdf.format(Time.toDate(getClientSecretCreationTime())));
+            map.put("secretCreationTime", sdf.format(new Date(TimeUnit.SECONDS.toMillis(getClientSecretCreationTime()))));
             map.put("secretExpirationTimeSeconds", getClientSecretExpirationTime());
-            map.put("secretExpirationTime", sdf.format(Time.toDate(getClientSecretExpirationTime())));
+            map.put("secretExpirationTime", sdf.format(new Date(TimeUnit.SECONDS.toMillis(getClientSecretExpirationTime()))));
             map.put("rotatedSecretCreationTimeSeconds", getClientRotatedSecretCreationTime());
-            map.put("rotatedSecretCreationTime", sdf.format(Time.toDate(getClientRotatedSecretCreationTime())));
+            map.put("rotatedSecretCreationTime", sdf.format(new Date(TimeUnit.SECONDS.toMillis(getClientRotatedSecretCreationTime()))));
             map.put("rotatedSecretExpirationTimeSeconds", getClientRotatedSecretExpirationTime());
-            map.put("rotatedSecretExpirationTime", sdf.format(Time.toDate(getClientRotatedSecretExpirationTime())));
+            map.put("rotatedSecretExpirationTime", sdf.format(new Date(TimeUnit.SECONDS.toMillis(getClientRotatedSecretExpirationTime()))));
             return mapper.writeValueAsString(map);
         } catch (JsonProcessingException e) {
             return "";

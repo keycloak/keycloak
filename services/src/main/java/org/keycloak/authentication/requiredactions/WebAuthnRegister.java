@@ -525,9 +525,8 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 return;
             }
 
-            // Browser may not provide authenticatorAttachment (not required by WebAuthn spec)
             if (StringUtil.isBlank(authenticatorAttachment)) {
-                return;
+                throw new WebAuthnException("Authenticator attachment is required by the policy but was not provided by the client.");
             }
 
             if (!WebAuthnConstants.SUPPORTED_AUTHENTICATOR_ATTACHMENTS.contains(authenticatorAttachment)) {

@@ -391,7 +391,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
             }
             awaitLatch(afterFirstNodeLatch);
 
-            if (!Profile.isFeatureEnabled(Profile.Feature.CACHELESS) && InfinispanUtils.isEmbeddedInfinispan()) {
+            if (!Profile.isFeatureEnabled(Profile.Feature.STATELESS) && InfinispanUtils.isEmbeddedInfinispan()) {
                 log.debug("Joining the cluster");
                 inComittedTransaction(session -> {
                     InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
@@ -443,7 +443,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
         withRealm(realmId, (session, realm) -> {
             // remove offline client sessions from the cache
             // this simulates the cases when offline client sessions are lost from the cache due to various reasons (a cache limit/expiration/preloading issue)
-            if (!Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
+            if (!Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
                 session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).clear();
             }
 
@@ -499,7 +499,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
         withRealm(realmId, (session, realm) -> {
             // remove offline client sessions from the cache
             // this simulates the cases when offline client sessions are lost from the cache due to various reasons (a cache limit/expiration/preloading issue)
-            if (!Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
+            if (!Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
                 session.getProvider(InfinispanConnectionProvider.class)
                         .getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).clear();
             }

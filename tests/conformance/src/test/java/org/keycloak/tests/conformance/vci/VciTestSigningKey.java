@@ -35,6 +35,7 @@ import java.util.Date;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.def.DefaultCryptoProvider;
+import org.keycloak.tests.conformance.ConformanceSigningKey;
 
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
@@ -77,7 +78,9 @@ final class VciTestSigningKey {
             keyStore.setKeyEntry(KEY_ALIAS, leafKeyPair.getPrivate(), PASSWORD.toCharArray(),
                     new Certificate[] { leafCertificate, caCertificate });
 
-            Path keyStorePath = Files.createTempFile("keycloak-oid4vci-conformance-signing", ".p12");
+            Path keyStorePath = Files.createTempFile(
+                    ConformanceSigningKey.realmKeystoreDir(VciConformanceRealmConfig.REALM),
+                    "keycloak-oid4vci-conformance-signing", ".p12");
             try (OutputStream output = Files.newOutputStream(keyStorePath)) {
                 keyStore.store(output, PASSWORD.toCharArray());
             }
