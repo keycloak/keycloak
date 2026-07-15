@@ -196,6 +196,72 @@ jobs:
           echo "$out" | grep -A4 'resources:' | grep -q 'cpu: 1500m'
           echo "$out" | grep -A4 'resources:' | grep -q 'memory: 1Gi'
 
+  test-helm-install:
+    name: Helm chart install on Kubernetes
+    if: needs.conditional.outputs.operator == 'true'
+    runs-on: ubuntu-latest
+    needs: conditional
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Setup Java
+        uses: ./.github/actions/java-setup
+
+      - name: Install Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v3.14.4
+
+      - name: Setup Minikube-Kubernetes
+        uses: manusa/actions-setup-minikube@b65276017fdec6f1e6498129fb740e34e260dc55 # v2.18.0
+        with:
+          minikube version: ${{ env.MINIKUBE_VERSION }}
+          kubernetes version: ${{ env.KUBERNETES_VERSION }}
+          github token: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker
+          start args: --memory=${{ env.MINIKUBE_MEMORY }} --cpus=max
+
+      - name: Build the operator image and Helm chart
+        # Build the chart cluster-wide (see test-helm) and the operator image in
+        # one reactor run, inside minikube's docker daemon so the cluster can use
+        # the image without a registry push. image-pull-policy=IfNotPresent makes
+        # the kubelet use the local image instead of pulling.
+        run: |
+          eval $(minikube -p minikube docker-env)
+          ./mvnw -B -Poperator -Pcluster-wide -pl :keycloak-operator -am package -DskipTests \
+            -Dquarkus.container-image.build=true \
+            -Dquarkus.container-image.tag=ci \
+            -Dquarkus.kubernetes.image-pull-policy=IfNotPresent
+
+      - name: helm install
+        # A real API-server install validates what `helm template` cannot: the
+        # ClusterRoleBinding ServiceAccount subjects must carry a namespace or
+        # the API server rejects them. --wait blocks until the Deployment is
+        # Available, so a crash-looping or unschedulable operator fails the job.
+        run: |
+          set -euo pipefail
+          kubectl create namespace keycloak-operator
+          helm install kc-op operator/target/helm/kubernetes/keycloak-operator \
+            --namespace keycloak-operator \
+            --set operator.image=keycloak/keycloak-operator:ci \
+            --wait --timeout 5m
+
+      - name: Verify the operator is running
+        run: |
+          set -euo pipefail
+          kubectl -n keycloak-operator rollout status deployment/keycloak-operator --timeout=300s
+          for crd in keycloaks keycloakrealmimports keycloakoidcclients keycloaksamlclients; do
+            kubectl get crd "${crd}.k8s.keycloak.org"
+          done
+          kubectl -n keycloak-operator get pods
+
+      - name: Dump operator diagnostics on failure
+        if: failure()
+        run: |
+          kubectl -n keycloak-operator get all || true
+          kubectl -n keycloak-operator describe deployment/keycloak-operator || true
+          kubectl -n keycloak-operator logs deployment/keycloak-operator --tail=300 || true
+
   test-olm:
     name: Test OLM installation
     runs-on: ubuntu-latest
@@ -426,6 +492,7 @@ jobs:
       - test-local-apiserver
       - test-remote
       - test-helm
+      - test-helm-install
       - test-olm
       - test-kustomize
     runs-on: ubuntu-latest
