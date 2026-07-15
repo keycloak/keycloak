@@ -62,9 +62,11 @@ This executor uses Java Regular Expressions. Ensure you correctly escape special
 ====
 
 
-[[blind-ssrf]]
-==== Blind Server-side Request Forgery (SSRF) via DNS rebinding
+[[dns-rebinding]]
+==== DNS rebinding
 
-A blind SSRF attack is a type of <<ssrf,SSRF attack>> where an attacker induces an application ({project_name}, in this case) to make requests to an unintended destination without exposing the response body to the attacker. This can be used to map private network infrastructure and services through observable side effects.
+DNS rebinding is a type of attack that uses manipulation of domain-name resolution to bypass domain-based protections such as browser's Same-Origin Policy, or in the case of {project_name}, domain-based protections against SSRF. It exploits a Time-of-Check to Time-of-Use (TOCTOU) gap in how {project_name} resolves hostnames. By configuring a malicious DNS server and changing the resolved IP address between the validation check and the actual connection the attacker can induce {project_name} to send requests to unintended destinations.
 
-DNS rebinding allows an attacker to bypass domain-based IP restrictions and SSRF protections by configuring a malicious DNS server to resolve to an external IP on the first request, and switch to an internal IP on the second request. It is recommended to mitigate the threat of DNS rebinding by hardening the DNS resolver used by {project_name}.
+By resolving the domain name to a public IP address first and then switching to a private IP address in the second request the attacker can make {project_name} connect to internal services, including its own endpoints. This can be used for SSRF or to map an internal network infrastructure. Inversely, by resolving the domain name to a private IP address first and then switching to a public IP address in the second request the attacker can induce {project_name} to send data intended for an internal service to an external host.
+
+DNS rebinding should be mitigated by implementing protections on the DNS resolver used by {project_name}, preventing resolutions of public domain names to internal IP addresses and private domain names to external IP addresses.
