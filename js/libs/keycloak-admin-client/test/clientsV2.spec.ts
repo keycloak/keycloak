@@ -134,7 +134,7 @@ describe("Clients V2 API", () => {
     const clientIds = sortedClients!.map(
       (c) => (c as OIDCClientRepresentation).clientId,
     );
-    expect(clientIds.sort()).to.deep.equal(clientIds);
+    expect([...clientIds].sort()).to.deep.equal(clientIds);
 
     const sortedClient1 = sortedClients!.find(
       (c) => (c as OIDCClientRepresentation).clientId === clientId1,
@@ -156,6 +156,7 @@ describe("Clients V2 API", () => {
     expect(filteredClients).to.be.ok;
     expect(filteredClients).to.be.an("array");
     expect(filteredClients!.length).to.equal(1);
+    expect(filteredClients![0].description).to.be.undefined;
 
     const filteredClient1 = filteredClients!.find(
       (c) => (c as OIDCClientRepresentation).clientId === clientId1,
