@@ -25,8 +25,6 @@ import java.util.function.Consumer;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -50,6 +48,8 @@ import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.handlers.WriterHandler;
 import org.jboss.resteasy.mock.MockHttpRequest;
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  *
@@ -174,39 +174,21 @@ public class JBossLoggingEventListenerProviderTest {
         });
     }
 
-
-    @Test
-    public void testAdminSameRealm() {
-        AdminEvent adminEvent = createEvent();
-        AuthDetails authDetails = adminEvent.getAuthDetails();
-        authDetails.setRealmId("realm-id");
-        authDetails.setRealmName("realm-name");
-        adminEvent.setAuthDetails(authDetails);
-        adminEvent.setRealmId("realm-id");
-        adminEvent.setRealmName("realm-name");
-        test(Map.of("success-level", "info"), adminEvent, false, message -> {
-            MatcherAssert.assertThat(message, Matchers.startsWith("INFO "));
-            assertAdminEvent(adminEvent, message);
-            assertAdminEventKeyNotPresent(message, "targetRealmId");
-            assertAdminEventKeyNotPresent(message, "targetRealmName");
-        });
-    }
-
     @ParameterizedTest
-    @CsvSource({"different-realm-id,realm-name", "realm-id,different-realm-name", "different-realm-id,different-realm-name"})
-    public void testAdminDifferentRealm(String realmId, String realmName) {
+    @CsvSource({"realm-id,realm-name", "different-realm-id,realm-name", "realm-id,different-realm-name", "different-realm-id,different-realm-name"})
+    public void testAdminTargetRealm(String realmId, String realmName) {
         AdminEvent adminEvent = createEvent();
         AuthDetails authDetails = adminEvent.getAuthDetails();
         authDetails.setRealmId("realm-id");
         authDetails.setRealmName("realm-name");
         adminEvent.setAuthDetails(authDetails);
-        adminEvent.setRealmId(realmId);
-        adminEvent.setRealmName(realmName);
+        adminEvent.setTargetRealmId(realmId);
+        adminEvent.setTargetRealmName(realmName);
         test(Map.of("success-level", "info"), adminEvent, false, message -> {
             MatcherAssert.assertThat(message, Matchers.startsWith("INFO "));
             assertAdminEvent(adminEvent, message);
-            assertAdminEventKey(message, "targetRealmId", adminEvent.getRealmId());
-            assertAdminEventKey(message, "targetRealmName", adminEvent.getRealmName());
+            assertAdminEventKey(message, "targetRealmId", adminEvent.getTargetRealmId());
+            assertAdminEventKey(message, "targetRealmName", adminEvent.getTargetRealmName());
         });
     }
 
@@ -289,8 +271,6 @@ public class JBossLoggingEventListenerProviderTest {
         adminEvent.setAuthDetails(authDetails);
         adminEvent.setResourceType(ResourceType.USER);
         adminEvent.setResourcePath("resource-path");
-        adminEvent.setRealmId("realm-id");
-        adminEvent.setRealmName("realm-name");
         adminEvent.setError(error);
         return adminEvent;
     }

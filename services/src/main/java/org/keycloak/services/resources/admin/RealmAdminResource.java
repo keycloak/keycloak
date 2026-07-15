@@ -575,8 +575,12 @@ public class RealmAdminResource {
         // The delete event is associated with the realm of the user executing the operation,
         // instead of the realm being deleted.
         AdminEventBuilder deleteAdminEvent = new AdminEventBuilder(auth.adminAuth().getRealm(), auth.adminAuth(), session, connection);
-        deleteAdminEvent.operation(OperationType.DELETE).resource(ResourceType.REALM)
-                .realm(auth.adminAuth().getRealm()).resourcePath(realm.getName()).success();
+        deleteAdminEvent.operation(OperationType.DELETE)
+                .resource(ResourceType.REALM)
+                .realm(auth.adminAuth().getRealm())
+                .targetRealm(realm)
+                .resourcePath(realm.getName())
+                .success();
     }
 
     /**
