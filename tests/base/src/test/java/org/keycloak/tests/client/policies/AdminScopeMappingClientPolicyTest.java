@@ -31,13 +31,16 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
-import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientProtocolCondition;
+import org.keycloak.services.clientpolicy.condition.ClientProtocolConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextCondition;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
 import org.keycloak.services.clientpolicy.executor.RejectRequestExecutorFactory;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -131,15 +134,40 @@ public class AdminScopeMappingClientPolicyTest extends AbstractClientPoliciesTes
         assertRolePresent(mappedScope.getScopeMappings().clientLevel(clientUuid).listAll(), roleToRemove.getName());
     }
 
+    @Test
+    public void applyTargetClientProtocolConditionWithClientScopeSemantics() throws Exception {
+        RoleRepresentation role = createRealmRole("target-scope-role");
+        ClientResource oidcClient = createClient("target-scope-oidc-client", OIDCLoginProtocol.LOGIN_PROTOCOL);
+        ClientResource samlClient = createClient("target-scope-saml-client", SamlProtocol.LOGIN_PROTOCOL);
+        ClientScopeResource clientScope = createClientScope("target-scope-client-scope");
+
+        setupRejectingProtocolPolicy(OIDCLoginProtocol.LOGIN_PROTOCOL);
+
+        Assertions.assertThrows(BadRequestException.class,
+                () -> oidcClient.getScopeMappings().realmLevel().add(List.of(role)));
+        assertRoleAbsent(oidcClient.getScopeMappings().realmLevel().listAll(), role.getName());
+
+        samlClient.getScopeMappings().realmLevel().add(List.of(role));
+        assertRolePresent(samlClient.getScopeMappings().realmLevel().listAll(), role.getName());
+
+        clientScope.getScopeMappings().realmLevel().add(List.of(role));
+        assertRolePresent(clientScope.getScopeMappings().realmLevel().listAll(), role.getName());
+    }
+
     private ClientResource createClient(String clientId) {
+        return createClient(clientId, OIDCLoginProtocol.LOGIN_PROTOCOL);
+    }
+
+    private ClientResource createClient(String clientId, String protocol) {
         ClientRepresentation client = ClientBuilder.create(generateSuffixedName(clientId))
-                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                .protocol(protocol)
                 .publicClient()
                 .build();
 
         try (Response response = realm.admin().clients().create(client)) {
             Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
             String id = ApiUtil.getCreatedId(response);
+            realm.cleanup().add(r -> r.clients().delete(id));
             return realm.admin().clients().get(id);
         }
     }
@@ -152,6 +180,7 @@ public class AdminScopeMappingClientPolicyTest extends AbstractClientPoliciesTes
         try (Response response = realm.admin().clientScopes().create(scope)) {
             Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
             String id = ApiUtil.getCreatedId(response);
+            realm.cleanup().add(r -> r.clientScopes().get(id).remove());
             return realm.admin().clientScopes().get(id);
         }
     }
@@ -159,6 +188,7 @@ public class AdminScopeMappingClientPolicyTest extends AbstractClientPoliciesTes
     private RoleRepresentation createRealmRole(String name) {
         RoleRepresentation role = new RoleRepresentation(generateSuffixedName(name), "", false);
         realm.admin().roles().create(role);
+        realm.cleanup().add(r -> r.roles().get(role.getName()).remove());
         return realm.admin().roles().get(role.getName()).toRepresentation();
     }
 
@@ -177,8 +207,15 @@ public class AdminScopeMappingClientPolicyTest extends AbstractClientPoliciesTes
     }
 
     private void setupRejectingPolicy() throws Exception {
+        ClientUpdaterContextCondition.Configuration configuration = new ClientUpdaterContextCondition.Configuration();
+        configuration.setUpdateClientSource(List.of(ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER));
         setupPolicy(realm, RejectRequestExecutorFactory.PROVIDER_ID, null,
-                AnyClientConditionFactory.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation());
+                ClientUpdaterContextConditionFactory.PROVIDER_ID, configuration);
+    }
+
+    private void setupRejectingProtocolPolicy(String protocol) throws Exception {
+        setupPolicy(realm, RejectRequestExecutorFactory.PROVIDER_ID, null,
+                ClientProtocolConditionFactory.PROVIDER_ID, new ClientProtocolCondition.Configuration(protocol));
     }
 
     private void grantClientScopeManagePermission() {
@@ -198,6 +235,9 @@ public class AdminScopeMappingClientPolicyTest extends AbstractClientPoliciesTes
         public RealmBuilder configure(RealmBuilder realm) {
             return realm.adminPermissionsEnabled(true)
                     .users(UserBuilder.create("myadmin")
+                            .name("My", "Admin")
+                            .email("myadmin@localhost")
+                            .emailVerified(true)
                             .password("password")
                             .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_CLIENTS))
                     .clients(ClientBuilder.create("myclient")

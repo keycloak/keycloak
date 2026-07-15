@@ -36,6 +36,13 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 public interface ClientScopeMappingContext extends ClientPolicyContext {
 
     /**
+     * @return the client receiving or losing the mapping, or {@code null} when the target is a client scope.
+     */
+    default ClientModel getTargetClient() {
+        return getScopeContainer() instanceof ClientModel client ? client : null;
+    }
+
+    /**
      * @return the scope container (client or client scope) receiving or losing the mapping.
      */
     default ScopeContainerModel getScopeContainer() {
