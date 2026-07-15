@@ -65,6 +65,6 @@ This executor uses Java Regular Expressions. Ensure you correctly escape special
 [[blind-ssrf]]
 ==== Blind Server-side Request Forgery (SSRF) via DNS rebinding
 
-Blind SSRF attack is a type of <<ssrf,SSRF attack>> where the attacker induces an application ({project_name}, in this case) to make requests to an unintended destination but does not return a response body to the attacker. This can be used to map private network infrastructure and services.
+A blind SSRF attack is a type of <<ssrf,SSRF attack>> where an attacker induces an application ({project_name}, in this case) to make requests to an unintended destination without exposing the response body to the attacker. This can be used to map private network infrastructure and services through observable side effects.
 
 DNS rebinding allows an attacker to bypass domain-based IP restrictions and SSRF protections by configuring a malicious DNS server to resolve to an external IP on the first request, and switch to an internal IP on the second request. It is recommended to mitigate the threat of DNS rebinding by hardening the DNS resolver used by {project_name}.
