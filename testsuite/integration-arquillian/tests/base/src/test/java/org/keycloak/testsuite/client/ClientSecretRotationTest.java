@@ -649,6 +649,30 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         assertThat(policies.getPolicies(), is(empty()));
     }
 
+    @Test
+    public void createExecutorConfigurationWithMissingConfigDoesNotCauseNPE() throws Exception {
+        ClientSecretRotationExecutor.Configuration missingExpirationPeriod = getClientProfileConfiguration(60, 30, 20);
+        missingExpirationPeriod.setExpirationPeriod(null);
+        ClientSecretRotationExecutor.Configuration missingRotatedExpirationPeriod = getClientProfileConfiguration(60, 30, 20);
+        missingRotatedExpirationPeriod.setRotatedExpirationPeriod(null);
+        ClientSecretRotationExecutor.Configuration missingRemainExpirationPeriod = getClientProfileConfiguration(60, 30, 20);
+        missingRemainExpirationPeriod.setRemainExpirationPeriod(null);
+
+        for (ClientSecretRotationExecutor.Configuration config : Arrays.asList(
+                missingExpirationPeriod, missingRotatedExpirationPeriod, missingRemainExpirationPeriod)) {
+            try {
+                doConfigProfileAndPolicy(new ClientProfileBuilder(), config);
+                fail("Should have rejected configuration with a missing period");
+            } catch (ClientPolicyException e) {
+                assertThat(e.getErrorDetail(), is(Status.BAD_REQUEST.getReasonPhrase()));
+            }
+        }
+
+        ClientPoliciesPoliciesResource policiesResource = adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource();
+        ClientPoliciesRepresentation policies = policiesResource.getPolicies();
+        assertThat(policies.getPolicies(), is(empty()));
+    }
+
     /**
      * When there is a client that has a secret rotated and the policy is disabled, Rotation information must be removed after updating a client
      *

@@ -46,7 +46,7 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
                 consumerSessionNoteToClaimMapper.setName(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
                 consumerSessionNoteToClaimMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
                 consumerSessionNoteToClaimMapper.setProtocolMapper(UserSessionNoteMapper.PROVIDER_ID);
-                consumerSessionNoteToClaimMapper.setConfig(Map.of(ProtocolMapperUtils.USER_SESSION_NOTE, OIDCIdentityProvider.FEDERATED_ID_TOKEN,
+                consumerSessionNoteToClaimMapper.setConfig(Map.of(ProtocolMapperUtils.USER_SESSION_NOTE, OIDCIdentityProvider.FEDERATED_ID_TOKEN + ":" + BrokerTestConstants.IDP_OIDC_ALIAS,
                         OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, OIDCIdentityProvider.FEDERATED_ID_TOKEN,
                         OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, Boolean.TRUE.toString()));
                 client.setProtocolMappers(Arrays.asList(consumerSessionNoteToClaimMapper));

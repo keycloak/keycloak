@@ -96,6 +96,9 @@ public class BruteForceUsersResource {
                 userModels = Arrays.stream(prefix.splitTerms(search))
                         .map(term -> prefix.lookup(session.users(), realm, term))
                         .filter(Objects::nonNull);
+                if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                    userModels = userModels.filter(userPermissionEvaluator::canView);
+                }
             } else {
                 Map<String, String> attributes = new HashMap<>();
                 attributes.put(UserModel.SEARCH, search.trim());

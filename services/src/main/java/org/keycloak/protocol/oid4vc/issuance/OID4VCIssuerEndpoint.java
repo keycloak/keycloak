@@ -895,41 +895,42 @@ public class OID4VCIssuerEndpoint {
 
             offerState = offerStorage.getOfferStateById(credOfferId);
             if (offerState == null) {
-                var errorMessage = "No credential offer state for: " + credOfferId;
-                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-            }
+                if (tokenAuthDetail.getIssuedCredentialId() == null) {
+                    var errorMessage = "No credential offer state for: " + credOfferId;
+                    eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+                }
+                LOGGER.debugf("Credential offer '%s' no longer present in storage — skipping offer validation for re-issuance (issuedCredentialId: %s)",
+                        credOfferId, tokenAuthDetail.getIssuedCredentialId());
+            } else {
 
-            // Verify not expired
-            // The cache should have evicted the expired CredentialOfferState - we check anyway
-            if (offerState.isExpired()) {
-                var errorMessage = "Credential offer has already expired";
-                LOGGER.errorf(errorMessage);
-                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-            }
+                if (offerState.isExpired()) {
+                    var errorMessage = "Credential offer has already expired";
+                    LOGGER.errorf(errorMessage);
+                    eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+                }
 
-            // Verify the user login session
-            //
-            if (offerState.getTargetUserId() != null && !offerState.getTargetUserId().equals(userModel.getId())) {
-                var errorMessage = "Unexpected login user: " + userModel.getUsername();
-                LOGGER.errorf(errorMessage + " != %s", offerState.getTargetUserId());
-                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-            }
+                if (offerState.getTargetUserId() != null && !offerState.getTargetUserId().equals(userModel.getId())) {
+                    var errorMessage = "Unexpected login user: " + userModel.getUsername();
+                    LOGGER.errorf(errorMessage + " != %s", offerState.getTargetUserId());
+                    eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+                }
 
-            // Verify the login client
-            //
-            if (offerState.getTargetClientId() != null && !offerState.getTargetClientId().equals(clientModel.getClientId())) {
-                var errorMessage = "Unexpected login client: " + clientModel.getClientId();
-                LOGGER.errorf(errorMessage + " != %s", offerState.getTargetClientId());
-                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+                if (offerState.getTargetClientId() != null && !offerState.getTargetClientId().equals(clientModel.getClientId())) {
+                    var errorMessage = "Unexpected login client: " + clientModel.getClientId();
+                    LOGGER.errorf(errorMessage + " != %s", offerState.getTargetClientId());
+                    eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+                }
             }
         }
 
         // Validate that authorization_details from the token matches the offer state
         // This ensures the correct access token is being used for the credential request
+        LOGGER.debugf("Validating authorization_details: offerState=%s, credOfferId=%s, issuedCredentialId=%s",
+                offerState != null ? "present" : "null", credOfferId, tokenAuthDetail.getIssuedCredentialId());
         if (offerState != null && !offerState.matchAuthorizationDetails(List.of(tokenAuthDetail))) {
             var errorMessage = "Authorization details in access token do not match the credential offer state. " +
                     "The access token may not be the one issued for this credential offer.";
