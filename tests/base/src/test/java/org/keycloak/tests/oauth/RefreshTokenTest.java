@@ -18,6 +18,8 @@ package org.keycloak.tests.oauth;
 
 
 import java.io.IOException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -87,6 +89,7 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AbstractHttpPostRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.DPoPGenerator;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.hamcrest.MatcherAssert;
@@ -391,6 +394,102 @@ public class RefreshTokenTest {
         });
     }
 
+    @Test
+    public void refreshTokenWithUnsupportedConfirmationRejected() {
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN);
+
+        String code = oauth.parseLoginResponse().getCode();
+
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        String refreshTokenString = response.getRefreshToken();
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN);
+
+        String tamperedRefreshToken = encodeRefreshTokenWithEmptyConfirmation(refreshTokenString);
+        response = oauth.doRefreshTokenRequest(tamperedRefreshToken);
+
+        Assert.assertEquals(400, response.getStatusCode());
+        Assert.assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+        assertThat(response.getErrorDescription(), Matchers.startsWith("Invalid refresh token confirmation"));
+
+        EventAssertion.assertError(events.poll()).type(EventType.REFRESH_TOKEN_ERROR).error(Errors.INVALID_TOKEN);
+    }
+
+    private String encodeRefreshTokenWithEmptyConfirmation(String encodedRefreshToken) {
+        return runOnServer.fetchString(session -> {
+            try {
+                JWSInput input = new JWSInput(encodedRefreshToken);
+                RefreshToken refreshToken = input.readJsonContent(RefreshToken.class);
+
+                refreshToken.setConfirmation(new AccessToken.Confirmation());
+                return session.tokens().encode(refreshToken);
+            } catch (JWSInputException ioe) {
+                throw new RuntimeException("Failed to encode token: " + encodedRefreshToken);
+            }
+        });
+    }
+
+    @Test
+    public void refreshTokenRejectedAfterEnablingCNFCheck() throws Exception {
+        ClientRepresentation clientRep = testAppClient.toRepresentation();
+        clientRep.setPublicClient(true);
+        testAppClient.update(clientRep);
+
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN);
+
+        String code = oauth.parseLoginResponse().getCode();
+
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        String refreshTokenString = response.getRefreshToken();
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN);
+
+        // Refresh works before enabling DPoP
+        response = oauth.doRefreshTokenRequest(refreshTokenString);
+        assertEquals(200, response.getStatusCode());
+        refreshTokenString = response.getRefreshToken();
+
+        events.poll();
+
+        // Enable DPoP on the public client
+        clientRep.getAttributes().put(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS, "true");
+        testAppClient.update(clientRep);
+
+        // Generate a valid DPoP proof (handleDPoPHeader rejects requests without one when DPoP is required)
+        KeyPair rsaKeyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        String dpopProof = DPoPGenerator.generateRsaSignedDPoPProof(rsaKeyPair, "POST", oauth.getEndpoints().getToken(), null);
+
+        // Refresh with DPoP proof + old unbound token is rejected
+        response = oauth.refreshRequest(refreshTokenString).dpopProof(dpopProof).send();
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+        assertThat(response.getErrorDescription(), Matchers.startsWith("DPoP proof key binding is required"));
+        EventAssertion.assertError(events.poll()).type(EventType.REFRESH_TOKEN_ERROR).error(Errors.INVALID_TOKEN);
+
+        //enable mtls
+        clientRep.getAttributes().put(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS, "false");
+        clientRep.getAttributes().put(OIDCConfigAttributes.USE_MTLS_HOK_TOKEN, "true");
+        clientRep.setPublicClient(false);
+        testAppClient.update(clientRep);
+
+        // Refresh with old token is rejected - token has no x5t#S256 cnf
+        response = oauth.doRefreshTokenRequest(refreshTokenString);
+        assertEquals(401, response.getStatusCode());
+        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
+        EventAssertion.assertError(events.poll()).type(EventType.REFRESH_TOKEN_ERROR).error(Errors.NOT_ALLOWED);
+
+        clientRep.getAttributes().put(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS, "false");
+        clientRep.getAttributes().put(OIDCConfigAttributes.USE_MTLS_HOK_TOKEN, "false");
+        testAppClient.update(clientRep);
+
+        // Refresh works again
+        response = oauth.doRefreshTokenRequest(refreshTokenString);
+        assertEquals(200, response.getStatusCode());
+    }
 
     @Test
     public void refreshingTokenLoadsSessionIntoCache() {
