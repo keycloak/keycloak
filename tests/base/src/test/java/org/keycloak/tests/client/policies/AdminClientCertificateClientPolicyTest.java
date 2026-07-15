@@ -27,6 +27,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.crypto.def.DefaultCryptoProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -83,6 +84,39 @@ public class AdminClientCertificateClientPolicyTest extends AbstractClientPolici
         assertCertificateUnchanged(certificates, original);
     }
 
+    @Test
+    public void rejectCertificateUploadJks() throws Exception {
+        ClientAttributeCertificateResource certificates = createClient("certificate-upload-jks-client")
+                .getCertficateResource("jwt.credential");
+        CertificateRepresentation original = certificates.generate();
+        MultipartFormDataOutput form = new MultipartFormDataOutput();
+        form.addFormData("keystoreFormat", "Certificate PEM", MediaType.TEXT_PLAIN_TYPE);
+        form.addFormData("file", original.getCertificate().getBytes(StandardCharsets.US_ASCII), MediaType.APPLICATION_OCTET_STREAM_TYPE);
+
+        setupRejectingPolicy();
+
+        Assertions.assertThrows(BadRequestException.class, () -> certificates.uploadJks(form));
+        assertCertificateUnchanged(certificates, original);
+    }
+
+    @Test
+    public void rejectCertificateGenerateAndDownload() throws Exception {
+        ClientAttributeCertificateResource certificates = createClient("certificate-gen-download-client")
+                .getCertficateResource("jwt.credential");
+        CertificateRepresentation original = certificates.generate();
+
+        KeyStoreConfig config = new KeyStoreConfig();
+        config.setFormat("PKCS12");
+        config.setKeyAlias("alias");
+        config.setKeyPassword("keyPass");
+        config.setStorePassword("storePass");
+
+        setupRejectingPolicy();
+
+        Assertions.assertThrows(BadRequestException.class, () -> certificates.generateAndGetKeystore(config));
+        assertCertificateUnchanged(certificates, original);
+    }
+
     private ClientResource createClient(String clientId) {
         ClientRepresentation client = ClientBuilder.create(generateSuffixedName(clientId))
                 .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
@@ -92,6 +126,7 @@ public class AdminClientCertificateClientPolicyTest extends AbstractClientPolici
         try (Response response = realm.admin().clients().create(client)) {
             Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
             String id = ApiUtil.getCreatedId(response);
+            realm.cleanup().add(r -> r.clients().delete(id));
             return realm.admin().clients().get(id);
         }
     }
