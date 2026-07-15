@@ -662,6 +662,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // CIMD (mandatory): client_id
         // RFC 7591 (mandatory): redirect_uris
         // RFC 7591 (optional): logo_uri, client_uri, tos_uri, policy_uri, jwks_uri
+        // RP-Initiated Logout 1.0 (optional): post_logout_redirect_uris
 
         List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
         verifyUriProperty(clientOIDC.getClientId(), "client_id", trustedDomains);
@@ -675,6 +676,12 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         verifyUriPropertyIfPresent(clientOIDC.getTosUri(), "tos_uri", trustedDomains);
         verifyUriPropertyIfPresent(clientOIDC.getPolicyUri(), "policy_uri", trustedDomains);
         verifyUriPropertyIfPresent(clientOIDC.getJwksUri(), "jwks_uri", trustedDomains);
+
+        if (clientOIDC.getPostLogoutRedirectUris() != null) {
+            for (String postLogoutRedirectUri : clientOIDC.getPostLogoutRedirectUris()) {
+                verifyUriProperty(postLogoutRedirectUri, "post_logout_redirect_uris", trustedDomains);
+            }
+        }
 
         URI clientIdURIfromMetadata;
         try {
@@ -762,8 +769,10 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 throw invalidClientIdMetadata(ERR_METADATA_URIS_SAMEDOMAIN);
             }
 
-            List<String> l = Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri())
-                    .filter(Objects::nonNull).toList();
+            List<String> l = Stream.concat(
+                        Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri()),
+                        clientOIDC.getPostLogoutRedirectUris() == null ? Stream.empty() : clientOIDC.getPostLogoutRedirectUris().stream()
+                    ).filter(Objects::nonNull).toList();
             try {
                 for (String s : l) {
                     URI u = new URI(s);
