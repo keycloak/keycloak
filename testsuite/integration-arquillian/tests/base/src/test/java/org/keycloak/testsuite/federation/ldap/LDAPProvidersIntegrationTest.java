@@ -669,6 +669,104 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     }
 
 
+    // The password update is handled by the LDAP provider, so the password stored in the Keycloak DB is left untouched
+    // and its ID must not be reported on the UPDATE_CREDENTIAL event
+    @Test
+    public void ldapPasswordChangeWithRequiredActionAndShadowingLocalPassword() throws Exception {
+        // Test this just for the import mode. No-import mode doesn't support requiredActions right now
+        if (!isImportEnabled()) {
+            return;
+        }
+
+        String username = "req-act-local-pwd";
+        String email = username + "@email.cz";
+
+        // Register new LDAP user with password, logout user
+        oauth.openLoginForm();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+        registerPage.register("firstName", "lastName", email, username, "Password1", "Password1");
+
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
+        String userId = user.toRepresentation().getId();
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.REGISTER).userId(userId).clientId(oauth.getClientId()).details(Details.USERNAME, username).details(Details.EMAIL, email);
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).getEvent();
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
+        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(userId);
+
+        assertPasswordConfiguredThroughLDAPOnly(user);
+
+        // Store a password in the Keycloak DB too, by switching the provider to UNSYNCED just for that update
+        setLDAPEditMode(UserStorageProvider.EditMode.UNSYNCED.toString());
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            session.getContext().setRealm(appRealm);
+
+            UserModel userModel = session.users().getUserByUsername(appRealm, username);
+            userModel.credentialManager().updateCredential(UserCredentialModel.password("Local-password1", true));
+        });
+        setLDAPEditMode(UserStorageProvider.EditMode.WRITABLE.toString());
+
+        CredentialRepresentation localPassword = getLocallyStoredPassword(user);
+
+        // Update password through required action. The LDAP provider handles the update, so no local credential is touched
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.setRequiredActions(Arrays.asList(UserModel.RequiredAction.UPDATE_PASSWORD.toString()));
+        user.update(userRep);
+
+        oauth.openLoginForm();
+        // The LDAP provider stops validating passwords as soon as one is stored in the Keycloak DB, so the local
+        // password is the one the user authenticates with
+        loginPage.login(username, "Local-password1");
+        requiredActionChangePasswordPage.assertCurrent();
+
+        requiredActionChangePasswordPage.changePassword("Password1-updated", "Password1-updated");
+
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId);
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId)
+                .withoutDetails(Details.CREDENTIAL_ID);
+        loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).getEvent();
+        tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
+        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(userId);
+
+        // Assert the locally stored password is still the very same one as before the update
+        CredentialRepresentation localPasswordAfterUpdate = getLocallyStoredPassword(user);
+        assertEquals(localPassword.getId(), localPasswordAfterUpdate.getId());
+        assertEquals(localPassword.getCreatedDate(), localPasswordAfterUpdate.getCreatedDate());
+
+        // Remove the local password so the LDAP provider validates again, proving the update landed in the LDAP
+        user.removeCredential(localPassword.getId());
+        assertPasswordConfiguredThroughLDAPOnly(user);
+        loginSuccessAndLogout(username, "Password1-updated");
+    }
+
+    private void setLDAPEditMode(String editMode) {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            session.getContext().setRealm(appRealm);
+
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.EDIT_MODE, editMode);
+            appRealm.updateComponent(ctx.getLdapModel());
+        });
+    }
+
+    private CredentialRepresentation getLocallyStoredPassword(UserResource user) {
+        return user.credentials().stream()
+                .filter(credential -> PasswordCredentialModel.TYPE.equals(credential.getType()))
+                .filter(credential -> credential.getFederationLink() == null)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Password credential is not stored in the Keycloak DB"));
+    }
+
+
     // Use admin REST endpoints
     private void assertPasswordConfiguredThroughLDAPOnly(UserResource user) {
         // Assert password not stored locally
