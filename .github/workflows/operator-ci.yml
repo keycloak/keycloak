@@ -166,7 +166,7 @@ jobs:
           # Default install ships one CRD per CR class (Keycloak, KeycloakRealmImport,
           # KeycloakOIDCClient, KeycloakSAMLClient) plus the operator's Deployment.
           crds=$(echo "$out" | grep -cE '^kind: "?CustomResourceDefinition"?$' || true)
-          if [ "$crds" -lt 2 ]; then echo "expected >=2 CRDs, got $crds"; exit 1; fi
+          if [ "$crds" -ne 4 ]; then echo "expected 4 CRDs, got $crds"; exit 1; fi
           echo "$out" | grep -qE '^kind: Deployment$'
           # Cluster-wide install binds the controllers via ClusterRoleBinding.
           echo "$out" | grep -qE '^kind: ClusterRoleBinding$'
