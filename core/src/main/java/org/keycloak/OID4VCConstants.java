@@ -78,6 +78,11 @@ public class OID4VCConstants {
     public static final String SD_JWT_ALG_VALUES = "sd-jwt_alg_values";
     public static final String KB_JWT_ALG_VALUES = "kb-jwt_alg_values";
     public static final String RESPONSE_MODE_DIRECT_POST = "direct_post";
+    public static final String RESPONSE_MODE_DIRECT_POST_JWT = "direct_post.jwt";
+    // client_metadata parameters advertising the verifier's ephemeral response encryption key material.
+    public static final String JWKS = "jwks";
+    public static final String JWKS_KEYS = "keys";
+    public static final String ENCRYPTED_RESPONSE_ENC_VALUES_SUPPORTED = "encrypted_response_enc_values_supported";
     public static final String FORMAT_SD_JWT_VC = "dc+sd-jwt";
     public static final String SELF_ISSUED_V2 = "https://self-issued.me/v2";
     public static final String REQUEST_OBJECT_TYPE = "oauth-authz-req+jwt";

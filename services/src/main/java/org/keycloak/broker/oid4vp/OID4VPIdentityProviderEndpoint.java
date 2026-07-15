@@ -43,11 +43,11 @@ import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider.AuthenticationCallback;
 import org.keycloak.common.VerificationException;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.IDToken;
@@ -83,7 +83,7 @@ import org.jboss.logging.Logger;
  *   <li>{@code GET /complete-auth} resolves the deferred identity and hands control back to Keycloak.</li>
  * </ul>
  *
- * <p>TODO add the cross device flow and {@code direct_post.jwt} response encryption.
+ * <p>TODO add the cross device flow.
  */
 public class OID4VPIdentityProviderEndpoint {
 
@@ -91,10 +91,6 @@ public class OID4VPIdentityProviderEndpoint {
 
     private static final int CLOCK_SKEW_SECONDS = 60;
     private static final int KB_JWT_MAX_AGE_SECONDS = 300;
-
-    // TODO the accepted presentation signature algorithms are hardcoded to match the advertised client
-    // metadata. Derive both from configuration or the available verification key material.
-    private static final List<String> ACCEPTED_ALGORITHMS = List.of(Algorithm.ES256);
 
     // Broker-internal endpoint routing, not part of the OID4VP protocol.
     public static final String REQUEST_OBJECT_PATH = "request-object";
@@ -122,14 +118,15 @@ public class OID4VPIdentityProviderEndpoint {
     @GET
     @Path("/request-object/{state}")
     public Response requestObject(@PathParam("state") String state) {
-        Map<String, String> flow = session.singleUseObjects().get(OID4VPIdentityProvider.FLOW_PREFIX + state);
-        if (flow == null) {
+        Map<String, String> stored = session.singleUseObjects().get(OID4VPIdentityProvider.CONTEXT_PREFIX + state);
+        if (stored == null) {
             return loginError(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST,
                     "Unknown or expired state", Errors.INVALID_REQUEST);
         }
         String requestObject;
         try {
-            requestObject = buildRequestObject(state, flow).sign(provider.signingKey());
+            requestObject = buildRequestObject(state, RequestContext.fromMap(stored))
+                    .sign(provider.signingKey());
         } catch (RuntimeException e) {
             logger.errorf(e, "Failed to build the OID4VP request object: %s", e.getMessage());
             return loginError(Response.Status.INTERNAL_SERVER_ERROR, OAuthErrorException.SERVER_ERROR,
@@ -143,19 +140,42 @@ public class OID4VPIdentityProviderEndpoint {
     @Path("/")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response directPost(@FormParam(OID4VCConstants.VP_TOKEN) String vpToken,
-            @FormParam(OAuth2Constants.STATE) String state) {
-        if (StringUtil.isBlank(vpToken) || StringUtil.isBlank(state)) {
-            return loginError(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST,
-                    "Missing vp_token or state", Errors.INVALID_REQUEST);
-        }
-        Map<String, String> flow = session.singleUseObjects().get(OID4VPIdentityProvider.FLOW_PREFIX + state);
-        if (flow == null) {
-            return loginError(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST,
-                    "Unknown or expired state", Errors.INVALID_REQUEST);
+            @FormParam(OAuth2Constants.STATE) String state,
+            @FormParam(OAuth2Constants.RESPONSE) String response) {
+        RequestContext requestContext;
+        if (StringUtil.isNotBlank(response)) {
+            // direct_post.jwt, a JWE whose plaintext carries vp_token and state.
+            DecryptedResponse decrypted;
+            try {
+                decrypted = decryptResponse(response);
+            } catch (VerificationException e) {
+                logger.warnf("OID4VP encrypted response rejected: %s", e.getMessage());
+                return loginError(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST,
+                        e.getMessage(), Errors.INVALID_REQUEST);
+            }
+            vpToken = decrypted.vpToken();
+            state = decrypted.state();
+            requestContext = decrypted.context();
+        } else {
+            if (StringUtil.isBlank(vpToken) || StringUtil.isBlank(state)) {
+                return loginError(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST,
+                        "Missing vp_token or state", Errors.INVALID_REQUEST);
+            }
+            Map<String, String> stored = session.singleUseObjects().get(OID4VPIdentityProvider.CONTEXT_PREFIX + state);
+            if (stored == null) {
+                return loginError(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST,
+                        "Unknown or expired state", Errors.INVALID_REQUEST);
+            }
+            requestContext = RequestContext.fromMap(stored);
+            // The request object promised an encrypted response, so a plain post is a downgrade.
+            if (requestContext.isEncrypted()) {
+                return loginError(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST,
+                        "Expected an encrypted response", Errors.INVALID_REQUEST);
+            }
         }
 
         AuthenticationSessionModel authSession =
-                resolveAuthSession(flow.get(OID4VPIdentityProvider.KEY_ROOT_SESSION_ID), flow.get(OID4VPIdentityProvider.KEY_TAB_ID));
+                resolveAuthSession(requestContext.rootSessionId(), requestContext.tabId());
         if (authSession == null) {
             return loginError(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST,
                     "Authentication session not found", Errors.INVALID_REQUEST);
@@ -163,7 +183,7 @@ public class OID4VPIdentityProviderEndpoint {
 
         BrokeredIdentityContext context;
         try {
-            SdJwtVpVerificationResult result = verifyPresentation(vpToken, flow.get(OID4VPIdentityProvider.KEY_NONCE));
+            SdJwtVpVerificationResult result = verifyPresentation(vpToken, requestContext.nonce());
             context = toBrokeredContext(result, authSession);
         } catch (Exception e) {
             logger.warnf("OID4VP presentation rejected: %s", e.getMessage());
@@ -182,9 +202,9 @@ public class OID4VPIdentityProviderEndpoint {
                 OID4VPIdentityProvider.DEFERRED_PREFIX + responseCode,
                 realm.getAccessCodeLifespanLogin(),
                 Map.of(
-                        OID4VPIdentityProvider.KEY_ROOT_SESSION_ID, flow.get(OID4VPIdentityProvider.KEY_ROOT_SESSION_ID),
-                        OID4VPIdentityProvider.KEY_TAB_ID, flow.get(OID4VPIdentityProvider.KEY_TAB_ID)));
-        session.singleUseObjects().remove(OID4VPIdentityProvider.FLOW_PREFIX + state);
+                        OID4VPIdentityProvider.KEY_ROOT_SESSION_ID, requestContext.rootSessionId(),
+                        OID4VPIdentityProvider.KEY_TAB_ID, requestContext.tabId()));
+        session.singleUseObjects().remove(OID4VPIdentityProvider.CONTEXT_PREFIX + state);
 
         return Response.ok(Map.of(OAuth2Constants.REDIRECT_URI, completeAuthUrl(responseCode)))
                 .type(MediaType.APPLICATION_JSON_TYPE).cacheControl(CacheControlUtil.noCache()).build();
@@ -229,18 +249,20 @@ public class OID4VPIdentityProviderEndpoint {
         return callback.authenticated(context);
     }
 
-    protected RequestObject buildRequestObject(String state, Map<String, String> flow) {
+    protected RequestObject buildRequestObject(String state, RequestContext requestContext) {
         String clientId = provider.clientId();
         Instant now = Instant.now();
 
         RequestObject requestObject = new RequestObject()
                 .clientId(clientId)
                 .responseType(OID4VCConstants.VP_TOKEN)
-                .responseMode(OID4VCConstants.RESPONSE_MODE_DIRECT_POST)
+                .responseMode(requestContext.isEncrypted()
+                        ? OID4VCConstants.RESPONSE_MODE_DIRECT_POST_JWT
+                        : OID4VCConstants.RESPONSE_MODE_DIRECT_POST)
                 .responseUri(endpointBaseUrl())
-                .nonce(flow.get(OID4VPIdentityProvider.KEY_NONCE))
+                .nonce(requestContext.nonce())
                 .state(state)
-                .clientMetadata(clientMetadata())
+                .clientMetadata(requestContext.clientMetadata())
                 .dcqlQuery(dcqlQuery());
         requestObject.id(UUID.randomUUID().toString());
         requestObject.iat(now.getEpochSecond());
@@ -263,12 +285,57 @@ public class OID4VPIdentityProviderEndpoint {
         }
     }
 
-    // TODO infer from configuration / available verification key material
-    protected Map<String, Object> clientMetadata() {
-        return Map.of(OID4VCConstants.VP_FORMATS_SUPPORTED, Map.of(
-                OID4VCConstants.FORMAT_SD_JWT_VC, Map.of(
-                        OID4VCConstants.SD_JWT_ALG_VALUES, ACCEPTED_ALGORITHMS,
-                        OID4VCConstants.KB_JWT_ALG_VALUES, ACCEPTED_ALGORITHMS)));
+    protected DecryptedResponse decryptResponse(String response) throws VerificationException {
+        ParsedResponse parsed;
+        try {
+            parsed = ResponseEncryption.parse(response);
+        } catch (JWEException e) {
+            throw new VerificationException("Malformed encrypted response", e);
+        }
+        // The ephemeral key was issued with the state as its kid.
+        String state = parsed.keyId();
+        if (StringUtil.isBlank(state)) {
+            throw new VerificationException("Encrypted response is missing the key id");
+        }
+
+        Map<String, String> stored = session.singleUseObjects().get(OID4VPIdentityProvider.CONTEXT_PREFIX + state);
+        if (stored == null) {
+            throw new VerificationException("Unknown or expired response encryption key");
+        }
+        RequestContext requestContext = RequestContext.fromMap(stored);
+        if (!requestContext.isEncrypted()) {
+            // A plain flow never advertised a key, so a JWE naming its state as kid must not resolve one.
+            throw new VerificationException("Unknown or expired response encryption key");
+        }
+
+        JsonNode payload;
+        try {
+            String plaintext = ResponseEncryption.decrypt(parsed,
+                    requestContext.encryptionKey().privateKey());
+            payload = JsonSerialization.readValue(plaintext, JsonNode.class);
+        } catch (JWEException | IOException e) {
+            throw new VerificationException("Failed to decrypt the response", e);
+        }
+
+        JsonNode vpTokenNode = payload.get(OID4VCConstants.VP_TOKEN);
+        if (vpTokenNode == null || vpTokenNode.isNull()
+                || (vpTokenNode.isTextual() && StringUtil.isBlank(vpTokenNode.asText()))) {
+            throw new VerificationException("Encrypted response is missing vp_token");
+        }
+        // The state sealed inside the ciphertext must match the one this key id was issued for.
+        JsonNode stateNode = payload.get(OAuth2Constants.STATE);
+        if (stateNode == null || !state.equals(stateNode.asText())) {
+            throw new VerificationException("Encrypted response state mismatch");
+        }
+
+        String vpToken;
+        try {
+            vpToken = vpTokenNode.isTextual() ? vpTokenNode.asText()
+                    : JsonSerialization.writeValueAsString(vpTokenNode);
+        } catch (IOException e) {
+            throw new VerificationException("Malformed vp_token in the encrypted response", e);
+        }
+        return new DecryptedResponse(vpToken, state, requestContext);
     }
 
     protected SdJwtVpVerificationResult verifyPresentation(String vpToken, String nonce) throws VerificationException {
@@ -313,7 +380,7 @@ public class OID4VPIdentityProviderEndpoint {
     }
 
     private static void requireAcceptedAlgorithm(String algorithm, String jwt) throws VerificationException {
-        if (!ACCEPTED_ALGORITHMS.contains(algorithm)) {
+        if (!OID4VPIdentityProvider.ACCEPTED_ALGORITHMS.contains(algorithm)) {
             throw new VerificationException("Unsupported " + jwt + " signature algorithm " + algorithm);
         }
     }
