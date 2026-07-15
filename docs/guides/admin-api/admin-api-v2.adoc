@@ -1,12 +1,15 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/api.adoc" as api>
+<#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Admin API v2"
+title="Admin API v2: Reference"
 summary="REST API for managing Keycloak resources. Experimental feature.">
 
 <#include "/templates/experimental-feature.adoc">
+
+To provide feedback, use the https://github.com/keycloak/keycloak/discussions/50186[Client Admin API v2] GitHub Discussion.
 
 == Prerequisites
 
@@ -57,6 +60,8 @@ The Admin API v2 uses the same CLI tool described in the {adminguide_link}#admin
 <@kc.admin parameters="--v2 config credentials --server http://localhost:8080 --realm master --user admin"/>
 
 == Available Resources
+
+For details on filtering and projection, see <@links.adminapi id="querying" />.
 
 <#if ctx.adminApiV2.hasEndpoints()>
 <#list ctx.adminApiV2.categories as category>

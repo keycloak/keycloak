@@ -69,7 +69,7 @@ public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
                 logger.trace("Including service account token in request");
                 return token;
             } else {
-                logger.debug("Not including service account token due to issuer missmatch");
+                logger.debug("Not including service account token due to issuer mismatch");
             }
         } catch (Exception e) {
             logger.warn("Failed to read service account token file", e);

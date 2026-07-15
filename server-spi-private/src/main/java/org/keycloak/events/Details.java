@@ -45,6 +45,9 @@ public interface Details {
     String IDENTITY_PROVIDER_BROKER_SESSION_ID = "identity_provider_broker_session_id";
     String REGISTER_METHOD = "register_method";
     String USERNAME = "username";
+    String ACTOR = "actor";
+    String ACTOR_ID = "actor_id";
+    String ACTOR_SESSION_ID = "actor_session_id";
     String FIRST_NAME = "first_name";
     String LAST_NAME = "last_name";
     String PREVIOUS_FIRST_NAME = PREF_PREVIOUS + "first_name";

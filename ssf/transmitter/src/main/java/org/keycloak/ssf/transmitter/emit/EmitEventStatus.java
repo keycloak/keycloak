@@ -25,6 +25,15 @@ public enum EmitEventStatus {
     /** Receiver has no SSF stream registered yet. */
     STREAM_NOT_FOUND("stream_not_found"),
 
+    /**
+     * Receiver is a configured SSF receiver but its Keycloak client is
+     * currently disabled. The stream configuration is intact; re-enabling
+     * the client resumes delivery. Mirrors the dispatch-path gate so the
+     * synthetic emitter cannot deliver to a receiver the operator has
+     * switched off (keycloak/keycloak#50050).
+     */
+    RECEIVER_DISABLED("receiver_disabled"),
+
     /** The stream exists but has no delivery configuration. */
     NO_DELIVERY_CONFIG("no_delivery_config"),
 

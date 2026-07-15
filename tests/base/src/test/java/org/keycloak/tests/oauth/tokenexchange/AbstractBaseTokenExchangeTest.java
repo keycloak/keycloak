@@ -330,24 +330,38 @@ public class AbstractBaseTokenExchangeTest {
         return verifyAccessToken(accessToken).getSessionId();
     }
 
-    protected AccessTokenResponse resourceOwnerLogin(String username, String password, String clientId, String secret) {
-        return resourceOwnerLogin(username, password, clientId, secret, null);
+    protected AccessTokenResponse resourceOwnerLogin(String username, String password, String clientId, String secret, String scope) {
+        return resourceOwnerLogin(username, password, clientId, secret, scope, false);
     }
 
-    protected AccessTokenResponse resourceOwnerLogin(String username, String password, String clientId, String secret, String scope) {
+    protected AccessTokenResponse resourceOwnerLogin(String username, String password, String clientId, String secret) {
+        return resourceOwnerLogin(username, password, clientId, secret, null, false);
+    }
+
+    protected AccessTokenResponse resourceOwnerLogin(String username, String password, String clientId, String secret, String scope, boolean lightweight) {
         events.clear();
         oauth.client(clientId, secret);
         oauth.scope(scope);
-        oauth.openid(false);
+        oauth.openid(scope != null && scope.contains("openid"));
+
         AccessTokenResponse response = oauth.doPasswordGrantRequest(username, password);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
         AccessToken token = verifyAccessToken(response.getAccessToken());
-        EventAssertion.assertSuccess(events.poll())
-                .type(EventType.LOGIN)
-                .clientId(clientId)
-                .userId(token.getSubject())
-                .sessionId(token.getSessionId())
-                .details(Details.USERNAME, username);
+
+        if (lightweight) {
+            EventAssertion.assertSuccess(events.poll())
+                    .type(EventType.LOGIN)
+                    .clientId(clientId)
+                    .sessionId(token.getSessionId());
+        }
+        else {
+            EventAssertion.assertSuccess(events.poll())
+                    .type(EventType.LOGIN)
+                    .clientId(clientId)
+                    .userId(token.getSubject())
+                    .sessionId(token.getSessionId())
+                    .details(Details.USERNAME, username);
+        }
         return response;
     }
 
