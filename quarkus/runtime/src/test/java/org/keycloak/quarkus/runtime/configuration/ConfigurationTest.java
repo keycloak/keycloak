@@ -104,7 +104,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(Configuration.getConfig().isPropertyPresent("quarkus.log.category.\"io.k8s\".level"));
         putEnvVar("SOME_LOG_LEVEL", "debug");
         assertEquals("debug", createConfig().getRawValue("kc.log-level"));
-        SmallRyeConfig config = ConfigUtils.emptyConfigBuilder().setAddDefaultSources(false).addDiscoveredSources().build();
+        SmallRyeConfig config = ConfigBuilderCustomizer.addInterceptors(ConfigUtils.emptyConfigBuilder().setAddDefaultSources(false).addDiscoveredSources()).build();
         assertNull(Expressions.withoutExpansion(() -> config.getConfigValue("kc.log-level")).getValue());
     }
 
@@ -946,20 +946,51 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
         assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
-        // Oracle:
+        // Oracle (non-XA mode — default):
         config = createConfigFromCliArguments("--db=oracle");
         assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
         assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
         assertEquals("PT20S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+
         config = createConfigFromCliArguments("--db=oracle", "--db-url-properties=?oracle.net.CONNECT_TIMEOUT=5000");
         assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
         config = createConfigFromCliArguments("--db=oracle", "--db-url=jdbc:oracle:thin:@//localhost:1521/keycloak?oracle.net.CONNECT_TIMEOUT=5000");
         assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
 
         config = createConfigFromCliArguments("--db=oracle", "--db-connect-timeout=30s");
         assertEquals("30000", config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
         assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
         assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+
+        // Oracle (XA mode):
+        config = createConfigFromCliArguments("--db=oracle", "--transaction-xa-enabled=true");
+        assertEquals("oracle.net.CONNECT_TIMEOUT=10000", config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT20S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+
+        config = createConfigFromCliArguments("--db=oracle", "--transaction-xa-enabled=true", "--db-url-properties=?oracle.net.CONNECT_TIMEOUT=5000");
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        config = createConfigFromCliArguments("--db=oracle", "--transaction-xa-enabled=true", "--db-url=jdbc:oracle:thin:@//localhost:1521/keycloak?oracle.net.CONNECT_TIMEOUT=5000");
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+
+        // Oracle (XA mode) — user sets ConnectionProperties directly, connect timeout is not overridden:
+        setSystemProperty(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES, "oracle.net.keepAlive=true", () -> {
+            SmallRyeConfig xaWithUserProps = createConfigFromCliArguments("--db=oracle", "--transaction-xa-enabled=true");
+            assertEquals("oracle.net.keepAlive=true", xaWithUserProps.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
+            assertNull(xaWithUserProps.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        });
+        setSystemProperty(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES, "oracle.net.keepAlive=true", () -> {
+            SmallRyeConfig xaWithUserPropsExplicit = createConfigFromCliArguments("--db=oracle", "--transaction-xa-enabled=true", "--db-connect-timeout=30s");
+            assertEquals("oracle.net.keepAlive=true", xaWithUserPropsExplicit.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECTION_PROPERTIES).getValue());
+            assertNull(xaWithUserPropsExplicit.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        });
 
         // MSSQL:
         config = createConfigFromCliArguments("--db=mssql");

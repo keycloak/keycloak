@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -23,7 +24,6 @@ import org.keycloak.events.admin.v2.AdminEventV2Builder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -72,6 +72,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.util.EntityUtils;
 
 import static org.keycloak.representations.admin.v2.validators.ClientSecretNotBlankValidator.isClientSecret;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
@@ -79,7 +80,7 @@ import static org.keycloak.utils.StringUtil.isBlank;
  */
 public class DefaultClientService implements ClientService {
     private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
-    private static final ClientModelMappers MAPPERS = new ClientModelMappers();
+    public static final ClientModelMappers MAPPERS = new ClientModelMappers();
 
     private final KeycloakSession session;
     private final AdminPermissionEvaluator permissions;
@@ -100,6 +101,11 @@ public class DefaultClientService implements ClientService {
     @Override
     public Optional<BaseClientRepresentation> getClient(@Nonnull RealmModel realm,
                                                         @Nonnull String clientId) throws ServiceException {
+        return getClient(realm, clientId, true);
+    }
+
+    public Optional<BaseClientRepresentation> getClient(@Nonnull RealmModel realm,
+                                                        @Nonnull String clientId, boolean includeReadOnlyFields) throws ServiceException {
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             return Optional.empty();
@@ -108,7 +114,7 @@ public class DefaultClientService implements ClientService {
         
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientViewContext(client, permissions.adminAuth()));
-            return Optional.ofNullable(getMapper(client.getProtocol()).fromModel(client));
+            return Optional.ofNullable(getMapper(client.getProtocol()).fromModel(client, includeReadOnlyFields));
         } catch (ClientPolicyException e) {
             throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
@@ -116,9 +122,9 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public Stream<BaseClientRepresentation> getClients(@Nonnull RealmModel realm,
-                                                       ClientProjectionOptions projectionOptions,
+                                                       @Nonnull ClientProjectionOptions projectionOptions,
                                                        ClientSearchOptions searchOptions,
-                                                       ClientSortAndSliceOptions sortAndSliceOptions) {
+                                                       @Nonnull ClientSortAndSliceOptions sortAndSliceOptions) {
         permissions.clients().requireList();
 
         // TODO: this check is weak
@@ -135,15 +141,29 @@ public class DefaultClientService implements ClientService {
         // When FGAP is enabled, authorization filtering is applied at the JPA layer (via PartialEvaluator predicates), so we trust the DB results.
         // When disabled, we fall back to in-memory filtering by VIEW_CLIENTS role.
         boolean canView = AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || permissions.clients().canView();
+        boolean hasQuery = searchOptions != null && searchOptions.query() != null && !searchOptions.query().isBlank();
+        boolean useJpaPagination = canView && !hasQuery;
+        int offset = sortAndSliceOptions.offset();
+        int limit = sortAndSliceOptions.limit();
+
+        Comparator<BaseClientRepresentation> sortComparator = sortAndSliceOptions.getSortComparator();
         try {
-            Stream<BaseClientRepresentation> stream = realm.getClientsStream()
+            Stream<ClientModel> clientModels = useJpaPagination
+                    ? realm.getClientsStream(offset, limit)
+                    : realm.getClientsStream();
+
+            Stream<BaseClientRepresentation> stream = clientModels
                     .filter(client -> canView || permissions.clients().canView(client))
                     .filter(client -> client.getProtocol() != null)
                     .map(client -> getMapper(client.getProtocol()).fromModel(client))
-                    .filter(java.util.Objects::nonNull);
+                    .filter(Objects::nonNull);
 
-            stream = applySearchFilter(stream, searchOptions);
+            stream = applySearchFilter(stream, searchOptions).sorted(sortComparator);
+            if (!useJpaPagination) {
+                stream = paginatedStream(stream, offset, limit);
+            }
             return applyProjection(stream, projectionOptions);
+
         } catch (ModelException e) {
             throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
         }
@@ -185,10 +205,7 @@ public class DefaultClientService implements ClientService {
 
         permissions.clients().requireManage(client);
         try {
-            AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
             session.clientPolicy().triggerOnEvent(new AdminClientUnregisterContext(client, permissions.adminAuth()));
-        } catch (ModelValidationException e) {
-            throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
         } catch (ClientPolicyException e) {
             throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
@@ -205,7 +222,7 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, InputStream patch) throws ServiceException {
-        Supplier<BaseClientRepresentation> getOriginalClient = () -> getClient(realm, clientId)
+        Supplier<BaseClientRepresentation> getOriginalClient = () -> getClient(realm, clientId, false)
                 .orElseThrow(() -> new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND));
 
         BaseClientRepresentation updated;
@@ -309,12 +326,17 @@ public class DefaultClientService implements ClientService {
                             throw new ServiceException(r.getAllErrorsAsString(), Response.Status.BAD_REQUEST);
                         });
 
+                        model.updateClient();
+
                         session.clientPolicy().triggerOnEvent(new AdminClientUpdatedContext(proposedRepresentation, model, permissions.adminAuth()));
                     }
                 }
             } else {
                 // Check permissions, execute validations and trigger client policies
                 permissions.clients().requireManage();
+                if (strategy == CreateOrUpdateStrategy.PUT && client.getUuid() != null && realm.getClientById(client.getUuid()) != null) {
+                    throw new ServiceException("uuid already exists, but with a different clientId", Response.Status.BAD_REQUEST);
+                }
                 validator.validate(client, strategy.getValidationGroup(), Default.class);
                 var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper);
                 session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(proposedRepresentation, permissions.adminAuth()));
@@ -370,22 +392,18 @@ public class DefaultClientService implements ClientService {
     /**
      * Creates a temporary client to convert BaseClientRepresentation to ClientRepresentation.
      * Required because client policy contexts expect ClientRepresentation (v1), but there's no
-     * direct converter from BaseClientRepresentation (v2 API). The temp client is immediately removed.
+     * direct converter from BaseClientRepresentation (v2 API).
      * <p>
      * For more details, see the <a href="https://github.com/keycloak/keycloak/issues/47576">keycloak#47576</a>.
      */
     private ClientRepresentation getProposedOldRepresentation(RealmModel realm, BaseClientRepresentation client, ClientModelMapper mapper) {
-        String tempId = "__temp__" + client.getClientId() + "__" + System.nanoTime();
-        ClientModel tempModel = realm.addClient(tempId);
         String clientId = client.getClientId();
+        SimpleClientModel tempModel = new SimpleClientModel("", realm);
         mapper.toModel(client, tempModel);
-        try {
-            var proposedRepresentation = ModelToRepresentation.toRepresentation(tempModel, session);
-            proposedRepresentation.setClientId(clientId);
-            return proposedRepresentation;
-        } finally {
-            realm.removeClient(tempModel.getId());
-        }
+        var proposedRepresentation = ModelToRepresentation.toRepresentation(tempModel, session);
+        proposedRepresentation.setClientId(clientId);
+        proposedRepresentation.setId(null);
+        return proposedRepresentation;
     }
 
     private void generateClientSecretIfNeeded(BaseClientRepresentation client, ClientModel model, CreateOrUpdateStrategy strategy, boolean patchExplicitNullSecret) {

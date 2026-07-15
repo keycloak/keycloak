@@ -231,7 +231,7 @@ bin/kc.[sh|bat] start --spi-client-policy-executor--client-id-metadata-document-
 
 === Visual Studio Code desktop integration
 
-https://code.visualstudio.com/[Microsoft Visual Studio Code] (VS Code) desktop is an MCP client that supports OAuth Client ID Metadata Document. When VS Code desktop connects to an MCP server that requires authorization, it sends an authorization request with a `client_id` parameter that is an `https` URL hosted on `vscode.dev` (e.g., `+https://vscode.dev/mcp-client+`). {project_name} fetches the Client ID Metadata Document from this URL and uses the metadata to process the request.
+https://code.visualstudio.com/[Microsoft Visual Studio Code] (VS Code) desktop is an MCP client that supports OAuth Client ID Metadata Document. When VS Code desktop connects to an MCP server that requires authorization, it sends an authorization request with a `client_id` parameter that is an `https` URL hosted on `vscode.dev` (e.g., `+https://vscode.dev/oauth/client-metadata.json+`). {project_name} fetches the Client ID Metadata Document from this URL and uses the metadata to process the request.
 
 VS Code desktop uses localhost callbacks for the OAuth redirect. It starts a local HTTP server and uses a redirect URI such as `+http://127.0.0.1:<port>/callback+`. Because the redirect URI is on `127.0.0.1` rather than on the `vscode.dev` domain, the *Restrict same domain* option in the client profile executor must be set to `OFF`.
 
@@ -256,7 +256,7 @@ bin/kc.[sh|bat] start --features=cimd
 . Configure the executor with the following options:
 +
 * *Allow http scheme*: `OFF`
-* *Trusted domains*: `vscode.dev`, `127.0.0.1`
+* *Trusted domains*: `vscode.dev`, `127.0.0.1`, `code.visualstudio.com` (This option is applied not only to the `client_id` URL but also to the URL-valued properties of the Client ID Metadata Document, such as `client_uri`, `logo_uri`, `tos_uri`, `policy_uri`, and `jwks_uri`. VS Code desktop's Client ID Metadata Document includes a `logo_uri` property whose value is a URL on `code.visualstudio.com`. Therefore, this domain must be included in the trusted domains list.)
 * *Restrict same domain*: `OFF` (VS Code desktop uses a localhost redirect URI such as `+http://127.0.0.1:<port>/callback+`, which is not on the same domain as `vscode.dev`)
 * *Only Allow Confidential Client*: `OFF` (VS Code desktop is a public client)
 +
@@ -279,5 +279,54 @@ bin/kc.[sh|bat] start --features=cimd
 
 With this configuration, when VS Code desktop sends an authorization request, {project_name} recognizes the `client_id` as a URL on `vscode.dev`, fetches the Client ID Metadata Document, and uses a localhost callback to complete the OAuth flow.
 
+=== Claude Code desktop integration
+
+https://claude.com/product/claude-code/[Claude Code] desktop is an MCP client that supports OAuth Client ID Metadata Document. When Claude Code desktop connects to an MCP server that requires authorization, it sends an authorization request with a `client_id` parameter that is an `https` URL hosted on `claude.ai` (e.g., `+https://claude.ai/oauth/claude-code-client-metadata+`). {project_name} fetches the Client ID Metadata Document from this URL and uses the metadata to process the request.
+
+Claude Code desktop uses localhost callbacks for the OAuth redirect. It starts a local HTTP server and uses a redirect URI such as `+http://localhost:<port>/callback+`. Because the redirect URI is on `localhost` rather than on the `claude.ai` domain, the *Restrict same domain* option in the client profile executor must be set to `OFF`.
+
+To configure {project_name} for Claude Code desktop's MCP client, follow the steps below.
+
+NOTE: Claude Code desktop is a public client that uses PKCE (Proof Key for Code Exchange) for OAuth. It does not use a client secret.
+
+==== Starting {project_name} with the CIMD feature
+
+Start {project_name} with the `cimd` feature flag enabled:
+
+```bash
+bin/kc.[sh|bat] start --features=cimd
+```
+
+==== Setting up the client profile for Claude Code desktop
+
+. Navigate to *Realm Settings* -> *Client Policies* -> *Profiles* tab.
+. Click *Create client profile*.
+. Give the profile a name such as `claude-code-cimd-profile` and click *Save*.
+. Click *Add executor* and select `client-id-metadata-document` from the list.
+. Configure the executor with the following options:
++
+* *Allow http scheme*: `OFF`
+* *Trusted domains*: `claude.ai`, `localhost`, `127.0.0.1`
+* *Restrict same domain*: `OFF` (Claude Code desktop uses a localhost redirect URI such as `+http://localhost:<port>/callback+`, which is not on the same domain as `claude.ai`)
+* *Only Allow Confidential Client*: `OFF` (Claude Code desktop is a public client)
++
+. Click *Save*.
+
+==== Setting up the client policy for Claude Code desktop
+
+. Navigate to *Realm Settings* -> *Client Policies* -> *Policies* tab.
+. Click *Create client policy*.
+. Give the policy a name such as `claude-code-cimd-policy` and click *Save*.
+. Under *Conditions*, click *Add condition* and select `client-id-uri` from the list.
+. Configure the condition with the following options:
++
+* *URI scheme*: `https`
+* *Trusted domains*: `claude.ai`
++
+. Click *Save*.
+. Under *Associated client profiles*, add the `claude-code-cimd-profile` profile created in the previous step.
+. Click *Save*.
+
+With this configuration, when Claude Code desktop sends an authorization request, {project_name} recognizes the `client_id` as a URL on `claude.ai`, fetches the Client ID Metadata Document, and uses a localhost callback to complete the OAuth flow.
 
 </@tmpl.guide>

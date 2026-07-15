@@ -330,23 +330,32 @@ public class LDAPStorageProvider implements UserStorageProvider,
             user = new InMemoryUserAdapter(session, realm, new StorageId(model.getId(), username).getId());
             user.setUsername(username);
         }
+        List<Runnable> onCreatedActions = new ArrayList<>();
+
         LDAPObject ldapUser = LDAPUtils.addUserToLDAP(this, realm, user, ldapObject -> {
             LDAPUtils.checkUuid(ldapObject, ldapIdentityStore.getConfig());
             user.setSingleAttribute(LDAPConstants.LDAP_ID, ldapObject.getUuid());
             user.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapObject.getDn().toString());
+            onCreatedActions.forEach(Runnable::run);
         });
 
-        // Add the user to the default groups and add default required actions
         UserModel proxy = proxy(realm, user, ldapUser, true);
-        proxy.grantRole(realm.getDefaultRole());
 
-        realm.getDefaultGroupsStream().forEach(proxy::joinGroup);
+        Runnable assignDefaults = () -> {
+            proxy.grantRole(realm.getDefaultRole());
+            realm.getDefaultGroupsStream().forEach(proxy::joinGroup);
+            realm.getRequiredActionProvidersStream()
+                    .filter(RequiredActionProviderModel::isEnabled)
+                    .filter(RequiredActionProviderModel::isDefaultAction)
+                    .map(RequiredActionProviderModel::getAlias)
+                    .forEachOrdered(proxy::addRequiredAction);
+        };
 
-        realm.getRequiredActionProvidersStream()
-                .filter(RequiredActionProviderModel::isEnabled)
-                .filter(RequiredActionProviderModel::isDefaultAction)
-                .map(RequiredActionProviderModel::getAlias)
-                .forEachOrdered(proxy::addRequiredAction);
+        if (ldapUser.isWaitingForExecutionOnMandatoryAttributesComplete()) {
+            onCreatedActions.add(assignDefaults);
+        } else {
+            assignDefaults.run();
+        }
 
         return proxy;
     }

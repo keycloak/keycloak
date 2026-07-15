@@ -57,13 +57,17 @@ public final class OpenIdConformanceSuite implements AutoCloseable {
     private final GenericContainer<?> server;
     private final GenericContainer<?> nginx;
     private final ConformanceApiClient client;
+    private final URI baseUri;
+    private final X509Certificate nginxCertificate;
 
     private OpenIdConformanceSuite(Network network, GenericContainer<?> mongo, GenericContainer<?> server,
-            GenericContainer<?> nginx, URI baseUri, SSLContext sslContext) {
+            GenericContainer<?> nginx, URI baseUri, SSLContext sslContext, X509Certificate nginxCertificate) {
         this.network = network;
         this.mongo = mongo;
         this.server = server;
         this.nginx = nginx;
+        this.baseUri = baseUri;
+        this.nginxCertificate = nginxCertificate;
         this.client = new ConformanceApiClient(baseUri, sslContext);
     }
 
@@ -120,8 +124,10 @@ public final class OpenIdConformanceSuite implements AutoCloseable {
             nginx.start();
 
             URI baseUri = URI.create("https://" + nginx.getHost() + ":" + nginx.getMappedPort(8443));
-            SSLContext sslContext = sslContextTrusting(nginxCertificate(nginx));
-            OpenIdConformanceSuite suite = new OpenIdConformanceSuite(network, mongo, server, nginx, baseUri, sslContext);
+            X509Certificate nginxCertificate = nginxCertificate(nginx);
+            SSLContext sslContext = sslContextTrusting(nginxCertificate);
+            OpenIdConformanceSuite suite =
+                    new OpenIdConformanceSuite(network, mongo, server, nginx, baseUri, sslContext, nginxCertificate);
             suite.client().waitUntilAvailable(Duration.ofMinutes(4));
             return suite;
         } catch (RuntimeException e) {
@@ -133,6 +139,20 @@ public final class OpenIdConformanceSuite implements AutoCloseable {
 
     public ConformanceApiClient client() {
         return client;
+    }
+
+    // The suite's nginx TLS certificate, so a client can trust it without disabling verification.
+    public X509Certificate nginxCertificate() {
+        return nginxCertificate;
+    }
+
+    // Rewrites a suite internal URI to one reachable from the test JVM.
+    public URI externalUri(URI internalUri) {
+        if (!INTERNAL_BASE_URI.getHost().equals(internalUri.getHost())) {
+            return internalUri;
+        }
+        String query = internalUri.getRawQuery() != null ? "?" + internalUri.getRawQuery() : "";
+        return URI.create(baseUri + internalUri.getRawPath() + query);
     }
 
     @Override

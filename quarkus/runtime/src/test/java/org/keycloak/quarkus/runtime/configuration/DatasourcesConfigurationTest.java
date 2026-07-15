@@ -583,6 +583,21 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         assertEquals("15", config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.connectTimeout").getValue());
         // the to mapping for other source types should not be set
         assertNull(config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.loginTimeout").getValue());
+
+        // Oracle named datasource in XA mode
+        config = createConfigFromCliArguments("--db=postgres", "--db-kind-users=oracle", "--transaction-xa-enabled-users=true");
+        assertEquals("oracle.net.CONNECT_TIMEOUT=10000", config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties").getValue());
+        assertNull(config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.oracle.net.CONNECT_TIMEOUT").getValue());
+
+        // Oracle named datasource in XA mode — user sets ConnectionProperties directly
+        setSystemProperty("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties", "oracle.net.keepAlive=true", () -> {
+            SmallRyeConfig xaConfig = createConfigFromCliArguments("--db=postgres", "--db-kind-users=oracle", "--transaction-xa-enabled-users=true");
+            assertEquals("oracle.net.keepAlive=true", xaConfig.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties").getValue());
+        });
+        setSystemProperty("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties", "oracle.net.keepAlive=true", () -> {
+            SmallRyeConfig xaConfig = createConfigFromCliArguments("--db=postgres", "--db-kind-users=oracle", "--transaction-xa-enabled-users=true", "--db-connect-timeout-users=30s");
+            assertEquals("oracle.net.keepAlive=true", xaConfig.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties").getValue());
+        });
     }
 
     private static void doDatabaseTlsOptionTest(String dbKind, String dbUrl,
