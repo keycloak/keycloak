@@ -31,7 +31,7 @@ public class AdminEvent {
 
     /**
      * Realm associated with this admin event.
-     * It is not necessarily the realm affected by the administrative operation {@link #targetRealmId()}.
+     * It is not necessarily the realm affected by the administrative operation {@link #getTargetRealmId()}.
      * It is not always the same as the realm where the user is authenticated {@link AuthDetails#getRealmId()}.
      */
     private String realmId;
@@ -41,7 +41,7 @@ public class AdminEvent {
     /**
      * Realm affected by the administrative operation.
      *
-     * Usually this is the same as the event realm {@link #realmId()}.
+     * Usually this is the same as the event realm {@link #getRealmId()}.
      * However, for realm creation/deletion it differs,
      * because those events are stored in the realm of the authenticated admin.
      */
