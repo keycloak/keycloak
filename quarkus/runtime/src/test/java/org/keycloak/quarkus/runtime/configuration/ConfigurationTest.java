@@ -1117,4 +1117,14 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals("false", config.getConfigValue("kc.spi-jgroups-mtls--default--activated").getValue());
         assertNull(config.getConfigValue("kc.spi-jgroups-mtls--default--enabled").getValue());
     }
+    
+    @Test
+    public void testSniEnabled() {
+        var config = createConfigFromCliArguments("--https-certificate-file=\\some\\file");
+        assertEquals("true", config.getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_SNI).getValue());
+        
+        // not expected to be enabled in reencrypt
+        config = createConfigFromCliArguments("--https-certificate-file=\\some\\file", "--proxy-headers=forwarded");
+        assertNull(config.getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_SNI).getValue());
+    }
 }

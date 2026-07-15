@@ -56,7 +56,7 @@ public class HttpOptions {
 
     public static final Option<Boolean> HTTPS_SNI_ENABLED = new OptionBuilder<>("https-sni-enabled", Boolean.class)
             .category(OptionCategory.HTTP)
-            .description("Enables SNI for HTTPS")
+            .synthetic()
             .defaultValue(Optional.empty())
             .build();
 

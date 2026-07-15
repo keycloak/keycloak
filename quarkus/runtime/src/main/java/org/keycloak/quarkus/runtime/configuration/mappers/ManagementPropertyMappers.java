@@ -141,11 +141,6 @@ public class ManagementPropertyMappers implements PropertyMapperGrouping {
                         .mapFrom(HttpOptions.HTTPS_TRUST_STORE_TYPE)
                         .to(QUARKUS_MANAGEMENT_HTTPS_TRUST_STORE_FILE_TYPE)
                         .paramLabel("type")
-                        .build(),
-                fromOption(ManagementOptions.HTTPS_MANAGEMENT_SNI_ENABLED)
-                        .isEnabled(ManagementPropertyMappers::isInheritedScheme, HTTP_MANAGEMENT_SCHEME_IS_INHERITED)
-                        .mapFrom(HttpOptions.HTTPS_SNI_ENABLED)
-                        .to("quarkus.management.ssl.sni")
                         .build()
         );
     }
