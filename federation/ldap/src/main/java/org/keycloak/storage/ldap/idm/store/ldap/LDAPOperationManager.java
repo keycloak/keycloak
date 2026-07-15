@@ -774,6 +774,14 @@ public class LDAPOperationManager {
 
     private <R> R execute(LdapOperation<R> operation, LDAPOperationDecorator decorator) throws NamingException {
         try (LDAPContextManager ldapContextManager = LDAPContextManager.create(session, config)) {
+            long connectStartNanos = System.nanoTime();
+            boolean connectSuccess = false;
+            try {
+                ldapContextManager.getLdapContext();
+                connectSuccess = true;
+            } finally {
+                recordLdapRequest("connect", connectSuccess, connectStartNanos);
+            }
             return execute(operation, ldapContextManager.getLdapContext(), decorator);
         }
     }
