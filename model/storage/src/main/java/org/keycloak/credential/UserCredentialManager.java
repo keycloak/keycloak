@@ -20,6 +20,7 @@ package org.keycloak.credential;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.keycloak.common.util.reflections.Types;
@@ -93,21 +94,37 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
 
     @Override
     public boolean updateCredential(CredentialInput input) {
+        return update(input).handled();
+    }
+
+    @Override
+    public Optional<CredentialModel> updateCredentialAndGet(CredentialInput input) {
+        return Optional.ofNullable(update(input).storedCredential());
+    }
+
+    /**
+     * Updates a credential of the user with the given input on the updater handling that credential type.
+     */
+    private CredentialUpdate update(CredentialInput input) {
         if (!StorageId.isLocalStorage(user.getId())) throwExceptionIfInvalidUser(user);
 
         if (user.isFederated()) {
             UserStorageProviderModel model = getStorageProviderModel(realm, user.getFederationLink());
-            if (model == null || !model.isEnabled()) return false;
+            if (model == null || !model.isEnabled()) return CredentialUpdate.NOT_HANDLED;
 
             CredentialInputUpdater updater = getStorageProviderInstance(model, CredentialInputUpdater.class);
             if (updater != null && updater.supportsCredentialType(input.getType())) {
-                if (updater.updateCredential(realm, user, input)) return true;
+                CredentialUpdate update = updater.updateCredentialAndGet(realm, user, input);
+                if (update.handled()) return update;
             }
         }
 
         return getCredentialProviders(session, CredentialInputUpdater.class)
                 .filter(updater -> updater.supportsCredentialType(input.getType()))
-                .anyMatch(updater -> updater.updateCredential(realm, user, input));
+                .map(updater -> updater.updateCredentialAndGet(realm, user, input))
+                .filter(CredentialUpdate::handled)
+                .findFirst()
+                .orElse(CredentialUpdate.NOT_HANDLED);
     }
 
     @Override
