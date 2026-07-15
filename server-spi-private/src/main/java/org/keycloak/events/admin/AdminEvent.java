@@ -150,22 +150,22 @@ public class AdminEvent {
      * @return
      */
     public String getTargetRealmId() {
-        return realmId;
+        return targetRealmId;
     }
 
-    public void setTargetRealmId(String realmId) {
-        this.realmId = realmId;
+    public void setTargetRealmId(String targetRealmId) {
+        this.targetRealmId = targetRealmId;
     }
 
     /**
      * @return the name of the target realm
      */
     public String getTargetRealmName() {
-        return realmName;
+        return targetRealmName;
     }
 
-    public void setTargetRealmName(String realmName) {
-        this.realmName = realmName;
+    public void setTargetRealmName(String targetRealmName) {
+        this.targetRealmName = targetRealmName;
     }
 
     /**
