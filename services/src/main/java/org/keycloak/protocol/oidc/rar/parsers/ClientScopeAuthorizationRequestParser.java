@@ -18,6 +18,7 @@ package org.keycloak.protocol.oidc.rar.parsers;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -27,12 +28,13 @@ import java.util.stream.Collectors;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
 import org.keycloak.protocol.oidc.rar.model.IntermediaryScopeRepresentation;
+import org.keycloak.protocol.oidc.scope.DefaultScopeType;
 import org.keycloak.protocol.oidc.scope.InvalidScopeParameterException;
 import org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeProvider;
-import org.keycloak.protocol.oidc.scope.StringScopeType;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.rar.AuthorizationRequestSource;
@@ -57,17 +59,24 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
         this.session = session;
     }
 
+    @Override
+    public AuthorizationRequestContext parseScopes(ClientModel client, String scopeParam) {
+        return parseScopes(null, client, scopeParam);
+    }
+
     /**
      * Creates a {@link AuthorizationRequestContext} with a list of {@link AuthorizationDetails} that will be parsed from
      * the provided OAuth scopes that have been requested in a given Auth request, together with default client scopes.
      * <p>
      * Parameterized scopes will also be parsed with the extracted parameter, so it can be used later
      *
+     * @param user The user in the login (can be null, for example in the authorization endpoint)
+     * @param client The client requesting the parsing
      * @param scopeParam the OAuth scope param for the current request
      * @return see description
      */
     @Override
-    public AuthorizationRequestContext parseScopes(ClientModel client, String scopeParam) {
+    public AuthorizationRequestContext parseScopes(UserModel user, ClientModel client, String scopeParam) {
         // Process all the default ClientScopeModels for the current client, and maps them to the IntermediaryScopeRepresentation to make use of a HashSet
         Set<IntermediaryScopeRepresentation> clientScopeModelSet = client.getClientScopes(true).values().stream()
                 .filter(clientScopeModel -> !clientScopeModel.isParameterizedScope()) // not strictly needed as Parameterized Scopes are going to be Optional scopes for now
@@ -78,7 +87,7 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
         if (scopeParam != null) {
             // Go through the parsed requested scopes and attempt to match them against the optional scopes list
             intermediaryScopeRepresentations = TokenManager.parseScopeParameter(scopeParam).collect(Collectors.toSet()).stream()
-                    .map((String requestScope) -> getMatchingClientScope(requestScope, client.getClientScopes(false).values()))
+                    .map((String requestScope) -> getMatchingClientScope(user, requestScope, client.getClientScopes(false).values()))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .collect(Collectors.toSet());
@@ -124,17 +133,28 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
      * @param requestScope one of the requested OAuth scopes
      * @return see description
      */
-    private Optional<IntermediaryScopeRepresentation> getMatchingClientScope(String requestScope, Collection<ClientScopeModel> optionalScopes) {
-        for (ClientScopeModel clientScopeModel : optionalScopes) {
+    private Optional<IntermediaryScopeRepresentation> getMatchingClientScope(UserModel user, String requestScope, Collection<ClientScopeModel> optionalScopes) {
+        List<ClientScopeModel> sorted = optionalScopes.stream()
+                .sorted(Comparator.comparingInt((ClientScopeModel s) -> s.getName().length()).reversed())
+                .toList();
+
+        for (ClientScopeModel clientScopeModel : sorted) {
             if (clientScopeModel.isParameterizedScope()) {
                 String paramValue = clientScopeModel.getParameterFromScope(requestScope).orElse(null);
                 if (paramValue == null) {
                     continue;
                 }
                 try {
-                    resolveType(clientScopeModel).validateParameter(clientScopeModel, paramValue);
+                    if (paramValue.length() > ParameterizedScopeTypeProvider.MAX_PARAMETER_LENGTH) {
+                        throw new InvalidScopeParameterException("parameter value exceeds maximum length of " + ParameterizedScopeTypeProvider.MAX_PARAMETER_LENGTH);
+                    }
+                    if (user != null) {
+                        resolveType(clientScopeModel).validateParameterWithUser(user, clientScopeModel, paramValue);
+                    } else {
+                        resolveType(clientScopeModel).validateParameter(clientScopeModel, paramValue);
+                    }
                 } catch (InvalidScopeParameterException e) {
-                    logger.warnf("Invalid scope parameter for '%s': %s", requestScope, e.getMessage());
+                    logger.warnf("Invalid scope parameter for '%s': %s", clientScopeModel.getName(), e.getMessage());
                     return Optional.empty();
                 }
                 return Optional.of(new IntermediaryScopeRepresentation(clientScopeModel, paramValue, requestScope));
@@ -150,8 +170,8 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
     private ParameterizedScopeTypeProvider resolveType(ClientScopeModel clientScopeModel) {
         String typeId = clientScopeModel.getAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE);
         if (StringUtil.isNullOrEmpty(typeId)) {
-            logger.warnf("Parameterized scope '%s' has no type set, defaulting to '%s'", clientScopeModel.getName(), StringScopeType.TYPE);
-            typeId = StringScopeType.TYPE;
+            logger.warnf("Parameterized scope '%s' has no type set, defaulting to '%s'", clientScopeModel.getName(), DefaultScopeType.TYPE);
+            typeId = DefaultScopeType.TYPE;
         }
         ParameterizedScopeTypeProvider provider = session.getProvider(ParameterizedScopeTypeProvider.class, typeId);
         if (provider == null) {

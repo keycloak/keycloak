@@ -54,8 +54,7 @@ public class KeycloakNegativeHealthCheckTest {
                 .statusCode(503)
                 .body(Matchers.allOf(Matchers.containsString("DOWN"), Matchers.containsString(KeycloakReadyHealthCheck.FAILING_SINCE)));
 
-        // now have an active connection, failing since should be cleared
-        Mockito.when(metrics.activeCount()).thenReturn(2L);
+        Mockito.when(dataSourceHealthCheck.call()).thenReturn(HealthCheckResponse.up("up"));
         given()
                 .when().get("/health/ready")
                 .then()

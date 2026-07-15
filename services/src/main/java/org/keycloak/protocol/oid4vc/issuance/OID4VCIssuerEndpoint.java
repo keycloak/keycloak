@@ -92,6 +92,7 @@ import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerException;
 import org.keycloak.protocol.oid4vc.model.AttestationProof;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer.BatchCredentialIssuance;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
@@ -138,6 +139,7 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+import static org.keycloak.constants.OID4VCIConstants.BATCH_CREDENTIAL_ISSUANCE_DEFAULT_MAX_BATCH_SIZE;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.getSupportedCredentials;
 import static org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant.AUTH_CODE_GRANT_TYPE;
@@ -893,41 +895,42 @@ public class OID4VCIssuerEndpoint {
 
             offerState = offerStorage.getOfferStateById(credOfferId);
             if (offerState == null) {
-                var errorMessage = "No credential offer state for: " + credOfferId;
-                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-            }
+                if (tokenAuthDetail.getIssuedCredentialId() == null) {
+                    var errorMessage = "No credential offer state for: " + credOfferId;
+                    eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+                }
+                LOGGER.debugf("Credential offer '%s' no longer present in storage — skipping offer validation for re-issuance (issuedCredentialId: %s)",
+                        credOfferId, tokenAuthDetail.getIssuedCredentialId());
+            } else {
 
-            // Verify not expired
-            // The cache should have evicted the expired CredentialOfferState - we check anyway
-            if (offerState.isExpired()) {
-                var errorMessage = "Credential offer has already expired";
-                LOGGER.errorf(errorMessage);
-                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-            }
+                if (offerState.isExpired()) {
+                    var errorMessage = "Credential offer has already expired";
+                    LOGGER.errorf(errorMessage);
+                    eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+                }
 
-            // Verify the user login session
-            //
-            if (offerState.getTargetUserId() != null && !offerState.getTargetUserId().equals(userModel.getId())) {
-                var errorMessage = "Unexpected login user: " + userModel.getUsername();
-                LOGGER.errorf(errorMessage + " != %s", offerState.getTargetUserId());
-                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-            }
+                if (offerState.getTargetUserId() != null && !offerState.getTargetUserId().equals(userModel.getId())) {
+                    var errorMessage = "Unexpected login user: " + userModel.getUsername();
+                    LOGGER.errorf(errorMessage + " != %s", offerState.getTargetUserId());
+                    eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+                }
 
-            // Verify the login client
-            //
-            if (offerState.getTargetClientId() != null && !offerState.getTargetClientId().equals(clientModel.getClientId())) {
-                var errorMessage = "Unexpected login client: " + clientModel.getClientId();
-                LOGGER.errorf(errorMessage + " != %s", offerState.getTargetClientId());
-                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+                if (offerState.getTargetClientId() != null && !offerState.getTargetClientId().equals(clientModel.getClientId())) {
+                    var errorMessage = "Unexpected login client: " + clientModel.getClientId();
+                    LOGGER.errorf(errorMessage + " != %s", offerState.getTargetClientId());
+                    eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+                }
             }
         }
 
         // Validate that authorization_details from the token matches the offer state
         // This ensures the correct access token is being used for the credential request
+        LOGGER.debugf("Validating authorization_details: offerState=%s, credOfferId=%s, issuedCredentialId=%s",
+                offerState != null ? "present" : "null", credOfferId, tokenAuthDetail.getIssuedCredentialId());
         if (offerState != null && !offerState.matchAuthorizationDetails(List.of(tokenAuthDetail))) {
             var errorMessage = "Authorization details in access token do not match the credential offer state. " +
                     "The access token may not be the one issued for this credential offer.";
@@ -999,6 +1002,8 @@ public class OID4VCIssuerEndpoint {
 
         // Get the list of all proofs (handles single proof, multiple proofs, or none)
         List<String> allProofs = getAllProofs(credentialRequest);
+        if (allProofs.stream().anyMatch(p -> p == null || p.isBlank()))
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF, "Proof values must not be null or blank"));
 
         // Generate credential response
         CredentialResponse responseVO = new CredentialResponse();
@@ -1012,6 +1017,16 @@ public class OID4VCIssuerEndpoint {
             Proofs originalProofs = credentialRequest.getProofs();
             // Determine the proof type from the original proofs
             String proofType = originalProofs.getProofType();
+
+            if (allProofs.size() > 1) {
+                Integer maxBatchSize = Optional.ofNullable(issuerMetadata.getBatchCredentialIssuance())
+                        .map(BatchCredentialIssuance::getBatchSize)
+                        .orElse(BATCH_CREDENTIAL_ISSUANCE_DEFAULT_MAX_BATCH_SIZE);
+                if (allProofs.size() > maxBatchSize) {
+                    LOGGER.warnf("Reducing credential batch size to: %d", maxBatchSize);
+                    allProofs = allProofs.subList(0, maxBatchSize);
+                }
+            }
 
             for (String currentProof : allProofs) {
                 Proofs proofForIteration = Proofs.create(proofType, currentProof);
@@ -1703,9 +1718,10 @@ public class OID4VCIssuerEndpoint {
         Instant normalizedIssuance = timeClaimNormalizer.normalize(issuance);
 
         // Compute expiration date from client scope configuration and normalize it
+        // Note: The IssuedVerifiableCredentialModel.expiresAt and refresh token still use the full credential lifetime
         CredentialScopeModel clientScopeModel = credentialScopeModel;
-        Integer expiryInSeconds = clientScopeModel.getExpiryInSeconds();
-        Instant expiration = normalizedIssuance.plusSeconds(expiryInSeconds);
+        Integer refreshIntervalInSeconds = clientScopeModel.getRefreshIntervalInSeconds();
+        Instant expiration = normalizedIssuance.plusSeconds(refreshIntervalInSeconds);
         Instant normalizedExpiration = timeClaimNormalizer.normalize(expiration);
 
         // set the required claims

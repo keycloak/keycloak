@@ -35,10 +35,16 @@ public class RefreshToken extends AccessToken {
 
     public static final String ORIGINAL_AUD = "aud_x";
 
+    public static final String PROVIDER = "prov";
+
     @JsonProperty(ORIGINAL_AUD)
     @JsonSerialize(using = StringOrArraySerializer.class)
     @JsonDeserialize(using = StringOrArrayDeserializer.class)
     protected String[] originalAudience;
+
+    // Reference to refresh-token provider
+    @JsonProperty(PROVIDER)
+    private String provider;
 
     private RefreshToken() {
         type(TokenUtil.TOKEN_TYPE_REFRESH);
@@ -47,8 +53,11 @@ public class RefreshToken extends AccessToken {
     /**
      * Deep copies issuer, subject, issuedFor, sessionState from AccessToken.
      *
+     * @param token
+     * @param confirmation optional confirmation parameter that might be processed during authentication but should not
+     *                     always be included in the response
      */
-    public RefreshToken(AccessToken token) {
+    public RefreshToken(AccessToken token, Confirmation confirmation, String provider) {
         this();
         this.issuer = token.issuer;
         this.subject = token.subject;
@@ -59,18 +68,8 @@ public class RefreshToken extends AccessToken {
         this.originalAudience = token.audience;
         this.scope = token.scope;
         this.authorizationDetails = token.authorizationDetails;
-    }
-
-    /**
-     * Deep copies issuer, subject, issuedFor, sessionState from AccessToken.
-     *
-     * @param token
-     * @param confirmation optional confirmation parameter that might be processed during authentication but should not
-     *                     always be included in the response
-     */
-    public RefreshToken(AccessToken token, Confirmation confirmation) {
-        this(token);
         this.confirmation = confirmation;
+        this.provider = provider;
     }
 
     @Override
@@ -87,5 +86,9 @@ public class RefreshToken extends AccessToken {
 
     public String[] getOriginalAudience() {
         return originalAudience;
+    }
+
+    public String getProvider() {
+        return provider;
     }
 }

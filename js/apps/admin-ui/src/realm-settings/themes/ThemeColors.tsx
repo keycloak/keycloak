@@ -196,11 +196,11 @@ export const ThemeColors = ({
     form.reset(values);
 
     // Update contexts with data URIs so preview reflects uploaded images
-    if (values.logo) {
+    if (values.logo && typeof values.logo !== "string") {
       const logoDataUri = await fileToDataUri(values.logo);
       contextLogo?.setLogo(logoDataUri);
     }
-    if (values.bgimage) {
+    if (values.bgimage && typeof values.bgimage !== "string") {
       const bgDataUri = await fileToDataUri(values.bgimage);
       contextBackground?.setBackground(bgDataUri);
     }
