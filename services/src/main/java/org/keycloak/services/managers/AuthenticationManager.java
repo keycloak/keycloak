@@ -106,7 +106,7 @@ import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.services.ErrorPage;
+import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
@@ -1064,9 +1064,9 @@ public class AuthenticationManager {
 
     }
 
-    private static Response handleActionTokenVerificationException(KeycloakSession session, EventBuilder event, String eventError, String errorMessage) {
+    private static void handleActionTokenVerificationException(KeycloakSession session, EventBuilder event, String eventError, String errorMessage) {
         event.error(eventError);
-        return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, errorMessage == null ? Messages.INVALID_CODE : errorMessage);
+        throw new ErrorPageException(session, null, Response.Status.BAD_REQUEST, errorMessage == null ? Messages.INVALID_CODE : errorMessage);
     }
 
 
@@ -1078,12 +1078,12 @@ public class AuthenticationManager {
             if (actionTokenKey != null) {
                 // Token has expired. We must not accept it, as it will have been removed from the single use provider already
                 if (Time.currentTime() > actionTokenKey.getExp()) {
-                    return handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
+                    handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
                 }
 
                 SingleUseObjectProvider singleUseObjectProvider = session.singleUseObjects();
                 if (!singleUseObjectProvider.putIfAbsent(actionTokenKeyToInvalidate + SingleUseObjectProvider.REVOKED_KEY, actionTokenKey.getExp() - Time.currentTime() + CLOCK_SKEW_SECONDS)) {
-                    return handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
+                    handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
                 }
             }
         }
