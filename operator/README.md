@@ -32,7 +32,7 @@ A Helm chart is generated alongside the regular build, under `operator/target/he
 To regenerate locally (from the repo root):
 
 ```bash
-./mvnw -Poperator -pl :keycloak-operator -am package -DskipTests -Dmaven.test.skip=true
+./mvnw -Poperator -Pcluster-wide -pl :keycloak-operator -am package -DskipTests
 ```
 
 Then `helm install` / `helm template` against `operator/target/helm/kubernetes/keycloak-operator/`. See the [Operator Installation guide](../docs/guides/operator/installation.adoc) for end-user instructions.
