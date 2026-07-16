@@ -233,7 +233,11 @@ public class TokenRevocationEndpoint {
         UserSessionUtil.UserSessionValidationResult validationResult = UserSessionUtil.findValidSessionForAccessToken(
                 session, realm, token, client, (UserSessionModel t) -> {});
         if (validationResult.getError() != null) {
-            event.error(validationResult.getError());
+            if (!Errors.USER_SESSION_NOT_FOUND.equals(validationResult.getError())
+               && !Errors.SESSION_EXPIRED.equals(validationResult.getError())
+               && !Errors.INVALID_TOKEN.equals(validationResult.getError())) {
+                event.error(validationResult.getError());
+            }
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.OK);
         }
 
