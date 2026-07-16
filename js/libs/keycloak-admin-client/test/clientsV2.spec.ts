@@ -99,6 +99,7 @@ describe("Clients V2 API", () => {
     await kcAdminClient.clients.v2().post({
       clientId: clientId1,
       protocol: "openid-connect",
+      description: "Client 1",
       enabled: true,
     });
 
@@ -162,6 +163,8 @@ describe("Clients V2 API", () => {
       (c) => (c as OIDCClientRepresentation).clientId === clientId1,
     );
     expect(filteredClient1).to.be.ok;
+    await kcAdminClient.clients.v2().byId(clientId1).delete();
+    await kcAdminClient.clients.v2().byId(clientId2).delete();
   });
 
   it("should create and delete a client", async () => {
