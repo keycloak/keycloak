@@ -105,20 +105,20 @@ public abstract class AbstractOrganizationTest {
         }
         managedRealm.admin().identityProviders().create(broker).close();
 
-        String brokerAlias = broker.getAlias();
-        managedRealm.cleanup().add(r -> {
-            try {
-                r.identityProviders().get(brokerAlias).remove();
-            } catch (NotFoundException ignored) {}
-        });
-
         managedRealm.admin().organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
         org = managedRealm.admin().organizations().get(id).toRepresentation();
 
         String orgId = id;
+        // org deletion must run before IdP removal — removing an IdP linked to an org may fail
         managedRealm.cleanup().add(r -> {
             try {
                 r.organizations().get(orgId).delete().close();
+            } catch (NotFoundException ignored) {}
+        });
+        String brokerAlias = broker.getAlias();
+        managedRealm.cleanup().add(r -> {
+            try {
+                r.identityProviders().get(brokerAlias).remove();
             } catch (NotFoundException ignored) {}
         });
 
@@ -175,7 +175,11 @@ public abstract class AbstractOrganizationTest {
         }
 
         String userId = expected.getId();
-        realm.cleanup().add(r -> r.users().get(userId).remove());
+        realm.cleanup().add(r -> {
+            try {
+                r.users().get(userId).remove();
+            } catch (NotFoundException ignored) {}
+        });
 
         try (Response response = organization.members().addMember(userId)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
