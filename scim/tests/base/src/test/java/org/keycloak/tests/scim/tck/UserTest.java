@@ -170,6 +170,23 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testCreateWithRegularNameFormatted() {
+        User expected = new User();
+        expected.setUserName(KeycloakModelUtils.generateId());
+        Name name = new Name();
+        name.setGivenName("John");
+        name.setFamilyName("Doe");
+        expected.setName(name);
+
+        User actual = client.users().create(expected);
+        actual = client.users().get(actual.getId());
+
+        assertRootAttributes(actual, expected);
+        assertNotNull(actual.getName());
+        assertEquals("John Doe", actual.getName().getFormatted());
+    }
+
+    @Test
     public void testLocale() {
         RealmRepresentation realm = this.realm.admin().toRepresentation();
         realm.setInternationalizationEnabled(true);
