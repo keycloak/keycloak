@@ -231,6 +231,12 @@ public class Messages {
 
     public static final String IDENTITY_PROVIDER_LINK_SUCCESS = "identityProviderLinkSuccess";
 
+    public static final String IDENTITY_PROVIDER_LINK_SUCCESS_HEADER = "identityProviderLinkSuccessHeader";
+
+    public static final String IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY = "identityProviderLinkConfirmedAlreadyMessage";
+
+    public static final String IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY_HEADER = "identityProviderLinkConfirmedAlreadyMessageHeader";
+
     public static final String CONFIRM_ACCOUNT_LINKING = "confirmAccountLinking";
 
     public static final String CONFIRM_ACCOUNT_LINKING_BODY = "confirmAccountLinkingBody";

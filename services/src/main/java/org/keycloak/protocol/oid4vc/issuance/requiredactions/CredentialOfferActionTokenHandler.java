@@ -121,9 +121,6 @@ public class CredentialOfferActionTokenHandler extends AbstractActionTokenHandle
             throw ErrorResponse.error("Invalid credential configuration action", Response.Status.BAD_REQUEST);
         }
 
-        // verify user email as we know it is valid as this entry point would never have gotten here.
-        user.setEmailVerified(true);
-
         String nextAction = AuthenticationManager.nextRequiredAction(tokenContext.getSession(), authSession, tokenContext.getRequest(), tokenContext.getEvent());
         return AuthenticationManager.redirectToRequiredActions(tokenContext.getSession(), tokenContext.getRealm(), authSession, tokenContext.getUriInfo(), nextAction);
     }
