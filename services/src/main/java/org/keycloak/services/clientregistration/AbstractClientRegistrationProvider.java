@@ -74,8 +74,8 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
     public ClientRepresentation create(ClientRegistrationContext context) {
         ClientRepresentation client = context.getClient();
+        RealmModel realm = session.getContext().getRealm();
         if(client.getOptionalClientScopes() != null && client.getDefaultClientScopes() == null) {
-            RealmModel realm = session.getContext().getRealm();
             String protocol = client.getProtocol() != null ? client.getProtocol() : OIDCLoginProtocol.LOGIN_PROTOCOL;
             List<String> realmDefaults = realm.getDefaultClientScopesStream(true)
                     .filter(s -> Objects.equals(protocol, s.getProtocol()))
@@ -89,7 +89,6 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         RegistrationAuth registrationAuth = auth.requireCreate(context);
 
         try {
-            RealmModel realm = session.getContext().getRealm();
             ClientModel clientModel = ClientManager.createClient(session, realm, client);
 
             if (client.getDefaultRoles() != null) {

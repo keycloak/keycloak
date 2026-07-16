@@ -57,6 +57,8 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.util.JsonSerialization;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -828,7 +830,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertTrue(clientScopes.equals(registeredClientScopes));
 
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(response.getClientId());
-        assertTrue(CollectionUtil.collectionEquals(clientResource.toRepresentation().getDefaultClientScopes(), Set.of("web-origins", "acr", "profile", "roles", "basic", "email")));
+        MatcherAssert.assertThat(clientResource.toRepresentation().getDefaultClientScopes(), Matchers.containsInAnyOrder("web-origins", "acr", "profile", "roles", "basic", "email"));
     }
 
     @Test
