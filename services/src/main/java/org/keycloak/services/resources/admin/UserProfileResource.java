@@ -78,7 +78,7 @@ public class UserProfileResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public UPConfig getConfiguration() {
-        if (auth.realm().canViewRealm() || auth.users().canQuery()) {
+        if (auth.realm().canViewRealm() || auth.users().canQuery() || auth.users().canView()) {
             return session.getProvider(UserProfileProvider.class).getConfiguration();
         } else {
             throw new ForbiddenException();
@@ -95,7 +95,7 @@ public class UserProfileResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public UserProfileMetadata getMetadata() {
-        if (auth.realm().canViewRealm() || auth.users().canQuery()) {
+        if (auth.realm().canViewRealm() || auth.users().canQuery() || auth.users().canView()) {
             UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.USER_API, Collections.emptyMap());
             return createUserProfileMetadata(session, profile);
         } else {
