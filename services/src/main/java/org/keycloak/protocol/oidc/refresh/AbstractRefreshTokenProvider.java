@@ -277,7 +277,11 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
                     logger.debugf("Failed validation of refresh token %s due it was used before. Realm: %s, client: %s, user: %s, user session: %s. Will detach client session from user session",
                             refreshToken.getId(), realm.getName(), clientSession.getClient().getClientId(), clientSession.getUserSession().getUser().getUsername(), clientSession.getUserSession().getId());
                 }
-                clientSession.detachFromUserSession();
+                // Detach must persist even when the error response rolls back the main tx.
+                KeycloakModelUtils.enlistAfterRollback(session, ctx -> {
+                    AuthenticatedClientSessionModel cs = ctx.findClientSession(clientSession);
+                    if (cs != null) cs.detachFromUserSession();
+                });
                 throw oee;
             }
         }
