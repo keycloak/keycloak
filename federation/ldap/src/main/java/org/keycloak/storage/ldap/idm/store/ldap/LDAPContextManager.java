@@ -40,7 +40,7 @@ public final class LDAPContextManager implements AutoCloseable {
     private StartTlsResponse tlsResponse;
     private LdapContext ldapContext;
 
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "26.8")
     public LDAPContextManager(KeycloakSession session, LDAPConfig connectionProperties) {
         this(session, connectionProperties, null);
     }
@@ -51,7 +51,7 @@ public final class LDAPContextManager implements AutoCloseable {
         this.requestTimer = requestTimer;
     }
 
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "26.8")
     public static LDAPContextManager create(KeycloakSession session, LDAPConfig connectionProperties) {
         return new LDAPContextManager(session, connectionProperties, null);
     }
