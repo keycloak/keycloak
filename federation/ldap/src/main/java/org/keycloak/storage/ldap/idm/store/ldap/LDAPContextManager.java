@@ -51,11 +51,16 @@ public final class LDAPContextManager implements AutoCloseable {
         this.requestTimer = requestTimer;
     }
 
-    @Deprecated(forRemoval = true, since = "26.8")
+    /**
+     * Use this method only when the operation should not be tracked by metrics, for example when testing a connection.
+     */
     public static LDAPContextManager create(KeycloakSession session, LDAPConfig connectionProperties) {
         return new LDAPContextManager(session, connectionProperties, null);
     }
 
+    /**
+     * This is the default method to create the context manager. It will track metrics for LDAP requests.
+     */
     public static LDAPContextManager create(KeycloakSession session, LDAPConfig connectionProperties, Meter.MeterProvider<Timer> requestTimer) {
         return new LDAPContextManager(session, connectionProperties, requestTimer);
     }
