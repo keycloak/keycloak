@@ -61,7 +61,7 @@ export const PageHandler = ({
 
   useFetch(
     async () => {
-      const entityId = getEntityId(storageType, tabParams, pathname);
+      const entityId = getEntityId(storageType, tabParams);
 
       switch (storageType) {
         case "CLIENT":
@@ -83,21 +83,6 @@ export const PageHandler = ({
           if (entityId) {
             const attributes = (
               await adminClient.users.findOne({ id: entityId })
-            )?.attributes;
-            return {
-              config: normalizeConfig(
-                attributes as Record<string, unknown>,
-                page.properties,
-                "load",
-                "list-map",
-              ),
-            };
-          }
-          return undefined;
-        case "GROUP":
-          if (entityId) {
-            const attributes = (
-              await adminClient.groups.findOne({ id: entityId })
             )?.attributes;
             return {
               config: normalizeConfig(
@@ -176,7 +161,7 @@ export const PageHandler = ({
 
   const onSubmit = async (formData: ComponentRepresentation) => {
     try {
-      const entityId = getEntityId(storageType, tabParams, pathname);
+      const entityId = getEntityId(storageType, tabParams);
 
       if (
         (isEntityStorageType(storageType) && !entityId) ||
