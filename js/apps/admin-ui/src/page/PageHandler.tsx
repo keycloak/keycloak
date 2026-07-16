@@ -7,7 +7,7 @@ import {
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import { ActionGroup, Button, Form, PageSection } from "@patternfly/react-core";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
@@ -58,16 +58,39 @@ export const PageHandler = ({
 
   const storageType: StorageType =
     (page.metadata.storageType as StorageType | undefined) || "COMPONENT";
+  const resolvedEntityId = getEntityId(storageType, tabParams);
+  const componentId = idAttribute ?? id;
+  const customEndpointTemplate = page.metadata.endpoint as string | undefined;
+  const customEndpointDependency =
+    storageType === "CUSTOM"
+      ? [
+          customEndpointTemplate || "",
+          ...Object.entries(tabParams)
+            .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+            .map(([key, value]) => `${key}=${value}`),
+        ].join("|")
+      : undefined;
+
+  const resolveCustomEndpoint = () => {
+    if (!customEndpointTemplate) {
+      return undefined;
+    }
+
+    return interpolateEndpoint(customEndpointTemplate, tabParams);
+  };
+
+  useEffect(() => {
+    setIsLoading(true);
+    form.reset({});
+  }, [form, idAttribute, resolvedEntityId, customEndpointDependency]);
 
   useFetch(
     async () => {
-      const entityId = getEntityId(storageType, tabParams);
-
       switch (storageType) {
         case "CLIENT":
-          if (entityId) {
+          if (resolvedEntityId) {
             const attributes = (
-              await adminClient.clients.findOne({ id: entityId })
+              await adminClient.clients.findOne({ id: resolvedEntityId })
             )?.attributes;
             return {
               config: normalizeConfig(
@@ -80,9 +103,9 @@ export const PageHandler = ({
           }
           return undefined;
         case "USER":
-          if (entityId) {
+          if (resolvedEntityId) {
             const attributes = (
-              await adminClient.users.findOne({ id: entityId })
+              await adminClient.users.findOne({ id: resolvedEntityId })
             )?.attributes;
             return {
               config: normalizeConfig(
@@ -95,10 +118,10 @@ export const PageHandler = ({
           }
           return undefined;
         case "IDENTITY_PROVIDER":
-          if (entityId) {
+          if (resolvedEntityId) {
             const config = (
               await adminClient.identityProviders.findOne({
-                alias: entityId,
+                alias: resolvedEntityId,
               })
             )?.config;
             return {
@@ -112,11 +135,11 @@ export const PageHandler = ({
           }
           return undefined;
         case "CUSTOM": {
-          if (page.metadata.endpoint) {
-            const endpoint = interpolateEndpoint(
-              page.metadata.endpoint as string,
-              tabParams,
-            );
+          if (customEndpointTemplate) {
+            const endpoint = resolveCustomEndpoint();
+            if (!endpoint) {
+              return undefined;
+            }
             const response = await fetchWithError(
               joinPath(
                 adminClient.baseUrl,
@@ -141,7 +164,9 @@ export const PageHandler = ({
         case "COMPONENT":
         default: {
           const [data, tabs] = await Promise.all([
-            id ? adminClient.components.findOne({ id }) : Promise.resolve(),
+            componentId
+              ? adminClient.components.findOne({ id: componentId })
+              : Promise.resolve(),
             providerType === TAB_PROVIDER
               ? adminClient.components.find({ type: TAB_PROVIDER })
               : Promise.resolve(),
@@ -156,16 +181,24 @@ export const PageHandler = ({
       setId(data?.id);
       setIsLoading(false);
     },
-    [],
+    [
+      storageType,
+      idAttribute,
+      providerId,
+      providerType,
+      realmName,
+      resolvedEntityId,
+      customEndpointDependency,
+    ],
   );
 
   const onSubmit = async (formData: ComponentRepresentation) => {
     try {
-      const entityId = getEntityId(storageType, tabParams);
+      const entityId = resolvedEntityId;
 
       if (
         (isEntityStorageType(storageType) && !entityId) ||
-        (storageType === "CUSTOM" && !page.metadata.endpoint)
+        (storageType === "CUSTOM" && !customEndpointTemplate)
       ) {
         throw new Error(
           `Missing required parameters for storageType: ${storageType}`,
@@ -260,11 +293,11 @@ export const PageHandler = ({
           }
           break;
         case "CUSTOM": {
-          if (page.metadata.endpoint) {
-            const endpoint = interpolateEndpoint(
-              page.metadata.endpoint as string,
-              tabParams,
-            );
+          if (customEndpointTemplate) {
+            const endpoint = resolveCustomEndpoint();
+            if (!endpoint) {
+              break;
+            }
             await fetchWithError(
               joinPath(
                 adminClient.baseUrl,
@@ -300,8 +333,11 @@ export const PageHandler = ({
             providerType,
             parentId: realm.id,
           };
-          if (id) {
-            await adminClient.components.update({ id }, updatedComponent);
+          if (componentId) {
+            await adminClient.components.update(
+              { id: componentId },
+              updatedComponent,
+            );
           } else {
             const { id: newId } =
               await adminClient.components.create(updatedComponent);
