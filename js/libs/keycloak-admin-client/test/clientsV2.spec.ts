@@ -132,19 +132,16 @@ describe("Clients V2 API", () => {
     });
     expect(sortedClients).to.be.ok;
     expect(sortedClients).to.be.an("array");
-    const clientIds = sortedClients!.map(
-      (c) => (c as OIDCClientRepresentation).clientId,
+    const clientIds = sortedClients!.map((c) => c.clientId!);
+    const caseInsensitiveSortedClientIds = [...clientIds].sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: "base" }),
     );
-    expect([...clientIds].sort()).to.deep.equal(clientIds);
+    expect(caseInsensitiveSortedClientIds).to.deep.equal(clientIds);
 
-    const sortedClient1 = sortedClients!.find(
-      (c) => (c as OIDCClientRepresentation).clientId === clientId1,
-    );
+    const sortedClient1 = sortedClients!.find((c) => c.clientId === clientId1);
     expect(sortedClient1).to.be.ok;
 
-    const sortedClient2 = sortedClients!.find(
-      (c) => (c as OIDCClientRepresentation).clientId === clientId2,
-    );
+    const sortedClient2 = sortedClients!.find((c) => c.clientId === clientId2);
     expect(sortedClient2).to.be.ok;
 
     // Filter by clientId
@@ -160,7 +157,7 @@ describe("Clients V2 API", () => {
     expect(filteredClients![0].description).to.be.undefined;
 
     const filteredClient1 = filteredClients!.find(
-      (c) => (c as OIDCClientRepresentation).clientId === clientId1,
+      (c) => c.clientId === clientId1,
     );
     expect(filteredClient1).to.be.ok;
     await kcAdminClient.clients.v2().byId(clientId1).delete();
@@ -180,7 +177,7 @@ describe("Clients V2 API", () => {
 
     // Verify we can get it via v2 API
     const client = await kcAdminClient.clients.v2().byId(clientId).get();
-    expect((client as OIDCClientRepresentation).clientId).to.equal(clientId);
+    expect(client?.clientId).to.equal(clientId);
 
     // Delete the client using v2 API
     await kcAdminClient.clients.v2().byId(clientId).delete();
