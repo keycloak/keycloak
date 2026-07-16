@@ -22,6 +22,14 @@ When calling {project_name}'s experimental AuthZEN endpoints, the caller now nee
 
 The Admin REST API endpoints for listing client sessions (`GET /admin/realms/\{realm}/clients/\{id}/user-sessions` and `GET /admin/realms/\{realm}/clients/\{id}/offline-sessions`) now filter out sessions belonging to users that the caller does not have permission to view. Previously, any caller with the `view-clients` role could see all user sessions for a client, potentially exposing user identities to callers without the `view-users` role. After upgrading, callers without `view-users` permission will see fewer results from these endpoints.
 
+=== Redesigned identity provider buttons on the login page
+
+The social identity provider section on the login page has been redesigned with updated icons and layout.
+For details, see the https://github.com/keycloak/keycloak/issues/50992[GitHub issue].
+Custom login themes that override `social-providers.ftl` or apply CSS targeting the identity provider icons may render incorrectly after upgrading.
+
+Test your custom login theme to ensure the identity provider buttons display correctly.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
