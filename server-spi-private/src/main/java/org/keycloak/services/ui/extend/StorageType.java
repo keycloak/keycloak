@@ -29,12 +29,6 @@ public enum StorageType {
     USER,
 
     /**
-     * Store data on a group's attributes.
-     * Requires 'id' parameter in the URL (group route).
-     */
-    GROUP,
-
-    /**
      * Store data on an identity provider's config.
      * Requires 'alias' parameter in the URL (identity provider route).
      */
