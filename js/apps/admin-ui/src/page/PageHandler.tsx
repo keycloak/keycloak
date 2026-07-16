@@ -248,28 +248,6 @@ export const PageHandler = ({
             );
           }
           break;
-        case "GROUP":
-          if (entityId) {
-            const group = await adminClient.groups.findOne({
-              id: entityId,
-            });
-            await adminClient.groups.update(
-              { id: entityId },
-              {
-                ...group,
-                attributes: {
-                  ...group?.attributes,
-                  ...normalizeConfig(
-                    formData.config as Record<string, unknown>,
-                    page.properties,
-                    "save",
-                    "list-map",
-                  ),
-                },
-              },
-            );
-          }
-          break;
         case "IDENTITY_PROVIDER":
           if (entityId) {
             const idp = await adminClient.identityProviders.findOne({
