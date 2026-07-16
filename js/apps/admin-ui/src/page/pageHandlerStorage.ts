@@ -1,6 +1,5 @@
 import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
 import { matchPath } from "react-router-dom";
-import { getLastId } from "../groups/groupIdUtils";
 
 const MULTIVALUED_DELIMITER = "##";
 
@@ -10,7 +9,6 @@ export type StorageType =
   | "COMPONENT"
   | "CLIENT"
   | "USER"
-  | "GROUP"
   | "IDENTITY_PROVIDER"
   | "CUSTOM";
 
@@ -46,15 +44,12 @@ export function resolveTabParams(
 export function getEntityId(
   storageType: StorageType,
   params: Record<string, string | undefined>,
-  pathname: string,
 ): string | undefined {
   switch (storageType) {
     case "CLIENT":
       return params.clientId!;
     case "USER":
       return params.id!;
-    case "GROUP":
-      return params.id ?? getLastId(pathname);
     case "IDENTITY_PROVIDER":
       return params.alias!;
     default:
@@ -64,11 +59,10 @@ export function getEntityId(
 
 export function isEntityStorageType(
   storageType: StorageType,
-): storageType is "CLIENT" | "USER" | "GROUP" | "IDENTITY_PROVIDER" {
+): storageType is "CLIENT" | "USER" | "IDENTITY_PROVIDER" {
   return (
     storageType === "CLIENT" ||
     storageType === "USER" ||
-    storageType === "GROUP" ||
     storageType === "IDENTITY_PROVIDER"
   );
 }
