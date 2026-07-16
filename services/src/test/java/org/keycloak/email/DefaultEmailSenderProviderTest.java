@@ -133,6 +133,18 @@ class DefaultEmailSenderProviderTest {
     }
 
     @Test
+    void testRewriteCidReferencesDoesNotCorruptPrefixPaths() {
+        String html = "<img src=\"cid:img/logo\" /><img src=\"cid:img/logo/icon.png\" />";
+        Map<String, String> mapping = Map.of(
+                "img/logo", "logo",
+                "img/logo/icon.png", "icon.png");
+
+        String resolved = DefaultEmailSenderProvider.rewriteCidReferences(html, mapping);
+
+        assertThat(resolved, is("<img src=\"cid:logo\" /><img src=\"cid:icon.png\" />"));
+    }
+
+    @Test
     void testBuildMultipartBodyWithoutCidReferences() throws Exception {
         DefaultEmailSenderProvider provider = new DefaultEmailSenderProvider(null, null);
 

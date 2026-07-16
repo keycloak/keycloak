@@ -323,11 +323,20 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
         if (htmlBody == null) {
             return null;
         }
-        String resolved = htmlBody;
-        for (Map.Entry<String, String> entry : pathToContentId.entrySet()) {
-            resolved = resolved.replace("cid:" + entry.getKey(), "cid:" + entry.getValue());
+        Matcher matcher = CID_PATTERN.matcher(htmlBody);
+        StringBuilder resolved = new StringBuilder();
+        while (matcher.find()) {
+            String path = matcher.group(1);
+            String contentId = pathToContentId.get(path);
+            if (contentId != null) {
+                char quote = matcher.group().charAt(0);
+                matcher.appendReplacement(resolved, Matcher.quoteReplacement(quote + "cid:" + contentId + quote));
+            } else {
+                matcher.appendReplacement(resolved, Matcher.quoteReplacement(matcher.group()));
+            }
         }
-        return resolved;
+        matcher.appendTail(resolved);
+        return resolved.toString();
     }
 
     static String fileNameFor(String path) {
