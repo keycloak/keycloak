@@ -47,7 +47,7 @@
             <img src="${resourcesPath}/logo.svg" alt="${productName} Logo" class="kc-brand">
           </div>
         </header>
-        <#if adminConsoleEnabled && (bootstrap || successMessage?has_content)>
+        <#-- if adminConsoleEnabled && (bootstrap || successMessage?has_content)>
           <main class="pf-v5-c-login__main">
             <header class="pf-v5-c-login__main-header">
               <#if localUser>
@@ -174,7 +174,7 @@
               </#if>
             </div>
           </main>
-        </#if>
+        </#if-->
       </div>
     </div>
   </body>
