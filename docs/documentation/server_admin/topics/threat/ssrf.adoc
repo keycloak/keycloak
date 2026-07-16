@@ -6,7 +6,9 @@
 
 If these fields are not strictly validated, a malicious administrator, a compromised account or a Dynamic Client Registration could point them toward internal network resources or loopback interfaces (e.g., `http://localhost:8080/any`), allowing the attacker to probe or attack the internal infrastructure from the {project_name} server itself.
 
-To mitigate this threat, {project_name} provides a solution using <<_client_policies, Client Policies>> with some executors like *Secure Client Uris* to provide baseline protection for transport security and wildcards, but especially with  the **Secure Client URIs Pattern** executor.
+To mitigate this threat, {project_name} provides a solution using <<_client_policies, Client Policies>> with some executors like *Secure Client Uris* to provide baseline protection for transport security and wildcards, but especially with the **Secure Client URIs Pattern** executor.
+
+See also <<dns-rebinding>> for an attack vector that can bypass URI-based validation.
 
 ==== Secure Client URIs Pattern Executor
 
@@ -61,12 +63,13 @@ If your clients use JWKS URI from third-party providers, only add the specific d
 This executor uses Java Regular Expressions. Ensure you correctly escape special characters (for example, use `\.` to indicate a literal dot). An incorrect pattern could prevent legitimate updates to clients. It is recommended to test regexes in a non-production environment.
 ====
 
-
 [[dns-rebinding]]
-==== DNS rebinding
+==== DNS Rebinding
 
-DNS rebinding is a type of attack that uses manipulation of domain-name resolution to bypass domain-based protections such as browser's Same-Origin Policy, or in the case of {project_name}, domain-based protections against SSRF. It exploits a Time-of-Check to Time-of-Use (TOCTOU) gap in how {project_name} resolves hostnames. By configuring a malicious DNS server and changing the resolved IP address between the validation check and the actual connection the attacker can induce {project_name} to send requests to unintended destinations.
+An attacker can use DNS rebinding to resolve a public hostname to an internal IP address, bypassing URI-based allowlists that validate only the hostname at request time.
 
-By resolving the domain name to a public IP address first and then switching to a private IP address in the second request the attacker can make {project_name} connect to internal services, including its own endpoints. This can be used for SSRF or to map an internal network infrastructure. Inversely, by resolving the domain name to a private IP address first and then switching to a public IP address in the second request the attacker can induce {project_name} to send data intended for an internal service to an external host.
+This allows an attacker to make {project_name} connect to internal services, including {project_name}'s own Admin REST API, enabling SSRF or internal network scanning.
 
-DNS rebinding should be mitigated by implementing protections on the DNS resolver used by {project_name}, preventing resolutions of public domain names to internal IP addresses and private domain names to external IP addresses.
+To mitigate DNS rebinding attacks, configure the DNS resolver used by {project_name} to reject resolutions of public domain names to private IP address ranges (for example, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, and `127.0.0.0/8`).
+
+NOTE: This is an infrastructure-level mitigation applied in the DNS resolver, not a setting within {project_name} itself.
