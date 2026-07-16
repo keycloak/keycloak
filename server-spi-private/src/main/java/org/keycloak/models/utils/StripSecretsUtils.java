@@ -17,20 +17,30 @@
 
 package org.keycloak.models.utils;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.ClientAuthenticator;
+import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
+import org.keycloak.authentication.FormAction;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -61,6 +71,7 @@ public class StripSecretsUtils {
         REPRESENTATION_FORMATTER.put(IdentityProviderRepresentation.class, (session, o) -> StripSecretsUtils.stripBroker((IdentityProviderRepresentation) o));
         REPRESENTATION_FORMATTER.put(ComponentRepresentation.class, (session, o) -> StripSecretsUtils.stripComponent(session, (ComponentRepresentation) o));
         REPRESENTATION_FORMATTER.put(CredentialRepresentation.class, (session, o) -> StripSecretsUtils.stripCredentials((CredentialRepresentation) o));
+        REPRESENTATION_FORMATTER.put(AuthenticatorConfigRepresentation.class, (session, o) -> StripSecretsUtils.stripAuthenticatorConfig(session, (AuthenticatorConfigRepresentation) o));
     }
 
     public static <T> T stripSecrets(KeycloakSession session, T representation) {
@@ -89,7 +100,7 @@ public class StripSecretsUtils {
     }
 
     protected static CredentialRepresentation stripCredentials(CredentialRepresentation rep) {
-        rep.setValue("**********");
+        rep.setValue(ComponentRepresentation.SECRET_VALUE);
         return rep;
     }
 
@@ -131,6 +142,43 @@ public class StripSecretsUtils {
         return map;
     }
 
+    private static AuthenticatorConfigRepresentation stripAuthenticatorConfig(KeycloakSession session, AuthenticatorConfigRepresentation rep) {
+        return stripAuthenticatorConfig(collectNonSecretAuthenticatorPropertyNames(session), rep);
+    }
+
+    protected static AuthenticatorConfigRepresentation stripAuthenticatorConfig(Set<String> nonSecretPropertyNames, AuthenticatorConfigRepresentation rep) {
+        Map<String, String> config = rep.getConfig();
+        if (config == null || config.isEmpty()) {
+            return rep;
+        }
+        Map<String, String> sanitized = new HashMap<>(config);
+        sanitized.replaceAll((key, value) ->
+                nonSecretPropertyNames.contains(key) ? value : maskNonVaultValue(value));
+        rep.setConfig(sanitized);
+        return rep;
+    }
+
+    private static Set<String> collectNonSecretAuthenticatorPropertyNames(KeycloakSession session) {
+        Set<String> nonSecretNames = new HashSet<>();
+        Set<String> secretNames = new HashSet<>();
+        Stream.of(Authenticator.class, FormAction.class, ClientAuthenticator.class).forEach(providerClass ->
+                session.getKeycloakSessionFactory().getProviderFactoriesStream(providerClass)
+                        .filter(ConfigurableAuthenticatorFactory.class::isInstance)
+                        .map(ConfigurableAuthenticatorFactory.class::cast)
+                        .map(ConfigurableAuthenticatorFactory::getConfigProperties)
+                        .filter(Objects::nonNull)
+                        .flatMap(Collection::stream)
+                        .forEach(p -> {
+                            if (p.isSecret()) {
+                                secretNames.add(p.getName());
+                            } else {
+                                nonSecretNames.add(p.getName());
+                            }
+                        }));
+        nonSecretNames.removeAll(secretNames);
+        return nonSecretNames;
+    }
+
     protected static IdentityProviderRepresentation stripBroker(IdentityProviderRepresentation rep) {
         stripFromMap(rep.getConfig(), "clientSecret");
         return rep;
@@ -164,6 +212,12 @@ public class StripSecretsUtils {
 
         Optional.ofNullable(rep.getFederatedUsers())
                 .ifPresent(users -> users.forEach(StripSecretsUtils::stripUser));
+
+        Optional.ofNullable(rep.getAuthenticatorConfig())
+                .ifPresent(configs -> {
+                    Set<String> nonSecretNames = collectNonSecretAuthenticatorPropertyNames(session);
+                    configs.forEach(config -> stripAuthenticatorConfig(nonSecretNames, config));
+                });
     }
 
     protected static UserRepresentation stripUser(UserRepresentation user) {
