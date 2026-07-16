@@ -387,6 +387,13 @@ public class DefaultClientService implements ClientService {
         if (factory != null) {
             factory.setupClientDefaults(proposedRepresentation, model);
         }
+        if (client instanceof OIDCClientRepresentation oidcClient
+                && oidcClient.getAuth() != null
+                && !isClientSecret(oidcClient.getAuth().getMethod())) {
+            // OIDCLoginProtocolFactory generates a secret for every confidential client, while Admin API v2
+            // only uses secrets with secret-based authentication methods.
+            model.setSecret(null);
+        }
     }
 
     /**
