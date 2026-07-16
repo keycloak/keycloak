@@ -125,7 +125,7 @@ set of management operations:
 | *view-members*            | Defines if a realm administrator can view group members.
                               This operation applies to any child group in the group hierarchy.
                               This can be prevented by explicitly denying permission for specific subgroups.
-| *manage-members*          | Defines if a realm administrator can manage group members and create new users that will be members of the group.
+| *manage-members*          | Defines if a realm administrator can manage group members. Together with `manage-membership`, also allows creating new users as members of the group.
                               This operation applies to any child group in the group hierarchy.
                               This can be prevented by explicitly denying permission for specific subgroups.
 | *impersonate-members*     | Defines if a realm administrator can impersonate group members.
