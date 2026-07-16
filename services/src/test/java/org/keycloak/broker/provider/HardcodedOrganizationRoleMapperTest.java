@@ -1,0 +1,346 @@
+/*
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.keycloak.broker.provider;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderSyncMode;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.RoleProvider;
+import org.keycloak.models.UserModel;
+import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.provider.ProviderConfigProperty;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+
+public class HardcodedOrganizationRoleMapperTest {
+
+    @Test
+    public void grantsConfiguredOrganizationRoleToMembers() {
+        TestContext context = new TestContext();
+        HardcodedOrganizationRoleMapper mapper = new HardcodedOrganizationRoleMapper();
+
+        mapper.importNewUser(context.session, context.realm, context.user.model, context.mapperModel, context.brokeredIdentityContext);
+        mapper.updateBrokeredUser(context.session, context.realm, context.user.model, context.mapperModel, context.brokeredIdentityContext);
+        mapper.updateBrokeredUserLegacy(context.session, context.realm, context.user.model, context.mapperModel, context.brokeredIdentityContext);
+
+        assertEquals(2, context.user.grants);
+        assertTrue(context.user.roleMappings.contains(context.organizationRole.model));
+    }
+
+    @Test
+    public void acceptsLinkedOrganizationIdAliasOrBlankConfiguration() {
+        TestContext context = new TestContext();
+
+        OrganizationRoleMapperHelper.grantUserRole(context.session, context.realm, context.user.model, context.mapperModel, context.brokeredIdentityContext);
+        context.mapperModel.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION, "org");
+        OrganizationRoleMapperHelper.grantUserRole(context.session, context.realm, context.user.model, context.mapperModel, context.brokeredIdentityContext);
+        context.mapperModel.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION, "acme");
+        OrganizationRoleMapperHelper.grantUserRole(context.session, context.realm, context.user.model, context.mapperModel, context.brokeredIdentityContext);
+        context.mapperModel.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION, "");
+        OrganizationRoleMapperHelper.grantUserRole(context.session, context.realm, context.user.model, context.mapperModel, context.brokeredIdentityContext);
+
+        assertEquals(4, context.user.grants);
+    }
+
+    @Test
+    public void skipsInvalidOrganizationRoleMapperConfiguration() {
+        TestContext missingOrganization = new TestContext();
+        missingOrganization.idp.setOrganizationId(null);
+        assertMapperSkipped(missingOrganization);
+
+        TestContext wrongOrganization = new TestContext();
+        wrongOrganization.mapperModel.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION, "other");
+        assertMapperSkipped(wrongOrganization);
+
+        TestContext missingRoleId = new TestContext();
+        missingRoleId.mapperModel.getConfig().remove(OrganizationRoleMapperHelper.ORGANIZATION_ROLE);
+        assertMapperSkipped(missingRoleId);
+
+        TestContext missingRole = new TestContext();
+        missingRole.mapperModel.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION_ROLE, "missing");
+        assertMapperSkipped(missingRole);
+
+        TestContext foreignRole = new TestContext();
+        foreignRole.roleProviderIgnoresContainer = true;
+        foreignRole.mapperModel.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION_ROLE, foreignRole.otherOrganizationRole.model.getId());
+        assertMapperSkipped(foreignRole);
+
+        TestContext nonOrganizationRole = new TestContext();
+        nonOrganizationRole.organizationRole.organizationRole = false;
+        assertMapperSkipped(nonOrganizationRole);
+    }
+
+    @Test
+    public void skipsDisabledOrganization() {
+        TestContext disabledOrganization = new TestContext();
+        disabledOrganization.organizationEnabled = false;
+        assertMapperSkipped(disabledOrganization);
+    }
+
+    @Test
+    public void failsForNonMemberUser() {
+        TestContext nonMember = new TestContext();
+        nonMember.member = false;
+        assertThrows(IdentityBrokerException.class, () -> OrganizationRoleMapperHelper.grantUserRole(nonMember.session,
+                nonMember.realm, nonMember.user.model, nonMember.mapperModel, nonMember.brokeredIdentityContext));
+        assertEquals(0, nonMember.user.grants);
+        assertTrue(nonMember.user.roleMappings.isEmpty());
+    }
+
+    @Test
+    public void propagatesRoleProviderFailures() {
+        TestContext context = new TestContext();
+        context.roleLookupFails = true;
+
+        assertThrows(ModelException.class, () -> OrganizationRoleMapperHelper.grantUserRole(context.session,
+                context.realm, context.user.model, context.mapperModel, context.brokeredIdentityContext));
+        assertEquals(0, context.user.grants);
+    }
+
+    @Test
+    public void validatesOrganizationRoleMapperConfiguration() throws Exception {
+        TestContext context = new TestContext();
+        HardcodedOrganizationRoleMapper mapper = new HardcodedOrganizationRoleMapper();
+
+        mapper.validateConfig(context.session, context.realm, context.idp, context.mapperModel);
+        context.mapperModel.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION, "org");
+        mapper.validateConfig(context.session, context.realm, context.idp, context.mapperModel);
+        context.mapperModel.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION, "acme");
+        mapper.validateConfig(context.session, context.realm, context.idp, context.mapperModel);
+    }
+
+    @Test
+    public void rejectsInvalidOrganizationRoleMapperConfiguration() {
+        TestContext missingOrganization = new TestContext();
+        missingOrganization.idp.setOrganizationId(null);
+        assertMapperConfigRejected(missingOrganization);
+
+        TestContext disabledOrganization = new TestContext();
+        disabledOrganization.organizationEnabled = false;
+        assertMapperConfigRejected(disabledOrganization);
+
+        TestContext wrongOrganization = new TestContext();
+        wrongOrganization.mapperModel.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION, "other");
+        assertMapperConfigRejected(wrongOrganization);
+
+        TestContext missingRoleId = new TestContext();
+        missingRoleId.mapperModel.getConfig().remove(OrganizationRoleMapperHelper.ORGANIZATION_ROLE);
+        assertMapperConfigRejected(missingRoleId);
+
+        TestContext missingRole = new TestContext();
+        missingRole.mapperModel.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION_ROLE, "missing");
+        assertMapperConfigRejected(missingRole);
+
+        TestContext foreignRole = new TestContext();
+        foreignRole.roleProviderIgnoresContainer = true;
+        foreignRole.mapperModel.getConfig().put(OrganizationRoleMapperHelper.ORGANIZATION_ROLE, foreignRole.otherOrganizationRole.model.getId());
+        assertMapperConfigRejected(foreignRole);
+
+        TestContext nonOrganizationRole = new TestContext();
+        nonOrganizationRole.organizationRole.organizationRole = false;
+        assertMapperConfigRejected(nonOrganizationRole);
+    }
+
+    @Test
+    public void exposesProviderMetadata() {
+        HardcodedOrganizationRoleMapper mapper = new HardcodedOrganizationRoleMapper();
+
+        assertEquals("oidc-hardcoded-organization-role-idp-mapper", mapper.getId());
+        assertEquals("Role Importer", mapper.getDisplayCategory());
+        assertEquals("Hardcoded Organization Role", mapper.getDisplayType());
+        assertEquals("When user is imported from provider, hardcode an organization role mapping for it.", mapper.getHelpText());
+        assertArrayEquals(HardcodedOrganizationRoleMapper.COMPATIBLE_PROVIDERS, mapper.getCompatibleProviders());
+        for (IdentityProviderSyncMode syncMode : IdentityProviderSyncMode.values()) {
+            assertTrue(mapper.supportsSyncMode(syncMode));
+        }
+
+        List<ProviderConfigProperty> properties = mapper.getConfigProperties();
+        assertEquals(1, properties.size());
+        ProviderConfigProperty role = properties.get(0);
+        assertEquals(OrganizationRoleMapperHelper.ORGANIZATION_ROLE, role.getName());
+        assertEquals("Organization Role", role.getLabel());
+        assertEquals("Organization role to grant from the organization linked to the identity provider.", role.getHelpText());
+        assertEquals(ProviderConfigProperty.ORGANIZATION_ROLE_TYPE, role.getType());
+        assertTrue(role.isRequired());
+    }
+
+    private static void assertMapperSkipped(TestContext context) {
+        OrganizationRoleMapperHelper.grantUserRole(context.session, context.realm, context.user.model, context.mapperModel, context.brokeredIdentityContext);
+
+        assertEquals(0, context.user.grants);
+        assertTrue(context.user.roleMappings.isEmpty());
+    }
+
+    private static void assertMapperConfigRejected(TestContext context) {
+        assertThrows(IdentityProviderMapperConfigException.class,
+                () -> new HardcodedOrganizationRoleMapper().validateConfig(context.session, context.realm, context.idp, context.mapperModel));
+    }
+
+    private static class TestContext {
+        private boolean organizationEnabled = true;
+        private boolean member = true;
+        private boolean roleLookupFails;
+        private boolean roleProviderIgnoresContainer;
+        private final Map<String, TestRole> roles = new LinkedHashMap<>();
+        private final IdentityProviderModel idp = identityProvider();
+        private final RealmModel realm = proxy(RealmModel.class, (proxy, method, args) -> switch (method.getName()) {
+            case "getName" -> "realm";
+            default -> defaultValue(method.getReturnType());
+        });
+        private final OrganizationModel organization = organization("org", "acme");
+        private final OrganizationModel otherOrganization = organization("other-org", "other");
+        private final TestRole organizationRole = addOrganizationRole("role", "member", organization);
+        private final TestRole otherOrganizationRole = addOrganizationRole("other-role", "other", otherOrganization);
+        private final TestUser user = new TestUser();
+        private final RoleProvider roleProvider = proxy(RoleProvider.class, (proxy, method, args) -> switch (method.getName()) {
+            case "getRoleById" -> {
+                if (roleLookupFails) {
+                    throw new ModelException("Role provider failure");
+                }
+                TestRole role = roles.get(args[1]);
+                yield role != null && (roleProviderIgnoresContainer || role.container == args[0]) ? role.model : null;
+            }
+            default -> defaultValue(method.getReturnType());
+        });
+        private final OrganizationProvider organizationProvider = proxy(OrganizationProvider.class, (proxy, method, args) -> switch (method.getName()) {
+            case "isEnabled" -> true;
+            case "getById" -> Objects.equals(args[0], "org") ? organization : null;
+            default -> defaultValue(method.getReturnType());
+        });
+        private final KeycloakSession session = proxy(KeycloakSession.class, (proxy, method, args) -> switch (method.getName()) {
+            case "roles" -> roleProvider;
+            case "getProvider" -> args[0].equals(OrganizationProvider.class) ? organizationProvider : null;
+            default -> defaultValue(method.getReturnType());
+        });
+        private final IdentityProviderMapperModel mapperModel = mapperModel();
+        private final BrokeredIdentityContext brokeredIdentityContext = new BrokeredIdentityContext(idp);
+
+        private IdentityProviderModel identityProvider() {
+            IdentityProviderModel model = new IdentityProviderModel();
+            model.setAlias("idp");
+            model.setEnabled(true);
+            model.setOrganizationId("org");
+            return model;
+        }
+
+        private OrganizationModel organization(String id, String alias) {
+            return proxy(OrganizationModel.class, (proxy, method, args) -> switch (method.getName()) {
+                case "getId" -> id;
+                case "getAlias" -> alias;
+                case "isEnabled" -> organizationEnabled;
+                case "isMember" -> member && args[0] == user.model;
+                case "getIdentityProviders" -> Stream.of(idp);
+                default -> defaultValue(method.getReturnType());
+            });
+        }
+
+        private IdentityProviderMapperModel mapperModel() {
+            IdentityProviderMapperModel mapper = new IdentityProviderMapperModel();
+            mapper.setName("organization-role-mapper");
+            mapper.setConfig(new LinkedHashMap<>(Map.of(OrganizationRoleMapperHelper.ORGANIZATION_ROLE, "role")));
+            return mapper;
+        }
+
+        private TestRole addOrganizationRole(String id, String name, OrganizationModel organization) {
+            TestRole role = new TestRole(id, name, organization);
+            roles.put(id, role);
+            return role;
+        }
+    }
+
+    private static class TestUser {
+        private final Set<RoleModel> roleMappings = new LinkedHashSet<>();
+        private int grants;
+        private final UserModel model = proxy(UserModel.class, (proxy, method, args) -> switch (method.getName()) {
+            case "getId" -> "user";
+            case "grantRole" -> {
+                grants++;
+                roleMappings.add((RoleModel) args[0]);
+                yield null;
+            }
+            case "getRoleMappingsStream" -> roleMappings.stream();
+            default -> defaultValue(method.getReturnType());
+        });
+    }
+
+    private static class TestRole {
+        private final RoleContainerModel container;
+        private final RoleModel model;
+        private boolean organizationRole = true;
+
+        TestRole(String id, String name, RoleContainerModel container) {
+            this.container = container;
+            model = proxy(RoleModel.class, (proxy, method, args) -> switch (method.getName()) {
+                case "getId" -> id;
+                case "getName" -> name;
+                case "isOrganizationRole" -> organizationRole;
+                case "getContainer" -> container;
+                case "getContainerId" -> container.getId();
+                default -> defaultValue(method.getReturnType());
+            });
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T proxy(Class<T> type, InvocationHandler handler) {
+        return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] { type }, (proxy, method, args) -> {
+            if (method.getDeclaringClass().equals(Object.class)) {
+                return switch (method.getName()) {
+                    case "equals" -> proxy == args[0];
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "toString" -> type.getSimpleName() + "@" + Integer.toHexString(System.identityHashCode(proxy));
+                    default -> null;
+                };
+            }
+            return handler.invoke(proxy, method, args);
+        });
+    }
+
+    private static Object defaultValue(Class<?> type) {
+        if (!type.isPrimitive()) {
+            return null;
+        }
+        if (boolean.class.equals(type)) {
+            return false;
+        }
+        if (char.class.equals(type)) {
+            return '\0';
+        }
+        return 0;
+    }
+}

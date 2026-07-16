@@ -54,13 +54,7 @@ public class RoleCompositeResource {
             )}
     )
     public RoleMappingRepresentation getCompositeRoleMappings(@PathParam("id") String id) {
-        RoleModel role = this.realm.getRoleById(id);
-        if (role == null) {
-            role = this.session.roles().getRoleById(this.realm, id);
-        }
-        if (role == null) {
-            throw new NotFoundException("Could not find role");
-        }
+        RoleModel role = getNonOrganizationRoleById(id);
 
         auth.roles().requireView(role);
 
@@ -72,7 +66,7 @@ public class RoleCompositeResource {
         for (RoleModel compositeRole : compositeRoles) {
             RoleRepresentation roleRep = toRoleRepresentation(compositeRole);
 
-            if (compositeRole.isClientRole()) {
+            if (compositeRole.getType() == RoleModel.Type.CLIENT) {
                 ClientModel client = this.realm.getClientById(compositeRole.getContainerId());
                 if (client != null) {
                     String clientId = client.getClientId();
@@ -85,7 +79,7 @@ public class RoleCompositeResource {
                     }
                     clientMapping.getMappings().add(roleRep);
                 }
-            } else {
+            } else if (compositeRole.getType() == RoleModel.Type.REALM) {
                 realmMappings.add(roleRep);
             }
         }
@@ -96,13 +90,22 @@ public class RoleCompositeResource {
         );
     }
 
+    private RoleModel getNonOrganizationRoleById(String id) {
+        RoleModel role = this.realm.getRoleById(id);
+        if (role == null) {
+            role = this.session.roles().getRoleById(this.realm, id);
+        }
+        if (role == null || role.isOrganizationRole()) throw new NotFoundException("Could not find role");
+        return role;
+    }
+
     private RoleRepresentation toRoleRepresentation(RoleModel role) {
         return new RoleRepresentation(
                 role.getId(),
                 role.getName(),
                 role.getDescription(),
                 role.isComposite(),
-                role.isClientRole(),
+                role.getType() == RoleModel.Type.CLIENT,
                 role.getContainerId()
         );
     }

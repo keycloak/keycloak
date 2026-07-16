@@ -21,8 +21,9 @@ export type RoleFormProps = {
   form: UseFormReturn<AttributeForm>;
   onSubmit: SubmitHandler<AttributeForm>;
   cancelLink: To;
-  role: "manage-realm" | "manage-clients";
+  role: "manage-realm" | "manage-clients" | "manage-organizations";
   editMode: boolean;
+  isReadOnly?: boolean;
 };
 
 export const RoleForm = ({
@@ -31,6 +32,7 @@ export const RoleForm = ({
   cancelLink,
   role,
   editMode,
+  isReadOnly = false,
 }: RoleFormProps) => {
   const { t } = useTranslation();
   const { control, handleSubmit } = useFormContext<AttributeForm>();
@@ -49,8 +51,9 @@ export const RoleForm = ({
           isHorizontal
           onSubmit={handleSubmit(onSubmit)}
           role={role}
+          isReadOnly={isReadOnly}
           className="pf-v5-u-mt-lg"
-          fineGrainedAccess={true} // We would never want to show this form in read-only mode
+          fineGrainedAccess={true} // Callers decide read-only state explicitly.
         >
           <TextControl
             name="name"

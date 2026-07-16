@@ -456,7 +456,7 @@ public class ModelToRepresentation {
         rep.setName(role.getName());
         rep.setDescription(role.getDescription());
         rep.setComposite(role.isComposite());
-        rep.setClientRole(role.isClientRole());
+        rep.setClientRole(role.getType() == RoleModel.Type.CLIENT);
         rep.setContainerId(role.getContainerId());
         rep.setAttributes(role.getAttributes());
         return rep;
@@ -468,7 +468,7 @@ public class ModelToRepresentation {
         rep.setName(role.getName());
         rep.setDescription(role.getDescription());
         rep.setComposite(role.isComposite());
-        rep.setClientRole(role.isClientRole());
+        rep.setClientRole(role.getType() == RoleModel.Type.CLIENT);
         rep.setContainerId(role.getContainerId());
         return rep;
     }

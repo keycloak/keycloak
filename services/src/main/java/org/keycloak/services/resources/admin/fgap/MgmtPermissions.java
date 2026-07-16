@@ -199,7 +199,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
             return false;
         }
         Set<String> roleNames = Set.of(adminRoles);
-        return masterAdminRole.getCompositesStream().anyMatch(r -> (r.isClientRole()
+        return masterAdminRole.getCompositesStream().anyMatch(r -> (r.getType() == RoleModel.Type.CLIENT
                 && r.getContainerId().equals(clientId) && roleNames.contains(r.getName())));
     }
 

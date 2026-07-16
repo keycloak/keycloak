@@ -26,6 +26,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
@@ -223,6 +224,46 @@ public class RoleStorageManager implements RoleProvider {
     @Override
     public void removeRoles(ClientModel client) {
         localStorage().removeRoles(client);
+    }
+
+    @Override
+    public RoleModel addOrganizationRole(OrganizationModel organization, String name) {
+        return localStorage().addOrganizationRole(organization, name);
+    }
+
+    @Override
+    public RoleModel addOrganizationRole(OrganizationModel organization, String id, String name) {
+        return localStorage().addOrganizationRole(organization, id, name);
+    }
+
+    @Override
+    public RoleModel getOrganizationRole(OrganizationModel organization, String name) {
+        return localStorage().getOrganizationRole(organization, name);
+    }
+
+    @Override
+    public RoleModel getRoleById(OrganizationModel organization, String id) {
+        return localStorage().getRoleById(organization, id);
+    }
+
+    @Override
+    public Stream<RoleModel> getOrganizationRolesStream(OrganizationModel organization, Integer first, Integer max) {
+        return localStorage().getOrganizationRolesStream(organization, first, max);
+    }
+
+    @Override
+    public Stream<RoleModel> searchForOrganizationRolesStream(OrganizationModel organization, String search, Integer first, Integer max) {
+        return localStorage().searchForOrganizationRolesStream(organization, search, first, max);
+    }
+
+    @Override
+    public long getOrganizationRolesCount(OrganizationModel organization, String search) {
+        return localStorage().getOrganizationRolesCount(organization, search);
+    }
+
+    @Override
+    public void removeRoles(OrganizationModel organization) {
+        localStorage().removeRoles(organization);
     }
 
     @Override

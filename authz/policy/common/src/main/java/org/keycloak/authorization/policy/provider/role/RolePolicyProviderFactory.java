@@ -122,9 +122,9 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         for (RolePolicyRepresentation.RoleDefinition roleDefinition : roles) {
             RoleModel role = authorizationProvider.getRealm().getRoleById(roleDefinition.getId());
 
-            if (role.isClientRole()) {
+            if (role.getType() == RoleModel.Type.CLIENT) {
                 roleDefinition.setId(ClientModel.class.cast(role.getContainer()).getClientId() + "/" + role.getName());
-            } else {
+            } else if (role.getType() == RoleModel.Type.REALM) {
                 roleDefinition.setId(role.getName());
             }
         }

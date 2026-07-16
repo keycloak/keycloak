@@ -38,6 +38,7 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -291,8 +292,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
                     if (realm.getName().equals(Config.getAdminRealm())) {
                         return adminConflictMessage(role);
                     }
-                } else {
-                    ClientModel container = (ClientModel)role.getContainer();
+                } else if (role.getContainer() instanceof ClientModel container) {
                     // abort if this is an role in master realm and role is an admin role of any realm
                     if (container.getRealm().getName().equals(Config.getAdminRealm())
                             && container.getClientId().endsWith("-realm")) {
@@ -320,7 +320,13 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
      */
     @Override
     public boolean canMapRole(RoleModel role) {
-        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) return checkAdminRoles(role);
+        OrganizationModel organization = getRoleOrganization(role);
+        if (organization != null) {
+            return root.orgs().canManage(organization);
+        }
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
+            return checkAdminRoles(role);
+        }
         if (!root.isAdminSameRealm()) {
             return false;
         }
@@ -363,6 +369,8 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
             return true;
         } else if (container instanceof RealmModel) {
             return root.realm().canViewRealm() || root.hasOneAdminRole(AdminRoles.MANAGE_IDENTITY_PROVIDERS);
+        } else if (container instanceof OrganizationModel) {
+            return root.orgs().canQuery();
         } else {
             return root.clients().canView((ClientModel)container);
         }
@@ -380,6 +388,8 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     public boolean canManage(RoleContainerModel container) {
         if (container instanceof RealmModel) {
             return root.realm().canManageRealm();
+        } else if (container instanceof OrganizationModel organization) {
+            return root.orgs().canManage(organization);
         } else {
             return root.clients().canConfigure((ClientModel)container);
         }
@@ -396,6 +406,8 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     public boolean canView(RoleContainerModel container) {
         if (container instanceof RealmModel) {
             return root.realm().canViewRealm();
+        } else if (container instanceof OrganizationModel organization) {
+            return root.orgs().canView(organization);
         } else {
             return root.clients().canView((ClientModel)container);
         }
@@ -410,6 +422,9 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     @Override
     public boolean canMapComposite(RoleModel role) {
+        OrganizationModel organization = getRoleOrganization(role);
+        if (organization != null) return root.orgs().canManage(organization);
+
         if (canManageDefault(role)) return checkAdminRoles(role);
 
         if (!root.isAdminSameRealm()) {
@@ -450,6 +465,8 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     @Override
     public boolean canMapClientScope(RoleModel role) {
+        if (role.isOrganizationRole()) return false;
+
         if (root.clients().canManageClientsDefault()) return true;
         if (!root.isAdminSameRealm()) {
             return false;
@@ -489,6 +506,8 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         } else if (role.getContainer() instanceof ClientModel) {
             ClientModel client = (ClientModel)role.getContainer();
             return root.clients().canConfigure(client);
+        } else if (role.getContainer() instanceof OrganizationModel organization) {
+            return root.orgs().canManage(organization);
         }
         return false;
     }
@@ -498,6 +517,8 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
             return root.realm().canManageRealmDefault();
         } else if (role.getContainer() instanceof ClientModel) {
             return root.clients().canManageClientsDefault();
+        } else if (role.getContainer() instanceof OrganizationModel organization) {
+            return root.orgs().canManage(organization);
         }
         return false;
     }
@@ -517,6 +538,8 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         } else if (role.getContainer() instanceof ClientModel) {
             ClientModel client = (ClientModel)role.getContainer();
             return root.clients().canView(client);
+        } else if (role.getContainer() instanceof OrganizationModel organization) {
+            return root.orgs().canView(organization);
         }
         return false;
     }
@@ -537,6 +560,11 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
             client = root.getRealmPermissionsClient();
         }
         return client;
+    }
+
+    protected OrganizationModel getRoleOrganization(RoleModel role) {
+        RoleContainerModel container = role.getContainer();
+        return container instanceof OrganizationModel organization ? organization : null;
     }
 
     @Override
@@ -677,7 +705,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     private ResourceServer getResourceServer(RoleModel role) {
         ResourceServer resourceServer = null;
-        if (role.isClientRole()) {
+        if (role.getType() == RoleModel.Type.CLIENT) {
             RoleContainerModel container = role.getContainer();
             resourceServer = session.getProvider(AuthorizationProvider.class).getStoreFactory().getResourceServerStore().findById(container.getId());
         }

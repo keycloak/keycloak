@@ -41,6 +41,7 @@ import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
@@ -53,6 +54,7 @@ import org.keycloak.models.cache.infinispan.entities.CachedClientRole;
 import org.keycloak.models.cache.infinispan.entities.CachedClientScope;
 import org.keycloak.models.cache.infinispan.entities.CachedCompositeRoles;
 import org.keycloak.models.cache.infinispan.entities.CachedGroup;
+import org.keycloak.models.cache.infinispan.entities.CachedOrganizationRole;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.models.cache.infinispan.entities.CachedRealmRole;
 import org.keycloak.models.cache.infinispan.entities.CachedRole;
@@ -311,8 +313,15 @@ public class RealmCacheSession implements CacheRealmProvider {
         }
     }
 
-
-
+    public void registerOrganizationRoleInvalidations(OrganizationModel organization) {
+        listInvalidations.add(organization.getId());
+        registerInvalidation(organization.getId());
+        getRoleDelegate().getOrganizationRolesStream(organization).forEach(role -> {
+            invalidateRole(role.getId());
+            invalidationEvents.add(RoleRemovedEvent.create(role.getId(), role.getName(), organization.getId()));
+            roleRemovalInvalidations(role.getId(), role.getName(), organization.getId());
+        });
+    }
 
     private void invalidateRole(String id) {
         invalidations.add(id);
@@ -785,6 +794,40 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public Stream<RoleModel> getOrganizationRolesStream(OrganizationModel organization) {
+        String cacheKey = getRolesCacheKey(organization.getId());
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(organization.getId()) || listInvalidations.contains(organization.getRealm().getId());
+        if (queryDB) {
+            return getRoleDelegate().getOrganizationRolesStream(organization);
+        }
+
+        RoleListQuery query = cache.get(cacheKey, RoleListQuery.class);
+        if (query != null) {
+            logger.tracev("getOrganizationRoles cache hit: {0}", organization.getId());
+        }
+
+        if (query == null) {
+            long loaded = cache.getCurrentRevision(cacheKey);
+            Set<RoleModel> model = getRoleDelegate().getOrganizationRolesStream(organization).collect(Collectors.toSet());
+            if (model.isEmpty()) return Stream.of();
+            Set<String> ids = model.stream().map(RoleModel::getId).collect(Collectors.toSet());
+            query = new RoleListQuery(loaded, cacheKey, organization.getRealm(), ids);
+            logger.tracev("adding organization roles cache miss: organization {0} key {1}", organization.getId(), cacheKey);
+            cache.addRevisioned(query, startupRevision);
+        }
+        Set<RoleModel> list = new HashSet<>();
+        for (String id : query.getRoles()) {
+            RoleModel role = session.roles().getRoleById(organization, id);
+            if (role == null) {
+                invalidations.add(cacheKey);
+                return getRoleDelegate().getOrganizationRolesStream(organization);
+            }
+            list.add(role);
+        }
+        return list.stream();
+    }
+
+    @Override
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max) {
         return getRoleDelegate().getRealmRolesStream(realm, first, max);
     }
@@ -800,8 +843,18 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public Stream<RoleModel> getOrganizationRolesStream(OrganizationModel organization, Integer first, Integer max) {
+        return getRoleDelegate().getOrganizationRolesStream(organization, first, max);
+    }
+
+    @Override
     public Stream<RoleModel> searchForClientRolesStream(ClientModel client, String search, Integer first, Integer max) {
         return getRoleDelegate().searchForClientRolesStream(client, search, first, max);
+    }
+
+    @Override
+    public Stream<RoleModel> searchForOrganizationRolesStream(OrganizationModel organization, String search, Integer first, Integer max) {
+        return getRoleDelegate().searchForOrganizationRolesStream(organization, search, first, max);
     }
 
     @Override
@@ -828,6 +881,18 @@ public class RealmCacheSession implements CacheRealmProvider {
     public RoleModel addClientRole(ClientModel client, String id, String name) {
         RoleModel role = getRoleDelegate().addClientRole(client, id, name);
         addedRole(role.getId(), client.getId(), name);
+        return role;
+    }
+
+    @Override
+    public RoleModel addOrganizationRole(OrganizationModel organization, String name) {
+        return addOrganizationRole(organization, KeycloakModelUtils.generateId(), name);
+    }
+
+    @Override
+    public RoleModel addOrganizationRole(OrganizationModel organization, String id, String name) {
+        RoleModel role = getRoleDelegate().addOrganizationRole(organization, id, name);
+        addedRole(role.getId(), organization.getId(), name);
         return role;
     }
 
@@ -906,6 +971,48 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public RoleModel getOrganizationRole(OrganizationModel organization, String name) {
+        String cacheKey = getRoleByNameCacheKey(organization.getId(), name);
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(organization.getId()) || listInvalidations.contains(organization.getRealm().getId());
+        if (queryDB) {
+            return getRoleDelegate().getOrganizationRole(organization, name);
+        }
+
+        RoleByNameQuery query = cache.get(cacheKey, RoleByNameQuery.class);
+        if (query != null) {
+            logger.tracev("getOrganizationRole cache hit: {0}.{1}", organization.getId(), name);
+        }
+
+        if (query == null) {
+            long loaded = cache.getCurrentRevision(cacheKey);
+            RoleModel model = getRoleDelegate().getOrganizationRole(organization, name);
+            if (model == null) {
+                // caching empty results will speed up the policy evaluation which tries to look up the role by name and ID
+                query = new RoleByNameQuery(loaded, cacheKey, organization.getRealm(), null);
+            } else {
+                query = new RoleByNameQuery(loaded, cacheKey, organization.getRealm(), model.getId());
+            }
+            logger.tracev("adding organization role cache miss: organization {0} key {1}", organization.getId(), cacheKey);
+            cache.addRevisioned(query, startupRevision);
+        }
+        String roleId = query.getRole();
+        if (roleId == null) {
+            return null;
+        }
+        RoleModel role = getRoleById(organization, roleId);
+        if (role == null) {
+            invalidations.add(cacheKey);
+            return getRoleDelegate().getOrganizationRole(organization, name);
+        }
+        return role;
+    }
+
+    @Override
+    public long getOrganizationRolesCount(OrganizationModel organization, String search) {
+        return getRoleDelegate().getOrganizationRolesCount(organization, search);
+    }
+
+    @Override
     public boolean removeRole(RoleModel role) {
         listInvalidations.add(role.getContainer().getId());
 
@@ -927,6 +1034,12 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public void removeRoles(OrganizationModel organization) {
+        registerOrganizationRoleInvalidations(organization);
+        getRoleDelegate().removeRoles(organization);
+    }
+
+    @Override
     public RoleModel getRoleById(RealmModel realm, String id) {
         if (invalidations.contains(id)) {
             return getRoleDelegate().getRoleById(realm, id);
@@ -943,6 +1056,25 @@ public class RealmCacheSession implements CacheRealmProvider {
         return adapter;
     }
 
+    @Override
+    public RoleModel getRoleById(OrganizationModel organization, String id) {
+        if (invalidations.contains(id)) {
+            return getRoleDelegate().getRoleById(organization, id);
+        } else if (managedRoles.containsKey(id)) {
+            RoleAdapter adapter = managedRoles.get(id);
+            return adapter.isOrganizationRole() && organization.getId().equals(adapter.getContainerId()) ? adapter : null;
+        }
+
+        CachedRole cached = getCachedRole(organization.getRealm(), id);
+        if (!(cached instanceof CachedOrganizationRole organizationRole) || !organization.getId().equals(organizationRole.getOrganizationId())) {
+            return null;
+        }
+
+        RoleAdapter adapter = new RoleAdapter(cached,this, organization.getRealm());
+        managedRoles.put(id, adapter);
+        return adapter;
+    }
+
     protected CachedRole getCachedRole(RealmModel realm, String id) {
         CachedRole cached = cache.get(id, CachedRole.class);
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
@@ -953,11 +1085,11 @@ public class RealmCacheSession implements CacheRealmProvider {
             long loaded = cache.getCurrentRevision(id);
             RoleModel model = getRoleDelegate().getRoleById(realm, id);
             if (model == null) return null;
-            if (model.isClientRole()) {
-                cached = new CachedClientRole(loaded, model.getContainerId(), model, realm);
-            } else {
-                cached = new CachedRealmRole(loaded, model, realm);
-            }
+            cached = switch (model.getType()) {
+                case CLIENT -> new CachedClientRole(loaded, model.getContainerId(), model, realm);
+                case ORGANIZATION -> new CachedOrganizationRole(loaded, model.getContainerId(), model, realm);
+                case REALM -> new CachedRealmRole(loaded, model, realm);
+            };
             cache.addRevisioned(cached, startupRevision);
         }
         return cached;

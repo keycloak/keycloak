@@ -112,6 +112,9 @@ public class RoleResolveUtil {
 
     private static void addToToken(AccessToken token, RoleModel role) {
         AccessToken.Access access = null;
+        if (role.isOrganizationRole()) {
+            return;
+        }
         if (role.getContainer() instanceof RealmModel) {
             access = token.getRealmAccess();
             if (token.getRealmAccess() == null) {
@@ -120,16 +123,14 @@ public class RoleResolveUtil {
             } else if (token.getRealmAccess().getRoles() != null && token.getRealmAccess().isUserInRole(role.getName()))
                 return;
 
-        } else {
-            ClientModel app = (ClientModel) role.getContainer();
-            if (app == null) {
-                return;
-            }
+        } else if (role.getContainer() instanceof ClientModel app) {
             access = token.getResourceAccess(app.getClientId());
             if (access == null) {
                 access = token.addAccess(app.getClientId());
                 if (app.isSurrogateAuthRequired()) access.verifyCaller(true);
             } else if (access.isUserInRole(role.getName())) return;
+        } else {
+            return;
 
         }
         access.addRole(role.getName());

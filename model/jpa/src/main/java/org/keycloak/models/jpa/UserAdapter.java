@@ -60,6 +60,7 @@ import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.representations.idm.MembershipType;
 
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -536,6 +537,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void grantRole(RoleModel role) {
+        OrganizationsValidation.validateOrganizationRoleMapping(this, role);
         if (hasDirectRole(role)) return;
         grantRoleImpl(role);
         RoleGrantedEvent.fire(role, this, session);
@@ -597,7 +599,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
-        return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
+        return getRoleMappingsStream().filter(r -> RoleUtils.isRoleFromClient(r, app));
     }
 
     @Override

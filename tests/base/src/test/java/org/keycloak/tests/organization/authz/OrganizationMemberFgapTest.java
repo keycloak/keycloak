@@ -26,6 +26,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.OrganizationMembersResource;
+import org.keycloak.admin.client.resource.OrganizationRoleResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -33,6 +34,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -50,6 +52,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW_MEMBERS;
 
@@ -141,6 +144,36 @@ public class OrganizationMemberFgapTest {
     public void testCountWithNoPermissionsReturnsZero() {
         // no user view permissions granted
         assertThat(getOrgMembers().count(), equalTo(0L));
+    }
+
+    @Test
+    public void testOrganizationRoleCandidatesRespectUserPermissions() {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName("organization-role");
+        String roleId;
+        try (Response response = realm.admin().organizations().get(orgId).roles().create(role)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            roleId = ApiUtil.getCreatedId(response);
+        }
+
+        OrganizationRoleResource restrictedRole = realmAdminClient.realm(realm.getName()).organizations()
+                .get(orgId).roles().get(roleId);
+        assertTrue(restrictedRole.getAvailableUserMembers(null, null, true, 0, 10).isEmpty());
+
+        UserPolicyRepresentation policy = createAdminPolicy();
+        PermissionTestUtils.createPermission(clientResource, Set.of(userAlice.getId()),
+                AdminPermissionsSchema.USERS.getType(), Set.of(VIEW, MANAGE), policy);
+
+        List<UserRepresentation> candidates = restrictedRole.getAvailableUserMembers(null, null, true, 0, 10);
+        assertThat(candidates, hasSize(1));
+        assertEquals(userAlice.getId(), candidates.get(0).getId());
+
+        UserRepresentation alice = new UserRepresentation();
+        alice.setId(userAlice.getId());
+        restrictedRole.addUserMembers(List.of(alice));
+        assertThat(restrictedRole.getUserMembers(), hasSize(1));
+        restrictedRole.deleteUserMembers(List.of(alice));
+        assertTrue(restrictedRole.getUserMembers().isEmpty());
     }
 
     @Test

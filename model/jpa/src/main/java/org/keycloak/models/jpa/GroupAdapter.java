@@ -49,6 +49,7 @@ import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.storage.UserStoragePrivateUtil;
 
 import static java.util.Optional.ofNullable;
@@ -367,6 +368,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public void grantRole(RoleModel role) {
+        OrganizationsValidation.validateOrganizationRoleGroupMapping(role);
         if (hasDirectRole(role)) return;
         GroupRoleMappingEntity entity = new GroupRoleMappingEntity();
         entity.setGroup(getEntity());
@@ -409,7 +411,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
-        return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
+        return getRoleMappingsStream().filter(r -> RoleUtils.isRoleFromClient(r, app));
     }
 
     @Override

@@ -29,6 +29,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -47,6 +48,11 @@ class RolePermissionsV2 extends RolePermissions {
 
     @Override
     public boolean canMapRole(RoleModel role) {
+        OrganizationModel organization = getRoleOrganization(role);
+        if (organization != null) {
+            return root.orgs().canManage(organization);
+        }
+
         if (isRealmAdminRole(role)) {
             if (realm.isAdminPermissionsEnabled()) {
                 // only server or realm admins can map roles if FGAP is enabled
@@ -72,6 +78,11 @@ class RolePermissionsV2 extends RolePermissions {
 
     @Override
     public boolean canMapComposite(RoleModel role) {
+        OrganizationModel organization = getRoleOrganization(role);
+        if (organization != null) {
+            return root.orgs().canManage(organization);
+        }
+
         if (isRealmAdminRole(role)) {
             if (realm.isAdminPermissionsEnabled()) {
                 // only server or realm admins can map roles if FGAP is enabled
@@ -104,6 +115,10 @@ class RolePermissionsV2 extends RolePermissions {
 
     @Override
     public boolean canMapClientScope(RoleModel role) {
+        if (role.isOrganizationRole()) {
+            return false;
+        }
+
         if (role.getContainer() instanceof ClientModel clientModel) {
             if (root.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS)) {
                 return true;

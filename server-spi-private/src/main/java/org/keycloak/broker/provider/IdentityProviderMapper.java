@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -44,6 +45,13 @@ public interface IdentityProviderMapper extends Provider, ProviderFactory<Identi
 
     default boolean supportsSyncMode(IdentityProviderSyncMode syncMode) {
         return DEFAULT_IDENTITY_PROVIDER_MAPPER_SYNC_MODES.contains(syncMode);
+    }
+
+    /**
+     * Called when an identity provider mapper is created or updated through the admin endpoint.
+     */
+    default void validateConfig(KeycloakSession session, RealmModel realm, IdentityProviderModel identityProviderModel,
+            IdentityProviderMapperModel mapperModel) throws IdentityProviderMapperConfigException {
     }
 
     /**

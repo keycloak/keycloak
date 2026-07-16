@@ -17,6 +17,7 @@
 
 package org.keycloak.services.resources.admin;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,9 +33,11 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
@@ -89,12 +92,8 @@ public abstract class RoleResource {
                 }
 
                 @Override
-                public String getClientId() {
-                    if (!role.isClientRole()) {
-                        return null;
-                    }
-
-                    return ((ClientModel) role.getContainer()).getClientId();
+                public RoleModel getRole() {
+                    return role;
                 }
 
                 @Override
@@ -121,6 +120,7 @@ public abstract class RoleResource {
     }
 
     protected void addComposites(AdminPermissionEvaluator auth, AdminEventBuilder adminEvent, UriInfo uriInfo, List<RoleRepresentation> roles, RoleModel role) {
+        List<RoleModel> composites = new ArrayList<>();
         for (RoleRepresentation rep : roles) {
             if (rep.getId() == null) throw new NotFoundException("Could not find composite role");
             RoleModel composite = realm.getRoleById(rep.getId());
@@ -128,10 +128,16 @@ public abstract class RoleResource {
                 throw new NotFoundException("Could not find composite role");
             }
             auth.roles().requireMapComposite(composite);
-            role.addCompositeRole(composite);
+            try {
+                OrganizationsValidation.validateOrganizationRoleComposite(role, composite);
+            } catch (ModelException me) {
+                throw new BadRequestException(me.getMessage(), me);
+            }
+            composites.add(composite);
         }
+        composites.forEach(role::addCompositeRole);
 
-        if (role.isClientRole()) {
+        if (role.getType() == RoleModel.Type.CLIENT) {
             adminEvent.resource(ResourceType.CLIENT_ROLE);
         } else {
             adminEvent.resource(ResourceType.REALM_ROLE);
@@ -161,7 +167,7 @@ public abstract class RoleResource {
             role.removeCompositeRole(composite);
         }
 
-        if (role.isClientRole()) {
+        if (role.getType() == RoleModel.Type.CLIENT) {
             adminEvent.resource(ResourceType.CLIENT_ROLE);
         } else {
             adminEvent.resource(ResourceType.REALM_ROLE);

@@ -17,7 +17,7 @@ public class RoleMapper {
     }
 
     public static EffectiveRole convertToEffectiveRole(RoleModel roleModel, RealmModel realm) {
-        if (roleModel.isClientRole()) {
+        if (roleModel.getType() == RoleModel.Type.CLIENT) {
             ClientModel clientModel = realm.getClientById(roleModel.getContainerId());
             if (clientModel == null) {
                 throw new IllegalArgumentException("Could not find referenced client");

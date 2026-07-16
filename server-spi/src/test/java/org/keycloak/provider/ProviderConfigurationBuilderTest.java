@@ -8,6 +8,11 @@ import org.junit.Test;
 public class ProviderConfigurationBuilderTest {
 
   @Test
+  public void testOrganizationRoleType() {
+    Assert.assertEquals("OrganizationRole", ProviderConfigProperty.ORGANIZATION_ROLE_TYPE);
+  }
+
+  @Test
   public void testAddProperty() {
     ProviderConfigurationBuilder builder = ProviderConfigurationBuilder.create();
 

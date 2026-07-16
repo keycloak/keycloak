@@ -19,6 +19,7 @@ package org.keycloak.organization.jpa;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -39,6 +40,7 @@ import jakarta.persistence.criteria.Root;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.GroupProvider;
@@ -50,6 +52,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
@@ -58,6 +61,7 @@ import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
+import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.organization.InvitationManager;
@@ -140,6 +144,9 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             // Must be done after persist so the organization entity is managed
             GroupEntity groupEntity = em.find(GroupEntity.class, group.getId());
             groupEntity.setOrganization(entity);
+            em.flush();
+
+            createDefaultRole(adapter);
         } finally {
             session.getContext().setOrganization(null);
         }
@@ -168,6 +175,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
                 organization.getIdentityProviders().forEach((model) -> removeIdentityProvider(organization, model));
             }
+
+            session.roles().removeRoles(organization);
 
             OrganizationModel.OrganizationRemovedEvent.fire(organization, session);
 
@@ -219,6 +228,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             }
 
             user.joinGroup(group, metadata);
+            grantDefaultRole(organization, user);
             OrganizationModel.OrganizationMemberJoinEvent.fire(organization, user, session);
         } finally {
             if (current == null) {
@@ -446,6 +456,48 @@ public class JpaOrganizationProvider implements OrganizationProvider {
                         .equal(groupMembership.get(MembershipType.NAME), filter.getValue().toUpperCase()));
             }
         }
+
+        PartialEvaluationStorageProvider storageProvider = (PartialEvaluationStorageProvider) UserStoragePrivateUtil.userLocalStorage(session);
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, storageProvider, getRealm(), builder, queryBuilder, userJoin));
+
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+        queryBuilder.orderBy(builder.asc(userJoin.get(USERNAME)));
+
+        return closing(paginateQuery(em.createQuery(queryBuilder), first, max).getResultStream().map(id -> {
+            UserModel user = userProvider.getUserById(getRealm(), id);
+
+            if (isReadOnlyOrganizationMember(session, user)) {
+                return new ReadOnlyUserModelDelegate(user) {
+                    @Override
+                    public boolean isEnabled() {
+                        return false;
+                    }
+                };
+            }
+
+            return user;
+        }));
+    }
+
+    @Override
+    public Stream<UserModel> getRoleMembersStream(OrganizationModel organization, RoleModel role, Integer first, Integer max) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        throwExceptionIfObjectIsNull(role, "Role");
+
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
+        Root<UserGroupMembershipEntity> groupMembership = queryBuilder.from(UserGroupMembershipEntity.class);
+        Root<UserRoleMappingEntity> roleMapping = queryBuilder.from(UserRoleMappingEntity.class);
+        From<UserGroupMembershipEntity, UserEntity> userJoin = groupMembership.join("user");
+
+        queryBuilder.select(userJoin.get("id"));
+
+        List<Predicate> predicates = new ArrayList<>();
+        GroupModel group = getOrganizationGroup(organization);
+
+        predicates.add(builder.equal(groupMembership.get("groupId"), group.getId()));
+        predicates.add(builder.equal(roleMapping.get("roleId"), role.getId()));
+        predicates.add(builder.equal(roleMapping.get("user"), userJoin));
 
         PartialEvaluationStorageProvider storageProvider = (PartialEvaluationStorageProvider) UserStoragePrivateUtil.userLocalStorage(session);
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, storageProvider, getRealm(), builder, queryBuilder, userJoin));
@@ -848,6 +900,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             }
 
             try {
+                removeOrganizationRoleMappings(organization, member);
                 // Remove from all organization-specific groups
                 getOrganizationGroupsByMember(organization, member).forEach(member::leaveGroup);
                 // Remove from internal organization group
@@ -914,6 +967,27 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
     private GroupModel createOrganizationGroup(String orgId) {
         return groupProvider.createGroup(getRealm(), null, Type.ORGANIZATION, orgId, null);
+    }
+
+    private void createDefaultRole(OrganizationAdapter organization) {
+        RoleModel defaultRole = organization.addRole(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + organization.getAlias().toLowerCase(Locale.ROOT));
+        defaultRole.setDescription("${role_default-roles}");
+        organization.setDefaultRole(defaultRole);
+    }
+
+    private void grantDefaultRole(OrganizationModel organization, UserModel user) {
+        RoleModel defaultRole = organization.getDefaultRole();
+        if (defaultRole != null) {
+            user.grantRole(defaultRole);
+        }
+    }
+
+    private void removeOrganizationRoleMappings(OrganizationModel organization, UserModel user) {
+        user.getRoleMappingsStream()
+                .filter(RoleModel::isOrganizationRole)
+                .filter(role -> organization.getId().equals(role.getContainerId()))
+                .toList()
+                .forEach(user::deleteRoleMapping);
     }
 
     @Override

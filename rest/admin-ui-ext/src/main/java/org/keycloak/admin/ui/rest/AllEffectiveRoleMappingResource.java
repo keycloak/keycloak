@@ -179,20 +179,24 @@ public class AllEffectiveRoleMappingResource extends RoleMappingResource {
             )}
     )
     public final List<EffectiveRole> listAllEffectiveRealmRoleMappings(@PathParam("id") String id) {
-        RoleModel role = this.realm.getRoleById(id);
-        if (role == null) {
-            role = this.session.roles().getRoleById(this.realm, id);
-        }
-        if (role == null) {
-            throw new NotFoundException("Could not find role");
-        }
+        RoleModel role = getNonOrganizationRoleById(id);
 
         auth.roles().requireView(role);
         return toSortedEffectiveRoles(addSubRoles(Stream.of(role)));
     }
 
+    private RoleModel getNonOrganizationRoleById(String id) {
+        RoleModel role = this.realm.getRoleById(id);
+        if (role == null) {
+            role = this.session.roles().getRoleById(this.realm, id);
+        }
+        if (role == null || role.isOrganizationRole()) throw new NotFoundException("Could not find role");
+        return role;
+    }
+
     private List<EffectiveRole> toSortedEffectiveRoles(Stream<RoleModel> roles) {
-        return roles.map(roleModel -> convertToEffectiveRole(roleModel, realm))
+        return roles.filter(role -> role.getType() != RoleModel.Type.ORGANIZATION)
+                .map(roleModel -> convertToEffectiveRole(roleModel, realm))
                 .sorted(Comparator.comparing(EffectiveRole::isClientRole)
                         .thenComparing(r -> r.getClient() != null ? r.getClient() : "")
                         .thenComparing(EffectiveRole::getName))
