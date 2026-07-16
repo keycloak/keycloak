@@ -82,7 +82,7 @@ public class TransactionDistTest {
         assertThat(timeout.size(), Matchers.is(3));
         assertThat(timeout.get("default"), Matchers.is(123));
         assertThat(timeout.get("migration"), Matchers.is(456));
-        assertThat(timeout.get("db-lock"), Matchers.is(456));
+        assertThat(timeout.get("db-lock"), Matchers.is(456000));
     }
 
 }
