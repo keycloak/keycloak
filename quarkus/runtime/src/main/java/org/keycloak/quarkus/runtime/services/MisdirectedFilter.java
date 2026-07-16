@@ -2,6 +2,7 @@ package org.keycloak.quarkus.runtime.services;
 
 import java.util.Set;
 
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 
@@ -26,7 +27,11 @@ public class MisdirectedFilter implements Handler<RoutingContext> {
                 || allowedHosts.contains(authority.host())) {
             routingContext.next();
         } else {
-            routingContext.response().setStatusCode(421).end();
+            routingContext.response()
+                .setStatusCode(HttpResponseStatus.MISDIRECTED_REQUEST.code())
+                .setStatusMessage(HttpResponseStatus.MISDIRECTED_REQUEST.reasonPhrase())
+                .putHeader("Content-Type", "text/plain; charset=UTF-8")
+                .end(HttpResponseStatus.MISDIRECTED_REQUEST.reasonPhrase());
         }
     }
 

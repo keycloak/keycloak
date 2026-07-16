@@ -72,7 +72,9 @@ import io.quarkus.arc.InstanceHandle;
 import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
+import io.quarkus.vertx.http.runtime.security.SecurityHandlerPriorities;
 import io.vertx.core.Handler;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import liquibase.Scope;
 import liquibase.servicelocator.ServiceLocator;
@@ -134,20 +136,23 @@ public class KeycloakRecorder {
         }
     }
 
-    public Handler<RoutingContext> getRejectNonNormalizedPathFilter() {
-        return !Configuration.isTrue(HttpOptions.HTTP_ACCEPT_NON_NORMALIZED_PATHS) ? new RejectNonNormalizedPathFilter() : null;
+    public void rejectNonNormalizedPathFilter(RuntimeValue<Router> runtimeValue) {
+        if (Configuration.isTrue(HttpOptions.HTTP_ACCEPT_NON_NORMALIZED_PATHS)) {
+            return;
+        }
+        runtimeValue.getValue().route().order(-1 * (SecurityHandlerPriorities.CORS + 1)).handler(new RejectNonNormalizedPathFilter());
     }
     
-    public Handler<RoutingContext> getMisdirectedRequestFilter() {
+    public void misdirectedRequestFilter(RuntimeValue<Router> runtimeValue) {
         // not checking for http/2 enablement - it is enabled by default and not exposed as a supported configuration option
         if (!Configuration.isTrue(HttpPropertyMappers.QUARKUS_HTTPS_SNI) || !HttpPropertyMappers.isHttpsEnabled() || Configuration.getConfigValue(ProxyOptions.PROXY_HEADERS).getValue() != null) {
-            return null;
+            return;
         }
         
         Set<String> allowedHosts = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         extractHost(HostnameV2Options.HOSTNAME, allowedHosts);
         extractHost(HostnameV2Options.HOSTNAME_ADMIN, allowedHosts);
-        return new MisdirectedFilter(allowedHosts);
+        runtimeValue.getValue().route().order(-1 * (SecurityHandlerPriorities.CORS + 2)).handler(new MisdirectedFilter(allowedHosts));
     }
     
     private static void extractHost(Option<String> option, Set<String> allowedHosts) {
