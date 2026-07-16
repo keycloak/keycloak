@@ -197,6 +197,7 @@ public class JBossLoggingEventListenerProviderTest {
                 assertAdminEventKey(message, "targetRealmName", adminEvent.getTargetRealmName());
             });
         }
+    }
 
     private static void test(AdminEvent adminEvent, boolean includeRepresentation, Consumer<String> assertMessage) {
         test(Map.of(), adminEvent, includeRepresentation, assertMessage);
