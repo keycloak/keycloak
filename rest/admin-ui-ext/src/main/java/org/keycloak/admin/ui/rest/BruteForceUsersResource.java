@@ -91,7 +91,9 @@ public class BruteForceUsersResource {
                 UserModel userModel =
                         session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
                 if (userModel != null) {
-                    userModels = Stream.of(userModel);
+                    if (userPermissionEvaluator.canView(userModel)) {
+                        userModels = Stream.of(userModel);
+                    }
                 }
             } else {
                 Map<String, String> attributes = new HashMap<>();
