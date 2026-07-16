@@ -48,7 +48,6 @@ public interface UiTabProviderFactory<T> extends ComponentFactory<T, UiTabProvid
      *   <li>{@link StorageType#COMPONENT} - Store as a Keycloak component (default)</li>
      *   <li>{@link StorageType#CLIENT} - Store on client attributes (requires clientId param)</li>
      *   <li>{@link StorageType#USER} - Store on user attributes (requires id param)</li>
-     *   <li>{@link StorageType#GROUP} - Store on group attributes (requires id param)</li>
      *   <li>{@link StorageType#IDENTITY_PROVIDER} - Store on IdP config (requires alias param)</li>
      *   <li>{@link StorageType#CUSTOM} - Use custom endpoint (requires {@link #getEndpoint()})</li>
      * </ul>
