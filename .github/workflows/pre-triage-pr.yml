@@ -15,24 +15,141 @@ jobs:
       issues: read
       pull-requests: write
     steps:
-      - name: Wait for DCO
-        id: check-dco
-        uses: lewagon/wait-on-check-action@96d9100b431964d10e0136aff8b9ccb92470505e # v1.8.0
-        continue-on-error: true
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          check-name: "DCO"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
       - name: Check linked issues
-        uses: nearform-actions/github-action-check-linked-issues@7140e2e01aa0c18b8ac61bddf5e89abde1ca760e # v1.8.3
         id: check-linked-issues
         continue-on-error: true
-        with:
-          custom-body-comment: Thank you for contributing this PR. Please link this PR to an issue as outlined in CONTRIBUTING.md
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -uo pipefail
+          FAILED=0
+
+          # Extract linked issue numbers from a block of text.
+          # Valid patterns: "Closes #NNN" (single issue) or "Resolves #NNN" (one or more issues),
+          # each on its own line, case-sensitive, no colon after the keyword.
+          extract_issues() {
+            local text="$1"
+            printf '%s\n' "$text" | grep -E '^(Closes|Resolves) #[0-9]+' | sed -E 's/^(Closes|Resolves) #//' | sort -u || true
+          }
+
+          # Validate issue-link formatting in a block of text and report errors.
+          check_formatting() {
+            local text="$1"
+            local location="$2"
+
+            # "Fixes" is for cross-repo references and must not be used here
+            if printf '%s\n' "$text" | grep -qE '^Fixes #[0-9]+'; then
+              echo "::error::$location: Use 'Closes' instead of 'Fixes' for issues in this repository"
+              FAILED=1
+            fi
+
+            # No colon after the keyword
+            if printf '%s\n' "$text" | grep -qE '^(Closes|Resolves): #[0-9]+'; then
+              echo "::error::$location: Use 'Closes #NNN' without a colon (not 'Closes: #NNN')"
+              FAILED=1
+            fi
+
+            # Keyword must be capitalized
+            if printf '%s\n' "$text" | grep -qE '^closes #[0-9]+'; then
+              echo "::error::$location: Use capitalized 'Closes' (not 'closes')"
+              FAILED=1
+            fi
+            if printf '%s\n' "$text" | grep -qE '^resolves #[0-9]+'; then
+              echo "::error::$location: Use capitalized 'Resolves' (not 'resolves')"
+              FAILED=1
+            fi
+          }
+
+          # --- Check PR description ---
+          check_formatting "$PR_BODY" "PR description"
+          PR_ISSUES=$(extract_issues "$PR_BODY")
+
+          if [ -z "$PR_ISSUES" ]; then
+            echo "::error::PR description must contain a linked issue using 'Closes #NNN' on its own line"
+            FAILED=1
+          fi
+
+          # --- Check each commit in the PR ---
+          ALL_COMMIT_ISSUES=""
+          while IFS= read -r sha; do
+            if ! COMMIT_MSG=$(gh api "repos/$REPO/git/commits/$sha" --jq '.message' 2>&1); then
+              echo "::error::Failed to retrieve commit message for $sha: $COMMIT_MSG"
+              FAILED=1
+              continue
+            fi
+            check_formatting "$COMMIT_MSG" "Commit $sha"
+
+            ISSUES=$(extract_issues "$COMMIT_MSG")
+            if [ -z "$ISSUES" ]; then
+              echo "::error::Commit $sha must contain a linked issue using 'Closes #NNN' on its own line"
+              FAILED=1
+            fi
+            ALL_COMMIT_ISSUES="${ALL_COMMIT_ISSUES}"$'\n'"${ISSUES}"
+          done < <(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/commits" --jq '.[].sha')
+
+          [ "$FAILED" -ne 0 ] && exit 1
+
+          COMMIT_ISSUES=$(printf '%s\n' "$ALL_COMMIT_ISSUES" | sort -u | grep -v '^$' || true)
+
+          # --- Verify PR description and commits reference exactly the same issues ---
+          while IFS= read -r issue; do
+            if ! printf '%s\n' "$COMMIT_ISSUES" | grep -q "^${issue}$"; then
+              echo "::error::Issue #$issue is linked in the PR description but not in the commit messages"
+              FAILED=1
+            fi
+          done <<< "$PR_ISSUES"
+
+          while IFS= read -r issue; do
+            if ! printf '%s\n' "$PR_ISSUES" | grep -q "^${issue}$"; then
+              echo "::error::Issue #$issue is linked in the commit messages but not in the PR description"
+              FAILED=1
+            fi
+          done <<< "$COMMIT_ISSUES"
+
+          [ "$FAILED" -ne 0 ] && exit 1
+
+          # --- Enforce Closes vs Resolves based on issue count ---
+          ISSUE_COUNT=$(printf '%s\n' "$PR_ISSUES" | grep -c '.' || true)
+          if [ "$ISSUE_COUNT" -eq 1 ]; then
+            if printf '%s\n' "$PR_BODY" | grep -qE '^Resolves #[0-9]+'; then
+              echo "::error::PR description: Use 'Closes' (not 'Resolves') when linking a single issue"
+              FAILED=1
+            fi
+          else
+            if printf '%s\n' "$PR_BODY" | grep -qE '^Closes #[0-9]+'; then
+              echo "::error::PR description: Use 'Resolves' (not 'Closes') when linking multiple issues"
+              FAILED=1
+            fi
+          fi
+
+          [ "$FAILED" -ne 0 ] && exit 1
+
+          # --- Verify all linked issues are open ---
+          while IFS= read -r issue; do
+            if ! ISSUE_DATA=$(gh api "repos/$REPO/issues/$issue" 2>&1); then
+              echo "::error::Issue #$issue could not be retrieved: $ISSUE_DATA"
+              FAILED=1
+              continue
+            fi
+            STATE=$(printf '%s' "$ISSUE_DATA" | jq -r '.state')
+            if [ "$STATE" != "open" ]; then
+              echo "::error::Issue #$issue is not open (current state: $STATE)"
+              FAILED=1
+            fi
+          done <<< "$PR_ISSUES"
+
+          [ "$FAILED" -ne 0 ] && exit 1
+
+          echo "All linked issue checks passed."
+
       - name: Add label
-        if: steps.check-dco.outcome == 'failure' || steps.check-linked-issues.outcome == 'failure' 
+        if: steps.check-linked-issues.outcome == 'failure'
         run: gh pr edit "${{ github.event.pull_request.number }}" -R "$GITHUB_REPOSITORY" --add-label "action/waiting-for-author"
+      # Label is removed when linked-issue checks do not fail
       - name: Remove label
-        if: steps.check-dco.outcome != 'failure' && steps.check-linked-issues.outcome != 'failure' 
+        if: steps.check-linked-issues.outcome != 'failure'
         run: gh pr edit "${{ github.event.pull_request.number }}" -R "$GITHUB_REPOSITORY" --remove-label "action/waiting-for-author"
