@@ -75,6 +75,7 @@ test.describe.serial("Client initial access tokens", () => {
     await searchItem(page, placeHolder, "John Doe");
     await assertNoResults(page);
     await clearAllFilters(page);
+    await assertInitialAccessTokensIsNotEmpty(page);
 
     let data = (await getTableData(page, tableName))[0];
     expect(data[countCellNumber]).toBe("4");
