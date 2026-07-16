@@ -17,6 +17,8 @@
 
 package org.keycloak.policy;
 
+import java.util.List;
+
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
@@ -26,7 +28,7 @@ import org.keycloak.provider.Provider;
  */
 public interface PasswordPolicyManagerProvider extends Provider {
 
-    PolicyError validate(RealmModel realm, UserModel user, String password);
-    PolicyError validate(String user, String password);
+	List<PolicyError> validate(RealmModel realm, UserModel user, String password);
+	List<PolicyError> validate(String user, String password);
 
 }

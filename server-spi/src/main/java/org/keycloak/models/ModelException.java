@@ -17,6 +17,9 @@
 
 package org.keycloak.models;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.common.util.Throwables;
 
 /**
@@ -25,21 +28,26 @@ import org.keycloak.common.util.Throwables;
 public class ModelException extends RuntimeException {
 
     private Object[] parameters;
+    
+    private final Map<String, Object[]> policyMessages = new HashMap<>();
 
     public ModelException() {
     }
 
     public ModelException(String message) {
         super(message);
+        this.policyMessages.put(message, null);
     }
 
     public ModelException(String message, Object ... parameters) {
         super(message);
         this.parameters = parameters;
+        this.policyMessages.put(message, parameters);
     }
 
     public ModelException(String message, Throwable cause) {
         super(message, cause);
+        this.policyMessages.put(message, null);
     }
 
     public Object[] getParameters() {
@@ -48,6 +56,10 @@ public class ModelException extends RuntimeException {
 
     public void setParameters(Object[] parameters) {
         this.parameters = parameters;
+    }
+    
+    public void addPolicyMessages(final String message, final Object... parameters) {
+		policyMessages.put(message, parameters);
     }
 
     @SafeVarargs

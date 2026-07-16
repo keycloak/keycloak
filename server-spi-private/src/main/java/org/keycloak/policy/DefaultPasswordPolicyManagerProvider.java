@@ -17,6 +17,7 @@
 
 package org.keycloak.policy;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -37,25 +38,33 @@ public class DefaultPasswordPolicyManagerProvider implements PasswordPolicyManag
     }
 
     @Override
-    public PolicyError validate(RealmModel realm, UserModel user, String password) {
+    public List<PolicyError> validate(RealmModel realm, UserModel user, String password) {
+    	List<PolicyError> policyErrors = null;
         for (PasswordPolicyProvider p : getProviders(realm, session)) {
             PolicyError policyError = p.validate(realm, user, password);
             if (policyError != null) {
-                return policyError;
+            	if (policyErrors == null) {
+					policyErrors = new ArrayList<>();
+            	}
+            	policyErrors.add(policyError);
             }
         }
-        return null;
+        return policyErrors;
     }
 
     @Override
-    public PolicyError validate(String user, String password) {
+    public List<PolicyError> validate(String user, String password) {
+    	List<PolicyError> policyErrors = null;
         for (PasswordPolicyProvider p : getProviders(session)) {
             PolicyError policyError = p.validate(user, password);
             if (policyError != null) {
-                return policyError;
+            	if (policyErrors == null) {
+					policyErrors = new ArrayList<>();
+				}
+				policyErrors.add(policyError);
             }
         }
-        return null;
+        return policyErrors;
     }
 
     @Override
