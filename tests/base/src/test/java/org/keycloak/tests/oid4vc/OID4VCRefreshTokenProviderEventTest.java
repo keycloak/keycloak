@@ -14,7 +14,6 @@ import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -46,12 +45,7 @@ public class OID4VCRefreshTokenProviderEventTest extends OID4VCIssuerTestBase {
         user.admin().logout();
         user.admin().verifiableCredentials().getIssuedCredentials()
                 .forEach(issuedCred -> user.admin().verifiableCredentials().revokeIssuedCredential(issuedCred.getId()));
-        events.skipAll();
-    }
-
-    @AfterEach
-    public void afterEach() {
-        timeOffSet.set(0);
+        events.clear();
     }
 
     /**
@@ -71,8 +65,6 @@ public class OID4VCRefreshTokenProviderEventTest extends OID4VCIssuerTestBase {
                 .send().getCredentialResponse();
 
         timeOffSet.set(5);
-
-        events.clear();
 
         AccessTokenResponse refreshResponse = wallet.refreshRequest(ctx).send();
         assertTrue(refreshResponse.isSuccess(), "Refresh must succeed");
@@ -115,14 +107,17 @@ public class OID4VCRefreshTokenProviderEventTest extends OID4VCIssuerTestBase {
         AccessTokenResponse tokenResponse = authzCodeFlow();
         assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
 
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.CODE_TO_TOKEN)
+                .details(Details.REFRESH_TOKEN_PROVIDER_ID,
+                        OID4VCIRefreshTokenProviderFactory.PROVIDER_ID);
+
         String accessToken = tokenResponse.getAccessToken();
         String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
 
         wallet.credentialRequest(ctx, accessToken)
                 .credentialIdentifier(credentialIdentifier)
                 .send().getCredentialResponse();
-
-        events.clear();
 
         String refreshToken = tokenResponse.getRefreshToken();
         oauth.doTokenRevoke(refreshToken);
@@ -154,10 +149,9 @@ public class OID4VCRefreshTokenProviderEventTest extends OID4VCIssuerTestBase {
         AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
                 .scope(ctx.getScope())
                 .send(user.getUsername(), TEST_PASSWORD);
-        String code = authResponse.getCode();
-        assertNotNull(code, "Authorization code should not be null");
+        assertTrue(authResponse.isSuccess());
 
-        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, code).send();
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authResponse.getCode()).send();
         assertNotNull(tokenResponse, "Token response should not be null");
 
         String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
