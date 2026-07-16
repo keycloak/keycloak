@@ -29,6 +29,7 @@ jobs:
           FAILED=0
           ERRORS=""
           MARKER="<!-- pre-triage-linked-issues -->"
+          SKIP_LABEL="skip-issue-check"
 
           # Append an error message to the ERRORS list and emit a CI annotation.
           add_error() {
@@ -36,6 +37,19 @@ jobs:
             ERRORS="${ERRORS}"$'\n'"- $1"
             FAILED=1
           }
+
+          HAS_SKIP_LABEL=$(gh api "repos/$REPO/issues/$PR_NUMBER/labels" \
+            --jq ".[] | select(.name == \"$SKIP_LABEL\") | .name" | head -1 || true)
+
+          if [ -n "$HAS_SKIP_LABEL" ]; then
+            EXISTING_COMMENT_ID=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" \
+              --jq ".[] | select(.body | contains(\"$MARKER\")) | .id" | head -1 || true)
+            if [ -n "$EXISTING_COMMENT_ID" ]; then
+              gh api "repos/$REPO/issues/comments/$EXISTING_COMMENT_ID" -X DELETE
+            fi
+            echo "Skipping linked issue checks because '$SKIP_LABEL' label is present."
+            exit 0
+          fi
 
           # Extract linked issue numbers from a block of text.
           # Valid patterns: "Closes #NNN" (single issue) or "Resolves #NNN" (one or more issues),
