@@ -84,6 +84,10 @@ type ExecutionMoveSnapshot = {
   children: ExecutionMoveSnapshot[];
 };
 
+const executionLabel = (
+  execution?: Pick<ExpandableExecution, "displayName" | "alias" | "id">,
+) => execution?.displayName || execution?.alias || execution?.id || "";
+
 const rowFromElement = (
   element: Element | null,
   activeId: string,
@@ -197,12 +201,11 @@ const dropModeToVertical = (mode: DropInfo["mode"]): DropVertical => {
 
 const DragOverlayContent = ({
   execution,
-  targetParentName,
+  text,
 }: {
   execution: ExpandableExecution;
-  targetParentName?: string;
+  text: string;
 }) => {
-  const { t } = useTranslation();
   const isSubflow = execution.authenticationFlow;
   return (
     <div className="keycloak__authentication__drag-overlay">
@@ -213,12 +216,7 @@ const DragOverlayContent = ({
         {isSubflow ? <CodeBranchIcon /> : <CogIcon />}
       </span>
       <div className="keycloak__authentication__drag-overlay-text">
-        {targetParentName
-          ? t("onDragMoveIntoSubflow", {
-              item: execution.displayName,
-              subflow: targetParentName,
-            })
-          : execution.displayName}
+        {text || executionLabel(execution)}
       </div>
     </div>
   );
@@ -314,6 +312,61 @@ export default function FlowDetails() {
     [activeId, findExecutionById],
   );
 
+  const getDragDestinationText = useCallback(
+    (dragged: ExpandableExecution, info: DropInfo): string => {
+      const draggedName = executionLabel(dragged);
+      const destinationParent = info.targetParentId
+        ? findExecutionById(info.targetParentId)
+        : undefined;
+      const destinationParentName =
+        executionLabel(destinationParent) || flow?.alias || t("flows");
+      const siblings =
+        destinationParent?.executionList ?? executionList?.expandableList ?? [];
+      const siblingsWithoutDragged = siblings.filter(
+        (child) => child.id !== dragged.id,
+      );
+
+      let belowTargetName = "";
+
+      if (info.targetId && info.mode === "drop-into") {
+        belowTargetName = executionLabel(siblingsWithoutDragged.at(-1));
+      } else if (info.targetId) {
+        const targetIndex = siblingsWithoutDragged.findIndex(
+          (child) => child.id === info.targetId,
+        );
+        if (targetIndex >= 0) {
+          belowTargetName = executionLabel(
+            info.mode === "reorder-before"
+              ? siblingsWithoutDragged[targetIndex - 1]
+              : siblingsWithoutDragged[targetIndex],
+          );
+        }
+      }
+
+      if (belowTargetName) {
+        return t("onDragMoveIntoSubflowBelow", {
+          item: draggedName,
+          subflow: destinationParentName,
+          target: belowTargetName,
+        });
+      }
+
+      return t("onDragMoveIntoSubflow", {
+        item: draggedName,
+        subflow: destinationParentName,
+      });
+    },
+    [executionList, findExecutionById, flow?.alias, t],
+  );
+
+  const dragOverlayText = useMemo(() => {
+    if (!activeExecution) {
+      return "";
+    }
+
+    return getDragDestinationText(activeExecution, dropInfo);
+  }, [activeExecution, dropInfo, getDragDestinationText]);
+
   const clearExpandTimer = useCallback(() => {
     if (expandTimerRef.current) {
       clearTimeout(expandTimerRef.current);
@@ -345,8 +398,8 @@ export default function FlowDetails() {
     }
   }, [clearExpandTimer, executionList]);
 
-  const expandSubflowOnHover = useCallback(
-    (subflowId: string) => {
+  const syncAutoExpandedPath = useCallback(
+    (subflowId: string, expandTarget: boolean) => {
       if (!executionList) {
         return;
       }
@@ -357,14 +410,18 @@ export default function FlowDetails() {
       }
 
       const ancestorIds = executionList.ancestorPathIds(subflowId);
+      let changed = false;
 
       for (const id of [...autoExpandedIdsRef.current]) {
-        if (id === subflowId || ancestorIds.has(id)) {
+        const keepExpanded =
+          ancestorIds.has(id) || (expandTarget && id === subflowId);
+        if (keepExpanded) {
           continue;
         }
         const node = findExecutionById(id);
-        if (node) {
+        if (node?.executionList?.length && !node.isCollapsed) {
           node.isCollapsed = true;
+          changed = true;
         }
         autoExpandedIdsRef.current.delete(id);
       }
@@ -372,17 +429,28 @@ export default function FlowDetails() {
       for (const ancestorId of ancestorIds) {
         const ancestor = findExecutionById(ancestorId);
         if (ancestor?.executionList?.length) {
-          ancestor.isCollapsed = false;
+          if (ancestor.isCollapsed) {
+            ancestor.isCollapsed = false;
+            changed = true;
+          }
           autoExpandedIdsRef.current.add(ancestorId);
         }
       }
 
-      subflow.isCollapsed = false;
-      autoExpandedIdsRef.current.add(subflowId);
-      setExecutionList(executionList.clone());
-      requestAnimationFrame(() => {
-        refreshDragRows();
-      });
+      if (expandTarget) {
+        if (subflow.isCollapsed) {
+          subflow.isCollapsed = false;
+          changed = true;
+        }
+        autoExpandedIdsRef.current.add(subflowId);
+      }
+
+      if (changed) {
+        setExecutionList(executionList.clone());
+        requestAnimationFrame(() => {
+          refreshDragRows();
+        });
+      }
     },
     [executionList, findExecutionById, refreshDragRows],
   );
@@ -394,6 +462,7 @@ export default function FlowDetails() {
       }
 
       clearExpandTimer();
+      syncAutoExpandedPath(subflowId, false);
       pendingExpandIdRef.current = subflowId;
       setPendingExpandId(subflowId);
 
@@ -401,10 +470,10 @@ export default function FlowDetails() {
         expandTimerRef.current = null;
         pendingExpandIdRef.current = null;
         setPendingExpandId(null);
-        expandSubflowOnHover(subflowId);
+        syncAutoExpandedPath(subflowId, true);
       }, SUBFLOW_EXPAND_DELAY_MS);
     },
-    [clearExpandTimer, expandSubflowOnHover],
+    [clearExpandTimer, syncAutoExpandedPath],
   );
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -476,6 +545,7 @@ export default function FlowDetails() {
           scheduleSubflowExpand(hoveredRow.hoverId);
         } else {
           clearExpandTimer();
+          syncAutoExpandedPath(hoveredRow.hoverId, true);
         }
       } else {
         vertical = "after";
@@ -496,25 +566,18 @@ export default function FlowDetails() {
       if (resolved) {
         updateDropInfo(resolved.preview);
         if (dragged) {
-          if (resolved.preview.mode === "drop-into") {
-            const parent = findExecutionById(resolved.preview.targetParentId!);
-            setLiveText(
-              t("onDragMoveIntoSubflow", {
-                item: dragged.displayName,
-                subflow: parent?.displayName,
-              }),
-            );
-          } else {
-            setLiveText(t("onDragMove", { item: dragged.displayName }));
-          }
+          setLiveText(getDragDestinationText(dragged, resolved.preview));
         }
       } else {
         updateDropInfo(emptyDropInfo());
+        if (dragged) {
+          setLiveText(getDragDestinationText(dragged, emptyDropInfo()));
+        }
       }
     } else {
       updateDropInfo(emptyDropInfo());
       if (dragged) {
-        setLiveText(t("onDragMove", { item: dragged.displayName }));
+        setLiveText(getDragDestinationText(dragged, emptyDropInfo()));
       }
     }
   };
@@ -1026,12 +1089,7 @@ export default function FlowDetails() {
                   {activeExecution ? (
                     <DragOverlayContent
                       execution={activeExecution}
-                      targetParentName={
-                        dropInfo.targetParentId
-                          ? findExecutionById(dropInfo.targetParentId)
-                              ?.displayName
-                          : undefined
-                      }
+                      text={dragOverlayText}
                     />
                   ) : null}
                 </DragOverlay>
