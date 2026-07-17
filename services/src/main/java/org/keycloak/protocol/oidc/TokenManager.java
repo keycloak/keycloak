@@ -1290,6 +1290,9 @@ public class TokenManager {
 
             refreshToken = refreshTokenProvider.generateRefreshToken(initialRefreshTokenContext);
 
+            String providerId = refreshToken.getProvider() != null ? refreshToken.getProvider() : refreshTokenProvider.getProviderId();
+            event.detail(Details.REFRESH_TOKEN_PROVIDER_ID, providerId);
+
             Boolean bindOnlyRefreshToken = session.getAttributeOrDefault(DPoPUtil.DPOP_BINDING_ONLY_REFRESH_TOKEN_SESSION_ATTRIBUTE, false);
             if (bindOnlyRefreshToken) {
                 DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);

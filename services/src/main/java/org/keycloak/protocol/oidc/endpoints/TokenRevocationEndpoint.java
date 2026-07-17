@@ -129,6 +129,7 @@ public class TokenRevocationEndpoint {
 
             refreshTokenProvider.revokeToken(token, user, client, event);
 
+            event.detail(Details.REFRESH_TOKEN_PROVIDER_ID, providerClaim != null ? providerClaim : refreshTokenProvider.getProviderId());
             event.detail(Details.REVOKED_CLIENT, client.getClientId());
             event.session(token.getSessionId());
             event.detail(Details.REFRESH_TOKEN_ID, token.getId());
