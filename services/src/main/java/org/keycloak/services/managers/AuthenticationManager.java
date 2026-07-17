@@ -21,6 +21,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -78,6 +79,7 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
@@ -1685,7 +1687,35 @@ public class AuthenticationManager {
                 accessToken.subject(userSession.getUser().getId());
                 accessToken.setRealmAccess(realmAccess);
                 accessToken.setResourceAccess(clientAccess);
+            } else if (accessToken.getSubject() != null) {
+                // Fallback for service accounts using client_credentials grant without a
+                // persistent user session. Resolve roles directly from the user's role mappings.
+                UserModel user = session.users().getUserById(realm, accessToken.getSubject());
+                if (user != null) {
+                    resolveRolesFromUserModel(session, accessToken, realm, user);
+                }
             }
+        }
+    }
+
+    private static void resolveRolesFromUserModel(KeycloakSession session, AccessToken accessToken, RealmModel realm, UserModel user) {
+        // Resolve realm roles
+        AccessToken.Access realmAccess = new AccessToken.Access();
+        user.getRealmRoleMappingsStream().forEach(role -> realmAccess.addRole(role.getName()));
+        if (realmAccess.getRoles() != null && !realmAccess.getRoles().isEmpty()) {
+            accessToken.setRealmAccess(realmAccess);
+        }
+
+        // Resolve client roles by iterating all role mappings and grouping by client
+        Map<String, AccessToken.Access> clientAccess = new HashMap<>();
+        user.getRoleMappingsStream()
+                .filter(RoleModel::isClientRole)
+                .forEach(role -> {
+                    String clientId = realm.getClientById(role.getContainerId()).getClientId();
+                    clientAccess.computeIfAbsent(clientId, k -> new AccessToken.Access()).addRole(role.getName());
+                });
+        if (!clientAccess.isEmpty()) {
+            accessToken.setResourceAccess(clientAccess);
         }
     }
 
