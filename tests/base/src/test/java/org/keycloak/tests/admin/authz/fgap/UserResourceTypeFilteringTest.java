@@ -469,6 +469,90 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testExtendChildrenGroupDenyExcludesDeniedUserFromSearch() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(
+                realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(VIEW));
+
+        GroupRepresentation parentGroup = createGroup("fgap-parent-" + KeycloakModelUtils.generateId());
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("fgap-child-" + KeycloakModelUtils.generateId());
+        try (Response response = realm.admin().groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            childGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.admin().users().get(myadmin.getId()).joinGroup(childGroup.getId());
+
+        GroupPolicyRepresentation denyParentSubtree = new GroupPolicyRepresentation();
+        denyParentSubtree.setName("Deny Parent Subtree Policy");
+        denyParentSubtree.setLogic(Logic.NEGATIVE);
+        denyParentSubtree.addGroup(parentGroup.getId(), true);
+        try (Response response = adminPermissionsClient.authorization().policies().group()
+                .create(denyParentSubtree)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        UserRepresentation deniedUser = realm.admin().users().search("user-15").get(0);
+        createPermission(adminPermissionsClient, deniedUser.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), denyParentSubtree);
+
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
+                .users().get(deniedUser.getId()).toRepresentation());
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(deniedUser.getUsername(), 0, 10);
+        assertThat(search.stream().map(UserRepresentation::getId).toList(),
+                not(hasItems(deniedUser.getId())));
+        assertThat(realmAdminClient.realm(realm.getName()).users()
+                .count(null, null, null, deniedUser.getUsername()), is(0));
+    }
+
+    @Test
+    public void testExtendChildrenGroupDenyThreeLevelHierarchy() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(
+                realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(VIEW));
+
+        GroupRepresentation grandparentGroup = createGroup("fgap-grandparent-" + KeycloakModelUtils.generateId());
+        GroupRepresentation parentGroup = new GroupRepresentation();
+        parentGroup.setName("fgap-parent-" + KeycloakModelUtils.generateId());
+        try (Response response = realm.admin().groups().group(grandparentGroup.getId()).subGroup(parentGroup)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            parentGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("fgap-child-" + KeycloakModelUtils.generateId());
+        try (Response response = realm.admin().groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            childGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.admin().users().get(myadmin.getId()).joinGroup(childGroup.getId());
+
+        GroupPolicyRepresentation denyGrandparentSubtree = new GroupPolicyRepresentation();
+        denyGrandparentSubtree.setName("Deny Grandparent Subtree Policy");
+        denyGrandparentSubtree.setLogic(Logic.NEGATIVE);
+        denyGrandparentSubtree.addGroup(grandparentGroup.getId(), true);
+        try (Response response = adminPermissionsClient.authorization().policies().group()
+                .create(denyGrandparentSubtree)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        UserRepresentation deniedUser = realm.admin().users().search("user-15").get(0);
+        createPermission(adminPermissionsClient, deniedUser.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), denyGrandparentSubtree);
+
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
+                .users().get(deniedUser.getId()).toRepresentation());
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(deniedUser.getUsername(), 0, 10);
+        assertThat(search.stream().map(UserRepresentation::getId).toList(),
+                not(hasItems(deniedUser.getId())));
+        assertThat(realmAdminClient.realm(realm.getName()).users()
+                .count(null, null, null, deniedUser.getUsername()), is(0));
+    }
+
+    @Test
     public void testSessionEndpointRespectsUserViewPermission() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
         String clientUuid = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
