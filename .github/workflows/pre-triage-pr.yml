@@ -158,10 +158,10 @@ jobs:
 
           if [ "$FAILED" -ne 0 ]; then
             COMMENT_BODY="${MARKER}
-Thank you for contributing this PR. The following linked issue checks failed:
-${ERRORS}
+          Thank you for contributing this PR. The following linked issue checks failed:
+          ${ERRORS}
 
-Please refer to [CONTRIBUTING.md](https://github.com/${REPO}/blob/main/CONTRIBUTING.md) for requirements."
+          Please refer to [CONTRIBUTING.md](https://github.com/${REPO}/blob/main/CONTRIBUTING.md) for requirements."
 
             if [ -n "$EXISTING_COMMENT_ID" ]; then
               gh api "repos/$REPO/issues/comments/$EXISTING_COMMENT_ID" -X PATCH --raw-field "body=$COMMENT_BODY"
