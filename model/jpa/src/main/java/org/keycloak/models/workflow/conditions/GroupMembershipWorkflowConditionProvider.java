@@ -73,10 +73,10 @@ public class GroupMembershipWorkflowConditionProvider implements WorkflowConditi
     @Override
     public void validate() {
         if (StringUtil.isBlank(this.expectedGroup)) {
-            throw new WorkflowInvalidStateException("Expected group path not set.");
+            throw new WorkflowInvalidStateException("workflowConditionGroupNotSet");
         }
         if (KeycloakModelUtils.findGroupByPath(session, session.getContext().getRealm(), expectedGroup) == null) {
-            throw new WorkflowInvalidStateException(String.format("Group with name %s does not exist.", expectedGroup));
+            throw new WorkflowInvalidStateException("workflowConditionGroupNotFound", expectedGroup);
         }
     }
 

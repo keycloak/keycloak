@@ -47,6 +47,7 @@ public class WorkflowsResource {
     private final WorkflowProvider provider;
     private final AdminPermissionEvaluator auth;
     private final AdminEventBuilder adminEvent;
+    private final String locale;
 
     public WorkflowsResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         if (!Profile.isFeatureEnabled(Feature.WORKFLOWS)) {
@@ -57,6 +58,7 @@ public class WorkflowsResource {
         this.provider = session.getProvider(WorkflowProvider.class);
         this.auth = auth;
         this.adminEvent = adminEvent.resource(ResourceType.WORKFLOW);
+        this.locale = auth.adminAuth().getToken().getLocale();
     }
 
     @POST
@@ -80,7 +82,7 @@ public class WorkflowsResource {
                     .success();
             return Response.created(session.getContext().getUri().getRequestUriBuilder().path(workflow.getId()).build()).build();
         } catch (ModelException me) {
-            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(session, locale, me, Response.Status.BAD_REQUEST);
         }
     }
 
@@ -104,7 +106,7 @@ public class WorkflowsResource {
             throw new NotFoundException("Workflow with id " + id + " not found");
         }
 
-        return new WorkflowResource(session, provider, workflow, adminEvent);
+        return new WorkflowResource(session, provider, workflow, adminEvent, locale);
     }
 
     @GET
@@ -171,7 +173,7 @@ public class WorkflowsResource {
         auth.realm().requireManageRealm();
 
         if (stepIdFrom == null || stepIdTo == null) {
-            throw ErrorResponse.error("Both 'from' and 'to' step ids must be provided for migration.", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(ErrorResponse.resolveMessage(session, locale, "workflowMigrateStepIdsRequired", null), Response.Status.BAD_REQUEST);
         }
 
         try {
@@ -182,7 +184,8 @@ public class WorkflowsResource {
                     .success();
             return Response.noContent().build();
         } catch (ModelException me) {
-            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(session, locale, me, Response.Status.BAD_REQUEST);
         }
     }
+
 }

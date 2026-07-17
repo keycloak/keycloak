@@ -2,7 +2,6 @@ package org.keycloak.workflow.admin.resource;
 
 import java.util.Map;
 
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -43,12 +42,14 @@ public class WorkflowResource {
     private final WorkflowProvider provider;
     private final Workflow workflow;
     private final AdminEventBuilder adminEvent;
+    private final String locale;
 
-    public WorkflowResource(KeycloakSession session, WorkflowProvider provider, Workflow workflow, AdminEventBuilder adminEvent) {
+    public WorkflowResource(KeycloakSession session, WorkflowProvider provider, Workflow workflow, AdminEventBuilder adminEvent, String locale) {
         this.session = session;
         this.provider = provider;
         this.workflow = workflow;
         this.adminEvent = adminEvent;
+        this.locale = locale;
     }
 
     @DELETE
@@ -68,7 +69,7 @@ public class WorkflowResource {
                     .resourcePath(session.getContext().getUri())
                     .success();
         } catch (ModelException me) {
-            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(session, locale, me, Response.Status.BAD_REQUEST);
         }
     }
 
@@ -95,7 +96,7 @@ public class WorkflowResource {
                     .representation(rep)
                     .success();
         } catch (ModelException me) {
-            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(session, locale, me, Response.Status.BAD_REQUEST);
         }
     }
 
@@ -160,20 +161,24 @@ public class WorkflowResource {
         Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
 
         if (resource == null) {
-            throw new BadRequestException("Resource with id " + resourceId + " not found");
+            throw ErrorResponse.error(ErrorResponse.resolveMessage(session, locale, "workflowResourceNotFound", new Object[]{resourceId}), Response.Status.BAD_REQUEST);
         }
 
         if (notBefore != null) {
             workflow.setNotBefore(notBefore);
         }
 
-        provider.activate(workflow, type, resourceId);
-        AdminEventBuilder event = adminEvent.operation(OperationType.ACTION)
-                .resourcePath(session.getContext().getUri());
-        if (notBefore != null) {
-            event.representation(Map.of("notBefore", notBefore));
+        try {
+            provider.activate(workflow, type, resourceId);
+            AdminEventBuilder event = adminEvent.operation(OperationType.ACTION)
+                    .resourcePath(session.getContext().getUri());
+            if (notBefore != null) {
+                event.representation(Map.of("notBefore", notBefore));
+            }
+            event.success();
+        } catch (ModelException me) {
+            throw ErrorResponse.error(session, locale, me, Response.Status.BAD_REQUEST);
         }
-        event.success();
     }
 
     /**
@@ -203,13 +208,17 @@ public class WorkflowResource {
         Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
 
         if (resource == null) {
-            throw new BadRequestException("Resource with id " + resourceId + " not found");
+            throw ErrorResponse.error(ErrorResponse.resolveMessage(session, locale, "workflowResourceNotFound", new Object[]{resourceId}), Response.Status.BAD_REQUEST);
         }
 
-        provider.deactivate(workflow, resourceId);
-        adminEvent.operation(OperationType.ACTION)
-                .resourcePath(session.getContext().getUri())
-                .success();
+        try {
+            provider.deactivate(workflow, resourceId);
+            adminEvent.operation(OperationType.ACTION)
+                    .resourcePath(session.getContext().getUri())
+                    .success();
+        } catch (ModelException me) {
+            throw ErrorResponse.error(session, locale, me, Response.Status.BAD_REQUEST);
+        }
     }
 
 }
