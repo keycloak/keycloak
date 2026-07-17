@@ -120,7 +120,7 @@ export async function expandFlowRow(page: Page, displayName: string) {
     has: page.getByTestId(displayName),
   });
   if ((await row.getAttribute("aria-expanded")) === "false") {
-    await row.getByRole("button").first().click();
+    await row.locator(".pf-v5-c-table__toggle button").click();
   }
 }
 
@@ -140,15 +140,18 @@ export async function assertExecutionLevel(
   executionName: string | RegExp,
   level: number,
 ) {
-  const row = page
-    .locator("tr[data-execution-id]")
-    .filter({
-      has:
-        typeof executionName === "string"
-          ? page.getByTestId(executionName)
-          : page.getByRole("row", { name: executionName }),
-    })
-    .first();
+  const row =
+    typeof executionName === "string"
+      ? page
+          .locator("tr[data-execution-id]")
+          .filter({
+            has: page.getByTestId(executionName),
+          })
+          .first()
+      : page
+          .locator("tr[data-execution-id]")
+          .filter({ hasText: executionName })
+          .first();
   await expect(row).toHaveAttribute("data-level", String(level));
 }
 

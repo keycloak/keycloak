@@ -25,11 +25,11 @@ tr.keycloak__authentication__drop-pending-expand {
 }
 
 tr.keycloak__authentication__drop-line--before {
-  box-shadow: inset 0 3px 0 0 var(--pf-v5-global--active-color--100);
+  box-shadow: inset 0 3px 0 0 var(--pf-v5-global--success-color--100);
 }
 
 tr.keycloak__authentication__drop-line--after {
-  box-shadow: inset 0 -3px 0 0 var(--pf-v5-global--active-color--100);
+  box-shadow: inset 0 -3px 0 0 var(--pf-v5-global--success-color--100);
 }
 
 .keycloak__authentication__flow-title-cell {
