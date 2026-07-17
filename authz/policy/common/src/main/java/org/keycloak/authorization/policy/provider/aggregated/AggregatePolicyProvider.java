@@ -40,6 +40,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ResourceType;
 
 import org.jboss.logging.Logger;
@@ -120,11 +121,22 @@ public class AggregatePolicyProvider implements PolicyProvider, PartialEvaluatio
             PolicyProvider policyProvider = session.getProvider(AuthorizationProvider.class).getProvider(associatedPolicy.getType());
 
             if (policyProvider instanceof PartialEvaluationPolicyProvider partialPolicyProvider) {
-                if (partialPolicyProvider.evaluate(session, associatedPolicy, subject)) {
+                boolean childResult = partialPolicyProvider.evaluate(session, associatedPolicy, subject);
+
+                if (Logic.NEGATIVE.equals(associatedPolicy.getLogic())) {
+                    childResult = !childResult;
+                }
+
+                if (childResult) {
                     grants++;
                 }
             } else {
-                return false;
+                // we cannot partially evaluate this child, so the aggregate
+                // must resolve to "deny" regardless of its own Logic. The caller (PartialEvaluator)
+                // will invert our return value when policy.getLogic() == NEGATIVE, so we
+                // pre-compensate: return true for NEGATIVE (inverted to false by caller),
+                // false for POSITIVE (used as-is). Net result is always deny.
+                return Logic.NEGATIVE.equals(policy.getLogic());
             }
         }
 
