@@ -16,6 +16,7 @@
  */
 package org.keycloak.authorization.policy.provider.group;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -111,7 +112,19 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
         StoreFactory storeFactory = provider.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(adminPermissionsClient);
         PolicyStore policyStore = storeFactory.getPolicyStore();
-        List<String> groupIds = user.getGroupsStream().map(GroupModel::getId).toList();
+        // getParent() issues a query per ancestor; may need optimization for deep hierarchies
+        List<String> groupIds = user.getGroupsStream()
+                .flatMap(group -> {
+                    List<String> ids = new ArrayList<>();
+                    GroupModel current = group;
+                    while (current != null) {
+                        ids.add(current.getId());
+                        current = current.getParent();
+                    }
+                    return ids.stream();
+                })
+                .distinct()
+                .toList();
 
         return policyStore.findDependentPolicies(resourceServer, resourceType.getType(), groupResourceType == null ? null : groupResourceType.getType(), GroupPolicyProviderFactory.ID, "groups", groupIds);
     }
