@@ -77,16 +77,12 @@ test.describe.serial("Client SSF stream creation", () => {
 
     // A non-http(s) URL is rejected inline and submit remains disabled.
     await page.getByTestId("ssfCreateStreamEndpointUrl").fill("ftp://nope");
-    await expect(
-      page.getByTestId("ssfCreateStreamEndpointUrlError"),
-    ).toBeVisible();
+    await expect(page.getByTestId("endpointUrl-helper")).toBeVisible();
     await expect(submit).toBeDisabled();
 
     // A valid https URL clears the error and enables submit.
     await page.getByTestId("ssfCreateStreamEndpointUrl").fill(pushEndpoint);
-    await expect(
-      page.getByTestId("ssfCreateStreamEndpointUrlError"),
-    ).toBeHidden();
+    await expect(page.getByTestId("endpointUrl-helper")).toBeHidden();
     await expect(submit).toBeEnabled();
   });
 
