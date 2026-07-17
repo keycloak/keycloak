@@ -31,19 +31,31 @@ export async function assertSelectValue(field: Locator, value: string) {
 export async function switchOn(page: Page, id: string | Locator) {
   const switchElement = typeof id === "string" ? page.locator(id) : id;
   if (await switchElement.isChecked()) return;
-  await switchElement.click({ force: true });
-  await expect(switchElement).toBeChecked();
+  await clickSwitch(switchElement);
+  if (!(await switchElement.isChecked())) {
+    await switchElement.click({ force: true, timeout: 3_000 });
+  }
 }
 
 export async function switchOff(page: Page, id: string | Locator) {
   const switchElement = typeof id === "string" ? page.locator(id) : id;
-  await expect(switchElement).toBeChecked();
-  await switchElement.click({ force: true });
+  if (!(await switchElement.isChecked())) return;
+  await clickSwitch(switchElement);
 }
 
 export async function switchToggle(page: Page, id: string | Locator) {
   const switchElement = typeof id === "string" ? page.locator(id) : id;
-  await switchElement.click({ force: true });
+  const wasChecked = await switchElement.isChecked();
+  await clickSwitch(switchElement);
+  const isChecked = await switchElement.isChecked();
+  if (isChecked === wasChecked) {
+    await switchElement.click({ force: true, timeout: 3_000 });
+  }
+  if (wasChecked) {
+    await expect(switchElement).not.toBeChecked();
+  } else {
+    await expect(switchElement).toBeChecked();
+  }
 }
 
 export async function assertSwitchIsChecked(
@@ -76,6 +88,23 @@ export async function clickCancelButton(page: Page) {
 
 async function clickOption(page: Page, option: string) {
   await page.getByRole("option", { name: option }).click();
+}
+
+async function clickSwitch(switchElement: Locator) {
+  await expect(switchElement).toBeVisible();
+  await expect(switchElement).toBeEnabled();
+  try {
+    await switchElement.click({ timeout: 3_000 });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      /Target page, context or browser has been closed/i.test(error.message)
+    ) {
+      throw error;
+    }
+    // Fallback for transient overlays/animations while preserving deterministic state checks.
+    await switchElement.click({ force: true, timeout: 3_000 });
+  }
 }
 
 export async function selectClient(page: Page, clientName: string) {

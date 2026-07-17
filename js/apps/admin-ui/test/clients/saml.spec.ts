@@ -6,7 +6,7 @@ import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { assertModalTitle, cancelModal, confirmModal } from "../utils/modal.ts";
 import { goToClients } from "../utils/sidebar.ts";
-import { clickTableRowItem } from "../utils/table.ts";
+import { clickTableRowItem, searchItem } from "../utils/table.ts";
 import { goToAdvancedTab, revertFineGrain, saveFineGrain } from "./advanced.ts";
 import {
   assertCertificates,
@@ -85,22 +85,21 @@ test.describe.serial("Fine Grain SAML Endpoint Configuration", () => {
 });
 
 test.describe.serial("Clients SAML tests", () => {
-  const clientId = "saml";
-
-  const clientName = `saml-settings-${uuid()}`;
+  const clientId = `saml-settings-${uuid()}`;
 
   test.beforeAll(() =>
     adminClient.createClient({
       protocol: "saml",
-      clientId: clientName,
+      clientId,
     }),
   );
 
-  test.afterAll(() => adminClient.deleteClient(clientName));
+  test.afterAll(() => adminClient.deleteClient(clientId));
 
   test.beforeEach(async ({ page }) => {
     await login(page);
     await goToClients(page);
+    await searchItem(page, "Search for client", clientId);
     await clickTableRowItem(page, clientId);
   });
 

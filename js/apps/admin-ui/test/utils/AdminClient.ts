@@ -11,17 +11,23 @@ import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/def
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata.js";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation.js";
 import type { Credentials } from "@keycloak/keycloak-admin-client/lib/utils/auth.js";
+import {
+  ADMIN_PASSWORD,
+  ADMIN_USER,
+  DEFAULT_REALM,
+  SERVER_URL,
+} from "./constants.ts";
 
 class AdminClient {
   readonly #client = new KeycloakAdminClient({
-    baseUrl: "http://localhost:8080",
-    realmName: "master",
+    baseUrl: SERVER_URL,
+    realmName: DEFAULT_REALM,
   });
 
   #login() {
     return this.#client.auth({
-      username: "admin",
-      password: "admin",
+      username: ADMIN_USER,
+      password: ADMIN_PASSWORD,
       grantType: "password",
       clientId: "admin-cli",
     });
@@ -73,10 +79,14 @@ class AdminClient {
     ).at(0);
   }
 
-  async deleteClient(clientName: string) {
-    const client = await this.getClient(clientName);
+  async deleteClient(
+    clientName: string,
+    realmName: string = this.#client.realmName,
+  ) {
+    const client = await this.getClient(clientName, realmName);
     if (client) {
-      await this.#client.clients.del({ id: client.id! });
+      await this.#login();
+      await this.#client.clients.del({ id: client.id!, realm: realmName });
     }
   }
 
@@ -103,11 +113,11 @@ class AdminClient {
     return createdGroups;
   }
 
-  async deleteGroups() {
+  async deleteGroups(realm: string = this.#client.realmName) {
     await this.#login();
-    const groups = await this.#client.groups.find();
+    const groups = await this.#client.groups.find({ realm });
     for (const group of groups) {
-      await this.#client.groups.del({ id: group.id! });
+      await this.#client.groups.del({ id: group.id!, realm });
     }
   }
 

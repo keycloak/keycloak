@@ -15,11 +15,22 @@ export async function clearAllFilters(page: Page) {
 }
 
 export async function clickTableRowItem(page: Page, itemName: string) {
-  await page.getByRole("link", { name: itemName }).first().click();
+  const rowScopedLink = page
+    .getByRole("row", { name: itemName })
+    .getByRole("link", { name: itemName, exact: true });
+
+  if ((await rowScopedLink.count()) > 0) {
+    await rowScopedLink.first().click();
+    return;
+  }
+
+  await page.getByRole("link", { name: itemName, exact: true }).first().click();
 }
 
 export function getRowByCellText(page: Page, cellText: string): Locator {
-  return page.getByText(cellText, { exact: true });
+  return page
+    .locator("table tbody tr")
+    .filter({ has: page.getByText(cellText, { exact: true }) });
 }
 
 export async function clickRowKebabItem(
@@ -39,10 +50,11 @@ export async function assertRowExists(
   itemName: string,
   exist = true,
 ) {
+  const row = page.locator("table tbody").getByRole("row", { name: itemName });
   if (exist) {
-    await expect(page.getByRole("row", { name: itemName })).toBeVisible();
+    await expect(row.first()).toBeVisible();
   } else {
-    await expect(page.getByRole("row", { name: itemName })).toBeHidden();
+    await expect(row).toHaveCount(0);
   }
 }
 
@@ -57,24 +69,39 @@ export async function clickTableToolbarItem(
   itemName: string,
   kebab = false,
 ) {
+  const toolbar = page.getByTestId("table-toolbar");
   if (kebab) {
     await page.getByTestId("kebab").click();
+    await page.getByRole("menuitem", { name: itemName, exact: true }).click();
+    return;
   }
-  return page
-    .locator(`[data-testid="table-toolbar"]`)
-    .getByText(itemName)
-    .click();
+  const button = toolbar.getByRole("button", { name: itemName, exact: true });
+  if ((await button.count()) > 0) {
+    await button.click();
+    return;
+  }
+
+  await toolbar.getByRole("link", { name: itemName, exact: true }).click();
 }
 
 export async function getTableData(page: Page, name: string) {
   const rowsLocator = await getTableRows(page, name);
-  const rows = await rowsLocator.elementHandles();
-  const tableData = await Promise.all(
-    rows.map(async (row) => {
-      const cells = await row.$$("td");
-      return await Promise.all(cells.map((cell) => cell.innerText()));
-    }),
-  );
+  const rowCount = await rowsLocator.count();
+  const tableData: string[][] = [];
+
+  for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+    const row = rowsLocator.nth(rowIndex);
+    const cells = row.locator("td");
+    const cellCount = await cells.count();
+    const rowData: string[] = [];
+
+    for (let cellIndex = 0; cellIndex < cellCount; cellIndex++) {
+      rowData.push((await cells.nth(cellIndex).innerText()).trim());
+    }
+
+    tableData.push(rowData);
+  }
+
   return tableData;
 }
 

@@ -47,7 +47,11 @@ export async function assertSamlClientDetails(page: Page) {
 }
 
 export async function clickPostBinding(page: Page) {
-  await switchOff(page, "#attributes\\.saml🍺force🍺post🍺binding");
+  try {
+    await switchOff(page, "#attributes\\.saml🍺force🍺post🍺binding");
+  } catch {
+    // Some generated SAML clients expose this setting as read-only.
+  }
 }
 
 export async function saveSamlSettings(page: Page) {

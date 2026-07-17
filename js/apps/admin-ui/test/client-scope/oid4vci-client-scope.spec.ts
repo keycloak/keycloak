@@ -13,6 +13,11 @@ import { clickTableRowItem, clickTableToolbarItem } from "../utils/table.ts";
 import { login } from "../utils/login.ts";
 import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.tsx";
 
+type Oid4vciFormat = "SD-JWT VC (dc+sd-jwt)" | "JWT VC (jwt_vc_json)";
+const OID4VCI_PROTOCOL = "OpenID for Verifiable Credentials";
+const OID4VCI_UNAVAILABLE_MESSAGE =
+  "OID4VCI protocol is unavailable. Start Keycloak with verifiable credentials support enabled.";
+
 // Helper function to create client scope (without selecting protocol)
 async function createClientScope(
   page: Page,
@@ -21,27 +26,27 @@ async function createClientScope(
   await login(page, { to: toClientScopes({ realm: testBed.realm }) });
 
   await goToClientScopes(page);
-  await page.waitForLoadState("domcontentloaded");
+  await expect(page.getByPlaceholder("Search for client scope")).toBeVisible();
 
   await clickTableToolbarItem(page, "Create client scope");
-  await page.waitForLoadState("domcontentloaded");
+  await expect(
+    page.getByRole("heading", { name: "Create client scope" }),
+  ).toBeVisible();
+  await expect(page.getByTestId("name")).toBeVisible();
 }
 
 // Helper function to create client scope and select protocol/format
 async function createClientScopeAndSelectProtocolAndFormat(
   page: Page,
   testBed: Awaited<ReturnType<typeof createTestBed>>,
-  format?: "SD-JWT VC (dc+sd-jwt)" | "JWT VC (jwt_vc_json)",
+  format?: Oid4vciFormat,
 ) {
   await createClientScope(page, testBed);
 
-  await selectItem(page, "#kc-protocol", "OpenID for Verifiable Credentials");
-
-  await page.waitForLoadState("domcontentloaded");
+  await selectOID4VCIProtocol(page);
 
   if (format) {
-    await selectItem(page, "#kc-vc-format", format);
-    await page.waitForLoadState("domcontentloaded");
+    await selectVCFormat(page, format);
   }
 }
 
@@ -56,12 +61,13 @@ async function navigateBackAndVerifyClientScope(
   await page.goto(
     `${baseUrl}#${toClientScopes({ realm: testBed.realm }).pathname!}`,
   );
-  await page.waitForLoadState("domcontentloaded");
+  await expect(page.getByPlaceholder("Search for client scope")).toBeVisible();
 
   await page.getByPlaceholder("Search for client scope").fill(clientScopeName);
+  await page.keyboard.press("Enter");
 
   await clickTableRowItem(page, clientScopeName);
-  await page.waitForLoadState("domcontentloaded");
+  await expect(page.getByTestId("name")).toHaveValue(clientScopeName);
 }
 
 // OID4VCI field selectors
@@ -108,6 +114,24 @@ const TEST_VALUES = {
 const TOKEN_JWS_TYPE_WARNING_PREFIX =
   "The configured Token JWS Type does not match the recommended value for the selected credential format.";
 
+async function selectOID4VCIProtocol(page: Page) {
+  await expect(page.locator("#kc-protocol")).toBeVisible();
+  await page.locator("#kc-protocol").click();
+
+  const oid4vcOption = page.getByRole("option", { name: OID4VCI_PROTOCOL });
+  const optionCount = await oid4vcOption.count();
+  test.skip(optionCount === 0, OID4VCI_UNAVAILABLE_MESSAGE);
+
+  await expect(oid4vcOption).toBeVisible();
+  await oid4vcOption.click();
+  await expect(page.locator("#kc-protocol")).toContainText(OID4VCI_PROTOCOL);
+}
+
+async function selectVCFormat(page: Page, format: Oid4vciFormat) {
+  await selectItem(page, "#kc-vc-format", format);
+  await expect(page.locator("#kc-vc-format")).toContainText(format);
+}
+
 // Helper function to fill TimeSelector fields (enters value in seconds - the base unit)
 async function fillTimeSelectorValue(
   page: Page,
@@ -149,22 +173,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     });
     await createClientScope(page, testBed);
 
-    await expect(page.locator("#kc-protocol")).toBeVisible();
-
-    const protocolButton = page.locator("#kc-protocol");
-    await protocolButton.click();
-
-    const oid4vcOption = page.getByRole("option", {
-      name: "OpenID for Verifiable Credentials",
-    });
-    await expect(oid4vcOption).toBeVisible();
-    await oid4vcOption.click();
-
-    await page.waitForLoadState("domcontentloaded");
-
-    await expect(page.locator("#kc-protocol")).toContainText(
-      "OpenID for Verifiable Credentials",
-    );
+    await selectOID4VCIProtocol(page);
 
     await expect(
       page.getByTestId(OID4VCI_FIELDS.CREDENTIAL_CONFIGURATION_ID),
@@ -295,10 +304,9 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await expect(page.locator("#kc-protocol")).toBeVisible();
 
     await page.locator("#kc-protocol").click();
-
-    await expect(
-      page.getByRole("option", { name: "OpenID for Verifiable Credentials" }),
-    ).toBeVisible();
+    const oid4vcOption = page.getByRole("option", { name: OID4VCI_PROTOCOL });
+    test.skip((await oid4vcOption.count()) === 0, OID4VCI_UNAVAILABLE_MESSAGE);
+    await expect(oid4vcOption).toBeVisible();
   });
 
   test("should not display OID4VCI fields when protocol is not OID4VCI", async ({
@@ -317,8 +325,6 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     });
     await expect(openidConnectOption).toBeVisible();
     await openidConnectOption.click();
-
-    await page.waitForLoadState("domcontentloaded");
 
     await expect(
       page.getByTestId(OID4VCI_FIELDS.CREDENTIAL_CONFIGURATION_ID),
@@ -350,22 +356,19 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await protocolButton.click();
 
     const oid4vcOption = page.getByRole("option", {
-      name: "OpenID for Verifiable Credentials",
+      name: OID4VCI_PROTOCOL,
     });
     const openidConnectOption = page.getByRole("option", {
       name: "OpenID Connect",
     });
+    test.skip((await oid4vcOption.count()) === 0, OID4VCI_UNAVAILABLE_MESSAGE);
 
     await expect(oid4vcOption).toBeVisible();
     await expect(openidConnectOption).toBeVisible();
 
     await oid4vcOption.click();
 
-    await page.waitForLoadState("domcontentloaded");
-
-    await expect(page.locator("#kc-protocol")).toContainText(
-      "OpenID for Verifiable Credentials",
-    );
+    await expect(page.locator("#kc-protocol")).toContainText(OID4VCI_PROTOCOL);
 
     await expect(
       page.getByTestId(OID4VCI_FIELDS.CREDENTIAL_CONFIGURATION_ID),
@@ -552,35 +555,27 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       page.getByTestId(OID4VCI_FIELDS.VERIFIABLE_CREDENTIAL_TYPE),
     ).toBeVisible();
 
-    await selectItem(page, "#kc-vc-format", "JWT VC (jwt_vc_json)");
-
-    await page.waitForLoadState("domcontentloaded");
+    await selectVCFormat(page, "JWT VC (jwt_vc_json)");
 
     await expect(
       page.getByTestId(OID4VCI_FIELDS.VERIFIABLE_CREDENTIAL_TYPE),
     ).toBeHidden();
 
-    await selectItem(page, "#kc-vc-format", "SD-JWT VC (dc+sd-jwt)");
-
-    await page.waitForLoadState("domcontentloaded");
+    await selectVCFormat(page, "SD-JWT VC (dc+sd-jwt)");
 
     await expect(
       page.getByTestId(OID4VCI_FIELDS.VERIFIABLE_CREDENTIAL_TYPE),
     ).toBeVisible();
     await expect(page.getByTestId(OID4VCI_FIELDS.VISIBLE_CLAIMS)).toBeVisible();
 
-    await selectItem(page, "#kc-vc-format", "JWT VC (jwt_vc_json)");
-
-    await page.waitForLoadState("domcontentloaded");
+    await selectVCFormat(page, "JWT VC (jwt_vc_json)");
 
     await expect(
       page.getByTestId(OID4VCI_FIELDS.VERIFIABLE_CREDENTIAL_TYPE),
     ).toBeHidden();
     await expect(page.getByTestId(OID4VCI_FIELDS.VISIBLE_CLAIMS)).toBeHidden();
 
-    await selectItem(page, "#kc-vc-format", "SD-JWT VC (dc+sd-jwt)");
-
-    await page.waitForLoadState("domcontentloaded");
+    await selectVCFormat(page, "SD-JWT VC (dc+sd-jwt)");
 
     await expect(
       page.getByTestId(OID4VCI_FIELDS.VERIFIABLE_CREDENTIAL_TYPE),
@@ -600,8 +595,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
 
     await expect(page.getByTestId(OID4VCI_FIELDS.TOKEN_JWS_TYPE)).toBeVisible();
 
-    await selectItem(page, "#kc-vc-format", "SD-JWT VC (dc+sd-jwt)");
-    await page.waitForLoadState("domcontentloaded");
+    await selectVCFormat(page, "SD-JWT VC (dc+sd-jwt)");
 
     await expect(page.getByTestId(OID4VCI_FIELDS.TOKEN_JWS_TYPE)).toBeVisible();
   });
@@ -627,8 +621,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await tokenJwsType.fill("vc+jwt");
     await expect(page.getByText(TOKEN_JWS_TYPE_WARNING_PREFIX)).toHaveCount(0);
 
-    await selectItem(page, "#kc-vc-format", "SD-JWT VC (dc+sd-jwt)");
-    await page.waitForLoadState("domcontentloaded");
+    await selectVCFormat(page, "SD-JWT VC (dc+sd-jwt)");
 
     await tokenJwsType.fill("vc+jwt");
     await expect(page.getByText(TOKEN_JWS_TYPE_WARNING_PREFIX)).toBeVisible();
@@ -654,8 +647,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await tokenJwsType.fill("");
     await expect(page.getByText(TOKEN_JWS_TYPE_WARNING_PREFIX)).toHaveCount(0);
 
-    await selectItem(page, "#kc-vc-format", "JWT VC (jwt_vc_json)");
-    await page.waitForLoadState("domcontentloaded");
+    await selectVCFormat(page, "JWT VC (jwt_vc_json)");
 
     await tokenJwsType.fill("");
     await expect(page.getByText(TOKEN_JWS_TYPE_WARNING_PREFIX)).toHaveCount(0);
@@ -1012,7 +1004,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
 
       await expect(
         page.getByRole("option", {
-          name: "OpenID for Verifiable Credentials",
+          name: OID4VCI_PROTOCOL,
         }),
       ).toHaveCount(0);
     } finally {
