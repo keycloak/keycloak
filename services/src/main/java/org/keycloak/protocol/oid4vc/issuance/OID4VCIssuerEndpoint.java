@@ -429,7 +429,7 @@ public class OID4VCIssuerEndpoint {
      * | yes      | yes      | yes     | Offer restricted to a specific user.       |
      * +----------+----------+---------+--------------------------------------------+
      * </p>
-     * <b>Pre-Authorized Offer</b>
+     * <b>Pre-Authorized Code Grant Offer</b>
      * <ul>
      *   <li>A pre-authorized offer is authorized for the clientId from the current login session</li>
      *   <li>If targetUser is null or empty, it defaults to the user from the current login session</li>
@@ -439,7 +439,7 @@ public class OID4VCIssuerEndpoint {
      *   <li>An offer can optionally have a predefined expiry date</li>
      * </ul>
      *
-     * <b>Non Pre-Authorized Offer</b>
+     * <b>Authorization Code Grant Offer</b>
      * <ul>
      *   <li>If targetUser is null or empty, the generated offer is "anonymous"</li>
      *   <li>If targetUser is equal to the current login, the offer is "self issued"</li>
@@ -540,9 +540,13 @@ public class OID4VCIssuerEndpoint {
 
         // Create the CredentialsOffer
         //
-        String targetClientId = clientModel.getClientId();
         String grantType = preAuthorized ? PRE_AUTH_GRANT_TYPE : AUTH_CODE_GRANT_TYPE;
         List<String> credentialConfigurationIds = List.of(credentialConfigurationId);
+
+        // Bind pre-authorized code offers to the authenticated client to prevent redemption from a different client_id.
+        // Authorization Code Grant offers are intentionally not bound to a client_id.
+        // https://github.com/keycloak/keycloak/issues/48188
+        String targetClientId = preAuthorized ? clientModel.getClientId() : null;
 
         CredentialOfferState offerState;
         try {
