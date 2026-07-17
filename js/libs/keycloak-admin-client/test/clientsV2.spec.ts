@@ -114,29 +114,25 @@ describe("Clients V2 API", () => {
     expect(clients).to.be.ok;
     expect(clients).to.be.an("array");
 
-    const client1 = clients!.find(
-      (c) => (c as OIDCClientRepresentation).clientId === clientId1,
-    );
+    const client1 = clients!.find((c) => c.clientId === clientId1);
     expect(client1).to.be.ok;
 
-    const client2 = clients!.find(
-      (c) => (c as OIDCClientRepresentation).clientId === clientId2,
-    );
+    const client2 = clients!.find((c) => c.clientId === clientId2);
     expect(client2).to.be.ok;
 
-    // Sort by clientId
     const sortedClients = await kcAdminClient.clients.v2().get({
       queryParameters: {
-        sort: "clientId",
+        sort: "clientId|desc",
       },
     });
     expect(sortedClients).to.be.ok;
     expect(sortedClients).to.be.an("array");
     const clientIds = sortedClients!.map((c) => c.clientId!);
-    const caseInsensitiveSortedClientIds = [...clientIds].sort((a, b) =>
-      a.localeCompare(b, undefined, { sensitivity: "base" }),
-    );
-    expect(caseInsensitiveSortedClientIds).to.deep.equal(clientIds);
+    expect(
+      [...clientIds].sort((a, b) =>
+        b.localeCompare(a, undefined, { sensitivity: "base" }),
+      ),
+    ).to.deep.equal(clientIds);
 
     const sortedClient1 = sortedClients!.find((c) => c.clientId === clientId1);
     expect(sortedClient1).to.be.ok;
