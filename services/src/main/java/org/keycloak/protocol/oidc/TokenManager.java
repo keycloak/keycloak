@@ -347,51 +347,85 @@ public class TokenManager {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Token client and authorized client don't match");
             }
 
-            // KEYCLOAK-6771 Certificate Bound Token
-            if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken()) {
-                if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(refreshToken, request, session)) {
-                    throw new OAuthErrorException(OAuthErrorException.UNAUTHORIZED_CLIENT, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC);
-                }
-            }
-
-            // Verify RefreshToken Confirmation
-            //
-            AccessToken.Confirmation cnf = refreshToken.getConfirmation();
-            if (cnf != null && cnf.getKeyThumbprint() != null) {
-                String jktType = Optional.ofNullable(cnf.getJktType()).orElse(DPOP_JKT_TYPE);
-                switch (jktType) {
-                    case ABCA_JKT_TYPE -> {
-                        ABCAResult abcaResult = session.getAttribute(ABCAResult.ABCA_RESULT, ABCAResult.class);
-                        if (abcaResult == null) {
-                            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Client attestation must be used with this refresh token");
-                        }
-                        JWK jwk = abcaResult.getAttestationJwt().getConfirmation().getJwk();
-                        String thumbprint = JWKSUtils.computeThumbprint(jwk);
-                        if (!Objects.equals(thumbprint, cnf.getKeyThumbprint())) {
-                            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Attestation-Based Key mismatch");
-                        }
-                    }
-                    case DPOP_JKT_TYPE -> {
-                        DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
-                        if (dPoP == null) {
-                            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "DPoP proof is missing");
-                        }
-                        try {
-                            DPoPUtil.validateBinding(refreshToken, dPoP);
-                        } catch (VerificationException ex) {
-                            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, ex.getMessage());
-                        }
-                    }
-                    default -> {
-                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unknown jkt type: " + jktType);
-                    }
-                }
-            }
+            verifyConfirmationBinding(session, client, request, refreshToken);
 
             return refreshToken;
 
         } catch (JWSInputException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
+        }
+    }
+
+    private void verifyConfirmationBinding(KeycloakSession session, ClientModel client, HttpRequest request, RefreshToken refreshToken) throws OAuthErrorException {
+        AccessToken.Confirmation cnf = refreshToken.getConfirmation();
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        ABCAResult abcaResult = session.getAttribute(ABCAResult.ABCA_RESULT, ABCAResult.class);
+
+        // MTLS required but token has no certificate thumbprint
+        if (clientConfig.isUseMtlsHokToken() && (cnf == null || cnf.getCertThumbprint() == null)) {
+            throw new OAuthErrorException(OAuthErrorException.UNAUTHORIZED_CLIENT, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC);
+        }
+
+        // DPoP required for public client but token has no DPoP binding (RFC 9449 §5)
+        if (clientConfig.isUseDPoP() && client.isPublicClient()) {
+            boolean dpopBound = cnf != null && cnf.getKeyThumbprint() != null && (cnf.getJktType() == null || DPOP_JKT_TYPE.equals(cnf.getJktType()));
+            if (!dpopBound) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "DPoP proof key binding is required");
+            }
+        }
+
+        // ABCA attestation present but token has no attestation binding
+        if (abcaResult != null) {
+            boolean abcaBound = cnf != null && cnf.getKeyThumbprint() != null && ABCA_JKT_TYPE.equals(cnf.getJktType());
+            if (!abcaBound) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Attestation-based key binding is required for this refresh token");
+            }
+        }
+
+        // No confirmation claim, nothing to verify
+        if (cnf == null) {
+            return;
+        }
+
+        // cnf present but no known binding type
+        if (cnf.getCertThumbprint() == null && cnf.getKeyThumbprint() == null) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token confirmation");
+        }
+
+        // Verify MTLS certificate binding (x5t#S256)
+        if (cnf.getCertThumbprint() != null) {
+            if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(refreshToken, request, session)) {
+                throw new OAuthErrorException(OAuthErrorException.UNAUTHORIZED_CLIENT, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC);
+            }
+        }
+
+        // Verify key binding (DPoP or ABCA)
+        if (cnf.getKeyThumbprint() != null) {
+            String jktType = Optional.ofNullable(cnf.getJktType()).orElse(DPOP_JKT_TYPE);
+            switch (jktType) {
+                case ABCA_JKT_TYPE -> {
+                    if (abcaResult == null) {
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Client attestation must be used with this refresh token");
+                    }
+                    JWK jwk = abcaResult.getAttestationJwt().getConfirmation().getJwk();
+                    String thumbprint = JWKSUtils.computeThumbprint(jwk);
+                    if (!Objects.equals(thumbprint, cnf.getKeyThumbprint())) {
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Attestation-Based Key mismatch");
+                    }
+                }
+                case DPOP_JKT_TYPE -> {
+                    DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
+                    if (dPoP == null) {
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "DPoP proof is missing");
+                    }
+                    try {
+                        DPoPUtil.validateBinding(refreshToken, dPoP);
+                    } catch (VerificationException ex) {
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, ex.getMessage());
+                    }
+                }
+                default -> throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unknown jkt type: " + jktType);
+            }
         }
     }
 
