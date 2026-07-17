@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Set;
 import javax.xml.namespace.QName;
 
+import org.w3c.dom.Node;
+
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ECP_PROFILE;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.METADATA_NSURI;
@@ -330,11 +332,24 @@ public enum JBossSAMLConstants {
     }
 
     /**
-     *  Protocol element types that may carry independent XML signatures.
+     *  Artifact element types that may carry independent XML signatures.
      */
-    public static final Set<JBossSAMLConstants> SIGNED_PROTOCOL_ELEMENTS = Set.of(
+    public static final Set<JBossSAMLConstants> ARTIFACT_SIGNED_ELEMENTS = Set.of(
             RESPONSE__PROTOCOL,
-            LOGOUT_REQUEST,
             LOGOUT_RESPONSE
     );
+
+    /**
+     * Returns an enum constant based on the given node element. If node is not an
+     * element node the unknown element is returned.
+     * @param node The DOM node
+     * @return The jboss node for the passed node or unknown
+     */
+    public static JBossSAMLConstants from(Node node) {
+        if (node.getNodeType() != Node.ELEMENT_NODE) {
+            return UNKNOWN_VALUE;
+        }
+        QName qname = new QName(node.getNamespaceURI(), node.getLocalName());
+        return from(qname);
+    }
 }
