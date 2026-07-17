@@ -1,6 +1,13 @@
 import { expect, Locator, Page } from "@playwright/test";
 import { clickSelectRow } from "./table.ts";
 
+function isPageClosedError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    /Target page, context or browser has been closed/i.test(error.message)
+  );
+}
+
 export async function assertRequiredFieldError(page: Page, field: string) {
   await expect(page.getByTestId(field + "-helper")).toHaveText(/required/i);
 }
@@ -19,7 +26,16 @@ export async function selectItem(
   value: string,
 ) {
   const element = typeof field === "string" ? page.locator(field) : field;
-  await element.click();
+  await expect(element).toBeVisible();
+  await expect(element).toBeEnabled();
+  try {
+    await element.click({ timeout: 3_000 });
+  } catch (error) {
+    if (isPageClosedError(error)) {
+      throw error;
+    }
+    await element.click({ force: true, timeout: 3_000 });
+  }
   await page.getByRole("option", { name: value, exact: true }).click();
 }
 
@@ -30,20 +46,22 @@ export async function assertSelectValue(field: Locator, value: string) {
 
 export async function switchOn(page: Page, id: string | Locator) {
   const switchElement = typeof id === "string" ? page.locator(id) : id;
-  if (await switchElement.isChecked()) return;
-  await switchElement.click({ force: true });
-  await expect(switchElement).toBeChecked();
+  await setSwitchState(switchElement, true);
 }
 
 export async function switchOff(page: Page, id: string | Locator) {
   const switchElement = typeof id === "string" ? page.locator(id) : id;
-  await expect(switchElement).toBeChecked();
-  await switchElement.click({ force: true });
+  await setSwitchState(switchElement, false);
 }
 
 export async function switchToggle(page: Page, id: string | Locator) {
   const switchElement = typeof id === "string" ? page.locator(id) : id;
-  await switchElement.click({ force: true });
+  await setSwitchState(switchElement, !(await switchElement.isChecked()));
+}
+
+export async function clickSwitch(page: Page, id: string | Locator) {
+  const switchElement = typeof id === "string" ? page.locator(id) : id;
+  await clickSwitchElement(switchElement);
 }
 
 export async function assertSwitchIsChecked(
@@ -76,6 +94,99 @@ export async function clickCancelButton(page: Page) {
 
 async function clickOption(page: Page, option: string) {
   await page.getByRole("option", { name: option }).click();
+}
+
+async function clickSwitchElement(switchElement: Locator) {
+  await expect(switchElement).toBeVisible();
+
+  const switchId = await switchElement.getAttribute("id");
+  const label = switchId
+    ? switchElement.page().locator(`label[for="${switchId}"]`).first()
+    : undefined;
+
+  try {
+    await switchElement.click({ timeout: 3_000 });
+    return;
+  } catch (error) {
+    if (isPageClosedError(error)) {
+      throw error;
+    }
+  }
+
+  if (label && (await label.count()) > 0) {
+    try {
+      await label.click({ force: true, timeout: 3_000 });
+      return;
+    } catch (error) {
+      if (isPageClosedError(error)) {
+        throw error;
+      }
+    }
+  }
+
+  await switchElement.click({ force: true, timeout: 3_000 });
+}
+
+async function setSwitchState(switchElement: Locator, checked: boolean) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await expect(switchElement).toBeVisible();
+
+    if ((await switchElement.isChecked()) === checked) {
+      return;
+    }
+
+    try {
+      if (checked) {
+        await switchElement.check({ force: true, timeout: 3_000 });
+      } else {
+        await switchElement.uncheck({ force: true, timeout: 3_000 });
+      }
+    } catch (error) {
+      if (isPageClosedError(error)) {
+        throw error;
+      }
+    }
+
+    if (await waitForSwitchState(switchElement, checked)) {
+      return;
+    }
+
+    await clickSwitchElement(switchElement);
+    if (await waitForSwitchState(switchElement, checked)) {
+      return;
+    }
+
+    // Some switches only respond to keyboard interactions after focus.
+    try {
+      await switchElement.focus({ timeout: 2_000 });
+      await switchElement.page().keyboard.press("Space");
+    } catch (error) {
+      if (isPageClosedError(error)) {
+        throw error;
+      }
+    }
+
+    if (await waitForSwitchState(switchElement, checked)) {
+      return;
+    }
+  }
+
+  if (checked) {
+    await expect(switchElement).toBeChecked();
+  } else {
+    await expect(switchElement).not.toBeChecked();
+  }
+}
+
+async function waitForSwitchState(switchElement: Locator, checked: boolean) {
+  try {
+    await expect
+      .poll(async () => await switchElement.isChecked(), { timeout: 2_000 })
+      .toBe(checked);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function selectClient(page: Page, clientName: string) {

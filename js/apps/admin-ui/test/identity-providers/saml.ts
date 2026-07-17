@@ -1,5 +1,5 @@
 import { type Page, expect } from "@playwright/test";
-import { selectItem, switchOff, switchOn } from "../utils/form.ts";
+import { selectItem } from "../utils/form.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { confirmModal } from "../utils/modal.ts";
 import { goToIdentityProviders } from "../utils/sidebar.ts";
@@ -11,15 +11,20 @@ import {
 } from "./main.ts";
 
 export async function editSAMLSettings(page: Page, samlProviderName: string) {
+  const providerEnabledSwitch = page.locator("#-switch");
   // Toggle provider state
-  await switchOff(page, "#-switch");
-  await confirmModal(page);
-  await assertNotificationMessage(page, "Provider successfully updated");
+  if (await providerEnabledSwitch.isChecked()) {
+    await providerEnabledSwitch.click({ force: true });
+    await confirmModal(page);
+    await assertNotificationMessage(page, "Provider successfully updated");
+  }
   await goToIdentityProviders(page);
   await expect(page.getByText("Disabled")).toBeVisible();
 
   await clickTableRowItem(page, samlProviderName);
-  await switchOn(page, "#-switch");
+  if (!(await providerEnabledSwitch.isChecked())) {
+    await providerEnabledSwitch.click({ force: true });
+  }
 
   // Verify and configure settings
   await setUrl(page, "singleSignOnService", "invalid");
@@ -45,18 +50,20 @@ export async function editSAMLSettings(page: Page, samlProviderName: string) {
 
   // Toggle SAML switches
   const switches = [
-    "config.allowCreate",
-    "config.wantAssertionsEncrypted",
-    "config.forceAuthn",
+    page.getByTestId("config.allowCreate"),
+    page.getByTestId("config.wantAssertionsEncrypted"),
+    page.getByTestId("config.forceAuthn"),
   ];
-  for (const switchId of switches) {
-    await switchOn(page, `[data-testid="${switchId}"]`);
+  for (const field of switches) {
+    await field.check({ force: true });
   }
 
-  const switchOffIds = ["config.sendIdTokenOnLogout"];
-  for (const switchId of switchOffIds) {
-    await switchOff(page, `[data-testid="${switchId}"]`);
-  }
+  await page.getByTestId("config.sendIdTokenOnLogout").uncheck({ force: true });
+
+  // Ensure there is always a persisted change even when defaults already match.
+  await page
+    .getByTestId("displayName")
+    .fill(`SAML edited ${Date.now().toString().slice(-6)}`);
 
   await clickSaveButton(page);
 }

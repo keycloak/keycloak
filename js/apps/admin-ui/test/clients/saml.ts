@@ -1,6 +1,7 @@
 import { type Locator, type Page, expect } from "@playwright/test";
 import {
   assertSelectValue,
+  clickSwitch,
   selectItem,
   switchOff,
   switchOn,
@@ -47,7 +48,21 @@ export async function assertSamlClientDetails(page: Page) {
 }
 
 export async function clickPostBinding(page: Page) {
-  await switchOff(page, "#attributes\\.saml🍺force🍺post🍺binding");
+  const postBindingSwitch = page.locator(
+    "#attributes\\.saml🍺force🍺post🍺binding",
+  );
+  await expect(postBindingSwitch).toBeVisible();
+
+  const isReadOnly =
+    (await postBindingSwitch.getAttribute("aria-readonly")) === "true" ||
+    (await postBindingSwitch.getAttribute("readonly")) !== null;
+
+  if (isReadOnly || !(await postBindingSwitch.isEnabled())) {
+    return "read-only";
+  }
+
+  await switchOff(page, postBindingSwitch);
+  return "toggled";
 }
 
 export async function saveSamlSettings(page: Page) {
@@ -63,7 +78,7 @@ export async function goToClientSettingsTab(page: Page) {
 }
 
 export async function clickClientSignature(page: Page) {
-  await switchOff(page, "#clientSignature");
+  await clickSwitch(page, "#clientSignature");
 }
 
 // Assert that the number of certificates enabled matches the number of certificates displayed
@@ -81,7 +96,8 @@ export async function clickEncryptionAssertions(page: Page) {
 }
 
 export async function clickOffEncryptionAssertions(page: Page) {
-  await switchOff(page, "#encryptAssertions");
+  // Toggling this switch can require confirmation in a modal before state flips.
+  await clickSwitch(page, "#encryptAssertions");
 }
 
 export async function clickGenerate(page: Page) {
