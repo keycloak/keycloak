@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.GenericType;
@@ -78,6 +79,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
@@ -609,6 +611,39 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
 
         assertThat(roleMembers, hasSize(allowedUsers.size()));
         assertThat(roleMembers, hasItems(allowedUsers.toArray(new String[0])));
+    }
+
+    @Test
+    public void testParentGroupDenyExcludesChildMemberFromSearch() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(
+                realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(VIEW));
+
+        GroupRepresentation parentGroup = createGroup("fgap-denied-parent-" + KeycloakModelUtils.generateId());
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("fgap-denied-child-" + KeycloakModelUtils.generateId());
+        try (Response response = realm.admin().groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            childGroup.setId(ApiUtil.getCreatedId(response));
+        }
+
+        UserRepresentation deniedUser = realm.admin().users().search("user-15").get(0);
+        realm.admin().users().get(deniedUser.getId()).joinGroup(childGroup.getId());
+
+        UserPolicyRepresentation denyMyAdmin = createUserPolicy(
+                Logic.NEGATIVE, realm, adminPermissionsClient, "Deny My Admin User Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, parentGroup.getId(), GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), denyMyAdmin);
+
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
+                .users().get(deniedUser.getId()).toRepresentation());
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(deniedUser.getUsername(), 0, 10);
+        assertThat(search.stream().map(UserRepresentation::getId).toList(),
+                not(hasItems(deniedUser.getId())));
+        assertThat(realmAdminClient.realm(realm.getName()).users()
+                .count(null, null, null, deniedUser.getUsername()), is(0));
     }
 
     @Test
