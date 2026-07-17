@@ -74,6 +74,7 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
+import org.keycloak.storage.user.UserServiceAccountProvider;
 import org.keycloak.tracing.TracingProvider;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
@@ -498,8 +499,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     @Override
     public UserModel addUser(RealmModel realm, String username) {
         if (username.startsWith(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX)) {
-            // Don't use federation for service account user
-            return localStorage().addUser(realm, username);
+            return getEnabledStorageProviders(realm, UserServiceAccountProvider.class)
+                    .map(provider -> provider.addServiceAccountUser(realm, username))
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .orElseGet(() -> localStorage().addUser(realm, username));
         }
 
         return getEnabledStorageProviders(realm, UserRegistrationProvider.class)
@@ -511,13 +515,16 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        if (getFederatedStorage() != null && user.getServiceAccountClientLink() == null) {
+        StorageId storageId = new StorageId(user.getId());
+        boolean isLocalServiceAccount = user.getServiceAccountClientLink() != null
+                && !user.isFederated()
+                && storageId.getProviderId() == null;
+
+        if (getFederatedStorage() != null && !isLocalServiceAccount) {
             getFederatedStorage().preRemove(realm, user);
         }
 
         publishUserPreRemovedEvent(realm, user);
-
-        StorageId storageId = new StorageId(user.getId());
 
         if (storageId.getProviderId() == null) {
             boolean linkRemoved = !user.isFederated() || Optional.ofNullable(
@@ -1054,7 +1061,13 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public UserModel getServiceAccount(ClientModel client) {
-        return localStorage().getServiceAccount(client);
+        return getEnabledStorageProviders(client.getRealm(), UserServiceAccountProvider.class)
+                .map(provider -> provider.getServiceAccount(client))
+                .filter(Objects::nonNull)
+                .map(user -> validateUser(client.getRealm(), user))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElseGet(() -> localStorage().getServiceAccount(client));
     }
 
     @Override
