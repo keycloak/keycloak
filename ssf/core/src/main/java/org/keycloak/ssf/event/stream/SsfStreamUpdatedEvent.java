@@ -1,17 +1,19 @@
 package org.keycloak.ssf.event.stream;
 
+import java.util.Map;
+
 import org.keycloak.ssf.stream.StreamStatus;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * SSF Stream status updated event.
- *
+ * <p>
  * See: https://openid.net/specs/openid-sharedsignals-framework-1_0-final.html#name-stream-updated-event
  */
 public class SsfStreamUpdatedEvent extends SsfStreamEvent {
 
-    public static final String TYPE = "https://schemas.openid.net/secevent/ssf/event-type/stream-updated";
+    public static final String TYPE = SsfStreamEvent.EVENT_TYPE_BASE_URI + "stream-updated";
 
     /**
      * REQUIRED. Defines the new status of the stream.
@@ -43,5 +45,12 @@ public class SsfStreamUpdatedEvent extends SsfStreamEvent {
 
     public void setReason(String reason) {
         this.reason = reason;
+    }
+
+    @Override
+    protected void appendFields(Map<String, Object> fields) {
+        super.appendFields(fields);
+        fields.put("status", status);
+        fields.put("reason", reason);
     }
 }
