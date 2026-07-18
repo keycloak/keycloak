@@ -507,9 +507,12 @@ public class LogoutEndpoint {
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
-        // Parse and validate the DPoP proof from the request header (if present),
-        // so that DPoP-bound refresh tokens can be verified in verifyRefreshToken.
-        DPoPUtil.handleDPoPHeader(session, event, cors, OIDCAdvancedConfigWrapper.fromClientModel(client));
+        // Parse and validate the DPoP proof from the request header when present.
+        // Pass null for the client config so proof-less logouts are not rejected here:
+        // DPoP binding is enforced by TokenManager.verifyRefreshToken() based on the
+        // token's cnf claim, which correctly allows non-DPoP-bound refresh tokens on
+        // DPoP-enabled clients (mirrors ParEndpoint's null config argument).
+        DPoPUtil.handleDPoPHeader(session, event, cors, null);
 
         RefreshToken token = null;
         try {
