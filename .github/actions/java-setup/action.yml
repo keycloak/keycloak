@@ -20,3 +20,6 @@ runs:
       with:
         distribution: ${{ inputs.distribution }}
         java-version: ${{ inputs.java-version }}
+    - id: block-non-maven-central-repositories
+      run: cp .github/settings-block-repositories.xml ~/.m2/settings.xml
+      shell: bash
