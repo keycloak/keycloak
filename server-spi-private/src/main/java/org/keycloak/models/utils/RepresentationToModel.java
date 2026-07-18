@@ -250,7 +250,7 @@ public class RepresentationToModel {
     }
 
 
-    private static void convertDeprecatedCredentialsFormat(UserRepresentation user) {
+    private static void convertDeprecatedCredentialsFormat(UserRepresentation user, RealmModel realm) {
         if (user.getCredentials() != null) {
             for (CredentialRepresentation cred : user.getCredentials()) {
                 try {
@@ -258,7 +258,19 @@ public class RepresentationToModel {
                         logger.warnf("Using deprecated 'credentials' format in JSON representation for user '%s'. It will be removed in future versions", user.getUsername());
 
                         if (PasswordCredentialModel.TYPE.equals(cred.getType()) || PasswordCredentialModel.PASSWORD_HISTORY.equals(cred.getType())) {
-                            int hashIterations = cred.getHashIterations() != null ? cred.getHashIterations() : -1;
+                            int hashIterations;
+                            if (cred.getHashIterations() != null) {
+                                hashIterations = cred.getHashIterations();
+                            } else {
+                                int policyIterations = realm.getPasswordPolicy().getHashIterations();
+                                if (policyIterations < 0) {
+                                    logger.warnf("Cannot convert deprecated password credential for user '%s': " +
+                                            "'hashIterations' is absent and no realm password policy provides a default. " +
+                                            "The credential will be skipped.", user.getUsername());
+                                    continue;
+                                }
+                                hashIterations = policyIterations;
+                            }
                             PasswordCredentialData credentialData = new PasswordCredentialData(hashIterations, cred.getAlgorithm());
                             cred.setCredentialData(JsonSerialization.writeValueAsString(credentialData));
                             // Created this manually to avoid conversion from Base64 and back
@@ -806,7 +818,7 @@ public class RepresentationToModel {
     }
 
     public static void createCredentials(UserRepresentation userRep, KeycloakSession session, RealmModel realm, UserModel user, boolean adminRequest) {
-        convertDeprecatedCredentialsFormat(userRep);
+        convertDeprecatedCredentialsFormat(userRep, realm);
         if (userRep.getCredentials() != null) {
             for (CredentialRepresentation cred : userRep.getCredentials()) {
                 if (cred.getId() != null && user.credentialManager().getStoredCredentialById(cred.getId()) != null) {
