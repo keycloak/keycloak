@@ -280,7 +280,8 @@ public class UserCreateTest extends AbstractUserTest {
     @Test
     public void createUserWithDeprecatedCredentialsFormatMissingHashIterations() throws IOException {
         // Configure realm password policy so the import can use it when hashIterations is absent
-        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
+RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
+        managedRealm.cleanup().add(r -> r.update(realmRep));
         realmRep.setPasswordPolicy("hashIterations(30000)");
         managedRealm.admin().update(realmRep);
 
