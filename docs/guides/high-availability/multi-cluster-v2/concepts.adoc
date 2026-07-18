@@ -3,10 +3,10 @@
 
 <@tmpl.guide
 title="Concepts for multi-cluster deployments (v2)"
-summary="Understand multi-cluster deployment with synchronous replication without an external {jdgserver_name} cluster. This is an experimental feature."
-tileVisible="false" >
-
-<#include "/templates/experimental-feature.adoc">
+summary="Understand multi-cluster deployment with synchronous replication without an external {jdgserver_name} cluster."
+tileVisible="false"
+preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
 
 This topic describes a highly available multi-cluster setup and the behavior to expect.
 It outlines the requirements of the high availability architecture and describes the benefits and tradeoffs.
@@ -25,9 +25,9 @@ Two or more independent {project_name} deployments running in different sites.
 
 Users, realms, clients, sessions, and other entities are stored in a database that is replicated synchronously across all sites.
 
-The realm data, including clients and groups, is cached in the {project_name} embedded Infinispan caches as local caches.
+Realm data (including clients and groups) and authorization data are cached in the {project_name} embedded Infinispan caches as local caches.
 
-image::high-availability/active-active-cacheless.dio.svg[]
+image::high-availability/active-active-stateless.dio.svg[]
 
 === Background jobs
 
@@ -35,7 +35,7 @@ Background jobs will run only in one of the active clusters and will be automati
 
 === Updates to realm data and cache invalidation
 
-NOTE: This paragraph describes the internal implementation of how cache invalidation works across clusters with the `cacheless` feature to allow administrators to understand the emerging observed behavior.
+NOTE: This paragraph describes the internal implementation of how cache invalidation works across clusters with the `stateless` feature to allow administrators to understand the emerging observed behavior.
 This internal implementation might change between minor or patch releases.
 If it changes, this section will be updated.
 

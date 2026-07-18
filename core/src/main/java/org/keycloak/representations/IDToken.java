@@ -62,6 +62,10 @@ public class IDToken extends JsonWebToken {
     // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
     public static final String S_HASH = "s_hash";
 
+    // RFC 8693 - OAuth 2.0 Token Exchange
+    public static final String MAY_ACT = "may_act";
+    public static final String ACT = "act";
+
     // NOTE!!!  WE used to use @JsonUnwrapped on a UserClaimSet object.  This screws up otherClaims and the won't work
     // anymore.  So don't have any @JsonUnwrapped!
     @JsonProperty(NONCE)

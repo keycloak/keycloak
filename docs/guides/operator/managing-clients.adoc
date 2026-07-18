@@ -200,4 +200,11 @@ The operator deletes the client from the {project_name} server before removing t
 If the Keycloak CR is deleted before the client CR, the operator cannot reach the server and the client will remain on the {project_name} server.
 ====
 
+=== Security Considerations
+
+[WARNING]
+====
+Anyone with the ability to create or edit KeycloakOIDCClient or KeycloakSAMLClient CRs should be a namespace-level admin.
+====
+
 </@tmpl.guide>

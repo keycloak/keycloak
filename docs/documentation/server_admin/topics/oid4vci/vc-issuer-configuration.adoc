@@ -367,7 +367,11 @@ After selecting the OID4VCI protocol, the following configuration fields become 
 
 | Credential Lifetime
 | `31536000` seconds (1 year)
-| How long the issued credential remains valid.
+| How long the issued credential remains valid. This controls the expiration of the refresh token and the database record.
+
+| Credential Refresh Interval
+| `604800` seconds (7 days), or credential lifetime if shorter
+| How often the wallet should refresh the credential. This sets the expiration (`exp` claim) of the issued VC JWT. If not explicitly set, defaults to 7 days or the credential lifetime, whichever is smaller. The credential can be refreshed using the refresh token as long as the credential lifetime has not expired. Must not exceed the credential lifetime.
 
 | Supported Format
 | SD-JWT VC (`dc+sd-jwt`)
@@ -425,6 +429,35 @@ image::images/oid4vci/screenshot-oid4vci-scope-form.png[OID4VCI configuration fi
 [NOTE]
 ====
 When you select a **Signing Key ID**, the **Credential Signing Algorithm** is automatically populated with the corresponding algorithm of the selected key. To override the algorithm, leave the signing key field empty and set the algorithm manually.
+====
+
+===== Understanding Credential Lifetime vs. Refresh Interval
+
+{project_name} provides separate time-based settings for verifiable credential validity:
+
+* **Credential Lifetime** (`vc.expiry_in_seconds`) — Controls how long the credential record remains valid in the database and determines the refresh token expiration. Default: 1 year (31536000 seconds).
+
+* **Credential Refresh Interval** (`vc.refresh_interval_in_seconds`) — Controls the `exp` (expiration) claim in the actual VC JWT returned to the wallet. Default: 7 days (604800 seconds), or the credential lifetime if shorter.
+
+This separation enables a periodic refresh cycle:
+
+. The wallet receives a VC with a 7-day expiration
+. The wallet also receives a refresh token valid for 1 year
+. After 7 days, the VC expires (wallet can verify this locally)
+. The wallet uses the refresh token to obtain a new access token
+. The wallet requests a new VC, which is valid for another 7 days
+. This cycle continues until the refresh token expires (after 1 year)
+. After 1 year, both the refresh token and the database record expire, requiring re-authentication
+
+This design provides:
+
+* **Enhanced security** — Regular credential rotation reduces the impact of credential theft
+* **Privacy protection** — Fresh credentials with updated timestamps prevent long-term correlation
+* **User convenience** — Automatic refresh without re-authentication for up to 1 year
+
+[IMPORTANT]
+====
+The credential refresh interval must not exceed the credential lifetime. {project_name} validates this constraint when creating or updating credential scopes. If you set a credential lifetime shorter than 7 days without explicitly configuring the refresh interval, the refresh interval automatically adjusts to match the credential lifetime.
 ====
 
 ==== Adding Protocol Mappers

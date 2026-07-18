@@ -88,13 +88,8 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
             throw new ForbiddenException();
         }
 
-        return getModels(searchRequest).map(m -> {
-            try {
-                return get(m.getId(), searchRequest.getAttributes(), searchRequest.getExcludedAttributes());
-            } catch (ForbiddenException fe) {
-                return null;
-            }
-        }).filter(Objects::nonNull);
+        return getModels(searchRequest)
+                .map(m -> createResourceTypeInstance(m, searchRequest.getAttributes(), searchRequest.getExcludedAttributes()));
     }
 
     @Override

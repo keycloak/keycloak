@@ -4,11 +4,11 @@
 
 <@tmpl.guide
 title="Multi-cluster deployments (v2)"
-summary="Connect multiple {project_name} deployments without an external {jdgserver_name} cluster" >
+summary="Connect multiple {project_name} deployments without an external {jdgserver_name} cluster"
+preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
 
-<#include "/templates/experimental-feature.adoc">
-
-{project_name} supports deployments that consist of multiple {project_name} instances that connect to each other using its embedded Infinispan caches.
+{project_name} allows deployments that consist of multiple {project_name} instances that connect to each other using its embedded Infinispan caches.
 Load balancers can distribute the load evenly across those instances.
 Such setups are intended for transparent networks; see <@links.ha id="single-cluster-introduction" /> for more details.
 
@@ -28,10 +28,7 @@ The multi-cluster deployment capabilities of {project_name} are targeted at use 
 * Provide data centers with the appropriate network latency and database configuration.
 
 
-// TODO: Add an automated test, or remove
-////
-<#--
-
+// TODO: Add an automated test
 [#multi-cluster-v2-tested-configuration]
 == Tested Configuration
 
@@ -48,13 +45,11 @@ using ROSA HCP.
 ** Version ${properties["aurora-postgresql.version"]}
 
 * AWS Global Accelerator, sending traffic to both ROSA clusters
--->
-////
 
-[#multi-cluster-v2-supported-configuration]
-== Supported Configuration
+[#multi-cluster-v2-infrastructure-requirements]
+== Infrastructure requirements
 
-The following configurations are supported:
+The following infrastructure requirements need to be met:
 
 * A highly available database with synchronous replication.
 
@@ -70,17 +65,13 @@ Networking problems can cause downtimes until the failure detection isolates pro
 
 <#include "/high-availability/partials/configuration-disclaimer.adoc" />
 
-////
-<#--
-// TODO: Add an automated test, or remove
+// TODO: Add an automated test
 [#multi-cluster-v2-load]
 <#include "/high-availability/partials/tested-load.adoc" />
 
 <@profile.ifCommunity>
 While we did not see a hard limit in our tests with these values, we ask you to test for higher volumes with horizontally and vertically scaled {project_name} instances and databases.
 </@profile.ifCommunity>
--->
-////
 
 [#multi-cluster-v2-limitations]
 == Limitations

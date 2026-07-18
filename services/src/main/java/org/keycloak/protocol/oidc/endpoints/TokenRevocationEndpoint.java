@@ -46,14 +46,16 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.refresh.DefaultRefreshTokenProviderFactory;
+import org.keycloak.protocol.oidc.refresh.RefreshTokenProvider;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.clientpolicy.context.TokenRevokeResponseContext;
 import org.keycloak.services.cors.Cors;
-import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.util.TokenUtil;
 
@@ -116,7 +118,18 @@ public class TokenRevocationEndpoint {
         checkUser();
 
         if (TokenUtil.TOKEN_TYPE_REFRESH.equals(token.getType()) || TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType())) {
-            revokeClientSession();
+            String providerClaim = (String)token.getOtherClaims().get(RefreshToken.PROVIDER);
+            String providerId = (providerClaim != null) ? providerClaim : DefaultRefreshTokenProviderFactory.PROVIDER_ID;
+            RefreshTokenProvider refreshTokenProvider = session.getProvider(RefreshTokenProvider.class, providerId);
+
+            if (refreshTokenProvider == null) {
+                // Fallback for unknown provider ID
+                refreshTokenProvider = session.getProvider(RefreshTokenProvider.class, DefaultRefreshTokenProviderFactory.PROVIDER_ID);
+            }
+
+            refreshTokenProvider.revokeToken(token, user, client, event);
+
+            event.detail(Details.REFRESH_TOKEN_PROVIDER_ID, providerClaim != null ? providerClaim : refreshTokenProvider.getProviderId());
             event.detail(Details.REVOKED_CLIENT, client.getClientId());
             event.session(token.getSessionId());
             event.detail(Details.REFRESH_TOKEN_ID, token.getId());
@@ -221,7 +234,11 @@ public class TokenRevocationEndpoint {
         UserSessionUtil.UserSessionValidationResult validationResult = UserSessionUtil.findValidSessionForAccessToken(
                 session, realm, token, client, (UserSessionModel t) -> {});
         if (validationResult.getError() != null) {
-            event.error(validationResult.getError());
+            if (!Errors.USER_SESSION_NOT_FOUND.equals(validationResult.getError())
+               && !Errors.SESSION_EXPIRED.equals(validationResult.getError())
+               && !Errors.INVALID_TOKEN.equals(validationResult.getError())) {
+                event.error(validationResult.getError());
+            }
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.OK);
         }
 
@@ -239,30 +256,6 @@ public class TokenRevocationEndpoint {
         for (List<String> strings : formParams.values()) {
             if (strings.size() != 1) {
                 throw new CorsErrorResponseException(cors, Errors.INVALID_REQUEST, "duplicated parameter", Response.Status.BAD_REQUEST);
-            }
-        }
-    }
-
-    private void revokeClientSession() {
-        if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType())) {
-            UserSessionModel userSession = session.sessions().getOfflineUserSession(realm, token.getSessionId());
-            if (userSession != null) {
-                new UserSessionManager(session).removeClientFromOfflineUserSession(realm, userSession, client, user);
-            }
-        }
-        // Always remove "online" session as well if exists to make sure that issued access-tokens are revoked as well
-        UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionId());
-        if (userSession != null) {
-            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-            if (clientSession != null) {
-                TokenManager.dettachClientSession(clientSession);
-
-                revokeTokenExchangeSession(userSession);
-
-                // TODO: Might need optimization to prevent loading client sessions from cache in getAuthenticatedClientSessions()
-                if (userSession.getAuthenticatedClientSessions().isEmpty()) {
-                    session.sessions().removeUserSession(realm, userSession);
-                }
             }
         }
     }
@@ -289,7 +282,7 @@ public class TokenRevocationEndpoint {
         clientSessionModelMap.forEach((key, clientSessionModel) -> {
             if (clientSessionModel.getNote(Constants.TOKEN_EXCHANGE_SUBJECT_CLIENT + token.getIssuedFor()) != null) {
                 revokedClients.add(clientSessionModel.getClient().getClientId());
-                TokenManager.dettachClientSession(clientSessionModel);
+                TokenManager.detachClientSession(clientSessionModel);
             }
         });
         if (!revokedClients.isEmpty()) {

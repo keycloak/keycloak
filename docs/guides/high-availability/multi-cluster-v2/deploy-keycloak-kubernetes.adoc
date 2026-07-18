@@ -3,10 +3,10 @@
 
 <@tmpl.guide
 title="Deploying {project_name} for HA with the Operator (v2)"
-summary="Deploy {project_name} for experimental multi-cluster HA (cacheless) with the {project_name} Operator as a building block."
-tileVisible="false" >
-
-<#include "/templates/experimental-feature.adoc">
+summary="Deploy {project_name} for multi-cluster HA (stateless) with the {project_name} Operator as a building block."
+tileVisible="false"
+preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
 
 This {section} describes advanced {project_name} configurations for {kubernetes} which are load tested and will recover from single Pod failures or site failures.
 
@@ -17,8 +17,7 @@ While this blueprint uses {kubernetes}, the concepts are not limited to {kuberne
 == Prerequisites
 
 * {kubernetes} clusters running. Each {kubernetes} cluster should have its own internal load balancing to leverage the startup, liveness and readiness probes of the {project_name} Pods.
-* A load balancer in front of the clusters that is probing the root URL of the {project_name} clusters.
-// TODO: Add the lb-check non-blocking endpoint for the probe
+* A load balancer in front of the clusters that is probing the URL `/lb-check` of the {project_name} clusters.
 * A highly available database deployed with synchronous replication across sites, reachable from all {project_name} nodes in all clusters. The following example assumes a PostgreSQL database. Any database supported by {project_name} will work.
 * Understanding of a <@links.operator id="basic-deployment" /> of {project_name} with the {project_name} Operator.
 
@@ -44,17 +43,17 @@ kubectl --namespace keycloak create configmap keycloak-db-rootcert --from-file d
 +
 [source,yaml]
 ----
-include::../examples/generated/keycloak-cacheless.yaml[tag=keycloak-cacheless]
+include::../examples/generated/keycloak-stateless.yaml[tag=keycloak-stateless]
 ----
 <1> Set the database URL.
 <2> The database connection pool initial, max and min size should be identical to allow statement caching for the database.
 Adjust this number to meet the needs of your system.
-With the cacheless feature, authentication sessions and action tokens are stored in the database, which increases database load compared to setups with an external {jdgserver_name} cluster. Adjust the pool size accordingly.
+With the `stateless` feature, authentication sessions and action tokens are stored in the database, which increases database load compared to setups with an external {jdgserver_name} cluster. Adjust the pool size accordingly.
 See the <@links.ha id="multi-cluster-concepts-database-connections" /> {section} for details.
 <3> Specify the URL to your custom {project_name} image. If your image is optimized, set the `startOptimized` flag to `true`.
-<4> Enable the `cacheless` feature to remove the requirement for an external {jdgserver_name} cluster.
+<4> Enable the `stateless` feature to remove the requirement for an external {jdgserver_name} cluster.
 <5> Set a unique cluster name that identifies this cluster. Each cluster must have a distinct name; no two clusters may share the same name.
-This option is only available if the `cacheless` feature is enabled.
+This option is only available if the `stateless` feature is enabled.
 <6> To be able to analyze the system under load, enable the metrics endpoint.
 <7> Secure the database connection.
 <8> Specify the `ConfigMap` name that contains the database certificate bundle.

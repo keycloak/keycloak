@@ -203,7 +203,6 @@ jobs:
       - name: Arrange OLM test installation for all namespaces
         working-directory: operator
         run: |
-          kubectl patch csv keycloak-operator.v86400000.0.0 --type merge --patch '{"spec": {"installModes": [{"type": "AllNamespaces","supported": true}]}}'
           kubectl patch operatorgroup og --type json --patch '[{"op":"remove","path":"/spec/targetNamespaces"}]'
        
       - name: Deploy an example Keycloak in a different namespace and wait for it to be ready

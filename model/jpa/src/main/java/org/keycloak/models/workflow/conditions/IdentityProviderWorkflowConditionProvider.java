@@ -69,10 +69,10 @@ public class IdentityProviderWorkflowConditionProvider implements WorkflowCondit
     @Override
     public void validate() {
         if (StringUtil.isBlank(expectedAlias)) {
-            throw new WorkflowInvalidStateException("Expected identity provider alias is not set.");
+            throw new WorkflowInvalidStateException("workflowConditionIdpNotSet");
         }
         if (session.identityProviders().getByAlias(expectedAlias) == null) {
-            throw new WorkflowInvalidStateException(String.format("Identity provider %s does not exist.", expectedAlias));
+            throw new WorkflowInvalidStateException("workflowConditionIdpNotFound", expectedAlias);
         }
     }
 

@@ -58,7 +58,9 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
     public static final String SOCKET_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.socketTimeout";
     public static final String ORACLEDB_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.oracle.net.CONNECT_TIMEOUT";
+    public static final String ORACLEDB_CONNECTION_PROPERTIES = "quarkus.datasource.jdbc.additional-jdbc-properties.ConnectionProperties";
     public static final String MSSQL_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.loginTimeout";
+    private static final String ORACLE_NET_CONNECT_TIMEOUT = "oracle.net.CONNECT_TIMEOUT";
     public static final String JDBC_LOGIN_TIMEOUT = "quarkus.datasource.jdbc.login-timeout";
     public static final String JDBC_ACQUISITION_TIMEOUT = "quarkus.datasource.jdbc.acquisition-timeout";
 
@@ -101,8 +103,12 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getConnectTimeout(EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.MARIADB, Database.Vendor.POSTGRES, Database.Vendor.TIDB), "connectTimeout"))
                         .build(),
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(ORACLEDB_CONNECTION_PROPERTIES)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getOracleConnectTimeout(true))
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(ORACLEDB_CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getConnectTimeout(EnumSet.of(Database.Vendor.ORACLE), "oracle.net.CONNECT_TIMEOUT"))
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getOracleConnectTimeout(false))
                         .build(),
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(MSSQL_CONNECT_TIMEOUT)
@@ -368,12 +374,46 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
             if (vendor == Vendor.MSSQL || vendor == Vendor.POSTGRES) {
                 return durationToSeconds(value);
             }
-            if (vendor == Vendor.MYSQL || vendor == Vendor.MARIADB || vendor == Vendor.ORACLE || vendor == Vendor.TIDB) {
+            if (vendor == Vendor.MYSQL || vendor == Vendor.MARIADB || vendor == Vendor.TIDB) {
                 return durationToMillis(value);
             }
 
             // We don't know if it is seconds or milliseconds for other databases.
             throw new IllegalArgumentException("Vendor " + vendor + " not supported for socket timeout calculation");
+        };
+    }
+
+    private static ValueMapper getOracleConnectTimeout(boolean forXa) {
+        return (String datasource, String value, ConfigSourceInterceptorContext context) -> {
+            String db = getDatasourceOptionValue(DB, datasource).orElse(null);
+            Database.Vendor vendor = Database.getVendor(db).orElse(null);
+
+            if (checkSettingsAndVendor(EnumSet.of(Database.Vendor.ORACLE), ORACLE_NET_CONNECT_TIMEOUT, datasource, vendor, db)) {
+                return null;
+            }
+
+            var key = StringUtil.isNotBlank(datasource) ? TransactionOptions.getNamedTxXADatasource(datasource) : TransactionOptions.TRANSACTION_XA_ENABLED.getKey();
+            boolean isXaEnabled = Configuration.isKcPropertyTrue(key);
+
+            if (forXa != isXaEnabled) {
+                return null;
+            }
+
+            if (forXa) {
+                String connectionPropertiesKey = StringUtil.isNotBlank(datasource)
+                        ? "quarkus.datasource.\"" + datasource + "\".jdbc.additional-jdbc-properties.ConnectionProperties"
+                        : ORACLEDB_CONNECTION_PROPERTIES;
+                ConfigValue existing = context.proceed(connectionPropertiesKey);
+                if (existing != null && existing.getValue() != null) {
+                    if (!existing.getValue().contains(ORACLE_NET_CONNECT_TIMEOUT)) {
+                        log.warnf("Custom ConnectionProperties does not contain '%s'; the socket connect timeout will not be set.",
+                                ORACLE_NET_CONNECT_TIMEOUT);
+                    }
+                    return null;
+                }
+                return ORACLE_NET_CONNECT_TIMEOUT + "=" + durationToMillis(value);
+            }
+            return durationToMillis(value);
         };
     }
 
