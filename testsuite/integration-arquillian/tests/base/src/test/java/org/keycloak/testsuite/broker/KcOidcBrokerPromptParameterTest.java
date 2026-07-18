@@ -10,6 +10,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 
 import org.junit.jupiter.api.Assertions;
 
+import org.junit.Test;
+
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 public class KcOidcBrokerPromptParameterTest extends AbstractBrokerTest {
@@ -74,6 +76,31 @@ public class KcOidcBrokerPromptParameterTest extends AbstractBrokerTest {
 
         Assertions.assertTrue(isUserFound,
                 "There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName());
+    }
+
+    @Test
+    public void testPromptCreateNotForwardedToIdP() {
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        // Use "create login" so the auth endpoint stores both values in the session
+        // but does not redirect to the registration page (which has no social buttons).
+        driver.navigate().to(driver.getCurrentUrl() + "&" + OIDCLoginProtocol.PROMPT_PARAM + "="
+                + OIDCLoginProtocol.PROMPT_VALUE_CREATE + " " + PROMPT_LOGIN);
+
+        log.debug("Clicking social " + bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
+
+        waitForPage(driver, "sign in to", true);
+
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+
+        Assert.assertFalse(OIDCLoginProtocol.PROMPT_PARAM + "=" + OIDCLoginProtocol.PROMPT_VALUE_CREATE + " should NOT be part of the url",
+                driver.getCurrentUrl().contains(OIDCLoginProtocol.PROMPT_PARAM + "=" + OIDCLoginProtocol.PROMPT_VALUE_CREATE));
+
+        Assert.assertTrue(OIDCLoginProtocol.PROMPT_PARAM + "=" + PROMPT_LOGIN + " should be part of the url",
+                driver.getCurrentUrl().contains(OIDCLoginProtocol.PROMPT_PARAM + "=" + PROMPT_LOGIN));
     }
 
     private class KcOidcBrokerConfiguration2 extends KcOidcBrokerConfiguration {
