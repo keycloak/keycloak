@@ -36,6 +36,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -48,6 +49,10 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.admin.ClientScopeMappingRegisterContext;
+import org.keycloak.services.clientpolicy.context.admin.ClientScopeMappingRemoveContext;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.util.ScopeMappedUtil;
@@ -183,7 +188,7 @@ public class ScopeMappedResource {
      * to show a comprehensive total view of realm-level roles associated with the client.
      *
      * @param briefRepresentation if false, return roles with their attributes
-     * 
+     *
      * @return
      */
     @Path("realm/composite")
@@ -191,7 +196,7 @@ public class ScopeMappedResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
-    @Operation(summary = "Get effective realm-level roles associated with the client’s scope What this does is recurse any composite roles associated with the client’s scope and adds the roles to this lists.",
+    @Operation(summary = "Get effective realm-level roles associated with the client's scope. What this does is recurse any composite roles associated with the client's scope and adds the roles to this list.",
         description = "The method is really to show a comprehensive total view of realm-level roles associated with the client.")
     public Stream<RoleRepresentation> getCompositeRealmScopeMappings(@Parameter(description = "if false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
@@ -225,12 +230,22 @@ public class ScopeMappedResource {
             throw new NotFoundException("Could not find client");
         }
 
-        for (RoleRepresentation role : roles) {
+        List<RoleModel> roleModels = roles.stream().map(role -> {
             RoleModel roleModel = realm.getRoleById(role.getId());
             if (roleModel == null) {
                 throw new NotFoundException("Role not found");
             }
             auth.roles().requireMapClientScope(roleModel);
+            return roleModel;
+        }).collect(Collectors.toList());
+
+        try {
+            session.clientPolicy().triggerOnEvent(new ClientScopeMappingRegisterContext(scopeContainer, null, roles, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+
+        for (RoleModel roleModel : roleModels) {
             scopeContainer.addScopeMapping(roleModel);
         }
 
@@ -254,24 +269,38 @@ public class ScopeMappedResource {
             throw new NotFoundException("Could not find client");
         }
 
+        List<RoleModel> roleModels;
+        List<RoleRepresentation> effectiveRoles;
         if (roles == null) {
-            roles = scopeContainer.getRealmScopeMappingsStream()
+            roleModels = scopeContainer.getRealmScopeMappingsStream()
                     .filter(auth.roles()::canMapClientScope)
-                    .peek(scopeContainer::deleteScopeMapping)
+                    .collect(Collectors.toList());
+            effectiveRoles = roleModels.stream()
                     .map(ModelToRepresentation::toBriefRepresentation)
                     .collect(Collectors.toList());
-       } else {
-            for (RoleRepresentation role : roles) {
+        } else {
+            effectiveRoles = roles;
+            roleModels = roles.stream().map(role -> {
                 RoleModel roleModel = realm.getRoleById(role.getId());
                 if (roleModel == null) {
                     throw new NotFoundException("Role not found");
                 }
                 auth.roles().requireMapClientScope(roleModel);
-                scopeContainer.deleteScopeMapping(roleModel);
-            }
+                return roleModel;
+            }).collect(Collectors.toList());
         }
 
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(roles).success();
+        try {
+            session.clientPolicy().triggerOnEvent(new ClientScopeMappingRemoveContext(scopeContainer, null, effectiveRoles, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+
+        for (RoleModel roleModel : roleModels) {
+            scopeContainer.deleteScopeMapping(roleModel);
+        }
+
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(effectiveRoles).success();
 
     }
 
