@@ -1,0 +1,15 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+This release features new capabilities for users and administrators of {project_name}. The highlights of this release are:
+
+* SAML `login_hint` query parameter support
+
+Read on to learn more about each new feature.
+If you are upgrading from a previous release, https://www.keycloak.org/docs/latest/upgrading/index.html[also review the changes listed in the upgrading guide].
+
+= Security and Standards
+
+== SAML `login_hint` query parameter support
+
+{project_name} can now forward the `login_hint` query parameter to SAML identity providers, allowing destination providers to pre-fill their login form. This behavior is controlled by a new *Use login_hint* option in the SAML identity provider configuration.
