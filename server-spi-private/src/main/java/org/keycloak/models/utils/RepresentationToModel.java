@@ -281,7 +281,7 @@ public class RepresentationToModel {
                             int digits = cred.getDigits() != null ? cred.getDigits() : 6;
                             int counter = cred.getCounter() != null ? cred.getCounter() : 0;
                             int period = cred.getPeriod() != null ? cred.getPeriod() : 30;
-                            OTPCredentialData credentialData = new OTPString algorithm = cred.getAlgorithm() != null ? cred.getAlgorithm() : HmacOTP.DEFAULT_ALGORITHM;
+                            String algorithm = cred.getAlgorithm() != null ? cred.getAlgorithm() : HmacOTP.DEFAULT_ALGORITHM;
                             OTPCredentialData credentialData = new OTPCredentialData(cred.getType(), digits, counter, period, algorithm, null); secretData = new OTPSecretData(cred.getHashedSaltedValue());
                             cred.setCredentialData(JsonSerialization.writeValueAsString(credentialData));
                             cred.setSecretData(JsonSerialization.writeValueAsString(secretData));
