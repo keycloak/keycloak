@@ -63,11 +63,11 @@ import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity;
-import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.models.OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE;
@@ -103,13 +103,16 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             throw new ModelValidationException("Name can not be null");
         }
 
-        if (StringUtil.isBlank(alias)) {
-            try {
-                ReservedCharValidator.validateNoSpace(name);
-            } catch (ReservedCharValidator.ReservedCharException e) {
-                throw new ModelValidationException("Name cannot be used as alias: " + e.getMessage());
-            }
+        if (StringUtil.isNullOrEmpty(alias)) {
+            // no alias was provided at all; default to the name. A non-empty but blank (e.g.
+            // whitespace-only) alias is not defaulted here and is rejected below instead.
             alias = name;
+        }
+
+        try {
+            OrganizationsValidation.validateAlias(alias);
+        } catch (OrganizationsValidation.OrganizationValidationException e) {
+            throw new ModelValidationException(e.getMessage());
         }
 
         if (getByName(name) != null) {

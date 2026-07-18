@@ -52,7 +52,6 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
-import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.SearchQueryUtils;
 import org.keycloak.utils.StringUtil;
 
@@ -107,8 +106,6 @@ public class OrganizationsResource {
         if (organization == null) {
             throw ErrorResponse.error("Organization cannot be null.", Response.Status.BAD_REQUEST);
         }
-
-        ReservedCharValidator.validateNoSpace(organization.getAlias());
 
         try {
             OrganizationsValidation.validateUrl(organization.getRedirectUrl());
