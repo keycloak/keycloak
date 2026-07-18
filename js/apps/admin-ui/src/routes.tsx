@@ -6,6 +6,7 @@ import { PageNotFoundSection } from "./PageNotFoundSection";
 import authenticationRoutes from "./authentication/routes";
 import clientScopesRoutes from "./client-scopes/routes";
 import clientRoutes from "./clients/routes";
+import testChapterRoutes from "./test-chapter/routes";
 import dashboardRoutes from "./dashboard/routes";
 import eventRoutes from "./events/routes";
 import groupsRoutes from "./groups/routes";
@@ -51,6 +52,7 @@ export const routes: AppRouteObject[] = [
   ...realmRoutes,
   ...realmSettingRoutes,
   ...sessionRoutes,
+  ...testChapterRoutes,
   ...userFederationRoutes,
   ...permissionsConfigurationRoute,
   ...userRoutes,
