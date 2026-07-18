@@ -21,6 +21,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -345,6 +346,7 @@ public class UserCreateTest extends AbstractUserTest {
         assertEquals(6, otpm.getOTPCredentialData().getDigits());
         assertEquals(0, otpm.getOTPCredentialData().getCounter());
         assertEquals(30, otpm.getOTPCredentialData().getPeriod());
+        assertEquals(HmacOTP.DEFAULT_ALGORITHM, otpm.getOTPCredentialData().getAlgorithm());
         assertEquals("otp", otpCred.getType());
     }
 
