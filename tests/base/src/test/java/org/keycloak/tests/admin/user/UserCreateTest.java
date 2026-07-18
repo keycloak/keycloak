@@ -20,6 +20,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -272,6 +273,79 @@ public class UserCreateTest extends AbstractUserTest {
         assertEquals("ABC", pcmh.getPasswordSecretData().getValue());
         assertEquals("theSalt", new String(pcmh.getPasswordSecretData().getSalt()));
         assertEquals(CredentialRepresentation.PASSWORD, credentialHashed.getType());
+    }
+
+
+    @Test
+    public void createUserWithDeprecatedCredentialsFormatMissingHashIterations() throws IOException {
+        // Configure realm password policy so the import can use it when hashIterations is absent
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
+        realmRep.setPasswordPolicy("hashIterations(30000)");
+        managedRealm.admin().update(realmRep);
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user_creds_no_iter");
+        user.setEmail("email.noiter@localhost");
+        user.setEnabled(true);
+
+        // Deprecated credential WITHOUT hashIterations — the exact regression path from #41640
+        String deprecatedCredential = "{\n" +
+                "      \"type\" : \"password\",\n" +
+                "      \"hashedSaltedValue\" : \"HASHVALUE\",\n" +
+                "      \"salt\" : \"" + Base64.getEncoder().encodeToString("theSalt".getBytes()) + "\",\n" +
+                "      \"algorithm\" : \"pbkdf2-sha256\"\n" +
+                "    }";
+
+        CredentialRepresentation deprecatedHashedPassword = JsonSerialization.readValue(deprecatedCredential, CredentialRepresentation.class);
+        Assertions.assertNull(deprecatedHashedPassword.getHashIterations());
+        Assertions.assertNull(deprecatedHashedPassword.getCredentialData());
+
+        user.setCredentials(Arrays.asList(deprecatedHashedPassword));
+
+        // Must not throw NullPointerException (the regression from #41640)
+        createUser(user, false);
+
+        // Credential imported using realm policy hash iterations
+        CredentialModel credentialHashed = fetchCredentials("user_creds_no_iter");
+        assertNotNull(credentialHashed, "Expecting credential to be imported using realm policy iterations");
+        PasswordCredentialModel pcmh = PasswordCredentialModel.createFromCredentialModel(credentialHashed);
+        assertEquals(30000, pcmh.getPasswordCredentialData().getHashIterations());
+        assertEquals(CredentialRepresentation.PASSWORD, credentialHashed.getType());
+    }
+
+
+    @Test
+    public void createUserWithDeprecatedOtpCredentialsMissingFields() throws IOException {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user_otp_defaults");
+        user.setEmail("email.otpdefaults@localhost");
+        user.setEnabled(true);
+
+        // Deprecated TOTP credential without digits, counter, or period — tests proactive OTP fix
+        String deprecatedCredential = "{\n" +
+                "      \"type\" : \"totp\",\n" +
+                "      \"hashedSaltedValue\" : \"TOTPSECRET\"\n" +
+                "    }";
+
+        CredentialRepresentation deprecatedOtp = JsonSerialization.readValue(deprecatedCredential, CredentialRepresentation.class);
+        Assertions.assertNull(deprecatedOtp.getDigits());
+        Assertions.assertNull(deprecatedOtp.getCounter());
+        Assertions.assertNull(deprecatedOtp.getPeriod());
+        Assertions.assertNull(deprecatedOtp.getCredentialData());
+
+        user.setCredentials(Arrays.asList(deprecatedOtp));
+
+        // Must not throw NullPointerException when digits/counter/period are null
+        createUser(user, false);
+
+        // Credential stored with standard TOTP defaults
+        CredentialModel otpCred = fetchCredentials("user_otp_defaults");
+        assertNotNull(otpCred, "Expecting OTP credential to be imported with default values");
+        OTPCredentialModel otpm = OTPCredentialModel.createFromCredentialModel(otpCred);
+        assertEquals(6, otpm.getOTPCredentialData().getDigits());
+        assertEquals(0, otpm.getOTPCredentialData().getCounter());
+        assertEquals(30, otpm.getOTPCredentialData().getPeriod());
+        assertEquals("otp", otpCred.getType());
     }
 
     @Test
