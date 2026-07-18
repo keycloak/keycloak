@@ -133,6 +133,7 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
@@ -1390,6 +1391,7 @@ public class RepresentationToModel {
         updateResources(representation, model, authorization);
         updateScopes(representation, model, storeFactory);
         updateAssociatedPolicies(representation, model, storeFactory);
+        validateScopesAssociatedWithResources(representation, model, authorization);
 
         PolicyProviderFactory provider = authorization.getProviderFactory(model.getType());
 
@@ -1461,6 +1463,48 @@ public class RepresentationToModel {
         }
 
         policy.removeConfig("scopes");
+    }
+
+    private static void validateScopesAssociatedWithResources(AbstractPolicyRepresentation representation, Policy policy, AuthorizationProvider authorization) {
+        if (!(representation instanceof ScopePermissionRepresentation)) {
+            // only scope-based permissions bind scopes to specific resources
+            return;
+        }
+
+        String resourceType = representation.getResourceType();
+
+        if (resourceType != null && !resourceType.isEmpty()) {
+            // permissions applied to a resource type manage their scopes through the type
+            return;
+        }
+
+        if (policy.getResources().isEmpty() || policy.getScopes().isEmpty()) {
+            // resource-less scope permissions are not bound to any resource
+            return;
+        }
+
+        ResourceServer resourceServer = policy.getResourceServer();
+        ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
+        Set<String> resourceScopeIds = new HashSet<>();
+
+        for (Resource resource : policy.getResources()) {
+            resource.getScopes().forEach(scope -> resourceScopeIds.add(scope.getId()));
+
+            // a typed resource not owned by the resource server inherits the scopes defined by its resource type
+            if (resource.getType() != null && !resourceServer.getClientId().equals(resource.getOwner())) {
+                resourceStore.findByType(resourceServer, resource.getType(), resourceServer.getClientId(), typed -> {
+                    if (!typed.getId().equals(resource.getId())) {
+                        typed.getScopes().forEach(scope -> resourceScopeIds.add(scope.getId()));
+                    }
+                });
+            }
+        }
+
+        for (Scope scope : policy.getScopes()) {
+            if (!resourceScopeIds.contains(scope.getId())) {
+                throw new ModelValidationException("Scope [" + scope.getName() + "] is not associated with any of the resources set to the permission");
+            }
+        }
     }
 
     private static void updateAssociatedPolicies(AbstractPolicyRepresentation representation, Policy policy, StoreFactory storeFactory) {
