@@ -31,6 +31,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import io.quarkus.runtime.Quarkus;
 import io.smallrye.config.ConfigValue;
+import io.smallrye.config.EnvConfigSource;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
@@ -80,6 +81,12 @@ public final class ShowConfig extends AbstractCommand {
             }
 
             PropertyMapper<?> mapper = PropertyMappers.getMapper(property);
+
+            // Ignore SmallRye-normalized duplicates of KC_* variables; KcEnvConfigSource provides the canonical keys.
+            if (mapper == null && property.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)
+                    && EnvConfigSource.NAME.equals(configValue.getSourceName())) {
+                return;
+            }
 
             if (mapper == null && configValue.getSourceName().equals("SysPropConfigSource") && !allowedSystemPropertyKeys.contains(property)) {
                 return; // most system properties are internally used, and not relevant during show-config
