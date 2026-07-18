@@ -335,6 +335,8 @@ public class Messages {
     public static final String WEBAUTHN_ERROR_AUTH_VERIFICATION = "webauthn-error-auth-verification";
     public static final String WEBAUTHN_ERROR_REGISTER_VERIFICATION = "webauthn-error-register-verification";
     public static final String WEBAUTHN_ERROR_USER_NOT_FOUND = "webauthn-error-user-not-found";
+    public static final String WEBAUTHN_ERROR_USER_NOT_PRESENT = "webauthn-error-user-not-present";
+    public static final String WEBAUTHN_ERROR_USER_NOT_VERIFIED = "webauthn-error-user-not-verified";
 
     // Conditions in Conditional Flow
     public static final String ACCESS_DENIED = "access-denied";

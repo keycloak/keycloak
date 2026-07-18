@@ -77,7 +77,7 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
                 tamperCreateOptions(
                         "opts.publicKey.authenticatorSelection = opts.publicKey.authenticatorSelection || {};" +
                         "opts.publicKey.authenticatorSelection.userVerification = 'discouraged';"),
-                "Verifier is configured to check user verified, but UV flag in authenticatorData is not set.");
+                "User verification is required.");
     }
 
     @Test
