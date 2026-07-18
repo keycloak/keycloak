@@ -30,6 +30,17 @@ public class BasicAuthHelperTest {
     }
 
     @Test
+    public void parseHeaderWithColonInPassword() {
+        String username = "client";
+        String password = "secret:with:colons";
+
+        String header = BasicAuthHelper.createHeader(username, password);
+        String[] actual = BasicAuthHelper.parseHeader(header);
+
+        assertArrayEquals(new String[] {username, password}, actual);
+    }
+
+    @Test
     public void rfc6749_createHeader() {
         String username = "user";
         String password = "secret/with=special?character";
