@@ -145,14 +145,14 @@ public class AttestationValidatorUtil {
 
         SignatureVerifierContext verifier;
         if (header.getX5c() != null && !header.getX5c().isEmpty()) {
-            verifier = verifierFromX5CChain(header.getX5c(), header.getAlgorithm().name(), keycloakSession);
+            verifier = verifierFromX5CChain(header.getX5c(), header.getRawAlgorithm(), keycloakSession);
         } else if (header.getKeyId() != null) {
             JWK resolvedJwk = keyResolver.resolveKey(header.getKeyId(), rawHeader,
                     JsonSerialization.mapper.convertValue(attestationBody, Map.class));
             if (resolvedJwk == null) {
                 throw new VCIssuerException(ErrorType.INVALID_PROOF, "Key with kid '" + header.getKeyId() + "' not found in trusted key registry");
             }
-            verifier = verifierFromResolvedJWK(resolvedJwk, header.getAlgorithm().name(), keycloakSession);
+            verifier = verifierFromResolvedJWK(resolvedJwk, header.getRawAlgorithm(), keycloakSession);
         } else {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Neither x5c nor kid present in attestation JWT header");
         }
