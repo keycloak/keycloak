@@ -96,6 +96,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.dto.OTPCredentialData;
 import org.keycloak.models.credential.dto.OTPSecretData;
@@ -280,8 +281,8 @@ public class RepresentationToModel {
                             int digits = cred.getDigits() != null ? cred.getDigits() : 6;
                             int counter = cred.getCounter() != null ? cred.getCounter() : 0;
                             int period = cred.getPeriod() != null ? cred.getPeriod() : 30;
-                            OTPCredentialData credentialData = new OTPCredentialData(cred.getType(), digits, counter, period, cred.getAlgorithm(), null);
-                            OTPSecretData secretData = new OTPSecretData(cred.getHashedSaltedValue());
+                            OTPCredentialData credentialData = new OTPString algorithm = cred.getAlgorithm() != null ? cred.getAlgorithm() : HmacOTP.DEFAULT_ALGORITHM;
+                            OTPCredentialData credentialData = new OTPCredentialData(cred.getType(), digits, counter, period, algorithm, null); secretData = new OTPSecretData(cred.getHashedSaltedValue());
                             cred.setCredentialData(JsonSerialization.writeValueAsString(credentialData));
                             cred.setSecretData(JsonSerialization.writeValueAsString(secretData));
                             cred.setPriority(20);
