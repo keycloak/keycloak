@@ -132,7 +132,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                 if (keyDescriptor != null) {
                     for (KeyDescriptorType keyDescriptorType : keyDescriptor) {
                         Element keyInfo = keyDescriptorType.getKeyInfo();
-                        Element x509KeyInfo = DocumentUtil.getChildElement(keyInfo, new QName("dsig", "X509Certificate"));
+                        Element x509KeyInfo = DocumentUtil.getChildElement(keyInfo, new QName(JBossSAMLURIConstants.XMLDSIG_NSURI.get(), "X509Certificate", "ds"));
 
                         if (KeyTypes.SIGNING.equals(keyDescriptorType.getUse())) {
                             samlIdentityProviderConfig.addSigningCertificate(x509KeyInfo.getTextContent());

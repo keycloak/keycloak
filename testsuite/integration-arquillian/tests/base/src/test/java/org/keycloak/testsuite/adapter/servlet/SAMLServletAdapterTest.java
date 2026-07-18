@@ -1620,7 +1620,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
         log.debug("Removing KeyInfo from Keycloak response");
         Document responseDoc = documentHolder.getSamlDocument();
-        IOUtil.removeElementFromDoc(responseDoc, "samlp:Response/dsig:Signature/dsig:KeyInfo");
+        IOUtil.removeElementFromDoc(responseDoc, "samlp:Response/ds:Signature/ds:KeyInfo");
 
         CloseableHttpResponse response = null;
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
