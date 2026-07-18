@@ -266,7 +266,7 @@ To keep the old behavior, update your realm configuration and extend the session
 = Support for legacy `redirect_uri` parameter and SPI options has been removed
 
 Previous versions of {project_name} had supported automatic logout of the user and redirecting to the application by opening logout endpoint URL such as
-`http(s)://example-host/auth/realms/my-realm-name/protocol/openid-connect/logout?redirect_uri=encodedRedirectUri`. This functionality was deprecated in {project_name} 18 and has been removed in this version in favor of following the OpenID Connect specification.
+`http(s)://example-host/auth/realms/{realm-name}/protocol/openid-connect/logout?redirect_uri=encodedRedirectUri`. This functionality was deprecated in {project_name} 18 and has been removed in this version in favor of following the OpenID Connect specification.
 
 As part of this change the following related configuration options for the SPI have been removed:
 
