@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { emptyFormatter } from "../util";
+import { UserDetailModal } from "./UserDetalModal";
 
 type UserRow = UserRepresentation & { onSelect: () => void };
 
@@ -41,10 +42,14 @@ export const SecondTab = () => {
     }));
   };
 
-  console.log(selectedUserId);
-
   return (
     <PageSection data-testid="users-table-tab" variant="light">
+      {selectedUserId && (
+        <UserDetailModal
+          userId={selectedUserId}
+          onClose={() => setSelectedUserId(undefined)}
+        />
+      )}
       <KeycloakDataTable
         isPaginated
         loader={loader}
