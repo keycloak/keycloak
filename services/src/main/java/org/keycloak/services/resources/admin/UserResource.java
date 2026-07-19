@@ -77,6 +77,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserLoginFailureModel;
@@ -308,8 +309,14 @@ public class UserResource {
             }
 
             reqActions.stream()
-                    .filter(action -> session.getKeycloakSessionFactory()
-                            .getProviderFactory(RequiredActionProvider.class, action) != null)
+                    .filter(action -> {
+                        // Required-action values stored on a user are realm aliases, which are not
+                        // necessarily equal to the provider factory id. Resolve the realm model by
+                        // alias first, then validate that its provider id maps to a registered factory.
+                        RequiredActionProviderModel model = session.getContext().getRealm().getRequiredActionProviderByAlias(action);
+                        return model != null && session.getKeycloakSessionFactory()
+                                .getProviderFactory(RequiredActionProvider.class, model.getProviderId()) != null;
+                    })
                     .forEach(user::addRequiredAction);
         }
 
