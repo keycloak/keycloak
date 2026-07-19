@@ -124,7 +124,7 @@ To make {project_name} issue such the access token, we could configure {project_
 * Add a client scope `mcp:resources` whose type is `Optional`.
 * Add to the client scope a new `Audience` mapper whose `Included Custom Audience` field is `+https://example.com/mcp+`.
 
-Please not that the client scope's `Included Custom Audience` field needs to be the same as the authorization request's `resource` parameter value and the MCP server's URL.
+Please note that the client scope's `Included Custom Audience` field needs to be the same as the authorization request's `resource` parameter value and the MCP server's URL.
 
 With the configuration, if the MCP client send to {project_name} an authorization request whose `resource` parameter value is `+https://example.com/mcp+` and `scope` parameter includes `mcp:resources`, `mcp:tools` and `mcp:prompts`, {project_name} can issue the following access token:
 
