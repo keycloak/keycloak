@@ -17,6 +17,8 @@ import org.keycloak.scim.resource.schema.ModelSchema;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import static java.util.function.Predicate.not;
+
 import static org.keycloak.utils.StringUtil.isBlank;
 
 public abstract class AbstractScimResourceTypeProvider<M extends Model, R extends ResourceTypeRepresentation> implements ScimResourceTypeProvider<R> {
@@ -77,13 +79,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
             throw new ForbiddenException();
         }
 
-        R resource = createResourceTypeInstance();
-
-        for (ModelSchema<M, R> schema : schemas) {
-            schema.populate(resource, model, attributes, excludedAttributes);
-        }
-
-        return resource;
+        return createResourceTypeInstance(model, attributes, excludedAttributes);
     }
 
     @Override
@@ -92,13 +88,8 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
             throw new ForbiddenException();
         }
 
-        return getModels(searchRequest).map(m -> {
-            try {
-                return get(m.getId(), searchRequest.getAttributes(), searchRequest.getExcludedAttributes());
-            } catch (ForbiddenException fe) {
-                return null;
-            }
-        }).filter(Objects::nonNull);
+        return getModels(searchRequest)
+                .map(m -> createResourceTypeInstance(m, searchRequest.getAttributes(), searchRequest.getExcludedAttributes()));
     }
 
     @Override
@@ -137,7 +128,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
                     case "add" -> schema.add(model, path, value);
                     case "replace" -> schema.replace(existing, model, path, value);
                     case "remove" -> schema.remove(existing, model, path);
-                    default -> throw new RuntimeException("Unsupported patch operation " + op);
+                    default -> throw new ModelValidationException("Unsupported patch operation " + op);
                 }
             }
         }
@@ -155,7 +146,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
     @Override
     public List<String> getSchemaExtensions() {
-        return schemaExtensions.stream().map(ModelSchema::getId).toList();
+        return schemaExtensions.stream().filter(not(ModelSchema::isInternal)).map(ModelSchema::getId).toList();
     }
 
     protected abstract R onCreate(R resource);
@@ -172,30 +163,44 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
     protected void populate(M model, R resource) {
         for (ModelSchema<M, R> schema : schemas) {
-            if (resource.hasSchema(schema.getId())) {
+            if (schema.supports(resource.getSchemas())) {
                 schema.populate(model, resource);
             }
         }
     }
 
-    private R createResourceTypeInstance() {
+    protected R createResourceTypeInstance(M model, List<String> attributes, List<String> excludedAttributes) {
         try {
-            return getResourceType().getDeclaredConstructor().newInstance();
+            R resource = getResourceType().getDeclaredConstructor().newInstance();
+
+            for (ModelSchema<M, R> schema : schemas) {
+                schema.populate(resource, model, attributes, excludedAttributes);
+            }
+
+            return resource;
         } catch (Exception e) {
             throw new RuntimeException("Could not create instance of resource type " + getResourceType(), e);
         }
     }
 
     private boolean canQuery() {
-        return session.getContext().getPermissions().hasPermission(getRealmResourceType(), AdminPermissionsSchema.QUERY);
+        return session.getContext().getPermissions().hasPermission(getRealmResourceType(), AdminPermissionsSchema.QUERY)
+                || session.getContext().getPermissions().hasPermission(getRealmResourceType(), AdminPermissionsSchema.VIEW);
     }
 
     private boolean hasPermission(String realmResourceType, String scope) {
         return session.getContext().getPermissions().hasPermission(realmResourceType, scope);
     }
 
-    private boolean hasPermission(M model, String realmResourceType, String scope) {
-        return session.getContext().getPermissions().hasPermission(model, realmResourceType, scope);
+    protected boolean hasPermission(M model, String realmResourceType, String scope) {
+        if (AdminPermissionsSchema.VIEW.equals(scope)) {
+            return session.getContext().getPermissions().hasPermission(model, realmResourceType, scope);
+        }
+
+        return session.getContext().getPermissions().hasPermission(model, realmResourceType, scope) && isManageable(model);
     }
 
+    protected boolean isManageable(M model) {
+        return true;
+    }
 }

@@ -36,6 +36,7 @@ import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -162,11 +163,10 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         Assertions.assertEquals(302, spnegoResponse.getStatus());
         List<UserRepresentation> users = testRealmResource().users().search("jduke", 0, 1);
         String userId = users.get(0).getId();
-        events.expectLogin()
-                .client("kerberos-app")
-                .user(userId)
-                .detail(Details.USERNAME, "jduke")
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId("kerberos-app")
+                .userId(userId)
+                .details(Details.USERNAME, "jduke");
 
         String codeUrl = spnegoResponse.getLocation().toString();
 

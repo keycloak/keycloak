@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -97,7 +98,7 @@ public class OrganizationInvitationResource {
     }
 
     public Response inviteUser(String email, String firstName, String lastName) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
 
         if (!organization.isEnabled()) {
             throw ErrorResponse.error("Organization is disabled", Status.BAD_REQUEST);
@@ -147,7 +148,7 @@ public class OrganizationInvitationResource {
     }
 
     public Response inviteExistingUser(String id) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
 
         if (!organization.isEnabled()) {
             throw ErrorResponse.error("Organization is disabled", Status.BAD_REQUEST);
@@ -160,7 +161,9 @@ public class OrganizationInvitationResource {
         UserModel user = session.users().getUserById(realm, id);
 
         if (user == null) {
-            throw ErrorResponse.error("User does not exist", Status.BAD_REQUEST);
+            throw auth.users().canQuery() ?
+                    ErrorResponse.error("User does not exist", Status.BAD_REQUEST) :
+                    new ForbiddenException();
         }
 
         if (StringUtil.isBlank(user.getEmail())) {
@@ -196,7 +199,10 @@ public class OrganizationInvitationResource {
             throw ErrorResponse.error("Failed to send invite email", Status.INTERNAL_SERVER_ERROR);
         }
 
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
+        adminEvent.operation(OperationType.ACTION)
+                .representation(toMinimalRepresentation(invitation))
+                .resourcePath(session.getContext().getUri())
+                .success();
 
         return Response.noContent().build();
     }
@@ -262,6 +268,7 @@ public class OrganizationInvitationResource {
             @QueryParam("search") String search,
             @QueryParam("firstName") String firstName,
             @QueryParam("lastName") String lastName) {
+        auth.orgs().requireManage(organization);
 
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         Map<Filter, String> filters = new HashMap<>();
@@ -302,6 +309,7 @@ public class OrganizationInvitationResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public OrganizationInvitationRepresentation getInvitation(@PathParam("id") String id) {
+        auth.orgs().requireManage(organization);
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
 
@@ -317,13 +325,16 @@ public class OrganizationInvitationResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response deleteInvitation(@PathParam("id") String id) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
 
-        verifyInvitationById(invitationManager, id);
+        OrganizationInvitationModel invitation = verifyInvitationById(invitationManager, id);
         invitationManager.remove(id);
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+        adminEvent.operation(OperationType.DELETE)
+                .representation(toMinimalRepresentation(invitation))
+                .resourcePath(session.getContext().getUri())
+                .success();
 
         return Response.noContent().build();
     }
@@ -337,7 +348,7 @@ public class OrganizationInvitationResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response resendInvitation(@PathParam("id") String id) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
 
         if (!organization.isEnabled()) {
             throw ErrorResponse.error("Organization is disabled", Status.BAD_REQUEST);
@@ -380,6 +391,16 @@ public class OrganizationInvitationResource {
                 PENDING;
         rep.setStatus(dynamicStatus);
 
+        return rep;
+    }
+
+    private OrganizationInvitationRepresentation toMinimalRepresentation(OrganizationInvitationModel model) {
+        if (model == null) return null;
+
+        OrganizationInvitationRepresentation rep = new OrganizationInvitationRepresentation();
+        rep.setId(model.getId());
+        rep.setEmail(model.getEmail());
+        rep.setOrganizationId(model.getOrganizationId());
         return rep;
     }
 

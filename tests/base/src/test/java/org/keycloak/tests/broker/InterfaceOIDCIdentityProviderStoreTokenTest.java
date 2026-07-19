@@ -14,11 +14,12 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -182,11 +183,11 @@ public interface InterfaceOIDCIdentityProviderStoreTokenTest extends InterfaceId
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
 
-            realm.addUser("testuser")
+            realm.users(UserBuilder.create("testuser")
                     .name("Test", "User")
                     .email("test@localhost")
                     .emailVerified(Boolean.TRUE)
-                    .password("password");
+                    .password("password"));
             return realm;
         }
     }
@@ -195,17 +196,17 @@ public interface InterfaceOIDCIdentityProviderStoreTokenTest extends InterfaceId
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.identityProvider(IdentityProviderBuilder.create()
+            realm.identityProviders(IdentityProviderBuilder.create()
                     .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                     .alias(IDP_ALIAS)
-                    .setAttribute("clientId", "test-app-external-realm")
-                    .setAttribute("clientSecret", "test-secret")
-                    .setAttribute(IdentityProviderModel.SYNC_MODE, "IMPORT")
-                    .setAttribute(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/openid-connect/token")
-                    .setAttribute("authorizationUrl", "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/openid-connect/auth")
-                    .setAttribute("logoutUrl", "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/openid-connect/logout")
-                    .setAttribute("backchannelSupported", Boolean.TRUE.toString())
-                    .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/openid-connect/cert")
+                    .attribute("clientId", "test-app-external-realm")
+                    .attribute("clientSecret", "test-secret")
+                    .attribute(IdentityProviderModel.SYNC_MODE, "IMPORT")
+                    .attribute(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/openid-connect/token")
+                    .attribute("authorizationUrl", "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/openid-connect/auth")
+                    .attribute("logoutUrl", "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/openid-connect/logout")
+                    .attribute("backchannelSupported", Boolean.TRUE.toString())
+                    .attribute(OIDCIdentityProviderConfig.JWKS_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/openid-connect/cert")
                     .storeToken(true)
                     .addReadTokenRoleOnCreate(true)
                     .build());

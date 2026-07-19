@@ -19,6 +19,7 @@ package org.keycloak.testsuite.account;
 import java.io.IOException;
 import java.util.List;
 
+import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -41,6 +42,8 @@ import org.junit.Test;
 import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.APP_ROOT;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -84,10 +87,10 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.getUsers().add(UserBuilder.create().username("no-account-access").password("password").build());
         testRealm.getUsers().add(UserBuilder.create().username("view-account-access").clientRoles("account", "view-profile").password("password").build());
-        testRealm.getUsers().add(UserBuilder.create().username("view-applications-access").roles("user", "offline_access").clientRoles("account", "view-applications").clientRoles("account", "manage-consent").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("view-applications-access").realmRoles("user", "offline_access").clientRoles("account", "view-applications").clientRoles("account", "manage-consent").password("password").build());
         testRealm.getUsers().add(UserBuilder.create().username("view-consent-access").clientRoles("account", "view-consent").password("password").build());
         testRealm.getUsers().add(UserBuilder.create().username("manage-consent-access").clientRoles("account", "manage-consent").clientRoles("account", "view-profile").password("password").build());
-        testRealm.getUsers().add(UserBuilder.create().username("manage-account-access").clientRoles("account", "view-profile").clientRoles("account", "manage-account").roles("user", "offline_access").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("manage-account-access").clientRoles("account", "view-profile").clientRoles("account", "manage-account").realmRoles("user", "offline_access").password("password").build());
 
         org.keycloak.representations.idm.ClientRepresentation inUseApp = ClientBuilder.create().clientId("in-use-client")
                 .id(KeycloakModelUtils.generateId())
@@ -136,6 +139,14 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
     @Test
     @DisableFeature(value = ACCOUNT_API, skipRestart = true)
     public void testFeatureDoesntWorkWhenDisabled() {
+        checkIfFeatureWorks(false);
+    }
+
+    @Test
+    @DisableFeature(value = ACCOUNT_API, skipRestart = true)
+    public void testVersionedApiDoesntWorkWhenDisabled() {
+        apiVersion = AccountRestApiVersion.DEFAULT.getStrVersion();
+        assertThat(getAccountUrl(""), containsString(apiVersion));
         checkIfFeatureWorks(false);
     }
 

@@ -99,7 +99,7 @@ public class LDAPExternalChangesTest extends AbstractLDAPTest {
         tokenResponse = oauth.doPasswordGrantRequest(originalEmail, "Password1");
         assertTrue(tokenResponse.isSuccess());
 
-        setTimeOffset(610);
+        timeOffSet.set(610);
 
         tokenResponse = oauth.doPasswordGrantRequest(originalEmail, "Password1");
         assertFalse(tokenResponse.isSuccess());
@@ -149,7 +149,7 @@ public class LDAPExternalChangesTest extends AbstractLDAPTest {
         tokenResponse = oauth.doPasswordGrantRequest(originalUsername, "Password1");
         assertTrue(tokenResponse.isSuccess());
 
-        setTimeOffset(610);
+        timeOffSet.set(610);
 
         tokenResponse = oauth.doPasswordGrantRequest(originalUsername, "Password1");
         assertFalse(tokenResponse.isSuccess());

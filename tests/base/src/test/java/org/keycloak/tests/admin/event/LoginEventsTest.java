@@ -96,16 +96,16 @@ public class LoginEventsTest {
         List<EventRepresentation> events = events();
         Assertions.assertEquals(1, events.size());
         EventAssertion.assertError(events.get(0))
-                .type(EventType.LOGIN_ERROR).isCodeId()
+                .type(EventType.LOGIN_ERROR)
                 .error("user_not_found")
                 .userId(null)
                 .sessionId(null)
-                .isCodeId()
+                .hasCodeId()
                 .hasIpAddress()
                 .details(Details.AUTH_METHOD, "openid-connect")
                 .details(Details.AUTH_TYPE, "code")
                 .details(Details.USERNAME, "bad")
-                .details(Details.REDIRECT_URI, "http://127.0.0.1:8500/callback/oauth");
+                .details(Details.REDIRECT_URI, oAuthClient.getRedirectUri());
     }
 
     @Test
@@ -126,7 +126,7 @@ public class LoginEventsTest {
         badLogin();
         Assertions.assertEquals(0, events().size());
 
-        managedRealm.updateWithCleanup(r -> r.setEnabledEventTypes("LOGIN_ERROR"));
+        managedRealm.updateWithCleanup(r -> r.setEnabledEventTypes(List.of("LOGIN_ERROR")));
 
         badLogin();
         Assertions.assertEquals(1, events().size());
@@ -241,21 +241,6 @@ public class LoginEventsTest {
         badLogin();
         Assertions.assertEquals(0, events().size());
     }
-
-
-    /*
-    Removed this test because it takes too long.  The default interval for
-    event cleanup is 15 minutes (900 seconds).  I don't have time to figure out
-    a way to set the cleanup thread to a lower interval for testing.
-    @Test
-    public void eventExpirationTest() {
-        configRep.setEventsExpiration(1L); //  second
-        saveConfig();
-        badLogin();
-        assertEquals(1, events().size());
-        pause(900); // pause 900 seconds
-        assertEquals(0, events().size());
-    }**/
 
     private static class LoginEventsRealmConfig implements RealmConfig {
 

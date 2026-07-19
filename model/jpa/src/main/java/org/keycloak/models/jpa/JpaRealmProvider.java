@@ -40,6 +40,7 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.MapJoin;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.client.clienttype.ClientTypeManager;
@@ -75,6 +76,7 @@ import org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity;
 import org.keycloak.models.jpa.entities.ClientScopeEntity;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
+import org.keycloak.models.jpa.entities.GroupRoleMappingEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RealmLocalizationTextsEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
@@ -506,6 +508,22 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
+    public Stream<RoleModel> getCompositeRolesStream(RealmModel realm, Set<String> parentRoleIds) {
+        if (parentRoleIds == null || parentRoleIds.isEmpty()) {
+            return Stream.empty();
+        }
+        // One query fetches the child roles for every parent in the frontier, so a composite-role
+        // tree expands with a single getChildRolesFromParentIds query per breadth-first level. The
+        // query hydrates the child RoleEntity rows, so the getRoleById calls below are served from
+        // the persistence context without extra round-trips.
+        TypedQuery<RoleEntity> query = em.createNamedQuery("getChildRolesFromParentIds", RoleEntity.class)
+                .setParameter("parentRoleIds", parentRoleIds);
+        return closing(query.getResultStream())
+                .map(roleEntity -> session.roles().getRoleById(realm, roleEntity.getId()))
+                .filter(Objects::nonNull);
+    }
+
+    @Override
     public GroupModel getGroupById(RealmModel realm, String id) {
         GroupEntity groupEntity = em.find(GroupEntity.class, id);
         if (groupEntity == null) return null;
@@ -734,14 +752,30 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public Stream<GroupModel> getGroupsByRoleStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
-        TypedQuery<GroupEntity> query = em.createNamedQuery("groupsInRole", GroupEntity.class);
-        query.setParameter("roleId", role.getId());
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
+        Root<GroupEntity> root = queryBuilder.from(GroupEntity.class);
 
-        Stream<GroupEntity> results = paginateQuery(query, firstResult, maxResults).getResultStream();
+        queryBuilder.select(root.get("id"));
 
-        return closing(results
-                .map(g -> (GroupModel) new GroupAdapter(session, realm, em, g))
-                .sorted(GroupModel.COMPARE_BY_NAME));
+        Subquery<String> roleMappingSubquery = queryBuilder.subquery(String.class);
+        Root<GroupRoleMappingEntity> roleMappingRoot = roleMappingSubquery.from(GroupRoleMappingEntity.class);
+        roleMappingSubquery.select(roleMappingRoot.get("group").get("id"));
+        roleMappingSubquery.where(builder.equal(roleMappingRoot.get("roleId"), role.getId()));
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(root.get("id").in(roleMappingSubquery));
+        predicates.add(builder.equal(root.get("realm"), realm.getId()));
+        predicates.add(builder.equal(root.get("type"), Type.REALM.intValue()));
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, realm, builder, queryBuilder, root));
+
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+        queryBuilder.orderBy(builder.asc(root.get("name")));
+
+        return closing(paginateQuery(em.createQuery(queryBuilder), firstResult, maxResults).getResultStream()
+                .map(g -> session.groups().getGroupById(realm, g))
+                .filter(Objects::nonNull));
     }
 
     @Override
@@ -1143,7 +1177,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             }
         });
 
-        int countRemoved = em.createNamedQuery("deleteClientScopeClientMappingByClient")
+        em.createNamedQuery("deleteClientScopeClientMappingByClient")
                 .setParameter("clientId", clientEntity.getId())
                 .executeUpdate();
         em.remove(clientEntity);  // i have no idea why, but this needs to come before deleteScopeMapping

@@ -18,9 +18,9 @@
                 <@passwordCommons.logoutOtherSessions/>
 
                 <@buttons.actionGroup horizontal=true>
-                    <@buttons.button id="kc-submit" label="doSubmit" class=["kcButtonPrimaryClass","kcButtonBlockClass"]/>
+                    <@buttons.button id="kc-submit" label="doSubmit"/>
                     <#if isAppInitiatedAction??>
-                        <@buttons.button id="kc-cancel" label="doCancel" class=["kcButtonSecondaryClass","kcButtonBlockClass"] name="cancel-aia" value="true"/>
+                        <@buttons.button id="kc-cancel" label="doCancel" type="secondary" name="cancel-aia" value="true"/>
                     </#if>
                 </@buttons.actionGroup>
             </div>

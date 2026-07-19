@@ -42,7 +42,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.runonserver.RunHelpers;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.commons.io.IOUtils;

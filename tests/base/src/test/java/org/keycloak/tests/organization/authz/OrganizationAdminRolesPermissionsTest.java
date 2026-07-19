@@ -25,6 +25,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -391,6 +392,66 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
     }
 
     @Test
+    public void testOrgGroupMembersRequiresQueryUsers() {
+        OrganizationRepresentation orgRep = createRepresentation("testGroupMembersOrg", "testGroupMembersOrg.org");
+        String orgId;
+        String userId;
+        String groupId;
+
+        try (
+                Keycloak realmAdminClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("realm-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            RealmResource realmAdminResource = realmAdminClient.realm(realm.getName());
+
+            try (Response response = realmAdminResource.organizations().create(orgRep)) {
+                assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+                orgId = ApiUtil.getCreatedId(response);
+                realm.cleanup().add(r -> r.organizations().get(orgId).delete().close());
+            }
+
+            GroupRepresentation groupRep = new GroupRepresentation();
+            groupRep.setName("test-group");
+            try (Response response = realmAdminResource.organizations().get(orgId).groups().addTopLevelGroup(groupRep)) {
+                assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+                groupId = ApiUtil.getCreatedId(response);
+            }
+
+            UserRepresentation userRep = UserBuilder.create()
+                    .username("user@testGroupMembersOrg.org")
+                    .email("user@testGroupMembersOrg.org")
+                    .build();
+            try (Response response = realmAdminResource.users().create(userRep)) {
+                userId = ApiUtil.getCreatedId(response);
+            }
+            try (Response response = realmAdminResource.organizations().get(orgId).members().addMember(userId)) {
+                assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+            }
+            realmAdminResource.organizations().get(orgId).groups().group(groupId).addMember(userId);
+        }
+
+        // view-orgs-admin has view-organizations but NOT query-users — should get 403
+        try (
+                Keycloak viewOrgsClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("view-orgs-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            try {
+                viewOrgsClient.realm(realm.getName()).organizations().get(orgId).groups().group(groupId).getMembers(null, null, null);
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+        }
+
+        // view-orgs-and-users-admin has view-organizations + view-users — should succeed
+        try (
+                Keycloak viewOrgsAndUsersClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("view-orgs-and-users-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            assertThat(viewOrgsAndUsersClient.realm(realm.getName()).organizations().get(orgId).groups().group(groupId).getMembers(null, null, null),
+                    Matchers.not(Matchers.empty()));
+        }
+    }
+
+    @Test
     public void testIdpLinkingRequiresManageIdentityProviders() {
         // manage-orgs-only-admin has manage-organizations but NOT manage-identity-providers
         // manage-orgs-admin has both manage-organizations AND manage-identity-providers
@@ -434,6 +495,28 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             RealmResource manageOrgsOnlyResource = manageOrgsOnlyClient.realm(realm.getName());
 
             try (Response response = manageOrgsOnlyResource.organizations().get(orgId).identityProviders().addIdentityProvider("testIdpLink")) {
+                assertThat(response.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
+            }
+        }
+
+        // re-link the IdP so we can test unlink
+        try (
+                Keycloak manageOrgsClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("manage-orgs-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            try (Response response = manageOrgsClient.realm(realm.getName()).organizations().get(orgId).identityProviders().addIdentityProvider("testIdpLink")) {
+                assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+            }
+        }
+
+        // manage-orgs-only-admin cannot unlink IdP either (no manage-identity-providers)
+        try (
+                Keycloak manageOrgsOnlyClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("manage-orgs-only-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            RealmResource manageOrgsOnlyResource = manageOrgsOnlyClient.realm(realm.getName());
+
+            try (Response response = manageOrgsOnlyResource.organizations().get(orgId).identityProviders().get("testIdpLink").delete()) {
                 assertThat(response.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
             }
         }
@@ -493,6 +576,64 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
     }
 
     @Test
+    public void testIdpViewRequiresViewIdentityProviders() {
+        String orgId;
+
+        try (
+                Keycloak manageOrgsClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("manage-orgs-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            RealmResource manageOrgsResource = manageOrgsClient.realm(realm.getName());
+
+            OrganizationRepresentation orgRep = createRepresentation("testIdpViewOrg", "testIdpViewOrg.org");
+            try (Response response = manageOrgsResource.organizations().create(orgRep)) {
+                assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+                orgId = ApiUtil.getCreatedId(response);
+                realm.cleanup().add(r -> r.organizations().get(orgId).delete().close());
+            }
+
+            IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
+            idpRep.setAlias("testIdpView");
+            idpRep.setProviderId("oidc");
+            manageOrgsResource.identityProviders().create(idpRep).close();
+            realm.cleanup().add(r -> r.identityProviders().get(idpRep.getAlias()).remove());
+
+            try (Response response = manageOrgsResource.organizations().get(orgId).identityProviders().addIdentityProvider(idpRep.getAlias())) {
+                assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+            }
+        }
+
+        // view-orgs-admin has view-organizations but NOT view-identity-providers — cannot list or get org IdPs
+        try (
+                Keycloak viewOrgsClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("view-orgs-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            RealmResource viewOrgsResource = viewOrgsClient.realm(realm.getName());
+
+            try {
+                viewOrgsResource.organizations().get(orgId).identityProviders().getIdentityProviders();
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+
+            try {
+                viewOrgsResource.organizations().get(orgId).identityProviders().get("testIdpView").toRepresentation();
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+        }
+
+        // view-orgs-manage-idps-admin has view-organizations + manage-identity-providers — can list and get org IdPs
+        try (
+                Keycloak viewOrgsManageIdpsClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("view-orgs-manage-idps-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            RealmResource viewOrgsManageIdpsResource = viewOrgsManageIdpsClient.realm(realm.getName());
+
+            assertThat(viewOrgsManageIdpsResource.organizations().get(orgId).identityProviders().getIdentityProviders(), Matchers.not(Matchers.empty()));
+            assertThat(viewOrgsManageIdpsResource.organizations().get(orgId).identityProviders().get("testIdpView").toRepresentation(), Matchers.notNullValue());
+        }
+    }
+
+    @Test
     public void testQueryOrganizationsRole() {
         // first create an org and a member with the realm-admin
         OrganizationRepresentation orgRep = createRepresentation("testQueryOrg", "testQueryOrg.org");
@@ -534,8 +675,11 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             // count should return 0
             assertThat(queryOrgsResource.organizations().count("testQueryOrg"), equalTo(0L));
 
-            // getOrganizations for a member should return empty list
-            assertThat(queryOrgsResource.organizations().members().getOrganizations(userId), Matchers.empty());
+            // getOrganizations for a member should fail - requires user view permission
+            try {
+                queryOrgsResource.organizations().members().getOrganizations(userId);
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
 
             // get specific org should fail - requires view-organizations
             try {
@@ -676,14 +820,43 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             }
 
             invitationId = manageOrgsResource.organizations().get(orgId).invitations().list().get(0).getId();
+            assertThat(manageOrgsResource.organizations().get(orgId).invitations().get(invitationId), Matchers.notNullValue());
         }
 
-        // view-orgs-manage-users-admin cannot delete or resend invitations
+        // view-orgs-admin (view-organizations only) cannot list or get invitations
+        try (
+                Keycloak viewOrgsClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("view-orgs-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
+        ) {
+            RealmResource viewOrgsResource = viewOrgsClient.realm(realm.getName());
+
+            try {
+                viewOrgsResource.organizations().get(orgId).invitations().list();
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+
+            try {
+                viewOrgsResource.organizations().get(orgId).invitations().get(invitationId);
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+        }
+
+        // view-orgs-manage-users-admin cannot list, get, delete, or resend invitations
         try (
                 Keycloak viewOrgsManageUsersClient = adminClientFactory.create()
                         .realm(realm.getName()).username("view-orgs-manage-users-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()
         ) {
             RealmResource viewOrgsManageUsersResource = viewOrgsManageUsersClient.realm(realm.getName());
+
+            try {
+                viewOrgsManageUsersResource.organizations().get(orgId).invitations().list();
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+
+            try {
+                viewOrgsManageUsersResource.organizations().get(orgId).invitations().get(invitationId);
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
 
             try (Response response = viewOrgsManageUsersResource.organizations().get(orgId).invitations().delete(invitationId)) {
                 assertThat(response.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
@@ -769,7 +942,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             super.configure(realm);
-            realm.addUser("realm-admin")
+            realm.users(UserBuilder.create("realm-admin")
                     .password("password")
                     .name("realm", "admin")
                     .email("admin-user@localhost")
@@ -777,8 +950,8 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID,
                             AdminRoles.MANAGE_REALM,
                             AdminRoles.MANAGE_IDENTITY_PROVIDERS,
-                            AdminRoles.MANAGE_USERS);
-            realm.addUser("manage-orgs-admin")
+                            AdminRoles.MANAGE_USERS));
+            realm.users(UserBuilder.create("manage-orgs-admin")
                     .password("password")
                     .name("manage", "orgs")
                     .email("manage-orgs-admin@localhost")
@@ -786,64 +959,64 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID,
                             AdminRoles.MANAGE_ORGANIZATIONS,
                             AdminRoles.MANAGE_IDENTITY_PROVIDERS,
-                            AdminRoles.MANAGE_USERS);
-            realm.addUser("view-orgs-admin")
+                            AdminRoles.MANAGE_USERS));
+            realm.users(UserBuilder.create("view-orgs-admin")
                     .password("password")
                     .name("view", "orgs")
                     .email("view-orgs-admin@localhost")
                     .emailVerified(true)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID,
-                            AdminRoles.VIEW_ORGANIZATIONS);
-            realm.addUser("view-realm-admin")
+                            AdminRoles.VIEW_ORGANIZATIONS));
+            realm.users(UserBuilder.create("view-realm-admin")
                     .password("password")
                     .name("view", "realm")
                     .email("view-realm-admin@localhost")
                     .emailVerified(true)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID,
-                            AdminRoles.VIEW_REALM);
-            realm.addUser("manage-orgs-only-admin")
+                            AdminRoles.VIEW_REALM));
+            realm.users(UserBuilder.create("manage-orgs-only-admin")
                     .password("password")
                     .name("manage-only", "orgs")
                     .email("manage-orgs-only-admin@localhost")
                     .emailVerified(true)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID,
-                            AdminRoles.MANAGE_ORGANIZATIONS);
-            realm.addUser("view-orgs-and-users-admin")
+                            AdminRoles.MANAGE_ORGANIZATIONS));
+            realm.users(UserBuilder.create("view-orgs-and-users-admin")
                     .password("password")
                     .name("view", "orgs-and-users")
                     .email("view-orgs-and-users@localhost")
                     .emailVerified(true)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID,
                             AdminRoles.VIEW_ORGANIZATIONS,
-                            AdminRoles.VIEW_USERS);
-            realm.addUser("query-orgs-admin")
+                            AdminRoles.VIEW_USERS));
+            realm.users(UserBuilder.create("query-orgs-admin")
                     .password("password")
                     .name("query", "orgs")
                     .email("query-orgs@localhost")
                     .emailVerified(true)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID,
-                            AdminRoles.QUERY_ORGANIZATIONS);
-            realm.addUser("view-orgs-manage-users-admin")
+                            AdminRoles.QUERY_ORGANIZATIONS));
+            realm.users(UserBuilder.create("view-orgs-manage-users-admin")
                     .password("password")
                     .name("view-orgs", "manage-users")
                     .email("view-orgs-manage-users@localhost")
                     .emailVerified(true)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID,
                             AdminRoles.VIEW_ORGANIZATIONS,
-                            AdminRoles.MANAGE_USERS);
-            realm.addUser("view-orgs-manage-idps-admin")
+                            AdminRoles.MANAGE_USERS));
+            realm.users(UserBuilder.create("view-orgs-manage-idps-admin")
                     .password("password")
                     .name("view-orgs", "manage-idps")
                     .email("view-orgs-manage-idps@localhost")
                     .emailVerified(true)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID,
                             AdminRoles.VIEW_ORGANIZATIONS,
-                            AdminRoles.MANAGE_IDENTITY_PROVIDERS);
-            realm.addUser("test-user")
+                            AdminRoles.MANAGE_IDENTITY_PROVIDERS));
+            realm.users(UserBuilder.create("test-user")
                     .password("password")
                     .name("test", "user")
                     .email("test-user@localhost")
-                    .emailVerified(true);
+                    .emailVerified(true));
             return realm;
         }
     }

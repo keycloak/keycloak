@@ -14,7 +14,8 @@ export type UserTab =
   | "role-mapping"
   | "identity-provider-links"
   | "events"
-  | "workflows";
+  | "workflows"
+  | "verifiable-credentials";
 
 export type UserParams = {
   realm: string;

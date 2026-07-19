@@ -10,11 +10,11 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.MethodOrderer;
@@ -126,16 +126,16 @@ public class OIDCIdentityProviderJWTAuthorizationGrantTest extends AbstractJWTAu
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             super.configure(realm);
-            realm.identityProvider(
+            realm.identityProviders(
                     IdentityProviderBuilder.create()
                             .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                             .alias(IDP_ALIAS)
-                            .setAttribute("clientId", "test-client")
-                            .setAttribute(IdentityProviderModel.ISSUER, IDP_ISSUER)
-                            .setAttribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString())
-                            .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
-                            .setAttribute(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString())
-                            .setAttribute(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ENABLED, Boolean.TRUE.toString())
+                            .attribute("clientId", "test-client")
+                            .attribute(IdentityProviderModel.ISSUER, IDP_ISSUER)
+                            .attribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString())
+                            .attribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
+                            .attribute(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString())
+                            .attribute(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ENABLED, Boolean.TRUE.toString())
                             .build());
             return realm;
         }

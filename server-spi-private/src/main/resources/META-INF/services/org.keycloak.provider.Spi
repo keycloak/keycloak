@@ -111,5 +111,8 @@ org.keycloak.models.workflow.WorkflowStateSpi
 org.keycloak.models.workflow.WorkflowStepSpi
 org.keycloak.models.workflow.WorkflowSpi
 org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorSpi
+org.keycloak.protocol.oidc.rar.AuthorizationRequestParserSpi
+org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeSpi
 org.keycloak.cache.AlternativeLookupSPI
 org.keycloak.cache.LocalCacheSPI
+org.keycloak.models.RevokedTokenSpi

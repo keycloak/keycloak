@@ -30,6 +30,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
@@ -144,7 +145,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
         errorPage.assertCurrent();
         Assertions.assertEquals("Access denied", errorPage.getError());
 
-        events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.ACCESS_DENIED).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null).error(Errors.ACCESS_DENIED);
     }
 
     private void checkAllowed(String username) {
@@ -154,7 +155,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
         Assertions.assertNull(res.getError());
         Assertions.assertNotNull(res.getAccessToken());
 
-        events.expectLogin().user(AssertEvents.isUUID()).detail(Details.USERNAME, username).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).hasUserId().details(Details.USERNAME, username);
     }
 
     private void configureConditionalSubFlowExecutedAuthenticatorInFlow(String flowName, String check) {

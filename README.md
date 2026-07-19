@@ -77,6 +77,7 @@ If you wish to report an incident or appeal a moderation decision, please email 
 ## Other Keycloak Projects
 
 * [Keycloak](https://github.com/keycloak/keycloak) - Keycloak Server and Java adapters
+* [Keycloak Client](https://github.com/keycloak/keycloak-client) - Keycloak client libraries
 * [Keycloak QuickStarts](https://github.com/keycloak/keycloak-quickstarts) - QuickStarts for getting started with Keycloak
 * [Keycloak Node.js Connect](https://github.com/keycloak/keycloak-nodejs-connect) - Node.js adapter for Keycloak
 

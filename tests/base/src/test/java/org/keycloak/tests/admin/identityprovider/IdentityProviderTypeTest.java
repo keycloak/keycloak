@@ -12,13 +12,13 @@ import org.keycloak.models.IdentityProviderType;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.client.authentication.external.SpiffeClientAuthTest;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -65,17 +65,17 @@ public class IdentityProviderTypeTest {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             return realm
-                    .identityProvider(IdentityProviderBuilder.create()
+                    .identityProviders(IdentityProviderBuilder.create()
                         .providerId(SpiffeIdentityProviderFactory.PROVIDER_ID)
                         .alias("myspiffe")
-                        .setAttribute(SpiffeIdentityProviderConfig.TRUST_DOMAIN_KEY, "spiffe://mytrust")
-                        .setAttribute(SpiffeIdentityProviderConfig.BUNDLE_ENDPOINT_KEY, "https://myendpoint")
+                        .attribute(SpiffeIdentityProviderConfig.TRUST_DOMAIN_KEY, "spiffe://mytrust")
+                        .attribute(SpiffeIdentityProviderConfig.BUNDLE_ENDPOINT_KEY, "https://myendpoint")
                         .build())
-                    .identityProvider(IdentityProviderBuilder.create()
+                    .identityProviders(IdentityProviderBuilder.create()
                         .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                         .alias("myoidc")
                         .build())
-                    .identityProvider(IdentityProviderBuilder.create()
+                    .identityProviders(IdentityProviderBuilder.create()
                         .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
                         .alias("mysaml")
                         .build());

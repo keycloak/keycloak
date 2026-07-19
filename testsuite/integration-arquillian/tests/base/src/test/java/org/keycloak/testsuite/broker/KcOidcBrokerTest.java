@@ -36,6 +36,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
@@ -76,6 +77,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
@@ -492,6 +494,84 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         assertEquals(1, requiredActions.size());
         // email updated by the user, must verify the email
         assertThat(users.get(0).getEmail(), is("updated@keycloak.org"));
+    }
+
+    @Test
+    public void testEmailVerifiedFromUserInfo() {
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.setTrustEmail(true);
+        idpRep.getConfig().put("disableUserInfo", "false");
+        identityProviderResource.update(idpRep);
+
+        ClientScopeResource emailClientScope = AdminApiUtil.findClientScopeByName(providerRealm, "email");
+        List<ProtocolMapperRepresentation> originalMappers = emailClientScope.getProtocolMappers().getMappers();
+        originalMappers.forEach(protocolMapper -> emailClientScope.getProtocolMappers().delete(protocolMapper.getId()));
+
+        // Save and remove the "email" protocol mapper from the brokerapp client so that the email claim
+        // is not included in the ID token, allowing us to test that the email comes from userinfo only
+        ClientRepresentation brokerAppClient = providerRealm.clients().findByClientId("brokerapp").get(0);
+        ClientResource brokerAppResource = providerRealm.clients().get(brokerAppClient.getId());
+        ProtocolMapperRepresentation brokerAppEmailMapper = brokerAppResource.getProtocolMappers().getMappers().stream()
+                .filter(mapper -> "email".equals(mapper.getName()))
+                .findFirst()
+                .orElse(null);
+        brokerAppResource.getProtocolMappers().delete(brokerAppEmailMapper.getId());
+
+        ProtocolMapperRepresentation userinfoEmailVerifiedMapper = new ProtocolMapperRepresentation();
+        userinfoEmailVerifiedMapper.setName("userinfo-email-verified");
+        userinfoEmailVerifiedMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        userinfoEmailVerifiedMapper.setProtocolMapper(HardcodedClaim.PROVIDER_ID);
+        userinfoEmailVerifiedMapper.getConfig().put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, IDToken.EMAIL_VERIFIED);
+        userinfoEmailVerifiedMapper.getConfig().put(OIDCAttributeMapperHelper.JSON_TYPE, "boolean");
+        userinfoEmailVerifiedMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "false");
+        userinfoEmailVerifiedMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "false");
+        userinfoEmailVerifiedMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
+        userinfoEmailVerifiedMapper.getConfig().put(HardcodedClaim.CLAIM_VALUE, "false");
+        emailClientScope.getProtocolMappers().createMapper(userinfoEmailVerifiedMapper).close();
+
+        ProtocolMapperRepresentation userinfoEmailMapper = new ProtocolMapperRepresentation();
+        userinfoEmailMapper.setName("userinfo-email");
+        userinfoEmailMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        userinfoEmailMapper.setProtocolMapper(HardcodedClaim.PROVIDER_ID);
+        userinfoEmailMapper.getConfig().put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, IDToken.EMAIL);
+        userinfoEmailMapper.getConfig().put(OIDCAttributeMapperHelper.JSON_TYPE, "String");
+        userinfoEmailMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "false");
+        userinfoEmailMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "false");
+        userinfoEmailMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
+        userinfoEmailMapper.getConfig().put(HardcodedClaim.CLAIM_VALUE, "different-email@test.com");
+        emailClientScope.getProtocolMappers().createMapper(userinfoEmailMapper).close();
+
+
+        oauth.client("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        logInWithBroker(bc);
+
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
+
+        // Verify user was created with email from ID token, not userinfo
+        List<UserRepresentation> users = consumerRealm.users().search(bc.getUserLogin());
+        assertEquals(1, users.size());
+        UserRepresentation consumerUser = users.get(0);
+
+        assertEquals(consumerUser.getEmail(), "different-email@test.com");
+
+        // Email should be not verified because it came from ID token which has email_verified=false
+        assertFalse(consumerUser.isEmailVerified());
+
+        emailClientScope.getProtocolMappers().getMappers().forEach(protocolMapper -> emailClientScope.getProtocolMappers().delete(protocolMapper.getId()));
+        emailClientScope.getProtocolMappers().createMapper(originalMappers);
+
+        // Restore the "email" protocol mapper on the brokerapp client
+        if (brokerAppEmailMapper != null) {
+            brokerAppEmailMapper.setId(null);
+            brokerAppResource.getProtocolMappers().createMapper(brokerAppEmailMapper).close();
+        }
+
     }
 
     @Test

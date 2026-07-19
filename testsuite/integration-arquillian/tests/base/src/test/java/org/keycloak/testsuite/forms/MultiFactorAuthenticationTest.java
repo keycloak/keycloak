@@ -31,6 +31,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
@@ -238,8 +239,8 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
 
             Assertions.assertFalse(passwordPage.isCurrent());
             Assertions.assertFalse(loginPage.isCurrent());
-            events.expectLogin().user(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
-                    .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).userId(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
+                    .details(Details.USERNAME, "user-with-one-configured-otp");
         } finally {
             BrowserFlowTest.revertFlows(managedRealm.admin(),"browser - alternative mechanisms");
         }
@@ -284,8 +285,8 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             // Successfully login with OTP
             loginTotpPage.login(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
             Assertions.assertFalse(loginTotpPage.isCurrent());
-            events.expectLogin().user(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
-                    .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).userId(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
+                    .details(Details.USERNAME, "user-with-one-configured-otp");
         } finally {
             BrowserFlowTest.revertFlows(managedRealm.admin(),"browser - alternative mechanisms");
         }
@@ -319,12 +320,11 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
 
             // Reset login
             selectAuthenticatorPage.clickResetLogin();
-            events.expect(EventType.RESTART_AUTHENTICATION)
-                    .client(oauth.getClientId())
-                    .user(user.getId())
-                    .detail(Details.USERNAME, "user-with-one-configured-otp")
-                    .detail(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
-                    .assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.RESTART_AUTHENTICATION)
+                    .clientId(oauth.getClientId())
+                    .userId(user.getId())
+                    .details(Details.USERNAME, "user-with-one-configured-otp")
+                    .details(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL);
 
             // Should be back on the login page
             loginUsernameOnlyPage.assertCurrent();
@@ -340,8 +340,8 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
 
             // Login
             passwordPage.login(getPassword("user-with-one-configured-otp"));
-            events.expectLogin().user(user.getId())
-                    .detail(Details.USERNAME, "otp1@redhat.com").assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).userId(user.getId())
+                    .details(Details.USERNAME, "otp1@redhat.com");
         } finally {
             BrowserFlowTest.revertFlows(managedRealm.admin(), "browser - alternative");
         }

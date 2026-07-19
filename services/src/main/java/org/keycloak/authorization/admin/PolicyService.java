@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -216,7 +217,7 @@ public class PolicyService {
                             @QueryParam("owner") String owner,
                             @QueryParam("fields") String fields,
                             @QueryParam("first") Integer firstResult,
-                            @QueryParam("max") Integer maxResult) {
+                            @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResult) {
         if (auth != null) {
             this.auth.realm().requireViewAuthorization(resourceServer);
         }

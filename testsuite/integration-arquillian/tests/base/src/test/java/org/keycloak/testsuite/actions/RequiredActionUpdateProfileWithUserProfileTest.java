@@ -26,6 +26,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientScopeBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -277,13 +278,12 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
 
         updateProfilePage.prepareUpdate().username(USERNAME1).firstName("New first").lastName("").email("new@email.com").submit();
 
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "New first")
-                .detail(Details.PREVIOUS_LAST_NAME, "Brady")
-                .detail(Details.PREVIOUS_EMAIL, USERNAME1).detail(Details.UPDATED_EMAIL, "new@email.com")
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE).details(Details.PREVIOUS_FIRST_NAME, "Tom").details(Details.UPDATED_FIRST_NAME, "New first")
+                .details(Details.PREVIOUS_LAST_NAME, "Brady")
+                .details(Details.PREVIOUS_EMAIL, USERNAME1).details(Details.UPDATED_EMAIL, "new@email.com");
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         // assert user is really updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, USERNAME1);
@@ -318,7 +318,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         updateProfilePage.prepareUpdate().username(USERNAME1).firstName("First").lastName("Last").email(USERNAME1).submit();
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation user = getUserByUsername(USERNAME1);
         assertEquals("First", user.getFirstName());
@@ -347,7 +347,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         updateProfilePage.prepareUpdate().username(USERNAME1).firstName("First").lastName("Last").email(USERNAME1).submit();
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation user = getUserByUsername(USERNAME1);
         assertEquals("First", user.getFirstName());
@@ -374,7 +374,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         updateProfilePage.prepareUpdate().username(USERNAME1).firstName("First").lastName("Last").email(USERNAME1).submit();
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation user = getUserByUsername(USERNAME1);
         assertEquals("First", user.getFirstName());
@@ -401,7 +401,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         updateProfilePage.prepareUpdate().username(USERNAME1).firstName("First").lastName("Last").email(USERNAME1).submit();
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation user = getUserByUsername(USERNAME1);
         assertEquals("First", user.getFirstName());
@@ -432,14 +432,13 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 .department("DepartmentCC").submit();
 
         // we also test additional attribute configured to be audited in the event
-        events.expectRequiredAction(EventType.UPDATE_PROFILE)
-                .detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "FirstCC")
-                .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "LastCC")
-                .detail(Details.PREF_UPDATED + "department", "DepartmentCC")
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE)
+                .details(Details.PREVIOUS_FIRST_NAME, "Tom").details(Details.UPDATED_FIRST_NAME, "FirstCC")
+                .details(Details.PREVIOUS_LAST_NAME, "Brady").details(Details.UPDATED_LAST_NAME, "LastCC")
+                .details(Details.PREF_UPDATED + "department", "DepartmentCC");
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation user = getUserByUsername(USERNAME1);
         assertEquals("FirstCC", user.getFirstName());
@@ -472,14 +471,12 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         updateProfilePage.prepareUpdate().username(USERNAME1).firstName("FirstCC").lastName("LastCC").email(USERNAME1)
                 .department("DepartmentCC").submit();
 
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).client(client_scope_optional.getClientId())
-                .detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "FirstCC")
-                .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "LastCC")
-                .assertEvent();
-
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE).clientId(client_scope_optional.getClientId())
+                .details(Details.PREVIOUS_FIRST_NAME, "Tom").details(Details.UPDATED_FIRST_NAME, "FirstCC")
+                .details(Details.PREVIOUS_LAST_NAME, "Brady").details(Details.UPDATED_LAST_NAME, "LastCC");
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation user = getUserByUsername(USERNAME1);
         assertEquals("FirstCC", user.getFirstName());
@@ -513,7 +510,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 .department("DepartmentCC").submit();
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation user = getUserByUsername(USERNAME1);
         assertEquals("FirstCC", user.getFirstName());
@@ -547,7 +544,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 .department("DepartmentCC").submit();
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation user = getUserByUsername(USERNAME1);
         assertEquals("FirstCC", user.getFirstName());
@@ -576,7 +573,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 .department("DepartmentCC").submit();
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation user = getUserByUsername(USERNAME1);
         assertEquals("FirstCC", user.getFirstName());
@@ -604,7 +601,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         updateProfilePage.prepareUpdate().username(USERNAME1).firstName("FirstCC").lastName("LastCC").email(USERNAME1).submit();
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation user = getUserByUsername(USERNAME1);
         assertEquals("FirstCC", user.getFirstName());

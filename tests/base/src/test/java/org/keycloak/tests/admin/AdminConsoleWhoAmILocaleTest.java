@@ -275,18 +275,18 @@ public class AdminConsoleWhoAmILocaleTest {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             realm.internationalizationEnabled(false);
-            realm.addUser(USER_WITHOUT_LOCALE).password(PASSWORD)
+            realm.users(UserBuilder.create(USER_WITHOUT_LOCALE).password(PASSWORD)
                     .name("My", "Locale Off")
                     .email("locale-off@email.org").emailVerified(true)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-            realm.addUser(USER_WITH_LOCALE).password(PASSWORD)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
+            realm.users(UserBuilder.create(USER_WITH_LOCALE).password(PASSWORD)
                     .name("My", "Locale On")
                     .email("locale-on@email.org").emailVerified(true)
                     .attribute("locale", USER_LOCALE)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-            realm.addClient(ADMIN_CLI_CLIENT_ID).name(ADMIN_CLI_CLIENT_ID).secret(SECRET)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
+            realm.clients(ClientBuilder.create(ADMIN_CLI_CLIENT_ID).name(ADMIN_CLI_CLIENT_ID).secret(SECRET)
                     .attribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR, "true")
-                    .directAccessGrantsEnabled(true);
+                    .directAccessGrantsEnabled(true));
 
             return realm;
         }
@@ -300,24 +300,24 @@ public class AdminConsoleWhoAmILocaleTest {
             realm.supportedLocales(REALM_LOCALE, USER_LOCALE, EXTRA_LOCALE);
             realm.defaultLocale(REALM_LOCALE);
 
-            realm.addUser(USER_WITHOUT_LOCALE).password(PASSWORD)
+            realm.users(UserBuilder.create(USER_WITHOUT_LOCALE).password(PASSWORD)
                     .name("My", "Locale Off")
                     .email("locale-off@email.org").emailVerified(true)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-            realm.addUser(USER_WITH_LOCALE).password(PASSWORD)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
+            realm.users(UserBuilder.create(USER_WITH_LOCALE).password(PASSWORD)
                     .email("locale-on@email.org").emailVerified(true).name("My", "Locale On")
                     .attribute("locale", USER_LOCALE)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-            realm.addUser(USER_NO_ACCESS).password(PASSWORD)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
+            realm.users(UserBuilder.create(USER_NO_ACCESS).password(PASSWORD)
                     .name("No", "Access")
                     .email("no-access@email.org").emailVerified(true)
-                    .attribute("locale", USER_LOCALE);
-            realm.addClient(ADMIN_CLI_CLIENT_ID).name(ADMIN_CLI_CLIENT_ID).secret(SECRET)
+                    .attribute("locale", USER_LOCALE));
+            realm.clients(ClientBuilder.create(ADMIN_CLI_CLIENT_ID).name(ADMIN_CLI_CLIENT_ID).secret(SECRET)
                     .attribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR, "true")
-                    .directAccessGrantsEnabled(true);
-            realm.addClient(ADMIN_CLI_NOT_ALLOWED).name(ADMIN_CLI_NOT_ALLOWED).secret(SECRET)
+                    .directAccessGrantsEnabled(true));
+            realm.clients(ClientBuilder.create(ADMIN_CLI_NOT_ALLOWED).name(ADMIN_CLI_NOT_ALLOWED).secret(SECRET)
                     .attribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR, null)
-                    .directAccessGrantsEnabled(true);
+                    .directAccessGrantsEnabled(true));
 
             return realm;
         }

@@ -11,7 +11,7 @@ import { stringifyQueryParams } from "../utils/stringifyQueryParams.js";
 // constants
 const SLASH = "/";
 
-type Method = "GET" | "POST" | "PUT" | "DELETE";
+type Method = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
 // interface
 export interface RequestArgs {
@@ -148,9 +148,10 @@ export class Agent {
       const baseParams = this.#getBaseParams?.() ?? {};
 
       // Filter query parameters by queryParamKeys
-      const queryParams = queryParamKeys
-        ? (pick(query, queryParamKeys) as any)
-        : undefined;
+      const queryParams =
+        queryParamKeys.length > 0
+          ? (pick(query, queryParamKeys) as any)
+          : undefined;
 
       // Add filtered query parameters to base parameters
       const allUrlParamKeys = [...Object.keys(baseParams), ...urlParamKeys];
@@ -307,9 +308,9 @@ export class Agent {
       return;
     }
 
-    Object.keys(keyMapping).some((key) => {
+    Object.keys(keyMapping).forEach((key) => {
       if (typeof payload[key] === "undefined") {
-        return false;
+        return;
       }
       const newKey = keyMapping[key];
       payload[newKey] = payload[key];

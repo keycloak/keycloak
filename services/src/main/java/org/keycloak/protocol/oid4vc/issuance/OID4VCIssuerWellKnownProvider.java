@@ -18,6 +18,9 @@
 package org.keycloak.protocol.oid4vc.issuance;
 
 import java.net.URI;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -113,6 +116,8 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
             throw new NotFoundException("OID4VCI functionality is disabled for this realm");
         }
         CredentialIssuer issuer = getIssuerMetadata();
+        // Keep Date explicit for RFC7231 compliance and conformance-suite header validation.
+        keycloakSession.getContext().getHttpResponse().setHeader(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)));
         return getMetadataResponse(issuer, keycloakSession);
     }
 

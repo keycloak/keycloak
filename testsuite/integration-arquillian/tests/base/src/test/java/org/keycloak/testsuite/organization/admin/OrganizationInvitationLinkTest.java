@@ -37,19 +37,24 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -57,7 +62,7 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.OrganizationAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.MailUtils.EmailBody;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -87,7 +92,10 @@ import static org.hamcrest.Matchers.notNullValue;
 public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public AssertEvents events = new AssertEvents(this);
+
+    @Rule
+    public MailServer mail = new MailServer();
 
     @Page
     protected InfoPage infoPage;
@@ -250,10 +258,29 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         String firstName = "Homer";
         String lastName = "Simpson";
 
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        String orgId = createOrganization().getId();
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgId);
         organization.members().inviteUser(email, firstName, lastName).close();
 
         registerUser(organization, email);
+
+        // Assert INVITE_ORG event fires when user is added to the organization
+        EventRepresentation inviteEvent = EventAssertion.assertSuccess(events.poll()).type(EventType.INVITE_ORG)
+                .clientId("account")
+                .hasUserId()
+                .details(Details.ORG_ID, orgId).getEvent();
+
+        // Assert REGISTER event fires during new user registration via organization invite
+        EventAssertion.assertSuccess(events.poll()).type(EventType.REGISTER)
+                .clientId("account")
+                .userId(inviteEvent.getUserId())
+                .details(Details.EMAIL, email)
+                .details(Details.REGISTER_METHOD, "form");
+
+        // Assert LOGIN event fires after registration completes
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId("account")
+                .userId(inviteEvent.getUserId());
 
         List<UserRepresentation> users = managedRealm.admin().users().searchByEmail(email, true);
         assertThat(users, not(empty()));
@@ -463,7 +490,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     private String getInvitationLinkFromEmail(String ...parameters) throws MessagingException, IOException {
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        MimeMessage message = mail.getLastReceivedMessage();
         Assertions.assertNotNull(message);
         Assertions.assertEquals("Invitation to join the " + organizationName + " organization", message.getSubject());
 
@@ -495,7 +522,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         organization.members().inviteUser(email, "Homer", "Simpson").close();
 
         try {
-            setTimeOffset((int) TimeUnit.DAYS.toSeconds(1));
+            timeOffSet.set((int) TimeUnit.DAYS.toSeconds(1));
 
             List<OrganizationInvitationRepresentation> list = organization.invitations().list();
             assertThat(list, Matchers.hasSize(1));
@@ -508,7 +535,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             assertThat(driver.getPageSource(), Matchers.containsString("Action expired."));
             assertThat(managedRealm.admin().users().searchByEmail(email, true), Matchers.empty());
         } finally {
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
     }
 

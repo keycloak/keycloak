@@ -23,6 +23,11 @@ public abstract class AbstractTargetAuthOptionsCmd extends BaseAuthOptionsCmd im
         super(KcAdmMain.COMMAND_STATE);
     }
 
+    protected final void initFromParent(AbstractTargetAuthOptionsCmd parent) {
+        super.initFromParent(parent);
+        targetRealm = parent.targetRealm;
+    }
+
     protected String getTargetRealm(ConfigData config) {
         return targetRealm != null ? targetRealm : config.getRealm();
     }

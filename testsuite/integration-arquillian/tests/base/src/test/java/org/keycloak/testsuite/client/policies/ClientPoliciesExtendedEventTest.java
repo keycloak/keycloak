@@ -26,6 +26,7 @@ import jakarta.ws.rs.NotFoundException;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.models.AdminRoles;
@@ -47,6 +48,7 @@ import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFac
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.executor.SuppressRefreshTokenRotationExecutorFactory;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
@@ -63,6 +65,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.device.DeviceAuthorizationResponse;
+import org.keycloak.util.TokenUtil;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
@@ -417,7 +420,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.client(clientId, clientSecret);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        events.expectLogin().client(clientId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId);
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertEquals(400, response.getStatusCode());
@@ -440,14 +443,19 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.client(clientId, clientSecret);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId).getEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
-        events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(clientId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
@@ -505,7 +513,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.client(clientId, clientSecret);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        events.expectLogin().client(clientId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId);
         String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
@@ -690,7 +698,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.client(clientId, clientSecret);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        events.expectLogin().client(clientId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId);
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertEquals(200, response.getStatusCode());

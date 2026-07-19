@@ -46,7 +46,6 @@ export async function editSAMLSettings(page: Page, samlProviderName: string) {
   // Toggle SAML switches
   const switches = [
     "config.allowCreate",
-    "config.wantAssertionsSigned",
     "config.wantAssertionsEncrypted",
     "config.forceAuthn",
   ];

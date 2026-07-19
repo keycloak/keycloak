@@ -258,6 +258,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
 
     @Test
+    @DatabaseTest
     public void concurrentCodeReuseShouldFail() throws Throwable {
         LOGGER.info("*********************************************");
         long start = System.currentTimeMillis();
@@ -494,14 +495,6 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             if (userSessionId.get() == null) {
                 userSessionId.set(token.getSessionState());
             }
-        }
-
-        public int getRetryDelayMs() {
-            return retryDelayMs;
-        }
-
-        public int getRetryCount() {
-            return retryCount;
         }
 
         public Map<Integer, Integer> getHistogram() {

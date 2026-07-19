@@ -51,6 +51,7 @@ import org.keycloak.services.util.ViteManifest;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeResourcesParser;
 import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
@@ -167,6 +168,7 @@ public class AccountConsole implements AccountResourceProvider {
         map.put("msgJSON", messagesToJsonString(messages));
         map.put("supportedLocales", supportedLocales(messages));
         map.put("properties", theme.getProperties());
+        map.put("themeResources", ThemeResourcesParser.parse(theme.getProperties()));
         map.put("darkMode", "true".equals(theme.getProperties().getProperty("darkMode"))
                 && realm.getAttribute("darkMode", true));
         map.put("theme", (Function<String, String>) file -> {
@@ -184,12 +186,15 @@ public class AccountConsole implements AccountResourceProvider {
         boolean deleteAccountAllowed = false;
         boolean isViewGroupsEnabled = false;
         boolean isViewApplicationsEnabled = false;
+        boolean isOid4VciEnabled = false;
         if (user != null) {
             AccountRoleChecker roleChecker = new AccountRoleChecker(session, realm, user);
             // the 'manage-account' role works on the API level (for the 'account' client) as some kind of composite role
             deleteAccountAllowed = roleChecker.hasOneOfRole(AccountRoles.MANAGE_ACCOUNT, AccountRoles.DELETE_ACCOUNT) && realm.getRequiredActionProviderByAlias(DeleteAccount.PROVIDER_ID).isEnabled();
-            isViewGroupsEnabled = roleChecker.hasOneOfRole(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_GROUPS);
+            isViewGroupsEnabled = roleChecker.hasOneOfRole(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_GROUPS)
+                    && user.getGroupsCount() > 0;
             isViewApplicationsEnabled = roleChecker.hasOneOfRole(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_APPLICATIONS);
+            isOid4VciEnabled = Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI) && realm.isVerifiableCredentialsEnabled()  && roleChecker.hasOneOfRole(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_VERIFIABLE_CREDENTIALS);
         }
 
         map.put("deleteAccountAllowed", deleteAccountAllowed);
@@ -197,7 +202,7 @@ public class AccountConsole implements AccountResourceProvider {
         map.put("isViewApplicationsEnabled", isViewApplicationsEnabled);
         map.put("isViewGroupsEnabled", isViewGroupsEnabled);
         map.put("isViewOrganizationsEnabled", realm.isOrganizationsEnabled());
-        map.put("isOid4VciEnabled", realm.isVerifiableCredentialsEnabled());
+        map.put("isOid4VciEnabled", isOid4VciEnabled);
 
         map.put("updateEmailFeatureEnabled", Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL));
         map.put("updateEmailActionEnabled", UpdateEmail.isEnabled(realm));

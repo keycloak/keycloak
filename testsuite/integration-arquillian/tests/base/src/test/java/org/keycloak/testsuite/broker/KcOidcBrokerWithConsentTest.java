@@ -62,7 +62,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
         // Set time offset
-        invokeTimeOffset(60);
+        timeOffSet.set(60);
         try {
             // User rejected consent
             grantPage.assertCurrent();
@@ -72,7 +72,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
             Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
 
         } finally {
-            invokeTimeOffset(0);
+            timeOffSet.set(0);
         }
     }
 
@@ -87,7 +87,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
         logInWithBroker(bc);
 
         // Set time offset
-        invokeTimeOffset(60);
+        timeOffSet.set(60);
         try {
             testingClient.server(bc.providerRealmName()).run(removeBrokerExpiredSessions());
 
@@ -98,7 +98,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
             // Assert login page with "You took too long to login..." message
             Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
         } finally {
-            invokeTimeOffset(0);
+            timeOffSet.set(0);
         }
     }
 

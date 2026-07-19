@@ -169,7 +169,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     protected Response exchangeSessionToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
-        String accessToken = tokenUserSession.getNote(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN);
+        String accessToken = getFederatedAccessToken(tokenUserSession);
         if (accessToken == null) {
             return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
@@ -296,8 +296,8 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
     @Override
     public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
-        authSession.setUserSessionNote(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN, (String) context.getContextData().get(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN));
-
+        String token = (String) context.getContextData().get(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN);
+        setFederatedAccessToken(authSession, token);
     }
 
 }

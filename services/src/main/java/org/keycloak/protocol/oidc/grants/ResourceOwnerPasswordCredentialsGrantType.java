@@ -17,6 +17,9 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.Collections;
+import java.util.Set;
+
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -177,6 +180,11 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
     @Override
     public EventType getEventType() {
         return EventType.LOGIN;
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Collections.emptySet();
     }
 
 }

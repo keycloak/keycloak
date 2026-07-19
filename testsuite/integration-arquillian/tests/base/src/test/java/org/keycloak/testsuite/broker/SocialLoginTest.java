@@ -33,7 +33,10 @@ import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.login.UpdateAccount;
@@ -54,8 +57,6 @@ import org.keycloak.testsuite.pages.social.StackOverflowLoginPage;
 import org.keycloak.testsuite.pages.social.TwitterConsentLoginPage;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -383,6 +384,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     @Test
     public void twitterLogin() {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.TWITTER_BROKER);
         setTestProvider(TWITTER);
         performLogin();
         assertUpdateProfile(false, false, true);

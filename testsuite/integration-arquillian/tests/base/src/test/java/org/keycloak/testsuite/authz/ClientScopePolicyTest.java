@@ -35,8 +35,8 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientScopeBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -54,13 +54,13 @@ public class ClientScopePolicyTest extends AbstractAuthzTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms
-            .add(RealmBuilder.create().name("authz-test").user(UserBuilder.create().username("marta").password("password"))
-                .clientScope(ClientScopeBuilder.create().name("foo").protocol("openid-connect"))
-                .clientScope(ClientScopeBuilder.create().name("bar").protocol("openid-connect"))
-                .clientScope(ClientScopeBuilder.create().name("baz").protocol("openid-connect"))
-                .clientScope(ClientScopeBuilder.create().name("to-remove-a").protocol("openid-connect"))
-                .clientScope(ClientScopeBuilder.create().name("to-remove-b").protocol("openid-connect"))
-                .client(ClientBuilder.create().clientId("resource-server-test").secret("secret")
+            .add(RealmBuilder.create().name("authz-test").users(UserBuilder.create().username("marta").password("password"))
+                .clientScopes(ClientScopeBuilder.create().name("foo").protocol("openid-connect"))
+                .clientScopes(ClientScopeBuilder.create().name("bar").protocol("openid-connect"))
+                .clientScopes(ClientScopeBuilder.create().name("baz").protocol("openid-connect"))
+                .clientScopes(ClientScopeBuilder.create().name("to-remove-a").protocol("openid-connect"))
+                .clientScopes(ClientScopeBuilder.create().name("to-remove-b").protocol("openid-connect"))
+                .clients(ClientBuilder.create().clientId("resource-server-test").secret("secret")
                     .authorizationServicesEnabled(true).redirectUris("http://localhost/resource-server-test")
                     .optionalClientScopes("foo", "bar", "baz").directAccessGrantsEnabled())
                 .build());

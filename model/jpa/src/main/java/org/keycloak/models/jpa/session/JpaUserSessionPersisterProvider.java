@@ -57,6 +57,8 @@ import org.keycloak.utils.StreamsUtil;
 import org.hibernate.jpa.HibernateHints;
 import org.jboss.logging.Logger;
 
+import static jakarta.persistence.PersistenceConfiguration.LOCK_TIMEOUT;
+
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.models.jpa.session.JpaSessionUtil.offlineFromString;
 import static org.keycloak.models.jpa.session.JpaSessionUtil.offlineToString;
@@ -71,6 +73,8 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     private final KeycloakSession session;
     private final EntityManager em;
     private final int expirationBatch;
+    private final Set<PersistentUserSessionEntity.Key> userSessionNotInDatabaseCache = new HashSet<>();
+    private final Set<PersistentClientSessionEntity.Key> clientSessionNotInDatabaseCache = new HashSet<>();
 
     public JpaUserSessionPersisterProvider(KeycloakSession session, EntityManager em, int expirationBatch) {
         this.session = session;
@@ -95,6 +99,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         entity.setBrokerSessionId(userSession.getBrokerSessionId());
         entity.setRememberMe(userSession.isRememberMe());
         em.persist(entity);
+        userSessionNotInDatabaseCache.remove(new PersistentUserSessionEntity.Key(userSession.getId(), offlineStr));
     }
 
     @Override
@@ -119,7 +124,14 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         String offlineStr = offlineToString(offline);
         boolean exists = false;
 
-        PersistentClientSessionEntity entity = em.find(PersistentClientSessionEntity.class, new PersistentClientSessionEntity.Key(userSessionId, clientId, clientStorageProvider, externalClientId, offlineStr));
+        PersistentClientSessionEntity entity = null;
+        PersistentClientSessionEntity.Key key = new PersistentClientSessionEntity.Key(userSessionId, clientId, clientStorageProvider, externalClientId, offlineStr);
+        if (!clientSessionNotInDatabaseCache.contains(key)) {
+            entity = em.find(PersistentClientSessionEntity.class, key);
+        } else {
+            clientSessionNotInDatabaseCache.remove(key);
+        }
+
         if (entity != null) {
             // client session can already exist in some circumstances (EG. in case it was already present, but expired in the infinispan, but not yet expired in the DB)
             exists = true;
@@ -145,10 +157,11 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     public void removeUserSession(String userSessionId, boolean offline) {
         String offlineStr = offlineToString(offline);
 
-        em.createNamedQuery("deleteClientSessionsByUserSession")
+        em.createNamedQuery("findClientSessionsByUserSession", PersistentClientSessionEntity.class)
                 .setParameter("userSessionId", userSessionId)
                 .setParameter("offline", offlineStr)
-                .executeUpdate();
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .getResultStream().forEach(em::remove);
 
         removeUserSessionFromDatabase(userSessionId, offlineStr);
     }
@@ -292,17 +305,46 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     @Override
     public UserSessionModel loadUserSession(RealmModel realm, String userSessionId, boolean offline) {
-
         String offlineStr = offlineToString(offline);
 
-        TypedQuery<PersistentUserSessionEntity> userSessionQuery = em.createNamedQuery("findUserSession", PersistentUserSessionEntity.class)
-                .setParameter("realmId", realm.getId())
-                .setParameter("offline", offlineStr)
-                .setParameter("userSessionId", userSessionId)
-                .setParameter("lastSessionRefresh", calculateOldestSessionTime(realm, offline))
-                .setMaxResults(1);
+        PersistentUserSessionEntity.Key key = new PersistentUserSessionEntity.Key(userSessionId, offlineStr);
 
-        return handleSingleQuery(userSessionQuery, offlineStr);
+        PersistentUserSessionEntity entity = null;
+        if (!userSessionNotInDatabaseCache.contains(key)) {
+            entity = em.find(PersistentUserSessionEntity.class, key);
+            if (entity == null) {
+                userSessionNotInDatabaseCache.add(key);
+            }
+            if (entity != null && !Objects.equals(entity.getRealmId(), realm.getId())) {
+                entity = null;
+            }
+        }
+
+        return handleSingleQuery(entity, offlineStr);
+    }
+
+    public boolean lockUserSession(RealmModel realm, String userSessionId, boolean offline, boolean isDelete) {
+        String offlineStr = offlineToString(offline);
+        PersistentUserSessionEntity entity = em.find(PersistentUserSessionEntity.class, new PersistentUserSessionEntity.Key(userSessionId, offlineStr));
+        if (entity == null) {
+            // If the entity has already been deleted, there is no need to lock it, as this transaction will fail anyway if it is modified concurrently
+            // When caches are enabled, this might have been retrieved from the cache, and the entry doesn't exist in the database yet, and it can lead to conflicts if it is not locked.
+            logger.debugf("User session %s/%s not locked as it wasn't found (mode: %b)", userSessionId, offlineStr, isDelete);
+            return isDelete;
+        }
+        int knownVersion = entity.getVersion();
+
+        // Fetch the entry and lock the row but only if it is not locked already
+        Integer currentVersion = em.createQuery("select version from PersistentUserSessionEntity where userSessionId = :userSessionId and offline = :offline", Integer.class)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .setHint(LOCK_TIMEOUT, -2)
+                .setParameter("userSessionId", userSessionId)
+                .setParameter("offline", offlineStr)
+                .getSingleResultOrNull();
+
+        boolean result = currentVersion != null && knownVersion == currentVersion;
+        logger.debugf("User session %s/%s lock status: %b", userSessionId, offlineStr, result);
+        return result;
     }
 
     @Override
@@ -315,11 +357,10 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         userSessionQuery.setParameter("lastSessionRefresh", calculateOldestSessionTime(realm, offline));
         userSessionQuery.setMaxResults(1);
 
-        return handleSingleQuery(userSessionQuery, offlineStr);
+        return handleSingleQuery(userSessionQuery.getSingleResultOrNull(), offlineStr);
     }
 
-    private UserSessionModel handleSingleQuery(TypedQuery<PersistentUserSessionEntity> query, String offlineStr) {
-        var entity = query.getSingleResultOrNull();
+    private UserSessionModel handleSingleQuery(PersistentUserSessionEntity entity, String offlineStr) {
         if (entity == null) {
             return null;
         }
@@ -378,6 +419,18 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         return loadExactUserSessionsWithClientSessions(query, offlineStr);
     }
 
+    @Override
+    public Map<String, Set<String>> findUserSessionsByUserId(RealmModel realm, UserModel user, boolean offline) {
+        var query = em.createNamedQuery("findUserAndClientSessionsByUserId", UserSessionIdAndClientSessionId.class)
+                .setParameter("offline", offlineToString(offline))
+                .setParameter("realmId", realm.getId())
+                .setParameter("userId", user.getId());
+        return closing(query.getResultStream())
+                .collect(Collectors.groupingBy(
+                        UserSessionIdAndClientSessionId::userSessionId,
+                        Collectors.mapping(JpaSessionUtil::getClientId, Collectors.filtering(Objects::nonNull, Collectors.toSet()))));
+    }
+
     public Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
                                                            String lastUserSessionId) {
         String offlineStr = offlineToString(offline);
@@ -391,26 +444,60 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     @Override
     public AuthenticatedClientSessionModel loadClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, boolean offline) {
-        TypedQuery<PersistentClientSessionEntity> query;
-        StorageId clientStorageId = new StorageId(client.getId());
-        if (clientStorageId.isLocal()) {
-            query = em.createNamedQuery("findClientSessionsByUserSessionAndClient", PersistentClientSessionEntity.class);
-            query.setParameter("clientId", client.getId());
-        } else {
-            query = em.createNamedQuery("findClientSessionsByUserSessionAndExternalClient", PersistentClientSessionEntity.class);
-            query.setParameter("clientStorageProvider", clientStorageId.getProviderId());
-            query.setParameter("externalClientId", clientStorageId.getExternalId());
+        PersistentClientSessionEntity.Key key = getClientSessionKey(client.getId(), userSession.getId(), offline);
+
+        PersistentClientSessionEntity entity = null;
+        if (!clientSessionNotInDatabaseCache.contains(key)) {
+            entity = em.find(PersistentClientSessionEntity.class, key);
+            if (entity == null) {
+                clientSessionNotInDatabaseCache.add(key);
+            }
+            if (entity != null && !Objects.equals(entity.getRealmId(), realm.getId())) {
+                entity = null;
+            }
         }
 
-        String offlineStr = offlineToString(offline);
-        query.setParameter("userSessionId", userSession.getId());
-        query.setParameter("offline", offlineStr);
-        query.setMaxResults(1);
+        return entity != null ? toAdapter(realm, client, userSession, entity) : null;
+    }
 
-        return closing(query.getResultStream())
-                .map(entity -> toAdapter(realm, client, userSession, entity))
-                .findFirst()
-                .orElse(null);
+    private static PersistentClientSessionEntity.Key getClientSessionKey(String clientId, String userSessionId, boolean offline) {
+        String offlineStr = offlineToString(offline);
+        PersistentClientSessionEntity.Key key;
+        StorageId clientStorageId = new StorageId(clientId);
+        if (clientStorageId.isLocal()) {
+            key = new PersistentClientSessionEntity.Key(userSessionId, clientId, PersistentClientSessionEntity.LOCAL, PersistentClientSessionEntity.LOCAL, offlineStr);
+        } else {
+            key = new PersistentClientSessionEntity.Key(userSessionId, PersistentClientSessionEntity.EXTERNAL, clientStorageId.getProviderId(), clientStorageId.getExternalId(), offlineStr);
+        }
+        return key;
+    }
+
+    @Override
+    public boolean lockClientSession(RealmModel realm, String userSessionId, String clientId, boolean offline, boolean isDelete) {
+        PersistentClientSessionEntity.Key key = getClientSessionKey(clientId, userSessionId, offline);
+
+        PersistentClientSessionEntity entity = em.find(PersistentClientSessionEntity.class, key);
+        if (entity == null) {
+            // If the entity has already been deleted, there is no need to lock it, as this transaction will fail anyway if it is modified concurrently
+            // When caches are enabled, this might have been retrieved from the cache, and the entry doesn't exist in the database yet, and it can lead to conflicts if it is not locked.
+            logger.debugf("Client session %s/%s/%s not locked as it wasn't found (mode: %b)", userSessionId, clientId, offline, isDelete);
+            return isDelete;
+        }
+        int knownVersion = entity.getVersion();
+
+        Integer currentVersion = em.createQuery("select version from PersistentClientSessionEntity where userSessionId = :userSessionId and offline = :offline and clientId = :clientId and externalClientId = :externalClientId and clientStorageProvider = :clientStorageProvider", Integer.class)
+                .setParameter("userSessionId", key.userSessionId)
+                .setParameter("offline", key.offline)
+                .setParameter("clientId", key.clientId)
+                .setParameter("clientStorageProvider", key.getClientStorageProvider())
+                .setParameter("externalClientId", key.getExternalClientId())
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .setHint(LOCK_TIMEOUT, -2)
+                .getSingleResultOrNull();
+
+        boolean locked = currentVersion != null && knownVersion == currentVersion;
+        logger.debugf("User session %s/%s/%s lock status: %b"+ userSessionId, clientId, offline, locked);
+        return locked;
     }
 
     @Override

@@ -1,0 +1,404 @@
+[[_oid4vci_proofs]]
+=== Proof Types and Key Binding in OID4VCI
+
+This section documents the proof types supported by OpenID for Verifiable Credential Issuance (OID4VCI), how to configure trusted attester keys, and how key binding works in the resulting credentials.
+
+==== Supported Proof Types
+
+{project_name} currently supports the following proof types for holder binding:
+
+[cols="1,1,2", options="header"]
+|===
+| Proof Type
+| Value
+| Description
+
+| JWT Proof
+| `jwt`
+| A signed JWT containing holder binding information. The key used to sign the JWT becomes the holder binding key in the credential.
+
+| Attestation Proof
+| `attestation`
+| Proof containing key attestations from a trusted attestation authority.
+|===
+
+When a credential requires cryptographic holder binding, the client must provide a proof of an appropriate type. The issuer validates the proof and extracts the binding key, which is then included in the issued credential.
+
+==== Configuring Trusted Attester Keys
+
+{project_name} supports JWT proofs that can optionally include key attestations, and the `attestation` proof type. To validate these attestations, configure the trusted attester keys through trust-material identity providers and link those identity providers to the OID4VCI client.
+
+Trusted attester keys are configured per client because different wallets can rely on different attestation authorities. The former realm-level options **Trusted Key IDs** and **Trusted Keys (JSON)** are no longer used for OID4VCI proof validation.
+
+===== Admin Console
+
+. Create or configure a trust-material identity provider, such as **Default Trust**, that exposes the trusted attester public keys. The identity provider must be configured with either a JWKS URL or a validating public key.
+. Go to *Clients* and select the wallet client that requests credentials.
+. Open the *Advanced* tab.
+. In the *OpenID Verifiable Credentials* section, enable **Enable OID4VCI**.
+. In **OID4VCI Attester Trust Identity Providers**, select the trust-material identity providers that contain the trusted attester public keys.
+. Save the client.
+
+The **OID4VCI Attester Trust Identity Providers** option is only shown when **Enable OID4VCI** is enabled for the client. It accepts only trust-material identity providers from the current realm. If no trust-material identity provider is configured, the dropdown has no values to select.
+
+===== Client Attribute
+
+[cols="1,1,2", options="header"]
+|===
+| Attribute
+| Default
+| Description
+
+| `oid4vci.attester_trust_idps`
+| none
+| Comma-separated aliases of trust-material identity providers containing trusted attester public keys for OID4VCI key attestation validation.
+
+|===
+
+===== Admin REST API
+
+Use the Admin REST API when you need to configure the client attribute directly.
+
+[source,bash]
+----
+curl -X PUT "https://localhost:8443/admin/realms/{realm}/clients/{client-uuid}" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "attributes": {
+          "oid4vci.enabled": "true",
+          "oid4vci.attester_trust_idps": "alias-1,alias-2"
+        }
+      }'
+----
+
+For a JWT proof with a `key_attestation` JOSE header, or for an `attestation` proof, {project_name} resolves the attester signing key from the configured identity providers. Key resolution can use the attestation JWT header and payload, including the `kid`, `alg`, and `iss` values. If no configured identity provider exposes a matching trusted key, proof validation fails.
+
+==== Creating and Sending JWT Proofs
+
+JWT proofs are the most common proof type. To create a JWT proof:
+
+===== 1. Obtain a Nonce
+
+First, call the nonce endpoint to obtain a fresh nonce:
+
+[source,bash]
+----
+curl -X POST "https://localhost:8443/realms/{realm}/protocol/oid4vc/nonce" \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+----
+
+Response:
+[source,json]
+----
+{
+  "c_nonce": "abc123def456...",
+  "c_nonce_expires_in": 300
+}
+----
+
+===== 2. Create the JWT Proof
+
+The JWT proof must contain the following claims:
+
+[cols="1,1,2", options="header"]
+|===
+| Claim
+| Required
+| Description
+
+| `iss`
+| Conditional
+| For client-bound flows, must be the client_id. For anonymous flows, omit this claim.
+
+| `aud`
+| Yes
+| Must be the Credential Issuer Identifier of the issuing realm
+
+| `nonce`
+| Yes
+| The c_nonce value obtained from the nonce endpoint.
+
+| `iat`
+| Yes
+| Issued-at time (Unix timestamp). Must be within 30 seconds of server time.
+
+| `exp`
+| No
+| Expiration time. If provided, must be in the future.
+
+| `nbf`
+| No
+| Not-before time. If provided, must be before server time + 10 seconds.
+|===
+
+.Header Requirements
+[cols="1,2", options="header"]
+|===
+| Header
+| Description
+
+| `typ`
+| Must be `openid4vci-proof+jwt`
+
+| `alg`
+| One of the algorithms listed in `proof_signing_alg_values_supported` (e.g., `ES256`, `RS256`, `PS256`)
+
+| `jwk` or `kid` or `x5c`
+| The binding key. Only one of these should be present.
+|===
+
+====== Example: JWT Proof with JWK in Header
+
+[source,javascript]
+----
+// Header
+{
+  "typ": "openid4vci-proof+jwt",
+  "alg": "ES256",
+  "jwk": {
+    "kty": "EC",
+    "crv": "P-256",
+    "x": "f83OJ3B2f4GuoXv...d83rVU",
+    "y": "X_5R34qL2Y8ZdqU..."
+  }
+}
+
+// Payload
+{
+  "iss": "your-client-id",
+  "aud": "https://localhost:8443/realms/myrealm",
+  "nonce": "abc123def456...",
+  "iat": 1719785014
+}
+----
+
+====== Example: JWT Proof with kid Header
+
+[source,javascript]
+----
+// Header
+{
+  "typ": "openid4vci-proof+jwt",
+  "alg": "ES256",
+  "kid": "my-binding-key-id"
+}
+
+// Payload
+{
+  "iss": "your-client-id",
+  "aud": "https://localhost:8443/realms/myrealm",
+  "nonce": "abc123def456...",
+  "iat": 1719785014
+}
+----
+
+===== 3. Send the Credential Request
+
+Include the JWT proof in the credential request:
+
+[source,json]
+----
+{
+  "format": "jwt_vc_json",
+  "credential_configuration_id": "my-credential-config",
+  "proofs": {
+    "jwt": ["eyJhbGciOiJFUzI1NiIsInR5cCI6Im9wZW5pZDh2Y2ktcHJvb2Yrand0IiwiandrIjp7Imt0eSI6IkVDIiwiY3J2IjoiUC0yNTYiLCJ4IjoiZjgzak8zQjJmNFdndU...=="]
+  }
+}
+----
+
+==== Using Attestation Proofs
+
+Attestation proofs allow the holder to prove key ownership through an attestation authority. This is useful for hardware-backed keys or keys managed by secure enclaves.
+
+===== Structure of an Attestation Proof
+
+An attestation proof is a JWT containing:
+
+.Header
+[cols="1,2", options="header"]
+|===
+| Header
+| Description
+
+| `typ`
+| `openid4vci-attestation+jwt`
+
+| `kid`
+| Key ID of the attestation signing key
+
+| `alg`
+| Algorithm (e.g., `ES256`)
+|===
+
+.Payload
+[cols="1,1,2", options="header"]
+|===
+| Claim
+| Required
+| Description
+
+| `nonce`
+| Yes
+| The c_nonce from the nonce endpoint
+
+| `iat`
+| Yes
+| Issued-at time
+
+| `exp`
+| Yes
+| Expiration time
+
+| `attested_keys`
+| Yes
+| Array of JWK objects representing the holder's attested keys
+
+| `key_storage`
+| No
+| List of acceptable key storage attack potential levels (ISO 18045)
+
+| `user_authentication`
+| No
+| List of acceptable user authentication attack potential levels
+
+| `status`
+| Yes
+| Object with `status` claim (e.g., `{"status": "valid"}`)
+|===
+
+===== Credential Request with Attestation Proof
+
+[source,json]
+----
+{
+  "format": "jwt_vc_json",
+  "credential_configuration_id": "my-credential-config",
+  "proofs": {
+    "attestation": ["eyJhbGciOiJFUzI1NiIsInR5cCI6Im9wZW5pZDh2Y2ktYXR0ZXN0YXRpb24rand0Ii...=="]
+  }
+}
+----
+
+==== Key Binding in Credentials
+
+The binding key from the proof is included in the issued credential to ensure the holder possesses the corresponding private key.
+
+===== JWT VC JSON Format
+
+For `jwt_vc_json` format credentials, the binding key is included in the `cnf` (confirmation) claim:
+
+[source,json]
+----
+{
+  "iss": "https://localhost:8443/realms/myrealm",
+  "vc": {
+    "@context": ["https://www.w3.org/2018/credentials/v1"],
+    "type": ["VerifiableCredential", "MyCredential"],
+    "credentialSubject": { ... },
+    "cnf": {
+      "jwk": {
+        "kty": "EC",
+        "crv": "P-256",
+        "x": "f83OJ3B2f4GuoXv...d83rVU",
+        "y": "X_5R34qL2Y8ZdqU..."
+      }
+    }
+  },
+  "iat": 1719785014,
+  "exp": 1751321014,
+  "jti": "unique-credential-id"
+}
+----
+
+===== SD-JWT Format
+
+For `dc+sd-jwt` format credentials, the binding key is included as a disclosure in the SD-JWT:
+
+[source]
+----
+eyJhbGciOiJFUzI1NiJ9.eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiTXlDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7fSwiY25mIjp7Imp3ayI6eyJrdHkiOiJFQyIsImNydiI6IlAtMjU2IiwieCI6ImY4M09PM0IyZjRHZ3VYdi4uLmQ4M3JWVSJ9fX0.K3ZkVYZ2B9...#eyJjdHgiOnsidHlwZSI6ImNuZiIsIm9iaiI6eyJrdHkiOiJFQyIsImNydiI6IlAtMjU2In19"
+----
+
+The holder binding key appears in the `_sd_hash` of the SD-JWT, allowing verifiers to confirm the holder possesses the corresponding private key.
+
+===== Verifying Key Binding
+
+When presenting a credential, the verifier should:
+
+1. Extract the `cnf` claim (for JWT VC) or verify the `_sd_hash` (for SD-JWT)
+2. Challenge the holder to sign a challenge with the corresponding private key
+3. Verify the signature matches the bound key
+
+==== Complete Example: Credential Request with JWT Proof
+
+[source,bash]
+----
+# 1. Get an access token (OAuth2 flow)
+# ... (obtain access token with appropriate scopes)
+
+# 2. Obtain nonce
+NONCE_RESPONSE=$(curl -X POST "https://localhost:8443/realms/myrealm/protocol/oid4vc/nonce" \
+  -H "Authorization: Bearer $ACCESS_TOKEN")
+C_NONCE=$(echo $NONCE_RESPONSE | jq -r '.c_nonce')
+
+# 3. Create JWT proof (pseudocode - use your JWT library)
+PROOF_HEADER='{ "typ":"openid4vci-proof+jwt", "alg":"ES256", "jwk":{ "kty":"EC", "crv":"P-256", "x":"...", "y":"..." } }'
+PROOF_PAYLOAD="{ \"iss\":\"your-client-id\", \"aud\":\"https://localhost:8443/realms/myrealm\", \"nonce\":\"$C_NONCE\", \"iat\":$(date +%s) }"
+JWT_PROOF=$(create_jwt "$PROOF_HEADER" "$PROOF_PAYLOAD" "$YOUR_PRIVATE_KEY")
+
+# 4. Send credential request
+curl -X POST "https://localhost:8443/realms/myrealm/protocol/oid4vc/credential" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "format": "jwt_vc_json",
+    "credential_configuration_id": "my-credential-config",
+    "proofs": {
+      "jwt": ["'"$JWT_PROOF"'"]
+    }
+  }'
+----
+
+==== Client Scope Configuration for Proof Types
+
+To require key binding for a credential, configure the OID4VCI client scope with the appropriate attributes. These settings are advertised in the issuer metadata as `cryptographic_binding_methods_supported` and `proof_types_supported`, and they determine which proof types the wallet can use.
+
+[source,json]
+----
+{
+  "name": "my-vc-scope",
+  "protocol": "oid4vc",
+  "attributes": {
+    "include.in.token.scope": "true",
+    "vc.format": "jwt_vc_json",
+    "vc.credential_configuration_id": "my-credential-config",
+    "vc.binding_required": "true",
+    "vc.cryptographic_binding_methods_supported": "jwk",
+    "vc.binding_required_proof_types": "jwt,attestation",
+    "vc.credential_signing_alg": "ES256"
+  },
+  "protocolMappers": [
+    {
+      "name": "givenName",
+      "protocol": "oid4vc",
+      "protocolMapper": "oid4vc-user-attribute-mapper",
+      "config": {
+        "claim.name": "given_name",
+        "userAttribute": "firstName"
+      }
+    }
+  ]
+}
+----
+
+The `vc.binding_required_proof_types` attribute accepts a comma-separated list of supported proof types, currently `jwt` and `attestation`. If `vc.binding_required` is not enabled, the credential configuration does not require holder binding and the issuer metadata omits `cryptographic_binding_methods_supported` and `proof_types_supported`.
+
+The `proof_signing_alg_values_supported` values are automatically included in the issuer metadata based on the realm's supported asymmetric signing algorithms.
+
+==== Related Configuration
+
+- <<_oid4vci, OID4VCI Configuration>> - General OID4VCI setup
+- <<proc-creating-a-realm_{context}, Creating a Realm>> - Realm creation
+- <<realm_keys, Managing Realm Keys>> - Key management

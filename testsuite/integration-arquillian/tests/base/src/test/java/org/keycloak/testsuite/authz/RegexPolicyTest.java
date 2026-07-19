@@ -45,8 +45,8 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -111,20 +111,20 @@ public class RegexPolicyTest extends AbstractAuthzTest {
         //        For JSON-based claims, you can use dot notation for nesting and square brackets to access array fields by index. For example, contact.address[0].country.
 
         testRealms.add(RealmBuilder.create().name("authz-test")
-            .user(UserBuilder.create().username("marta").password("password").attribute("foo", "foo").attribute("bar",
+            .users(UserBuilder.create().username("marta").password("password").attribute("foo", "foo").attribute("bar",
                 "barbar").attribute("json-simple", "{\"tenant\": \"abc\"}")
                     .attribute("json-complex", "{\"userinfo\": {\"tenant\": \"abc\"}, \"some-array\": [\"foo\",\"bar\"]}"))
-            .user(UserBuilder.create().username("taro").password("password").attribute("foo", "faa").attribute("bar",
+            .users(UserBuilder.create().username("taro").password("password").attribute("foo", "faa").attribute("bar",
                 "bbarbar"))
-            .user(UserBuilder.create().username("my-user").password("password").attribute("canCreateItems","true"))
-            .user(UserBuilder.create().username("my-user2").password("password").attribute("canCreateItems","false"))
-            .user(UserBuilder.create().username("my-user3").password("password").attribute("otherClaim","something"))
-            .user(UserBuilder.create().username("context-user").password("password").attribute("custom", "foo"))
-            .group(GroupBuilder.create().name("ADMIN").attribute("attribute","example").build())
-            .user(UserBuilder.create().username("admin").password("password").groups("ADMIN"))
+            .users(UserBuilder.create().username("my-user").password("password").attribute("canCreateItems","true"))
+            .users(UserBuilder.create().username("my-user2").password("password").attribute("canCreateItems","false"))
+            .users(UserBuilder.create().username("my-user3").password("password").attribute("otherClaim","something"))
+            .users(UserBuilder.create().username("context-user").password("password").attribute("custom", "foo"))
+            .groups(GroupBuilder.create().name("ADMIN").attribute("attribute","example"))
+            .users(UserBuilder.create().username("admin").password("password").groups("ADMIN"))
 
 
-            .client(ClientBuilder.create().clientId("resource-server-test").secret("secret").authorizationServicesEnabled(true)
+            .clients(ClientBuilder.create().clientId("resource-server-test").secret("secret").authorizationServicesEnabled(true)
                 .redirectUris("http://localhost/resource-server-test").directAccessGrantsEnabled()
                 .protocolMappers(userAttrFooProtocolMapper, userAttrBarProtocolMapper, userAttrJsonProtocolMapper, userAttrJsonComplexProtocolMapper,userAttributesProtocolMapper,groupAttributesProtocolMapper))
                 .build());

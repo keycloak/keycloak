@@ -352,7 +352,7 @@ public class Picocli {
                 if (newValue == null || oldValue == null) {
                     changed = true;
                 } else if (!warnedTimestampChanged && timestampChanged(oldValue, newValue)) {
-                    if (Configuration.getOptionalBooleanKcValue("run-in-container").orElse(false)) {
+                    if (Environment.isRunInContainer()) {
                         warnedTimestampChanged = true;
                         warn(PROVIDER_TIMESTAMP_WARNING);
                     } else {
@@ -601,15 +601,17 @@ public class Picocli {
             // Completion is inheriting mixinStandardHelpOptions = true
         }
 
-        spec.addUnmatchedArgsBinding(CommandLine.Model.UnmatchedArgsBinding.forStringArrayConsumer(new ISetter() {
-            @Override
-            public <T> T set(T value) {
-                if (value != null) {
-                    unrecognizedArgs.addAll(Arrays.asList((String[]) value));
+        if (spec.subcommands().isEmpty() && spec.userObject() instanceof AbstractCommand ac && getIncludeOptions(ac).allowUnrecognized) {
+            spec.addUnmatchedArgsBinding(CommandLine.Model.UnmatchedArgsBinding.forStringArrayConsumer(new ISetter() {
+                @Override
+                public <T> T set(T value) {
+                    if (value != null) {
+                        unrecognizedArgs.addAll(Arrays.asList((String[]) value));
+                    }
+                    return null; // doesn't matter
                 }
-                return null; // doesn't matter
-            }
-        }));
+            }));
+        }
 
         spec.subcommands().values().forEach(c -> updateSpecHelpAndUnmatched(c.getCommandSpec(), unrecognizedArgs));
     }

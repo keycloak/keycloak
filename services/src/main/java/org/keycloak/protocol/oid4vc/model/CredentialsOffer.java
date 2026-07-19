@@ -91,10 +91,6 @@ public class CredentialsOffer {
         return this;
     }
 
-    public CredentialOfferGrant getGrant(String grantType) {
-        return grants.get(grantType);
-    }
-
     public CredentialsOffer addGrant(CredentialOfferGrant grant) {
         grants.put(grant.getGrantType(), grant);
         return this;

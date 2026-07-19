@@ -31,12 +31,12 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.util.AuthorizationContextUtil;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.RealmBuilder;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  *
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
  */
-@EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+@EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
 public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
@@ -67,8 +67,8 @@ public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTes
                 .password("password")
                 .build();
 
-        RealmBuilder.edit(testRealm)
-                .user(user);
+        RealmBuilder.update(testRealm)
+                .users(user);
     }
 
     @Override
@@ -101,7 +101,7 @@ public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTes
             String clientUUID = client.getId();
             AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUUID);
             session.getContext().setClient(client);
-            List<AuthorizationRequestContextHolder.AuthorizationRequestHolder> authorizationRequestHolders = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getNote(OAuth2Constants.SCOPE))
+            List<AuthorizationRequestContextHolder.AuthorizationRequestHolder> authorizationRequestHolders = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, null, clientSession.getNote(OAuth2Constants.SCOPE))
                     .getAuthorizationDetailEntries().stream()
                     .map(AuthorizationRequestContextHolder.AuthorizationRequestHolder::new)
                     .collect(Collectors.toList());

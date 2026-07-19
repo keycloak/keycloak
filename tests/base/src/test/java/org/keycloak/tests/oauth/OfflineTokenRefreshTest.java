@@ -17,13 +17,17 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -40,6 +44,7 @@ import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.timeoffset.InfinispanTimeUtil;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
@@ -440,7 +445,7 @@ public class OfflineTokenRefreshTest {
                 .clientId("offline-client")
                 .sessionId(loginEvent.getSessionId());
 
-        introspectionResponse = oauth.doIntrospectionAccessTokenRequest(response.getRefreshToken());
+        introspectionResponse = oauth.doIntrospectionRefreshTokenRequest(response.getRefreshToken());
         assertTrue(introspectionResponse.asJsonNode().get("active").asBoolean());
         EventRepresentation introspectEvent2 = events.poll();
         EventAssertion.assertSuccess(introspectEvent2)
@@ -602,21 +607,30 @@ public class OfflineTokenRefreshTest {
             });
 
             // Only create offline-client - test-app is created by @InjectOAuthClient
-            builder.addClient(OFFLINE_CLIENT_ID)
+            ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
+            audienceMapper.setName("audience-offline-client");
+            audienceMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            audienceMapper.setProtocolMapper(AudienceProtocolMapper.PROVIDER_ID);
+            audienceMapper.setConfig(new java.util.HashMap<>());
+            audienceMapper.getConfig().put(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE, OFFLINE_CLIENT_ID);
+            audienceMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+
+            builder.clients(ClientBuilder.create(OFFLINE_CLIENT_ID)
                     .secret("secret1")
                     .redirectUris(OFFLINE_CLIENT_APP_URI)
                     .adminUrl(OFFLINE_CLIENT_APP_URI)
                     .directAccessGrantsEnabled(true)
                     .serviceAccountsEnabled(true)
-                    .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true");
+                    .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
+                    .protocolMappers(audienceMapper));
 
             // Users WITHOUT test-app client roles
-            builder.addUser("test-user@localhost")
+            builder.users(UserBuilder.create("test-user@localhost")
                     .name("Tom", "Brady")
                     .email("test-user@localhost")
                     .emailVerified(true)
                     .password("password")
-                    .roles("user", "offline_access");
+                    .realmRoles("user", "offline_access"));
 
             return builder;
         }
@@ -625,6 +639,13 @@ public class OfflineTokenRefreshTest {
     public static class OfflineAuthClientConfig implements ClientConfig {
         @Override
         public ClientBuilder configure(ClientBuilder client) {
+            ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
+            audienceMapper.setName("audience-test-app");
+            audienceMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            audienceMapper.setProtocolMapper(AudienceProtocolMapper.PROVIDER_ID);
+            audienceMapper.setConfig(new java.util.HashMap<>());
+            audienceMapper.getConfig().put(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE, "test-app");
+            audienceMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
             return client.clientId("test-app")
                     .secret("password")
                     .serviceAccountsEnabled(true)
@@ -632,7 +653,8 @@ public class OfflineTokenRefreshTest {
                     .redirectUris(
                             "http://localhost:8080/test-app",  // Default
                             TEST_APP_REDIRECT_URI              // Custom URI
-                    );
+                    )
+                    .protocolMappers(audienceMapper);
         }
     }
 }

@@ -19,6 +19,7 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper;
 import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
@@ -55,9 +56,12 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.Creator;
@@ -65,6 +69,7 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -611,12 +616,13 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             String offlineTokenString = tokenResponse.getRefreshToken();
             RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
 
-            events.expectCodeToToken(codeId, sessionId)
-                    .realm(consumerRealmRep)
-                    .client(CONSUMER_BROKER_APP_CLIENT_ID)
-                    .user(lwUserId)
-                    .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
-                    .assertEvent();
+            EventAssertion.expectCodeToTokenSuccess(events.poll())
+                    .sessionId(sessionId)
+                    .clientId(CONSUMER_BROKER_APP_CLIENT_ID)
+                    .userId(lwUserId)
+                    .details(Details.CODE_ID, codeId)
+                    .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                    .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
             assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
             assertNull(offlineToken.getExp());
@@ -626,37 +632,42 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             String newRefreshTokenString = testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, sessionId, consumerRealmRep, lwUserId);
 
             // Change offset to very big value to ensure offline session expires
-            setTimeOffset(3000000);
+            timeOffSet.set(3000000);
 
             AccessTokenResponse response = oauth.doRefreshTokenRequest(newRefreshTokenString);
             RefreshToken newRefreshToken = oauth.parseRefreshToken(newRefreshTokenString);
             Assertions.assertEquals(400, response.getStatusCode());
             assertEquals("invalid_grant", response.getError());
 
-            events.expectRefresh(offlineToken.getId(), newRefreshToken.getSessionState())
-                    .realm(consumerRealmRep)
-                    .client(CONSUMER_BROKER_APP_CLIENT_ID)
-                    .user((String) null)
-                    .error(Errors.INVALID_TOKEN)
-                    .clearDetails()
-                    .assertEvent();
+            EventRepresentation eventRep = EventAssertion.assertError(events.poll())
+                    .type(EventType.REFRESH_TOKEN_ERROR)
+                    .hasSessionId()
+                    .sessionId(newRefreshToken.getSessionState())
+                    .clientId(CONSUMER_BROKER_APP_CLIENT_ID)
+                    .userId(null)
+                    .error(Errors.INVALID_TOKEN).getEvent();
+            Assertions.assertNotEquals(offlineToken.getId(), eventRep.getDetails().get(Details.REFRESH_TOKEN_ID));
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
         }
     }
 
     private String testRefreshWithOfflineToken(AccessToken oldToken, RefreshToken offlineToken, String offlineTokenString,
                                                final String sessionId, RealmRepresentation consumerRealmRep, String userId) {
         // Change offset to big value to ensure userSession expired
-        setTimeOffset(99999);
+        timeOffSet.set(99999);
         assertFalse(oldToken.isActive());
         assertTrue(offlineToken.isActive());
 
         // Assert userSession expired
-        testingClient.testing().removeExpired(bc.consumerRealmName());
+        KeycloakTestingClient.Server runOnServerConsumer = testingClient.server(bc.consumerRealmName());
+        runOnServerConsumer.run(RunHelpers.removeExpired());
         try {
-            testingClient.testing().removeUserSession(bc.consumerRealmName(), sessionId);
-        } catch (NotFoundException nfe) {
+            runOnServerConsumer.run(RunHelpers.removeUserSession(sessionId));
+        } catch (RunOnServerException nfe) {
+            if (!(nfe.getCause() instanceof NotFoundException)) {
+                throw nfe;
+            }
             // Ignore
         }
 
@@ -676,16 +687,15 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
 
         assertTrue(refreshedToken.getRealmAccess().isUserInRole(Constants.OFFLINE_ACCESS_ROLE));
 
-        EventRepresentation refreshEvent = events.expectRefresh(offlineToken.getId(), sessionId)
-                .realm(consumerRealmRep)
-                .client(CONSUMER_BROKER_APP_CLIENT_ID)
-                .user(userId)
-                .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
-                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
-                .assertEvent();
+        EventRepresentation refreshEvent = EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .clientId(CONSUMER_BROKER_APP_CLIENT_ID)
+                .userId(userId)
+                .details(Details.REFRESH_TOKEN_ID, offlineToken.getId()).sessionId(sessionId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID).getEvent();
         Assertions.assertNotEquals(oldToken.getId(), refreshEvent.getDetails().get(Details.TOKEN_ID));
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
         return newRefreshToken;
     }
 

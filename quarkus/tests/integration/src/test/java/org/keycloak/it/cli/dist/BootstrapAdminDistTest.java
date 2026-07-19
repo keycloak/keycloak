@@ -19,9 +19,10 @@ package org.keycloak.it.cli.dist;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.WithEnvVars;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
@@ -87,14 +88,15 @@ public class BootstrapAdminDistTest {
 
     @Test
     @WithEnvVars({"MY_SECRET", "admin123"})
-    void createAndUseSericeAccountAdmin(KeycloakDistribution dist) throws Exception {
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        CLIResult result = rawDist.run("bootstrap-admin", "service", "--db=dev-file", "--client-id=admin", "--client-secret:env=MY_SECRET");
+    void createAndUseSericeAccountAdmin(KeycloakRunner runner) throws Exception {
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        CLIResult result = runner.run("bootstrap-admin", "service", "--db=dev-file", "--client-id=admin", "--client-secret:env=MY_SECRET");
 
         assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
 
-        rawDist.setManualStop(true);
-        rawDist.run("start-dev");
+        runner.setStopServer(Mode.MANUAL);
+        result = runner.run("start-dev");
+        result.assertStartedDevMode();
 
         CLIResult adminResult = rawDist.kcadm("get", "clients", "--server", "http://localhost:8080", "--realm", "master", "--client", "admin", "--secret", "admin123");
 

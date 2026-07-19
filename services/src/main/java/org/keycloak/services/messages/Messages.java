@@ -96,6 +96,8 @@ public class Messages {
     public static final String RECAPTCHA_NOT_CONFIGURED = "recaptchaNotConfigured";
 
     public static final String EMAIL_EXISTS = "emailExistsMessage";
+
+    public static final String DID_EXISTS = "didExistsMessage";
     public static final String EMAIL_VERIFICATION_PENDING = "emailVerificationPending";
 
     public static final String FEDERATED_IDENTITY_EXISTS = "federatedIdentityExistsMessage";
@@ -238,6 +240,8 @@ public class Messages {
     public static final String CONFIRM_EMAIL_ADDRESS_VERIFICATION_HEADER = "confirmEmailAddressVerificationHeader";
 
     public static final String CONFIRM_EXECUTION_OF_ACTIONS = "confirmExecutionOfActions";
+
+    public static final String CONFIRM_CLAIM_CREDENTIAL = "credentialOfferTitle";
 
     public static final String STALE_CODE = "staleCodeMessage";
 

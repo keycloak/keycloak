@@ -1,11 +1,16 @@
 package org.keycloak.testframework.realm;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.Time;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 
 public class UserBuilder extends Builder<UserRepresentation> {
 
@@ -15,6 +20,10 @@ public class UserBuilder extends Builder<UserRepresentation> {
 
     public static UserBuilder create() {
         return new UserBuilder(new UserRepresentation()).enabled(true);
+    }
+
+    public static UserBuilder create(String username) {
+        return create().username(username);
     }
 
     public static UserBuilder update(UserRepresentation rep) {
@@ -81,7 +90,7 @@ public class UserBuilder extends Builder<UserRepresentation> {
         return credential(CredentialBuilder.hotp(hotpSecret));
     }
 
-    public UserBuilder roles(String... roles) {
+    public UserBuilder realmRoles(String... roles) {
         rep.setRealmRoles(combine(rep.getRealmRoles(), roles));
         return this;
     }
@@ -126,6 +135,22 @@ public class UserBuilder extends Builder<UserRepresentation> {
 
     public UserBuilder serviceAccountId(String serviceAccountClientId) {
         rep.setServiceAccountClientId(serviceAccountClientId);
+        return this;
+    }
+
+    public UserBuilder verifiableCredential(String credentialScopeName) {
+        UserVerifiableCredentialRepresentation newCred = new UserVerifiableCredentialRepresentation();
+        newCred.setCredentialScopeName(credentialScopeName);
+        newCred.setRevision(SecretGenerator.getInstance().generateSecureID());
+        newCred.setCreatedDate(Time.currentTimeMillis());
+
+        List<UserVerifiableCredentialRepresentation> creds = Optional.ofNullable(rep.getVerifiableCredentials())
+                .orElseGet(() -> {
+            List<UserVerifiableCredentialRepresentation> newCreds = new ArrayList<>();
+            rep.setVerifiableCredentials(newCreds);
+            return newCreds;
+        });
+        creds.add(newCred);
         return this;
     }
 

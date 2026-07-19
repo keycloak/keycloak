@@ -2,8 +2,8 @@ package org.keycloak.testsuite.organization.admin;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testsuite.AbstractAdminTest;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -25,8 +25,8 @@ public class IdentityProviderThemeConfigTest extends AbstractAdminTest {
                 IdentityProviderBuilder.create()
                         .alias("broker")
                         .providerId("oidc")
-                        .setAttribute("unsupported-themeConfig", "This value is not shown in the Keycloak theme")
-                        .setAttribute("kcTheme-idpConfigValue", "This value is shown in the Keycloak theme")
+                        .attribute("unsupported-themeConfig", "This value is not shown in the Keycloak theme")
+                        .attribute("kcTheme-idpConfigValue", "This value is shown in the Keycloak theme")
                         .build()).close();
 
         oauth.realm(TEST_REALM_NAME);

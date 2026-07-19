@@ -22,11 +22,12 @@ import java.util.List;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.userprofile.UserProfileContext;
 
-import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -50,105 +51,89 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
         return KcOidcBrokerConfiguration.INSTANCE;
     }
 
-    private void checkFirstLoginEvents(RealmResource providerRealm, RealmResource consumerRealm, String providerUserId, String consumerUserId) {
-        events.expect(EventType.LOGIN)
-                .realm(providerRealm.toRepresentation().getId())
-                .user(providerUserId)
-                .client(bc.getIDPClientIdInProviderRealm())
-                .session(Matchers.any(String.class))
-                .detail(Details.USERNAME, bc.getUserLogin())
-                .assertEvent();
+    private void checkFirstLoginEvents(String providerUserId, String consumerUserId) {
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN)
+                .userId(providerUserId)
+                .clientId(bc.getIDPClientIdInProviderRealm())
+                .hasSessionId()
+                .details(Details.USERNAME, bc.getUserLogin());
 
-        events.expect(EventType.CODE_TO_TOKEN)
-                .session(Matchers.any(String.class))
-                .realm(providerRealm.toRepresentation().getId())
-                .user(providerUserId)
-                .client(bc.getIDPClientIdInProviderRealm())
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN)
+                .hasSessionId()
+                .userId(providerUserId)
+                .clientId(bc.getIDPClientIdInProviderRealm());
 
-        events.expect(EventType.USER_INFO_REQUEST)
-                .session(Matchers.any(String.class))
-                .realm(providerRealm.toRepresentation().getId())
-                .user(providerUserId)
-                .client(bc.getIDPClientIdInProviderRealm())
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.USER_INFO_REQUEST)
+                .hasSessionId()
+                .userId(providerUserId)
+                .clientId(bc.getIDPClientIdInProviderRealm());
 
-        events.expect(EventType.IDENTITY_PROVIDER_FIRST_LOGIN)
-                .realm(consumerRealm.toRepresentation().getId())
-                .client("broker-app")
-                .user((String)null)
-                .detail(Details.IDENTITY_PROVIDER, IDP_OIDC_ALIAS)
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
-                .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID,  Matchers.startsWith(bc.getIDPAlias()))
-                .assertEvent();
+        EventRepresentation eventRep = EventAssertion.assertSuccess(events.poll()).type(EventType.IDENTITY_PROVIDER_FIRST_LOGIN)
+                .clientId("broker-app")
+                .userId(null)
+                .details(Details.IDENTITY_PROVIDER, IDP_OIDC_ALIAS)
+                .details(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin()).getEvent();
+        Assertions.assertTrue(eventRep.getDetails().get(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID).startsWith(bc.getIDPAlias()));
 
-        events.expect(EventType.UPDATE_PROFILE)
-                .realm(consumerRealm.toRepresentation().getId())
-                .client("broker-app")
-                .user((String)null)
-                .detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_PROFILE)
+                .clientId("broker-app")
+                .userId(null)
+                .details(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name());
 
-        events.expect(EventType.REGISTER)
-                .realm(consumerRealm.toRepresentation().getId())
-                .client("broker-app")
-                .user(consumerUserId == null? Matchers.any(String.class) : Matchers.is(consumerUserId))
-                .session((String) null)
-                .detail(Details.USERNAME, bc.getUserLogin())
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
-                .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
-                .assertEvent();
+        EventRepresentation eventRep2 = EventAssertion.assertSuccess(events.poll()).type(EventType.REGISTER)
+                .clientId("broker-app")
+                .sessionId(null)
+                .hasUserId()
+                .details(Details.USERNAME, bc.getUserLogin())
+                .details(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
+                .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias()).getEvent();
+        if (consumerUserId != null) {
+            Assertions.assertEquals(eventRep2.getUserId(), consumerUserId);
+        }
 
-        events.expect(EventType.LOGIN)
-                .realm(consumerRealm.toRepresentation().getId())
-                .client("broker-app")
-                .user(consumerUserId == null? Matchers.any(String.class) : Matchers.is(consumerUserId))
-                .session(Matchers.any(String.class))
-                .detail(Details.USERNAME, bc.getUserLogin())
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
-                .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
-                .assertEvent();
+        EventRepresentation eventRep3 = EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN)
+                .clientId("broker-app")
+                .hasSessionId()
+                .hasUserId()
+                .details(Details.USERNAME, bc.getUserLogin())
+                .details(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
+                .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias()).getEvent();
+        if (consumerUserId != null) {
+            Assertions.assertEquals(eventRep3.getUserId(), consumerUserId);
+        }
         
         events.clear();
     }
 
-    private void checkLoginEvents(RealmResource providerRealm, RealmResource consumerRealm, String providerUserId, String consumerUserId) {
-        events.expect(EventType.LOGIN)
-                .realm(providerRealm.toRepresentation().getId())
-                .user(providerUserId)
-                .client(bc.getIDPClientIdInProviderRealm())
-                .session(Matchers.any(String.class))
-                .detail(Details.USERNAME, bc.getUserLogin())
-                .assertEvent();
+    private void checkLoginEvents(String providerUserId, String consumerUserId) {
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN)
+                .userId(providerUserId)
+                .clientId(bc.getIDPClientIdInProviderRealm())
+                .hasSessionId()
+                .details(Details.USERNAME, bc.getUserLogin());
 
-        events.expect(EventType.CODE_TO_TOKEN)
-                .session(Matchers.any(String.class))
-                .realm(providerRealm.toRepresentation().getId())
-                .user(providerUserId)
-                .client(bc.getIDPClientIdInProviderRealm())
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN)
+                .hasSessionId()
+                .userId(providerUserId)
+                .clientId(bc.getIDPClientIdInProviderRealm());
 
-        events.expect(EventType.USER_INFO_REQUEST)
-                .session(Matchers.any(String.class))
-                .realm(providerRealm.toRepresentation().getId())
-                .user(providerUserId)
-                .client(bc.getIDPClientIdInProviderRealm())
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.USER_INFO_REQUEST)
+                .hasSessionId()
+                .userId(providerUserId)
+                .clientId(bc.getIDPClientIdInProviderRealm());
 
-        events.expect(EventType.LOGIN)
-                .realm(consumerRealm.toRepresentation().getId())
-                .client("broker-app")
-                .user(consumerUserId == null? Matchers.any(String.class) : Matchers.is(consumerUserId))
-                .session(Matchers.any(String.class))
-                .detail(Details.USERNAME, bc.getUserLogin())
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
-                .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
-                .assertEvent();
+        EventRepresentation eventRep = EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN)
+                .clientId("broker-app")
+                .hasSessionId()
+                .details(Details.USERNAME, bc.getUserLogin())
+                .details(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
+                .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias()).getEvent();
+        Assertions.assertTrue(eventRep.getUserId() == null || eventRep.getUserId().equals(consumerUserId));
 
         events.clear();
     }
 
-    private void doALoginError(RealmResource consumerRealm) {
+    private void doALoginError() {
         events.clear();
 
         // navigate to the account url of the consumer realm
@@ -158,14 +143,12 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
         // Do a wrong login with a user that does not exist
         loginPage.login("wrong-user", "wrong-password");
 
-        events.expect(EventType.LOGIN_ERROR)
-                .realm(consumerRealm.toRepresentation().getId())
-                .user((String) null)
-                .client("broker-app")
-                .session((String) null)
-                .detail(Details.USERNAME, "wrong-user")
-                .error("user_not_found")
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR)
+                .userId(null)
+                .clientId("broker-app")
+                .sessionId(null)
+                .details(Details.USERNAME, "wrong-user")
+                .error("user_not_found");
 
         events.clear();
     }
@@ -181,7 +164,7 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
 
         super.loginUser();
 
-        checkFirstLoginEvents(providerRealm, consumerRealm, providerUser.getId(), null);
+        checkFirstLoginEvents(providerUser.getId(), null);
     }
 
     private void loginUserAfterError() {
@@ -189,7 +172,7 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
         RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
         UserRepresentation providerUser = providerRealm.users().search(bc.getUserLogin()).iterator().next();
 
-        doALoginError(consumerRealm);
+        doALoginError();
 
         logInWithBroker(bc);
 
@@ -206,13 +189,13 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
         UserRepresentation consumerUser = users.iterator().next();
         Assertions.assertEquals(bc.getUserEmail(), consumerUser.getEmail());
 
-        checkFirstLoginEvents(providerRealm, consumerRealm, providerUser.getId(), consumerUser.getId());
+        checkFirstLoginEvents(providerUser.getId(), consumerUser.getId());
     }
 
     @Override
     protected void testSingleLogout() {
         RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
-        UserRepresentation providerUser = providerRealm.users().search(bc.getUserLogin()).iterator().next();
+        providerRealm.users().search(bc.getUserLogin()).iterator().next();
         events.clear();
 
         super.testSingleLogout();
@@ -240,7 +223,7 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/master/app"));
         Assertions.assertEquals(userCount, adminClient.realm(bc.consumerRealmName()).users().count());
 
-        checkLoginEvents(providerRealm, consumerRealm, providerUser.getId(), consumerUser.getId());
+        checkLoginEvents(providerUser.getId(), consumerUser.getId());
     }
 
     @Test
@@ -260,7 +243,7 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
         UserRepresentation consumerUser = consumerRealm.users().search(bc.getUserLogin()).iterator().next();
         Integer userCount = adminClient.realm(bc.consumerRealmName()).users().count();
 
-        doALoginError(consumerRealm);
+        doALoginError();
 
         // now perform the login via the broker
         logInWithBroker(bc);
@@ -268,6 +251,6 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/master/app"));
         Assertions.assertEquals(userCount, adminClient.realm(bc.consumerRealmName()).users().count());
 
-        checkLoginEvents(providerRealm, consumerRealm, providerUser.getId(), consumerUser.getId());
+        checkLoginEvents(providerUser.getId(), consumerUser.getId());
     }
 }

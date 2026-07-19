@@ -26,14 +26,15 @@ import jakarta.ws.rs.core.HttpHeaders;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.auth.page.AuthRealm;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.HttpClientUtils;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
@@ -83,7 +84,7 @@ public class CookieTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        RealmBuilder realm = RealmBuilder.edit(realmRepresentation).testEventListener();
+        RealmBuilder realm = RealmBuilder.update(realmRepresentation).eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID);
         RealmRepresentation testRealm = realm.build();
         testRealms.add(testRealm);
     }

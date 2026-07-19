@@ -44,17 +44,19 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
@@ -106,7 +108,7 @@ public class LogoutTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        RealmBuilder realm = RealmBuilder.edit(realmRepresentation).testEventListener();
+        RealmBuilder realm = RealmBuilder.update(realmRepresentation).eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID);
 
         testRealms.add(realm.build());
     }
@@ -152,7 +154,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         oauth.doLogout(refreshToken1);
 
-        setTimeOffset(2);
+        timeOffSet.set(2);
 
         driver.navigate().refresh();
         oauth.fillLoginForm("test-user@localhost", "password");
@@ -284,7 +286,7 @@ public class LogoutTest extends AbstractKeycloakTest {
     public void logoutUserByAdmin() {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
-        String sessionId = events.expectLogin().assertEvent().getSessionId();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         UserRepresentation user = AdminApiUtil.findUserByUsername(adminClient.realm("test"), "test-user@localhost");
         Assertions.assertEquals((Object) 0, user.getNotBefore());
@@ -357,7 +359,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         clients.get(rep.getId()).update(rep);
 
         oauth.doLogin("test-user@localhost", "password");
-        String sessionId = events.expectLogin().assertEvent().getSessionId();
+        String sessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
 
         String code = oauth.parseLoginResponse().getCode();
 
@@ -376,10 +378,10 @@ public class LogoutTest extends AbstractKeycloakTest {
         }
 
         // Assert logout event triggered for backchannel logout
-        events.expectLogout(sessionId)
-                .client(AssertEvents.DEFAULT_CLIENT_ID)
-                .detail(Details.REDIRECT_URI, oauth.APP_AUTH_ROOT)
-                .assertEvent();
+        EventAssertion.expectLogoutSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(oauth.getClientId())
+                .details(Details.REDIRECT_URI, oauth.APP_AUTH_ROOT);
 
         assertNotNull(testingClient.testApp().getAdminLogoutAction());
     }
@@ -470,6 +472,34 @@ public class LogoutTest extends AbstractKeycloakTest {
     }
 
     /**
+     * Test for CVE-2026-4874: Verify that malicious client_session_host values
+     * are rejected during token refresh and don't cause SSRF during admin logout.
+     */
+    @Test
+    public void adminLogoutDoesNotUseMaliciousClientSessionHost() throws Exception {
+        try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, oauth.getRealm(), oauth.getClientId())
+                .setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "https://${application.session.host}/testing/test-app/admin/backchannelLogout")
+                .update()) {
+
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.parseLoginResponse().getCode();
+
+            AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
+                    .param(AdapterConstants.CLIENT_SESSION_STATE, "client_session")
+                    .param(AdapterConstants.CLIENT_SESSION_HOST, "evil.com:8180")
+                    .send();
+
+            List<UserRepresentation> users = adminClient.realm("test")
+                    .users()
+                    .search("test-user@localhost");
+            adminClient.realm("test").users().get(users.get(0).getId()).logout();
+
+            assertNull(testingClient.testApp().getBackChannelRawLogoutToken(),
+                    "There should be no Backchannel logout token for an untrusted client session host");
+        }
+    }
+
+    /**
      * Validate the token matches the spec at <a href="https://openid.net/specs/openid-connect-backchannel-1_0.html#LogoutToken">OpenID Connect Back-Channel Logout 1.0 incorporating errata set 1</a>
      */
     private void validateLogoutToken(LogoutToken backChannelLogoutToken) {
@@ -494,7 +524,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code).param(AdapterConstants.CLIENT_SESSION_STATE, "client-session").send();
 
-        setTimeOffset(1);
+        timeOffSet.set(1);
 
         oauth.loginForm()
                 .prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN)

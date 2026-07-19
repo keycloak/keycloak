@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.forms;
 
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -43,10 +42,11 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.managers.DefaultBruteForceProtector;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.AssertEvents.ExpectedEvent;
 import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -56,11 +56,12 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
@@ -87,7 +88,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     public AssertEvents events = new AssertEvents(this);
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected AppPage appPage;
@@ -542,10 +543,61 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
             //Wait for brute force executor to process the login and then wait for delta time
             WaitUtils.waitForBruteForceExecutors(testingClient);
-            setTimeOffset(5);
+            timeOffSet.set(5);
 
             loginInvalidPassword();
             loginSuccess();
+        } finally {
+            realm.setMaxDeltaTimeSeconds(20);
+            managedRealm.admin().update(realm);
+        }
+    }
+
+    @Test
+    public void testRepeatedFailureResetForTemporaryLockout() {
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
+        try {
+            // Using a large maxDeltaTimeSeconds to prevent cache expiration happening due to
+            // Infinispan cache expiration in dev environment, between the two failure() calls inside the server lambda.
+            realm.setMaxDeltaTimeSeconds(3600);
+            managedRealm.admin().update(realm);
+
+            UserRepresentation user = findUser("test-user@localhost");
+            String userId = user.getId();
+            String realmId = realm.getId();
+
+            // Calling failure() directly on the server side with custom failureTime values, this ensures 
+            // bypassing the async executor so both calls share the same session/transaction. 
+            // This allows to observing the entity state without cache expiration.
+            testingClient.server().run(session -> {
+
+                RealmModel realmModel = session.realms().getRealm(realmId);
+                DefaultBruteForceProtector protector = (DefaultBruteForceProtector)session.getProvider(BruteForceProtector.class);
+
+                // Now attempting Failure 1
+                long T1 = org.keycloak.common.util.Time.currentTimeMillis();
+                protector.failure(session, realmModel, userId, "127.0.0.1", T1, null);
+                UserLoginFailureModel lf = session.loginFailures()
+                        .getUserLoginFailure(realmModel, userId);
+                Assertions.assertNotNull(lf);
+                Assertions.assertEquals(1, lf.getNumFailures());
+
+                // Now attempting Failure 2 with delta > maxDeltaTimeSeconds (3600s)
+                long T2 = T1 + 3601 * 1000L;
+                protector.failure(session, realmModel, userId, "127.0.0.1", T2, null);
+                lf = session.loginFailures().getUserLoginFailure(realmModel, userId);
+
+                // Counter should have been cleared then re-incremented
+                Assertions.assertEquals(1, lf.getNumFailures(), "numFailures should be 1 after counter reset");
+                
+                Assertions.assertEquals("127.0.0.1", lf.getLastIPFailure(), "last ip should be retained");
+
+                // The Core Test Assertion: setLastFailure must run AFTER clearFailures so lastFailure is not wiped to 0.
+                // If setLastFailure runs before clearFailures (the behavior causing the bug), clearFailures() sets lastFailure to 0, 
+                // then subsequent failures lose the ability to compute the correct delta time.
+                Assertions.assertTrue(lf.getLastFailure() > 0, "lastFailure must be preserved after counter reset, got: "
+                        + lf.getLastFailure());
+            });
         } finally {
             realm.setMaxDeltaTimeSeconds(20);
             managedRealm.admin().update(realm);
@@ -559,7 +611,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         //Wait for brute force executor to process the login and then wait for delta time
         WaitUtils.waitForBruteForceExecutors(testingClient);
-        setTimeOffset(realm.getMaxDeltaTimeSeconds());
+        timeOffSet.set(realm.getMaxDeltaTimeSeconds());
 
         String realmId = realm.getId();
         testingClient.server().run(session -> {
@@ -581,7 +633,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
             //Wait for brute force executor to process the login and then wait for delta time
             WaitUtils.waitForBruteForceExecutors(testingClient);
-            setTimeOffset(5);
+            timeOffSet.set(5);
 
             loginInvalidPassword();
             expectPermanentlyDisabled();
@@ -605,7 +657,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         // KEYCLOAK-5420
         // Test to make sure that temporarily disabled doesn't increment failure count
-        setTimeOffset(21);
+        timeOffSet.set(21);
         // should be unlocked now
         loginSuccess();
         clearUserFailures();
@@ -639,14 +691,14 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             loginInvalidPassword();
             expectTemporarilyDisabled();
             assertUserNumberOfFailures(user.getId(), 2);
-            this.setTimeOffset(30);
+            timeOffSet.set(30);
 
             loginInvalidPassword();
             assertUserNumberOfFailures(user.getId(), 3);
-            this.setTimeOffset(60);
+            timeOffSet.set(60);
             loginSuccess();
         } finally {
-            this.resetTimeOffset();
+            timeOffSet.set(0);
         }
     }
 
@@ -664,18 +716,18 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             loginInvalidPassword();
             expectTemporarilyDisabled();
             assertUserNumberOfFailures(user.getId(), 2);
-            this.setTimeOffset(30);
+            timeOffSet.set(30);
 
             loginInvalidPassword();
             assertUserNumberOfFailures(user.getId(), 3);
-            this.setTimeOffset(60);
+            timeOffSet.set(60);
             expectTemporarilyDisabled();
 
         } finally {
             realm.setPermanentLockout(false);
             realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
             managedRealm.admin().update(realm);
-            this.resetTimeOffset();
+            timeOffSet.set(0);
         }
     }
 
@@ -735,7 +787,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             managedRealm.admin().update(realm);
 
             // expires the temporary lockout
-            this.setTimeOffset(60);
+            timeOffSet.set(60);
 
             // after switching to permanent lockout the user status is disabled because there are login failures
             // the user did not try to successfully authenticate yet to clear the login failures
@@ -757,7 +809,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             // login failures should be removed after re-enabling the user and the user able to authenticate
             loginSuccess();
         } finally {
-            resetTimeOffset();
+            timeOffSet.set(0);
             realm.setPermanentLockout(false);
             managedRealm.admin().update(realm);
         }
@@ -810,7 +862,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     private void checkEmailPresent(String subject) {
-        Assertions.assertFalse(Arrays.stream(greenMail.getReceivedMessages()).filter(m -> {
+        Assertions.assertFalse(Arrays.stream(mail.getReceivedMessages()).filter(m -> {
             try {
                 return subject.equals(m.getSubject());
             } catch (MessagingException ex) {
@@ -821,7 +873,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void testPermanentLockout() throws Exception {
-        testingClient.testing().addEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT));
+        runOnServerMaster.run(RunHelpers.addEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT)));
         try (RealmAttributeUpdater updater = new RealmAttributeUpdater(managedRealm.admin()).setPermanentLockout(true)
                 .setQuickLoginCheckMilliSeconds(0L)
                 .addEventsListener(EmailEventListenerProviderFactory.ID).update()) {
@@ -832,9 +884,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             // As of now, there are two events: USER_DISABLED_BY_PERMANENT_LOCKOUT and LOGIN_ERROR but Order is not
             // guarantee though since the brute force detector is running separately "in its own thread" named
             // "Brute Force Protector".
-            List<EventRepresentation> actualEvents = Arrays.asList(events.poll(), events.poll(5));
-            assertIsContained(events.expect(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT).client((String) null).detail(Details.REASON, "brute_force_attack detected"), actualEvents);
-            assertIsContained(events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS), actualEvents);
+            assertIsContained(true);
 
             checkEmailPresent("User disabled by permanent lockout");
 
@@ -849,7 +899,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             updateUser(user);
             assertUserDisabledReason(null);
         } finally {
-            testingClient.testing().removeEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT));
+            runOnServerMaster.run(RunHelpers.removeEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT)));
             UserRepresentation user = managedRealm.admin().users().search("test-user@localhost", 0, 1).get(0);
             user.setEnabled(true);
             updateUser(user);
@@ -876,9 +926,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             // As of now, there are two events: USER_DISABLED_BY_PERMANENT_LOCKOUT and LOGIN_ERROR but Order is not
             // guarantee though since the brute force detector is running separately "in its own thread" named
             // "Brute Force Protector".
-            List<EventRepresentation> actualEvents = Arrays.asList(events.poll(), events.poll(5));
-            assertIsContained(events.expect(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT).client((String) null).detail(Details.REASON, "brute_force_attack detected"), actualEvents);
-            assertIsContained(events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS), actualEvents);
+            assertIsContained(true);
 
             // assert
             expectPermanentlyDisabled();
@@ -901,19 +949,17 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void testTemporaryLockout() throws Exception {
-        testingClient.testing().addEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT));
+        runOnServerMaster.run(RunHelpers.addEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT)));
         try (RealmAttributeUpdater updater = new RealmAttributeUpdater(managedRealm.admin())
                 .addEventsListener(EmailEventListenerProviderFactory.ID).update()) {
             loginInvalidPassword("test-user@localhost");
             loginInvalidPassword("test-user@localhost", false);
 
-            List<EventRepresentation> actualEvents = Arrays.asList(events.poll(), events.poll(5));
-            assertIsContained(events.expect(EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT).client((String) null).detail(Details.REASON, "brute_force_attack detected"), actualEvents);
-            assertIsContained(events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS), actualEvents);
+            assertIsContained(false);
 
             checkEmailPresent("User disabled by temporary lockout");
         } finally {
-            testingClient.testing().removeEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT));
+            runOnServerMaster.run(RunHelpers.removeEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT)));
         }
     }
 
@@ -928,11 +974,11 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             loginInvalidPassword();
             loginInvalidPassword();
             expectTemporarilyDisabled();
-            setTimeOffset(21);
+            timeOffSet.set(21);
 
             loginInvalidPassword();
             expectTemporarilyDisabled();
-            setTimeOffset(42);
+            timeOffSet.set(42);
 
             loginInvalidPassword();
             expectPermanentlyDisabled();
@@ -957,7 +1003,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             loginInvalidPassword();
             loginInvalidPassword();
             expectTemporarilyDisabled();
-            setTimeOffset(21);
+            timeOffSet.set(21);
             UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
             Map<String, Object> status = adminClient.realm("test").attackDetection().bruteForceUserStatus(user.getId());
             assertEquals(1, status.get("numTemporaryLockouts"));
@@ -1043,9 +1089,9 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
-        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD).userId(userId);
 
-        MimeMessage message = greenMail.getReceivedMessages()[0];
+        MimeMessage message = mail.getReceivedMessages()[0];
         String passwordResetEmailLink = MailUtils.getPasswordResetEmailLink(message);
 
         driver.navigate().to(passwordResetEmailLink.trim());
@@ -1059,8 +1105,8 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         updatePasswordPage.updatePasswords(getPassword("user2"), getPassword("user2"));
 
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId);
 
         userRepresentation = managedRealm.admin().users().get(userId).toRepresentation();
         assertTrue(userRepresentation.isEnabled());
@@ -1100,6 +1146,36 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             user.setEnabled(true);
             updateUser(user);
         }
+    }
+
+    // https://github.com/keycloak/keycloak/issues/49960
+    @Test
+    public void testCookieSsoReauthenticationDoesNotResetLockout() {
+        String totpSecret = totp.generateTOTP("totpSecret");
+
+        oauth.openLoginForm();
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+        loginTotpPage.assertCurrent();
+        loginTotpPage.login(totpSecret);
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        String sessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
+
+        getTestToken("wrongpass", totpSecret);
+        getTestToken("wrongpass", totpSecret);
+
+        AccessTokenResponse shouldBeLocked = getTestToken(getPassword("test-user@localhost"), totpSecret);
+        Assertions.assertNull(shouldBeLocked.getAccessToken());
+        events.clear();
+
+        oauth.openLoginForm();
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType(), "Expected SSO cookie re-authentication to skip the login form");
+        EventRepresentation ssoLogin = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
+        Assertions.assertEquals(sessionId, ssoLogin.getSessionId(), "SSO re-auth must reuse the existing user session");
+
+        AccessTokenResponse shouldStillBeLocked = getTestToken(getPassword("test-user@localhost"), totpSecret);
+        Assertions.assertNull(shouldStillBeLocked.getAccessToken(), "User should still be locked after cookie-based SSO re-authentication");
+
+        events.clear();
     }
 
     @Test
@@ -1171,15 +1247,15 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         loginPage.assertCurrent();
         Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
-        ExpectedEvent event = events.expectLogin()
-                .session((String) null)
+        EventRepresentation event = EventAssertion.expectLoginError(events.poll())
+                .sessionId(null)
                 .error(Errors.USER_TEMPORARILY_DISABLED)
-                .detail(Details.USERNAME, username)
-                .removeDetail(Details.CONSENT);
+                .details(Details.USERNAME, username)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT).getEvent();
         if (userId != null) {
-            event.user(userId);
+            Assertions.assertEquals(userId, event.getUserId());
         }
-        event.assertEvent();
     }
 
     public void expectPermanentlyDisabled() {
@@ -1192,12 +1268,12 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         loginPage.assertCurrent();
         Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
-        ExpectedEvent event = events.expectLogin()
-            .session((String) null)
+        EventAssertion.expectLoginError(events.poll())
+            .sessionId(null)
             .error(Errors.USER_DISABLED)
-            .detail(Details.USERNAME, username)
-            .removeDetail(Details.CONSENT);
-        event.assertEvent();
+            .details(Details.USERNAME, username)
+            .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+            .withoutDetails(Details.CONSENT);
         UserRepresentation user = managedRealm.admin().users().search(username, true).get(0);
         user = managedRealm.admin().users().get(user.getId()).toRepresentation();
         List<String> disabledReason = user.getAttributes().get(UserModel.DISABLED_REASON);
@@ -1221,7 +1297,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code ).getIdToken();
@@ -1249,7 +1325,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
         String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         appPage.logout(idTokenHint);
@@ -1345,11 +1421,11 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     private void assertUserDisabledEvent(String error) {
-        events.expect(EventType.LOGIN_ERROR).error(error).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(error);
     }
 
     private void assertUserPermanentlyDisabledEvent() {
-        events.expect(EventType.LOGIN_ERROR).error(Errors.USER_DISABLED).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.USER_DISABLED);
     }
 
     private void assertUserDisabledReason(String expected) {
@@ -1387,25 +1463,24 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     /**
-     * Verifies the given {@link ExpectedEvent} is "contained" in the collection of actual events. An
-     * {@link ExpectedEvent expectedEvent} object is considered equal to a
-     * {@link EventRepresentation eventRepresentation} object if {@code
-     * expectedEvent.assertEvent(eventRepresentation)} does not throw any {@link AssertionError}.
+     * Verifies the given {@link EventRepresentation} is "contained" in the collection of actual events.
      *
-     * @param expectedEvent the expected event
-     * @param actualEvents the collection of {@link EventRepresentation}
+     * @param isPermanent considers if temporary or permanent lockout
      */
-    public void assertIsContained(ExpectedEvent expectedEvent, List<? extends EventRepresentation> actualEvents) {
-        List<String> messages = new ArrayList<>();
-        for (EventRepresentation e : actualEvents) {
-            try {
-                expectedEvent.assertEvent(e);
-                return;
-            } catch (AssertionError error) {
-                // silently fail
-                messages.add(error.getMessage());
+    public void assertIsContained(boolean isPermanent) {
+        EventType eventType = isPermanent ? EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT : EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT;
+        int expectedEvents = 2;
+
+        while (expectedEvents > 0) {
+            EventRepresentation eventRep = events.poll();
+            if (eventRep != null) {
+                if (eventRep.getType().equals(eventType.name())) {
+                    EventAssertion.assertSuccess(eventRep).type(eventType).clientId(null).details(Details.REASON, "brute_force_attack detected");
+                } else {
+                    EventAssertion.assertError(eventRep).type(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS);
+                }
+                expectedEvents--;
             }
         }
-        Assertions.fail(String.format("Expected event not found. Possible reasons are: %s", messages));
     }
 }

@@ -51,6 +51,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
@@ -975,28 +976,28 @@ public class OfflineTokenBasicFlowTest {
             });
 
             // Only create offline-client - test-app is created by @InjectOAuthClient
-            builder.addClient(OFFLINE_CLIENT_ID)
+            builder.clients(ClientBuilder.create(OFFLINE_CLIENT_ID)
                     .secret("secret1")
                     .redirectUris(OFFLINE_CLIENT_APP_URI)
                     .adminUrl(OFFLINE_CLIENT_APP_URI)
                     .directAccessGrantsEnabled(true)
                     .serviceAccountsEnabled(true)
-                    .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true");
+                    .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true"));
 
             // Users WITHOUT test-app client roles
-            builder.addUser("test-user@localhost")
+            builder.users(UserBuilder.create("test-user@localhost")
                     .name("Tom", "Brady")
                     .email("test-user@localhost")
                     .emailVerified(true)
                     .password("password")
-                    .roles("user", "offline_access");
+                    .realmRoles("user", "offline_access"));
 
-            builder.addUser("keycloak-user@localhost")
+            builder.users(UserBuilder.create("keycloak-user@localhost")
                     .name("Keycloak", "User") // <-- Add this to satisfy VERIFY_PROFILE
                     .email("keycloak-user@localhost")
                     .emailVerified(true)
                     .password("password")
-                    .roles("user");
+                    .realmRoles("user"));
 
             return builder;
         }

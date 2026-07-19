@@ -29,8 +29,8 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.FlowUtil;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -91,6 +91,18 @@ public class ClientAdapter implements ClientModel, CachedObject {
         return cached.getId();
     }
 
+    @Override
+    public Long getCreatedTimestamp() {
+        if (isUpdated()) return updated.getCreatedTimestamp();
+        return cached.getCreatedTimestamp();
+    }
+
+    @Override
+    public Long getLastModifiedTimestamp() {
+        if (isUpdated()) return updated.getLastModifiedTimestamp();
+        return cached.getLastModifiedTimestamp();
+    }
+
     public Set<String> getWebOrigins() {
         if (isUpdated()) return updated.getWebOrigins();
         return cached.getWebOrigins();
@@ -217,7 +229,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
     }
 
     public boolean isFrontchannelLogout() {
-        if (isUpdated()) return updated.isPublicClient();
+        if (isUpdated()) return updated.isFrontchannelLogout();
         return cached.isFrontchannelLogout();
     }
 

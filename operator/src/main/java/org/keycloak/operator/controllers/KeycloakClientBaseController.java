@@ -301,7 +301,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
     private <V> V invoke(R resource, Context<R> context, Keycloak keycloak,
             Function<ClientApi, V> action) {
         if (!isServerReady(context, resource)) {
-            throw new RuntimeException("A replica of the server is not yet ready. The operatiorn will be retried");
+            throw new RuntimeException("A replica of the server is not yet ready. The operation will be retried");
         }
         try (var kcAdmin = getAdminClient(context.getClient(), keycloak, addressOverride)) {
             var target = getWebTarget(kcAdmin);
@@ -418,9 +418,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
     }
 
     private static String getAdminUrl(Keycloak keycloak, KubernetesClient client, String addressOverride) {
-        boolean httpEnabled = KeycloakServiceDependentResource.isHttpEnabled(keycloak);
-        // for now preferring to use http if available
-        boolean https = isTlsConfigured(keycloak) && !httpEnabled;
+        boolean https = isTlsConfigured(keycloak);
         String protocol = https?HTTPS:"http";
         String address = addressOverride;
 

@@ -16,15 +16,25 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
+import org.keycloak.models.OrganizationModel;
+
 public interface OrganizationPermissionEvaluator {
 
     boolean canManage();
 
+    boolean canManage(OrganizationModel organization);
+
     void requireManage();
+
+    void requireManage(OrganizationModel organization);
 
     boolean canView();
 
+    boolean canView(OrganizationModel organization);
+
     void requireView();
+
+    void requireView(OrganizationModel organization);
 
     boolean canQuery();
 

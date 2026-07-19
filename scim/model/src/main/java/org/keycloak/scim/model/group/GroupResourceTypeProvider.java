@@ -29,6 +29,7 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
@@ -52,7 +53,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
 public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<GroupModel, Group> implements ScimAttributeJpaExpressionResolver {
 
     public GroupResourceTypeProvider(KeycloakSession session) {
-        super(session, new GroupCoreModelSchema());
+        super(session, new GroupCoreModelSchema(session));
     }
 
     @Override
@@ -66,11 +67,26 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     }
 
     @Override
+    protected Group createResourceTypeInstance(GroupModel model, List<String> attributes, List<String> excludedAttributes) {
+        if (session.getContext().getPermissions().isAdminGroup(model)) {
+            Group group = new Group();
+
+            group.addSchema(getSchema());
+            group.setId(model.getId());
+            group.setDisplayName(model.getName());
+
+            return group;
+        }
+
+        return super.createResourceTypeInstance(model, attributes, excludedAttributes);
+    }
+
+    @Override
     public Group update(Group resource) {
         List<Member> members = resource.getMembers();
 
         if (!Optional.ofNullable(members).orElse(List.of()).isEmpty()) {
-            throw new ModelValidationException("Managing members on updates are not supported");
+            throw new ModelValidationException("Managing members on updates is not supported");
         }
 
         return super.update(resource);
@@ -87,7 +103,13 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     @Override
     protected GroupModel getModel(String id) {
         RealmModel realm = session.getContext().getRealm();
-        return session.groups().getGroupById(realm, id);
+        GroupModel model = session.groups().getGroupById(realm, id);
+
+        if (model == null || Type.REALM.equals(model.getType())) {
+            return model;
+        }
+
+        return null;
     }
 
     @Override
@@ -100,7 +122,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         RealmModel realm = session.getContext().getRealm();
         Integer firstResult = searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() - 1 : null;
         Integer maxResults = searchRequest.getCount();
-        maxResults = maxResults != null ? Math.min(maxResults, DEFAULT_MAX_RESULTS) : DEFAULT_MAX_RESULTS;
+        maxResults = maxResults != null ? Math.max(0, Math.min(maxResults, DEFAULT_MAX_RESULTS)) : DEFAULT_MAX_RESULTS;
 
         if (StringUtil.isNotBlank(searchRequest.getFilter())) {
             // parse filter into AST
@@ -187,5 +209,10 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
             return join.get("user").get("id");
         }
         return null;
+    }
+
+    @Override
+    protected boolean isManageable(GroupModel model) {
+        return !session.getContext().getPermissions().isAdminGroup(model);
     }
 }

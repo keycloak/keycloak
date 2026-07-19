@@ -23,9 +23,13 @@ import java.util.Map;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.events.AdminEvents;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -42,16 +46,16 @@ public class AbstractRealmRolesTest {
 
         @Override
         public RealmBuilder configure(RealmBuilder builder) {
-            builder.addGroup("test-role-group").path("/test-role-group");
-            builder.addUser("test-role-member").name("Test", "Role User").
-                    email("test-role-member@test-role-member.com").roles("default-roles-default").emailVerified(true).requiredActions();
-            builder.addClient("client-a").id("client-a").description("Client A");
-            builder.addClient("client-c").id("client-c").description("Client C");
-            builder.addRole("role-a").description("Role A").attributes(Map.of("role-a-attr-key1", List.of("role-a-attr-val1")));
-            builder.addRole("role-b").description("Role B");
-            builder.addClientRole("client-a", "role-c").description("Role C");
-            builder.addRole("role-with-users").description("Role with users");
-            builder.addRole("role-without-users").description("role-without-users");
+            builder.groups(GroupBuilder.create("test-role-group").path("/test-role-group"));
+            builder.users(UserBuilder.create("test-role-member").name("Test", "Role User").
+                    email("test-role-member@test-role-member.com").realmRoles("default-roles-default").emailVerified(true).requiredActions());
+            builder.clients(ClientBuilder.create("client-a").id("client-a").description("Client A"));
+            builder.clients(ClientBuilder.create("client-c").id("client-c").description("Client C"));
+            builder.realmRoles(RoleBuilder.create("role-a").description("Role A").attributes(Map.of("role-a-attr-key1", List.of("role-a-attr-val1"))));
+            builder.realmRoles(RoleBuilder.create("role-b").description("Role B"));
+            builder.clientRoles("client-a", RoleBuilder.create("role-c").description("Role C"));
+            builder.realmRoles(RoleBuilder.create("role-with-users").description("Role with users"));
+            builder.realmRoles(RoleBuilder.create("role-without-users").description("role-without-users"));
 
             return builder;
         }

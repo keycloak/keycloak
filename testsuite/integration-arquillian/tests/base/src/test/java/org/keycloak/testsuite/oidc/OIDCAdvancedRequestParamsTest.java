@@ -71,6 +71,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.util.CertificateInfoHelper;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -205,7 +206,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     public void testMaxAge1() {
         // Open login form and login successfully
         oauth.doLogin("test-user@localhost", "password");
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent);
 
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
@@ -215,14 +217,15 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         Assertions.assertTrue(authTime <= currentTime && authTime + 3 >= currentTime);
 
         // Set time offset
-        setTimeOffset(10);
+        timeOffSet.set(10);
 
         // Assert I need to login again through the login form. But username field is not present
         oauth.loginForm().maxAge(1).open();
         loginPage.assertCurrent();
         assertThat(false, is(loginPage.isUsernameInputPresent()));
         loginPage.login("password");
-        loginEvent = events.expectLogin().assertEvent();
+        loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent);
 
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
@@ -235,7 +238,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     public void testMaxAge10000() {
         // Open login form and login successfully
         oauth.doLogin("test-user@localhost", "password");
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent);
 
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
@@ -245,13 +249,14 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         Assertions.assertTrue(authTime <= currentTime && authTime + 3 >= currentTime);
 
         // Set time offset
-        setTimeOffset(10);
+        timeOffSet.set(10);
 
         // Now open login form with maxAge=10000
         oauth.loginForm().maxAge(10000).open();
 
         // Assert that I will be automatically logged through cookie
-        loginEvent = events.expectLogin().assertEvent();
+        loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent);
 
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
@@ -274,7 +279,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         assertFalse(loginPage.isCurrent());
         assertTrue(appPage.isCurrent());
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
 
         // Assert error response was sent because not logged in
         AuthorizationEndpointResponse resp = oauth.parseLoginResponse();
@@ -292,18 +297,20 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         loginPage.login("test-user@localhost", "password");
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).details(Details.USERNAME, "test-user@localhost");
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
         long authTime = idToken.getAuth_time();
 
         // Set time offset
-        setTimeOffset(10);
+        timeOffSet.set(10);
 
         // Assert user still logged with previous authTime
         oauth.loginForm().prompt("none").open();
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        loginEvent = events.expectLogin().removeDetail(Details.USERNAME).assertEvent();
+        loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent);
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
         long authTime2 = idToken.getAuth_time();
 
@@ -334,10 +341,10 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             grantPage.assertCurrent();
             grantPage.accept();
 
-            events.expectLogin()
-                    .detail(Details.USERNAME, "test-user@localhost")
-                    .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .details(Details.USERNAME, "test-user@localhost")
+                    .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                    .details(Details.REDIRECT_URI, oauth.getRedirectUri());
 
             // Consent not required anymore. Login with prompt=none should success
             oauth.loginForm().prompt("none").open();
@@ -347,10 +354,10 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             Assertions.assertNotNull(resp.getCode());
             Assertions.assertNull(resp.getError());
 
-            events.expectLogin()
-                    .detail(Details.USERNAME, "test-user@localhost")
-                    .detail(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .details(Details.USERNAME, "test-user@localhost")
+                    .details(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
+                    .details(Details.REDIRECT_URI, oauth.getRedirectUri());
 
         } finally {
             // Revert consent
@@ -371,23 +378,25 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         loginPage.login("test-user@localhost", "password");
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).details(Details.USERNAME, "test-user@localhost");
         IDToken oldIdToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Set time offset
-        setTimeOffset(10);
+        timeOffSet.set(10);
 
         // SSO login first WITHOUT prompt=login ( Tests KEYCLOAK-5248 )
         oauth.openLoginForm();
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).details(Details.USERNAME, "test-user@localhost");
         IDToken newIdToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime wasn't updated
         Assertions.assertEquals(oldIdToken.getAuth_time(), newIdToken.getAuth_time());
 
         // Set time offset
-        setTimeOffset(20);
+        timeOffSet.set(20);
 
         // Assert need to re-authenticate with prompt=login
         oauth.loginForm().prompt("login").open();
@@ -396,7 +405,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         loginPage.login("password");
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).details(Details.USERNAME, "test-user@localhost");
         newIdToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime was updated
@@ -454,19 +464,19 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             appPage.assertCurrent();
             Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            events.expectLogin()
-                    .detail(Details.USERNAME, "test-user@localhost")
-                    .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .details(Details.USERNAME, "test-user@localhost")
+                    .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                    .details(Details.REDIRECT_URI, oauth.getRedirectUri());
 
 
             // Re-login without prompt=consent. The previous persistent consent was used
             oauth.openLoginForm();
             Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            events.expectLogin()
-                    .detail(Details.USERNAME, "test-user@localhost")
-                    .detail(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .details(Details.USERNAME, "test-user@localhost")
+                    .details(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
+                    .details(Details.REDIRECT_URI, oauth.getRedirectUri());
 
             // Re-login with prompt=consent.
             oauth.loginForm()
@@ -480,10 +490,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             appPage.assertCurrent();
             Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            events.expectLogin()
-                    .detail(Details.USERNAME, "test-user@localhost")
-                    .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .details(Details.USERNAME, "test-user@localhost")
+                    .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
 
         } finally {
             // Revert consent
@@ -504,7 +513,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         loginPage.login("test-user@localhost", "password");
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).details(Details.USERNAME, "test-user@localhost");
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         Assertions.assertNotNull(idToken);
@@ -982,7 +992,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         clientResource.update(clientRep);
 
         // set time offset, so that new keys are downloaded
-        setTimeOffset(20);
+        timeOffSet.set(20);
 
         // Check signed request_uri will pass
         AuthorizationEndpointResponse response = oauth.loginForm().requestUri(requestUri).doLogin("test-user@localhost", "password");
@@ -1027,7 +1037,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             clientResource.update(clientRep);
 
             // set time offset, so that new keys are downloaded
-            setTimeOffset(20);
+            timeOffSet.set(20);
 
             oauth.realm("test");
             oauth.client("test-app", "password");
@@ -1152,7 +1162,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         loginPage.login("password");
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "test-user@localhost");
     }
     
     // CLAIMS
@@ -1174,7 +1184,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         loginPage.login("test-user@localhost", "password");
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).details(Details.USERNAME, "test-user@localhost");
         String sessionId = loginEvent.getSessionId();
         String clientId = loginEvent.getClientId();
         
@@ -1213,7 +1224,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         loginPage.login("test-user@localhost", "password");
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).details(Details.USERNAME, "test-user@localhost");
         String sessionId = loginEvent.getSessionId();
         String clientId = loginEvent.getClientId();
         
@@ -1265,7 +1277,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             String request = new JWSBuilder().jsonContent(oidcRequest).none();
 
             oauth.loginForm().request(request).doLogin("test-user@localhost", "password");
-            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+            EventRepresentation loginEvent = events.poll();
+            EventAssertion.expectLoginSuccess(loginEvent);
 
             AccessTokenResponse accessTokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             IDToken idToken = oauth.verifyIDToken(accessTokenResponse.getIdToken());
@@ -1285,12 +1298,13 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
                 assertEquals("Tom", userInfo.getGivenName());
                 assertNull(userInfo.getName());
             } finally {
-                events.expect(EventType.USER_INFO_REQUEST).session(accessTokenResponse.getSessionState()).client("test-app").assertEvent();
+                EventAssertion.assertSuccess(events.poll()).type(EventType.USER_INFO_REQUEST).sessionId(accessTokenResponse.getSessionState()).clientId("test-app");
                 client.close();
             }
 
             oauth.doLogout(accessTokenResponse.getRefreshToken());
-            events.expectLogout(accessTokenResponse.getSessionState()).client("test-app").clearDetails().assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                    .sessionId(accessTokenResponse.getSessionState()).clientId(oauth.getClientId()).withoutDetails(Details.REDIRECT_URI);
 
 
             claims = ImmutableMap.of(
@@ -1312,7 +1326,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             request = new JWSBuilder().jsonContent(oidcRequest).none();
 
             oauth.loginForm().request(request).doLogin("test-user@localhost", "password");
-            loginEvent = events.expectLogin().assertEvent();
+            loginEvent = events.poll();
+            EventAssertion.expectLoginSuccess(loginEvent);
 
             accessTokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             idToken = oauth.verifyIDToken(accessTokenResponse.getIdToken());
@@ -1344,7 +1359,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     @Test
     public void testSignedRequestObject() throws IOException {
         oauth.loginForm().request(createAndSignRequestObject()).doLogin("test-user@localhost", "password");
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -1417,7 +1432,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     @Test
     public void testSignedAndEncryptedRequestObject() throws IOException, JWEException {
         oauth.loginForm().request(createEncryptedRequestObject(RSA_OAEP_256)).doLogin("test-user@localhost", "password");
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     private String createEncryptedRequestObject(String encAlg) throws IOException, JWEException {
@@ -1532,7 +1547,59 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
                     .setEncryptionKey(decryptionKEK);
 
             oauth.loginForm().request(jwe.encodeJwe()).doLogin("test-user@localhost", "password");
-            events.expectLogin().assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll());
+        }
+    }
+
+    /**
+     * When a client requires signed request objects, a JWE-encrypted request object whose
+     * decrypted content is raw JSON (not a nested JWS) must be rejected.
+     */
+    @Test
+    public void testJweWithUnsignedJsonShouldBeRejectedWhenSignatureRequired() throws Exception {
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        try {
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(Algorithm.RS256);
+            clientResource.update(clientRep);
+
+            TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject requestObject =
+                    new TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject();
+            requestObject.id(KeycloakModelUtils.generateId());
+            requestObject.iat(Long.valueOf(Time.currentTime()));
+            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.nbf(requestObject.getIat());
+            requestObject.setClientId(oauth.getClientId());
+            requestObject.setResponseType("code");
+            requestObject.setRedirectUriParam(oauth.getRedirectUri());
+            requestObject.setScope("openid");
+            requestObject.setNonce(KeycloakModelUtils.generateId());
+
+            byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
+
+            try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+                OIDCConfigurationRepresentation representation = SimpleHttpDefault
+                        .doGet(getAuthServerRoot().toString() + "realms/" + oauth.getRealm() + "/.well-known/openid-configuration",
+                                httpClient).asJson(OIDCConfigurationRepresentation.class);
+                JSONWebKeySet jsonWebKeySet = SimpleHttpDefault.doGet(representation.getJwksUri(), httpClient).asJson(JSONWebKeySet.class);
+                Map<String, PublicKey> keysForUse = JWKSUtils.getKeysForUse(jsonWebKeySet, JWK.Use.ENCRYPTION);
+
+                KeysMetadataRepresentation.KeyMetadataRepresentation encKey = KeyUtils
+                        .findActiveEncryptingKey(managedRealm.admin(), Algorithm.PS256);
+                PublicKey encryptionKey = keysForUse.get(encKey.getKid());
+
+                JWE jwe = new JWE().header(new JWEHeader(RSA_OAEP, JWEConstants.A256GCM, null)).content(contentBytes);
+                jwe.getKeyStorage().setEncryptionKey(encryptionKey);
+
+                oauth.loginForm().request(jwe.encodeJwe()).open();
+
+                assertTrue(errorPage.isCurrent());
+                assertEquals("Invalid Request", errorPage.getError());
+            }
+        } finally {
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(null);
+            clientResource.update(clientRep);
         }
     }
 }

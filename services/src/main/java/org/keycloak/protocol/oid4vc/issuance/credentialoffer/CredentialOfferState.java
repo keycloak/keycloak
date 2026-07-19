@@ -16,7 +16,6 @@
  */
 package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -67,7 +66,8 @@ public class CredentialOfferState {
         this.targetClientId = clientId;
         this.targetUserId = userId;
         this.expiresAt = expiresAt;
-        this.nonce = Base64Url.encode(RandomSecret.createRandomSecret(64));
+        String nonceSecret = Base64Url.encode(RandomSecret.createRandomSecret(64));
+        this.nonce = CredentialOfferLookupKey.embed(nonceSecret, credentialsOfferId);
         if (authDetailsProvider != null) {
             this.authDetails = authDetailsProvider.apply(credentialsOfferId);
         }
@@ -107,7 +107,9 @@ public class CredentialOfferState {
     }
 
     public List<OID4VCAuthorizationDetail> getAuthorizationDetails() {
-        return Collections.unmodifiableList(authDetails != null ? authDetails : List.of());
+        return Optional.ofNullable(authDetails).orElse(List.of()).stream()
+                .map(OID4VCAuthorizationDetail::clone)
+                .toList();
     }
 
     public OID4VCAuthorizationDetail getAuthorizationDetails(String credConfigId) {
@@ -116,6 +118,26 @@ public class CredentialOfferState {
                 .findFirst()
                 .map(OID4VCAuthorizationDetail::clone)
                 .orElse(null);
+    }
+
+    public boolean matchAuthorizationDetails(List<OID4VCAuthorizationDetail> otherAuthDetails) {
+        if (authDetails == null && otherAuthDetails == null) { return true; }
+        if (authDetails == null || otherAuthDetails == null) { return false; }
+        if (authDetails.size() != otherAuthDetails.size()) { return false; }
+        for (int i = 0; i < authDetails.size(); i++) {
+            var authDetail = authDetails.get(i);
+            var otherDetail = otherAuthDetails.get(i);
+            if (otherDetail.getIssuedCredentialId() != null) {
+                otherDetail = otherDetail.clone();
+                otherDetail.setIssuedCredentialId(null);
+            }
+            // Unexpected issued_credential_id in authorization_details
+            assert authDetail.getIssuedCredentialId() == null;
+            if (!authDetail.equals(otherDetail)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @JsonIgnore
