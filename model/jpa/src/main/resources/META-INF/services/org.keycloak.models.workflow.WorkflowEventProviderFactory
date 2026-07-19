@@ -9,6 +9,11 @@ org.keycloak.models.workflow.events.UserRoleGrantedWorkflowEventFactory
 org.keycloak.models.workflow.events.UserRoleRevokedWorkflowEventFactory
 org.keycloak.models.workflow.events.UserDisabledByTemporaryLockoutWorkflowEventFactory
 org.keycloak.models.workflow.events.UserDisabledByPermanentLockoutWorkflowEventFactory
+org.keycloak.models.workflow.events.UserUpdateCredentialWorkflowEventFactory
+org.keycloak.models.workflow.events.UserRemoveCredentialWorkflowEventFactory
+org.keycloak.models.workflow.events.UserUpdateEmailWorkflowEventFactory
+org.keycloak.models.workflow.events.UserUpdateProfileWorkflowEventFactory
+org.keycloak.models.workflow.events.UserUpdateConsentWorkflowEventFactory
 
 # client event providers
 org.keycloak.models.workflow.events.ClientAuthenticatedWorkflowEventFactory
