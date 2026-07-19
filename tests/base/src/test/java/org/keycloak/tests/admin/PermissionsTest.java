@@ -44,17 +44,18 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.services.resources.admin.AdminAuth.Resource;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.CredentialBuilder;
+import org.keycloak.testframework.realm.FederatedIdentityBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.util.CredentialBuilder;
-import org.keycloak.testsuite.util.FederatedIdentityBuilder;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import org.hamcrest.Matchers;
 import org.jgroups.util.UUID;
@@ -326,6 +327,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.roles().get("sample-role").getRoleComposites(), Resource.REALM, false);
         invoke(realm -> realm.roles().get("sample-role").getRealmRoleComposites(), Resource.REALM, false);
         invoke(realm -> realm.roles().get("sample-role").getClientRoleComposites(KeycloakModelUtils.generateId()), Resource.REALM, false);
+        invoke(realm -> realm.roles().list(), clients.get(AdminRoles.MANAGE_IDENTITY_PROVIDERS), true);
     }
 
     @Test
@@ -425,8 +427,17 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.users().get(user.getId()).removeFederatedIdentity("nosuch"), Resource.USER, true);
         invoke(realm -> realm.users().get(user.getId()).getConsents(), Resource.USER, false);
         invoke(realm -> realm.users().get(user.getId()).revokeConsent("testclient"), Resource.USER, true);
+
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().getCredentials(), Resource.USER, false);
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().getIssuedCredentials(), Resource.USER, false);
+        UserVerifiableCredentialRepresentation verifCred = new UserVerifiableCredentialRepresentation();
+        verifCred.setCredentialScopeName("nosuch");
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().createCredential(verifCred), Resource.USER, true);
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().updateCredential("nosuch"), Resource.USER, true);
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().revokeCredential("nosuch"), Resource.USER, true);
+
         invoke(realm -> realm.users().get(user.getId()).logout(), Resource.USER, true);
-        invoke(realm -> realm.users().get(user.getId()).resetPassword(CredentialBuilder.create().password("password").build()),
+        invoke(realm -> realm.users().get(user.getId()).resetPassword(CredentialBuilder.password("password").build()),
                 Resource.USER, true);
         invoke(realm -> {
             CredentialRepresentation totpCredential = realm.users().get(user.getId()).credentials().stream()
@@ -501,8 +512,8 @@ public class PermissionsTest extends AbstractPermissionsTest {
                                         .providerId("oidc")
                                         .displayName("nosuch-foo")
                                         .alias("foo")
-                                        .setAttribute("clientId", "foo")
-                                        .setAttribute("clientSecret", "foo")
+                                        .attribute("clientId", "foo")
+                                        .attribute("clientSecret", "foo")
                                         .build()
                         )
                 ), Resource.IDENTITY_PROVIDER, true);

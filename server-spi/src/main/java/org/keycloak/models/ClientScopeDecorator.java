@@ -132,18 +132,36 @@ public class ClientScopeDecorator implements ClientScopeModel {
     }
 
     @Override
-    public boolean isDynamicScope() {
-        return delegate.isDynamicScope();
+    public boolean isParameterizedScope() {
+        return delegate.isParameterizedScope();
     }
 
+    @Override
+    public void setIsParameterizedScope(boolean isParameterizedScope) {
+        delegate.setIsParameterizedScope(isParameterizedScope);
+    }
+
+    @Override
+    public String getParameterizedScopeRegexp() {
+        return delegate.getParameterizedScopeRegexp();
+    }
+
+    @Deprecated
+    @Override
+    public boolean isDynamicScope() {
+        return isParameterizedScope();
+    }
+
+    @Deprecated
     @Override
     public void setIsDynamicScope(boolean isDynamicScope) {
-        delegate.setIsDynamicScope(isDynamicScope);
+        setIsParameterizedScope(isDynamicScope);
     }
 
+    @Deprecated
     @Override
     public String getDynamicScopeRegexp() {
-        return delegate.getDynamicScopeRegexp();
+        return getParameterizedScopeRegexp();
     }
 
     @Override

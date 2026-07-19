@@ -36,7 +36,7 @@ export const KerberosSettingsRequired = ({
     name: "config.allowPasswordAuthentication",
   });
 
-  useEffect(() => form.setValue("parentId", realmRepresentation?.id), []);
+  useEffect(() => form.setValue("parentId", realmRepresentation.id), []);
 
   return (
     <FormProvider {...form}>

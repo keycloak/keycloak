@@ -1,5 +1,5 @@
-[[_per_realm_admin_permissions]]
 
+[[_per_realm_admin_permissions]]
 === Dedicated realm admin consoles
 
 Each realm has a dedicated Admin Console that can be accessed by going to the url `{kc_admins_path}/{realm-name}/console`.

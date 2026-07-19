@@ -42,6 +42,7 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.UserProfileAttributeMetadata;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
@@ -49,8 +50,8 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
-import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.KerberosRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
@@ -80,7 +81,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
     public static KerberosRule kerberosRule = new KerberosRule(PROVIDER_CONFIG_LOCATION, KerberosEmbeddedServer.DEFAULT_KERBEROS_REALM);
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected LoginPasswordUpdatePage loginPasswordUpdatePage;
@@ -268,7 +269,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         }
 
         // get the email from green mail
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        MimeMessage message = mail.getLastReceivedMessage();
         Assertions.assertNotNull(message);
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
@@ -276,9 +277,8 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         driver.navigate().to(changePasswordUrl.trim());
         loginPasswordUpdatePage.assertCurrent();
         loginPasswordUpdatePage.changePassword("resetPassword", "resetPassword");
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).client(oauth.getClientId()).detail(Details.USERNAME, "test-user@localhost");
-        events.poll();
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).client(oauth.getClientId()).detail(Details.USERNAME, "test-user@localhost");
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD).withoutDetails(Details.CREDENTIAL_TYPE).clientId(oauth.getClientId()).details(Details.USERNAME, "test-user@localhost");
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).clientId(oauth.getClientId()).details(Details.USERNAME, "test-user@localhost");
         infoPage.assertCurrent();
         Assertions.assertEquals("Your account has been updated.", infoPage.getInfo());
     }

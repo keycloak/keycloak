@@ -17,7 +17,6 @@
 package org.keycloak.services.resources.admin;
 
 import java.net.URI;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -92,6 +90,7 @@ import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.policy.PasswordPolicyNotMetException;
+import org.keycloak.protocol.oid4vc.resources.admin.UserVerifiableCredentialResource;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -251,8 +250,7 @@ public class UserResource {
         } catch (PasswordPolicyNotMetException e) {
             logger.warn("Password policy not met for user " + e.getUsername(), e);
             session.getTransactionManager().setRollbackOnly();
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+            throw new ErrorResponseException(e.getMessage(), ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), e.getMessage(), e.getParameters()),
                     Status.BAD_REQUEST);
         } catch (ModelIllegalStateException e) {
             logger.error(e.getMessage(), e);
@@ -282,6 +280,7 @@ public class UserResource {
                     case Messages.MISSING_USERNAME -> throw ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
                     case Messages.USERNAME_EXISTS -> throw ErrorResponse.exists("User exists with same username");
                     case Messages.EMAIL_EXISTS -> throw ErrorResponse.exists("User exists with same email");
+                    case Messages.DID_EXISTS -> throw ErrorResponse.exists("User exists with same DID");
                 }
                 errors.add(new ErrorRepresentation(error.getAttribute(), error.getMessage(), error.getMessageParameters()));
             }
@@ -524,6 +523,10 @@ public class UserResource {
             throw ErrorResponse.exists("User is already linked with provider");
         }
 
+        if (!Organizations.resolveHomeBroker(session, user).isEmpty()) {
+            throw ErrorResponse.error("Cannot add identity provider link to a managed organization member.", Status.BAD_REQUEST);
+        }
+
         FederatedIdentityModel socialLink = new FederatedIdentityModel(provider, rep.getUserId(), rep.getUserName());
         session.users().addFederatedIdentity(realm, user, socialLink);
         adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(rep).success();
@@ -658,6 +661,11 @@ public class UserResource {
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
     }
 
+    @Path("vc")
+    public UserVerifiableCredentialResource verifiableCredentials() {
+        return new UserVerifiableCredentialResource(session, realm, user, auth, adminEvent);
+    }
+
     /**
      * Remove all user sessions associated with the user
      *
@@ -777,8 +785,7 @@ public class UserResource {
             throw new BadRequestException("Can't reset password as account is read only");
         } catch (PasswordPolicyNotMetException e) {
             logger.warn("Password policy not met for user " + e.getUsername(), e);
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+            throw new ErrorResponseException(e.getMessage(), ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), e.getMessage(), e.getParameters()),
                     Status.BAD_REQUEST);
         } catch (ModelIllegalStateException e) {
             logger.error(e.getMessage(), e);
@@ -789,8 +796,7 @@ public class UserResource {
             if (logger.isTraceEnabled()) {
                 logger.trace("Could not update user password.", e);
             }
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+            throw new ErrorResponseException(e.getMessage(), ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), e.getMessage(), e.getParameters()),
                     Status.BAD_REQUEST);
         }
         if (cred.isTemporary() != null && cred.isTemporary()) {
@@ -1199,8 +1205,7 @@ public class UserResource {
             logger.error(e.getMessage(), e);
             throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException me) {
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(me.getMessage(), MessageFormat.format(messages.getProperty(me.getMessage(), me.getMessage()), me.getParameters()),
+            throw new ErrorResponseException(me.getMessage(), ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), me.getMessage(), me.getParameters()),
                     Status.BAD_REQUEST);
         }
     }
@@ -1278,6 +1283,11 @@ public class UserResource {
     }
 
     private SendEmailParams verifySendEmailParams(String redirectUri, String clientId, Integer lifespan) {
+        return verifySendEmailParams(session, realm, user, redirectUri, clientId, lifespan);
+    }
+
+    public static SendEmailParams verifySendEmailParams(KeycloakSession session, RealmModel realm, UserModel user,
+                                                        String redirectUri, String clientId, Integer lifespan) {
         if (user.getEmail() == null) {
             throw ErrorResponse.error("User email missing", Status.BAD_REQUEST);
         }
@@ -1315,15 +1325,27 @@ public class UserResource {
         return new SendEmailParams(redirectUri, client.getClientId(), lifespan);
     }
 
-    private static class SendEmailParams {
-        final String redirectUri;
-        final String clientId;
-        final int lifespan;
+    public static class SendEmailParams {
+        private final String redirectUri;
+        private final String clientId;
+        private final int lifespan;
 
         public SendEmailParams(String redirectUri, String clientId, Integer lifespan) {
             this.redirectUri = redirectUri;
             this.clientId = clientId;
             this.lifespan = lifespan;
+        }
+
+        public String getRedirectUri() {
+            return redirectUri;
+        }
+
+        public String getClientId() {
+            return clientId;
+        }
+
+        public int getLifespan() {
+            return lifespan;
         }
     }
 }

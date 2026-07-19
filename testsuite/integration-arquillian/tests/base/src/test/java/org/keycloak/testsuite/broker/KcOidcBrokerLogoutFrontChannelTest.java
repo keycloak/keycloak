@@ -22,7 +22,6 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogoutTest {
@@ -65,7 +64,7 @@ public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogo
         int expiresInMs = (int) (idToken.getExp() - idToken.getIat());
 
         // simulate token expiration
-        setTimeOffset(expiresInMs * 2);
+        timeOffSet.set(expiresInMs * 2);
 
         logoutFromRealm(
             getConsumerRoot(),
@@ -119,6 +118,6 @@ public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogo
         // the external IdP online session should be also maintained, re-authenticate
         driver.navigate().to(getLoginUrl(getConsumerRoot(), bc.consumerRealmName(), "broker-app"));
         logInAsUserInIDPWithReAuthenticate();
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 }

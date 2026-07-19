@@ -40,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
+@DatabaseTest
 public class UserSearchTest extends AbstractUserTest {
 
     @Test
@@ -81,7 +82,6 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void searchByEmail() {
         createUsers();
 
@@ -103,7 +103,6 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void searchByUsername() {
         createUsers();
 
@@ -115,7 +114,6 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void searchByAttribute() {
         createUsers();
 
@@ -137,7 +135,6 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void searchByMultipleAttributes() {
         createUsers();
 
@@ -158,7 +155,6 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void searchByAttributesWithPagination() {
         createUsers();
 
@@ -172,7 +168,6 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void storeAndReadUserWithLongAttributeValue() {
         String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES), true, true);
 
@@ -196,7 +191,6 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void searchByLongAttributes() {
         // random string with suffix that makes it case-sensitive and distinct
         String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES) - 1, true, true) + "u";
@@ -322,7 +316,6 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void searchWithFilters() {
         createUser();
 
@@ -376,7 +369,6 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void searchByIdp() {
         // Add user without IDP
         createUser();
@@ -492,7 +484,6 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void searchById() {
         List<String> userIds = createUsers();
         String expectedUserId = userIds.get(0);
@@ -521,7 +512,90 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
+    public void searchByUsernameSearch() {
+        List<String> userIds = createUsers();
+        String expectedUserId = userIds.get(0);
+        UserRepresentation expectedUserRep = managedRealm.admin().users().get(expectedUserId).toRepresentation();
+        String expectedUsername = expectedUserRep.getUsername();
+
+        List<UserRepresentation> users = managedRealm.admin().users().search("username:" + expectedUsername, null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+        assertEquals(expectedUsername, users.get(0).getUsername());
+        assertThat(managedRealm.admin().users().count("username:" + expectedUsername), is(1));
+
+        // ensure spaces are ignored
+        users = managedRealm.admin().users().search("username:   " + expectedUsername + "     ", null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+        assertEquals(expectedUsername, users.get(0).getUsername());
+        assertThat(managedRealm.admin().users().count("username:   " + expectedUsername + "     "), is(1));
+
+        // Should allow searching for multiple users
+        String expectedUserId2 = userIds.get(1);
+        String expectedUsername2 = managedRealm.admin().users().get(expectedUserId2).toRepresentation().getUsername();
+        List<UserRepresentation> multipleUsers = managedRealm.admin().users().search(String.format("username:%s %s", expectedUsername, expectedUsername2), 0, 10);
+        assertThat(multipleUsers, hasSize(2));
+        assertThat(multipleUsers.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers.get(1).getId(), is(expectedUserId2));
+        assertThat(managedRealm.admin().users().count(String.format("username:%s %s", expectedUsername, expectedUsername2)), is(2));
+
+        // Should take arbitrary amount of spaces in between usernames
+        List<UserRepresentation> multipleUsers2 = managedRealm.admin().users().search(String.format("username:  %s   %s  ", expectedUsername, expectedUsername2), 0, 10);
+        assertThat(multipleUsers2, hasSize(2));
+        assertThat(multipleUsers2.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers2.get(1).getId(), is(expectedUserId2));
+        assertThat(managedRealm.admin().users().count(String.format("username:  %s   %s  ", expectedUsername, expectedUsername2)), is(2));
+
+        // Unknown username yields a count of zero
+        assertThat(managedRealm.admin().users().count("username:does-not-exist"), is(0));
+    }
+
+    @Test
+    public void searchByEmailSearch() {
+        List<String> userIds = createUsers();
+        String expectedUserId = userIds.get(0);
+        UserRepresentation expectedUserRep = managedRealm.admin().users().get(expectedUserId).toRepresentation();
+        String expectedEmail = expectedUserRep.getEmail();
+
+        List<UserRepresentation> users = managedRealm.admin().users().search("email:" + expectedEmail, null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+        assertEquals(expectedEmail, users.get(0).getEmail());
+        assertThat(managedRealm.admin().users().count("email:" + expectedEmail), is(1));
+
+        // ensure spaces are ignored
+        users = managedRealm.admin().users().search("email:   " + expectedEmail + "     ", null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+        assertEquals(expectedEmail, users.get(0).getEmail());
+        assertThat(managedRealm.admin().users().count("email:   " + expectedEmail + "     "), is(1));
+
+        // Should allow searching for multiple users
+        String expectedUserId2 = userIds.get(1);
+        String expectedEmail2 = managedRealm.admin().users().get(expectedUserId2).toRepresentation().getEmail();
+        List<UserRepresentation> multipleUsers = managedRealm.admin().users().search(String.format("email:%s %s", expectedEmail, expectedEmail2), 0, 10);
+        assertThat(multipleUsers, hasSize(2));
+        assertThat(multipleUsers.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers.get(1).getId(), is(expectedUserId2));
+        assertThat(managedRealm.admin().users().count(String.format("email:%s %s", expectedEmail, expectedEmail2)), is(2));
+
+        // Should take arbitrary amount of spaces in between emails
+        List<UserRepresentation> multipleUsers2 = managedRealm.admin().users().search(String.format("email:  %s   %s  ", expectedEmail, expectedEmail2), 0, 10);
+        assertThat(multipleUsers2, hasSize(2));
+        assertThat(multipleUsers2.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers2.get(1).getId(), is(expectedUserId2));
+        assertThat(managedRealm.admin().users().count(String.format("email:  %s   %s  ", expectedEmail, expectedEmail2)), is(2));
+
+        // Unknown email yields a count of zero
+        assertThat(managedRealm.admin().users().count("email:does-not-exist@nowhere.test"), is(0));
+    }
+
+    @Test
     public void infixSearch() {
         List<String> userIds = createUsers();
 
@@ -557,7 +631,6 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void prefixSearch() {
         List<String> userIds = createUsers();
 
@@ -625,7 +698,6 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void wildcardSearch() {
         UserProfileResource upResource = managedRealm.admin().users().userProfile();
         UPConfig upConfig = upResource.getConfiguration();
@@ -651,7 +723,6 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void sqlWildcardEscaping() {
         // Test underscore character doesn't act as SQL wildcard
         createUser("john_doe", "john_doe@test.com");
@@ -689,7 +760,6 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void exactSearch() {
         List<String> userIds = createUsers();
 

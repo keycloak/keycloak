@@ -380,19 +380,21 @@ public class AttestationValidatorUtil {
             // Create a certificate path
             CertPath certPath = cf.generateCertPath(certChain);
 
-            // Check if this is a self-signed certificate (for test environments)
+            // Check if this is a self-signed certificate
             X509Certificate firstCert = certChain.get(0);
             boolean isSelfSigned = firstCert.getSubjectX500Principal().equals(firstCert.getIssuerX500Principal());
 
-            // Only validate the certificate chain if it's not a self-signed certificate in a test environment
-            if (!isSelfSigned) {
-                // Validate certificate chain
-                CertPathValidator validator = CertPathValidator.getInstance("PKIX");
-                PKIXParameters params = new PKIXParameters(getTrustAnchors());
-                params.setRevocationEnabled(false);
-
-                validator.validate(certPath, params);
+            if (isSelfSigned) {
+                throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                        "Self-signed certificates are not accepted for key attestation");
             }
+
+            // Validate certificate chain
+            CertPathValidator validator = CertPathValidator.getInstance("PKIX");
+            PKIXParameters params = new PKIXParameters(getTrustAnchors());
+            params.setRevocationEnabled(false);
+
+            validator.validate(certPath, params);
 
             // Get public key from first certificate
             PublicKey publicKey = certChain.get(0).getPublicKey();

@@ -35,36 +35,23 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-spi</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>keycloak-services</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-spi-private</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>keycloak-model-jpa</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

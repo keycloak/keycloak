@@ -35,11 +35,11 @@ import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 
 import org.apache.commons.io.IOUtils;

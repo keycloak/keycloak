@@ -71,6 +71,7 @@ import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -79,6 +80,7 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.runonserver.LdapHelper;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -510,7 +512,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         grantPage.accept();
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         ComponentRepresentation ldapRep = managedRealm.admin().components().component(ldapModelId).toRepresentation();
         managedRealm.admin().components().component(ldapModelId).remove();
@@ -524,7 +526,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
         // Re-add LDAP provider
         Map<String, String> cfg = getLDAPRule().getConfig();
-        ldapModelId = testingClient.testing().ldap(TEST_REALM_NAME).createLDAPProvider(cfg, isImportEnabled());
+        ldapModelId = runOnServer.fetchString(LdapHelper.createLDAPProvider(cfg, isImportEnabled())).replace("\"", "");
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -544,7 +546,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         loginPage.login("marykeycloak", "password-app");
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
     }
 
@@ -554,7 +556,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         loginPage.login("johnkeycloak", "Password1");
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(managedRealm.admin(), "johnkeycloak");
 
@@ -579,7 +581,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         loginPage.login("john@email.org", "Password1");
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -625,11 +627,11 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
         String userId = user.toRepresentation().getId();
 
-        events.expectRegister(username, email).assertEvent();
-        EventRepresentation loginEvent = events.expectLogin().user(userId).assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.REGISTER).userId(userId).clientId(oauth.getClientId()).details(Details.USERNAME, username).details(Details.EMAIL, email);
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).getEvent();
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         appPage.logout(tokenResponse.getIdToken());
-        events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();
+        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(userId);
 
         // Test admin endpoint. Assert federated endpoint returns password in LDAP "supportedCredentials", but there is no stored password
         assertPasswordConfiguredThroughLDAPOnly(user);
@@ -658,12 +660,12 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             requiredActionChangePasswordPage.changePassword("Password1-updated2", "Password1-updated2");
 
             appPage.assertCurrent();
-            events.expect(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).assertEvent();
-            events.expect(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).assertEvent();
-            loginEvent = events.expectLogin().user(userId).assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId);
+            EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId);
+            loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).getEvent();
             tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             appPage.logout(tokenResponse.getIdToken());
-            events.expectLogout(loginEvent.getSessionId()).user(userId);
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(userId);
 
             // Assert user can authenticate with the new password
             loginSuccessAndLogout(username, "Password1-updated2");
@@ -1405,7 +1407,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
                 LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, appRealm, ldapProvider.getLdapIdentityStore().getConfig(), "johndirect");
             });
 
-            setTimeOffset(60 * 5); // 5 minutes in future, user should be cached still
+            timeOffSet.set(60 * 5); // 5 minutes in future, user should be cached still
 
             testingClient.server().run(session -> {
                 RealmModel appRealm = new RealmManager(session).getRealmByName("test");
@@ -1417,7 +1419,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
                 Assertions.assertEquals("johndirect@email.org", email);
             });
 
-            setTimeOffset(60 * 20); // 20 minutes into future, cache will be invalidated
+            timeOffSet.set(60 * 20); // 20 minutes into future, cache will be invalidated
 
             testingClient.server().run(session -> {
                 RealmModel appRealm = new RealmManager(session).getRealmByName("test");
@@ -1426,7 +1428,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
                 Assertions.assertNull(user);
             });
         } finally {
-            resetTimeOffset();
+            timeOffSet.set(0);
             testingClient.testing().revertTestingInfinispanTimeService();
         }
     }
@@ -1473,21 +1475,21 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assertions.assertTrue(testedUser instanceof CachedUserModel);
         });
 
-        setTimeOffset(60 * 5); // 5 minutes in future, should be cached still
+        timeOffSet.set(60 * 5); // 5 minutes in future, should be cached still
         testingClient.server().run(session -> {
             RealmModel appRealm = session.realms().getRealmByName(TEST_REALM_NAME);
             UserModel testedUser = session.users().getUserById(appRealm, userId);
             Assertions.assertTrue(testedUser instanceof CachedUserModel);
         });
 
-        setTimeOffset(60 * 10); // 10 minutes into future, cache will be invalidated
+        timeOffSet.set(60 * 10); // 10 minutes into future, cache will be invalidated
         testingClient.server().run(session -> {
             RealmModel appRealm = session.realms().getRealmByName(TEST_REALM_NAME);
             UserModel testedUser = session.users().getUserByUsername(appRealm, "thor");
             Assertions.assertFalse(testedUser instanceof CachedUserModel);
         });
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
     }
 
     @Test
@@ -1519,7 +1521,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assertions.assertEquals("Doe", john.getLastName());
 
             // expire the cache which is 10 minutes
-            setTimeOffset(610);
+            timeOffSet.set(610);
 
             // new sn should be present
             users = managedRealm.admin().users().search("johnkeycloak", true);
@@ -1536,7 +1538,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
                 johnLdapObject.setSingleAttribute(LDAPConstants.SN, "Doe");
                 ctx.getLdapProvider().getLdapIdentityStore().update(johnLdapObject);
             });
-            resetTimeOffset();
+            timeOffSet.set(0);
             testingClient.testing().revertTestingInfinispanTimeService();
         }
     }

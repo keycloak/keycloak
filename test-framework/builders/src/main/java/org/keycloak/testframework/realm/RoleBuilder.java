@@ -12,8 +12,11 @@ public class RoleBuilder extends Builder<RoleRepresentation> {
     }
 
     public static RoleBuilder create() {
-        RoleRepresentation rep = new RoleRepresentation();
-        return new RoleBuilder(rep);
+        return new RoleBuilder(new RoleRepresentation());
+    }
+
+    public static RoleBuilder create(String name) {
+        return create().name(name);
     }
 
     public static RoleBuilder update(RoleRepresentation rep) {

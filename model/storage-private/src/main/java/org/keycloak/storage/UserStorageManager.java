@@ -28,6 +28,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.reflections.Types;
@@ -44,6 +45,7 @@ import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
@@ -54,6 +56,7 @@ import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
@@ -931,6 +934,95 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
+    public UserVerifiableCredentialModel addVerifiableCredential(String userId, UserVerifiableCredentialModel credentialModel) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().addVerifiableCredential(userId, credentialModel);
+        } else {
+            return getFederatedStorage().addVerifiableCredential(userId, credentialModel);
+        }
+    }
+
+    @Override
+    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String clientScopeId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().updateVerifiableCredential(userId, clientScopeId);
+        } else {
+            return getFederatedStorage().updateVerifiableCredential(userId, clientScopeId);
+        }
+    }
+
+    @Override
+    public boolean removeVerifiableCredential(String userId, String clientScopeId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().removeVerifiableCredential(userId, clientScopeId);
+        } else {
+            return getFederatedStorage().removeVerifiableCredential(userId, clientScopeId);
+        }
+    }
+
+    @Override
+    public Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().getVerifiableCredentialsByUser(userId);
+        } else {
+            return getFederatedStorage().getVerifiableCredentialsByUser(userId);
+        }
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialById(String id) {
+        UserVerifiableCredentialModel credentialModel = localStorage().getVerifiableCredentialById(id);
+        if (credentialModel == null) {
+            return getFederatedStorage().getVerifiableCredentialById(id);
+        }
+        return credentialModel;
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialByClientScope(String userId, String clientScopeId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().getVerifiableCredentialByClientScope(userId, clientScopeId);
+        } else {
+            return getFederatedStorage().getVerifiableCredentialByClientScope(userId, clientScopeId);
+        }
+    }
+
+    @Override
+    public IssuedVerifiableCredentialModel addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc) {
+        if (StorageId.isLocalStorage(issuedVc.getUserId())) {
+            return localStorage().addIssuedVerifiableCredential(issuedVc);
+        } else {
+            return getFederatedStorage().addIssuedVerifiableCredential(issuedVc);
+        }
+    }
+
+    @Override
+    public Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().getIssuedVerifiableCredentialsStreamByUser(userId);
+        } else {
+            return getFederatedStorage().getIssuedVerifiableCredentialsStreamByUser(userId);
+        }
+    }
+
+    @Override
+    public boolean removeIssuedVerifiableCredential(String credentialId) {
+        if (localStorage().removeIssuedVerifiableCredential(credentialId)) {
+            return true;
+        }
+        if (getFederatedStorage() != null) {
+            return getFederatedStorage().removeIssuedVerifiableCredential(credentialId);
+        }
+        return false;
+    }
+
+    @Override
+    public void removeExpiredIssuedVerifiableCredentials() {
+        localStorage().removeExpiredIssuedVerifiableCredentials();
+        if (getFederatedStorage() != null) getFederatedStorage().removeExpiredIssuedVerifiableCredentials();
+    }
+
+    @Override
     public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
         if (StorageId.isLocalStorage(user.getId())) {
             localStorage().setNotBeforeForUser(realm, user, notBefore);
@@ -1015,7 +1107,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
         localStorage().preRemove(realm, component);
         if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, component);
-        StoreSyncEvent.fire(session, realm, component, true);
+        // enlistAfterCompletion(..) as we need to ensure that the realm is updated with the final settings
+        session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                StoreSyncEvent.fire(session, realm, component, true);
+            }
+
+            @Override
+            protected void rollbackImpl() {
+                // NOOP
+            }
+        });
     }
 
     @Override
@@ -1065,7 +1168,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         UserStorageProviderModel actual= new UserStorageProviderModel(newModel);
 
         if (isSyncSettingsUpdated(previous, actual)) {
-            StoreSyncEvent.fire(session, realm, actual, false);
+            // enlistAfterCompletion(..) as we need to ensure that the realm is updated with the final settings
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    StoreSyncEvent.fire(session, realm, actual, false);
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    // NOOP
+                }
+            });
         }
     }
 
@@ -1115,14 +1229,16 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
         OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
 
-        if (organizationProvider.count() == 0) {
+        if (!organizationProvider.hasOrganizations()) {
             return false;
         }
 
-        // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
-        return organizationProvider.getByMember(delegate)
-                .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
-                        (!organizationProvider.isEnabled() && org.isManaged(delegate)));
+        // disable FGAP filtering for this system-level check to avoid infinite recursion:
+        // getByMember -> applyAuthorizationFilters -> getPredicates -> getUser -> getUserById -> validateUser -> isReadOnlyOrganizationMember -> ...
+        return AdminPermissionsSchema.runWithoutAuthorization(session, () ->
+                organizationProvider.getByMember(delegate)
+                        .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
+                                (!organizationProvider.isEnabled() && org.isManaged(delegate))));
     }
 
     private void publishUserPreRemovedEvent(RealmModel realm, UserModel user) {

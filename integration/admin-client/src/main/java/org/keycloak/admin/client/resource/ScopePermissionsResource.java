@@ -46,13 +46,34 @@ public interface ScopePermissionsResource {
     @Path("/search")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    ScopePermissionRepresentation findByName(@QueryParam("name") String name);
+    ScopePermissionRepresentation findByName(@QueryParam("name") String name, @QueryParam("fields") String fields);
 
+    default ScopePermissionRepresentation findByName(String name) {
+        return findByName(name, null);
+    }
+
+    /**
+     *  Search for scope permissions based on given filters.
+     *
+     * @param id a policy id
+     * @param name a name
+     * @param resource a resource
+     * @param fields fields to fetch. This parameter is available since Keycloak server 26.7.0
+     * @param firstResult
+     * @param maxResult
+     * @return a list containing scope permissions.
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<ScopePermissionRepresentation> findAll(@QueryParam("policyId") String id,
                                         @QueryParam("name") String name,
                                         @QueryParam("resource") String resource,
+                                        @QueryParam("fields") String fields,
                                         @QueryParam("first") Integer firstResult,
                                         @QueryParam("max") Integer maxResult);
+
+    default List<ScopePermissionRepresentation> findAll(String id, String name, String resource,
+                                        Integer firstResult, Integer maxResult) {
+        return findAll(id, name, resource, null, firstResult, maxResult);
+    }
 }

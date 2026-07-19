@@ -121,6 +121,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
 
     protected static final String ALL_ZERO_AAGUID = "00000000-0000-0000-0000-000000000000";
     protected static final String ALL_ONE_AAGUID = "11111111-1111-1111-1111-111111111111";
+    protected static final String CHROME_AAGUID = "01020304-0506-0708-0102-030405060708";
     protected static final String USERNAME = "UserWebAuthn";
     protected static final String EMAIL = "UserWebAuthn@email";
 

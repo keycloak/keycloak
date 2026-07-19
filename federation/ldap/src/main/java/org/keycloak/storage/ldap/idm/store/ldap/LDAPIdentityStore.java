@@ -63,6 +63,8 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.IdentityStore;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Timer;
 import org.jboss.logging.Logger;
 
 /**
@@ -79,10 +81,20 @@ public class LDAPIdentityStore implements IdentityStore {
 
     private final LDAPConfig config;
     private final LDAPOperationManager operationManager;
+    private final Meter.MeterProvider<Timer> requestTimer;
 
     public LDAPIdentityStore(KeycloakSession session, LDAPConfig config) {
+        this(session, config, null);
+    }
+
+    public LDAPIdentityStore(KeycloakSession session, LDAPConfig config, Meter.MeterProvider<Timer> requestTimer) {
         this.config = config;
-        this.operationManager = new LDAPOperationManager(session, config);
+        this.requestTimer = requestTimer;
+        this.operationManager = new LDAPOperationManager(session, config, requestTimer);
+    }
+
+    public Meter.MeterProvider<Timer> getRequestTimer() {
+        return requestTimer;
     }
 
     @Override
@@ -483,14 +495,8 @@ public class LDAPIdentityStore implements IdentityStore {
                         Object val = enumm.next();
 
                         if (val instanceof byte[]) { // byte[]
-                            if (ldapAttributeName.equalsIgnoreCase(getConfig().getUuidLDAPAttributeName())) {
-                                // UUID was fetched as a binary attribute, we decode it here - this is the path that's used for objectGUID in Active Directory
-                                String attrVal = this.operationManager.decodeEntryUUID(val);
-                                attrValues.add(attrVal);
-                            } else {
-                                String attrVal = Base64.getEncoder().encodeToString((byte[]) val);
-                                attrValues.add(attrVal);
-                            }
+                            String attrVal = Base64.getEncoder().encodeToString((byte[]) val);
+                            attrValues.add(attrVal);
                         } else { // String
                             String attrVal = val.toString().trim();
                             attrValues.add(attrVal);
@@ -527,13 +533,6 @@ public class LDAPIdentityStore implements IdentityStore {
         Set<String> rdnAttrNamesLowerCased = ldapObject.getRdnAttributeNames().stream()
                 .map(String::toLowerCase)
                 .collect(Collectors.toSet());
-
-        if (!isCreate) {
-            // for updates, assume the password modification time attribute is an operational attribute and read-only
-            // otherwise, updates will fail when trying to modify the attribute
-            // vendors like AD, support the same type of attribute differently and using a mapper
-            ldapObject.addReadOnlyAttributeName(getPasswordModificationTimeAttributeName());
-        }
 
         for (Map.Entry<String, Set<String>> attrEntry : ldapObject.getAttributes().entrySet()) {
             String attrName = attrEntry.getKey();

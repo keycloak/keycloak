@@ -98,6 +98,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -509,7 +510,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         // authenticate client
         AuthorizeClientUtil.ClientAuthResult clientAuth = AuthorizeClientUtil.authorizeClient(session, event, cors);
         ClientModel client = clientAuth.getClient();
-        cors.allowedOrigins(session, client);
+        cors.checkAllowedOrigins(session, client);
         event.client(client);
         session.getContext().setClient(client);
         if (client.isPublicClient()) {
@@ -594,9 +595,10 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             event.success();
             return cors.add(Response.fromResponse(response));
         } catch (Exception e) {
+            logger.errorf(e, "Failed to retrieve token from identity provider");
             event.detail(Details.REASON, e.getMessage());
             event.error(Errors.INVALID_REQUEST);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Failed to retrieve token from identity provider", Response.Status.BAD_REQUEST);
         }
     }
 
@@ -886,10 +888,15 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             if (Booleans.isTrue(context.getIdpConfig().isAddReadTokenRoleOnCreate())) {
                 ClientModel brokerClient = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
                 if (brokerClient == null) {
-                    throw new IdentityBrokerException("Client 'broker' not available. Maybe realm has not migrated to support the broker token exchange service");
+                    logger.warnf("Identity provider '%s' has 'Stored tokens readable' enabled, but the broker client does not exist. This option requires the broker client with read-token role, which is only created when identity-broker-api:v1 is enabled.", context.getIdpConfig().getAlias());
+                } else {
+                    RoleModel readTokenRole = brokerClient.getRole(Constants.READ_TOKEN_ROLE);
+                    if (readTokenRole == null) {
+                        logger.warnf("Identity provider '%s' has 'Stored tokens readable' enabled, but the read-token role does not exist in the broker client.", context.getIdpConfig().getAlias());
+                    } else {
+                        federatedUser.grantRole(readTokenRole);
+                    }
                 }
-                RoleModel readTokenRole = brokerClient.getRole(Constants.READ_TOKEN_ROLE);
-                federatedUser.grantRole(readTokenRole);
             }
 
             // Add federated identity link here
@@ -1166,7 +1173,9 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             return redirectToErrorWhenLinkingFailed(authSession, Messages.ACCOUNT_DISABLED);
         }
 
-
+        if (!Organizations.resolveHomeBroker(session, authenticatedUser).isEmpty()) {
+            return redirectToErrorWhenLinkingFailed(authSession, Messages.FEDERATED_IDENTITY_BOUND_ORGANIZATION);
+        }
 
         if (federatedUser != null) {
             if (Booleans.isTrue(context.getIdpConfig().isStoreToken())) {
@@ -1546,7 +1555,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
     }
 
     private Response corsResponse(Response response, ClientModel clientModel) {
-        return Cors.builder().auth().allowedOrigins(session, clientModel).add(Response.fromResponse(response));
+        return Cors.builder().auth().checkAllowedOrigins(session, clientModel).add(Response.fromResponse(response));
     }
 
     private void fireErrorEvent(String message, Throwable throwable) {

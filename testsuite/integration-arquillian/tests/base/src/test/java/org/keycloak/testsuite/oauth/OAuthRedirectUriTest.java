@@ -21,6 +21,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.List;
+import java.util.Objects;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Encode;
@@ -29,13 +30,14 @@ import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -107,69 +109,69 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
 
         RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        RealmBuilder realm = RealmBuilder.edit(realmRepresentation).testEventListener();
+        RealmBuilder realm = RealmBuilder.update(realmRepresentation).eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID);
 
         ClientBuilder installedApp = ClientBuilder.create().clientId("test-installed").name("test-installed")
                 .redirectUris(Constants.INSTALLED_APP_URN, "http://localhost")
                 .secret("password");
-        realm.client(installedApp);
+        realm.clients(installedApp);
 
         ClientBuilder installedApp2 = ClientBuilder.create().clientId("test-installed2").name("test-installed2")
                 .redirectUris("http://localhost/myapp")
                 .secret("password");
-        realm.client(installedApp2);
+        realm.clients(installedApp2);
 
         ClientBuilder installedApp3 = ClientBuilder.create().clientId("test-wildcard").name("test-wildcard")
                 .redirectUris("http://example.com/foo/*", "http://with-dash.example.local/foo/*", "http://localhost:8280/foo/*", "http://something.com:80/*")
                 .secret("password");
-        realm.client(installedApp3);
+        realm.clients(installedApp3);
 
         ClientBuilder installedApp4 = ClientBuilder.create().clientId("test-dash").name("test-dash")
                 .redirectUris("http://with-dash.example.local", "http://with-dash.example.local/foo")
                 .secret("password");
-        realm.client(installedApp4);
+        realm.clients(installedApp4);
 
         ClientBuilder installedApp5 = ClientBuilder.create().clientId("test-root-url").name("test-root-url")
                 .rootUrl("http://with-dash.example.local")
                 .redirectUris("/foo")
                 .secret("password");
-        realm.client(installedApp5);
+        realm.clients(installedApp5);
 
         ClientBuilder installedApp6 = ClientBuilder.create().clientId("test-relative-url").name("test-relative-url")
                 .rootUrl("")
                 .redirectUris("/auth")
                 .secret("password");
-        realm.client(installedApp6);
+        realm.clients(installedApp6);
 
         ClientBuilder installedApp7 = ClientBuilder.create().clientId("test-query-component").name("test-query-component")
                 .redirectUris("http://localhost?foo=bar", "http://localhost?foo=bar*")
                 .secret("password");
-        realm.client(installedApp7);
+        realm.clients(installedApp7);
 
         ClientBuilder installedApp8 = ClientBuilder.create().clientId("test-fragment").name("test-fragment")
                 .redirectUris("http://localhost:8180/*", "https://localhost:8543/*")
                 .secret("password");
-        realm.client(installedApp8);
+        realm.clients(installedApp8);
 
         ClientBuilder installedApp9 = ClientBuilder.create().clientId("test-encoded-path").name("test-encoded-path")
                 .redirectUris("http://localhost:8280/foo/bar%20bar%2092%2F72/3", "http://localhost:8280/foo/bar%20bar%2092%2F72/44")
                 .secret("password");
-        realm.client(installedApp9);
+        realm.clients(installedApp9);
 
         ClientBuilder installedAppCustomScheme = ClientBuilder.create().clientId("custom-scheme").name("custom-scheme")
                 .redirectUris("android-app://org.keycloak.examples.cordova/https/keycloak-cordova-example.github.io/login")
                 .secret("password");
-        realm.client(installedAppCustomScheme);
+        realm.clients(installedAppCustomScheme);
 
         ClientBuilder installedAppLoopback = ClientBuilder.create().clientId("test-installed-loopback").name("test-installed-loopback")
                 .redirectUris("http://127.0.0.1")
                 .secret("password");
-        realm.client(installedAppLoopback);
+        realm.clients(installedAppLoopback);
 
         ClientBuilder installedAppLoopback2 = ClientBuilder.create().clientId("test-installed-loopback2").name("test-installed-loopback2")
                 .redirectUris("http://127.0.0.1/myapp")
                 .secret("password");
-        realm.client(installedAppLoopback2);
+        realm.clients(installedAppLoopback2);
 
         testRealms.add(realm.build());
     }
@@ -356,12 +358,12 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         checkRedirectUri("http://example.com/foo/../", false);
         checkRedirectUri("http://example.com/foo/%2E%2E/", false); // url-encoded "http://example.com/foobar/../"
         checkRedirectUri("http://example.com/foo%2F%2E%2E%2F", false); // url-encoded "http://example.com/foobar/../"
-        checkRedirectUri("http://example.com/foo/%252E%252E/", true); // double-encoded "http://example.com/foobar/../"
-        checkRedirectUri("http://example.com/foo/%252E%252E/?some_query_param=some_value", true); // double-encoded "http://example.com/foobar/../?some_query_param=some_value"
-        checkRedirectUri("http://example.com/foo/%252E%252E/?encodeTest=a%3Cb", true); // double-encoded "http://example.com/foobar/../?encodeTest=a<b"
-        checkRedirectUri("http://example.com/foo/%252E%252E/#encodeTest=a%3Cb", true); // double-encoded "http://example.com/foobar/../?encodeTest=a<b"
-        checkRedirectUri("http://example.com/foo/%25252E%25252E/", true); // triple-encoded "http://example.com/foobar/../"
-        checkRedirectUri("http://example.com/foo/%2525252525252E%2525252525252E/", true); // seventh-encoded "http://example.com/foobar/../"
+        checkRedirectUri("http://example.com/foo/%252E%252E/", false); // double-encoded "../" — blocked by UNSAFE_PATH_PATTERN per #48978
+        checkRedirectUri("http://example.com/foo/%252E%252E/?some_query_param=some_value", false); // double-encoded "../" — blocked per #48978
+        checkRedirectUri("http://example.com/foo/%252E%252E/?encodeTest=a%3Cb", false); // double-encoded "../" — blocked per #48978
+        checkRedirectUri("http://example.com/foo/%252E%252E/#encodeTest=a%3Cb", false); // double-encoded "../" — blocked per #48978
+        checkRedirectUri("http://example.com/foo/%25252E%25252E/", true); // triple-encoded — remains allowed (recursive-decode out of scope for #48978)
+        checkRedirectUri("http://example.com/foo/%2525252525252E%2525252525252E/", true); // seventh-encoded — remains allowed (recursive-decode out of scope for #48978)
 
         checkRedirectUri("http://example.com/foo?encodeTest=a%3Cb", true);
         checkRedirectUri("http://example.com/foo?encodeTest=a%3Cb#encode2=a%3Cb", true);
@@ -476,6 +478,85 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
 
         Assertions.assertEquals(400, tokenResponse.getStatusCode(), "Expected 400, but got something else");
     }
+
+    @Test
+    public void testRedirectUriWithForbiddenCodeParameter() {
+        oauth.redirectUri(APP_ROOT + "/auth?code=attacker_injected");
+        oauth.openLoginForm();
+
+        Assertions.assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithForbiddenStateParameter() {
+        oauth.redirectUri(APP_ROOT + "/auth?state=attacker_state");
+        oauth.openLoginForm();
+
+        Assertions.assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithForbiddenSessionStateParameter() {
+        oauth.redirectUri(APP_ROOT + "/auth?session_state=attacker_state");
+        oauth.openLoginForm();
+
+        Assertions.assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithForbiddenIssParameter() {
+        oauth.redirectUri(APP_ROOT + "/auth?iss=https://evil.com");
+        oauth.openLoginForm();
+
+        Assertions.assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithMixedLegitimateAndForbiddenParameters() {
+        oauth.redirectUri(APP_ROOT + "/auth?custom=value&code=evil&other=data");
+        oauth.openLoginForm();
+
+        Assertions.assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithUrlEncodedForbiddenParameter() {
+        // c%6Fde = "code" URL-encoded
+        oauth.redirectUri(APP_ROOT + "/auth?c%6Fde=evil");
+        oauth.openLoginForm();
+
+        Assertions.assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithMixedCaseForbiddenParameter() {
+        oauth.redirectUri(APP_ROOT + "/auth?CODE=evil");
+        oauth.openLoginForm();
+
+        Assertions.assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRedirectUriWithLegitimateCustomParameters() throws IOException {
+        oauth.redirectUri(APP_ROOT + "/auth?custom_param=value&return_to=/home");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+
+        Assertions.assertNotNull(response.getCode());
+        URL url = new URL(Objects.requireNonNull(driver.getCurrentUrl()));
+        Assertions.assertTrue(url.toString().startsWith(APP_ROOT));
+        Assertions.assertTrue(url.getQuery().contains("custom_param=value"));
+        Assertions.assertTrue(url.getQuery().contains("return_to=/home"));
+        Assertions.assertTrue(url.getQuery().contains("code="));
+        Assertions.assertTrue(url.getQuery().contains("state="));
+    }
+
 
     private void checkRedirectUri(String redirectUri, boolean expectValid) throws IOException {
         checkRedirectUri(redirectUri, expectValid, false);

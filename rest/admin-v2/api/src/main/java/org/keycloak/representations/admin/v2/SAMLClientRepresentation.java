@@ -19,7 +19,13 @@ package org.keycloak.representations.admin.v2;
 
 import java.util.Objects;
 
+import jakarta.validation.constraints.Size;
+
+import org.keycloak.representations.admin.v2.validation.ValidCanonicalizationMethod;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -30,8 +36,35 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class SAMLClientRepresentation extends BaseClientRepresentation {
     public static final String PROTOCOL = "saml";
 
-    @JsonPropertyDescription("Name ID format to use for the subject (e.g., 'username', 'email', 'transient', 'persistent')")
-    private String nameIdFormat;
+    public SAMLClientRepresentation() {
+        this.protocol = PROTOCOL;
+    }
+
+    public enum NameIdFormat {
+        USERNAME, EMAIL, PERSISTENT, TRANSIENT;
+
+        @JsonValue
+        public String toJson() {
+            return name().toLowerCase();
+        }
+
+        @JsonCreator
+        public static NameIdFormat fromJson(String value) {
+            return value == null ? null : valueOf(value.toUpperCase());
+        }
+    }
+
+    public enum SignatureAlgorithm {
+        RSA_SHA1, RSA_SHA256, RSA_SHA256_MGF1, RSA_SHA512, RSA_SHA512_MGF1, DSA_SHA1;
+
+        @JsonCreator
+        public static SignatureAlgorithm fromJson(String value) {
+            return value == null ? null : valueOf(value);
+        }
+    }
+
+    @JsonPropertyDescription("Name ID format to use for the subject")
+    private NameIdFormat nameIdFormat;
 
     @JsonPropertyDescription("Force the specified Name ID format even if the client requests a different one")
     private Boolean forceNameIdFormat;
@@ -54,28 +87,25 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
     @JsonPropertyDescription("Use front-channel logout (browser redirect)")
     private Boolean frontChannelLogout;
 
-    @JsonPropertyDescription("Signature algorithm for signing SAML documents (e.g., 'RSA_SHA256', 'RSA_SHA512')")
-    private String signatureAlgorithm;
+    @JsonPropertyDescription("Signature algorithm for signing SAML documents")
+    private SignatureAlgorithm signatureAlgorithm;
 
+    @ValidCanonicalizationMethod
     @JsonPropertyDescription("Canonicalization method for XML signatures")
     private String signatureCanonicalizationMethod;
 
+    @Size(max = 65536)
     @JsonPropertyDescription("X.509 certificate for signing (PEM format, without headers)")
     private String signingCertificate;
 
     @JsonPropertyDescription("Allow ECP (Enhanced Client or Proxy) flow")
     private Boolean allowEcpFlow;
 
-    @Override
-    public String getProtocol() {
-        return PROTOCOL;
-    }
-
-    public String getNameIdFormat() {
+    public NameIdFormat getNameIdFormat() {
         return nameIdFormat;
     }
 
-    public void setNameIdFormat(String nameIdFormat) {
+    public void setNameIdFormat(NameIdFormat nameIdFormat) {
         this.nameIdFormat = nameIdFormat;
     }
 
@@ -135,11 +165,11 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.frontChannelLogout = frontChannelLogout;
     }
 
-    public String getSignatureAlgorithm() {
+    public SignatureAlgorithm getSignatureAlgorithm() {
         return signatureAlgorithm;
     }
 
-    public void setSignatureAlgorithm(String signatureAlgorithm) {
+    public void setSignatureAlgorithm(SignatureAlgorithm signatureAlgorithm) {
         this.signatureAlgorithm = signatureAlgorithm;
     }
 

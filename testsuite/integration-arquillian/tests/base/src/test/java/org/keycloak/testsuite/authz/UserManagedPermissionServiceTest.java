@@ -53,18 +53,18 @@ import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.UmaPermissionRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.GroupBuilder;
-import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
-import org.keycloak.testsuite.runonserver.RunOnServer;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RolesBuilder;
 
 import org.junit.Test;
 
@@ -85,39 +85,32 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name(REALM_NAME)
-                .roles(RolesBuilder.create()
-                        .realmRole(RoleBuilder.create().name("uma_authorization").build())
-                        .realmRole(RoleBuilder.create().name("uma_protection").build())
-                        .realmRole(RoleBuilder.create().name("role_a").build())
-                        .realmRole(RoleBuilder.create().name("role_b").build())
-                        .realmRole(RoleBuilder.create().name("role_c").build())
-                        .realmRole(RoleBuilder.create().name("role_d").build())
-                )
-                .group(GroupBuilder.create().name("group_a")
-                        .subGroups(GroupBuilder.create().name("group_b"))
-                        .build())
-                .group(GroupBuilder.create().name("group_c").build())
-                .group(GroupBuilder.create().name("group_remove").build())
-                .user(UserBuilder.create().username("marta").password("password")
-                        .roles("uma_authorization", "uma_protection")
+                .realmRoles("uma_authorization", "uma_protection", "role_a", "role_b", "role_c", "role_d")
+                .groups(GroupBuilder.create().name("group_a")
+                        .subGroups(GroupBuilder.create().name("group_b")))
+                .groups(GroupBuilder.create().name("group_c"))
+                .groups(GroupBuilder.create().name("group_remove"))
+                .users(UserBuilder.create().username("marta").password("password")
+                        .realmRoles("uma_authorization", "uma_protection")
                         .clientRoles("resource-server-test", "uma_protection"))
-                .user(UserBuilder.create().username("alice").password("password")
-                        .roles("uma_authorization", "uma_protection")
+                .users(UserBuilder.create().username("alice").password("password")
+                        .realmRoles("uma_authorization", "uma_protection")
                         .clientRoles("resource-server-test", "uma_protection"))
-                .user(UserBuilder.create().username("kolo").password("password")
-                        .roles("role_a")
-                        .groups("group_a"))
-                .client(ClientBuilder.create().clientId("resource-server-test")
+                .users(UserBuilder.create().username("kolo").password("password")
+                        .realmRoles("role_a")
+                        .groups("group_a")
+                        .clientRoles("resource-server-test", "uma_protection"))
+                .clients(ClientBuilder.create().clientId("resource-server-test")
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
                         .directAccessGrantsEnabled()
                         .serviceAccountsEnabled(true))
-                .client(ClientBuilder.create().clientId("client-a")
+                .clients(ClientBuilder.create().clientId("client-a")
                         .redirectUris("http://localhost/resource-server-test")
                         .publicClient())
-                .client(ClientBuilder.create().clientId("client-remove")
+                .clients(ClientBuilder.create().clientId("client-remove")
                         .redirectUris("http://localhost/resource-server-test")
                         .publicClient())
                 .build());
@@ -131,7 +124,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         resource.setOwner("marta");
         resource.addScope("Scope A", "Scope B", "Scope C");
 
-        resource = getAuthzClient().protection().resource().create(resource);
+        resource = getAuthzClient().protection("marta", "password").resource().create(resource);
 
         UmaPermissionRepresentation newPermission = new UmaPermissionRepresentation();
 
@@ -213,7 +206,8 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         resource.setOwner("marta");
         resource.addScope("Scope A", "Scope B", "Scope C");
 
-        resource = getAuthzClient().protection().resource().create(resource);
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
+        resource = protection.resource().create(resource);
 
         UmaPermissionRepresentation permission = new UmaPermissionRepresentation();
 
@@ -221,8 +215,6 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         permission.setDescription("Users from specific roles are allowed to access");
         permission.addScope("Scope A");
         permission.addRole("role_a");
-
-        ProtectionResource protection = getAuthzClient().protection("marta", "password");
 
         permission = protection.policy(resource.getId()).create(permission);
 
@@ -398,7 +390,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         resource.setOwner("marta");
         resource.addScope("Scope A", "Scope B", "Scope C");
 
-        resource = getAuthzClient().protection().resource().create(resource);
+        resource = getAuthzClient().protection("marta", "password").resource().create(resource);
 
         ResourceRepresentation resourceB = new ResourceRepresentation();
 
@@ -407,7 +399,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         resourceB.setOwner("kolo");
         resourceB.addScope("Scope A", "Scope B", "Scope C");
 
-        resourceB = getAuthzClient().protection().resource().create(resourceB);
+        resourceB = getAuthzClient().protection("kolo", "password").resource().create(resourceB);
 
         UmaPermissionRepresentation permission = new UmaPermissionRepresentation();
 
@@ -503,7 +495,8 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         resource.setOwner("marta");
         resource.addScope("Scope A", "Scope B", "Scope C");
 
-        resource = getAuthzClient().protection().resource().create(resource);
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
+        resource = protection.resource().create(resource);
 
         UmaPermissionRepresentation permission = new UmaPermissionRepresentation();
 
@@ -511,8 +504,6 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         permission.setDescription("Users from specific roles are allowed to access");
         permission.addScope("Scope A");
         permission.addRole("role_a");
-
-        ProtectionResource protection = getAuthzClient().protection("marta", "password");
 
         permission = protection.policy(resource.getId()).create(permission);
 
@@ -563,7 +554,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         }
 
         try {
-            getAuthzClient().protection("marta", "password").policy(resource.getId()).findById(permission.getId());
+            protection.policy(resource.getId()).findById(permission.getId());
             fail("Permission must not exist");
         } catch (Exception e) {
             assertEquals(404, ((HttpResponseException) e.getCause()).getStatusCode());
@@ -600,16 +591,15 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         resource.setOwner("marta");
         resource.addScope("Scope A", "Scope B", "Scope C");
 
-        resource = getAuthzClient().protection().resource().create(resource);
+        ProtectionResource martaProtectionApi = getAuthzClient().protection("marta", "password");
+        resource = martaProtectionApi.resource().create(resource);
 
         UmaPermissionRepresentation permission = new UmaPermissionRepresentation();
 
         permission.setName("Custom User-Managed Permission");
         permission.addUser("kolo");
 
-        ProtectionResource protection = getAuthzClient().protection("marta", "password");
-
-        protection.policy(resource.getId()).create(permission);
+        martaProtectionApi.policy(resource.getId()).create(permission);
 
         AuthorizationResource authorization = getAuthzClient().authorization("kolo", "password");
 
@@ -657,7 +647,8 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         resource.setOwner("marta");
         resource.addScope("Scope A", "Scope B", "Scope C");
 
-        resource = getAuthzClient().protection().resource().create(resource);
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
+        resource = protection.resource().create(resource);
 
         PermissionResponse ticketResponse = getAuthzClient().protection().permission().create(new PermissionRequest(resource.getId(), "Scope A"));
 
@@ -673,7 +664,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
             assertTrue(e.getMessage().contains("request_submitted"));
         }
 
-        List<PermissionTicketRepresentation> tickets = getAuthzClient().protection().permission().findByResource(resource.getId());
+        List<PermissionTicketRepresentation> tickets = protection.permission().findByResource(resource.getId());
 
         assertEquals(1, tickets.size());
 
@@ -693,8 +684,6 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         permission.addScope("Scope A");
         permission.addRole("role_a");
 
-        ProtectionResource protection = getAuthzClient().protection("marta", "password");
-
         permission = protection.policy(resource.getId()).create(permission);
 
         getAuthzClient().authorization("kolo", "password").authorize(request);
@@ -705,14 +694,14 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
         getAuthzClient().authorization("kolo", "password").authorize(request);
 
-        permission = getAuthzClient().protection("marta", "password").policy(resource.getId()).findById(permission.getId());
+        permission = protection.policy(resource.getId()).findById(permission.getId());
 
         assertNotNull(permission);
 
         permission.removeRole("role_a");
         permission.addRole("role_b");
 
-        getAuthzClient().protection("marta", "password").policy(resource.getId()).update(permission);
+        protection.policy(resource.getId()).update(permission);
 
         try {
             getAuthzClient().authorization("kolo", "password").authorize(request);
@@ -732,7 +721,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
             assertTrue(e instanceof AuthorizationDeniedException);
         }
 
-        getAuthzClient().protection("marta", "password").policy(resource.getId()).delete(permission.getId());
+        protection.policy(resource.getId()).delete(permission.getId());
 
         try {
             getAuthzClient().authorization("kolo", "password").authorize(request);
@@ -751,7 +740,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         resource.setOwnerManagedAccess(true);
         resource.addScope("Scope A", "Scope B", "Scope C");
 
-        ProtectionResource protection = getAuthzClient().protection();
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
 
         resource = protection.resource().create(resource);
 
@@ -760,7 +749,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         permission.setName("Custom User-Managed Policy");
         permission.addRole("role_a");
 
-        PolicyResource policy = getAuthzClient().protection("marta", "password").policy(resource.getId());
+        PolicyResource policy = protection.policy(resource.getId());
 
         permission = policy.create(permission);
 
@@ -809,7 +798,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         resource.setOwner("marta");
         resource.addScope("Scope A", "Scope B", "Scope C");
 
-        ProtectionResource protection = getAuthzClient().protection();
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
 
         resource = protection.resource().create(resource);
 
@@ -830,7 +819,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         resource.addScope("Scope A", "Scope B", "Scope C");
         resource.setOwnerManagedAccess(true);
 
-        ProtectionResource protection = getAuthzClient().protection();
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
 
         resource = protection.resource().create(resource);
 
@@ -882,11 +871,11 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         resource.setOwnerManagedAccess(true);
         resource.addScope("Scope A", "Scope B", "Scope C");
 
-        ProtectionResource protection = getAuthzClient().protection();
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
 
         resource = protection.resource().create(resource);
 
-        PolicyResource policy = getAuthzClient().protection("marta", "password").policy(resource.getId());
+        PolicyResource policy = protection.policy(resource.getId());
 
         for (int i = 0; i < 10; i++) {
             UmaPermissionRepresentation permission = new UmaPermissionRepresentation();
@@ -985,7 +974,8 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         resource.setOwner("marta");
         resource.addScope("Scope A", "Scope B", "Scope C");
 
-        resource = getAuthzClient().protection().resource().create(resource);
+        ProtectionResource martaProtectionApi = getAuthzClient().protection("marta", "password");
+        resource = martaProtectionApi.resource().create(resource);
 
         UmaPermissionRepresentation permission = new UmaPermissionRepresentation();
 
@@ -993,9 +983,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         permission.addScope("Scope A", "Scope B");
         permission.addUser("kolo");
 
-        ProtectionResource protection = getAuthzClient().protection("marta", "password");
-
-        protection.policy(resource.getId()).create(permission);
+        martaProtectionApi.policy(resource.getId()).create(permission);
 
         AuthorizationResource authorization = getAuthzClient().authorization("kolo", "password");
 
@@ -1033,7 +1021,8 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         resource.setOwner("marta");
         resource.addScope("Scope A", "Scope B", "Scope C");
 
-        resource = getAuthzClient().protection().resource().create(resource);
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
+        resource = protection.resource().create(resource);
 
         UmaPermissionRepresentation newPermission = new UmaPermissionRepresentation();
 
@@ -1047,8 +1036,6 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         newPermission.setCondition("script-scripts/default-policy.js");
 
         newPermission.addUser("kolo");
-
-        ProtectionResource protection = getAuthzClient().protection("marta", "password");
 
         protection.policy(resource.getId()).create(newPermission);
 
@@ -1084,6 +1071,75 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         policies = provider.getStoreFactory().getPolicyStore()
                 .find(resourceServer, filters, null, null);
         assertTrue(policies.isEmpty());
+    }
+
+    @Test
+    public void testResourceTypeAnyDoesNotLeakOwnerManagedResources() {
+        // Alice creates her resource with owner-managed access
+        ResourceRepresentation aliceResource = new ResourceRepresentation();
+        aliceResource.setName("alice-medical-records");
+        aliceResource.setType("patient-data");
+        aliceResource.setOwnerManagedAccess(true);
+        aliceResource.addScope("read", "write");
+        aliceResource = getAuthzClient().protection("alice", "password").resource().create(aliceResource);
+
+        // Marta creates her own resource of the same type but does NOT share it with kolo
+        ResourceRepresentation martaResource = new ResourceRepresentation();
+        martaResource.setName("marta-medical-records");
+        martaResource.setType("patient-data");
+        martaResource.setOwner("marta");
+        martaResource.setOwnerManagedAccess(true);
+        martaResource.addScope("read", "write");
+        martaResource = getAuthzClient().protection("marta", "password").resource().create(martaResource);
+
+        // Request a permission ticket for alice's resource; kolo's failed authorization creates a pending ticket
+        PermissionResponse ticketResponse = getAuthzClient().protection()
+                .permission().create(new PermissionRequest(aliceResource.getId(), "read"));
+
+        AuthorizationRequest koloRequest = new AuthorizationRequest();
+        koloRequest.setTicket(ticketResponse.getTicket());
+        koloRequest.setSubmitRequest(true);
+
+        try {
+            getAuthzClient().authorization("kolo", "password").authorize(koloRequest);
+            fail("User should not have permission before ticket is granted");
+        } catch (Exception e) {
+            assertTrue(e instanceof AuthorizationDeniedException);
+            assertTrue(e.getMessage().contains("request_submitted"));
+        }
+
+        // Grant the pending ticket so kolo has explicit access to alice's resource
+        List<PermissionTicketRepresentation> tickets = getAuthzClient().protection()
+                .permission().findByResource(aliceResource.getId());
+        assertEquals(1, tickets.size());
+        PermissionTicketRepresentation aliceTicket = tickets.get(0);
+        aliceTicket.setGranted(true);
+        getAuthzClient().protection().permission().update(aliceTicket);
+
+        org.keycloak.admin.client.resource.AuthorizationResource authzAdmin = getClient(getRealm()).authorization();
+        ResourceServerRepresentation settings = authzAdmin.getSettings();
+        settings.setPolicyEnforcementMode(PolicyEnforcementMode.PERMISSIVE);
+        authzAdmin.update(settings);
+
+        try {
+            // kolo requests an RPT using resource-type-any for all "patient-data" resources
+            AuthorizationRequest request = new AuthorizationRequest();
+            request.addPermission("resource-type-any:patient-data", "read");
+
+            AuthorizationResponse response = getAuthzClient().authorization("kolo", "password").authorize(request);
+            assertNotNull(response);
+
+            AccessToken rpt = toAccessToken(response.getToken());
+            Collection<Permission> permissions = rpt.getAuthorization().getPermissions();
+
+            // kolo should only have access to alice's resource, NOT marta's (which was never shared)
+            assertEquals(1, permissions.size());
+            Permission granted = permissions.iterator().next();
+            assertEquals(aliceResource.getId(), granted.getResourceId());
+        } finally {
+            settings.setPolicyEnforcementMode(PolicyEnforcementMode.ENFORCING);
+            authzAdmin.update(settings);
+        }
     }
 
     private List<PolicyRepresentation> getAssociatedPolicies(UmaPermissionRepresentation permission) {

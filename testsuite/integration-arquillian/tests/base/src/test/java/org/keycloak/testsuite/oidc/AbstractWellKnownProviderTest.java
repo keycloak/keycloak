@@ -65,6 +65,7 @@ import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.testsuite.wellknown.CustomOIDCWellKnownProviderFactory;
 import org.keycloak.util.JsonSerialization;
 
@@ -437,7 +438,7 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
             oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
             assertScopesSupportedMatchesWithRealm(oidcConfig, expectedScopeList);
         } finally {
-            getTestingClient().testing().setSystemPropertyOnServer(CustomOIDCWellKnownProviderFactory.INCLUDE_CLIENT_SCOPES, null);
+            runOnServerMaster.run(RunHelpers.setSystemPropertyOnServer(CustomOIDCWellKnownProviderFactory.INCLUDE_CLIENT_SCOPES, null));
             if ( showScopeId != null)
                 adminClient.realm("test").clientScopes().get(showScopeId).remove();
             if ( hideScopeId != null)

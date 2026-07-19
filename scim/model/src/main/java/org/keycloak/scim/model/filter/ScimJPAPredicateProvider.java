@@ -20,6 +20,8 @@ import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 
+import org.jboss.logging.Logger;
+
 /**
  * Creates JPA predicates for SCIM filter operators. Handles both direct root entity fields and custom attributes stored
  * in an associated "attributes" collection. Also handles necessary type conversions for temporal fields.
@@ -27,6 +29,8 @@ import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
 public class ScimJPAPredicateProvider {
+
+    private static final Logger logger = Logger.getLogger(ScimJPAPredicateProvider.class);
 
     private final ScimResourceTypeProvider resourceTypeProvider;
     private final List<ModelSchema<?, ?>> schemas;
@@ -71,7 +75,10 @@ public class ScimJPAPredicateProvider {
      */
     public JPAFilterResult createPredicate(String path, String operator, String value) {
         Attribute<?,?> attrInfo = resolve(path);
-        if (attrInfo == null) return JPAFilterResult.unsupported(cb.disjunction());
+        if (attrInfo == null) {
+            logger.debugf("Filter attribute '%s' could not be resolved to a known SCIM attribute; filter will not match any resources", path);
+            return JPAFilterResult.unsupported(cb.disjunction());
+        }
 
         String op = operator.toLowerCase();
         // validate operator before normalization or predicate building

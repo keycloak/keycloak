@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.login;
 
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +33,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
@@ -214,7 +216,7 @@ public class ConditionalCredentialAuthenticatorTest extends AbstractTestRealmKey
         Assertions.assertNull(res.getError());
         Assertions.assertNotNull(res.getAccessToken());
 
-        events.expectLogin().user(AssertEvents.isUUID()).detail(Details.USERNAME, username).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).hasUserId().details(Details.USERNAME, username);
     }
 
 }

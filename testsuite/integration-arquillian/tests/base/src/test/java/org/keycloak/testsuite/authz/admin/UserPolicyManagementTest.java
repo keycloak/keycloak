@@ -34,9 +34,9 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
-import org.keycloak.testsuite.util.RealmBuilder;
 
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -54,12 +54,12 @@ public class UserPolicyManagementTest extends AbstractPolicyManagementTest {
     @Override
     protected RealmBuilder createTestRealm() {
         return super.createTestRealm()
-                .user(UserBuilder.create().username("User A"))
-                .user(UserBuilder.create().username("User B"))
-                .user(UserBuilder.create().username("User C"))
-                .user(UserBuilder.create().username("User D"))
-                .user(UserBuilder.create().username("User E"))
-                .user(UserBuilder.create().username("User F"));
+                .users(UserBuilder.create().username("User A"))
+                .users(UserBuilder.create().username("User B"))
+                .users(UserBuilder.create().username("User C"))
+                .users(UserBuilder.create().username("User D"))
+                .users(UserBuilder.create().username("User E"))
+                .users(UserBuilder.create().username("User F"));
     }
 
     @Test

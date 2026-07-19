@@ -292,7 +292,13 @@ public class RealmAdminResource {
         if (clientScope == null) {
             throw new NotFoundException("Client scope not found");
         }
-        
+
+        // Parameterized scopes currently require the caller to explicitly provide the scope parameter (e.g. "scope_name:value"),
+        // so they cannot be included automatically as default scopes. This restriction may be lifted in the future.
+        if (defaultScope && clientScope.isParameterizedScope()) {
+            throw ErrorResponse.error("Can't assign a Parameterized Scope as a Default Scope", Status.BAD_REQUEST);
+        }
+
         ClientResource.validateClientScopeAssignment(session, clientScope, defaultScope, realm);
         
         realm.addDefaultClientScope(clientScope, defaultScope);
@@ -645,7 +651,7 @@ public class RealmAdminResource {
 
     @Path("workflows")
     public WorkflowsResource workflows() {
-        return new WorkflowsResource(session, auth);
+        return new WorkflowsResource(session, auth, adminEvent);
     }
 
     @Path("{extension}")
@@ -902,7 +908,7 @@ public class RealmAdminResource {
                                                  @Parameter(description = "To (inclusive) date (yyyy-MM-dd) or time in Epoch timestamp millis (number of milliseconds since January 1, 1970, 00:00:00 GMT)") @QueryParam("dateTo") String dateTo,
                                                  @Parameter(description = "IP Address") @QueryParam("ipAddress") String ipAddress,
                                                  @Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult,
-                                                 @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults,
+                                                 @Parameter(description = "Maximum results size") @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults,
                                                  @Parameter(description = "The direction to sort events by (asc or desc)") @QueryParam("direction") String direction) {
         auth.realm().requireViewEvents();
 

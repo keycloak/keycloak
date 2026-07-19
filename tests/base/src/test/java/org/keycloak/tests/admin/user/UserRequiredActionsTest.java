@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class UserRequiredActionsTest extends AbstractUserTest {
 
     @Test
-    @DatabaseTest
     public void addRequiredAction() {
         String id = createUser();
 
@@ -43,7 +42,6 @@ public class UserRequiredActionsTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void removeRequiredAction() {
         String id = createUser();
 

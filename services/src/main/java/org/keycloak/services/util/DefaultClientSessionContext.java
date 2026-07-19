@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -37,6 +38,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -60,6 +62,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     private final AuthenticatedClientSessionModel clientSession;
     private final Set<ClientScopeModel> requestedScopes;
     private final KeycloakSession session;
+    private final String requestedScopeString;
 
     private Set<ClientScopeModel> allowedClientScopes;
 
@@ -76,10 +79,11 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     private final Set<String> restrictedScopes;
 
-    private DefaultClientSessionContext(AuthenticatedClientSessionModel clientSession, Set<ClientScopeModel> requestedScopes, Set<String> restrictedScopes, KeycloakSession session) {
+    private DefaultClientSessionContext(AuthenticatedClientSessionModel clientSession, Set<ClientScopeModel> requestedScopes, Set<String> restrictedScopes, String requestedScopeString, KeycloakSession session) {
         this.requestedScopes = requestedScopes;
         this.restrictedScopes = restrictedScopes;
         this.clientSession = clientSession;
+        this.requestedScopeString = requestedScopeString;
         this.session = session;
         this.session.setAttribute(ClientSessionContext.class.getName(), this);
     }
@@ -94,20 +98,20 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
 
     public static DefaultClientSessionContext fromClientSessionAndScopeParameter(AuthenticatedClientSessionModel clientSession, String scopeParam, KeycloakSession session) {
+        UserModel user = Optional.ofNullable(clientSession.getUserSession()).map(UserSessionModel::getUser).orElse(null);
         Stream<ClientScopeModel> requestedScopes;
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            session.getContext().setClient(clientSession.getClient());
-            requestedScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, scopeParam);
+        if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
+            requestedScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, clientSession.getClient(), user, scopeParam);
         } else {
-            requestedScopes = TokenManager.getRequestedClientScopes(session, scopeParam, clientSession.getClient(), clientSession.getUserSession().getUser());
+            requestedScopes = TokenManager.getRequestedClientScopes(session, scopeParam, clientSession.getClient(), user);
         }
-        return new DefaultClientSessionContext(clientSession, requestedScopes.collect(Collectors.toSet()), null, session);
+        return new DefaultClientSessionContext(clientSession, requestedScopes.collect(Collectors.toSet()), null, scopeParam, session);
     }
 
 
     public static DefaultClientSessionContext fromClientSessionAndClientScopes(AuthenticatedClientSessionModel clientSession,
             Set<ClientScopeModel> requestedScopes, Set<String> restrictedScopes, KeycloakSession session) {
-        return new DefaultClientSessionContext(clientSession, requestedScopes, restrictedScopes, session);
+        return new DefaultClientSessionContext(clientSession, requestedScopes, restrictedScopes, clientSession.getNote(OAuth2Constants.SCOPE), session);
     }
 
     @Override
@@ -186,10 +190,10 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     @Override
     public String getScopeString(boolean ignoreIncludeInTokenScope) {
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
             String scopeParam = buildScopesStringFromAuthorizationRequest(ignoreIncludeInTokenScope);
-            logger.tracef("Generated scope param with Dynamic Scopes enabled: %1s", scopeParam);
-            String scopeSent = clientSession.getNote(OAuth2Constants.SCOPE);
+            logger.tracef("Generated scope param with Parameterized Scopes enabled: %1s", scopeParam);
+            String scopeSent = requestedScopeString;
             if (TokenUtil.isOIDCRequest(scopeSent)) {
                 scopeParam = TokenUtil.attachOIDCScope(scopeParam);
             }
@@ -203,7 +207,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
                 .collect(Collectors.joining(" "));
 
         // See if "openid" scope is requested
-        String scopeSent = clientSession.getNote(OAuth2Constants.SCOPE);
+        String scopeSent = requestedScopeString;
         if (TokenUtil.isOIDCRequest(scopeSent)) {
             scopeParam = TokenUtil.attachOIDCScope(scopeParam);
         }
@@ -221,7 +225,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
      * @return see description
      */
     private String buildScopesStringFromAuthorizationRequest(boolean ignoreIncludeInTokenScope) {
-        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getNote(OAuth2Constants.SCOPE)).getAuthorizationDetailEntries().stream()
+        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getClient(), clientSession.getUserSession().getUser(), requestedScopeString).getAuthorizationDetailEntries().stream()
                 .filter(authorizationDetails -> authorizationDetails.getSource().equals(AuthorizationRequestSource.SCOPE))
                 .filter(authorizationDetails -> authorizationDetails.getClientScope().isIncludeInTokenScope() || ignoreIncludeInTokenScope)
                 .filter(authorizationDetails -> isClientScopePermittedForUser(authorizationDetails.getClientScope()))
@@ -244,7 +248,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     @Override
     public AuthorizationRequestContext getAuthorizationRequestContext() {
-        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getNote(OAuth2Constants.SCOPE));
+        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getClient(), clientSession.getUserSession().getUser(), requestedScopeString);
     }
 
     // Loading data

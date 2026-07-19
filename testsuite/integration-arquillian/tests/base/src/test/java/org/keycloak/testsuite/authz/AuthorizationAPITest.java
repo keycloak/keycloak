@@ -39,12 +39,10 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
-import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.Before;
@@ -72,28 +70,28 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name("authz-test")
-                .roles(RolesBuilder.create().realmRole(RoleBuilder.create().name("uma_authorization").build()))
-                .user(UserBuilder.create().username("marta").password("password").roles("uma_authorization"))
-                .user(UserBuilder.create().username("kolo").password("password"))
-                .client(ClientBuilder.create().clientId(RESOURCE_SERVER_TEST)
+                .realmRoles("uma_authorization")
+                .users(UserBuilder.create().username("marta").password("password").realmRoles("uma_authorization"))
+                .users(UserBuilder.create().username("kolo").password("password"))
+                .clients(ClientBuilder.create().clientId(RESOURCE_SERVER_TEST)
                     .secret("secret")
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/resource-server-test")
                     .defaultRoles("uma_protection")
                     .directAccessGrantsEnabled())
-                .client(ClientBuilder.create().clientId(PAIRWISE_RESOURCE_SERVER_TEST)
+                .clients(ClientBuilder.create().clientId(PAIRWISE_RESOURCE_SERVER_TEST)
                     .secret("secret")
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/resource-server-test")
                     .defaultRoles("uma_protection")
                     .directAccessGrantsEnabled()
                     .protocolMappers(ProtocolMapperUtil.createPairwiseMapper(TestApplicationResourceUrls.pairwiseSectorIdentifierUri(), null)))
-                .client(ClientBuilder.create().clientId(TEST_CLIENT)
+                .clients(ClientBuilder.create().clientId(TEST_CLIENT)
                     .secret("secret")
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/test-client")
                     .directAccessGrantsEnabled())
-                .client(ClientBuilder.create().clientId(PAIRWISE_TEST_CLIENT)
+                .clients(ClientBuilder.create().clientId(PAIRWISE_TEST_CLIENT)
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/test-client")

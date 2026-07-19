@@ -32,6 +32,7 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -41,13 +42,16 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -85,7 +89,7 @@ public class UserSessionLimitsTest {
     @InjectWebDriver
     ManagedWebDriver driver;
 
-    @InjectOAuthClient
+    @InjectOAuthClient(lifecycle = LifeCycle.METHOD)
     OAuthClient oauth;
 
     @InjectEvents
@@ -111,7 +115,6 @@ public class UserSessionLimitsTest {
     private static final String password = "password";
     private static final String directGrant1 = "direct-grant-1";
     private static final String directGrant2 = "direct-grant-2";
-    private static String defaultRedirectUri = null;
 
     @BeforeEach
     public void setup() {
@@ -124,14 +127,9 @@ public class UserSessionLimitsTest {
             session.sessions().removeUserSessions(realm);
 
              // Reset password
-            org.keycloak.models.UserModel user = session.users().getUserByUsername(realm, username);
+            UserModel user = session.users().getUserByUsername(realm, username);
             user.credentialManager().updateCredential(UserCredentialModel.password(password));
         });
-
-        if (defaultRedirectUri == null) {
-            defaultRedirectUri = oauth.getRedirectUri();
-        }
-        oauth.redirectUri(defaultRedirectUri);
 
         events.clear();
     }
@@ -400,6 +398,7 @@ public class UserSessionLimitsTest {
         }
     }
 
+    @Test
     public void testRealmSessionCountAndClientSessionCountExceededAndDecreaseLimitsAfterActiveSessionsAreCreated() throws Exception {
         try {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
@@ -815,23 +814,23 @@ public class UserSessionLimitsTest {
     public static class UserSessionLimitsRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.addUser(username)
+            realm.users(UserBuilder.create(username)
                     .email(username)
                     .name("Test", "User")
                     .emailVerified(true)
                     .password(password)
-                    .enabled(true);
+                    .enabled(true));
 
             realm.name(realmName);
-            realm.addClient(directGrant1)
+            realm.clients(ClientBuilder.create(directGrant1)
                     .secret(password)
                     .directAccessGrantsEnabled(true)
-                    .redirectUris("*");
+                    .redirectUris("*"));
 
-            realm.addClient(directGrant2)
+            realm.clients(ClientBuilder.create(directGrant2)
                     .secret(password)
                     .directAccessGrantsEnabled(true)
-                    .redirectUris("*");
+                    .redirectUris("*"));
 
             realm.resetPasswordAllowed(true);
             return realm;

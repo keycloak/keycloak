@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.UriInfo;
 
@@ -36,6 +37,8 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+
+import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
  * @resource Roles
@@ -62,6 +65,9 @@ public abstract class RoleResource {
     protected void updateRole(RoleRepresentation rep, RoleModel role, RealmModel realm,
             KeycloakSession session) {
         String newName = rep.getName();
+        if (isBlank(newName)) {
+            throw new BadRequestException("role has no name");
+        }
         String previousName = role.getName();
         if (!Objects.equals(previousName, newName)) {
             role.setName(newName);

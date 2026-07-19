@@ -49,7 +49,12 @@ import static org.keycloak.utils.StreamsUtil.closing;
 public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<UserModel, User> implements ScimAttributeJpaExpressionResolver {
 
     public UserResourceTypeProvider(KeycloakSession session) {
-        super(session, new UserCoreModelSchema(session), List.of(new UserEnterpriseModelSchema(session)));
+        super(session, new UserCoreModelSchema(session), List.of(new UserEnterpriseModelSchema(session), new UserExtensionModelSchema(session)));
+    }
+
+    @Override
+    public String getDescription() {
+        return "User Account";
     }
 
     @Override
@@ -99,7 +104,13 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     protected UserModel getModel(String id) {
         RealmModel realm = session.getContext().getRealm();
-        return session.users().getUserById(realm, id);
+        UserModel model = session.users().getUserById(realm, id);
+
+        if (model == null || model.getServiceAccountClientLink() == null) {
+            return model;
+        }
+
+        return null;
     }
 
     @Override
@@ -108,11 +119,25 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     }
 
     @Override
+    protected User createResourceTypeInstance(UserModel model, List<String> attributes, List<String> excludedAttributes) {
+        if (session.getContext().getPermissions().isAdminUser(model)) {
+            User user = new User();
+
+            user.addSchema(getSchema());
+            user.setId(model.getId());
+            user.setUserName(model.getUsername());
+
+            return user;
+        }
+        return super.createResourceTypeInstance(model, attributes, excludedAttributes);
+    }
+
+    @Override
     protected Stream<UserModel> getModels(SearchRequest searchRequest) {
         RealmModel realm = session.getContext().getRealm();
         Integer firstResult = searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() - 1 : null;
         Integer maxResults = searchRequest.getCount();
-        maxResults = maxResults != null ? Math.min(maxResults, DEFAULT_MAX_RESULTS) : DEFAULT_MAX_RESULTS;
+        maxResults = maxResults != null ? Math.max(0, Math.min(maxResults, DEFAULT_MAX_RESULTS)) : DEFAULT_MAX_RESULTS;
 
         if (StringUtil.isNotBlank(searchRequest.getFilter())) {
             // parse filter into AST
@@ -217,5 +242,10 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             return join.get("groupId");
         }
         return null;
+    }
+
+    @Override
+    protected boolean isManageable(UserModel model) {
+        return !session.getContext().getPermissions().isAdminUser(model);
     }
 }

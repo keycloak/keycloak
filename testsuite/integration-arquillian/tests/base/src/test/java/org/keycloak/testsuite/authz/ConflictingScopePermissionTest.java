@@ -46,8 +46,8 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.Before;
@@ -69,9 +69,9 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name("authz-test")
-                .user(UserBuilder.create().username("marta").password("password"))
-                .user(UserBuilder.create().username("kolo").password("password"))
-                .client(ClientBuilder.create().clientId("resource-server-test")
+                .users(UserBuilder.create().username("marta").password("password"))
+                .users(UserBuilder.create().username("kolo").password("password"))
+                .clients(ClientBuilder.create().clientId("resource-server-test")
                     .secret("secret")
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/resource-server-test")

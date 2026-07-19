@@ -37,6 +37,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
@@ -140,7 +141,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
 
         appPage.assertCurrent();
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -175,16 +176,16 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
             appPage.assertCurrent();
 
             // Logout
-            events.expect(EventType.UPDATE_TOTP)
-                    .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                    .user(userRep.getId()).assertEvent();
-            events.expect(EventType.UPDATE_CREDENTIAL)
-                    .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                    .user(userRep.getId()).assertEvent();
-            EventRepresentation loginEvent = events.expectLogin().user(userRep.getId()).assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_TOTP)
+                    .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
+                    .userId(userRep.getId());
+            EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL)
+                    .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
+                    .userId(userRep.getId());
+            EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userRep.getId()).getEvent();
             String idTokenHint = sendTokenRequestAndGetResponse(loginEvent).getIdToken();
             appPage.logout(idTokenHint);
-            events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(userRep.getId());
 
             // Authenticate as the user again with the dummy OTP should still work
             oauth.openLoginForm();
@@ -193,10 +194,10 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
             loginTotpPage.login(DummyUserFederationProvider.HARDCODED_OTP);
 
             appPage.assertCurrent();
-            loginEvent = events.expectLogin().user(userRep.getId()).assertEvent();
+            loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userRep.getId()).getEvent();
             idTokenHint = sendTokenRequestAndGetResponse(loginEvent).getIdToken();
             appPage.logout(idTokenHint);
-            events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(userRep.getId());
 
             // Authenticate with the new OTP code should work as well
             oauth.openLoginForm();
@@ -205,10 +206,10 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
             loginTotpPage.login(totp.generateTOTP(totpSecret));
 
             appPage.assertCurrent();
-            loginEvent = events.expectLogin().user(userRep.getId()).assertEvent();
+            loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userRep.getId()).getEvent();
             idTokenHint = sendTokenRequestAndGetResponse(loginEvent).getIdToken();
             appPage.logout(idTokenHint);
-            events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(userRep.getId());
         }
     }
 
@@ -239,7 +240,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
 
         appPage.assertCurrent();
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 

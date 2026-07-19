@@ -164,6 +164,7 @@ public class RoleByIdResource extends RoleResource {
     @Operation(summary = "Update the role")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public void updateRole(final @Parameter(description = "id of role") @PathParam("role-id") String id, final RoleRepresentation rep) {

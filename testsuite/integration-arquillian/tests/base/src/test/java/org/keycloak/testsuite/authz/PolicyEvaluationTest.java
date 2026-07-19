@@ -50,6 +50,7 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -71,11 +72,9 @@ import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.GroupBuilder;
-import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RolesBuilder;
 
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -105,29 +104,24 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         groupProtocolMapper.setConfig(config);
 
         testRealms.add(RealmBuilder.create().name("authz-test")
-                .roles(RolesBuilder.create()
-                        .realmRole(RoleBuilder.create().name("uma_authorization").build())
-                        .realmRole(RoleBuilder.create().name("role-a").build())
-                        .realmRole(RoleBuilder.create().name("role-b").build())
-                )
-                .group(GroupBuilder.create().name("Group A")
+                .realmRoles("uma_authorization", "role-a", "role-b")
+                .groups(GroupBuilder.create().name("Group A")
                         .subGroups(GroupBuilder.create("Group B").subGroups("Group C", "Group E"))
-                        .subGroups(GroupBuilder.create("Group D"))
-                        .build())
-                .group(GroupBuilder.create().name("Group E").build())
-                .user(UserBuilder.create().username("marta").password("password").roles("uma_authorization", "role-a").groups("Group A"))
-                .user(UserBuilder.create().username("alice").password("password").roles("uma_authorization").groups("/Group A/Group B/Group E"))
-                .user(UserBuilder.create().username("kolo").password("password").roles("uma_authorization").groups("/Group A/Group D"))
-                .user(UserBuilder.create().username("trinity").password("password").roles("uma_authorization").clientRoles("role-mapping-client", "client-role-a"))
-                .user(UserBuilder.create().username("jdoe").password("password").groups("/Group A/Group B", "/Group A/Group D"))
-                .client(ClientBuilder.create().clientId("resource-server-test")
+                        .subGroups(GroupBuilder.create("Group D").realmRoles("role-a")))
+                .groups(GroupBuilder.create().name("Group E"))
+                .users(UserBuilder.create().username("marta").password("password").realmRoles("uma_authorization", "role-a").groups("Group A"))
+                .users(UserBuilder.create().username("alice").password("password").realmRoles("uma_authorization").groups("/Group A/Group B/Group E"))
+                .users(UserBuilder.create().username("kolo").password("password").realmRoles("uma_authorization").groups("/Group A/Group D"))
+                .users(UserBuilder.create().username("trinity").password("password").realmRoles("uma_authorization").clientRoles("role-mapping-client", "client-role-a"))
+                .users(UserBuilder.create().username("jdoe").password("password").groups("/Group A/Group B", "/Group A/Group D"))
+                .clients(ClientBuilder.create().clientId("resource-server-test")
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
                         .directAccessGrantsEnabled()
                         .protocolMappers(groupProtocolMapper))
-                .client(ClientBuilder.create().clientId("role-mapping-client")
+                .clients(ClientBuilder.create().clientId("role-mapping-client")
                         .defaultRoles("client-role-a", "client-role-b"))
                 .build());
     }
@@ -679,6 +673,47 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
                 return baseAttributes;
             }
         };
+    }
+
+    @Test
+    public void testResolveServiceAccountByClientId() {
+        testingClient.server().run(PolicyEvaluationTest::testResolveServiceAccountByClientId);
+    }
+
+    public static void testResolveServiceAccountByClientId(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("authz-test");
+        session.getContext().setRealm(realm);
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+        ClientModel clientModel = session.clients().getClientByClientId(realm, "resource-server-test");
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
+
+        // get the service account user and assign a realm role
+        UserModel serviceAccount = session.users().getServiceAccount(clientModel);
+        assertNotNull(serviceAccount);
+        RoleModel roleA = realm.getRole("role-a");
+        assertNotNull(roleA);
+        serviceAccount.grantRole(roleA);
+
+        // create a simple user policy (type doesn't matter, we test through the Realm interface)
+        UserPolicyRepresentation policyRepresentation = new UserPolicyRepresentation();
+        policyRepresentation.setName("testResolveServiceAccountByClientId");
+        policyRepresentation.addUser(serviceAccount.getId());
+        Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
+
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
+
+        // resolve service account using the client's internal ID (the fix scenario)
+        Assertions.assertTrue(evaluation.getRealm().isUserInRealmRole(clientModel.getId(), "role-a"),
+                "Service account should be resolved by client internal ID");
+
+        // resolve service account using the service account username (regression check)
+        Assertions.assertTrue(evaluation.getRealm().isUserInRealmRole(serviceAccount.getUsername(), "role-a"),
+                "Service account should still be resolved by username");
+
+        // non-existent ID should not cause errors (NPE check)
+        Assertions.assertFalse(evaluation.getRealm().isUserInRealmRole("non-existent-id", "role-a"),
+                "Non-existent ID should return false without errors");
     }
 
     @Test

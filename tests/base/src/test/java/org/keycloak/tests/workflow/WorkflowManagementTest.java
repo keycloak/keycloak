@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
@@ -29,28 +31,37 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.BearerAuthFilter;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.WorkflowResource;
 import org.keycloak.admin.client.resource.WorkflowsResource;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.workflow.DeleteUserStepProviderFactory;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.RestartWorkflowStepProviderFactory;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
+import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.workflow.conditions.IdentityProviderWorkflowConditionFactory;
 import org.keycloak.models.workflow.conditions.RoleWorkflowConditionFactory;
 import org.keycloak.models.workflow.events.UserAuthenticatedWorkflowEventFactory;
 import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
+import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.workflows.StepExecutionStatus;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
@@ -70,6 +81,7 @@ import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -78,6 +90,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -89,6 +102,9 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
     @InjectUser(ref = "alice", config = DefaultUserConfig.class, lifecycle = LifeCycle.METHOD, realmRef = DEFAULT_REALM_NAME)
     private ManagedUser userAlice;
 
+    @InjectAdminEvents(realmRef = DEFAULT_REALM_NAME)
+    private AdminEvents adminEvents;
+
     @InjectMailServer
     private MailServer mailServer;
 
@@ -97,6 +113,9 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
 
     @InjectAdminClient(ref = "managed", realmRef = "managedRealm")
     Keycloak adminClient;
+
+    @InjectAdminClient(mode = InjectAdminClient.Mode.BOOTSTRAP, realmRef = DEFAULT_REALM_NAME)
+    Keycloak bootstrapAdmin;
 
     @Test
     public void testCreate() {
@@ -237,7 +256,8 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                 .build();
         try (Response response = managedRealm.admin().workflows().create(workflow)) {
             assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
-            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Step 'after' configuration cannot be negative."));
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertThat(error.getErrorMessage(), equalTo("Step 'after' configuration cannot be negative."));
         }
     }
 
@@ -262,8 +282,8 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                                 .build())
                 .build())) {
             assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
-            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(),
-                    equalTo("Workflow name must be unique. A workflow with name 'myworkflow' already exists."));
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertThat(error.getErrorMessage(), equalTo("Workflow name must be unique. A workflow with name 'myworkflow' already exists."));
         }
 
     }
@@ -610,6 +630,223 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         }
     }
 
+
+    @Test
+    public void testWorkflowManagementForbiddenThroughComponentAPI() {
+        // create a workflow through the proper API
+        WorkflowsResource workflows = managedRealm.admin().workflows();
+        String workflowId;
+        try (Response response = workflows.create(WorkflowRepresentation.withName("test-workflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build()
+                ).build())) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            workflowId = ApiUtil.getCreatedId(response);
+        }
+
+        // workflow components should not be visible through the component API
+        String wfId = workflowId;
+        List<ComponentRepresentation> components = managedRealm.admin().components().query();
+        assertThat(components.stream().anyMatch(c -> c.getId().equals(wfId)), is(false));
+
+        // attempting to get a workflow component by ID should return 404
+        assertThrows(NotFoundException.class,
+                () -> managedRealm.admin().components().component(wfId).toRepresentation());
+
+        // attempt to create a workflow component directly through the component API — should be forbidden
+        ComponentRepresentation component = new ComponentRepresentation();
+        component.setName("malicious-workflow");
+        component.setProviderType(WorkflowProvider.class.getName());
+        component.setProviderId("default");
+        try (Response response = managedRealm.admin().components().add(component)) {
+            assertThat(response.getStatus(), is(Status.FORBIDDEN.getStatusCode()));
+        }
+
+        // attempt to update an existing workflow through the component API — should be forbidden
+        assertThrows(ForbiddenException.class,
+                () -> managedRealm.admin().components().component(wfId).update(component));
+
+        // attempt to delete an existing workflow through the component API — should be forbidden
+        assertThrows(ForbiddenException.class,
+                () -> managedRealm.admin().components().component(wfId).remove());
+
+        // verify the workflow is still intact through the proper API
+        WorkflowRepresentation workflow = workflows.workflow(workflowId).toRepresentation();
+        assertThat(workflow.getName(), is("test-workflow"));
+    }
+
+    @Test
+    public void testRealmRemovalOnlyDeletesOwnWorkflowState() {
+        // create a workflow in the managed realm and activate it for a user
+        WorkflowsResource workflowsRealmA = managedRealm.admin().workflows();
+        String workflowIdA;
+        try (Response response = workflowsRealmA.create(WorkflowRepresentation.withName("realm-a-workflow")
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build())
+                .build())) {
+            workflowIdA = ApiUtil.getCreatedId(response);
+        }
+        workflowsRealmA.workflow(workflowIdA).activate(ResourceType.USERS.name(), userAlice.getId());
+
+        // verify state exists in managed realm
+        final String wfIdA = workflowIdA;
+        runOnServer.run((RunOnServer) session -> {
+            WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory()
+                    .getProviderFactory(WorkflowStateProvider.class).create(session);
+            List<ScheduledStep> steps = stateProvider.getScheduledStepsByWorkflow(wfIdA).toList();
+            assertThat(steps, hasSize(1));
+        });
+
+        // create a second realm with its own workflow and workflow state
+        RealmRepresentation realmBRep = new RealmRepresentation();
+        realmBRep.setRealm("realm-b-test");
+        realmBRep.setEnabled(true);
+        bootstrapAdmin.realms().create(realmBRep);
+
+        try {
+            RealmResource realmB = bootstrapAdmin.realm("realm-b-test");
+
+            String userIdB;
+            try (Response response = realmB.users().create(UserBuilder.create()
+                    .username("bob").email("bob@example.com").build())) {
+                userIdB = ApiUtil.getCreatedId(response);
+            }
+
+            String workflowIdB;
+            try (Response response = realmB.workflows().create(WorkflowRepresentation.withName("realm-b-workflow")
+                    .withSteps(
+                            WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                    .after(Duration.ofDays(5))
+                                    .build())
+                    .build())) {
+                workflowIdB = ApiUtil.getCreatedId(response);
+            }
+            realmB.workflows().workflow(workflowIdB).activate(ResourceType.USERS.name(), userIdB);
+
+            // verify state exists in both realms
+            final String wfIdB = workflowIdB;
+            runOnServer.run((RunOnServer) session -> {
+                WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory()
+                        .getProviderFactory(WorkflowStateProvider.class).create(session);
+                assertThat(stateProvider.getScheduledStepsByWorkflow(wfIdA).toList(), hasSize(1));
+                assertThat(stateProvider.getScheduledStepsByWorkflow(wfIdB).toList(), hasSize(1));
+            });
+
+            // delete realm B — this should only remove realm B's workflow state
+            bootstrapAdmin.realm("realm-b-test").remove();
+        } catch (Exception e) {
+            try { bootstrapAdmin.realm("realm-b-test").remove(); } catch (Exception ignored) {}
+            throw e;
+        }
+
+        // verify realm A's workflow state is still intact
+        runOnServer.run((RunOnServer) session -> {
+            WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory()
+                    .getProviderFactory(WorkflowStateProvider.class).create(session);
+            List<ScheduledStep> steps = stateProvider.getScheduledStepsByWorkflow(wfIdA).toList();
+            assertThat("Workflow state for the surviving realm should not be affected by the removal of another realm",
+                    steps, hasSize(1));
+        });
+    }
+
+    @Test
+    public void testAdminEventsForWorkflowOperations() {
+        WorkflowsResource workflows = managedRealm.admin().workflows();
+
+        // CREATE
+        WorkflowRepresentation rep = WorkflowRepresentation.withName("admin-events-workflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build())
+                .build();
+
+        String workflowId;
+        try (Response response = workflows.create(rep)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            workflowId = ApiUtil.getCreatedId(response);
+        }
+
+        AdminEventRepresentation event = adminEvents.poll();
+        AdminEventAssertion.assertSuccess(event)
+                .operationType(OperationType.CREATE)
+                .resourceType(org.keycloak.events.admin.ResourceType.WORKFLOW);
+
+        // UPDATE
+        WorkflowRepresentation updateRep = workflows.workflow(workflowId).toRepresentation();
+        updateRep.setName("updated-workflow");
+        workflows.workflow(workflowId).update(updateRep).close();
+
+        event = adminEvents.poll();
+        AdminEventAssertion.assertSuccess(event)
+                .operationType(OperationType.UPDATE)
+                .resourceType(org.keycloak.events.admin.ResourceType.WORKFLOW);
+
+        // ACTIVATE
+        workflows.workflow(workflowId).activate(ResourceType.USERS.name(), userAlice.getId(), "30");
+
+        event = adminEvents.poll();
+        AdminEventAssertion.assertSuccess(event)
+                .operationType(OperationType.ACTION)
+                .resourceType(org.keycloak.events.admin.ResourceType.WORKFLOW);
+        assertThat(event.getRepresentation(), containsString("\"notBefore\""));
+        assertThat(event.getRepresentation(), containsString("30"));
+
+        // MIGRATE - create a second workflow to migrate to
+        WorkflowRepresentation rep2 = WorkflowRepresentation.withName("migrate-target-workflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build())
+                .build();
+
+        String targetWorkflowId;
+        try (Response response = workflows.create(rep2)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            targetWorkflowId = ApiUtil.getCreatedId(response);
+        }
+        adminEvents.poll(); // consume CREATE event for second workflow
+
+        WorkflowRepresentation sourceWorkflow = workflows.workflow(workflowId).toRepresentation();
+        WorkflowRepresentation targetWorkflow = workflows.workflow(targetWorkflowId).toRepresentation();
+        String fromStepId = sourceWorkflow.getSteps().get(0).getId();
+        String toStepId = targetWorkflow.getSteps().get(0).getId();
+
+        workflows.migrate(fromStepId, toStepId).close();
+
+        event = adminEvents.poll();
+        AdminEventAssertion.assertSuccess(event)
+                .operationType(OperationType.ACTION)
+                .resourceType(org.keycloak.events.admin.ResourceType.WORKFLOW);
+        assertThat(event.getRepresentation(), containsString(fromStepId));
+        assertThat(event.getRepresentation(), containsString(toStepId));
+
+        // DEACTIVATE
+        workflows.workflow(workflowId).deactivate(ResourceType.USERS.name(), userAlice.getId());
+
+        event = adminEvents.poll();
+        AdminEventAssertion.assertSuccess(event)
+                .operationType(OperationType.ACTION)
+                .resourceType(org.keycloak.events.admin.ResourceType.WORKFLOW);
+
+        // DELETE
+        workflows.workflow(workflowId).delete().close();
+
+        event = adminEvents.poll();
+        AdminEventAssertion.assertSuccess(event)
+                .operationType(OperationType.DELETE)
+                .resourceType(org.keycloak.events.admin.ResourceType.WORKFLOW);
+
+        workflows.workflow(targetWorkflowId).delete().close();
+        adminEvents.poll(); // consume DELETE event for second workflow
+    }
 
     private static class DefaultUserConfig implements UserConfig {
 

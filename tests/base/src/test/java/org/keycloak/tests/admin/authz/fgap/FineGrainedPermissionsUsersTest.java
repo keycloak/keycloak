@@ -188,7 +188,7 @@ public class FineGrainedPermissionsUsersTest extends AbstractPermissionTest {
         List<GroupRepresentation> groups = setupUsersInGroups();
 
         if (grp1ViewPermissions) {
-            UserPolicyRepresentation userPolicy = createUserPolicy(realm, client, "allow-test-user", testUserId);
+            UserPolicyRepresentation userPolicy = createUserPolicy(realm, adminPermissionsClient, "allow-test-user", testUserId);
             createGroupPermission(groups.get(0), Set.of(VIEW_MEMBERS), userPolicy);
         }
 

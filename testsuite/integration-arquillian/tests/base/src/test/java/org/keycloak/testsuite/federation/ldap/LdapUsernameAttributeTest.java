@@ -22,7 +22,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.testsuite.runonserver.RunOnServerException;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.LDAPRule;
 
 import org.junit.ClassRule;

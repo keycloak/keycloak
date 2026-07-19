@@ -18,10 +18,13 @@
 package org.keycloak.tests.keys;
 
 import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -52,9 +55,12 @@ import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRe
 import org.keycloak.testframework.annotations.InjectCryptoHelper;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.crypto.CryptoHelper;
 import org.keycloak.testframework.crypto.KeystoreInfo;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -63,12 +69,13 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.KeyUtils;
 import org.keycloak.testsuite.util.saml.SamlConstants;
 
+import org.apache.commons.io.FileUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -89,14 +96,31 @@ public class JavaKeystoreKeyProviderTest {
     @InjectCryptoHelper
     CryptoHelper cryptoHelper;
 
-    @TempDir
     public static File folder;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     protected Logger log = Logger.getLogger(this.getClass());
 
     private String keyAlgorithm;
 
     private KeystoreInfo generatedKeystore;
+
+    @TestSetup
+    public void configureTestRealm() throws IOException {
+        String kcHome = runOnServer.fetchString(session -> System.getProperty("kc.home.dir"));
+        Path path = Paths.get(kcHome).normalize().resolve("data").resolve(realm.getName());
+        if (!Files.exists(path)) {
+            Files.createDirectory(path);
+        }
+        folder = path.toFile();
+    }
+
+    @AfterAll
+    public static void afterAll() throws IOException {
+        FileUtils.deleteDirectory(folder);
+    }
 
     @Test
     public void createJksRSA() throws Exception {
@@ -248,10 +272,20 @@ public class JavaKeystoreKeyProviderTest {
     public void invalidKeystore() throws Exception {
         generateKeystore(cryptoHelper.keystore().getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
-        rep.getConfig().putSingle("keystore", "/nosuchfile");
+        rep.getConfig().putSingle("keystore", "nosuchfile");
 
         Response response = realm.admin().components().add(rep);
         assertError(response, "Failed to load keys. File not found on server.");
+    }
+
+    @Test
+    public void invalidKeystoreOutsideKeystoreDirectories() throws Exception {
+        generateKeystore(cryptoHelper.keystore().getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
+        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
+        rep.getConfig().putSingle("keystore", "/invalid");
+
+        Response response = realm.admin().components().add(rep);
+        assertError(response, "is not under the realm directory");
     }
 
     @Test

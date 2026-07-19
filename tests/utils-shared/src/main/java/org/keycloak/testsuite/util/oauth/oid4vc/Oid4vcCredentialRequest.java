@@ -16,6 +16,7 @@ import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.testsuite.util.oauth.AbstractHttpPostRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.entity.ContentType;
@@ -39,6 +40,11 @@ public class Oid4vcCredentialRequest extends AbstractHttpPostRequest<Oid4vcCrede
 
     public Oid4vcCredentialRequest credentialIdentifier(String credentialIdentifier) {
         credRequest.setCredentialIdentifier(credentialIdentifier);
+        return this;
+    }
+
+    public Oid4vcCredentialRequest dpopProof(String dpopProof) {
+        header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
         return this;
     }
 

@@ -7,10 +7,12 @@ import java.util.stream.Stream;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
@@ -22,6 +24,7 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -29,6 +32,7 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.util.TokenUtil;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -84,7 +88,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         UserBuilder user = UserBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .username("no-permissions")
-                .roles("user")
+                .realmRoles("user")
                 .password("password");
         realm.getUsers().add(user.build());
 
@@ -98,7 +102,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     	// test case : success : A-1-1
         oauth.doLogin("test-user@localhost", "password");
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
         
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -116,7 +120,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
         oauth.loginForm().codeChallenge(codeChallenge, OAuth2Constants.PKCE_METHOD_S256).doLogin("test-user@localhost", "password");
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -134,7 +138,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
         oauth.loginForm().codeChallenge(codeChallenge, OAuth2Constants.PKCE_METHOD_S256).doLogin("test-user@localhost", "password");
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -147,7 +151,10 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
         assertEquals("PKCE verification failed: Code mismatch", response.getErrorDescription());
         
-        events.expectCodeToToken(codeId, sessionId).error(Errors.PKCE_VERIFICATION_FAILED).clearDetails().assertEvent();
+        EventAssertion.expectCodeToTokenError(events.poll())
+                .details(Details.CODE_ID, codeId)
+                .sessionId(sessionId)
+                .error(Errors.PKCE_VERIFICATION_FAILED);
     }
     
     @Test
@@ -156,7 +163,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     	// test case : success : A-1-3
         oauth.loginForm().codeChallenge(".234567890-234567890~234567890_234567890123", OAuth2Constants.PKCE_METHOD_PLAIN).doLogin("test-user@localhost", "password");
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -171,7 +178,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     	// test case : failure : A-1-6
         oauth.loginForm().codeChallenge("1234567890123456789012345678901234567890123", OAuth2Constants.PKCE_METHOD_PLAIN).doLogin("test-user@localhost", "password");
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -184,7 +191,10 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
         assertEquals("PKCE verification failed: Code mismatch", response.getErrorDescription());
         
-        events.expectCodeToToken(codeId, sessionId).error(Errors.PKCE_VERIFICATION_FAILED).clearDetails().assertEvent();
+        EventAssertion.expectCodeToTokenError(events.poll())
+                .details(Details.CODE_ID, codeId)
+                .sessionId(sessionId)
+                .error(Errors.PKCE_VERIFICATION_FAILED);
     }
     
     @Test
@@ -193,7 +203,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     	// test case : success : A-1-4
         oauth.loginForm().codeChallenge("1234567890123456789012345678901234567890123", null).doLogin("test-user@localhost", "password");
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -214,7 +224,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
         Assertions.assertEquals(errorResponse.getErrorDescription(), "Missing parameter: code_challenge");
         
-        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null);
     }
     
     @Test
@@ -227,8 +237,8 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         Assertions.assertTrue(errorResponse.isRedirected());
         Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
         Assertions.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code_challenge");
-        
-        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null);
     }
     
     @Test
@@ -241,8 +251,8 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         Assertions.assertTrue(errorResponse.isRedirected());
         Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
         Assertions.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code_challenge");
-        
-        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null);
     }
     
     @Test
@@ -253,7 +263,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
         oauth.loginForm().codeChallenge(codeChallenge, OAuth2Constants.PKCE_METHOD_S256).doLogin("test-user@localhost", "password");
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -266,7 +276,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
         assertEquals("PKCE verification failed: Invalid code verifier", response.getErrorDescription());
         
-        events.expectCodeToToken(codeId, sessionId).error(Errors.INVALID_CODE_VERIFIER).clearDetails().assertEvent();
+        EventAssertion.expectCodeToTokenError(events.poll())
+                .details(Details.CODE_ID, codeId).sessionId(sessionId)
+                .error(Errors.INVALID_CODE_VERIFIER);
     }
     
     @Test
@@ -277,7 +289,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
         oauth.loginForm().codeChallenge(codeChallenge, OAuth2Constants.PKCE_METHOD_S256).doLogin("test-user@localhost", "password");
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -290,7 +302,10 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
         assertEquals("PKCE verification failed: Invalid code verifier", response.getErrorDescription());
         
-        events.expectCodeToToken(codeId, sessionId).error(Errors.INVALID_CODE_VERIFIER).clearDetails().assertEvent();
+        EventAssertion.expectCodeToTokenError(events.poll())
+                .details(Details.CODE_ID, codeId)
+                .sessionId(sessionId)
+                .error(Errors.INVALID_CODE_VERIFIER);
     }
 
     @Test
@@ -298,7 +313,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     	// test case : failure : A-1-12
         oauth.loginForm().codeChallenge("1234567890123456789012345678901234567890123", OAuth2Constants.PKCE_METHOD_S256).doLogin("test-user@localhost", "password");
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -311,7 +326,10 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
         assertEquals("PKCE code verifier not specified", response.getErrorDescription());
         
-        events.expectCodeToToken(codeId, sessionId).error(Errors.CODE_VERIFIER_MISSING).clearDetails().assertEvent();
+        EventAssertion.expectCodeToTokenError(events.poll())
+                .details(Details.CODE_ID, codeId)
+                .sessionId(sessionId)
+                .error(Errors.CODE_VERIFIER_MISSING);
     }
 
     @Test
@@ -324,8 +342,8 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         Assertions.assertTrue(errorResponse.isRedirected());
         Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
         Assertions.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code_challenge");
-        
-        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null);
     }
 
     @Test
@@ -336,7 +354,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
         oauth.loginForm().codeChallenge(codeChallenge, OAuth2Constants.PKCE_METHOD_S256).doLogin("test-user@localhost", "password");
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -349,7 +367,10 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
         assertEquals("PKCE verification failed: Invalid code verifier", response.getErrorDescription());
         
-        events.expectCodeToToken(codeId, sessionId).error(Errors.INVALID_CODE_VERIFIER).clearDetails().assertEvent();
+        EventAssertion.expectCodeToTokenError(events.poll())
+                .details(Details.CODE_ID, codeId)
+                .sessionId(sessionId)
+                .error(Errors.INVALID_CODE_VERIFIER);
     }
 
     @Test
@@ -359,7 +380,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         // send oauth request without code_challenge because intercepted
         oauth.doLogin("test-user@localhost", "password");
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
@@ -372,7 +393,10 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
         assertEquals("PKCE code verifier specified but challenge not present in authorization", response.getErrorDescription());
 
-        events.expectCodeToToken(codeId, sessionId).error(Errors.INVALID_CODE_VERIFIER).clearDetails().assertEvent();
+        EventAssertion.expectCodeToTokenError(events.poll())
+                .details(Details.CODE_ID, codeId)
+                .sessionId(sessionId)
+                .error(Errors.INVALID_CODE_VERIFIER);
     }
     
     private String generateS256CodeChallenge(String codeVerifier) throws Exception {
@@ -424,7 +448,11 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertEquals(1, token.getResourceAccess(oauth.getClientId()).getRoles().size());
         assertTrue(token.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
 
-        EventRepresentation event = events.expectCodeToToken(codeId, sessionId).assertEvent();
+        EventRepresentation event = EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID).getEvent();
         
         assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
         assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
@@ -441,7 +469,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertThat(actual, allOf(greaterThanOrEqualTo(1799L - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800L + ALLOWED_CLOCK_SKEW)));
         assertEquals(sessionId, refreshToken.getSessionState());
 
-        setTimeOffset(2);
+        timeOffSet.set(2);
 
         AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(refreshTokenString);
         
@@ -473,11 +501,15 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertEquals(1, refreshedToken.getResourceAccess(oauth.getClientId()).getRoles().size());
         Assertions.assertTrue(refreshedToken.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
 
-        EventRepresentation refreshEvent = events.expectRefresh(event.getDetails().get(Details.REFRESH_TOKEN_ID), sessionId).assertEvent();
+        EventRepresentation refreshEvent = EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.REFRESH_TOKEN_ID, event.getDetails().get(Details.REFRESH_TOKEN_ID))
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID).getEvent();
         Assertions.assertNotEquals(event.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
         Assertions.assertNotEquals(event.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
     }
 
     // KEYCLOAK-10747 Explicit Proof Key for Code Exchange Activation Settings
@@ -498,7 +530,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
             oauth.loginForm().codeChallenge(codeChallenge, OAuth2Constants.PKCE_METHOD_S256).doLogin("test-user@localhost", "password");
 
-            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+            EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
             String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -524,7 +556,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
             oauth.loginForm().codeChallenge(codeChallenge, OAuth2Constants.PKCE_METHOD_PLAIN).doLogin("test-user@localhost", "password");
 
-            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+            EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
             String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -552,7 +584,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
             Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
             Assertions.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code challenge method is not matching the configured one");
 
-            events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null);
         } finally {
             setPkceActivationSettings("test-app", null);
         }
@@ -573,7 +605,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
             Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
             Assertions.assertEquals(errorResponse.getErrorDescription(), "Missing parameter: code_challenge_method");
 
-            events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null);
 
         } finally {
             setPkceActivationSettings("test-app", null);
@@ -593,7 +625,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
             Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
             Assertions.assertEquals(errorResponse.getErrorDescription(), "Missing parameter: code_challenge");
 
-            events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null);
 
         } finally {
             setPkceActivationSettings("test-app", null);
@@ -613,7 +645,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
             Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
             Assertions.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code_challenge");
 
-            events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null);
 
         } finally {
             setPkceActivationSettings("test-app", null);
@@ -629,7 +661,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
             oauth.loginForm().codeChallenge(codeChallenge, OAuth2Constants.PKCE_METHOD_S256).doLogin("test-user@localhost", "password");
 
-            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+            EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
             String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -642,7 +674,10 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
             assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
             assertEquals("PKCE code verifier not specified", response.getErrorDescription());
 
-            events.expectCodeToToken(codeId, sessionId).error(Errors.CODE_VERIFIER_MISSING).clearDetails().assertEvent();
+            EventAssertion.expectCodeToTokenError(events.poll())
+                    .details(Details.CODE_ID, codeId)
+                    .sessionId(sessionId)
+                    .error(Errors.CODE_VERIFIER_MISSING);
         } finally {
             setPkceActivationSettings("test-app", null);
         }

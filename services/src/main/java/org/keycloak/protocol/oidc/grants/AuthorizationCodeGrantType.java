@@ -17,10 +17,11 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
+import java.util.Set;
 
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
@@ -30,8 +31,8 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -42,6 +43,7 @@ import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.PreTokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenResponseContext;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -64,6 +66,11 @@ import static org.keycloak.models.Constants.AUTHORIZATION_DETAILS_RESPONSE;
 public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
 
     private static final Logger logger = Logger.getLogger(AuthorizationCodeGrantType.class);
+
+    @Override
+    public void preProcess(KeycloakSession session, MultivaluedMap<String, String> formParams) throws ClientPolicyException {
+        session.clientPolicy().triggerOnEvent(new PreTokenRequestContext(session, formParams));
+    }
 
     @Override
     public Response process(Context context) {
@@ -205,8 +212,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
 
         // Compute client scopes again from scope parameter. Check if user still has them granted
         // (but in code-to-token request, it could just theoretically happen that they are not available)
-        Supplier<Stream<ClientScopeModel>> clientScopesSupplier = () -> TokenManager.getRequestedClientScopes(session, scopeParam, client, user);
-        if (!TokenManager.verifyConsentStillAvailable(session, user, client, clientScopesSupplier.get())) {
+        if (!TokenManager.verifyConsentStillAvailable(session, user, client, clientSession, scopeParam)) {
             String errorMessage = "Client no longer has requested consent from user";
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
@@ -295,5 +301,10 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             logger.debugf(e, "Failed to parse authorization_details for comparison");
             return false;
         }
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Collections.emptySet();
     }
 }

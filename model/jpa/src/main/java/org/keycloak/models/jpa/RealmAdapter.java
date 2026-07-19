@@ -231,29 +231,78 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     @Override
     public void setAttribute(String name, String value) {
+        updateAttribute(name, value);
+    }
+
+    /**
+     * Sets the attribute and publishes a {@link RealmModel.RealmAttributeUpdateEvent} if the value changed.
+     *
+     * @return {@code true} if the value changed and the event was published, {@code false} for a no-op write
+     */
+    private boolean updateAttribute(String name, String value) {
+        RealmAttributeEntity existing = null;
         for (RealmAttributeEntity attr : realm.getAttributes()) {
             if (attr.getName().equals(name)) {
-                attr.setValue(value);
-                return;
+                existing = attr;
+                break;
             }
         }
-        RealmAttributeEntity attr = new RealmAttributeEntity();
-        attr.setName(name);
-        attr.setValue(value);
-        attr.setRealm(realm);
-        em.persist(attr);
-        realm.getAttributes().add(attr);
+        if (existing != null) {
+            if (Objects.equals(existing.getValue(), value)) {
+                return false;
+            }
+            existing.setValue(value);
+        } else {
+            RealmAttributeEntity attr = new RealmAttributeEntity();
+            attr.setName(name);
+            attr.setValue(value);
+            attr.setRealm(realm);
+            em.persist(attr);
+            realm.getAttributes().add(attr);
+        }
+        publishRealmAttributeUpdateEvent(name, value);
+        return true;
+    }
+
+    private void publishRealmAttributeUpdateEvent(String name, String value) {
+        session.getKeycloakSessionFactory().publish(new RealmModel.RealmAttributeUpdateEvent() {
+
+            @Override
+            public RealmModel getRealm() {
+                return RealmAdapter.this;
+            }
+
+            @Override
+            public String getAttributeName() {
+                return name;
+            }
+
+            @Override
+            public String getAttributeValue() {
+                return value;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
     }
 
     @Override
     public void removeAttribute(String name) {
+        boolean removed = false;
         Iterator<RealmAttributeEntity> it = realm.getAttributes().iterator();
         while (it.hasNext()) {
             RealmAttributeEntity attr = it.next();
             if (attr.getName().equals(name)) {
                 it.remove();
                 em.remove(attr);
+                removed = true;
             }
+        }
+        if (removed) {
+            publishRealmAttributeUpdateEvent(name, null);
         }
     }
 
@@ -1044,6 +1093,12 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         }
         policy.setRequireResidentKey(requireResidentKey);
 
+        String residentKey = getAttribute(RealmAttributes.WEBAUTHN_POLICY_RESIDENT_KEY + attributePrefix);
+        if (residentKey == null || residentKey.isEmpty()) {
+            residentKey = defaultConfig.getResidentKey();
+        }
+        policy.setResidentKey(residentKey);
+
         String userVerificationRequirement = getAttribute(RealmAttributes.WEBAUTHN_POLICY_USER_VERIFICATION_REQUIREMENT + attributePrefix);
         if (userVerificationRequirement == null || userVerificationRequirement.isEmpty()) {
             userVerificationRequirement = defaultConfig.getUserVerificationRequirement();
@@ -1080,6 +1135,12 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
                 : defaultConfig.isPasskeysEnabled();
         policy.setPasskeysEnabled(passKeysEnabled);
 
+        String mediation = getAttribute(RealmAttributes.WEBAUTHN_POLICY_MEDIATION + attributePrefix);
+        if (mediation == null || mediation.isEmpty()) {
+            mediation = defaultConfig.getMediation();
+        }
+        policy.setMediation(mediation);
+
         return policy;
     }
 
@@ -1103,6 +1164,9 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
         String authenticatorAttachment = policy.getAuthenticatorAttachment();
         setAttribute(RealmAttributes.WEBAUTHN_POLICY_AUTHENTICATOR_ATTACHMENT + attributePrefix, authenticatorAttachment);
+
+        String residentKey = policy.getResidentKey();
+        setAttribute(RealmAttributes.WEBAUTHN_POLICY_RESIDENT_KEY + attributePrefix, residentKey);
 
         String requireResidentKey = policy.getRequireResidentKey();
         setAttribute(RealmAttributes.WEBAUTHN_POLICY_REQUIRE_RESIDENT_KEY + attributePrefix, requireResidentKey);
@@ -1137,6 +1201,13 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
             setAttribute(RealmAttributes.WEBAUTHN_POLICY_PASSKEYS_ENABLED + attributePrefix, passkeysEnabled.toString());
         } else {
             removeAttribute(RealmAttributes.WEBAUTHN_POLICY_PASSKEYS_ENABLED + attributePrefix);
+        }
+
+        String mediation = policy.getMediation();
+        if (mediation != null && !mediation.isBlank()) {
+            setAttribute(RealmAttributes.WEBAUTHN_POLICY_MEDIATION + attributePrefix, mediation);
+        } else {
+            removeAttribute(RealmAttributes.WEBAUTHN_POLICY_MEDIATION + attributePrefix);
         }
     }
 
@@ -1281,33 +1352,13 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     @Override
     public void setAdminPermissionsEnabled(boolean adminPermissionsEnabled) {
-        boolean isAdminPermissionsAlreadyEnabled = getAdminPermissionsClient() != null;
-        setAttribute(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, adminPermissionsEnabled);
+        boolean published = updateAttribute(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, String.valueOf(adminPermissionsEnabled));
 
-        // sending an event if we are enabling the permissions and it was not enabled already
-        if (adminPermissionsEnabled && !isAdminPermissionsAlreadyEnabled) {
-            session.getKeycloakSessionFactory().publish(new RealmModel.RealmAttributeUpdateEvent() {
-
-                @Override
-                public RealmModel getRealm() {
-                    return RealmAdapter.this;
-                }
-
-                @Override
-                public String getAttributeName() {
-                    return RealmAttributes.ADMIN_PERMISSIONS_ENABLED;
-                }
-
-                @Override
-                public String getAttributeValue() {
-                    return String.valueOf(adminPermissionsEnabled);
-                }
-
-                @Override
-                public KeycloakSession getKeycloakSession() {
-                    return session;
-                }
-            });
+        // updateAttribute already published the update if the value changed. This explicit publish
+        // covers only the repair case where the attribute was already "true" but the admin
+        // permissions client is missing, keeping one event per change.
+        if (!published && adminPermissionsEnabled && getAdminPermissionsClient() == null) {
+            publishRealmAttributeUpdateEvent(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, String.valueOf(adminPermissionsEnabled));
         }
     }
 

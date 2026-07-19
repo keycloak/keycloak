@@ -285,10 +285,10 @@ public class RealmManager {
         realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
         realm.setLoginWithEmailAllowed(true);
 
-        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER)) {
             // Only create the role if it doesn't exist in the realm representation (during import)
             // or if it doesn't exist in the realm model (during fresh creation)
-            if ((realmRep == null || !hasRealmRole(realmRep, CREDENTIAL_OFFER_CREATE.getName())) 
+            if ((realmRep == null || !hasRealmRole(realmRep, CREDENTIAL_OFFER_CREATE.getName()))
                     && realm.getRole(CREDENTIAL_OFFER_CREATE.getName()) == null) {
                 RoleModel roleModel = realm.addRole(CREDENTIAL_OFFER_CREATE.getName());
                 roleModel.setDescription(CREDENTIAL_OFFER_CREATE.getDescription());
@@ -507,6 +507,14 @@ public class RealmManager {
             RoleModel viewGroups = accountClient.addRole(AccountRoles.VIEW_GROUPS);
             viewGroups.setDescription("${role_" + AccountRoles.VIEW_GROUPS + "}");
 
+            if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) {
+                RoleModel viewVerifiableCredentials = accountClient.addRole(AccountRoles.VIEW_VERIFIABLE_CREDENTIALS);
+                viewVerifiableCredentials.setDescription("${role_" + AccountRoles.VIEW_VERIFIABLE_CREDENTIALS + "}");
+                RoleModel manageVerifiableCredentials = accountClient.addRole(AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
+                manageVerifiableCredentials.setDescription("${role_" + AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS + "}");
+                manageVerifiableCredentials.addCompositeRole(viewVerifiableCredentials);
+            }
+
             KeycloakModelUtils.setupDeleteAccount(accountClient);
 
             ClientModel accountConsoleClient = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
@@ -545,6 +553,10 @@ public class RealmManager {
     }
 
     public void setupBrokerService(RealmModel realm) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.IDENTITY_BROKERING_API_V1)) {
+            return;
+        }
+
         ClientModel client = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
         if (client == null) {
             client = KeycloakModelUtils.createManagementClient(realm, Constants.BROKER_SERVICE_CLIENT_ID);

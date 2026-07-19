@@ -90,6 +90,30 @@ Mitigate this risk, for example, by restricting network access.
 
 * Allow a longer `--shutdown-delay` (for example, 10–30 seconds) to give keepalive connections time to drain during shutdown, since the proxy cannot signal a connection close at the HTTP connection level.
 
+=== Backchannel access considerations
+
+If private backchannel access to {project_name} is requested, using a proxy might be challenging:
+
+* When the PROXY protocol is used for TLS passthrough, clients cannot connect directly to {project_name} without the PROXY protocol. Any direct connection would also allow spoofing of IP source addresses.
+
+* When using TLS re-encrypt, it might be impossible to restrict proxy traffic to specific source IP addresses when the proxy's IP addresses are dynamic. Not restricting the proxy traffic would allow clients to spoof proxy headers.
+
+In these setups, it might be better to stick with a single proxy and no backchannel access, or to deploy an internal proxy in addition to the external proxy.
+
+When deploying a second proxy, there are additional considerations:
+
+* Restrict network access so that {project_name} accepts connections only from the two proxies, for example, by adding network filtering.
+
+* Both proxies need to use the same mode.
+Either both need to use TLS passthrough, or both need to use TLS re-encrypt.
+
+* If using TLS passthrough mode, both proxies can forward requests using the PROXY protocol.
+As {project_name} presents a single TLS certificate for both paths, it needs to include a subject alternative name (SAN) for the second path so callers can validate TLS on both paths.
+Note that this SAN will be visible on both paths.
+While this is not a technical problem, it still leaks an internal hostname on the public path.
+
+* If using TLS re-encrypt mode, both proxies would filter incoming HTTP headers, and add trusted HTTP headers.
+
 == Port to be proxied
 
 {project_name} runs on the following ports by default:
@@ -138,6 +162,7 @@ Setting both will result in a configuration error.
 === Blueprints
 
 * <@links.server id="haproxy-passthrough"/>
+* <@links.server id="traefik-passthrough"/>
 
 == {project_name} with TLS reencrypt
 
@@ -175,6 +200,75 @@ For example:
 
 <@kc.start parameters="--proxy-headers forwarded --proxy-trusted-addresses=192.168.0.32,127.0.0.0/8"/>
 
+[[header-filtering-recommendations]]
+=== Header filtering recommendations
+
+When using TLS re-encrypt, the proxy can inspect and modify HTTP traffic.
+Use this capability to prevent external clients from injecting headers that affect identity resolution, access control, or observability.
+
+NOTE: The following assumes that there is only a single proxy layer in front of {project_name}, and that it is not receiving traffic from another trusted proxy layer with trusted headers.
+
+Configure the proxy to apply the following rules to incoming requests before forwarding them to {project_name}:
+
+* *Overwrite* `Forwarded` and `+X-Forwarded-*+` headers with the proxy's own values rather than removing them, because {project_name} relies on these headers when `--proxy-headers` is configured.
+* *Strip* all other headers listed below entirely.
+
+[%autowidth]
+|===
+|Header(s) |Category |Risk if not filtered
+
+|`Forwarded`, `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, `X-Forwarded-Port`, `X-Forwarded-Prefix`
+|Proxy identity
+|Clients can spoof their IP address, protocol, or host, affecting access control and audit logging.
+*Overwrite* these headers rather than stripping them.
+
+|`X-Original-Forwarded-For`
+|Proxy identity
+|Variant of `X-Forwarded-For` recognized by some proxies.
+Can be spoofed to bypass IP-based access controls.
+
+|`X-Real-IP`
+|Proxy identity
+|Trusted by some applications for rate limiting and audit logging.
+Can be spoofed to bypass IP-based restrictions.
+
+|`X-Original-URL`, `X-Original-Method`
+|Proxy identity
+|Used by authentication sub-request mechanisms in some proxies.
+Can be spoofed to manipulate path-based authorization decisions.
+
+|`X-Forwarded-Access-Token`
+|Proxy identity
+|Injected by some OAuth2 proxies.
+Can be spoofed to inject forged access tokens.
+
+|`traceparent`, `tracestate`
+|Distributed tracing
+|https://www.w3.org/TR/trace-context/[W3C Trace Context] headers.
+External injection allows attackers to correlate requests in the tracing backend and map internal service dependencies.
+
+|`baggage`
+|Distributed tracing
+|https://www.w3.org/TR/baggage/[W3C Baggage] header.
+Can inject arbitrary key-value pairs into the trace context propagated to downstream services.
+
+|`b3`, `x-b3-traceid`, `x-b3-spanid`, `x-b3-parentspanid`, `x-b3-sampled`, `x-b3-flags`
+|Distributed tracing
+|https://github.com/openzipkin/b3-propagation[Zipkin B3] propagation headers.
+External injection inflates observability costs and enables cross-service correlation.
+
+|`uber-trace-id`
+|Distributed tracing
+|https://www.jaegertracing.io/sdk-migration/#propagation-format[Jaeger] propagation header (deprecated in favor of W3C Trace Context).
+Same risks as other tracing headers.
+
+|`x-ot-span-context`
+|Distributed tracing
+|OpenTracing propagation header (deprecated in favor of W3C Trace Context).
+Same risks as other tracing headers.
+
+|===
+
 === Exposed path recommendations
 
 When using a reverse proxy, {project_name} only requires certain paths to be exposed.
@@ -191,13 +285,18 @@ The following table shows the recommended paths to expose.
 
 |/admin/
 | -
-|No
+|Only internally
 |Exposed admin paths lead to an unnecessary attack vector.
 
 |/realms/
 |/realms/
 |Yes
 |This path is needed to work correctly, for example, for OIDC endpoints.
+
+|/realms/master/
+|/realms/master/
+|Only internally
+|Assuming the administrative realm is called `master`, restrict `/realms/master/` to internal access. See <<isolating-master-realm, Isolating authentication for the administrative realm>> for more information.
 
 |/resources/
 |/resources/
@@ -219,12 +318,31 @@ The following table shows the recommended paths to expose.
 |No
 |Exposed health checks lead to an unnecessary attack vector.
 
+|/lb-check
+|/lb-check
+|Yes
+|Endpoint to be used for an external load balancer to check the availability of a {project_name} cluster.
+
 |===
 
 We assume you run {project_name} on the root path `/` on your reverse proxy/gateway's public API.
 If not, prefix the path with your desired one.
 
 NOTE: If you configured an `http-relative-path` on the server, proceed as follows to use discovery with RFC 8414: Configure a reverse proxy to map the `/.well-known/` path without the prefix to the path with the prefix on the server.
+
+The `lb-check` endpoint is only available when the `stateless` or the `multi-site` feature is enabled.
+It is intended for external load balancers when you do not want to expose the management interface and its `/health` endpoints publicly.
+This is a non-blocking endpoint and should remain responsive under high load, so the load balancer does not remove a healthy cluster from rotation during transient overload.
+
+[[isolating-master-realm]]
+=== Isolating authentication for the administrative realm
+
+As a security best practice, restrict access to the authentication protocol endpoints of the administrative realm from public IP addresses.
+The following description assumes {project_name}'s default settings and that this realm is called `master`.
+
+To do that, do not expose the path `/realms/master/` to the public internet.
+
+Depending on your topology, you can combine this with serving the Admin UI and Admin API on a dedicated hostname and port. See <@links.server id="hostname" anchor="administration-console-on-a-separate-hostname" /> for details.
 
 === Different context path on reverse proxy
 
@@ -352,13 +470,60 @@ Common options for configuring providers are:
 | The prefix of the headers holding additional certificates in the chain and used to retrieve individual
 certificates according to the length of the chain. For instance, a value `CERT_CHAIN` will tell the server
 to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if `certificate-chain-length` is set to `10`.
-| `apache`, `haproxy`, `nginx`
+| `apache`, `nginx`
+
+|ssl-cert-chain
+| The name of the header holding the full certificate chain as a single value.
+All chain certificates are contained in one header rather than split across indexed headers.
+| `haproxy`, `rfc9440`
 
 |certificate-chain-length
 | The maximum length of the certificate chain beyond the client certificate
 | all but `envoy` (defaults to 1)
 
 |===
+
+==== Configuring the HAProxy provider
+
+HAProxy can forward client certificates as base64-encoded DER using its `ssl_c_der,base64` and `ssl_c_chain_der,base64` sample fetches.
+The `haproxy` provider reads the client certificate from the `ssl-client-cert` header and the certificate chain from the `ssl-cert-chain` header.
+
+The options and defaults specific to `haproxy` are as follows:
+
+[%autowidth]
+|===
+|Option|Description|Default
+
+|ssl-client-cert
+| The name of the header holding the client certificate.
+| (none)
+
+|ssl-cert-chain
+| The name of the header holding the full certificate chain as a single base64-encoded DER value. HAProxy's `ssl_c_chain_der,base64` produces the concatenated DER encoding of all CA certificates in one value.
+| (none)
+
+|certificate-chain-length
+| The maximum number of certificates to load from the chain header.
+| 1
+
+|===
+
+Example HAProxy configuration:
+
+[source]
+----
+http-request del-header Client-Cert
+http-request del-header Client-Cert-Chain
+http-request set-header Client-Cert %[ssl_c_der,base64] if { ssl_c_used } { ssl_c_verify 0 }
+http-request set-header Client-Cert-Chain %[ssl_c_chain_der,base64] if { ssl_c_used } { ssl_c_verify 0 }
+----
+
+Corresponding {project_name} configuration:
+
+<@kc.start parameters="--spi-x509cert-lookup--provider=haproxy --spi-x509cert-lookup--haproxy--ssl-client-cert=Client-Cert --spi-x509cert-lookup--haproxy--ssl-cert-chain=Client-Cert-Chain --spi-x509cert-lookup--haproxy--certificate-chain-length=2"/>
+
+If the number of intermediate certificates in your certificate chain is longer than the default, you must set the
+`certificate-chain-length` option to an appropriate value. Otherwise, the provider will discard the request.
 
 ==== Configuring the NGINX provider
 
@@ -401,8 +566,8 @@ The options and defaults specific to `rfc9440` are as follows:
 
 |===
 
-If your certificate chain is longer than the default, you must set the `certificate-chain-length` option to an appropriate value.
-Otherwise, the provider will discard the request.
+If the number of intermediate certificates in your certificate chain is longer than the default, you must set the
+`certificate-chain-length` option to an appropriate value. Otherwise, the provider will discard the request.
 
 ==== Configuring the Traefik provider
 
@@ -416,6 +581,11 @@ Other than possibly changing the `certificate-chain-length`, you do not need to 
 
 The Envoy provider automatically retrieves the client certificate and optional certificate chain from the `x-forwarded-client-cert` header.
 You do not need to configure additional options for the `envoy` provider.
+
+=== Blueprints
+
+* <@links.server id="haproxy-reencrypt"/>
+* <@links.server id="traefik-reencrypt"/>
 
 [[graceful-http-shutdown]]
 == Graceful HTTP shutdown
@@ -433,12 +603,13 @@ The server's readiness endpoint returns a "not ready" status, allowing the load 
 Existing TLS and HTTP keepalive connections are allowed to drain naturally.
 The server continues to process existing requests.
 
-*Shutdown timeout*:: After the pre-shutdown delay, {project_name} stops accepting new requests and waits for in-flight HTTP requests to complete.
-If requests are still running after the timeout expires, the server shuts down regardless.
+*Shutdown timeout*:: After the pre-shutdown delay, {project_name} waits for in-flight HTTP requests to complete.
+Once the HTTP requests are complete, it uses the remaining time of the shutdown timeout to wait for caches to rebalance to avoid possible data loss.
+Once the timeout expires, the server shuts down regardless.
 
 === Default behavior
 
-By default, {project_name} is configured with a 1-second pre-shutdown delay and a 1-second shutdown timeout.
+By default, {project_name} is configured with a 1-second pre-shutdown delay and a 10-second shutdown timeout.
 These defaults work well for most standard deployments where:
 
 * The load balancer reconfigures quickly (within 1 second)
@@ -463,7 +634,7 @@ Default: `1s`
 
 `--shutdown-timeout`::
 The shutdown period waiting for currently running HTTP requests to finish.
-Default: `1s`
+Default: `10s`
 
 Both values accept duration formats: `1s` (seconds), `500ms` (milliseconds), `2m` (minutes), etc.
 
@@ -522,11 +693,11 @@ Calculation:
 
 For production with TLS passthrough:
 
-<@kc.start parameters="--shutdown-delay=30s --shutdown-timeout=1s"/>
+<@kc.start parameters="--shutdown-delay=30s" />
 
 For load balancers that poll readiness:
 
-<@kc.start parameters="--shutdown-delay=16s --shutdown-timeout=1s"/>
+<@kc.start parameters="--shutdown-delay=16s"/>
 
 For test environments:
 

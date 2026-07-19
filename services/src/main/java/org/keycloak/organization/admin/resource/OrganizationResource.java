@@ -71,6 +71,10 @@ public class OrganizationResource {
         this.auth = auth;
     }
 
+    /**
+     * Precondition: caller must have passed through {@link OrganizationsResource#get(String)}
+     * which enforces {@code auth.orgs().requireView(organization)}.
+     */
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
@@ -93,7 +97,7 @@ public class OrganizationResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Response delete() {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
         boolean removed = provider.remove(organization);
         if (removed) {
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
@@ -114,7 +118,7 @@ public class OrganizationResource {
         @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response update(OrganizationRepresentation organizationRep) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
         // attempt to change organization name to an existing organization name
         if (!Objects.equals(organization.getName(), organizationRep.getName()) &&
                 provider.getAllStream(organizationRep.getName(), true, -1, -1).findAny().isPresent()) {

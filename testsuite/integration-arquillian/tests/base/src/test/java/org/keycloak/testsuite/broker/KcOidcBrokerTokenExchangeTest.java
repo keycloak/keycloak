@@ -249,7 +249,7 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
             return session.getProvider(UserProvider.class, JpaRealmProviderFactory.PROVIDER_ID).getFederatedIdentity(realm, user, idpAlias).getToken();
         }, String.class);
 
-        setTimeOffset(expires + 10);
+        timeOffSet.set(expires + 10);
 
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
         assertThat(tokenResponse.getError(), nullValue());
@@ -427,7 +427,7 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
 
         exchangeToIdP(brokerApp, tokenResponse.getAccessToken(), expires);
 
-        setTimeOffset(expires - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN);
+        timeOffSet.set(expires - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN);
 
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
         assertThat(tokenResponse.getError(), nullValue());

@@ -33,8 +33,8 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
 
 import org.junit.Test;
 
@@ -49,7 +49,7 @@ public class AggregatePolicyManagementTest extends AbstractPolicyManagementTest 
     @Override
     protected RealmBuilder createTestRealm() {
         return super.createTestRealm()
-                .user(UserBuilder.create().username("AggregatePolicyManagementTestUser"));
+                .users(UserBuilder.create().username("AggregatePolicyManagementTestUser"));
     }
 
     @Test

@@ -24,8 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CompletionStage;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -45,7 +43,6 @@ import org.keycloak.models.utils.RealmModelDelegate;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.models.utils.UserSessionModelDelegate;
 
-import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.infinispan.util.function.TriConsumer;
 import org.jboss.logging.Logger;
 
@@ -59,51 +56,11 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
 
     private final List<PersistentUpdate> changes;
     private final TriConsumer<KeycloakSession, Map.Entry<K, SessionUpdatesList<V>>, MergedUpdate<V>> processor;
-    private final ArrayBlockingQueue<PersistentUpdate> batchingQueue;
-    private boolean warningShown = false;
 
-    public JpaChangesPerformer(String cacheName, ArrayBlockingQueue<PersistentUpdate> batchingQueue) {
-        // The changes list is only used when batching is disabled.
-        this.changes = batchingQueue == null ? new ArrayList<>(2) : List.of();
-        this.batchingQueue = batchingQueue;
+    public JpaChangesPerformer(String cacheName) {
+        this.changes = new ArrayList<>(2);
         processor = processor(cacheName);
 
-    }
-
-    /**
-     * Checks if this instance support non-blocking writes.
-     * <p>
-     * If this instance is non-blocking, the invoker must use
-     * {@link #asyncWrite(AggregateCompletionStage, Map.Entry, MergedUpdate)}.
-     * <p>
-     * Otherwise, the implementation must support {@link #registerChange(Map.Entry, MergedUpdate)} and
-     * {@link #write(KeycloakSession)}. The invoker should register the change using the first method and applied them
-     * in a blocking way using the later method.
-     *
-     * @return {@code true} if this instance is non-blocking.
-     * @see #asyncWrite(AggregateCompletionStage, Map.Entry, MergedUpdate)
-     * @see #registerChange(Map.Entry, MergedUpdate)
-     * @see #write(KeycloakSession)
-     */
-    public boolean isNonBlocking() {
-        return batchingQueue != null;
-    }
-
-    /**
-     * Performs a non-blocking write into the database.
-     * <p>
-     * The implementation should register the {@link CompletionStage} into the {@link AggregateCompletionStage}.
-     *
-     * @param stage  The {@link AggregateCompletionStage} to collect the {@link CompletionStage}.
-     * @param entry  The {@link Map.Entry} with the ID and the session.
-     * @param merged The {@link MergedUpdate} to be applied to the existing session.
-     * @throws NullPointerException if this instance does not support non-blocking writes.
-     * @see #isNonBlocking()
-     */
-    public void asyncWrite(AggregateCompletionStage<Void> stage, Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
-        var update = newUpdate(entry, merged);
-        offer(update);
-        stage.dependsOn(update.future());
     }
 
     /**
@@ -111,8 +68,6 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
      *
      * @param entry  The {@link Map.Entry} with the ID and the session.
      * @param merged The {@link MergedUpdate} to be applied to the existing session.
-     * @throws UnsupportedOperationException if this instance does not support blocking writes.
-     * @see #isNonBlocking()
      */
     public void registerChange(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
         changes.add(newUpdate(entry, merged));
@@ -129,8 +84,6 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
 
     /**
      * Clears any pending blocking changes.
-     *
-     * @throws UnsupportedOperationException if this instance does not support blocking writes.
      */
     public void clear() {
         changes.clear();
@@ -148,22 +101,6 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
                     JpaChangesPerformer::processClientSessionUpdate;
             default -> throw new IllegalStateException("Unexpected value: " + cacheName);
         };
-    }
-
-    private void offer(PersistentUpdate update) {
-        if (!batchingQueue.offer(update)) {
-            if (!warningShown) {
-                warningShown = true;
-                LOG.warn("Queue is full, will block");
-            }
-            try {
-                // this will block until there is a free spot in the queue
-                batchingQueue.put(update);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     private static <K, V extends SessionEntity> void processClientSessionUpdate(KeycloakSession session, Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
@@ -184,7 +121,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
 
     }
 
-    private static <K, V extends SessionEntity> void mergeClientSession(SessionEntityWrapper<V> sessionWrapper, UserSessionPersisterProvider userSessionPersister, RealmModel realm, SessionUpdatesList<V> sessionUpdates) {
+    private static <V extends SessionEntity> void mergeClientSession(SessionEntityWrapper<V> sessionWrapper, UserSessionPersisterProvider userSessionPersister, RealmModel realm, SessionUpdatesList<V> sessionUpdates) {
         AuthenticatedClientSessionEntity entity = (AuthenticatedClientSessionEntity) sessionWrapper.getEntity();
         ClientModel client = new ClientModelLazyDelegate(null) {
             @Override

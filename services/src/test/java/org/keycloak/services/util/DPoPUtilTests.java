@@ -4,38 +4,21 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.http.HttpRequest;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resteasy.HttpRequestImpl;
-import org.keycloak.services.resteasy.ResteasyKeycloakSession;
-import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
+import org.keycloak.utils.AbstractUtilSessionTest;
 
 import org.jboss.resteasy.mock.MockHttpRequest;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class DPoPUtilTests {
+public class DPoPUtilTests extends AbstractUtilSessionTest {
     private static final String URL = "http://localhost/test";
     private static final long IAT = 1_000_000_000L;
-
-    private static KeycloakSession session;
-
-    @BeforeAll
-    public static void beforeAll() {
-        Profile.defaults();
-        CryptoIntegration.init(CryptoProvider.class.getClassLoader());
-        ResteasyKeycloakSessionFactory sessionFactory = new ResteasyKeycloakSessionFactory();
-        sessionFactory.init();
-        session = new ResteasyKeycloakSession(sessionFactory);
-    }
 
     @Test
     public void testRejectsUnsupportedJwkKeyType() {

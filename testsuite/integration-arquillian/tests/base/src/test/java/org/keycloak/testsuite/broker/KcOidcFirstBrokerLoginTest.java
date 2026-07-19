@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.broker;
 
+import java.time.Duration;
 import java.util.List;
 
 import org.keycloak.admin.client.resource.IdentityProviderResource;
@@ -453,7 +454,6 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         final var socialButton = this.loginPage.findSocialButton(bc.getIDPAlias());
     }
 
-
     @Test
     public void testDisplayName() {
 
@@ -862,8 +862,8 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         oauth.openLoginForm();
         logInWithBroker(bc);
         idpConfirmLinkPage.clickLinkAccount();
-        String verificationUrl = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
-                "Someone wants to link your", false);
+        String verificationUrl = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
+                "Someone wants to link your");
         assertNotNull(verificationUrl);
 
         // confirm the email using a different browser
@@ -879,6 +879,65 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         waitForPage(driver, "sign in to", true);
         loginPage.login(bc.getUserPassword());
         Assertions.assertTrue(appPage.isCurrent());
+    }
+
+    @Test
+    public void testLinkAccountAndVerifyEmailUsingDifferentBrowserDuplicateEmail() {
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofDays(1));
+        driver2.manage().timeouts().pageLoadTimeout(Duration.ofDays(1));
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        RealmRepresentation realmRep = realm.toRepresentation();
+
+        realmRep.setVerifyEmail(true);
+
+        realm.update(realmRep);
+
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+
+        idpRep.setTrustEmail(false);
+
+        identityProviderResource.update(idpRep);
+
+        configureSMTPServer();
+
+        // to avoid update profile required action
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+        UserRepresentation brokerUser = providerRealm.users().search(bc.getUserLogin()).get(0);
+        brokerUser.setFirstName("f");
+        brokerUser.setLastName("l");
+        providerRealm.users().get(brokerUser.getId()).update(brokerUser);
+        // creates a user in the consumer realm to link the account
+        brokerUser.setId(null);
+        realm.users().create(brokerUser).close();
+        RealmRepresentation providerRealmRep = providerRealm.toRepresentation();
+        providerRealmRep.setDuplicateEmailsAllowed(true);
+        providerRealm.update(providerRealmRep);
+        createUser(bc.providerRealmName(), "dup-user-email", BrokerTestConstants.USER_PASSWORD, "f", "l", brokerUser.getEmail());
+
+        // link the account
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        logInWithBroker(bc);
+        idpConfirmLinkPage.clickLinkAccount();
+        String verificationUrl = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
+                "Someone wants to link your");
+        assertNotNull(verificationUrl);
+
+        // confirm the email using a different browser
+        driver2.navigate().to(verificationUrl.trim());
+        driver2.findElement(By.linkText("» Click here to proceed")).click();
+
+        // clear cookies to start a fresh browser instance and try to log in again
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+        driver.manage().deleteAllCookies();
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        waitForPage(driver, "sign in to", true);
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "sign in to", true);
+        loginPage.login("dup-user-email", bc.getUserPassword());
+        idpConfirmLinkPage.assertCurrent();
     }
 
     public void addDepartmentScopeIntoRealm() {

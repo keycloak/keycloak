@@ -1,4 +1,5 @@
 import type { KeycloakAdminClient } from "../client.js";
+import { NetworkError } from "../utils/fetchWithError.js";
 import type CertificateRepresentation from "../defs/certificateRepresentation.js";
 import type ClientRepresentation from "../defs/clientRepresentation.js";
 import type ClientScopeRepresentation from "../defs/clientScopeRepresentation.js";
@@ -426,6 +427,16 @@ export class Clients extends Resource<{ realm?: string }> {
     queryParamKeys: ["scope"],
   });
 
+  public evaluateGenerateSamlResponse = this.makeRequest<
+    { id: string; scope: string; userId: string },
+    Record<string, unknown>
+  >({
+    method: "GET",
+    path: "/{id}/evaluate-scopes/generate-example-saml-response",
+    urlParamKeys: ["id"],
+    queryParamKeys: ["scope", "userId"],
+  });
+
   public evaluateGenerateAccessToken = this.makeRequest<
     { id: string; scope: string; userId: string; audience: string },
     Record<string, unknown>
@@ -718,11 +729,11 @@ export class Clients extends Resource<{ realm?: string }> {
     policyName: string;
     policy: PolicyRepresentation;
   }): Promise<PolicyRepresentation> {
-    const policyFound = await this.findPolicyByName({
-      id: payload.id,
-      name: payload.policyName,
-    });
-    if (policyFound) {
+    try {
+      const policyFound = await this.findPolicyByName({
+        id: payload.id,
+        name: payload.policyName,
+      });
       await this.updatePolicy(
         {
           id: payload.id,
@@ -731,15 +742,18 @@ export class Clients extends Resource<{ realm?: string }> {
         },
         payload.policy,
       );
-      return this.findPolicyByName({
+      return await this.findPolicyByName({
         id: payload.id,
         name: payload.policyName,
       });
-    } else {
-      return this.createPolicy(
-        { id: payload.id, type: payload.policy.type! },
-        payload.policy,
-      );
+    } catch (error) {
+      if (error instanceof NetworkError && error.response.status === 404) {
+        return this.createPolicy(
+          { id: payload.id, type: payload.policy.type! },
+          payload.policy,
+        );
+      }
+      throw error;
     }
   }
 

@@ -25,24 +25,31 @@ import jakarta.inject.Inject;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler;
-import org.keycloak.utils.KeycloakSessionUtil;
 
 import io.quarkus.arc.Unremovable;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
 @Unremovable
 public class KeycloakBeanProducer implements TransactionalSessionHandler {
+    
+    private static final Logger logger = Logger.getLogger(KeycloakBeanProducer.class);
 
     @Inject
     QuarkusKeycloakSessionFactory factory;
 
     @RequestScoped
     public KeycloakSession getKeycloakSession() {
+        // This is triggered lazily on the first method call on the session.
+        // Do not start the transaction here as it could still be inside the event loop when used with a (prematching) filter.
+        // JTA transactions must only be used in a blocking thread, so defer this until later.
         return factory.create();
     }
 
     void dispose(@Disposes KeycloakSession session) {
-        KeycloakSessionUtil.setKeycloakSession(null);
+        if (!session.isClosed()) {
+            logger.warn("Proactive closing of the session was missed - refinements are needed to TransactionSessionHandler related logic");
+        }
         close(session);
     }
 }

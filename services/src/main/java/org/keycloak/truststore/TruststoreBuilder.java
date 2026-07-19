@@ -224,7 +224,7 @@ public class TruststoreBuilder {
         }
     }
 
-    private static boolean mergePemFile(KeyStore truststore, String file, boolean isPem) {
+    static boolean mergePemFile(KeyStore truststore, String file, boolean isPem) {
         try (FileInputStream pemInputStream = new FileInputStream(file)) {
             CertificateFactory certFactory = CertificateFactory.getInstance("X509");
             boolean loadedAny = false;

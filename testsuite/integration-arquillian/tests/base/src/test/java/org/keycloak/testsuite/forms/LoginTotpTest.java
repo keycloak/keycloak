@@ -39,6 +39,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -48,7 +49,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
@@ -79,7 +80,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
     public AssertEvents events = new AssertEvents(this);
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected AppPage appPage;
@@ -113,9 +114,9 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
         //loginPage.assertCurrent();  // Invalid authenticator code.
         //Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().error("invalid_user_credentials").session((String) null)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).error("invalid_user_credentials").sessionId(null)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT);
     }
 
     @Test
@@ -132,9 +133,9 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
         //loginPage.assertCurrent();  // Invalid authenticator code.
         //Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().error("invalid_user_credentials").session((String) null)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).error("invalid_user_credentials").sessionId(null)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT);
     }
 
     @Test
@@ -150,7 +151,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     // KEYCLOAK-3835
@@ -170,7 +171,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -182,9 +183,8 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
-        events.expectLogin().error("invalid_user_credentials").session((String) null)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).error("invalid_user_credentials").sessionId(null)
+                .withoutDetails(Details.CONSENT);
     }
 
 
