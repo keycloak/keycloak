@@ -773,7 +773,7 @@ public class LDAPOperationManager {
     }
 
     private <R> R execute(LdapOperation<R> operation, LDAPOperationDecorator decorator) throws NamingException {
-        try (LDAPContextManager ldapContextManager = LDAPContextManager.create(session, config)) {
+        try (LDAPContextManager ldapContextManager = LDAPContextManager.create(session, config, requestTimer)) {
             return execute(operation, ldapContextManager.getLdapContext(), decorator);
         }
     }

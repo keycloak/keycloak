@@ -256,7 +256,8 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                 .build();
         try (Response response = managedRealm.admin().workflows().create(workflow)) {
             assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
-            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Step 'after' configuration cannot be negative."));
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertThat(error.getErrorMessage(), equalTo("Step 'after' configuration cannot be negative."));
         }
     }
 
@@ -281,8 +282,8 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                                 .build())
                 .build())) {
             assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
-            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(),
-                    equalTo("Workflow name must be unique. A workflow with name 'myworkflow' already exists."));
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertThat(error.getErrorMessage(), equalTo("Workflow name must be unique. A workflow with name 'myworkflow' already exists."));
         }
 
     }
