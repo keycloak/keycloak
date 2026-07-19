@@ -389,7 +389,8 @@ public class DefaultClientService implements ClientService {
         }
         if (client instanceof OIDCClientRepresentation oidcClient
                 && oidcClient.getAuth() != null
-                && !isClientSecret(oidcClient.getAuth().getMethod())) {
+                && !isClientSecret(oidcClient.getAuth().getMethod())
+                && isBlank(oidcClient.getAuth().getSecret())) {
             // OIDCLoginProtocolFactory generates a secret for every confidential client, while Admin API v2
             // only uses secrets with secret-based authentication methods.
             model.setSecret(null);
