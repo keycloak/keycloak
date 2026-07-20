@@ -1,6 +1,6 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation.js";
 import { test } from "@playwright/test";
-import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.tsx";
+import { toClientScopes } from "../utils/routes.ts";
 import { createTestBed } from "../support/testbed.ts";
 import { clickCancelButton, clickSaveButton } from "../utils/form.ts";
 import { login, navigateTo } from "../utils/login.ts";

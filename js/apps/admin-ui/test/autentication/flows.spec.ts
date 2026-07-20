@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { toAuthentication } from "../../src/authentication/routes/Authentication.tsx";
+import { toAuthentication } from "../utils/routes.ts";
 import { createTestBed } from "../support/testbed.ts";
 import adminClient from "../utils/AdminClient.ts";
 import { assertRequiredFieldError, clickSaveButton } from "../utils/form.ts";
