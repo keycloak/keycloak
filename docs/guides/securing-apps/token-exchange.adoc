@@ -328,6 +328,7 @@ s|Public clients  | Not available. Downscoping implemented by V1 can be replaced
 s|Consents        | Allowed for clients with `Consent required` as long as the user is already granted consent | Not allowed for clients with *Consent required*
 s|Authorization  | Verification that the requester client must be in the audience of the `subject_token`. Integration with client policies. No Fine-grained admin permissions | Based on fine-grained admin permissions version 1
 s|Revocation chain | Not available for access tokens. Available for refresh tokens   | Not available for access nor refresh tokens
+s|Sender-constrained tokens (DPoP, mTLS) | Supported. See <@links.securingapps id="dpop" />. | Not supported. The exchanged token is issued without any binding.
 s|Delegation per RFC 8693|Experimental support via <<_token-exchange-delegation,Token Exchange Delegation>>|Not supported
 s|Resource parameter per RFC 8693|Not supported yet|Not supported
 s|Internal to external Token Exchange | Identity brokering APIs can be used instead. See link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] for more information. | Implemented as a preview
@@ -774,6 +775,8 @@ the `iss` (issuer) claim within the JWT which must be the alias of the provider,
 For validation, if the token is an access token, the provider's user info service will be invoked to validate the token.  A successful call
 will mean that the access token is valid.  If the subject token is a JWT and if the provider has signature validation enabled, that will be attempted,
 otherwise, it will default to also invoking on the user info service to validate the token.
+
+WARNING: The legacy external-to-internal token exchange does *not* validate the `aud` (audience) claim of the `subject_token`, so an ID token issued by the external identity provider to a different client will be accepted as long as signature and expiry checks pass; restrict `token-exchange` permissions to only the clients that genuinely require them.
 
 By default, the internal token minted will use the calling client to determine what's in the token using the protocol
 mappers defined for the calling client.  Alternatively, you can specify a different target client using the `audience`
