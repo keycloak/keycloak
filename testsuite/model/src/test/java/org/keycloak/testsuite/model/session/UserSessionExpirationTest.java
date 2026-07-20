@@ -116,7 +116,7 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
             Time.setOffset(IDLE_TIMEOUT + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
             session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
 
-            if (Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
+            if (Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
                 Awaitility.await().until(() -> eventsCount(session) == sessionIdAndUsers.size());
                 return;
             }

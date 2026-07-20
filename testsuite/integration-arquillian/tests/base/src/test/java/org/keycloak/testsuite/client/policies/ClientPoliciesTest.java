@@ -155,7 +155,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -1157,7 +1156,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         try {
             oauth.client(clientBetaId);
             oauth.openLoginForm();
-            assertTrue(errorPage.isCurrent());
+            errorPage.assertCurrent();
             assertEquals(ERR_MSG_REQ_NOT_ALLOWED, errorPage.getError());
             EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
                     .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
@@ -1188,7 +1187,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         });
         OIDCClientRepresentation response = getClientDynamically(clientId);
         assertThat(response.getClientSecret(), notNullValue());
-        assertThat(response.getClientSecretExpiresAt(), greaterThan(0L));
+        assertThat(response.getClientSecretExpiresAt(), greaterThan(0));
 
     }
 
@@ -1208,7 +1207,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         OIDCClientRepresentation response = getClientDynamically(clientId);
 
         String firstSecret = response.getClientSecret();
-        Long firstSecretExpiration = response.getClientSecretExpiresAt();
+        Integer firstSecretExpiration = response.getClientSecretExpiresAt();
 
         updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> clientRep.setContacts(Collections.singletonList("keycloak@keycloak.org")));
 
@@ -1265,9 +1264,9 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         OIDCClientRepresentation response = getClientDynamically(clientId);
 
         String firstSecret = response.getClientSecret();
-        Long firstSecretExpiration = response.getClientSecretExpiresAt();
+        Integer firstSecretExpiration = response.getClientSecretExpiresAt();
 
-        assertThat(firstSecretExpiration, is(greaterThan(Time.currentTimeSeconds())));
+        assertThat(firstSecretExpiration, is(greaterThan(Time.currentTime())));
 
         //Enter in Remaining expiration window
         timeOffSet.set(41);

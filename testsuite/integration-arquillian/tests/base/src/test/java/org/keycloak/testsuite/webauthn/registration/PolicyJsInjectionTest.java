@@ -33,6 +33,7 @@ import org.keycloak.utils.StringUtil;
 import org.hamcrest.Matchers;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -137,7 +138,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
 
         registerDefaultUser(originalLabel);
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         final CredentialRepresentation credential = userResource().credentials()
                 .stream()
@@ -152,7 +153,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
             logout();
 
             oauth.openLoginForm();
-            loginPage.assertCurrent(TEST_REALM_NAME);
+            loginPage.assertCurrent();
             loginPage.login(USERNAME, getPassword(USERNAME));
 
             webAuthnLoginPage.assertCurrent();
@@ -190,7 +191,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
             registerDefaultUser(shouldSuccess);
 
             if (shouldSuccess) {
-                appPage.assertCurrent();
+                Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             } else {
                 webAuthnErrorPage.assertCurrent();
                 assertThat(webAuthnErrorPage.getError(), containsString(errorMessage));

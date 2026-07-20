@@ -213,7 +213,7 @@ public class ClientRegistrationAuth {
                 throw forbidden();
             }
         } else if (isRegistrationAccessToken()) {
-            if (client != null && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
+            if (client != null && client.isEnabled() && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
                 checkClientProtocol(client);
                 authenticated = true;
                 authType = getRegistrationAuth();
@@ -325,7 +325,7 @@ public class ClientRegistrationAuth {
                 throw forbidden();
             }
         } else if (isRegistrationAccessToken()) {
-            if (client != null && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
+            if (client != null && client.isEnabled() && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
                 return getRegistrationAuth();
             }
         }

@@ -42,7 +42,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
@@ -119,12 +118,12 @@ public class AltSubflowForCredentialResetTest extends AbstractTestRealmKeycloakT
         try {
             oauth.openLoginForm();
             loginPage.resetPassword();
-            Assertions.assertTrue(loginPasswordResetPage.isCurrent());
+            loginPasswordResetPage.assertCurrent();
             loginPasswordResetPage.changePassword("login@test.com.com");
-            Assertions.assertTrue(loginPage.isCurrent());
+            loginPage.assertCurrent();
             assertEquals("You should receive an email shortly with further instructions.", loginUsernameOnlyPage.getSuccessMessage());
             oauth.openLoginForm();
-            Assertions.assertTrue(loginPage.isCurrent());
+            loginPage.assertCurrent();
         } finally {
             managedRealm.admin().flows().getFlows().clear();
             RealmRepresentation realm = managedRealm.admin().toRepresentation();

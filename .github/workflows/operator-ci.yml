@@ -38,7 +38,7 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - id: conditional
         uses: ./.github/actions/conditional
@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: conditional
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
@@ -85,7 +85,7 @@ jobs:
           matrix:
             suite: [slow, fast]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Set version
         id: vars
@@ -140,7 +140,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
@@ -190,12 +190,10 @@ jobs:
       - name: Deploy an example Keycloak and wait for it to be ready
         working-directory: operator/scripts
         run: |
-          ./check-crd-installed.sh keycloaks.v2alpha1.k8s.keycloak.org
-          ./check-crd-installed.sh keycloakrealmimports.v2alpha1.k8s.keycloak.org
-          ./check-crd-installed.sh keycloaks.v2beta1.k8s.keycloak.org
-          ./check-crd-installed.sh keycloakrealmimports.v2beta1.k8s.keycloak.org
-          ./check-crd-installed.sh keycloakoidcclients.v2alpha1.k8s.keycloak.org
-          ./check-crd-installed.sh keycloaksamlclients.v2alpha1.k8s.keycloak.org
+          for file in ../target/kubernetes/*k8s.keycloak.org-v1.yml; do
+            name=$(basename "$file" -v1.yml)
+            ./check-crd-installed.sh ${name}
+          done
           ./deploy-examples.sh
           
       - name: Single namespace cleanup
@@ -205,7 +203,6 @@ jobs:
       - name: Arrange OLM test installation for all namespaces
         working-directory: operator
         run: |
-          kubectl patch csv keycloak-operator.v86400000.0.0 --type merge --patch '{"spec": {"installModes": [{"type": "AllNamespaces","supported": true}]}}'
           kubectl patch operatorgroup og --type json --patch '[{"op":"remove","path":"/spec/targetNamespaces"}]'
        
       - name: Deploy an example Keycloak in a different namespace and wait for it to be ready
@@ -244,6 +241,120 @@ jobs:
         with:
           name: oc-inspect
           path: inspect.*
+          
+  test-kustomize:
+    name: Test kustomize installation
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      
+      - name: Set version
+        id: vars
+        run: echo "version_remote=0.0.1-${GITHUB_SHA::6}" >> $GITHUB_ENV
+
+      - name: Setup Java
+        uses: ./.github/actions/java-setup
+
+      - name: Restore Quarkus snapshot cache
+        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+        uses: ./.github/actions/quarkus-snapshot-cache
+
+      - name: Setup Minikube-Kubernetes
+        uses: manusa/actions-setup-minikube@b65276017fdec6f1e6498129fb740e34e260dc55 # v2.18.0
+        with:
+          minikube version: ${{ env.MINIKUBE_VERSION }}
+          kubernetes version: ${{ env.KUBERNETES_VERSION }}
+          github token: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker
+          start args: --memory=${{ env.MINIKUBE_MEMORY }} --addons=registry --insecure-registry=192.168.49.0/24
+
+      - name: Install OPM / OC
+        uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1.13.1
+        with:
+          # openshift-tools-installer is out-of-date for later opm, which started using the binary name opm-rhelX.
+          # we may have to do our own installation to move past this
+          opm: 4.16.4
+          oc: 4
+
+      - name: Download keycloak distribution
+        id: download-keycloak-dist
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: keycloak-dist
+          path: quarkus/container
+
+      - name: Build Keycloak Docker image
+        run: |
+          eval $(minikube -p minikube docker-env)
+          (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
+          
+      - name: Arrange kustomize test installation for own namespace
+        run: |
+          kubectl create ns keycloak-own
+        
+          eval $(minikube -p minikube docker-env)
+          ./mvnw install -Poperator -pl :keycloak-operator -am \
+              -Dquarkus.container-image.build=true \
+              -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
+              -Dkc.operator.keycloak.image=keycloak:${{ env.version_remote }} \
+              -Dquarkus.kubernetes.env.vars.kc-operator-keycloak-image-pull-policy=Never \
+              --no-transfer-progress -DskipTests -Dkustomize.namespace=keycloak-own
+        
+          kubectl apply -k operator/target/kubernetes
+          
+      - name: Deploy an example Keycloak and wait for it to be ready
+        working-directory: operator/scripts
+        run: |
+          for file in ../target/kubernetes/*k8s.keycloak.org-v1.yml; do
+            name=$(basename "$file" -v1.yml)
+            ./check-crd-installed.sh ${name}
+          done
+          ./deploy-examples.sh keycloak-own
+          ./undeploy-examples.sh keycloak-own
+          kubectl delete ns keycloak-own
+          
+      - name: Arrange kustomize test installation for all namespaces
+        run: |
+          kubectl create ns keycloak-operator
+          
+          eval $(minikube -p minikube docker-env)
+          ./mvnw install -Poperator -Pcluster-wide -pl :keycloak-operator -am \
+              -Dquarkus.container-image.build=true \
+              -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
+              -Dkc.operator.keycloak.image=keycloak:${{ env.version_remote }} \
+              -Dquarkus.kubernetes.env.vars.kc-operator-keycloak-image-pull-policy=Never \
+              --no-transfer-progress -DskipTests
+          
+          kubectl apply -k operator/target/kubernetes
+
+      - name: Deploy an example Keycloak and wait for it to be ready
+        working-directory: operator/scripts
+        run: |
+          for file in ../target/kubernetes/*k8s.keycloak.org-v1.yml; do
+            name=$(basename "$file" -v1.yml)
+            ./check-crd-installed.sh ${name}
+          done
+          kubectl create ns keycloak
+          ./deploy-examples.sh keycloak
+          ./undeploy-examples.sh keycloak
+            
+      - name: Debug Custom Resources
+        if: failure()
+        run: |
+          kubectl get keycloaks -A -o yaml
+          kubectl get keycloakrealmimports -A -o yaml
+
+      - name: Gather inspect report
+        if: failure()
+        run: oc adm inspect ns
+
+      - name: Upload inspect report
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: oc-inspect
+          path: inspect.*
 
   check:
     name: Status Check - Keycloak Operator CI
@@ -254,9 +365,10 @@ jobs:
       - test-local-apiserver
       - test-remote
       - test-olm
+      - test-kustomize
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/status-check
         with:
           jobs: ${{ toJSON(needs) }}

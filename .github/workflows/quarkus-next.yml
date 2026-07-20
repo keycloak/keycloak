@@ -17,21 +17,32 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # Quarkus branch to build snapshots from. Update when quarkus-next should track a different release stream.
+  QUARKUS_BRANCH: 3.x
+
 jobs:
   build-quarkus-snapshot:
     name: Build Quarkus snapshot
     if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     outputs:
+      quarkus-version: ${{ steps.quarkus-version.outputs.version }}
       qosdk-version: ${{ steps.qosdk-version.outputs.version }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           repository: quarkusio/quarkus
-          ref: main
+          ref: ${{ env.QUARKUS_BRANCH }}
           path: quarkus
 
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Extract Quarkus snapshot version
+        id: quarkus-version
+        run: |
+          version=$(grep -m1 '<version>' quarkus/pom.xml | sed 's/.*<version>\(.*\)<\/version>.*/\1/')
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           repository: quarkiverse/quarkus-operator-sdk
           ref: main
@@ -50,12 +61,12 @@ jobs:
 
       - name: Quarkus snapshot cache
         id: quarkus-cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.m2/repository/io/quarkus
             ~/.m2/repository/io/quarkiverse/operatorsdk
-          key: quarkus-snapshot-${{ steps.cache-key.outputs.date }}
+          key: quarkus-snapshot-${{ env.QUARKUS_BRANCH }}-${{ steps.cache-key.outputs.date }}
           enableCrossOsArchive: true
 
       - name: Build Quarkus snapshot
@@ -72,7 +83,7 @@ jobs:
           cd quarkus-operator-sdk
           ./mvnw -B -e --no-transfer-progress \
             clean install -DskipTests -DskipITs -DskipDocs \
-            -Dquarkus.version=999-SNAPSHOT
+            -Dquarkus.version=${{ steps.quarkus-version.outputs.version }}
 
       - name: Extract QOSDK version
         id: qosdk-version
@@ -87,7 +98,7 @@ jobs:
     permissions:
       contents: write # Required to push changes to the repository
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: main
           fetch-depth: 0
@@ -105,6 +116,7 @@ jobs:
 
       - name: Cherry-pick additional commits in quarkus-next
         env:
+          QUARKUS_VERSION: ${{ needs.build-quarkus-snapshot.outputs.quarkus-version }}
           QOSDK_VERSION: ${{ needs.build-quarkus-snapshot.outputs.qosdk-version }}
         run: |
           ${GITHUB_WORKSPACE}/.github/scripts/prepare-quarkus-next.sh

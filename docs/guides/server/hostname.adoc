@@ -76,6 +76,7 @@ The `proxy-headers` is still relevant even when the `hostname` is set to a full 
 
 In this case, while nothing is dynamically resolved from the X-Forwarded-* headers, the X-Forwarded-* headers are used to determine the correct origin of the request.
 
+[#administration-console-on-a-separate-hostname]
 == Exposing the Administration Console on a separate hostname
 
 If you wish to expose the Admin Console on a different host, you can do so with the following command:
@@ -124,7 +125,7 @@ The default value of `hostname-backchannel-dynamic` option is `false`, which mea
 
 Note that `hostname` option must be set to a URL. For more information, refer to the <<Validations>> section below.
 
-NOTE: if the server is configured for TLS passthrough, the usage of dynamic backchannel HTTPS requests will not pass hostname validation as the server certificate presented will be for the public hostname.    
+NOTE: if the server is configured for TLS passthrough, the usage of dynamic backchannel HTTPS requests will not pass hostname validation as the server certificate presented will be for the public hostname.
 
 === Administration
 

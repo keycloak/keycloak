@@ -40,7 +40,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.EnterRecoveryAuthnCodePage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
@@ -119,9 +118,6 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
     @SecondBrowser
     protected PasswordPage passwordPageSecondBrowser;
 
-    @Page
-    protected AppPage appPage;
-
     @Drone
     @SecondBrowser
     private WebDriver driver2;
@@ -178,7 +174,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
         }
         Assertions.assertEquals(logoutOtherSessions, setupRecoveryAuthnCodesPage.isLogoutSessionsChecked());
         setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
-        assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         if (logoutOtherSessions) {
             EventAssertion.expectLogoutSuccess(events.poll())
@@ -236,7 +232,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
         setupRecoveryAuthnCodesPage.assertCurrent();
         setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
 
-        assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventRepresentation event = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL)
                 .userId(userRepresentation.getId())
                 .details(Details.USERNAME, "test-user@localhost")
@@ -266,7 +262,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
         setupRecoveryAuthnCodesPage.assertCurrent();
         setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
 
-        assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventRepresentation event = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL)
                 .userId(userRepresentation.getId())
                 .details(Details.USERNAME, "test-user@localhost")

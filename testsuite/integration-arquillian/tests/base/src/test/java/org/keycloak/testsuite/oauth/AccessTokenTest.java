@@ -217,13 +217,14 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         });
 
         oauth.doLogin("test-user@localhost", "password");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         runOnServerMaster.run(session -> {
             Statistics stats = statistics(session);
-            if (!Profile.isFeatureEnabled(Profile.Feature.CACHELESS) && Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+            if (!Profile.isFeatureEnabled(Profile.Feature.STATELESS) && Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
                 assertEquals(1, stats.getEntityStatistics("org.keycloak.models.jpa.session.PersistentUserSessionEntity").getInsertCount());
                 assertEquals(4, stats.getSuccessfulTransactionCount());
-            } else if (Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
+            } else if (Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
                 // user session
                 assertEquals(0, stats.getEntityStatistics("org.keycloak.models.jpa.session.PersistentUserSessionEntity").getUpdateCount());
                 assertEquals(1, stats.getEntityStatistics("org.keycloak.models.jpa.session.PersistentUserSessionEntity").getInsertCount());

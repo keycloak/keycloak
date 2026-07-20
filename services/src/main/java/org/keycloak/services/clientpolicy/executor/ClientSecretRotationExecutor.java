@@ -112,7 +112,7 @@ public class ClientSecretRotationExecutor implements
 
             if (adminContext instanceof DynamicClientUpdatedContext) {
                 long startRemainingWindow = clientConfigWrapper.getClientSecretExpirationTime()
-                        - (long) configuration.remainExpirationPeriod;
+                        - configuration.remainExpirationPeriod;
 
                 debugDynamicInfo(clientConfigWrapper, startRemainingWindow);
 
@@ -135,8 +135,7 @@ public class ClientSecretRotationExecutor implements
     private void rotateSecret(ClientCRUDContext crudContext,
                               OIDCClientSecretConfigWrapper clientConfigWrapper) {
 
-        if (crudContext instanceof ClientSecretRotationContext) {
-            ClientSecretRotationContext secretRotationContext = ((ClientSecretRotationContext) crudContext);
+        if (crudContext instanceof ClientSecretRotationContext secretRotationContext) {
             if (secretRotationContext.isForceRotation()) {
                 logger.debugv("Force rotation for client {0}", clientConfigWrapper.getId());
                 updateRotateSecret(clientConfigWrapper, secretRotationContext.getCurrentSecret());
@@ -191,15 +190,19 @@ public class ClientSecretRotationExecutor implements
     public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
 
         @JsonProperty(ClientSecretRotationExecutorFactory.SECRET_EXPIRATION_PERIOD)
-        protected Integer expirationPeriod;
+        protected Long expirationPeriod;
         @JsonProperty(ClientSecretRotationExecutorFactory.SECRET_REMAINING_ROTATION_PERIOD)
-        protected Integer remainExpirationPeriod;
+        protected Long remainExpirationPeriod;
         @JsonProperty(ClientSecretRotationExecutorFactory.SECRET_ROTATED_EXPIRATION_PERIOD)
-        private Integer rotatedExpirationPeriod;
+        private Long rotatedExpirationPeriod;
 
         @Override
         public boolean validateConfig() {
             logger.debugv("Validating configuration: [ expirationPeriod: {0}, rotatedExpirationPeriod: {1}, remainExpirationPeriod: {2} ]", expirationPeriod, rotatedExpirationPeriod, remainExpirationPeriod);
+            if (expirationPeriod == null || rotatedExpirationPeriod == null || remainExpirationPeriod == null) {
+                return false;
+            }
+
             // expiration must be a positive value greater than 0 (seconds)
             if (expirationPeriod <= 0) {
                 return false;
@@ -218,27 +221,27 @@ public class ClientSecretRotationExecutor implements
             return true;
         }
 
-        public Integer getExpirationPeriod() {
+        public Long getExpirationPeriod() {
             return expirationPeriod;
         }
 
-        public void setExpirationPeriod(Integer expirationPeriod) {
+        public void setExpirationPeriod(Long expirationPeriod) {
             this.expirationPeriod = expirationPeriod;
         }
 
-        public Integer getRemainExpirationPeriod() {
+        public Long getRemainExpirationPeriod() {
             return remainExpirationPeriod;
         }
 
-        public void setRemainExpirationPeriod(Integer remainExpirationPeriod) {
+        public void setRemainExpirationPeriod(Long remainExpirationPeriod) {
             this.remainExpirationPeriod = remainExpirationPeriod;
         }
 
-        public Integer getRotatedExpirationPeriod() {
+        public Long getRotatedExpirationPeriod() {
             return rotatedExpirationPeriod;
         }
 
-        public void setRotatedExpirationPeriod(Integer rotatedExpirationPeriod) {
+        public void setRotatedExpirationPeriod(Long rotatedExpirationPeriod) {
             this.rotatedExpirationPeriod = rotatedExpirationPeriod;
         }
 

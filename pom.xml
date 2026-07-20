@@ -99,7 +99,7 @@
         <jboss-servlet-api_4.0_spec>2.0.0.Final</jboss-servlet-api_4.0_spec>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
-        <log4j2-api.version>2.25.3</log4j2-api.version> <!-- Odd name needs to align with Quarkus -->
+        <log4j2-api.version>2.25.4</log4j2-api.version> <!-- Odd name needs to align with Quarkus -->
         <resteasy.version>6.2.16.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20260101.1</owasp.html.sanitizer.version>
@@ -189,12 +189,13 @@
         <!-- Maven Plugins -->
         <maven.plugins.version>3.15.2</maven.plugins.version>
         <version.enforcer.plugin>3.6.2</version.enforcer.plugin>
+        <extra.enforcer.rules.version>1.12.0</extra.enforcer.rules.version>
         <replacer.plugin.version>1.4.1</replacer.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
         <wildfly.plugin.version>5.0.0.Final</wildfly.plugin.version>
-        <central.publishing.plugin.version>0.7.0</central.publishing.plugin.version>
+        <central.publishing.plugin.version>0.11.0</central.publishing.plugin.version>
         <nexus3.staging.plugin.version>1.0.7</nexus3.staging.plugin.version>
         <frontend.plugin.version>1.15.0</frontend.plugin.version>
         <docker.maven.plugin.version>0.48.1</docker.maven.plugin.version>
@@ -213,6 +214,8 @@
         <maven-failsafe-plugin.version>2.22.2</maven-failsafe-plugin.version>
         <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
         <plugin.antrun.version>1.8</plugin.antrun.version>
+        <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
+        <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -1450,12 +1453,17 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.2.0</version>
+                    <version>${maven-javadoc-plugin.version}</version>
                     <configuration>
                         <doclint>none</doclint>
                         <failOnError>false</failOnError>
                         <excludePackageNames>cx.*:org.freedesktop*:org.jvnet*</excludePackageNames>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>${maven-source-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>com.lazerycode.jmeter</groupId>
@@ -1716,6 +1724,34 @@
             <modules>
                 <module>distribution</module>
             </modules>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
         <profile>

@@ -21,6 +21,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ClientAttestationPoPJwt;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
+import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWK;
@@ -42,8 +43,10 @@ import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.tests.oid4vc.abca.OIDCClientAttester;
 import org.keycloak.tests.oid4vc.abca.OIDCMockClientAttester;
@@ -65,6 +68,8 @@ import org.keycloak.util.DPoPGenerator;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import static org.keycloak.OAuth2Constants.DPOP_JWT_HEADER_TYPE;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
@@ -81,6 +86,7 @@ import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_URI_
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_RESPONSE_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.ISSUER_METADATA_ATTACHMENT_KEY;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -262,6 +268,19 @@ public class OID4VCBasicWallet {
         return Proofs.create(ProofType.JWT, proofValues);
     }
 
+    /**
+     * Builds an OID4VP presentation of an issued SD-JWT VC: it discloses every claim and adds a key
+     * binding JWT signed by {@code holderKey} and bound to the verifier ({@code audience}, {@code nonce}).
+     */
+    public String present(String sdJwtVc, KeyWrapper holderKey, String audience, String nonce) {
+        ObjectNode keyBindingClaims = JsonSerialization.mapper.createObjectNode();
+        keyBindingClaims.put("aud", audience);
+        keyBindingClaims.put("nonce", nonce);
+        keyBindingClaims.put("iat", Time.currentTimeSeconds());
+        return SdJwtVP.of(sdJwtVc)
+                .present(null, true, keyBindingClaims, new ECDSASignatureSignerContext(holderKey));
+    }
+
     public KeyWrapper getECKeyPair(OID4VCTestContext ctx) {
         return getECKeyPair(ctx, null);
     }
@@ -314,7 +333,7 @@ public class OID4VCBasicWallet {
                 UUID.randomUUID().toString(),
                 HttpMethod.POST,
                 htu,
-                (long) Time.currentTime(),
+                Time.currentTimeSeconds(),
                 jwsEcHeader, ecKey, accessToken);
     }
 
@@ -681,5 +700,18 @@ public class OID4VCBasicWallet {
             openLoginForm();
             return parseLoginResponse();
         }
+    }
+
+    public void assertAccessTokenAudience(String accessToken, String... expectedAudience) {
+        assertNotNull(accessToken);
+        assertNotNull(expectedAudience);
+
+        AccessToken token = oauth.verifyToken(accessToken);
+        assertNotNull(token);
+
+        String[] audience = token.getAudience();
+        assertNotNull(audience);
+        assertEquals(expectedAudience.length, audience.length);
+        assertArrayEquals(expectedAudience, audience, "Access token audience should be limited to credential endpoint");
     }
 }

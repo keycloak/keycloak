@@ -21,9 +21,7 @@ import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -38,18 +36,8 @@ public class SelectOrganizationPage extends LanguageComboboxAwarePage {
     protected WebElement htmlRoot;
 
     @Override
-    public boolean isCurrent() {
-        try {
-            return !driver.findElements(By.id("kc-user-organizations")).isEmpty();
-        } catch (NoSuchElementException ignore) {}
-
-        return false;
-    }
-
-    public void assertCurrent(String realm) {
-        String name = getClass().getSimpleName();
-        Assertions.assertTrue(isCurrent(realm),
-                "Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")");
+    public String getExpectedPageId() {
+        return "login-select-organization";
     }
 
     public void selectOrganization(String alias) {

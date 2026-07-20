@@ -26,8 +26,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jakarta.ws.rs.BadRequestException;
-
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
@@ -189,11 +187,11 @@ public class Workflow {
         }
 
         if (allowedTypes.isEmpty()) {
-            throw new ModelValidationException("Steps provided are not compatible with each other.");
+            throw new ModelValidationException("workflowStepsIncompatible");
         }
         else if (allowedTypes.size() > 1) {
             String formattedTypes = allowedTypes.stream().map(Enum::name).collect(Collectors.joining(", "));
-            throw new ModelValidationException("Steps provided should support a single type, actual: " + formattedTypes);
+            throw new ModelValidationException("workflowStepsSingleTypeRequired", formattedTypes);
         }
 
         ResourceType supported = allowedTypes.stream().findFirst().orElseThrow();
@@ -205,7 +203,7 @@ public class Workflow {
         ComponentModel workflowModel = realm.getComponent(getId());
 
         if (workflowModel == null) {
-            throw new ModelValidationException("Workflow with id '%s' not found.".formatted(getId()));
+            throw new ModelValidationException("workflowNotFoundById", getId());
         }
 
         ComponentModel stepModel = new ComponentModel();
@@ -225,7 +223,7 @@ public class Workflow {
         ComponentModel component = realm.getComponent(id);
 
         if (component == null || !Objects.equals(providerType, component.getProviderType())) {
-            throw new BadRequestException("Not a valid workflow resource: " + id);
+            throw new WorkflowInvalidStateException("workflowInvalidResource", id);
         }
         return component;
     }
