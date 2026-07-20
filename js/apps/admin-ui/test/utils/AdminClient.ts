@@ -349,6 +349,24 @@ class AdminClient {
     });
   }
 
+  async isFeatureEnabled(
+    featureName: string,
+    realm: string = this.#client.realmName,
+  ): Promise<boolean> {
+    await this.#login();
+    const features = (await this.#client.serverInfo.find({ realm })).features;
+    const normalizeFeatureName = (name?: string) => name?.replace(/_V\d+$/, "");
+
+    return (
+      features?.some(
+        (feature) =>
+          feature.enabled &&
+          normalizeFeatureName(feature.name) ===
+            normalizeFeatureName(featureName),
+      ) ?? false
+    );
+  }
+
   async deleteIdentityProvider(idpAlias: string) {
     await this.#login();
     await this.#client.identityProviders.del({

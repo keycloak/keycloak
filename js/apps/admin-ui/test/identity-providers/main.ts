@@ -1,7 +1,7 @@
 import { type Page, expect } from "@playwright/test";
 import { assertNotificationMessage } from "../utils/masthead.ts";
+import { SERVER_URL } from "../utils/constants.ts";
 
-const SERVER_URL = "http://localhost:8080";
 const discoveryUrl = `${SERVER_URL}/realms/master/.well-known/openid-configuration`;
 const authorizationUrl = `${SERVER_URL}/realms/master/protocol/openid-connect/auth`;
 

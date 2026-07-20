@@ -15,8 +15,27 @@ import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.tsx"
 
 type Oid4vciFormat = "SD-JWT VC (dc+sd-jwt)" | "JWT VC (jwt_vc_json)";
 const OID4VCI_PROTOCOL = "OpenID for Verifiable Credentials";
+const OID4VCI_SERVER_FEATURE = "OID4VC_VCI";
+const OID4VCI_OPTION_VISIBLE_TIMEOUT_MS = 5_000;
 const OID4VCI_UNAVAILABLE_MESSAGE =
   "OID4VCI protocol is unavailable. Start Keycloak with verifiable credentials support enabled.";
+
+async function skipIfOID4VCIFeatureDisabled() {
+  const isOID4VCIFeatureEnabled = await adminClient.isFeatureEnabled(
+    OID4VCI_SERVER_FEATURE,
+  );
+  // eslint-disable-next-line playwright/no-skipped-test -- Explicit environment gate for unsupported server features.
+  test.skip(!isOID4VCIFeatureEnabled, OID4VCI_UNAVAILABLE_MESSAGE);
+}
+
+async function getVisibleOID4VCIProtocolOption(page: Page) {
+  const oid4vcOption = page.getByRole("option", { name: OID4VCI_PROTOCOL });
+  await oid4vcOption.waitFor({
+    state: "visible",
+    timeout: OID4VCI_OPTION_VISIBLE_TIMEOUT_MS,
+  });
+  return oid4vcOption;
+}
 
 // Helper function to create client scope (without selecting protocol)
 async function createClientScope(
@@ -115,14 +134,12 @@ const TOKEN_JWS_TYPE_WARNING_PREFIX =
   "The configured Token JWS Type does not match the recommended value for the selected credential format.";
 
 async function selectOID4VCIProtocol(page: Page) {
+  await skipIfOID4VCIFeatureDisabled();
+
   await expect(page.locator("#kc-protocol")).toBeVisible();
   await page.locator("#kc-protocol").click();
 
-  const oid4vcOption = page.getByRole("option", { name: OID4VCI_PROTOCOL });
-  const optionCount = await oid4vcOption.count();
-  test.skip(optionCount === 0, OID4VCI_UNAVAILABLE_MESSAGE);
-
-  await expect(oid4vcOption).toBeVisible();
+  const oid4vcOption = await getVisibleOID4VCIProtocolOption(page);
   await oid4vcOption.click();
   await expect(page.locator("#kc-protocol")).toContainText(OID4VCI_PROTOCOL);
 }
@@ -303,9 +320,9 @@ test.describe("OID4VCI Client Scope Functionality", () => {
 
     await expect(page.locator("#kc-protocol")).toBeVisible();
 
+    await skipIfOID4VCIFeatureDisabled();
     await page.locator("#kc-protocol").click();
-    const oid4vcOption = page.getByRole("option", { name: OID4VCI_PROTOCOL });
-    test.skip((await oid4vcOption.count()) === 0, OID4VCI_UNAVAILABLE_MESSAGE);
+    const oid4vcOption = await getVisibleOID4VCIProtocolOption(page);
     await expect(oid4vcOption).toBeVisible();
   });
 
@@ -361,12 +378,14 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     const openidConnectOption = page.getByRole("option", {
       name: "OpenID Connect",
     });
-    test.skip((await oid4vcOption.count()) === 0, OID4VCI_UNAVAILABLE_MESSAGE);
+
+    await skipIfOID4VCIFeatureDisabled();
+    const oid4vcVisibleOption = await getVisibleOID4VCIProtocolOption(page);
 
     await expect(oid4vcOption).toBeVisible();
     await expect(openidConnectOption).toBeVisible();
 
-    await oid4vcOption.click();
+    await oid4vcVisibleOption.click();
 
     await expect(page.locator("#kc-protocol")).toContainText(OID4VCI_PROTOCOL);
 

@@ -47,11 +47,21 @@ export async function assertSamlClientDetails(page: Page) {
 }
 
 export async function clickPostBinding(page: Page) {
-  try {
-    await switchOff(page, "#attributes\\.saml🍺force🍺post🍺binding");
-  } catch {
+  const postBindingSwitch = page.locator(
+    "#attributes\\.saml🍺force🍺post🍺binding",
+  );
+  await expect(postBindingSwitch).toBeVisible();
+
+  const isReadOnly =
+    (await postBindingSwitch.getAttribute("aria-readonly")) === "true" ||
+    (await postBindingSwitch.getAttribute("readonly")) !== null;
+
+  if (isReadOnly || !(await postBindingSwitch.isEnabled())) {
     // Some generated SAML clients expose this setting as read-only.
+    return;
   }
+
+  await switchOff(page, postBindingSwitch);
 }
 
 export async function saveSamlSettings(page: Page) {

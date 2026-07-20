@@ -15,25 +15,47 @@ export async function clearAllFilters(page: Page) {
 }
 
 export async function clickTableRowItem(page: Page, itemName: string) {
-  const row = page
-    .locator("table tbody tr")
-    .filter({ hasText: itemName })
+  const rows = page.locator("table tbody tr");
+  const exactRow = rows
+    .filter({ has: page.getByText(itemName, { exact: true }) })
     .first();
 
-  if ((await row.count()) > 0) {
-    const exactRowLink = row.getByRole("link", { name: itemName, exact: true });
+  if ((await exactRow.count()) > 0) {
+    const exactRowLink = exactRow.getByRole("link", {
+      name: itemName,
+      exact: true,
+    });
     if ((await exactRowLink.count()) > 0) {
       await exactRowLink.first().click();
       return;
     }
 
-    const partialRowLink = row.getByRole("link", { name: itemName });
+    const firstExactRowLink = exactRow.getByRole("link").first();
+    if ((await firstExactRowLink.count()) > 0) {
+      await firstExactRowLink.click();
+      return;
+    }
+  }
+
+  const partialRow = rows.filter({ hasText: itemName }).first();
+
+  if ((await partialRow.count()) > 0) {
+    const exactRowLink = partialRow.getByRole("link", {
+      name: itemName,
+      exact: true,
+    });
+    if ((await exactRowLink.count()) > 0) {
+      await exactRowLink.first().click();
+      return;
+    }
+
+    const partialRowLink = partialRow.getByRole("link", { name: itemName });
     if ((await partialRowLink.count()) > 0) {
       await partialRowLink.first().click();
       return;
     }
 
-    const firstRowLink = row.getByRole("link").first();
+    const firstRowLink = partialRow.getByRole("link").first();
     if ((await firstRowLink.count()) > 0) {
       await firstRowLink.click();
       return;
@@ -105,31 +127,29 @@ export async function clickTableToolbarItem(
     await page.getByRole("menuitem", { name: itemName }).first().click();
     return;
   }
-  const exactButton = toolbar.getByRole("button", {
-    name: itemName,
-    exact: true,
-  });
-  if ((await exactButton.count()) > 0) {
-    await exactButton.first().click();
+
+  const exactToolbarItem = toolbar
+    .getByRole("button", { name: itemName, exact: true })
+    .or(toolbar.getByRole("link", { name: itemName, exact: true }))
+    .first();
+  try {
+    await exactToolbarItem.waitFor({ state: "visible", timeout: 2_000 });
+    await exactToolbarItem.click();
     return;
+  } catch {
+    // Fall through to partial name and overflow menu attempts.
   }
 
-  const partialButton = toolbar.getByRole("button", { name: itemName });
-  if ((await partialButton.count()) > 0) {
-    await partialButton.first().click();
+  const partialToolbarItem = toolbar
+    .getByRole("button", { name: itemName })
+    .or(toolbar.getByRole("link", { name: itemName }))
+    .first();
+  try {
+    await partialToolbarItem.waitFor({ state: "visible", timeout: 2_000 });
+    await partialToolbarItem.click();
     return;
-  }
-
-  const exactLink = toolbar.getByRole("link", { name: itemName, exact: true });
-  if ((await exactLink.count()) > 0) {
-    await exactLink.first().click();
-    return;
-  }
-
-  const partialLink = toolbar.getByRole("link", { name: itemName });
-  if ((await partialLink.count()) > 0) {
-    await partialLink.first().click();
-    return;
+  } catch {
+    // Fall through to overflow menu attempt.
   }
 
   const overflowKebab = toolbar.getByTestId("kebab");

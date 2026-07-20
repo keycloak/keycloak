@@ -201,10 +201,8 @@ test.describe("Authentication flow details", () => {
       "execution Kerberos",
     );
 
-    test.skip(
-      !moved,
-      "Drag-and-drop reorder could not be triggered deterministically in this runtime.",
-    );
+    expect(moved).toBe(true);
+    await assertNotificationMessage(page, "Flow successfully updated");
   });
 
   test("edits flow details", async ({ page }) => {
