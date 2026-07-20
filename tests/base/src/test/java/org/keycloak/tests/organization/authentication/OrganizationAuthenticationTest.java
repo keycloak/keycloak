@@ -27,6 +27,7 @@ import java.util.Map;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.organization.authentication.authenticators.browser.OrganizationAuthenticatorFactory;
@@ -53,6 +54,7 @@ import org.keycloak.testframework.ui.page.SelectOrganizationPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.hamcrest.Matchers;
@@ -558,6 +560,33 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         // switch organization link should NOT be available
         assertFalse(loginPage.isSwitchOrganizationPresent());
+    }
+
+    @Test
+    public void testOrganizationClientScopeDefault() {
+        OrganizationRepresentation org = createOrganization();
+        OrganizationResource orgResource = realm.admin().organizations().get(org.getId());
+        UserRepresentation member = addMember(orgResource, memberEmail, "John", "Doe");
+
+        // add organization as default scope to the client
+        final String testAppId = oauth.clientResource().toRepresentation().getId();
+        final String orgScopeId = AdminApiUtil.findClientScopeByName(realm.admin(), OAuth2Constants.ORGANIZATION).toRepresentation().getId();
+        oauth.clientResource().removeOptionalClientScope(orgScopeId);
+        oauth.clientResource().addDefaultClientScope(orgScopeId);
+        realm.cleanup().add(r -> {
+            ClientResource res = r.clients().get(testAppId);
+            res.removeDefaultClientScope(orgScopeId);
+            res.addOptionalClientScope(orgScopeId);
+        });
+
+        // set the organization scope although the client scope is default
+        oauth.scope("organization");
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getUsername());
+        loginUsernamePage.submit();
+        loginPage.fillPassword(memberPassword);
+        loginPage.submit();
+        assertLoginSuccess();
     }
 
     @Test
