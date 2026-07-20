@@ -19,7 +19,9 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientPoliciesPoliciesResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.profile.CommaSeparatedListProfileConfigResolver;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -54,13 +56,13 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
-import org.keycloak.utils.StringUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -108,6 +110,11 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
             TimeUnit.MINUTES.toSeconds(10)).intValue();
     private static final int DEFAULT_REMAIN_EXPIRATION_PERIOD = Long.valueOf(
             TimeUnit.MINUTES.toSeconds(30)).intValue();
+
+    @BeforeClass
+    public static void beforeAll() {
+        Profile.configure(new CommaSeparatedListProfileConfigResolver(Feature.CLIENT_SECRET_ROTATION.getVersionedKey(), ""));
+    }
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -232,11 +239,11 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
                 .get(cidConfidential);
         String firstSecret = clientResource.getSecret().getValue();
         String secondSecret = clientResource.generateNewSecret().getValue();
-        ClientRepresentation rep = clientResource.toRepresentation();
-        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(rep);
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
+                clientResource.toRepresentation());
 
         assertThat(secondSecret, not(equalTo(firstSecret)));
-        assertThat(hasRotatedSecretAttributes(rep), is(Boolean.TRUE));
+        assertThat(wrapper.hasRotatedSecret(), is(Boolean.TRUE));
         assertThat(wrapper.getClientRotatedSecret(null), equalTo(firstSecret));
     }
 
@@ -255,7 +262,9 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         String firstSecret = clientResource.getSecret().getValue();
         String secondSecret = clientResource.generateNewSecret().getValue();
         assertThat(secondSecret, not(equalTo(firstSecret)));
-        assertThat(hasRotatedSecretAttributes(clientResource.toRepresentation()), is(Boolean.FALSE));
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
+                clientResource.toRepresentation());
+        assertThat(wrapper.hasRotatedSecret(), is(Boolean.FALSE));
 
         //apply policy
         configureDefaultProfileAndPolicy();
@@ -265,9 +274,9 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         String newSecret = clientResource.generateNewSecret().getValue();
         assertThat(newSecret, not(equalTo(secondSecret)));
-        ClientRepresentation rep = clientResource.toRepresentation();
-        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(rep);
-        assertThat(hasRotatedSecretAttributes(rep), is(Boolean.TRUE));
+        wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
+                clientResource.toRepresentation());
+        assertThat(wrapper.hasRotatedSecret(), is(Boolean.TRUE));
         assertThat(wrapper.getClientRotatedSecret(null), equalTo(secondSecret));
         long rotatedCreationTime = wrapper.getClientSecretCreationTime();
         assertThat(rotatedCreationTime, is(notNullValue()));
@@ -307,12 +316,15 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         clientRepresentation.setDescription("Force second Updated");
         clientResource.update(clientRepresentation);
 
+        wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
+                clientResource.toRepresentation());
+
         assertThat(clientResource.getSecret().getValue(), not(equalTo(firstSecret)));
 
-        ClientRepresentation updatedRep = clientResource.toRepresentation();
-        wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(updatedRep);
+        wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
+                clientResource.toRepresentation());
         assertThat(wrapper.getClientSecretCreationTime(), not(equalTo(secretCreationTime)));
-        assertThat(hasRotatedSecretAttributes(updatedRep), is(Boolean.TRUE));
+        assertThat(wrapper.hasRotatedSecret(), is(Boolean.TRUE));
         assertThat(wrapper.getClientRotatedSecret(null), equalTo(firstSecret));
     }
 
@@ -522,7 +534,9 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         //confirms rotation
         assertThat(updatedSecret, not(equalTo(firstSecret)));
 
-        assertThat(hasRotatedSecretAttributes(clientResource.toRepresentation()), is(Boolean.FALSE));
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
+                clientResource.toRepresentation());
+        assertThat(wrapper.hasRotatedSecret(), is(Boolean.FALSE));
 
         oauth.client(clientId, firstSecret);
 
@@ -697,7 +711,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         clientRepresentation = clientResource.toRepresentation();
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRepresentation);
 
-        assertThat(hasRotatedSecretAttributes(clientRepresentation), is(false));
+        assertThat(wrapper.hasRotatedSecret(), is(false));
         assertThat(wrapper.getClientSecretExpirationTime(),is(0L));
     }
 
@@ -727,21 +741,15 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         //client must not have any information about rotation in it
         ClientRepresentation clientRepresentation = clientResource.toRepresentation();
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRepresentation);
         assertThat(clientResource.getSecret().getValue(),equalTo(newSecret));
-        assertThat(hasRotatedSecretAttributes(clientRepresentation), is(false));
-        assertThat(OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRepresentation).getClientSecretExpirationTime(),is(0L));
+        assertThat(wrapper.hasRotatedSecret(), is(false));
+        assertThat(wrapper.getClientSecretExpirationTime(),is(0L));
     }
 
     /**
      * -------------------- support methods --------------------
      **/
-
-    private static boolean hasRotatedSecretAttributes(ClientRepresentation rep) {
-        Map<String, String> attrs = rep.getAttributes();
-        return attrs != null
-                && StringUtil.isNotBlank(attrs.get(ClientSecretConstants.CLIENT_ROTATED_SECRET))
-                && StringUtil.isNotBlank(attrs.get(ClientSecretConstants.CLIENT_ROTATED_SECRET_CREATION_TIME));
-    }
 
     private void configureCustomProfileAndPolicy(int secretExpiration, int rotatedExpiration,
                                                  int remainingExpiration) throws Exception {
