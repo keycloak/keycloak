@@ -27,7 +27,11 @@ The Admin REST API endpoints for listing client sessions (`GET /admin/realms/\{r
 
 The following sections provide details on deprecated features.
 
-=== <TODO>
+=== Introspection endpoint 'jwt' extension
+
+Proprietary {project_name} extension to invoke introspection endpoint with the HTTP header `Accept: application/jwt` instead of `Accept: application/json` is
+deprecated now. In case you have lightweight access token, which you want to exchange for the proper access token, it is instead recommended to use the
+link:{securing_apps_token_exchange_link}[Token Exchange].
 
 // ------------------------ Removed features ------------------------ //
 == Removed features
