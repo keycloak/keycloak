@@ -47,6 +47,10 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         return super.parseLoginResponse();
     }
 
+    public ClientResource clientResource() {
+        return clientResource;
+    }
+
     public ClientRegistration clientRegistration() {
         return ClientRegistration.create().httpClient(httpClient().get()).url(baseUrl, config.getRealm()).build();
     }
