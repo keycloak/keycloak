@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.tsx";
-import { toNewClientScope } from "../../src/client-scopes/routes/NewClientScope.tsx";
+import { toClientScopes } from "../utils/routes.ts";
+import { toNewClientScope } from "../utils/routes.ts";
 import { createTestBed } from "../support/testbed.ts";
 import { assertSaveButtonIsDisabled, clickSaveButton } from "../utils/form.ts";
 import { login, navigateTo } from "../utils/login.ts";

@@ -4,7 +4,7 @@ import { goToClientScopes } from "../utils/sidebar.ts";
 import { clickSaveButton, selectItem } from "../utils/form.ts";
 import { clickTableRowItem, clickTableToolbarItem } from "../utils/table.ts";
 import { login } from "../utils/login.ts";
-import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.tsx";
+import { toClientScopes } from "../utils/routes.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 
 async function goToMappersTab(page: Page) {

@@ -22,7 +22,8 @@
     "build-lib": "wireit",
     "preview": "wireit",
     "lint": "wireit",
-    "test": "wireit"
+    "test": "wireit",
+    "test:typecheck": "wireit"
   },
   "dependencies": {
     "@keycloak/keycloak-ui-shared": "workspace:*",
@@ -100,6 +101,12 @@
     },
     "test": {
       "command": "playwright test",
+      "dependencies": [
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "test:typecheck": {
+      "command": "tsc --project test/tsconfig.json",
       "dependencies": [
         "../../libs/keycloak-admin-client:build"
       ]

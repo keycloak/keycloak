@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
-import { toUser } from "../../src/user/routes/User.tsx";
+import { toUser } from "../utils/routes.ts";
 import {
   assertRowExists,
   getTableData,

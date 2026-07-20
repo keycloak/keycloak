@@ -11,7 +11,7 @@ import {
 } from "../utils/form.ts";
 import { clickTableRowItem, clickTableToolbarItem } from "../utils/table.ts";
 import { login } from "../utils/login.ts";
-import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.tsx";
+import { toClientScopes } from "../utils/routes.ts";
 
 // Helper function to create client scope (without selecting protocol)
 async function createClientScope(

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { generatePath } from "react-router-dom";
-import { toRealmSettings } from "../../src/realm-settings/routes/RealmSettings.tsx";
+import { toRealmSettings } from "../utils/routes.ts";
 import { createTestBed } from "../support/testbed.ts";
 import adminClient from "../utils/AdminClient.js";
 import { SERVER_URL, ROOT_PATH } from "../utils/constants.ts";
