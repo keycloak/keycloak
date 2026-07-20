@@ -158,8 +158,9 @@ public class DefaultTokenManager implements TokenManager {
                         jwtValidator.accept(jws, client);
                         return verifyJWS(client, clazz, (JWSInput) jws);
                     }
-                } catch (Exception ignore) {
-                    // try to decrypt content as is
+                } catch (Exception e) {
+                    logger.debug("Decrypted JWE content is not a valid JWS", e);
+                    rejectUnsignedContentIfSignatureRequired(client);
                 }
 
                 return JsonSerialization.readValue(content, clazz);
@@ -379,5 +380,12 @@ public class DefaultTokenManager implements TokenManager {
             });
 
         return token;
+    }
+
+    private void rejectUnsignedContentIfSignatureRequired(ClientModel client) {
+        String requestedSignatureAlgorithm = OIDCAdvancedConfigWrapper.fromClientModel(client).getRequestObjectSignatureAlg();
+        if (requestedSignatureAlgorithm != null) {
+            throw new RuntimeException("Request object signature algorithm is required but decrypted JWE content is not a signed JWS");
+        }
     }
 }
