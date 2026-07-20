@@ -19,7 +19,19 @@ export async function selectItem(
   value: string,
 ) {
   const element = typeof field === "string" ? page.locator(field) : field;
-  await element.click();
+  await expect(element).toBeVisible();
+  await expect(element).toBeEnabled();
+  try {
+    await element.click({ timeout: 3_000 });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      /Target page, context or browser has been closed/i.test(error.message)
+    ) {
+      throw error;
+    }
+    await element.click({ force: true, timeout: 3_000 });
+  }
   await page.getByRole("option", { name: value, exact: true }).click();
 }
 
@@ -30,32 +42,17 @@ export async function assertSelectValue(field: Locator, value: string) {
 
 export async function switchOn(page: Page, id: string | Locator) {
   const switchElement = typeof id === "string" ? page.locator(id) : id;
-  if (await switchElement.isChecked()) return;
-  await clickSwitch(switchElement);
-  if (!(await switchElement.isChecked())) {
-    await switchElement.click({ force: true, timeout: 3_000 });
-  }
+  await setSwitchState(switchElement, true);
 }
 
 export async function switchOff(page: Page, id: string | Locator) {
   const switchElement = typeof id === "string" ? page.locator(id) : id;
-  if (!(await switchElement.isChecked())) return;
-  await clickSwitch(switchElement);
+  await setSwitchState(switchElement, false);
 }
 
 export async function switchToggle(page: Page, id: string | Locator) {
   const switchElement = typeof id === "string" ? page.locator(id) : id;
-  const wasChecked = await switchElement.isChecked();
-  await clickSwitch(switchElement);
-  const isChecked = await switchElement.isChecked();
-  if (isChecked === wasChecked) {
-    await switchElement.click({ force: true, timeout: 3_000 });
-  }
-  if (wasChecked) {
-    await expect(switchElement).not.toBeChecked();
-  } else {
-    await expect(switchElement).toBeChecked();
-  }
+  await setSwitchState(switchElement, !(await switchElement.isChecked()));
 }
 
 export async function assertSwitchIsChecked(
@@ -104,6 +101,66 @@ async function clickSwitch(switchElement: Locator) {
     }
     // Fallback for transient overlays/animations while preserving deterministic state checks.
     await switchElement.click({ force: true, timeout: 3_000 });
+  }
+}
+
+async function setSwitchState(switchElement: Locator, checked: boolean) {
+  await expect(switchElement).toBeVisible();
+  await expect(switchElement).toBeEnabled();
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if ((await switchElement.isChecked()) === checked) {
+      return;
+    }
+
+    try {
+      if (checked) {
+        await switchElement.check({ timeout: 3_000 });
+      } else {
+        await switchElement.uncheck({ timeout: 3_000 });
+      }
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        /Target page, context or browser has been closed/i.test(error.message)
+      ) {
+        throw error;
+      }
+      await clickSwitch(switchElement);
+    }
+
+    try {
+      await expect
+        .poll(async () => await switchElement.isChecked(), { timeout: 1_000 })
+        .toBe(checked);
+      return;
+    } catch {
+      // Retry a few times for transient UI states before failing.
+    }
+
+    const switchId = await switchElement.getAttribute("id");
+    if (switchId) {
+      const label = switchElement.page().locator(`label[for="${switchId}"]`);
+      if ((await label.count()) > 0) {
+        try {
+          await label.first().click({ timeout: 3_000 });
+          await expect
+            .poll(async () => await switchElement.isChecked(), {
+              timeout: 1_000,
+            })
+            .toBe(checked);
+          return;
+        } catch {
+          // Continue to next retry if label click did not stabilize state.
+        }
+      }
+    }
+  }
+
+  if (checked) {
+    await expect(switchElement).toBeChecked();
+  } else {
+    await expect(switchElement).not.toBeChecked();
   }
 }
 

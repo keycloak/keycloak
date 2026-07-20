@@ -51,3 +51,15 @@ export async function switchOffIfOn(page: Page, selector: string) {
     await page.locator(selector).click({ force: true });
   }
 }
+
+export async function fillEmailAndOptionalUsername(
+  page: Page,
+  email: string,
+  username: string,
+) {
+  await page.getByTestId("email").fill(email);
+  const usernameField = page.getByTestId("username");
+  if (await usernameField.isVisible()) {
+    await usernameField.fill(username);
+  }
+}

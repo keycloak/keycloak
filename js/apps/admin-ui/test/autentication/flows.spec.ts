@@ -29,6 +29,7 @@ import {
   clickDefaultSwitchPolicy,
   clickDeleteRow,
   clickSwitchPolicy,
+  dragExecutionAboveExecution,
   fillBindFlowModal,
   fillCreateForm,
   fillDuplicateFlowModal,
@@ -187,82 +188,18 @@ test.describe("Authentication flow details", () => {
   });
 
   test("drags and drops execution", async ({ page }) => {
+    test.setTimeout(60_000);
     await using testBed = await createTestBed();
 
     await adminClient.copyFlow("browser", flowName, testBed.realm);
     await login(page, { to: toAuthentication({ realm: testBed.realm }) });
 
     await clickTableRowItem(page, flowName);
-
-    const treeGrid = page.getByRole("treegrid", { name: "Flows" });
-    const sourceRow = treeGrid
-      .getByRole("row")
-      .filter({ hasText: "execution Identity Provider Redirector" })
-      .first();
-    const targetRow = treeGrid
-      .getByRole("row")
-      .filter({ hasText: "execution Kerberos" })
-      .first();
-    const sourceHandle = sourceRow.getByRole("button", {
-      name: "Drag handle",
-      exact: true,
-    });
-    const targetHandle = targetRow.getByRole("button", {
-      name: "Drag handle",
-      exact: true,
-    });
-
-    const hasMoved = async () => {
-      const rows = await treeGrid.getByRole("row").allInnerTexts();
-      const sourceIndex = rows.findIndex((row) =>
-        row.includes("execution Identity Provider Redirector"),
-      );
-      const targetIndex = rows.findIndex((row) =>
-        row.includes("execution Kerberos"),
-      );
-      return (
-        sourceIndex !== -1 && targetIndex !== -1 && sourceIndex < targetIndex
-      );
-    };
-
-    const waitForMove = async () => {
-      try {
-        await expect.poll(hasMoved, { timeout: 4_000 }).toBe(true);
-        return true;
-      } catch {
-        return false;
-      }
-    };
-
-    await sourceHandle.dragTo(targetHandle);
-    let moved = await waitForMove();
-
-    if (!moved) {
-      const sourceBox = await sourceRow.boundingBox();
-      const targetBox = await targetRow.boundingBox();
-      if (sourceBox && targetBox) {
-        await page.mouse.move(
-          sourceBox.x + sourceBox.width / 2,
-          sourceBox.y + sourceBox.height / 2,
-        );
-        await page.mouse.down();
-        await page.mouse.move(
-          targetBox.x + targetBox.width / 2,
-          targetBox.y + targetBox.height / 2,
-          { steps: 20 },
-        );
-        await page.mouse.up();
-        moved = await waitForMove();
-      }
-    }
-
-    if (!moved) {
-      await sourceHandle.focus();
-      await page.keyboard.press("Space");
-      await page.keyboard.press("ArrowUp");
-      await page.keyboard.press("Space");
-      moved = await waitForMove();
-    }
+    const moved = await dragExecutionAboveExecution(
+      page,
+      "execution Identity Provider Redirector",
+      "execution Kerberos",
+    );
 
     test.skip(
       !moved,

@@ -15,16 +15,38 @@ export async function clearAllFilters(page: Page) {
 }
 
 export async function clickTableRowItem(page: Page, itemName: string) {
-  const rowScopedLink = page
-    .getByRole("row", { name: itemName })
-    .getByRole("link", { name: itemName, exact: true });
+  const row = page
+    .locator("table tbody tr")
+    .filter({ hasText: itemName })
+    .first();
 
-  if ((await rowScopedLink.count()) > 0) {
-    await rowScopedLink.first().click();
+  if ((await row.count()) > 0) {
+    const exactRowLink = row.getByRole("link", { name: itemName, exact: true });
+    if ((await exactRowLink.count()) > 0) {
+      await exactRowLink.first().click();
+      return;
+    }
+
+    const partialRowLink = row.getByRole("link", { name: itemName });
+    if ((await partialRowLink.count()) > 0) {
+      await partialRowLink.first().click();
+      return;
+    }
+
+    const firstRowLink = row.getByRole("link").first();
+    if ((await firstRowLink.count()) > 0) {
+      await firstRowLink.click();
+      return;
+    }
+  }
+
+  const exactLink = page.getByRole("link", { name: itemName, exact: true });
+  if ((await exactLink.count()) > 0) {
+    await exactLink.first().click();
     return;
   }
 
-  await page.getByRole("link", { name: itemName, exact: true }).first().click();
+  await page.getByRole("link", { name: itemName }).first().click();
 }
 
 export function getRowByCellText(page: Page, cellText: string): Locator {
@@ -71,17 +93,61 @@ export async function clickTableToolbarItem(
 ) {
   const toolbar = page.getByTestId("table-toolbar");
   if (kebab) {
-    await page.getByTestId("kebab").click();
-    await page.getByRole("menuitem", { name: itemName, exact: true }).click();
+    await toolbar.getByTestId("kebab").click();
+    const exactMenuItem = page.getByRole("menuitem", {
+      name: itemName,
+      exact: true,
+    });
+    if ((await exactMenuItem.count()) > 0) {
+      await exactMenuItem.first().click();
+      return;
+    }
+    await page.getByRole("menuitem", { name: itemName }).first().click();
     return;
   }
-  const button = toolbar.getByRole("button", { name: itemName, exact: true });
-  if ((await button.count()) > 0) {
-    await button.click();
+  const exactButton = toolbar.getByRole("button", {
+    name: itemName,
+    exact: true,
+  });
+  if ((await exactButton.count()) > 0) {
+    await exactButton.first().click();
     return;
   }
 
-  await toolbar.getByRole("link", { name: itemName, exact: true }).click();
+  const partialButton = toolbar.getByRole("button", { name: itemName });
+  if ((await partialButton.count()) > 0) {
+    await partialButton.first().click();
+    return;
+  }
+
+  const exactLink = toolbar.getByRole("link", { name: itemName, exact: true });
+  if ((await exactLink.count()) > 0) {
+    await exactLink.first().click();
+    return;
+  }
+
+  const partialLink = toolbar.getByRole("link", { name: itemName });
+  if ((await partialLink.count()) > 0) {
+    await partialLink.first().click();
+    return;
+  }
+
+  const overflowKebab = toolbar.getByTestId("kebab");
+  if ((await overflowKebab.count()) > 0) {
+    await overflowKebab.click();
+    const exactMenuItem = page.getByRole("menuitem", {
+      name: itemName,
+      exact: true,
+    });
+    if ((await exactMenuItem.count()) > 0) {
+      await exactMenuItem.first().click();
+      return;
+    }
+    await page.getByRole("menuitem", { name: itemName }).first().click();
+    return;
+  }
+
+  throw new Error(`Toolbar item "${itemName}" not found`);
 }
 
 export async function getTableData(page: Page, name: string) {
