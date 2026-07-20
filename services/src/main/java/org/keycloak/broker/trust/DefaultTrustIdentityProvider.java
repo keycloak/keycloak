@@ -17,11 +17,16 @@
 
 package org.keycloak.broker.trust;
 
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.keycloak.broker.provider.TrustMaterialIdentityProvider;
 import org.keycloak.broker.provider.TrustMaterialRequest;
+import org.keycloak.broker.provider.X509TrustMaterial;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.PublicKeyLoader;
@@ -50,6 +55,10 @@ public class DefaultTrustIdentityProvider implements TrustMaterialIdentityProvid
 
     @Override
     public Stream<JWK> resolveKeys(TrustMaterialRequest request) {
+        if (config.isUseX509()
+                || Strings.isEmpty(config.getTrustedJwks()) && Strings.isEmpty(config.getTrustedJwksUrl())) {
+            return Stream.empty();
+        }
         PublicKeyLoader loader = getPublicKeyLoader(request);
         PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
         String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), config.getInternalId());
@@ -59,6 +68,19 @@ public class DefaultTrustIdentityProvider implements TrustMaterialIdentityProvid
                   .filter(Objects::nonNull);
 
         return TrustKeyUtil.filterKeys(keys.map(JWKSServerUtils::toJwk), request);
+    }
+
+    @Override
+    public Stream<X509TrustMaterial> resolveX509Trust(TrustMaterialRequest request) {
+        if (!config.isUseX509() || Strings.isEmpty(config.getTrustedCertificates())) {
+            return Stream.empty();
+        }
+
+        X509Certificate[] certificates = PemUtils.decodeCertificates(config.getTrustedCertificates());
+        return Stream.of(new X509TrustMaterial(
+                new LinkedHashSet<>(Arrays.asList(certificates)),
+                config.getAttestationExtendedKeyUsages(),
+                config.isCertificateRevocationEnabled()));
     }
 
     @Override

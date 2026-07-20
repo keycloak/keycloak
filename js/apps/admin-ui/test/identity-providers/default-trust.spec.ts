@@ -34,6 +34,7 @@ test.describe.serial("Default Trust identity provider test", () => {
     await page.goto(addDefaultTrustProviderUrl);
 
     await expect(page.getByTestId("alias")).toHaveValue(alias);
+    await expect(page.getByTestId("config.useX509")).not.toBeChecked();
     await expect(page.getByTestId("config.useJwksUrl")).toBeChecked();
     await expect(page.getByTestId("config.jwksUrl")).toBeVisible();
 
@@ -52,6 +53,16 @@ test.describe.serial("Default Trust identity provider test", () => {
       page.getByTestId("config.publicKeySignatureVerifierKeyId"),
     ).toBeVisible();
     await expect(page.getByTestId("import-certificate-button")).toBeVisible();
+
+    await page.getByTestId("config.useX509").click({ force: true });
+    await expect(page.getByTestId("config.useJwksUrl")).toBeHidden();
+    await expect(page.getByTestId("config.trustedCertificates")).toBeVisible();
+    await expect(
+      page.getByTestId("config.attestationExtendedKeyUsages"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("config.certificateRevocationEnabled"),
+    ).toBeChecked();
   });
 
   test("should create and edit a Default Trust provider", async ({ page }) => {

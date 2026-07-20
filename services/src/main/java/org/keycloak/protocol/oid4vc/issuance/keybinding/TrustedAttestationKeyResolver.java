@@ -1,11 +1,13 @@
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.provider.TrustMaterialRequest;
 import org.keycloak.broker.provider.TrustMaterialResolver;
+import org.keycloak.broker.provider.X509TrustMaterial;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.models.ClientModel;
@@ -36,6 +38,40 @@ public class TrustedAttestationKeyResolver implements AttestationKeyResolver {
      */
     @Override
     public JWK resolveKey(String kid, Map<String, Object> header, Map<String, Object> payload) {
+        String trustIdpsConfig = getTrustIdentityProviderAliases();
+        if (trustIdpsConfig == null) {
+            return null;
+        }
+
+        TrustMaterialRequest request = createTrustMaterialRequest(kid, header, payload);
+        Optional<JWK> jwk = new TrustMaterialResolver().resolveKey(session, trustIdpsConfig, request);
+        if (jwk.isEmpty()) {
+            logger.debugf("Key with kid '%s' not found in configured trusted attester keys", kid);
+        }
+
+        return jwk.orElse(null);
+    }
+
+    @Override
+    public JWK resolveX5c(List<String> x5c, Map<String, Object> header, Map<String, Object> payload) {
+        String trustIdpsConfig = getTrustIdentityProviderAliases();
+        if (trustIdpsConfig == null) {
+            return null;
+        }
+
+        String algorithm = header != null ? (String) header.get(JWK.ALGORITHM) : null;
+        List<X509TrustMaterial> trustMaterials = new TrustMaterialResolver()
+                .resolveX509Trust(session, trustIdpsConfig, createTrustMaterialRequest(null, header, payload))
+                .toList();
+
+        JWK trustedKey = AttestationX509CertificateValidator.validate(x5c, algorithm, trustMaterials);
+        if (trustedKey == null) {
+            logger.debug("No X.509 trust material found in configured trusted attester identity providers");
+        }
+        return trustedKey;
+    }
+
+    private String getTrustIdentityProviderAliases() {
         ClientModel client = session.getContext().getClient();
         if (client == null) {
             throw new IllegalStateException("Cannot load trust-material IdP aliases because client is null");
@@ -47,20 +83,18 @@ public class TrustedAttestationKeyResolver implements AttestationKeyResolver {
             return null;
         }
 
+        return trustIdpsConfig;
+    }
+
+    private TrustMaterialRequest createTrustMaterialRequest(String kid, Map<String, Object> header,
+                                                            Map<String, Object> payload) {
         String algorithm = header != null ? (String) header.get(JWK.ALGORITHM) : null;
         String issuer = payload != null ? (String) payload.get(OAuth2Constants.ISSUER) : null;
 
-        TrustMaterialRequest request = TrustMaterialRequest.builder()
+        return TrustMaterialRequest.builder()
                 .kid(kid)
                 .algorithm(algorithm)
                 .issuer(issuer)
                 .build();
-
-        Optional<JWK> jwk = new TrustMaterialResolver().resolveKey(session, trustIdpsConfig, request);
-        if (jwk.isEmpty()) {
-            logger.debugf("Key with kid '%s' not found in configured trusted attester keys", kid);
-        }
-
-        return jwk.orElse(null);
     }
 }
