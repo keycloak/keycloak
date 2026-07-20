@@ -800,6 +800,8 @@ public class ClientResource {
 
             logger.debug("delete rotated secret");
 
+            // Always remove rotated secret attributes even when the feature is disabled,
+            // so stale secrets cannot become valid again if the feature is re-enabled.
             OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
 
             CredentialRepresentation rep = new CredentialRepresentation();
