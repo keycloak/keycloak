@@ -12,6 +12,8 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -172,6 +174,31 @@ public class PartialImportUserTest extends AbstractPartialImportTest {
             assertTrue(user.getUsername().startsWith(USER_PREFIX));
             Assertions.assertTrue(userIds.contains(id));
             assertThat(user.getRequiredActions(), contains(TermsAndConditions.PROVIDER_ID));
+        }
+    }
+
+    @Test
+    public void testAddUserWithInvalidPolicyPassword() {
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
+        realmRep.setPasswordPolicy("length(8)");
+        managedRealm.admin().update(realmRep);
+
+        setFail();
+
+        CredentialRepresentation password = new CredentialRepresentation();
+        password.setType(CredentialRepresentation.PASSWORD);
+        password.setValue("ABCD");
+
+        UserRepresentation user = UserBuilder.create().username(USER_PREFIX).email(USER_PREFIX + "@foo.com").build();
+        user.setCredentials(List.of(password));
+        piRep.setUsers(List.of(user));
+
+        try (Response response = managedRealm.admin().partialImport(piRep)) {
+            assertEquals(500, response.getStatus());
+
+            OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
+            assertEquals("unknown_error", error.getError());
+            assertEquals("invalidPasswordMinLengthMessage", error.getErrorDescription());
         }
     }
 
