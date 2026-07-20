@@ -36,7 +36,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
 import org.keycloak.testsuite.pages.IdpConfirmOverrideLinkPage;
@@ -131,9 +130,6 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     @Page
     protected OAuthGrantPage grantPage;
 
-    @Page
-    protected AppPage appPage;
-
     protected TimeBasedOTP totp = new TimeBasedOTP();
 
     protected BrokerConfiguration bc = getBrokerConfiguration();
@@ -226,14 +222,16 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     protected void logInAsUserInIDP(String clientId) {
         oauth.client(clientId);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
     }
 
     // We are re-authenticating to the IDP. Hence it is assumed that "username" field is not visible on the login form on the IDP side
     protected void logInAsUserInIDPWithReAuthenticate() {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         waitForPage(driver, "sign in to", true);
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -270,11 +268,6 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         oauth.getDriver().findElement(By.id("social-" + brokerId)).click();
         oauth.fillLoginForm(username, password);
 
-        if (updateAccountInformationPage.isCurrent()) {
-            log.debug("Updating info on updateAccount page");
-            updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
-        }
-
         return oauth.parseLoginResponse();
     }
 
@@ -286,13 +279,13 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     protected void logInAsUserInIDPForFirstTimeAndAssertSuccess() {
         logInAsUserInIDPForFirstTime();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     protected void updateAccountInformation() {
         waitForPage(driver, "update account information", false);
 
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
                 "We must be on correct realm right now");
 
@@ -391,7 +384,11 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     // Check whether the logout confirmation is present; if yes, confirm the logout and verify the current page
     private void checkLogoutConfirmation(String realm, String idTokenHint, String clientId) {
-        if (logoutConfirmPage.isCurrent()) {
+        String expectedPageId = driver.findElement(By.xpath("//body")).getAttribute("data-page-id");
+        if (expectedPageId.equals(errorPage.getExpectedPageId())) {
+            errorPage.assertCurrent();
+        } else {
+            logoutConfirmPage.assertCurrent();
             Assertions.assertEquals("Logging out", driver.getTitle());
             confirmLogout();
             if (idTokenHint != null || clientId != null) {

@@ -194,7 +194,7 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
         loginPage.resetPassword();
         resetPasswordPage.changePassword(RESET_OTP_TEST_USER_REMOVE_ONE);
         // Here the last remaining OTP is selected automatically.
-        resetOtpPage.isCurrent();
+        resetOtpPage.assertCurrent();
         resetOtpPage.submitOtpReset();
 
         credentials = realmResource.users().get(userRep.getId()).credentials();

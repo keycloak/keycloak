@@ -51,7 +51,6 @@ import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginExpiredPage;
@@ -130,10 +129,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
     @Rule
     public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
-    @Page
-    protected AppPage appPage;
-
-    @Page
+       @Page 
     protected LoginPage loginPage;
 
     @Page
@@ -186,6 +182,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
 
             // Login in tab2
             loginSuccessAndDoRequiredActions();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             // Try to go back to tab 1. We should be logged-in automatically
             tabUtil.closeTab(1);
@@ -193,7 +190,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
 
             // Should be back on tab1
             waitForAppPage(() -> driver.navigate().refresh());
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         }
     }
 
@@ -204,6 +201,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             multipleTabsParallelLogin(tabUtil);
 
             waitForAppPage(() -> loginPage.login("login-test", getPassword("login-test")));
+            Assertions.assertTrue(oauth.parseLoginResponse().isError());
             events.skip(4);
             assertOnAppPageWithAlreadyLoggedInError(EventType.LOGIN_ERROR);
         }
@@ -232,6 +230,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
         events.clear();
 
         loginSuccessAndDoRequiredActions();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Remove redirectUri from the client "test-app"
         try (ClientAttributeUpdater cap = ClientAttributeUpdater.forClient(adminClient, "test", "test-app")
@@ -280,6 +279,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
         Assertions.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
         events.clear();
         loginSuccessAndDoRequiredActions();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Go back to tab1. Usually should be automatically authenticated here (previously it showed "You are already logged-in")
         tabUtil.closeTab(1);
@@ -290,7 +290,6 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
         loginPage.login("login-test", getPassword("login-test"));
         updateProfile();
         updatePassword();
-        appPage.assertCurrent();
     }
 
     private void updateProfile() {
@@ -318,7 +317,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
                 .details(Details.REDIRECTED_TO_CLIENT, "true")
                 .details(Details.RESPONSE_TYPE, OIDCResponseType.CODE)
                 .details(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value());
-        appPage.assertCurrent(); // Page "You are already logged in." should not be here
+        Assertions.assertTrue(oauth.parseLoginResponse().isError()); // Page "You are already logged in." should not be here
         AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
         Assertions.assertEquals(OAuthErrorException.TEMPORARILY_UNAVAILABLE, authzResponse.getError());
         Assertions.assertEquals(Constants.AUTHENTICATION_EXPIRED_MESSAGE, authzResponse.getErrorDescription());
@@ -330,6 +329,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             multipleTabsParallelLogin(tabUtil);
 
             waitForAppPage(() -> loginPage.clickRegister());
+            Assertions.assertTrue(oauth.parseLoginResponse().isError());
             events.skip(4);
             assertOnAppPageWithAlreadyLoggedInError(EventType.REGISTER_ERROR);
         }
@@ -341,6 +341,8 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             multipleTabsParallelLogin(tabUtil);
 
             waitForAppPage(() -> loginPage.resetPassword());
+            WaitUtils.waitForPageToLoad();
+            Assertions.assertTrue(oauth.parseLoginResponse().isError());
             events.skip(4);
             assertOnAppPageWithAlreadyLoggedInError(EventType.RESET_PASSWORD_ERROR);
         }
@@ -375,12 +377,14 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             Assertions.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
 
             loginSuccessAndDoRequiredActions();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             // Go back to tab1. Usually should be automatically authenticated here (previously it showed "You are already logged-in")
             tabUtil.closeTab(1);
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
 
             waitForAppPage(() -> updateProfile());
+            Assertions.assertTrue(oauth.parseLoginResponse().isError());
 
             events.skip(5);
             assertOnAppPageWithAlreadyLoggedInError(EventType.CUSTOM_REQUIRED_ACTION_ERROR);
@@ -416,6 +420,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             Assertions.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
 
             loginSuccessAndDoRequiredActions();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             // Go back to tab1 and refresh the page. Should be automatically authenticated here (previously it showed "You are already logged-in")
             tabUtil.closeTab(1);
@@ -424,6 +429,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             waitForAppPage(() -> {
                 driver.navigate().refresh();
             });
+            Assertions.assertTrue(oauth.parseLoginResponse().isError());
             events.skip(6);
             assertOnAppPageWithAlreadyLoggedInError(EventType.LOGIN_ERROR);
         }
@@ -436,6 +442,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             oauth.openLoginForm();
             String tab1WindowHandle = util.getActualWindowHandle();
             loginSuccessAndDoRequiredActions();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
@@ -443,7 +450,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             // seamless login in the second tab, user already authenticated
             util.newTab(oauth.loginForm().build());
             oauth.openLoginForm();
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             events.clear();
             // logout in the second tab
             oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
@@ -451,12 +458,12 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             // re-login in the second tab
             oauth.openLoginForm();
             loginPage.login("login-test", getPassword("login-test"));
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             // seamless authentication in the first tab
             util.switchToTab(tab1WindowHandle);
             oauth.openLoginForm();
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         }
     }
 
@@ -505,6 +512,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
 
         // Login success now
         loginSuccessAndDoRequiredActions();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -526,6 +534,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
 
         // Login success now
         loginSuccessAndDoRequiredActions();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -549,7 +558,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
         updateProfilePage.assertCurrent();
         updateProfile();
         updatePassword();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -586,22 +595,22 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
         updateProfilePage.assertCurrent();
         updateProfile();
         updatePassword();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
     // KEYCLOAK-5797
     @Test
     public void loginWithDifferentClients() throws Exception {
-       String redirectUri = String.format("%s/foo/bar/baz", getAuthServerContextRoot());
-       // Open tab1 and start login here
-       oauth.openLoginForm();
-       loginPage.assertCurrent();
-       loginPage.login("login-test", "bad-password");
-       String tab1Url = driver.getCurrentUrl();
+        String redirectUri = String.format("%s/foo/bar/baz", getAuthServerContextRoot());
+        // Open tab1 and start login here
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+        loginPage.login("login-test", "bad-password");
+        String tab1Url = driver.getCurrentUrl();
 
-       // Go to tab2 and start login with different client "root-url-client"
-       oauth.client("root-url-client", "password");
+        // Go to tab2 and start login with different client "root-url-client"
+        oauth.client("root-url-client", "password");
         oauth.redirectUri(redirectUri);
         oauth.openLoginForm();
         loginPage.assertCurrent();
@@ -610,6 +619,8 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
         // Go back to tab1 and finish login here
         driver.navigate().to(tab1Url);
         loginSuccessAndDoRequiredActions();
+        Assertions.assertFalse(oauth.parseLoginResponse().isRedirected());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         // Go back to tab2 and finish login here. Should be on the root-url-client page
         driver.navigate().to(tab2Url);
@@ -640,7 +651,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
         loginSuccessAndDoRequiredActions();
 
         // Assert I am redirected to the appPage in tab1 and have state corresponding to tab1
-        appPage.assertCurrent();
+        errorPage.assertCurrent();
         String currentUrl = driver.getCurrentUrl();
         assertCurrentUrlStartsWith(redirectUri1);
         Assertions.assertTrue(currentUrl.contains("state1"));
@@ -669,7 +680,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
         loginSuccessAndDoRequiredActions();
 
         // Assert I am redirected to the appPage in tab2 and have state corresponding to tab2
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         String currentUrl = driver.getCurrentUrl();
         assertCurrentUrlStartsWith(redirectUri2);
         Assertions.assertTrue(currentUrl.contains("state2"));
@@ -710,13 +721,14 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
 
             // Login in tab2
             loginSuccessAndDoRequiredActions();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             // Try to go back to tab 1. We should be logged-in automatically
             tabUtil.closeTab(1);
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
 
             waitForAppPage(() -> driver.navigate().refresh());
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         }
     }
 
@@ -751,10 +763,12 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
            }
 
            loginSuccessAndDoRequiredActions();
+           Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
            tabUtil.switchToTab(1);
 
            waitForAppPage(() -> loginPage.login("login-test", getPassword("login-test")));
+           Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
        }
     }
 
@@ -798,6 +812,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
             events.clear();
             loginSuccessAndDoRequiredActions();
+            errorPage.assertCurrent();
 
             getLogger().info("URL in after: " + driver.getCurrentUrl());
 
@@ -910,6 +925,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
 
             loginPage.assertCurrent();
             loginSuccessAndDoRequiredActions();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             String finalUrl = driver.getCurrentUrl();
 
@@ -979,6 +995,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
 
             loginPage.assertCurrent();
             loginSuccessAndDoRequiredActions();
+            errorPage.assertCurrent();
 
             String finalUrl = driver.getCurrentUrl();
 
@@ -1015,7 +1032,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             oauth.client("test-app", "password").redirectUri(OAuthClient.APP_ROOT + "/auth");
             loginPage.assertCurrent();
             loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             AccessTokenResponse responseOnline = oauth.accessTokenRequest(oauth.parseLoginResponse().getCode()).send();
             Assertions.assertNull(responseOnline.getError());
             RefreshToken onlineRefreshToken = oauth.parseRefreshToken(responseOnline.getRefreshToken());
@@ -1025,7 +1042,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             // perform an offline request for the client, automatic login
             oauth.scope("openid offline_access");
             oauth.openLoginForm();
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             AccessTokenResponse responseOffline = oauth.accessTokenRequest(oauth.parseLoginResponse().getCode()).send();
             Assertions.assertNull(responseOffline.getError());
             RefreshToken offlineRefreshToken = oauth.parseRefreshToken(responseOffline.getRefreshToken());
@@ -1048,7 +1065,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             oauth.openLoginForm();
             loginPage.assertCurrent();
             loginPage.login("non-duplicate-email-user", getPassword("non-duplicate-email-user"));
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             responseOffline = oauth.accessTokenRequest(oauth.parseLoginResponse().getCode()).send();
             Assertions.assertNull(responseOffline.getError());
             offlineRefreshToken = oauth.parseRefreshToken(responseOffline.getRefreshToken());
@@ -1071,8 +1088,5 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             // error and being redirected to client
             htmlUnitAction.run();
         }
-
-        // Should be back on tab1 and logged-in automatically here
-        WaitUtils.waitUntilElement(appPage.getAccountLink()).is().clickable();
     }
 }

@@ -50,7 +50,6 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.federation.ldap.LDAPProvidersIntegrationTest;
 import org.keycloak.testsuite.federation.ldap.LDAPTestAsserts;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
@@ -415,7 +414,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             Assertions.assertEquals("de", localeCookie.getValue());
 
             loginPage.login("johnkeycloak", "Password1");
-            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             events.clear();
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());

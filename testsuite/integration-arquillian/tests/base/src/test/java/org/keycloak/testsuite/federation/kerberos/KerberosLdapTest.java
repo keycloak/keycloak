@@ -98,7 +98,7 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
             // Assert user was imported
             assertUser("hnelson", "hnelson@keycloak.org", "Horatio", "Nelson", "hnelson@KEYCLOAK.ORG", false);
 
-            appPage.logout(accessTokenResponse.getIdToken());
+            oauth.doLogout(accessTokenResponse.getIdToken());
 
             testingClient.server().run(session -> {
                 LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -189,7 +189,7 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
 
     @Test
     public void writableEditModeTest() throws Exception {
-        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage);
 
         // Change editMode to WRITABLE
         updateProviderEditMode(UserStorageProvider.EditMode.WRITABLE);
@@ -203,9 +203,10 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
         //bypassPage.clickContinue();
 
         // Login with old password doesn't work, but with new password works
-
-        Assertions.assertFalse(testAppHelper.login("jduke", "theduke"));
-        Assertions.assertTrue(testAppHelper.login("jduke", "newPass"));
+        testAppHelper.login("jduke", "theduke");
+        loginPage.assertCurrent();
+        testAppHelper.login("jduke", "newPass");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Assert SPNEGO login with the new password as mode is writable
         events.clear();

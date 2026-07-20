@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Assertions;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests first-broker-login flow with new authenticators.
@@ -59,7 +58,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         loginWithBrokerAndConfirmLinkAccount();
 
         // Assert on the page with password form
-        Assertions.assertTrue(passwordPage.isCurrent("consumer"));
+        passwordPage.assertCurrent();
 
         // Try bad password first
         passwordPage.login("bad-password");
@@ -89,7 +88,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         loginWithBrokerAndConfirmLinkAccount();
 
         // Login with password
-        Assertions.assertTrue(passwordPage.isCurrent("consumer"));
+        passwordPage.assertCurrent();
         passwordPage.login("password");
 
         // Assert on TOTP page. Login with TOTP
@@ -113,11 +112,11 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         loginWithBrokerAndConfirmLinkAccount();
 
         // Assert that user can't see credentials combobox. Password is the only available credentials.
-        Assertions.assertTrue(passwordPage.isCurrent("consumer"));
+        passwordPage.assertCurrent();
         passwordPage.assertTryAnotherWayLinkAvailability(false);
 
         // Login with password
-        Assertions.assertTrue(passwordPage.isCurrent("consumer"));
+        passwordPage.assertCurrent();
         passwordPage.login("password");
 
         assertUserAuthenticatedInConsumer(consumerRealmUserId);
@@ -139,7 +138,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         loginWithBrokerAndConfirmLinkAccount();
 
         // Assert that user can choose between Password and OTP as available credentials. Password should be selected by default.
-        Assertions.assertTrue(passwordPage.isCurrent("consumer"));
+        passwordPage.assertCurrent();
         passwordPage.assertTryAnotherWayLinkAvailability(true);
 
         // Just click "Try another way" to verify that both Password and OTP are available. But go back to Password then
@@ -150,7 +149,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.PASSWORD);
 
         // Login with password
-        Assertions.assertTrue(passwordPage.isCurrent("consumer"));
+        passwordPage.assertCurrent();
         passwordPage.login("password");
 
         assertUserAuthenticatedInConsumer(consumerRealmUserId);
@@ -174,7 +173,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         loginWithBrokerAndConfirmLinkAccount();
 
         // Assert that user can see credentials combobox. Password and OTP are available credentials. Password should be selected.
-        Assertions.assertTrue(passwordPage.isCurrent("consumer"));
+        passwordPage.assertCurrent();
         passwordPage.assertTryAnotherWayLinkAvailability(true);
 
         // Click "Try another way", Select OTP and assert OTP form present
@@ -203,7 +202,8 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
 
         // Login. TOTP will be required at login time.
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         loginPage.login(username, "password");
 
@@ -221,12 +221,13 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
     // Login with broker and click "Link account"
     private void loginWithBrokerAndConfirmLinkAccount() {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
         waitForPage(driver, "account already exists", false);
-        assertTrue(idpConfirmLinkPage.isCurrent());
+        idpConfirmLinkPage.assertCurrent();
         assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
     }
