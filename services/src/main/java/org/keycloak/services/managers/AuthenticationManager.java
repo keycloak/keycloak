@@ -1689,33 +1689,45 @@ public class AuthenticationManager {
                 accessToken.setResourceAccess(clientAccess);
             } else if (accessToken.getSubject() != null) {
                 // Fallback for service accounts using client_credentials grant without a
-                // persistent user session. Resolve roles directly from the user's role mappings.
+                // persistent user session. Only applies to the service account of the
+                // issuing client - other subjects (e.g. expired user sessions) must not
+                // regain roles through this path.
                 UserModel user = session.users().getUserById(realm, accessToken.getSubject());
-                if (user != null) {
-                    resolveRolesFromUserModel(session, accessToken, realm, user);
+                if (user != null && user.getServiceAccountClientLink() != null
+                        && user.getServiceAccountClientLink().equals(client.getId())) {
+                    resolveServiceAccountRoles(session, accessToken, realm, client, user);
                 }
             }
         }
     }
 
-    private static void resolveRolesFromUserModel(KeycloakSession session, AccessToken accessToken, RealmModel realm, UserModel user) {
-        // Resolve realm roles
+    private static void resolveServiceAccountRoles(KeycloakSession session, AccessToken accessToken,
+                                                    RealmModel realm, ClientModel client, UserModel user) {
+        // Resolve roles respecting client scope mappings (fullScopeAllowed and assigned scopes).
+        // Uses the same resolution logic as token creation (TokenManager.getAccess).
+        Stream<ClientScopeModel> clientScopes = Stream.concat(
+                client.getClientScopes(true).values().stream(),
+                Stream.of(client));
+        Set<RoleModel> allowedRoles = TokenManager.getAccess(user, client, clientScopes);
+
+        // Split into realm and client role buckets
         AccessToken.Access realmAccess = new AccessToken.Access();
-        user.getRealmRoleMappingsStream().forEach(role -> realmAccess.addRole(role.getName()));
+        Map<String, AccessToken.Access> resourceAccess = new HashMap<>();
+
+        for (RoleModel role : allowedRoles) {
+            if (role.isClientRole()) {
+                String clientId = realm.getClientById(role.getContainerId()).getClientId();
+                resourceAccess.computeIfAbsent(clientId, k -> new AccessToken.Access()).addRole(role.getName());
+            } else {
+                realmAccess.addRole(role.getName());
+            }
+        }
+
         if (realmAccess.getRoles() != null && !realmAccess.getRoles().isEmpty()) {
             accessToken.setRealmAccess(realmAccess);
         }
-
-        // Resolve client roles by iterating all role mappings and grouping by client
-        Map<String, AccessToken.Access> clientAccess = new HashMap<>();
-        user.getRoleMappingsStream()
-                .filter(RoleModel::isClientRole)
-                .forEach(role -> {
-                    String clientId = realm.getClientById(role.getContainerId()).getClientId();
-                    clientAccess.computeIfAbsent(clientId, k -> new AccessToken.Access()).addRole(role.getName());
-                });
-        if (!clientAccess.isEmpty()) {
-            accessToken.setResourceAccess(clientAccess);
+        if (!resourceAccess.isEmpty()) {
+            accessToken.setResourceAccess(resourceAccess);
         }
     }
 
