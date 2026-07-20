@@ -4,7 +4,7 @@ import { createTestBed } from "../support/testbed.ts";
 import { login } from "../utils/login.ts";
 import { goToClientScopes, goToClients, goToRealm } from "../utils/sidebar.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
-import { toClients } from "../../src/clients/routes/Clients.tsx";
+import { toClients } from "../utils/routes.ts";
 import { createClient, continueNext, save as saveClient } from "./utils.ts";
 import {
   assignOptionalOid4vciClientScope,

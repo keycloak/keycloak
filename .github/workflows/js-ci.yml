@@ -114,6 +114,9 @@ jobs:
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
         working-directory: js
 
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:typecheck
+        working-directory: js
+
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
         working-directory: js
 
@@ -130,6 +133,9 @@ jobs:
       - uses: ./.github/actions/pnpm-setup
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+        working-directory: js
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:typecheck
         working-directory: js
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import { toSsfClientTab } from "../../src/clients/routes/ClientSsfTab.tsx";
+import { toSsfClientTab } from "../utils/routes.ts";
 import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
