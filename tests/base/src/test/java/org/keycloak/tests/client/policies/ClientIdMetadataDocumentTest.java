@@ -965,6 +965,27 @@ public class ClientIdMetadataDocumentTest {
     }
 
     @Test
+    public void testRestrictSameDomainChecksAdditionalRedirectUris() throws Exception {
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        executorConfig.setAllowHttpScheme(true);
+        executorConfig.setOnlyAllowConfidentialClient(false);
+        executorConfig.setTrustedDomains(List.of("localhost", "www.example.com"));
+        executorConfig.setRestrictSameDomain(true);
+        updatePolicy(conditionConfig, executorConfig);
+
+        setCimdPublicClient();
+        oauth.redirectUri(REDIRECT_URI);
+        cimd.getRepresentation().setRedirectUris(List.of(REDIRECT_URI, "https://www.example.com/callback"));
+        assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+
+        // The client with the cross-domain redirect URI must not have been persisted
+        Assertions.assertTrue(realm.admin().clients().findByClientId(CLIENT_ID).isEmpty());
+    }
+
+    @Test
     public void testClientIdMetadataDocumentExecutorValidateClientMetadataRequiredProperties() throws Exception {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
