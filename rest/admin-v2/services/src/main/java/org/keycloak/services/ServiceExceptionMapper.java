@@ -1,11 +1,15 @@
 package org.keycloak.services;
 
+import java.util.Optional;
+
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.services.error.KeycloakErrorHandler;
 
 /**
@@ -21,10 +25,15 @@ public class ServiceExceptionMapper implements ExceptionMapper<ServiceException>
 
     @Override
     public Response toResponse(ServiceException exception) {
-        if (exception.getMessage() != null && exception.getParameters().isPresent()) {
-            return ErrorResponse.error(exception.getMessage(), exception.getParameters().get(),
-                    exception.getSuggestedResponseStatus().orElse(Response.Status.BAD_REQUEST)).getResponse();
+        Response response = KeycloakErrorHandler.getResponse(session, exception.toWebApplicationException());
+        Optional<Object[]> parameters = exception.getParameters();
+        if (exception.getMessage() != null && parameters.isPresent()
+                && response.getMediaType() != null && MediaType.APPLICATION_JSON_TYPE.isCompatible(response.getMediaType())) {
+            ErrorRepresentation error = new ErrorRepresentation();
+            error.setErrorMessage(exception.getMessage());
+            error.setParams(parameters.get());
+            return Response.fromResponse(response).entity(error).build();
         }
-        return KeycloakErrorHandler.getResponse(session, exception.toWebApplicationException());
+        return response;
     }
 }

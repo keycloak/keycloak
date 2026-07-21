@@ -24,7 +24,7 @@ public class ServiceException extends RuntimeException {
 
     public ServiceException(String message, Object[] parameters, Response.Status suggestedStatus) {
         this(message, suggestedStatus);
-        this.parameters = parameters;
+        this.parameters = parameters == null ? null : parameters.clone();
     }
 
     public ServiceException(Response.Status suggestedStatus) {
@@ -37,7 +37,7 @@ public class ServiceException extends RuntimeException {
     }
 
     public Optional<Object[]> getParameters() {
-        return Optional.ofNullable(parameters);
+        return Optional.ofNullable(parameters == null ? null : parameters.clone());
     }
 
     public WebApplicationException toWebApplicationException() {

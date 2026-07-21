@@ -1,13 +1,15 @@
 package org.keycloak.models.mapper;
 
+import java.util.Set;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
-
-import java.util.Set;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public interface ClientModelMapper extends RepModelMapper<BaseClientRepresentation, ClientModel> {
-    void toModel(BaseClientRepresentation rep, ClientModel model, Set<String> excludedFields);
+    default void toModel(BaseClientRepresentation rep, ClientModel model, Set<String> excludedFields) {
+        toModel(rep, model);
+    }
 }

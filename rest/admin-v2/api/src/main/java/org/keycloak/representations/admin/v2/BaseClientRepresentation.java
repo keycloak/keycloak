@@ -164,7 +164,7 @@ public class BaseClientRepresentation extends BaseRepresentation {
 
     public void setRedirectUris(Set<String> redirectUris) {
         markFieldAsExplicitlySet("redirectUris");
-        this.redirectUris = redirectUris == null ? new LinkedHashSet<>() : redirectUris;
+        this.redirectUris = redirectUris == null ? new LinkedHashSet<>() : new LinkedHashSet<>(redirectUris);
     }
 
     public Set<String> getRoles() {
@@ -172,7 +172,7 @@ public class BaseClientRepresentation extends BaseRepresentation {
     }
 
     public void setRoles(Set<String> roles) {
-        this.roles = roles;
+        this.roles = roles == null ? new LinkedHashSet<>() : new LinkedHashSet<>(roles);
     }
 
     public String getProtocol() {

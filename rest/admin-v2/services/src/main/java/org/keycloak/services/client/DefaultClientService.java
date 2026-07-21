@@ -336,7 +336,7 @@ public class DefaultClientService implements ClientService {
                         // Must run before bean validation: PutClient requires a non-blank secret for client-secret methods
                         generateClientSecretIfNeeded(client, model, strategy, patchExplicitNullSecret);
                         validator.validate(client, strategy.getValidationGroup(), Default.class);
-                        var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper, false);
+                        var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper, model);
                         session.clientPolicy().triggerOnEvent(new AdminClientUpdateContext(proposedRepresentation, model, permissions.adminAuth()));
 
                         // Update model
@@ -360,7 +360,7 @@ public class DefaultClientService implements ClientService {
                     throw new ServiceException("uuid already exists, but with a different clientId", Response.Status.BAD_REQUEST);
                 }
                 validator.validate(client, strategy.getValidationGroup(), Default.class);
-                var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper, true);
+                var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper, null);
                 if (client instanceof SAMLClientRepresentation samlClient) {
                     proposedRepresentation.setStandardFlowEnabled(null);
                     proposedRepresentation.setFrontchannelLogout(samlClient.getFrontChannelLogout());
@@ -379,7 +379,7 @@ public class DefaultClientService implements ClientService {
 
                 // Generate random secret if applicable
                 generateClientSecretIfNeeded(client, model, strategy, patchExplicitNullSecret);
-                mapper.toModel(client, model, getFieldsOmittedFromTypedCreation(client));
+                mapper.toModel(client, model, getFieldsOmittedFromTypedCreation(realm, client));
                 setupClientDefaults(client, model, proposedRepresentation);
 
                 // Validate the fully populated model
@@ -451,20 +451,21 @@ public class DefaultClientService implements ClientService {
      * <p>
      * For more details, see the <a href="https://github.com/keycloak/keycloak/issues/47576">keycloak#47576</a>.
      */
-    private ClientRepresentation getProposedOldRepresentation(RealmModel realm, BaseClientRepresentation client, ClientModelMapper mapper, boolean creating) {
+    private ClientRepresentation getProposedOldRepresentation(RealmModel realm, BaseClientRepresentation client,
+            ClientModelMapper mapper, ClientModel existingClient) {
         String clientId = client.getClientId();
         ClientModel tempModel = new SimpleClientModel("", realm);
         String effectiveType = client.getType();
-        if (!creating && !client.isFieldExplicitlySet(CLIENT_TYPE_FIELD)) {
-            ClientModel existingClient = realm.getClientByClientId(clientId);
-            effectiveType = existingClient == null ? null : existingClient.getType();
+        if (existingClient != null && !client.isFieldExplicitlySet(CLIENT_TYPE_FIELD)) {
+            effectiveType = existingClient.getType();
         }
         if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && effectiveType != null) {
             ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, effectiveType);
             tempModel = clientType.augment(tempModel);
             tempModel.setType(effectiveType);
         }
-        mapper.toModel(client, tempModel, creating ? getFieldsOmittedFromTypedCreation(client) : Collections.emptySet());
+        mapper.toModel(client, tempModel,
+                existingClient == null ? getFieldsOmittedFromTypedCreation(realm, client) : Collections.emptySet());
         var proposedRepresentation = ModelToRepresentation.toRepresentation(tempModel, session);
         proposedRepresentation.setClientId(clientId);
         proposedRepresentation.setId(null);
@@ -475,11 +476,11 @@ public class DefaultClientService implements ClientService {
         return new ServiceException(exception.getMessage(), exception.getParameters(), Response.Status.BAD_REQUEST);
     }
 
-    private Set<String> getFieldsOmittedFromTypedCreation(BaseClientRepresentation client) {
+    private Set<String> getFieldsOmittedFromTypedCreation(RealmModel realm, BaseClientRepresentation client) {
         if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) || client.getType() == null) {
             return Collections.emptySet();
         }
-        ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(session.getContext().getRealm(), client.getType());
+        ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, client.getType());
         Set<String> excluded = new HashSet<>();
         TYPE_CONTROLLED_FIELDS.forEach(field -> excludeOmittedControlledField(client, clientType, excluded, field));
         if (!client.isFieldExplicitlySet(LOGIN_FLOWS_FIELD) && (
@@ -571,7 +572,7 @@ public class DefaultClientService implements ClientService {
     protected void handleServiceAccount(ClientModel model, OIDCClientRepresentation rep) {
         if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES)
                 || model.getType() == null
-                || rep.isFieldExplicitlySet("loginFlows")
+                || rep.isFieldExplicitlySet(LOGIN_FLOWS_FIELD)
                 || !isServiceAccountControlledByType(model)) {
             model.setServiceAccountsEnabled(rep.getLoginFlows().contains(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT));
         }
