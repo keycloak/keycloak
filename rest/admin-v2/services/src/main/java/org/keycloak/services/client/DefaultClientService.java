@@ -386,6 +386,14 @@ public class DefaultClientService implements ClientService {
                 generateClientSecretIfNeeded(client, model, strategy, patchExplicitNullSecret);
                 mapper.toModel(client, model, getFieldsOmittedFromTypedCreation(realm, client));
                 setupClientDefaults(client, model, proposedRepresentation);
+                if (client instanceof OIDCClientRepresentation oidcClient
+                        && !oidcClient.isFieldExplicitlySet("auth")
+                        && !model.isPublicClient()
+                        && isBlank(model.getClientAuthenticatorType())) {
+                    model.setClientAuthenticatorType(Optional.ofNullable(proposedRepresentation.getClientAuthenticatorType())
+                            .orElseGet(KeycloakModelUtils::getDefaultClientAuthenticatorType));
+                    model.setSecret(KeycloakModelUtils.generateSecret(model));
+                }
 
                 // Validate the fully populated model
                 ValidationUtil.validateClient(session, model, true, r -> {

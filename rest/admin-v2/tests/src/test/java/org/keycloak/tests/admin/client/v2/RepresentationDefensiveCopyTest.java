@@ -5,11 +5,24 @@ import java.util.Set;
 
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class RepresentationDefensiveCopyTest {
+
+    @Test
+    void mergePatchOnlyTracksFieldsFromPatch() throws Exception {
+        OIDCClientRepresentation representation = new OIDCClientRepresentation("client");
+        representation.setType("service-account");
+        representation.clearExplicitlySetFields();
+
+        new ObjectMapper().readerForUpdating(representation).readValue("{\"description\":\"updated\"}");
+
+        assertEquals(false, representation.isFieldExplicitlySet("type"));
+        assertEquals(true, representation.isFieldExplicitlySet("description"));
+    }
 
     @Test
     void setPropertiesAreDefensivelyCopied() {
