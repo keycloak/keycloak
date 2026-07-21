@@ -31,8 +31,11 @@ import org.keycloak.models.mapper.ClientModelMapper;
 import org.keycloak.models.mapper.ClientModelMappers;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
+import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.PutClient;
@@ -339,6 +342,10 @@ public class DefaultClientService implements ClientService {
                 }
                 validator.validate(client, strategy.getValidationGroup(), Default.class);
                 var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper);
+                if (client instanceof SAMLClientRepresentation samlClient) {
+                    proposedRepresentation.setStandardFlowEnabled(null);
+                    proposedRepresentation.setFrontchannelLogout(samlClient.getFrontChannelLogout());
+                }
                 session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(proposedRepresentation, permissions.adminAuth()));
 
                 // Add basic attributes
@@ -348,6 +355,7 @@ public class DefaultClientService implements ClientService {
                 // Generate random secret if applicable
                 generateClientSecretIfNeeded(client, model, strategy, patchExplicitNullSecret);
                 mapper.toModel(client, model);
+                setupClientDefaults(client, model, proposedRepresentation);
 
                 // Validate the fully populated model
                 ValidationUtil.validateClient(session, model, true, r -> {
@@ -371,6 +379,22 @@ public class DefaultClientService implements ClientService {
 
         fireAdminEvent(alreadyExists ? OperationType.UPDATE : OperationType.CREATE, mapper.fromModel(model));
         return new CreateOrUpdateResult(mapper.fromModel(model), !alreadyExists);
+    }
+
+    private void setupClientDefaults(BaseClientRepresentation client, ClientModel model, ClientRepresentation proposedRepresentation) {
+        LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(LoginProtocol.class, client.getProtocol());
+        if (factory != null) {
+            factory.setupClientDefaults(proposedRepresentation, model);
+        }
+        if (client instanceof OIDCClientRepresentation oidcClient
+                && oidcClient.getAuth() != null
+                && !isClientSecret(oidcClient.getAuth().getMethod())
+                && isBlank(oidcClient.getAuth().getSecret())) {
+            // OIDCLoginProtocolFactory generates a secret for every confidential client, while Admin API v2
+            // only uses secrets with secret-based authentication methods.
+            model.setSecret(null);
+        }
     }
 
     /**
