@@ -94,11 +94,13 @@ public class DefaultClientService implements ClientService {
     private static final String IMPLICIT_FLOW_OPTION = "implicitFlowEnabled";
     private static final String DIRECT_ACCESS_GRANTS_OPTION = "directAccessGrantsEnabled";
     private static final String SERVICE_ACCOUNTS_OPTION = "serviceAccountsEnabled";
+    private static final TypeControlledField FRONT_CHANNEL_LOGOUT_FIELD =
+            new TypeControlledField("frontChannelLogout", "frontchannelLogout", Boolean.class);
     private static final List<TypeControlledField> TYPE_CONTROLLED_FIELDS = List.of(
             new TypeControlledField("redirectUris", "redirectUris", Set.class),
             new TypeControlledField("webOrigins", "webOrigins", Set.class),
             new TypeControlledField("auth", "publicClient", Boolean.class),
-            new TypeControlledField("frontChannelLogout", "frontchannelLogout", Boolean.class));
+            FRONT_CHANNEL_LOGOUT_FIELD);
     public static final ClientModelMappers MAPPERS = new ClientModelMappers();
 
     private record TypeControlledField(String representationField, String clientTypeOption, Class<?> optionType) {
@@ -363,7 +365,10 @@ public class DefaultClientService implements ClientService {
                 var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper, null);
                 if (client instanceof SAMLClientRepresentation samlClient) {
                     proposedRepresentation.setStandardFlowEnabled(null);
-                    proposedRepresentation.setFrontchannelLogout(samlClient.getFrontChannelLogout());
+                    if (client.isFieldExplicitlySet(FRONT_CHANNEL_LOGOUT_FIELD.representationField())
+                            || !isControlledByType(realm, client, FRONT_CHANNEL_LOGOUT_FIELD)) {
+                        proposedRepresentation.setFrontchannelLogout(samlClient.getFrontChannelLogout());
+                    }
                 }
                 session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(proposedRepresentation, permissions.adminAuth()));
 
@@ -502,6 +507,14 @@ public class DefaultClientService implements ClientService {
 
     private <T> boolean isControlledByType(ClientType clientType, String option, Class<T> optionType) {
         return !clientType.isApplicable(option) || clientType.getTypeValue(option, optionType) != null;
+    }
+
+    private boolean isControlledByType(RealmModel realm, BaseClientRepresentation client, TypeControlledField field) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) || client.getType() == null) {
+            return false;
+        }
+        ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, client.getType());
+        return isControlledByType(clientType, field.clientTypeOption(), field.optionType());
     }
 
     private void generateClientSecretIfNeeded(BaseClientRepresentation client, ClientModel model, CreateOrUpdateStrategy strategy, boolean patchExplicitNullSecret) {
