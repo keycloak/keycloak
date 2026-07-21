@@ -70,6 +70,16 @@ link:{securing_apps_token_exchange_link}[Token Exchange].
 These methods are not useful for JAX-RS resource endpoints because the JAX-RS runtime usually determines the final HTTP status from the endpoint return value or exception.
 Use JAX-RS response handling for setting and observing status codes in resource endpoints.
 
+=== Organization invitation link no longer exposed in API responses
+
+The `inviteLink` field in `OrganizationInvitationRepresentation` is deprecated and is no longer returned in Admin REST API responses from the organization invitation endpoints.
+
+Previously, the invitation link containing the signed registration token was stored and returned in the representation. The invitation link is still sent via email to the intended recipient.
+
+The `getInviteLink()` and `setInviteLink()` methods on `OrganizationInvitationRepresentation` are deprecated and will be removed in a future major version. If your code reads `inviteLink` from invitation API responses, it will now receive `null`.
+
+The "Copy invite link" action has also been removed from the admin console invitations management UI.
+
 // ------------------------ Removed features ------------------------ //
 == Removed features
 
