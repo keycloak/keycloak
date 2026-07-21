@@ -1,17 +1,25 @@
 package org.keycloak.tests.webauthn;
 
+import java.time.Duration;
 import java.util.List;
 
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
+import com.webauthn4j.converter.AttestationObjectConverter;
+import com.webauthn4j.converter.util.ObjectConverter;
+import com.webauthn4j.data.attestation.AttestationObject;
+import com.webauthn4j.data.attestation.authenticator.AuthenticatorData;
+import com.webauthn4j.data.extension.authenticator.RegistrationExtensionAuthenticatorOutput;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import static org.keycloak.WebAuthnConstants.AUTHENTICATOR_ATTACHMENT_CROSS_PLATFORM;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Tests that WebAuthn registration enforces realm policy server-side.
@@ -78,6 +86,45 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
                         "opts.publicKey.authenticatorSelection = opts.publicKey.authenticatorSelection || {};" +
                         "opts.publicKey.authenticatorSelection.userVerification = 'discouraged';"),
                 "User verification is required.");
+    }
+
+    @Test
+    public void tamperedUserPresence() {
+        String testId = "up-tamper";
+        String username = "policy-" + testId;
+        String email = "policy-" + testId + "@email";
+
+        managedRealm.updateWithCleanup(r -> r
+                .webAuthnPolicyAttestationConveyancePreference("none"));
+
+        oAuthClient.openRegistrationForm();
+        registerPage.assertCurrent();
+        registerPage.register("firstName", "lastName", email, username, PASSWORD);
+
+        webAuthnRegisterPage.assertCurrent();
+
+        ((JavascriptExecutor) driver.driver()).executeScript(
+                "document.getElementById('register').addEventListener('submit', function(event) {" +
+                "  event.preventDefault();" +
+                "}, { once: true });");
+
+        webAuthnRegisterPage.clickRegister();
+        webAuthnRegisterPage.registerWebAuthnCredential(SecretGenerator.getInstance().randomString(24));
+
+        String encodedAttestationObject = new WebDriverWait(driver.driver(), Duration.ofSeconds(10)).until(webDriver -> {
+            String value = (String) ((JavascriptExecutor) webDriver).executeScript(
+                    "return document.getElementById('attestationObject').value;");
+            return value.isEmpty() ? null : value;
+        });
+        String tamperedAttestationObject = clearUserPresenceFlag(encodedAttestationObject);
+
+        ((JavascriptExecutor) driver.driver()).executeScript(
+                "document.getElementById('attestationObject').value = arguments[0];" +
+                "document.getElementById('register').requestSubmit();",
+                tamperedAttestationObject);
+
+        webAuthnErrorPage.assertCurrent();
+        assertThat(webAuthnErrorPage.getError(), containsString("User presence is required."));
     }
 
     @Test
@@ -180,5 +227,23 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
                 "  " + body +
                 "  return origCreate(opts);" +
                 "};";
+    }
+
+    private static String clearUserPresenceFlag(String encodedAttestationObject) {
+        AttestationObjectConverter converter = new AttestationObjectConverter(new ObjectConverter());
+        AttestationObject attestationObject = converter.convert(encodedAttestationObject);
+        AuthenticatorData<RegistrationExtensionAuthenticatorOutput> authenticatorData = attestationObject.getAuthenticatorData();
+        assertThat("Test credential must initially have user presence", authenticatorData.isFlagUP(), is(true));
+
+        AuthenticatorData<RegistrationExtensionAuthenticatorOutput> tamperedAuthenticatorData = new AuthenticatorData<>(
+                authenticatorData.getRpIdHash(),
+                (byte) (authenticatorData.getFlags() & ~AuthenticatorData.BIT_UP),
+                authenticatorData.getSignCount(),
+                authenticatorData.getAttestedCredentialData(),
+                authenticatorData.getExtensions());
+
+        return converter.convertToBase64urlString(new AttestationObject(
+                tamperedAuthenticatorData,
+                attestationObject.getAttestationStatement()));
     }
 }
