@@ -1644,11 +1644,19 @@ public class AuthenticationManager {
         return true;
     }
 
-    public static void resolveLightweightAccessTokenRoles(KeycloakSession session, AccessToken accessToken, RealmModel realm) {
+    /**
+     * Resolve lightweight access token roles
+     *
+     * @param session session
+     * @param accessToken access token
+     * @param realm realm
+     * @return true if some roles were resolved. False if the token was not lightweight or there was some issue (EG. user session not found)
+     */
+    public static boolean resolveLightweightAccessTokenRoles(KeycloakSession session, AccessToken accessToken, RealmModel realm) {
         final String issuedFor = accessToken.getIssuedFor();
         ClientModel client = realm.getClientByClientId(issuedFor);
         if(client == null) {
-            return;
+            return false;
         }
 
         TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
@@ -1668,8 +1676,10 @@ public class AuthenticationManager {
                 accessToken.subject(userSession.getUser().getId());
                 accessToken.setRealmAccess(realmAccess);
                 accessToken.setResourceAccess(clientAccess);
+                return true;
             }
         }
+        return false;
     }
 
     public enum AuthenticationStatus {
