@@ -63,11 +63,9 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         IdentityProviderRepresentation actual = idpResource.toRepresentation();
         Assert.assertEquals(actual.getOrganizationId(), organization.getId());
         actual.setOrganizationId("somethingelse");
-        try {
-            idpResource.update(actual);
-            Assert.fail("Should fail because it maps to an invalid org");
-        } catch (BadRequestException ignore) {
-        }
+        idpResource.update(actual);
+        actual = idpResource.toRepresentation();
+        Assert.assertEquals(actual.getOrganizationId(), organization.getId());
 
         OrganizationRepresentation secondOrg = createOrganization("secondorg");
         actual.setOrganizationId(secondOrg.getId());
@@ -233,8 +231,11 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         idpRep.setAlias("newbroker");
         idpRep.setInternalId(null);
         try (Response response = testRealm().identityProviders().create(idpRep)) {
-            Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            Assert.assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            getCleanup().addCleanup(() -> testRealm().identityProviders().get("newbroker").remove());
         }
+        IdentityProviderRepresentation created = testRealm().identityProviders().get("newbroker").toRepresentation();
+        Assert.assertNull(created.getOrganizationId());
     }
 
     @Test
