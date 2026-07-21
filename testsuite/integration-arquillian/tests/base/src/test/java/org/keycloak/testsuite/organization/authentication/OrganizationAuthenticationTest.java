@@ -26,6 +26,7 @@ import java.util.List;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel.RequiredAction;
@@ -483,6 +484,31 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         // switch organization link should NOT be available
         loginPage.assertSwitchOrganizationLinkAvailability(false);
+    }
+
+    @Test
+    public void testOrganizationClientScopeDefault() {
+        OrganizationRepresentation org = createOrganization();
+        OrganizationResource orgResource = managedRealm.admin().organizations().get(org.getId());
+        UserRepresentation member = addMember(orgResource, memberEmail, "John", "Doe");
+
+        // add organization as default scope to the client
+        ClientResource clientRes = AdminApiUtil.findClientByClientId(managedRealm.admin(), oauth.getClientId());
+        final String orgScopeId = AdminApiUtil.findClientScopeByName(managedRealm.admin(), OAuth2Constants.ORGANIZATION).toRepresentation().getId();
+        clientRes.removeOptionalClientScope(orgScopeId);
+        clientRes.addDefaultClientScope(orgScopeId);
+        getCleanup().addCleanup(() -> {
+            clientRes.removeDefaultClientScope(orgScopeId);
+            clientRes.addOptionalClientScope(orgScopeId);
+        });
+
+        // set the organization scope although the client scope is default
+        oauth.scope("organization");
+        oauth.openLoginForm();
+        loginPage.loginUsername(member.getUsername());
+        loginPage.clickSignIn();
+        loginPage.login(memberPassword);
+        appPage.assertCurrent();
     }
 
     @Test

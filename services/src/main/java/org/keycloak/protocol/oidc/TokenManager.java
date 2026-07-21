@@ -667,7 +667,7 @@ public class TokenManager {
                             anyInvalid.set(true);
                         }
                     })
-                    .collect(Collectors.toMap(ClientScopeModel::getName, Function.identity()));
+                    .collect(Collectors.toMap(ClientScopeModel::getName, Function.identity(), (a, b) -> a));
 
             if (anyInvalid.get()) {
                 return false;
