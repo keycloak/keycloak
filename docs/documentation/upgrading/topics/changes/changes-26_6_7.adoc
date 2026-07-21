@@ -24,3 +24,18 @@ When Fine-Grained Admin Permissions is enabled and a delegated administrator has
 The `subGroupCount` field on stripped ancestors reflects the number of visible children included in the response, not the total number of children in the database. This prevents leaking information about groups the administrator cannot access.
 
 In the admin console, non-viewable ancestor groups now appear greyed out and are not clickable in the group tree and breadcrumb navigation. Clicking a viewable child group navigates to its details as expected. Note that when a delegated administrator has `view` permission only on groups that are not at the top level, the Groups page initially appears empty. The administrator must use the search field to locate their permitted groups.
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== Organization invitation link no longer exposed in API responses
+
+The `inviteLink` field in `OrganizationInvitationRepresentation` is deprecated and is no longer returned in Admin REST API responses from the organization invitation endpoints.
+
+Previously, the invitation link containing the signed registration token was stored and returned in the representation. The invitation link is still sent via email to the intended recipient.
+
+The `getInviteLink()` and `setInviteLink()` methods on `OrganizationInvitationRepresentation` are deprecated and will be removed in a future major version. If your code reads `inviteLink` from invitation API responses, it will now receive `null`.
+
+The "Copy invite link" action has also been removed from the admin console invitations management UI.
