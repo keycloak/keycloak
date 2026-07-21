@@ -132,6 +132,19 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
     }
 
     @Test
+    public void testInviteLinkNotExposedInApiResponse() {
+        sendInvitation("sectest@test-org.com", "Sec", "Test");
+
+        List<OrganizationInvitationRepresentation> invitations = organization.invitations().list();
+        assertThat(invitations, hasSize(1));
+        assertThat(invitations.get(0).getInviteLink(), is(nullValue()));
+
+        String invitationId = invitations.get(0).getId();
+        OrganizationInvitationRepresentation invitation = organization.invitations().get(invitationId);
+        assertThat(invitation.getInviteLink(), is(nullValue()));
+    }
+
+    @Test
     public void testGetNonExistentInvitation() {
         // Try to get non-existent invitation - should throw an exception or return null
         try {
