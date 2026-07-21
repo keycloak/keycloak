@@ -19,6 +19,7 @@ package org.keycloak.cluster.infinispan;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,13 +32,13 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.InvalidateLocalCachesEvent;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import org.infinispan.Cache;
-import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.context.Flag;
 import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.notifications.Listener;
@@ -61,6 +62,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
     private volatile Cache<String, Object> workCache;
     private volatile ClusterProvider clusterProvider;
+    private KeycloakSessionFactory keycloakSessionFactory;
 
     private final ExecutorService localExecutor = Executors.newCachedThreadPool(r -> {
         Thread thread = Executors.defaultThreadFactory().newThread(r);
@@ -132,6 +134,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        this.keycloakSessionFactory = factory;
     }
 
 
@@ -165,12 +168,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
             // During split-brain only Keycloak instances contained within the same partition will receive updates via
             // the work cache. On split-brain healing, it's necessary for us to clear all local caches so that potentially
             // stale values are invalidated and subsequent requests are forced to read from the DB.
-            localExecutor.execute(() ->
-                    Arrays.stream(InfinispanConnectionProvider.LOCAL_CACHE_NAMES)
-                            .map(name -> workCache.getCacheManager().getCache(name))
-                            .filter(cache -> cache.getCacheConfiguration().clustering().cacheMode() == CacheMode.LOCAL)
-                            .forEach(Cache::clear)
-            );
+            localExecutor.execute(this::triggerInvalidationEvent);
 
             if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
                 // If persistent user sessions are enabled, the reasoning from above is true for the user and client sessions as well.
@@ -217,6 +215,10 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
         private Set<String> convertAddresses(Collection<Address> addresses) {
             return addresses.stream().map(Object::toString).collect(Collectors.toSet());
+        }
+
+        private void triggerInvalidationEvent() {
+            Optional.ofNullable(keycloakSessionFactory).ifPresent(f -> f.publish(InvalidateLocalCachesEvent.INSTANCE));
         }
     }
 }

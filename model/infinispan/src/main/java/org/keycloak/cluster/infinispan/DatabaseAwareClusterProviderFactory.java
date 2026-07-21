@@ -98,6 +98,7 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        super.postInit(factory);
         KeycloakModelUtils.runJobInTransaction(factory, session -> {
             InfinispanConnectionProvider ispnConnections = session.getProvider(InfinispanConnectionProvider.class);
             nodeInfo = ispnConnections.getNodeInfo();

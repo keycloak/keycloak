@@ -49,4 +49,21 @@ public interface ClusterHealth {
      */
     boolean isSupported();
 
+    /**
+     * Checks if this site is the active site in a cross-site deployment.
+     * <p>
+     * In a multi-cluster setup, only the active site should serve traffic. The non-active site should reject requests
+     * to prevent serving stale data.
+     *
+     * @return {@code true} if this site is active or if cross-site is not configured, {@code false} if this site
+     * should stop serving traffic.
+     */
+    default boolean isSiteActive() {
+        return true;
+    }
+
+    default void close() {
+        //no-op
+    }
+
 }
