@@ -88,7 +88,21 @@ import static org.keycloak.utils.StringUtil.isBlank;
  */
 public class DefaultClientService implements ClientService {
     private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
+    private static final String CLIENT_TYPE_FIELD = "type";
+    private static final String LOGIN_FLOWS_FIELD = "loginFlows";
+    private static final String STANDARD_FLOW_OPTION = "standardFlowEnabled";
+    private static final String IMPLICIT_FLOW_OPTION = "implicitFlowEnabled";
+    private static final String DIRECT_ACCESS_GRANTS_OPTION = "directAccessGrantsEnabled";
+    private static final String SERVICE_ACCOUNTS_OPTION = "serviceAccountsEnabled";
+    private static final List<TypeControlledField> TYPE_CONTROLLED_FIELDS = List.of(
+            new TypeControlledField("redirectUris", "redirectUris", Set.class),
+            new TypeControlledField("webOrigins", "webOrigins", Set.class),
+            new TypeControlledField("auth", "publicClient", Boolean.class),
+            new TypeControlledField("frontChannelLogout", "frontchannelLogout", Boolean.class));
     public static final ClientModelMappers MAPPERS = new ClientModelMappers();
+
+    private record TypeControlledField(String representationField, String clientTypeOption, Class<?> optionType) {
+    }
 
     private final KeycloakSession session;
     private final AdminPermissionEvaluator permissions;
@@ -441,7 +455,7 @@ public class DefaultClientService implements ClientService {
         String clientId = client.getClientId();
         ClientModel tempModel = new SimpleClientModel("", realm);
         String effectiveType = client.getType();
-        if (!creating && effectiveType == null) {
+        if (!creating && !client.isFieldExplicitlySet(CLIENT_TYPE_FIELD)) {
             ClientModel existingClient = realm.getClientByClientId(clientId);
             effectiveType = existingClient == null ? null : existingClient.getType();
         }
@@ -467,23 +481,21 @@ public class DefaultClientService implements ClientService {
         }
         ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(session.getContext().getRealm(), client.getType());
         Set<String> excluded = new HashSet<>();
-        excludeOmittedControlledField(client, clientType, excluded, "redirectUris", "redirectUris", Set.class);
-        excludeOmittedControlledField(client, clientType, excluded, "webOrigins", "webOrigins", Set.class);
-        excludeOmittedControlledField(client, clientType, excluded, "auth", "publicClient", Boolean.class);
-        excludeOmittedControlledField(client, clientType, excluded, "frontChannelLogout", "frontchannelLogout", Boolean.class);
-        if (!client.isFieldExplicitlySet("loginFlows") && (
-                isControlledByType(clientType, "standardFlowEnabled", Boolean.class)
-                || isControlledByType(clientType, "implicitFlowEnabled", Boolean.class)
-                || isControlledByType(clientType, "directAccessGrantsEnabled", Boolean.class))) {
-            excluded.add("loginFlows");
+        TYPE_CONTROLLED_FIELDS.forEach(field -> excludeOmittedControlledField(client, clientType, excluded, field));
+        if (!client.isFieldExplicitlySet(LOGIN_FLOWS_FIELD) && (
+                isControlledByType(clientType, STANDARD_FLOW_OPTION, Boolean.class)
+                || isControlledByType(clientType, IMPLICIT_FLOW_OPTION, Boolean.class)
+                || isControlledByType(clientType, DIRECT_ACCESS_GRANTS_OPTION, Boolean.class))) {
+            excluded.add(LOGIN_FLOWS_FIELD);
         }
         return excluded;
     }
 
-    private <T> void excludeOmittedControlledField(BaseClientRepresentation client, ClientType clientType,
-            Set<String> excluded, String field, String option, Class<T> optionType) {
-        if (!client.isFieldExplicitlySet(field) && isControlledByType(clientType, option, optionType)) {
-            excluded.add(field);
+    private void excludeOmittedControlledField(BaseClientRepresentation client, ClientType clientType,
+            Set<String> excluded, TypeControlledField field) {
+        if (!client.isFieldExplicitlySet(field.representationField())
+                && isControlledByType(clientType, field.clientTypeOption(), field.optionType())) {
+            excluded.add(field.representationField());
         }
     }
 
@@ -617,7 +629,7 @@ public class DefaultClientService implements ClientService {
 
     private boolean isServiceAccountControlledByType(ClientModel model) {
         ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(model.getRealm(), model.getType());
-        return isControlledByType(clientType, "serviceAccountsEnabled", Boolean.class);
+        return isControlledByType(clientType, SERVICE_ACCOUNTS_OPTION, Boolean.class);
     }
 
     protected void validateUnknownFields(BaseClientRepresentation rep) {

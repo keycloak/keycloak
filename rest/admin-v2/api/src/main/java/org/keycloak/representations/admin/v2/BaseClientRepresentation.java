@@ -118,6 +118,7 @@ public class BaseClientRepresentation extends BaseRepresentation {
     }
 
     public void setType(String type) {
+        markFieldAsExplicitlySet("type");
         this.type = type;
     }
 
