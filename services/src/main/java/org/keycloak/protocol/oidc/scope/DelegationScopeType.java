@@ -51,6 +51,12 @@ public class DelegationScopeType extends UsernameScopeType {
     }
 
     @Override
+    public boolean canAccessTargetUser(ClientScopeModel scope, UserModel currentUser, UserModel targetUser) {
+        // Impersonation relationship is already validated in validateParameterWithUser during scope resolution
+        return true;
+    }
+
+    @Override
     public ParameterizedScopeTypeProvider create(KeycloakSession session) {
         return new DelegationScopeType(session);
     }
