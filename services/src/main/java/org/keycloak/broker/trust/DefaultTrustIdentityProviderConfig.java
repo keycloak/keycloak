@@ -160,6 +160,7 @@ public class DefaultTrustIdentityProviderConfig extends IdentityProviderModel {
     }
 
     public boolean isCertificateRevocationEnabled() {
-        return Boolean.parseBoolean(getConfig().getOrDefault(CERTIFICATE_REVOCATION_ENABLED, Boolean.TRUE.toString()));
+        String configured = getConfig().get(CERTIFICATE_REVOCATION_ENABLED);
+        return configured == null || !Boolean.FALSE.toString().equalsIgnoreCase(configured.trim());
     }
 }

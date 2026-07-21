@@ -472,6 +472,23 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
     }
 
     @Test
+    public void testCertificateRevocationCanOnlyBeExplicitlyDisabled() {
+        DefaultTrustIdentityProviderConfig config = new DefaultTrustIdentityProviderConfig();
+        config.setConfig(new HashMap<>());
+
+        assertTrue(config.isCertificateRevocationEnabled());
+
+        config.getConfig().put(DefaultTrustIdentityProviderConfig.CERTIFICATE_REVOCATION_ENABLED, "false");
+        assertFalse(config.isCertificateRevocationEnabled());
+
+        config.getConfig().put(DefaultTrustIdentityProviderConfig.CERTIFICATE_REVOCATION_ENABLED, " FALSE ");
+        assertFalse(config.isCertificateRevocationEnabled());
+
+        config.getConfig().put(DefaultTrustIdentityProviderConfig.CERTIFICATE_REVOCATION_ENABLED, "invalid");
+        assertTrue(config.isCertificateRevocationEnabled());
+    }
+
+    @Test
     public void testAttestationWithInvalidResistanceLevels() {
         String cNonce = getCNonce();
         runOnServer.run(session -> {
