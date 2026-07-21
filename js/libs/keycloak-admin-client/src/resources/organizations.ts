@@ -128,10 +128,18 @@ export class Organizations extends Resource<{ realm?: string }> {
     urlParamKeys: ["userId"],
   });
 
-  public invite = this.makeUpdateRequest<{ orgId: string }, FormData>({
+  public invite = this.makeUpdateRequest<
+    { orgId: string; clientId?: string; redirectUri?: string },
+    FormData
+  >({
     method: "POST",
     path: "/{orgId}/members/invite-user",
     urlParamKeys: ["orgId"],
+    queryParamKeys: ["clientId", "redirectUri"],
+    keyTransform: {
+      clientId: "client_id",
+      redirectUri: "redirect_uri",
+    },
   });
 
   public inviteExistingUser = this.makeUpdateRequest<
