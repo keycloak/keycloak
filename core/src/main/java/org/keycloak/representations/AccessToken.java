@@ -35,8 +35,14 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class AccessToken extends IDToken {
+
+    // Access token claims
+    public static final String REALM_ACCESS = "realm_access";
+    public static final String RESOURCE_ACCESS = "resource_access";
+    public static final String ROLES = "roles";
+
     public static class Access implements Serializable {
-        @JsonProperty("roles")
+        @JsonProperty(ROLES)
         protected Set<String> roles;
         @JsonProperty("verify_caller")
         protected Boolean verifyCaller;
@@ -131,10 +137,10 @@ public class AccessToken extends IDToken {
     @JsonProperty("allowed-origins")
     protected Set<String> allowedOrigins;
 
-    @JsonProperty("realm_access")
+    @JsonProperty(REALM_ACCESS)
     protected Access realmAccess;
 
-    @JsonProperty("resource_access")
+    @JsonProperty(RESOURCE_ACCESS)
     protected Map<String, Access> resourceAccess;
 
     @JsonProperty("authorization")

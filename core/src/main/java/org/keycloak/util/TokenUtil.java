@@ -17,6 +17,11 @@
 
 package org.keycloak.util;
 
+import java.io.IOException;
+import java.security.Key;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEConstants;
@@ -27,11 +32,14 @@ import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 
-import java.io.IOException;
-import java.security.Key;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.representations.AccessToken.REALM_ACCESS;
+import static org.keycloak.representations.AccessToken.RESOURCE_ACCESS;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -65,6 +73,8 @@ public class TokenUtil {
     public static final String TOKEN_BACKCHANNEL_LOGOUT_EVENT = "http://schemas.openid.net/event/backchannel-logout";
     
     public static final String TOKEN_BACKCHANNEL_LOGOUT_EVENT_REVOKE_OFFLINE_TOKENS = "revoke_offline_access";
+
+    private static final Logger logger = Logger.getLogger(TokenUtil.class);
 
     public static String attachOIDCScope(String scopeParam) {
         if (scopeParam == null || scopeParam.isEmpty()) {
@@ -238,5 +248,57 @@ public class TokenUtil {
 
         return jwe.getContent();
 
+    }
+
+    /**
+     * If token contains claims like "realm_access" or "resource_access" inside the "otherClaims" map, then those would be merged with the original fields "realm_access"
+     * and "resource_access", which are present directly on the token
+     *
+     * @param token access token
+     */
+    public static void convertTokenRolesFromOtherClaims(AccessToken token) {
+        if (token.getOtherClaims() == null) return;
+
+        if (token.getOtherClaims().containsKey(REALM_ACCESS)) {
+            AccessToken.Access otherClaimsRealmAccess = convertToAccess(token.getOtherClaims().get(REALM_ACCESS), REALM_ACCESS);
+            if (otherClaimsRealmAccess != null) {
+                token.setRealmAccess(mergeAccess(token.getRealmAccess(), otherClaimsRealmAccess));
+                token.getOtherClaims().remove(REALM_ACCESS);
+            }
+        }
+
+        if (token.getOtherClaims().containsKey(RESOURCE_ACCESS)) {
+            token.setResourceAccess(new HashMap<>(token.getResourceAccess())); // Re-create as hashMap as it might be unmodifiable map
+
+            if (token.getOtherClaims().get(RESOURCE_ACCESS) instanceof Map) {
+                for (Map.Entry<String, Object> entry : ((Map<String, Object>) token.getOtherClaims().get(RESOURCE_ACCESS)).entrySet()) {
+                    String clientId = entry.getKey();
+                    AccessToken.Access otherClaimsClientAccess = convertToAccess(entry.getValue(), RESOURCE_ACCESS + "." + clientId);
+                    AccessToken.Access mergedAccess = mergeAccess(token.getResourceAccess(clientId), otherClaimsClientAccess);
+                    if (mergedAccess != null) {
+                        token.getResourceAccess().put(clientId, mergedAccess);
+                    }
+                }
+                token.getOtherClaims().remove(RESOURCE_ACCESS);
+            } else {
+                logger.warnf("Claim resource_access in the incorrect format in the access token of user %s. Ignoring", token.getPreferredUsername());
+            }
+        }
+    }
+
+    private static AccessToken.Access convertToAccess(Object accessClaim, String claimName) {
+        try {
+            return JsonSerialization.readValue(JsonSerialization.writeValueAsString(accessClaim), AccessToken.Access.class);
+        } catch (IOException ioe) {
+            logger.warnf( "Failed to convert roles from claim %s. Ignoring", claimName);
+            return null;
+        }
+    }
+
+    private static AccessToken.Access mergeAccess(AccessToken.Access access1, AccessToken.Access access2) {
+        if (access1 == null) return access2;
+        if (access2 == null) return access1;
+        access1.getRoles().addAll(access2.getRoles());
+        return access1;
     }
 }
