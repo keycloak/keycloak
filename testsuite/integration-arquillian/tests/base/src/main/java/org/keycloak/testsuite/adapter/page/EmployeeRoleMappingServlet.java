@@ -19,8 +19,9 @@ package org.keycloak.testsuite.adapter.page;
 
 import java.net.URL;
 
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.auth.page.login.SAMLPostLogin;
+import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.WaitUtils;
 
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
@@ -40,7 +41,7 @@ public class EmployeeRoleMappingServlet extends SAMLServlet {
     @OperateOnDeployment(DEPLOYMENT_NAME)
     private URL url;
 
-    private SAMLPostLogin loginPage;
+    private LoginPage loginPage;
     private UserRepresentation user;
 
     @Override
@@ -56,7 +57,7 @@ public class EmployeeRoleMappingServlet extends SAMLServlet {
      * @param page the login page to be used to authenticate an user.
      * @param user the user being authenticated.
      */
-    public void setupLoginInfo(final SAMLPostLogin page, final UserRepresentation user) {
+    public void setupLoginInfo(final LoginPage page, final UserRepresentation user) {
         this.loginPage = page;
         this.user = user;
     }
@@ -75,7 +76,8 @@ public class EmployeeRoleMappingServlet extends SAMLServlet {
         if (this.loginPage != null) {
             // authenticates user before calling setCheckRoles on the servlet - required in filter tests.
             driver.navigate().to(getUriBuilder().clone().path("setCheckRoles").queryParam("roles", roles).build().toASCIIString());
-            loginPage.form().login(user);
+            String password = user.getCredentials().stream().filter(f -> f.getType().equals(CredentialRepresentation.PASSWORD)).findFirst().get().getValue();
+            loginPage.login(user.getUsername(), password);
             WaitUtils.waitUntilElement(By.tagName("body")).text().contains("These roles will be checked:");
             this.logout();
         } else {
@@ -88,7 +90,8 @@ public class EmployeeRoleMappingServlet extends SAMLServlet {
         if (this.loginPage != null) {
             // authenticates user before calling setCheckRoles on the servlet - required in filter tests.
             driver.navigate().to(getUriBuilder().clone().path((value ? "" : "un") + "checkRoles").build().toASCIIString());
-            loginPage.form().login(user);
+            String password = user.getCredentials().stream().filter(f -> f.getType().equals(CredentialRepresentation.PASSWORD)).findFirst().get().getValue();
+            loginPage.login(user.getUsername(), password);
             WaitUtils.waitUntilElement(By.tagName("body")).text().contains("Roles will " + (value ? "" : "not ") +  "be checked");
             this.logout();
         } else {

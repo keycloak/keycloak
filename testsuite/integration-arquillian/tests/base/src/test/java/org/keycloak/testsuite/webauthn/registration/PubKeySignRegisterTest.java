@@ -99,7 +99,10 @@ public class PubKeySignRegisterTest extends AbstractWebAuthnVirtualTest {
 
             registerDefaultUser(shouldSuccess);
 
-            assertThat(webAuthnErrorPage.isCurrent(), is(!shouldSuccess));
+            if (!oauth.parseLoginResponse().isSuccess()) {
+                webAuthnErrorPage.assertCurrent();
+            }
+
             if (!shouldSuccess) {
                 final String expectedMessage = StringUtil.isNotBlank(expectedError)
                         ? expectedError

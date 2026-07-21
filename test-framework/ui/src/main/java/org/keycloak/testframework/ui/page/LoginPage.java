@@ -73,6 +73,10 @@ public class LoginPage extends AbstractLoginPage {
         return !driver.driver().findElements(By.id(id)).isEmpty();
     }
 
+    public boolean isUsernameInputPresent() {
+        return !driver.driver().findElements(By.id("username")).isEmpty();
+    }
+
     public boolean isPasswordInputPresent() {
         return !driver.driver().findElements(By.id("password")).isEmpty();
     }
@@ -139,5 +143,25 @@ public class LoginPage extends AbstractLoginPage {
         } catch (NoSuchElementException e) {
             return false;
         }
+    }
+
+    public boolean isSwitchOrganizationPresent() {
+        return !driver.driver().findElements(By.id("switch-organization")).isEmpty();
+    }
+
+    public void clickSwitchOrganization() {
+        driver.findElement(By.id("switch-organization")).click();
+    }
+
+    public void clickResetLogin() {
+        driver.findElement(By.id("reset-login")).click();
+    }
+
+    public boolean isTryAnotherWayPresent() {
+        return !driver.driver().findElements(By.id("try-another-way")).isEmpty();
+    }
+
+    public void clickTryAnotherWay() {
+        driver.findElement(By.id("try-another-way")).click();
     }
 }

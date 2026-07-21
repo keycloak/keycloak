@@ -209,7 +209,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         // resolve organization based on the organization scope value
         oauth.client("broker-app", "broker-app-secret");
         oauth.scope("organization:" + orgA.getAlias());
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         Assertions.assertFalse(loginPage.isPasswordInputPresent());
         assertTrue(loginPage.isSocialButtonPresent(orgA.getAlias() + "-identity-provider"));
         assertFalse(loginPage.isSocialButtonPresent(orgB.getAlias() + "-identity-provider"));
@@ -219,7 +220,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
         String orgScope = "organization:" + orgB.getAlias();
         oauth.scope(orgScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         assertFalse(loginPage.isPasswordInputPresent());
         assertTrue(loginPage.isSocialButtonPresent(orgB.getAlias() + "-identity-provider"));
         assertFalse(loginPage.isSocialButtonPresent(orgA.getAlias() + "-identity-provider"));
@@ -241,7 +243,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         // resolve organization based on the organization scope value
         oauth.client("broker-app", "broker-app-secret");
         oauth.scope("organization:" + orgA.getAlias());
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         assertFalse(loginPage.isPasswordInputPresent());
         assertTrue(loginPage.isSocialButtonPresent(orgA.getAlias() + "-identity-provider"));
         assertFalse(loginPage.isSocialButtonPresent(orgB.getAlias() + "-identity-provider"));
@@ -250,7 +253,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.client("broker-app", "broker-app-secret");
         String orgScope = "organization:*";
         oauth.scope(orgScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
         AccessTokenResponse response = assertSuccessfulCodeGrant();
@@ -287,7 +291,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
         String orgScope = "organization";
         oauth.scope(orgScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
 
@@ -302,9 +307,10 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         managedRealm.admin().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
         oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
         oauth.scope("organization");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
-        assertTrue(selectOrganizationPage.isCurrent());
+        selectOrganizationPage.assertCurrent();
         assertFalse(driver.getPageSource().contains("kc-select-try-another-way-form"));
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
@@ -319,16 +325,18 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(organizations.contains(orgB.getAlias()), is(true));
 
         managedRealm.admin().users().get(member.getId()).logout();
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         selectOrganizationPage.assertCurrent();
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
         orgB.setEnabled(false);
         managedRealm.admin().organizations().get(orgB.getId()).update(orgB).close();
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
-        assertFalse(selectOrganizationPage.isCurrent());
+        loginPage.assertCurrent();
         loginPage.login(memberPassword);
         response = assertSuccessfulCodeGrant();
         assertThat(response.getScope(), containsString("organization"));
@@ -347,9 +355,10 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         managedRealm.admin().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
         oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
         oauth.scope("organization");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
-        assertTrue(selectOrganizationPage.isCurrent());
+        selectOrganizationPage.assertCurrent();
         assertFalse(driver.getPageSource().contains("kc-select-try-another-way-form"));
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
@@ -364,16 +373,18 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(organizations.contains(orgB.getAlias()), is(true));
 
         managedRealm.admin().users().get(member.getId()).logout();
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         selectOrganizationPage.assertCurrent();
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
         orgB.setEnabled(false);
         managedRealm.admin().organizations().get(orgB.getId()).update(orgB).close();
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
-        assertFalse(selectOrganizationPage.isCurrent());
+        loginPage.assertCurrent();
         loginPage.login(memberPassword);
         response = assertSuccessfulCodeGrant();
         assertThat(response.getScope(), containsString("organization"));
@@ -392,9 +403,10 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         managedRealm.admin().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
         oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
         oauth.scope("organization");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
-        assertTrue(selectOrganizationPage.isCurrent());
+        selectOrganizationPage.assertCurrent();
         assertFalse(driver.getPageSource().contains("kc-select-try-another-way-form"));
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
@@ -409,7 +421,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(organizations.contains(orgB.getAlias()), is(true));
 
         managedRealm.admin().users().get(member.getId()).logout();
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         selectOrganizationPage.assertCurrent();
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
@@ -432,7 +445,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(organizations.contains(orgA.getAlias()), is(true));
         assertThat(organizations.contains(orgB.getAlias()), is(false));
         oauth.openLoginForm();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         orgA.setEnabled(false);
         managedRealm.admin().organizations().get(orgA.getId()).update(orgA).close();
         oauth.openLoginForm();
@@ -440,7 +453,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         oauth.scope("");
         oauth.openLoginForm();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         response = assertSuccessfulCodeGrant();
         assertThat(response.getScope(), not(containsString("organization")));
         accessToken = oauth.verifyToken(response.getAccessToken());
@@ -458,7 +471,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             //first tab - select orgA
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             loginPage.loginUsername(member.getEmail());
             selectOrganizationPage.selectOrganization(orgA.getAlias());
             loginPage.login(memberPassword);
@@ -469,7 +483,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
             //second tab - select orgB
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), is(2));
-            selectOrganizationPage.isCurrent();
+            selectOrganizationPage.assertCurrent();
             selectOrganizationPage.selectOrganization(orgB.getAlias());
             response = assertSuccessfulCodeGrant(oauth);
             assertThat(response.getScope(), containsString("organization"));
@@ -506,7 +520,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             //first tab - select orgA
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             loginPage.loginUsername(member.getEmail());
             selectOrganizationPage.selectOrganization(orgA.getAlias());
             loginPage.login(memberPassword);
@@ -517,7 +532,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
             //second tab - select orgB
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), is(2));
-            selectOrganizationPage.isCurrent();
+            selectOrganizationPage.assertCurrent();
             selectOrganizationPage.selectOrganization(orgB.getAlias());
             response = assertSuccessfulCodeGrant(oauth);
             assertThat(response.getScope(), containsString("organization"));
@@ -548,7 +563,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             //first tab - select orgA
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             loginPage.loginUsername(member.getEmail());
             selectOrganizationPage.selectOrganization(orgA.getAlias());
             loginPage.login(memberPassword);
@@ -559,7 +575,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
             //second tab - select orgB
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), is(2));
-            selectOrganizationPage.isCurrent();
+            selectOrganizationPage.assertCurrent();
             selectOrganizationPage.selectOrganization(orgB.getAlias());
             response = assertSuccessfulCodeGrant(oauth);
             assertThat(response.getScope(), containsString("organization"));
@@ -589,7 +605,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
         String orgScope = "organization:*";
         oauth.scope(orgScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
         AccessTokenResponse response = assertSuccessfulCodeGrant();
@@ -623,7 +640,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
         String orgScope = "organization:*";
         oauth.scope(orgScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
         AccessTokenResponse response = assertSuccessfulCodeGrant();
@@ -653,7 +671,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         String originalScope = "organization:orga";
         String orgScope = originalScope;
         oauth.scope(orgScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
         AccessTokenResponse response = assertSuccessfulCodeGrant();
@@ -689,7 +708,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         String originalScope = "organization:orga";
         String orgScope = originalScope;
         oauth.scope(orgScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
         AccessTokenResponse response = assertSuccessfulCodeGrant();
@@ -717,9 +737,10 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
         String originalScope = "organization";
         oauth.scope(originalScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
-        assertTrue(selectOrganizationPage.isCurrent());
+        selectOrganizationPage.assertCurrent();
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
         selectOrganizationPage.selectOrganization(orgB.getAlias());
@@ -762,9 +783,10 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.client("broker-app", "broker-app-secret");
         String originalScope = "organization";
         oauth.scope(originalScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
-        assertTrue(selectOrganizationPage.isCurrent());
+        selectOrganizationPage.assertCurrent();
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
         selectOrganizationPage.selectOrganization(orgB.getAlias());
@@ -796,9 +818,10 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.client("broker-app", "broker-app-secret");
         String originalScope = "organization";
         oauth.scope(originalScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
-        assertTrue(selectOrganizationPage.isCurrent());
+        selectOrganizationPage.assertCurrent();
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
         selectOrganizationPage.selectOrganization(orgB.getAlias());
@@ -836,7 +859,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.client("broker-app", "broker-app-secret");
         String originalScope = "organization:" + orgA.getAlias();
         oauth.scope(originalScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
         AccessTokenResponse response = assertSuccessfulCodeGrant();
@@ -910,7 +934,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             // first tab - organization:* (all orgs)
             oauth.scope("organization:*");
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             loginPage.loginUsername(member.getEmail());
             loginPage.login(memberPassword);
             AccessTokenResponse response = assertSuccessfulCodeGrant(oauth);
@@ -925,7 +950,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
             oauth.scope("organization");
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), is(2));
-            selectOrganizationPage.isCurrent();
+            selectOrganizationPage.assertCurrent();
             selectOrganizationPage.selectOrganization(orgB.getAlias());
             response = assertSuccessfulCodeGrant(oauth);
             assertThat(response.getScope(), containsString("organization"));
@@ -1181,7 +1206,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         String originalScope = "organization:orga";
         String orgScope = originalScope;
         oauth.scope(orgScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
         AccessTokenResponse response = assertSuccessfulCodeGrant();
@@ -1217,7 +1243,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         String originalScope = "organization";
         String orgScope = originalScope;
         oauth.scope(orgScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         selectOrganizationPage.selectOrganization(orgA.getAlias());
         loginPage.login(memberPassword);
@@ -1258,7 +1285,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         String originalScope = "organization:orga";
         String orgScope = originalScope;
         oauth.scope(orgScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
         AccessTokenResponse response = assertSuccessfulCodeGrant();
@@ -1297,7 +1325,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         managedRealm.admin().clients().create(client).close();
         // identity-first login will respect the organization provided in the scope even though the user email maps to a different organization
         oauth.client("broker-app", "broker-app-secret");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
         assertSuccessfulCodeGrant();
@@ -1326,7 +1355,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         managedRealm.admin().clients().create(client).close();
         // identity-first login will respect the organization provided in the scope even though the user email maps to a different organization
         oauth.client("broker-app", "broker-app-secret");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
         assertSuccessfulCodeGrant();
@@ -1355,7 +1385,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.client("broker-app", "broker-app-secret");
         String orgScope = "organization";
         oauth.scope(orgScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         selectOrganizationPage.selectOrganization(orgA.getAlias());
         loginPage.login(memberPassword);
@@ -1379,7 +1410,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.client("broker-app", "broker-app-secret");
         String orgScope = "organization";
         oauth.scope(orgScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         selectOrganizationPage.selectOrganization(orgA.getAlias());
         loginPage.login(memberPassword);
@@ -1567,7 +1599,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         // resolve organization based on the organization scope value
         oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
         oauth.scope(null);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
 
@@ -1676,7 +1709,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
         String orgScope = "organization";
         oauth.scope(orgScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
         String code = oauth.parseLoginResponse().getCode();
@@ -1696,7 +1730,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         organization.update(orgA).close();
 
         managedRealm.admin().users().get(member.getId()).logout();
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
         code = oauth.parseLoginResponse().getCode();
@@ -1715,7 +1750,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         organization.update(orgA).close();
 
         managedRealm.admin().users().get(member.getId()).logout();
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
         code = oauth.parseLoginResponse().getCode();
@@ -1737,7 +1773,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     }
 
     private AccessTokenResponse assertSuccessfulCodeGrant() {
-       return assertSuccessfulCodeGrant(oauth);
+        return assertSuccessfulCodeGrant(oauth);
     }
 
     private AccessTokenResponse assertSuccessfulCodeGrant(OAuthClient oauth) {
@@ -1901,7 +1937,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
             oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
             oauth.scope("organization:*");
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             loginPage.login(memberEmail, memberPassword);
 
             String code = oauth.parseLoginResponse().getCode();
@@ -2063,7 +2100,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         orgA.members().member(member.getId()).delete().close();
         oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
         oauth.scope(orgScope);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
 

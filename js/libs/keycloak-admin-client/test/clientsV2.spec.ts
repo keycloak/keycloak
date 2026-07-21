@@ -91,6 +91,75 @@ describe("Clients V2 API", () => {
     );
   });
 
+  it("should filter and sort clients", async () => {
+    const clientId1 = faker.internet.username();
+    const clientId2 = faker.internet.username();
+
+    // Create two clients using v2 API
+    await kcAdminClient.clients.v2().post({
+      clientId: clientId1,
+      protocol: "openid-connect",
+      description: "Client 1",
+      enabled: true,
+    });
+
+    await kcAdminClient.clients.v2().post({
+      clientId: clientId2,
+      protocol: "openid-connect",
+      enabled: true,
+    });
+
+    // Verify we can get them via v2 API
+    const clients = await kcAdminClient.clients.v2().get();
+    expect(clients).to.be.ok;
+    expect(clients).to.be.an("array");
+
+    const client1 = clients!.find((c) => c.clientId === clientId1);
+    expect(client1).to.be.ok;
+
+    const client2 = clients!.find((c) => c.clientId === clientId2);
+    expect(client2).to.be.ok;
+
+    const sortedClients = await kcAdminClient.clients.v2().get({
+      queryParameters: {
+        sort: "clientId|desc",
+      },
+    });
+    expect(sortedClients).to.be.ok;
+    expect(sortedClients).to.be.an("array");
+    const clientIds = sortedClients!.map((c) => c.clientId!);
+    expect(
+      [...clientIds].sort((a, b) =>
+        b.localeCompare(a, undefined, { sensitivity: "base" }),
+      ),
+    ).to.deep.equal(clientIds);
+
+    const sortedClient1 = sortedClients!.find((c) => c.clientId === clientId1);
+    expect(sortedClient1).to.be.ok;
+
+    const sortedClient2 = sortedClients!.find((c) => c.clientId === clientId2);
+    expect(sortedClient2).to.be.ok;
+
+    // Filter by clientId
+    const filteredClients = await kcAdminClient.clients.v2().get({
+      queryParameters: {
+        fields: ["clientId"],
+        q: `clientId eq "${clientId1}"`,
+      },
+    });
+    expect(filteredClients).to.be.ok;
+    expect(filteredClients).to.be.an("array");
+    expect(filteredClients!.length).to.equal(1);
+    expect(filteredClients![0].description).to.be.undefined;
+
+    const filteredClient1 = filteredClients!.find(
+      (c) => c.clientId === clientId1,
+    );
+    expect(filteredClient1).to.be.ok;
+    await kcAdminClient.clients.v2().byId(clientId1).delete();
+    await kcAdminClient.clients.v2().byId(clientId2).delete();
+  });
+
   it("should create and delete a client", async () => {
     const clientId = faker.internet.username();
 
@@ -104,7 +173,7 @@ describe("Clients V2 API", () => {
 
     // Verify we can get it via v2 API
     const client = await kcAdminClient.clients.v2().byId(clientId).get();
-    expect((client as OIDCClientRepresentation).clientId).to.equal(clientId);
+    expect(client?.clientId).to.equal(clientId);
 
     // Delete the client using v2 API
     await kcAdminClient.clients.v2().byId(clientId).delete();

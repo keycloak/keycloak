@@ -17,9 +17,7 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.OPTIONS;
@@ -38,14 +36,12 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.http.HttpRequest;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.refresh.DefaultRefreshTokenProvider;
 import org.keycloak.protocol.oidc.refresh.DefaultRefreshTokenProviderFactory;
 import org.keycloak.protocol.oidc.refresh.RefreshTokenProvider;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
@@ -129,6 +125,7 @@ public class TokenRevocationEndpoint {
 
             refreshTokenProvider.revokeToken(token, user, client, event);
 
+            event.detail(Details.REFRESH_TOKEN_PROVIDER_ID, providerClaim != null ? providerClaim : refreshTokenProvider.getProviderId());
             event.detail(Details.REVOKED_CLIENT, client.getClientId());
             event.session(token.getSessionId());
             event.detail(Details.REFRESH_TOKEN_ID, token.getId());
@@ -233,7 +230,11 @@ public class TokenRevocationEndpoint {
         UserSessionUtil.UserSessionValidationResult validationResult = UserSessionUtil.findValidSessionForAccessToken(
                 session, realm, token, client, (UserSessionModel t) -> {});
         if (validationResult.getError() != null) {
-            event.error(validationResult.getError());
+            if (!Errors.USER_SESSION_NOT_FOUND.equals(validationResult.getError())
+               && !Errors.SESSION_EXPIRED.equals(validationResult.getError())
+               && !Errors.INVALID_TOKEN.equals(validationResult.getError())) {
+                event.error(validationResult.getError());
+            }
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.OK);
         }
 
@@ -266,22 +267,8 @@ public class TokenRevocationEndpoint {
         if (token.getSessionId() != null) {
             UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionId());
             if (userSession != null) {
-                revokeTokenExchangeSession(userSession);
+                DefaultRefreshTokenProvider.revokeTokenExchangeSession(userSession, token, event);
             }
-        }
-    }
-
-    private void revokeTokenExchangeSession(UserSessionModel userSession) {
-        Map<String, AuthenticatedClientSessionModel> clientSessionModelMap = userSession.getAuthenticatedClientSessions();
-        List<String> revokedClients = new ArrayList<>();
-        clientSessionModelMap.forEach((key, clientSessionModel) -> {
-            if (clientSessionModel.getNote(Constants.TOKEN_EXCHANGE_SUBJECT_CLIENT + token.getIssuedFor()) != null) {
-                revokedClients.add(clientSessionModel.getClient().getClientId());
-                TokenManager.detachClientSession(clientSessionModel);
-            }
-        });
-        if (!revokedClients.isEmpty()) {
-            event.detail(Details.TOKEN_EXCHANGE_REVOKED_CLIENTS, String.join(",", revokedClients));
         }
     }
 }

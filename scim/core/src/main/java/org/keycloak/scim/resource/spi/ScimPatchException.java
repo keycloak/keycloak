@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,28 +15,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.auth.page.login;
-
-import org.keycloak.testsuite.util.DroneUtils;
+package org.keycloak.scim.resource.spi;
 
 /**
- *
- * @author tkyjovsk
+ * Exception thrown when a PATCH request exceeds the maximum allowed number of operations.
  */
-public class OIDCLogin extends Login {
+public class ScimPatchException extends RuntimeException {
 
-    public OIDCLogin() {
-        setProtocol(OIDC);
+    public ScimPatchException(String message) {
+        super(message);
     }
-
-    @Override
-    public boolean isCurrent() {
-        String realm = "test";
-        return isCurrent(realm);
-    }
-
-    public boolean isCurrent(String realm) {
-        return DroneUtils.getCurrentDriver().getTitle().equals("Sign in to " + realm) || DroneUtils.getCurrentDriver().getTitle().equals("Anmeldung bei " + realm);
-    }
-
 }

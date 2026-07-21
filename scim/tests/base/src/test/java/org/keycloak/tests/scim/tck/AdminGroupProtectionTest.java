@@ -38,6 +38,7 @@ import static org.keycloak.scim.resource.Scim.getCoreSchema;
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.ADMIN_CHILD_GROUP;
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.ADMIN_GROUP;
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.ADMIN_PARENT_GROUP;
+import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.ADMIN_USER;
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.ADMIN_VIA_COMPOSITE_GROUP;
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.REGULAR_GROUP;
 import static org.keycloak.tests.scim.tck.AdminGroupProtectionRealmConfig.REGULAR_USER;
@@ -234,6 +235,40 @@ public class AdminGroupProtectionTest {
             fail("Should not be able to add member to admin group via group PATCH");
         } catch (ScimClientException sce) {
             assertEquals(403, sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testCannotAddAdminUserToRegularGroupViaGroupPatch() {
+        String adminUserId = getUserId(ADMIN_USER);
+        String regularGroupId = getGroupId(REGULAR_GROUP);
+
+        try {
+            client.groups().patch(regularGroupId, PatchRequest.create()
+                    .add("members", adminUserId)
+                    .build());
+            fail("Should not be able to add admin user to regular group via group PATCH");
+        } catch (ScimClientException sce) {
+            assertEquals(403, sce.getError().getStatusInt());
+        }
+    }
+
+    @Test
+    public void testCannotRemoveAdminUserFromRegularGroupViaGroupPatch() {
+        String adminUserId = getUserId(ADMIN_USER);
+        String regularGroupId = getGroupId(REGULAR_GROUP);
+
+        realm.admin().users().get(adminUserId).joinGroup(regularGroupId);
+
+        try {
+            client.groups().patch(regularGroupId, PatchRequest.create()
+                    .remove("members[value eq \"" + adminUserId + "\"]")
+                    .build());
+            fail("Should not be able to remove admin user from regular group via group PATCH");
+        } catch (ScimClientException sce) {
+            assertEquals(403, sce.getError().getStatusInt());
+        } finally {
+            realm.admin().users().get(adminUserId).leaveGroup(regularGroupId);
         }
     }
 

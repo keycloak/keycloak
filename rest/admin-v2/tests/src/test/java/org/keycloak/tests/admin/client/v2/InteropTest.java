@@ -44,18 +44,24 @@ import org.keycloak.tests.admin.mapper.ClientRepresentationComparator;
 
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_ALLOW_ECP_FLOW;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_ASSERTION_SIGNATURE;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_AUTHNSTATEMENT;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_CANONICALIZATION_METHOD_ATTRIBUTE;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_FORCE_POST_BINDING;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_SERVER_SIGNATURE;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_SIGNING_CERTIFICATE_ATTRIBUTE;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -156,6 +162,24 @@ public class InteropTest extends AbstractClientApiV2Test {
             realm.clients().get(clientUuid).remove();
         }
 
+    }
+
+    @Test
+    public void createMinimalOidcWithV2AppliesProtocolDefaults() {
+        RealmResource realm = adminClient.realm(getRealmName());
+        OIDCClientRepresentation client = new OIDCClientRepresentation("v2-minimal-oidc-client");
+
+        try (var response = getClientsApi().createClient(client)) {
+            assertThat(response.getStatus(), is(201));
+        }
+
+        ClientRepresentation created = realm.clients().findByClientId(client.getClientId()).get(0);
+        try {
+            created = realm.clients().get(created.getId()).toRepresentation();
+            assertThat(created.getAttributes().get(BACKCHANNEL_LOGOUT_SESSION_REQUIRED), is("true"));
+        } finally {
+            realm.clients().get(created.getId()).remove();
+        }
     }
 
     /**
@@ -348,7 +372,7 @@ public class InteropTest extends AbstractClientApiV2Test {
         client.setAppUrl("https://client.example.com");
         client.setRedirectUris(Set.of("https://client.example.com/callback"));
         client.setWebOrigins(Set.of("https://client.example.com"));
-client.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.STANDARD));
+        client.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.STANDARD));
         client.setEnabled(true);
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod("client-secret");
@@ -382,6 +406,37 @@ client.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.STANDARD));
             assertThat(updated.getWebOrigins(), is(List.of()));
             assertThat(updated.isStandardFlowEnabled(), is(false));
             assertThat(updated.isPublicClient(), is(true));
+        } finally {
+            realm.clients().get(created.getId()).remove();
+        }
+    }
+
+    @Test
+    public void createMinimalSamlWithV2AppliesProtocolDefaults() {
+        RealmResource realm = adminClient.realm(getRealmName());
+        SAMLClientRepresentation client = new SAMLClientRepresentation();
+        client.setClientId("v2-minimal-saml-client");
+
+        try (var response = getClientsApi().createClient(client)) {
+            assertThat(response.getStatus(), is(201));
+        }
+
+        ClientRepresentation created = realm.clients().findByClientId(client.getClientId()).get(0);
+        try {
+            created = realm.clients().get(created.getId()).toRepresentation();
+            assertThat(created.isStandardFlowEnabled(), is(true));
+            assertThat(created.isFrontchannelLogout(), is(true));
+            assertThat(created.getAttributes().get(SAML_NAME_ID_FORMAT_ATTRIBUTE), is("username"));
+            assertThat(created.getAttributes().get(SAML_AUTHNSTATEMENT), is("true"));
+            assertThat(created.getAttributes().get(SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE), is("false"));
+            assertThat(created.getAttributes().get(SAML_SERVER_SIGNATURE), is("true"));
+            assertThat(created.getAttributes().get(SAML_CLIENT_SIGNATURE_ATTRIBUTE), is("true"));
+            assertThat(created.getAttributes().get(SAML_FORCE_POST_BINDING), is("true"));
+            assertThat(created.getAttributes().get(SAML_SIGNATURE_ALGORITHM), is("RSA_SHA256"));
+            assertThat(created.getAttributes().get(SAML_CANONICALIZATION_METHOD_ATTRIBUTE), is("http://www.w3.org/2001/10/xml-exc-c14n#"));
+            assertThat(created.getAttributes().get(SAML_ALLOW_ECP_FLOW), is("false"));
+            assertThat(created.getAttributes().get(SAML_SIGNING_CERTIFICATE_ATTRIBUTE), notNullValue());
+            assertThat(created.getAttributes().get(SAML_ARTIFACT_BINDING_IDENTIFIER), notNullValue());
         } finally {
             realm.clients().get(created.getId()).remove();
         }

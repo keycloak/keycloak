@@ -61,7 +61,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.pages.AbstractPage;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.x509.X509IdentityConfirmationPage;
 import org.keycloak.testsuite.updaters.SetSystemProperty;
@@ -143,10 +142,6 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
     @Rule
     public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
-
-    @Page
-    @HtmlUnitBrowser
-    protected AppPage appPage;
 
     @Page
     @HtmlUnitBrowser
@@ -578,7 +573,6 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
         loginConfirmationPage.confirm();
 
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation eventRep = events.poll();

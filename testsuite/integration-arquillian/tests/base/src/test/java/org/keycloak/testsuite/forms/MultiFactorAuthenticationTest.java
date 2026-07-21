@@ -237,8 +237,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             passwordPage.assertCurrent();
             passwordPage.login(getPassword("user-with-one-configured-otp"));
 
-            Assertions.assertFalse(passwordPage.isCurrent());
-            Assertions.assertFalse(loginPage.isCurrent());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             EventAssertion.expectLoginSuccess(events.poll()).userId(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
                     .details(Details.USERNAME, "user-with-one-configured-otp");
         } finally {
@@ -284,7 +283,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
 
             // Successfully login with OTP
             loginTotpPage.login(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
-            Assertions.assertFalse(loginTotpPage.isCurrent());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             EventAssertion.expectLoginSuccess(events.poll()).userId(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
                     .details(Details.USERNAME, "user-with-one-configured-otp");
         } finally {

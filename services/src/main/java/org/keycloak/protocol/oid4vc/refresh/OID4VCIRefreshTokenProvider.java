@@ -234,6 +234,11 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
         }
     }
 
+    @Override
+    public String getProviderId() {
+        return OID4VCIRefreshTokenProviderFactory.PROVIDER_ID;
+    }
+
     // Might eventually be overridden for scenarios where a user is not available in the Keycloak DB
     protected UserModel getUser(RealmModel realm, RefreshToken oldToken) {
         String userId = oldToken.getSubject();

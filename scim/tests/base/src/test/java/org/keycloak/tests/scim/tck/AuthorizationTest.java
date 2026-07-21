@@ -91,7 +91,11 @@ public class AuthorizationTest extends AbstractScimTest {
     @Test
     public void testUsersCanQueryIfQueryRoleGranted() {
         grantAdminRole(AdminRoles.QUERY_USERS);
-        assertEquals(1, noAccessClient.users().search("").getTotalResults());
+        ListResponse<User> response = noAccessClient.users().search("");
+        assertEquals(1, response.getTotalResults());
+        assertNotNull(response.getResources(), "Resources array should not be null");
+        assertEquals(1, response.getResources().size(), "Resources size should match totalResults");
+        assertEquals(1, response.getItemsPerPage(), "itemsPerPage should match resources size");
     }
 
     @Test
@@ -211,7 +215,11 @@ public class AuthorizationTest extends AbstractScimTest {
     public void testGroupsCanQueryIfQueryRoleGranted() {
         createGroup();
         grantAdminRole(AdminRoles.QUERY_GROUPS);
-        assertEquals(1, noAccessClient.groups().getAll("").getTotalResults());
+        ListResponse<Group> response = noAccessClient.groups().getAll("");
+        assertEquals(1, response.getTotalResults());
+        assertNotNull(response.getResources(), "Resources array should not be null");
+        assertEquals(1, response.getResources().size(), "Resources size should match totalResults");
+        assertEquals(1, response.getItemsPerPage(), "itemsPerPage should match resources size");
     }
 
     @Test
