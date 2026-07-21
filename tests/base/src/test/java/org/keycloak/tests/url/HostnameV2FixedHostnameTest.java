@@ -66,7 +66,8 @@ class HostnameV2FixedHostnameTest {
     static class ServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.option("hostname", HOSTNAME);
+            return config.option("hostname", HOSTNAME)
+                    .option("hostname-strict-host-check-enabled", "false");
         }
     }
 

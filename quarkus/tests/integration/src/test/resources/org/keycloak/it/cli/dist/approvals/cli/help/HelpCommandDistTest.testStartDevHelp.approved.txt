@@ -285,6 +285,12 @@ Hostname v2:
                        always be set to true in production, unless your reverse proxy overwrites
                        the Host header. If enabled, the 'hostname' option needs to be specified.
                        Default: true. Available only when hostname:v2 feature is enabled.
+--hostname-strict-host-check <true|false>
+                     DEPRECATED. Whether the server should validate that the HTTP Host header
+                       matches the configured hostname, and reject requests with HTTP 421 if not.
+                       This prevents HTTP/2 connection coalescing issues when using wildcard
+                       certificates. Requires 'hostname' to be configured. Default: true. Available
+                       only when hostname:v2 feature is enabled.
 
 HTTP(S):
 

@@ -19,10 +19,14 @@ package org.keycloak.quarkus.runtime;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
+import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,6 +42,7 @@ import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
+import org.keycloak.config.HostnameV2Options;
 import org.keycloak.config.HttpAccessLogOptions;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.MetricsOptions;
@@ -49,7 +54,9 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.mappers.ManagementPropertyMappers;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.services.RejectMisdirectedRequestFilter;
 import org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -128,6 +135,64 @@ public class KeycloakRecorder {
 
     public Handler<RoutingContext> getRejectNonNormalizedPathFilter() {
         return !Configuration.isTrue(HttpOptions.HTTP_ACCEPT_NON_NORMALIZED_PATHS) ? new RejectNonNormalizedPathFilter() : null;
+    }
+
+    private static final List<String> MANAGEMENT_PATH_SUFFIXES = MANAGEMENT_INTERFACE_ENDPOINTS.stream()
+            .map(ManagementInterfaceItem::path)
+            .toList();
+
+    public RuntimeValue<RejectMisdirectedRequestFilter> createMisdirectedRequestFilter() {
+        return new RuntimeValue<>(new RejectMisdirectedRequestFilter());
+    }
+
+    public Handler<RoutingContext> asMisdirectedRequestHandler(RuntimeValue<RejectMisdirectedRequestFilter> filter) {
+        return filter.getValue();
+    }
+
+    public void configureMisdirectedRequestFilter(RuntimeValue<RejectMisdirectedRequestFilter> filter) {
+        if (!Configuration.isTrue(HostnameV2Options.HOSTNAME_STRICT_HOST_CHECK_ENABLED)
+                || Configuration.isTrue(HostnameV2Options.HOSTNAME_BACKCHANNEL_DYNAMIC)) {
+            return;
+        }
+
+        String hostnameValue = Configuration.getConfigValue(HostnameV2Options.HOSTNAME).getValue();
+        if (hostnameValue == null) {
+            return;
+        }
+
+        Set<String> allowedHosts = new HashSet<>();
+        allowedHosts.add(extractHost(hostnameValue).toLowerCase(Locale.ROOT));
+
+        String adminValue = Configuration.getConfigValue(HostnameV2Options.HOSTNAME_ADMIN).getValue();
+        if (adminValue != null) {
+            allowedHosts.add(extractHost(adminValue).toLowerCase(Locale.ROOT));
+        }
+
+        List<String> managementPaths = null;
+        if (!ManagementPropertyMappers.isManagementEnabled()) {
+            String relativePath = Configuration.getConfigValue(HttpOptions.HTTP_RELATIVE_PATH).getValue();
+            String prefix = normalizePrefix(relativePath);
+            managementPaths = MANAGEMENT_PATH_SUFFIXES.stream()
+                    .map(suffix -> prefix + suffix)
+                    .toList();
+        }
+
+        filter.getValue().configure(allowedHosts, managementPaths);
+    }
+
+    private static String extractHost(String hostnameOrUrl) {
+        if (hostnameOrUrl.startsWith("http://") || hostnameOrUrl.startsWith("https://")) {
+            return URI.create(hostnameOrUrl).getHost();
+        }
+        return hostnameOrUrl;
+    }
+
+    private static String normalizePrefix(String relativePath) {
+        if (relativePath == null || relativePath.equals("/")) {
+            return "";
+        }
+        String prefix = relativePath.startsWith("/") ? relativePath : "/" + relativePath;
+        return prefix.endsWith("/") ? prefix.substring(0, prefix.length() - 1) : prefix;
     }
 
     public void configureTruststore() {

@@ -123,7 +123,7 @@ public class ProxyHostnameV2DistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--hostname=fixed", "--proxy-headers=xforwarded" })
+    @Launch({ "start-dev", "--hostname=fixed", "--proxy-headers=xforwarded", "--hostname-strict-host-check-enabled=false" })
     public void testXForwardedProxyHeadersWithHostname() {
         given().header("X-Forwarded-Prefix", "/prefix").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://fixed:8080/prefix/admin"));
         given().header("X-Forwarded-Host", "test:123").when().get("https://localhost:8443").then().header(HttpHeaders.LOCATION, containsString("https://fixed:123/admin"));
@@ -162,6 +162,52 @@ public class ProxyHostnameV2DistTest {
         given().header("X-Forwarded-Host", "test").when().get("https://localhost:8443").then().header(HttpHeaders.LOCATION, containsString("https://localhost:8443/admin"));
         given().header("X-Forwarded-Proto", "https").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://localhost:8080/admin"));
         given().header("X-Forwarded-Proto", "https").header("X-Forwarded-Port", "8443").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://localhost:8080/admin"));
+    }
+
+    @Test
+    @Launch({ "start-dev", "--hostname=mykeycloak.org", "--legacy-observability-interface=true", "--health-enabled=true" })
+    public void testMisdirectedRequestRejected() {
+        // Matching hostname should pass (redirect to admin)
+        given().when().get("http://mykeycloak.org:8080")
+                .then().statusCode(302)
+                .header(HttpHeaders.LOCATION, containsString("mykeycloak.org"));
+
+        // Non-matching hostname should get 421 Misdirected Request
+        given().when().get("http://localhost:8080")
+                .then().statusCode(421);
+
+        // Management paths on the main port should be exempt from the host check
+        given().when().get("http://localhost:8080/health")
+                .then().statusCode(200);
+    }
+
+    @Test
+    @Launch({ "start-dev", "--hostname=mykeycloak.org", "--hostname-strict-host-check-enabled=false" })
+    public void testMisdirectedRequestAllowedWhenDisabled() {
+        // Non-matching hostname should pass when host check is disabled
+        given().when().get("http://localhost:8080")
+                .then().statusCode(302)
+                .header(HttpHeaders.LOCATION, containsString("mykeycloak.org"));
+    }
+
+    @Test
+    @Launch({ "start-dev", "--hostname-strict=false" })
+    public void testMisdirectedRequestInactiveWithoutHostname() {
+        // Without hostname configured, the filter should be inactive
+        given().when().get("http://localhost:8080")
+                .then().statusCode(302);
+    }
+
+    @Test
+    @Launch({ "start-dev", "--hostname=https://mykeycloak.org:8443", "--hostname-admin=https://admin.mykeycloak.org:8443" })
+    public void testMisdirectedRequestAllowsAdminHostname() {
+        // Admin hostname should also be accepted
+        given().when().get("https://admin.mykeycloak.org:8443")
+                .then().statusCode(302);
+
+        // Non-matching hostname should get 421
+        given().when().get("http://localhost:8080")
+                .then().statusCode(421);
     }
 
     private OIDCConfigurationRepresentation getServerMetadata(String baseUrl) {

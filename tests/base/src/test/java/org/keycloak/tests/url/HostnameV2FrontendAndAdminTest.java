@@ -48,7 +48,8 @@ class HostnameV2FrontendAndAdminTest {
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.options(Map.of(
                     "hostname", FIXED_FRONTEND_URL,
-                    "hostname-admin", FIXED_ADMIN_URL
+                    "hostname-admin", FIXED_ADMIN_URL,
+                    "hostname-strict-host-check-enabled", "false"
             ));
         }
     }
