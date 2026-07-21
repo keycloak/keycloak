@@ -174,6 +174,7 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
 
         CredentialsOffer offer = wallet.createCredentialOffer(ctx, req -> {
             req.targetUser(ctx.getHolder());
+            req.targetClient(ctx.getClientId());
             req.preAuthorized(true);
         });
 

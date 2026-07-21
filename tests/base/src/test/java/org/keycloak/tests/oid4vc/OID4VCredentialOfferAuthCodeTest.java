@@ -2,8 +2,11 @@ package org.keycloak.tests.oid4vc;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.common.VerificationException;
 import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
@@ -11,9 +14,11 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OfferResponseType;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.oid4vc.CredentialOfferStateUtils.CredentialOfferStateRecord;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
@@ -26,33 +31,35 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
 import static org.keycloak.protocol.oidc.OIDCLoginProtocol.PROMPT_VALUE_LOGIN;
+import static org.keycloak.tests.oid4vc.CredentialOfferStateUtils.getCredentialOfferStateRecord;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Credential Offer Validity Matrix
  * <p>
- * +----------+----------+---------+------------------------------------------------------+
- * | Pre-Auth | Username | Valid   | Notes                                                |
- * +----------+----------+---------+------------------------------------------------------+
- * | no       | no       | yes     | Anonymous offer; any logged-in user may redeem.      |
- * | no       | yes      | yes     | Offer restricted to a specific user.                 |
- * +----------+----------+---------+------------------------------------------------------+
- * | yes      | no       | no      | Pre-auth requires a target user.                     |
- * | yes      | yes      | yes     | Pre-auth for a specific target user.                 |
- * +----------+----------+---------+------------------------------------------------------+
+ * +----------+----------+-----------------+---------+------------------------------------------------------+
+ * | Pre-Auth | Username | Client          | Valid   | Notes                                                |
+ * +----------+----------+-----------------+---------+------------------------------------------------------+
+ * | no       | no       | no              | yes     | Anonymous offer; any logged-in user may redeem.      |
+ * | no       | no       | explicit        | yes     | Anonymous offer; bound to a specific client.         |
+ * | no       | yes      | no              | yes     | Offer restricted to a specific user.                 |
+ * | no       | yes      | explicit        | yes     | Offer restricted to a specific user and client.      |
+ * +----------+----------+-----------------+---------+------------------------------------------------------+
  */
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithRestCredentialOfferEnabled.class)
 public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
     @Test
-    public void testAuthCodeOffer_Anonymous() throws Exception {
+    public void testAuthCodeOffer_Anonymous() {
 
-        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+        var ctx = createOID4VCTestContext();
 
         // Create Authorization Code CredentialOffer
         //
@@ -65,6 +72,12 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
         CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
         assertNotNull(offerURI, "No CredentialOfferURI");
+
+        // Verify internal offer state target user and client
+        //
+        CredentialOfferStateRecord offerState = getCredentialOfferStateRecord(runOnServer, offerURI.getNonce());
+        assertNull(offerState.targetUsername(), "Expected null targetUsername");
+        assertNull(offerState.targetClientId(), "Expected null targetClientId");
 
         // Fetch credential offer again
         // https://github.com/keycloak/keycloak/issues/48014
@@ -80,16 +93,92 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
 
         // Attempt to fetch the credential offer again after it has been consumed
-
+        //
         CredentialOfferResponse res = wallet.credentialsOfferRequest(ctx, offerURI).send();
         assertEquals("invalid_credential_offer_request", res.getError());
         assertEquals("Credential offer not found or already consumed", res.getErrorDescription());
     }
 
     @Test
-    public void testAuthCodeOffer_Anonymous_multipleOffers() throws Exception {
+    public void testAuthCodeOfferMatrix() {
 
-        var ctx1 = new OID4VCTestContext(client, jwtTypeCredentialScope);
+        record MatrixParams(
+                ClientRepresentation issuerClient,
+                String targetUser,
+                ClientRepresentation targetClient
+        ) {
+            String targetClientId() {
+                return Optional.ofNullable(targetClient)
+                        .map(ClientRepresentation::getClientId)
+                        .orElse(null);
+            }
+        }
+
+        Function<MatrixParams, Boolean> runMatrixParams = (p) -> {
+
+            var ctx = createOID4VCTestContext();
+
+            // Create CredentialOfferURI
+            //
+            CredentialOfferUriResponse uriResponse = wallet.createCredentialOfferUri(ctx, req -> {
+                req.targetUser(p.targetUser());
+                req.targetClient(p.targetClientId());
+                req.preAuthorized(false);
+            });
+
+            if (p.targetClient != null && !p.targetClient.getOptionalClientScopes().contains(ctx.getScope())) {
+                assertFalse(uriResponse.isSuccess());
+                assertEquals("invalid_credential_offer_request", uriResponse.getError());
+                String expErrorDescription = String.format("Client '%s' does not support '%s'", p.targetClientId(), ctx.getScope());
+                assertEquals(expErrorDescription, uriResponse.getErrorDescription());
+                return false;
+            }
+            CredentialOfferURI offerURI = uriResponse.getCredentialOfferURI();
+
+            if (p.targetClient != null) {
+                oauth.client(p.targetClient.getClientId(), p.targetClient.getSecret());
+            } else {
+                oauth.client(client.getClientId(), client.getSecret());
+            }
+
+            // Get Credentials Offer
+            //
+            CredentialOfferResponse offerResponse = wallet.credentialsOfferRequest(ctx, offerURI).send();
+            CredentialsOffer credOffer = offerResponse.getCredentialsOffer();
+
+            String issuerState = credOffer.getIssuerState();
+            assertNotNull(issuerState, "No IssuerState");
+
+            // Verify internal offer state target user and client
+            //
+            CredentialOfferStateRecord offerState = getCredentialOfferStateRecord(runOnServer, offerURI.getNonce());
+            assertEquals(p.targetUser(), offerState.targetUsername());
+            assertEquals(p.targetClientId(), offerState.targetClientId());
+
+            // Send the CredentialRequest
+            //
+            CredentialResponse credResponse = wallet.fetchCredentialByOffer(ctx, credOffer)
+                    .getCredentialResponse();
+
+            verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
+
+            wallet.logout(ctx.getHolder());
+
+            return true;
+        };
+
+        assertTrue(runMatrixParams.apply(new MatrixParams(client2, null, null)));
+        assertTrue(runMatrixParams.apply(new MatrixParams(client2, null, client)));
+        assertFalse(runMatrixParams.apply(new MatrixParams(client2, null, client2)));
+        assertTrue(runMatrixParams.apply(new MatrixParams(client2, "alice", null)));
+        assertTrue(runMatrixParams.apply(new MatrixParams(client2, "alice", client)));
+        assertFalse(runMatrixParams.apply(new MatrixParams(client2, "alice", client2)));
+    }
+
+    @Test
+    public void testAuthCodeOffer_Anonymous_multipleOffers() {
+
+        var ctx1 = createOID4VCTestContext();
 
         // Create Authorization Code CredentialOffer
         //
@@ -182,7 +271,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         // Bigger accessToken lifespan to avoid same timeout like credential-offer (to enforce that accessToken is still valid in the credential-request, when credential-offer would be invalid)
         testRealm.updateWithCleanup(r -> r.accessTokenLifespan(600));
 
-        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+        var ctx = createOID4VCTestContext();
 
         // Create Authorization Code CredentialOffer
         //
@@ -226,52 +315,9 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testAuthCodeOffer_Targeted() throws Exception {
-
-        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
-
-        // Create Authorization Code CredentialOffer
-        //
-        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
-            req.targetUser(ctx.getHolder());
-        });
-
-        String issuerState = credOffer.getIssuerState();
-        assertNotNull(issuerState, "No IssuerState");
-
-        // Send AuthorizationRequest
-        //
-        AuthorizationEndpointResponse authResponse = wallet
-                .authorizationRequest()
-                .scope(ctx.getScope())
-                .issuerState(issuerState)
-                .send(ctx.getHolder(), TEST_PASSWORD);
-        String authCode = authResponse.getCode();
-        assertNotNull(authCode, "No authCode");
-
-        // Build and send AccessTokenRequest
-        //
-        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode).send();
-        String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
-        assertNotNull(accessToken, "No accessToken");
-
-        String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
-        assertNotNull(authorizedIdentifier, "Has authorized credential identifier");
-
-        // Send the CredentialRequest
-        //
-        CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
-                .credentialIdentifier(authorizedIdentifier)
-                .proofs(wallet.generateJwtProof(ctx))
-                .send().getCredentialResponse();
-
-        verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
-    }
-
-    @Test
     public void testAuthCodeOffer_QRCode() {
 
-        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+        var ctx = createOID4VCTestContext();
 
         CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
             req.responseType(OfferResponseType.URI_QR);
@@ -288,37 +334,48 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
     @Test
     public void testAuthCodeOffer_QRCode_InvalidDimensions() {
 
-        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+        var ctx = createOID4VCTestContext();
 
-        var ex = assertThrows(IllegalStateException.class, () -> wallet.createCredentialOfferUri(ctx, req -> {
+        CredentialOfferUriResponse uriResponse = wallet.createCredentialOfferUri(ctx, req -> {
             req.responseType(OfferResponseType.URI_QR);
             req.width(1000).height(1000);
-        }));
-        CredentialOfferUriResponse res = ctx.getCredentialsOfferUriResponse();
+        });
+        assertFalse(uriResponse.isSuccess());
 
-        String error = res.getError();
+        String error = uriResponse.getError();
         assertNotNull(error, "No Error");
 
-        String errorDescription = res.getErrorDescription();
+        String errorDescription = uriResponse.getErrorDescription();
         assertNotNull(errorDescription, "No ErrorDescription");
 
-        assertEquals(HttpStatus.SC_BAD_REQUEST, res.getStatusCode());
+        assertEquals(HttpStatus.SC_BAD_REQUEST, uriResponse.getStatusCode());
         assertEquals("invalid_credential_offer_request", error);
         assertEquals("Requested QR Code too large, allowed maximum is 800x800", errorDescription);
-        assertEquals(String.format("[%s] %s", error, errorDescription), ex.getMessage());
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
 
-    private void verifyCredentialResponse(OID4VCTestContext ctx, String expUser, CredentialResponse credResponse) throws Exception {
+    private OID4VCTestContext createOID4VCTestContext() {
+        return new OID4VCTestContext(client, jwtTypeCredentialScope)
+                .withIssuerClient(client2);
+    }
+
+    private void verifyCredentialResponse(OID4VCTestContext ctx, String expUser, CredentialResponse credResponse) {
 
         String scope = ctx.getCredentialScope().getName();
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull(credentialObj, "The first credential in the array should not be null");
 
-        JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialObj.getCredential(), JsonWebToken.class).getToken();
+        JsonWebToken jsonWebToken;
+        try {
+            jsonWebToken = TokenVerifier.create((String) credentialObj.getCredential(), JsonWebToken.class).getToken();
+        } catch (VerificationException e) {
+            throw new RuntimeException(e);
+        }
+
         assertEquals("did:web:test.org", jsonWebToken.getIssuer());
         Object vc = jsonWebToken.getOtherClaims().get("vc");
+
         VerifiableCredential credential = JsonSerialization.mapper.convertValue(vc, VerifiableCredential.class);
         assertEquals(List.of(CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE, scope), credential.getType());
         assertEquals(URI.create("did:web:test.org"), credential.getIssuer());

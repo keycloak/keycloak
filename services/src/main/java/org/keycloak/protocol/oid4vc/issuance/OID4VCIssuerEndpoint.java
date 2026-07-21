@@ -343,7 +343,7 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
-     * the OpenId4VCI nonce-endpoint
+     * The OID4VCI nonce endpoint
      *
      * @return a short-lived c_nonce value that must be presented in key-bound proofs at the credential endpoint.
      * @see <a href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html#name-nonce-endpoint">Nonce endpoint</a>
@@ -404,47 +404,52 @@ public class OID4VCIssuerEndpoint {
      * Creates an authorization code grant offer that is bound to the calling user.
      */
     public Response createCredentialOffer(String credConfigId) {
-        return createCredentialOffer(credConfigId, false, null);
+        return createCredentialOffer(credConfigId, false, null, null, null, OfferResponseType.URI, 0, 0);
     }
 
     /**
      * Creates a Credential Offer that is bound to a specific user.
      */
     public Response createCredentialOffer(String credConfigId, boolean preAuthorized, String targetUser) {
-        return createCredentialOffer(credConfigId, preAuthorized, targetUser, null, OfferResponseType.URI, 0, 0);
+        return createCredentialOffer(credConfigId, preAuthorized, targetUser, null, null, OfferResponseType.URI, 0, 0);
     }
 
     /**
-     * Creates a Credential Offer that can be pre-authorized and/or bound to a specific target user.
+     * Creates a Credential Offer that can be pre-authorized and/or bound to a specific target user and client.
      * <p>
-     * Credential Offer Validity Matrix for the supported request parameters "pre_authorized", "targetUser" combinations.
+     * Credential Offer Validity Matrix for the supported request parameters.
      * </p>
-     * +----------+----------+---------+--------------------------------------------+
-     * | Pre-Auth | Username | Valid   | Notes                                      |
-     * +----------+----------+---------+--------------------------------------------+
-     * | no       | no       | yes     | Anonymous offer; works for any login user. |
-     * | no       | yes      | yes     | Offer restricted to a specific user.       |
-     * +----------+----------+---------+--------------------------------------------+
-     * | yes      | no       | yes     | Self issued pre-auth offer.                |
-     * | yes      | yes      | yes     | Offer restricted to a specific user.       |
-     * +----------+----------+---------+--------------------------------------------+
+     * +----------+----------+-----------------+---------+------------------------------------------------------+
+     * | Pre-Auth | Username | Client          | Valid   | Notes                                                |
+     * +----------+----------+-----------------+---------+------------------------------------------------------+
+     * | no       | no       | no              | yes     | Anonymous offer; any logged-in user may redeem.      |
+     * | no       | no       | explicit        | yes     | Anonymous offer; bound to a specific client.         |
+     * | no       | yes      | no              | yes     | Offer restricted to a specific user.                 |
+     * | no       | yes      | explicit        | yes     | Offer restricted to a specific user and client.      |
+     * +----------+----------+-----------------+---------+------------------------------------------------------+
+     * | yes      | no       | explicit/unique | yes     | Defaults to the user from the current login session  |
+     * | yes      | yes      | explicit        | yes     | Pre-auth for a specific target user and client.      |
+     * | yes      | yes      | omitted unique  | yes     | Discovered from credential_configuration_id.         |
+     * | yes      | yes      | omitted none    | no      | Discovery fails: no OID4VCI client has that scope.   |
+     * | yes      | yes      | omitted multi   | no      | Discovery fails: multiple clients match.             |
+     * +----------+----------+-----------------+---------+------------------------------------------------------+
      * </p>
-     * <b>Pre-Authorized Offer</b>
+     * <b>Pre-Authorized Code Grant Offer</b>
      * <ul>
-     *   <li>A pre-authorized offer is authorized for the clientId from the current login session</li>
      *   <li>If targetUser is null or empty, it defaults to the user from the current login session</li>
      *   <li>If targetUser is equal to the current login, the generated offer is "self issued"</li>
      *   <li>To create an offer for another user, the issuing user must hold the {@code credential_offer_create} role</li>
+     *   <li>A targetClient can explicitly be given or be discovered; the offer is scoped to that client</li>
      *   <li>A pre-authorized offer can optionally have an associated tx_code</li>
      *   <li>An offer can optionally have a predefined expiry date</li>
      * </ul>
      *
-     * <b>Non Pre-Authorized Offer</b>
+     * <b>Authorization Code Grant Offer</b>
      * <ul>
      *   <li>If targetUser is null or empty, the generated offer is "anonymous"</li>
      *   <li>If targetUser is equal to the current login, the offer is "self issued"</li>
-     *   <li>If targetUser is none of the above, the offer is "targeted"</li>
-     *   <li>For a targeted offer, the issuing user must hold the {@code credential_offer_create} role</li>
+     *   <li>To create an offer for another user, the issuing user must hold the {@code credential_offer_create} role</li>
+     *   <li>A targetClient may be given, in which case the offer is scoped to that client</li>
      *   <li>An offer can optionally have a predefined expiry date</li>
      * </ul>
      *
@@ -468,6 +473,7 @@ public class OID4VCIssuerEndpoint {
      * @param credentialConfigurationId  A valid credential configuration id
      * @param preAuthorized A flag whether the offer should be pre-authorized
      * @param targetUser    The username that the offer is authorized for
+     * @param targetClient  The client_id that the offer is scoped to (optional)
      * @param expiresAt     The date/time when the offer expires (in Unix timestamp seconds)
      * @param responseType  The response type, which can be 'uri', 'qr' or 'uri+qr'
      * @param width         The width of the QR code image
@@ -480,6 +486,7 @@ public class OID4VCIssuerEndpoint {
             @QueryParam("credential_configuration_id") String credentialConfigurationId,
             @QueryParam("pre_authorized") @DefaultValue("false") Boolean preAuthorized,
             @QueryParam("target_user") String targetUser,
+            @QueryParam("target_client") String targetClient,
             @QueryParam("expire") Integer expiresAt,
             @QueryParam("type") @DefaultValue("uri") OfferResponseType responseType,
             @QueryParam("width") @DefaultValue("200") int width,
@@ -540,7 +547,6 @@ public class OID4VCIssuerEndpoint {
 
         // Create the CredentialsOffer
         //
-        String targetClientId = clientModel.getClientId();
         String grantType = preAuthorized ? PRE_AUTH_GRANT_TYPE : AUTH_CODE_GRANT_TYPE;
         List<String> credentialConfigurationIds = List.of(credentialConfigurationId);
 
@@ -549,7 +555,7 @@ public class OID4VCIssuerEndpoint {
 
             CredentialOfferProvider offerProvider = session.getProvider(CredentialOfferProvider.class);
             offerState = offerProvider.createCredentialOffer(loginUserModel, grantType,
-                    credentialConfigurationIds, targetClientId, targetUser, expiresAt);
+                    credentialConfigurationIds, targetUser, targetClient, expiresAt);
 
         } catch (CredentialOfferException ex) {
             eventBuilder.detail(Details.REASON, ex.getMessage()).error(ex.getErrorType());
@@ -563,8 +569,9 @@ public class OID4VCIssuerEndpoint {
         offerStorage.putOfferState(offerState);
 
         String targetUserId = offerState.getTargetUserId();
+        String targetClientId = offerState.getTargetClientId();
         LOGGER.debugf("Stored credential offer state: [grant=%s, ids=%s, cid=%s, uid=%s, nonce=%s]",
-                grantType, credentialConfigurationIds, offerState.getTargetClientId(), targetUserId, offerState.getNonce());
+                grantType, credentialConfigurationIds, targetClientId, targetUserId, offerState.getNonce());
 
         // Add event details
         eventBuilder.detail(Details.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED, String.valueOf(preAuthorized))

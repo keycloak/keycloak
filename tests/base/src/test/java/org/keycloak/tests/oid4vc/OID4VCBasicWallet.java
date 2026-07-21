@@ -45,6 +45,7 @@ import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -120,11 +121,11 @@ public class OID4VCBasicWallet {
     /**
      * A composite action to create a credential offer uri with caller provided properties
      */
-    public CredentialOfferURI createCredentialOfferUri(OID4VCTestContext ctx, Consumer<CredentialOfferUriRequest> consumer) {
+    public CredentialOfferUriResponse createCredentialOfferUri(OID4VCTestContext ctx, Consumer<CredentialOfferUriRequest> consumer) {
 
         // Get Issuer AccessToken
         //
-        AccessTokenResponse issTokenResponse = getAccessToken(ctx.getIssuer());
+        AccessTokenResponse issTokenResponse = getAccessToken(ctx.getIssuerClient(), ctx.getIssuer());
 
         // Exclude scope: <credScope>
         // Require role: credential-offer-create
@@ -144,7 +145,7 @@ public class OID4VCBasicWallet {
             logout(ctx.getIssuer());
         }
 
-        return credOfferUriRes.getCredentialOfferURI();
+        return credOfferUriRes;
     }
 
     /**
@@ -154,7 +155,8 @@ public class OID4VCBasicWallet {
 
         // Create CredentialOfferURI
         //
-        CredentialOfferURI credOfferUri = createCredentialOfferUri(ctx, consumer);
+        CredentialOfferUriResponse uriResponse = createCredentialOfferUri(ctx, consumer);
+        CredentialOfferURI credOfferUri = uriResponse.getCredentialOfferURI();
 
         // Fetch the CredentialsOffer
         //
@@ -162,19 +164,40 @@ public class OID4VCBasicWallet {
         return credOfferResponse.getCredentialsOffer();
     }
 
-    public AccessTokenResponse getAccessToken(String username, String... scope) {
-        PkceGenerator pkce = PkceGenerator.s256();
-        AuthorizationEndpointResponse authResponse = authorizationRequest()
-                .scope(scope)
-                .codeChallenge(pkce)
-                .send(username, TEST_PASSWORD);
-        String authCode = authResponse.getCode();
-        assertNotNull(authCode, "No auth code");
-        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(authCode)
-                .codeVerifier(pkce)
-                .send();
-        assertNotNull(tokenResponse.getAccessToken(), "No AccessToken");
-        return tokenResponse;
+    public AccessTokenResponse getAccessToken(ClientRepresentation client, String username, String... scope) {
+        var clientId = oauth.config().getClientId();
+        var clientSecret = oauth.config().getClientSecret();
+        try {
+            oauth.client(client.getClientId(), client.getSecret());
+            PkceGenerator pkce = PkceGenerator.s256();
+            AuthorizationEndpointResponse authResponse = authorizationRequest()
+                    .scope(scope)
+                    .codeChallenge(pkce)
+                    .send(username, TEST_PASSWORD);
+            String authCode = authResponse.getCode();
+            assertNotNull(authCode, "No auth code");
+            AccessTokenResponse tokenResponse = oauth.accessTokenRequest(authCode)
+                    .codeVerifier(pkce)
+                    .send();
+            assertNotNull(tokenResponse.getAccessToken(), "No AccessToken");
+            return tokenResponse;
+        } finally {
+            oauth.client(clientId, clientSecret);
+        }
+    }
+
+    /**
+     * Obtains a bearer token for the given context holder (e.g. alice)
+     */
+    public String getHolderAccessToken(OID4VCTestContext ctx) {
+        return getAccessToken(ctx.getHolderClient(), ctx.getHolder()).getAccessToken();
+    }
+
+    /**
+     * Obtains a bearer token for the given context issuer (e.g. john)
+     */
+    public String getIssuerAccessToken(OID4VCTestContext ctx) {
+        return getAccessToken(ctx.getIssuerClient(), ctx.getIssuer()).getAccessToken();
     }
 
     public CredentialIssuer getIssuerMetadata(OID4VCTestContext ctx) {
@@ -204,7 +227,7 @@ public class OID4VCBasicWallet {
     public String buildClientAttestationJWT(OID4VCTestContext ctx, KeyWrapper walletKey) {
         KeyWrapper pubKeyWrapper = walletKey.cloneKey();
         pubKeyWrapper.setPrivateKey(null);
-        String clientId = ctx.getClient().getClientId();
+        String clientId = ctx.getHolderClient().getClientId();
         OIDCClientAttester attester = getClientAttester(ctx);
         String attestationJwt = attester.attestWalletKey(clientId, pubKeyWrapper);
         return attestationJwt;
@@ -215,7 +238,7 @@ public class OID4VCBasicWallet {
 
         // Build Client Attestation PoP JWT
         //
-        String clientId = ctx.getClient().getClientId();
+        String clientId = ctx.getHolderClient().getClientId();
         ClientAttestationPoPJwt body = new ClientAttestationPoPJwt()
                 .audience(issuer)
                 .issuer(clientId)
@@ -714,4 +737,6 @@ public class OID4VCBasicWallet {
         assertEquals(expectedAudience.length, audience.length);
         assertArrayEquals(expectedAudience, audience, "Access token audience should be limited to credential endpoint");
     }
+
+    // Private ---------------------------------------------------------------------------------------------------------
 }

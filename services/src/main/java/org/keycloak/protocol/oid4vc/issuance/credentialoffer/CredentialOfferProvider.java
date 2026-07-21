@@ -79,8 +79,8 @@ public interface CredentialOfferProvider extends Provider {
             UserModel user,
             String grantType,
             List<String> credentialConfigurationIds,
+            String targetUsername,
             String targetClientId,
-            String targetUserId,
             Integer expireAt
     );
 
