@@ -65,6 +65,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak.testframework</groupId>
+                <artifactId>keycloak-test-framework-saml</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak.testframework</groupId>
                 <artifactId>keycloak-test-framework-test-containers</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
