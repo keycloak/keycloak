@@ -78,6 +78,21 @@ test.describe.serial("Default Trust identity provider test", () => {
     await expect(page.getByTestId("config.clientSecret")).toBeHidden();
     await expect(page.getByTestId("mappers-tab")).toBeHidden();
 
+    await page.getByTestId("config.useX509").click({ force: true });
+    await page
+      .getByTestId("config.trustedCertificates")
+      .fill("stale certificate");
+    await page
+      .getByTestId("config.attestationExtendedKeyUsages")
+      .fill("1.2.3.4");
+    await page
+      .getByTestId("config.certificateRevocationEnabled")
+      .click({ force: true });
+    await page.getByTestId("config.useX509").click({ force: true });
+    await clickSaveButton(page);
+
+    await assertNotificationMessage(page, "Provider successfully updated");
+
     await page.getByTestId("config.useJwksUrl").click({ force: true });
     await page.getByTestId("config.publicKeySignatureVerifier").fill(jwks);
     await clickSaveButton(page);

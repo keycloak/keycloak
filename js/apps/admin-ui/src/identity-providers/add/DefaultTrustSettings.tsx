@@ -10,12 +10,26 @@ import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client
 export default function DefaultTrustSettings() {
   const { t } = useTranslation();
   const { tab } = useParams<IdentityProviderParams>();
-  const { control } = useFormContext<IdentityProviderRepresentation>();
+  const { control, setValue } =
+    useFormContext<IdentityProviderRepresentation>();
   const useX509 = useWatch({
     control,
     name: "config.useX509",
     defaultValue: "false",
   });
+
+  const setUseX509 = (checked: boolean) => {
+    const options = { shouldDirty: true };
+
+    if (checked) {
+      setValue("config.certificateRevocationEnabled", "true", options);
+      return;
+    }
+
+    setValue("config.trustedCertificates", "", options);
+    setValue("config.attestationExtendedKeyUsages", "", options);
+    setValue("config.certificateRevocationEnabled", "", options);
+  };
 
   return (
     <>
@@ -34,6 +48,7 @@ export default function DefaultTrustSettings() {
         labelIcon={t("useX509AttestationTrustHelp")}
         defaultValue="false"
         stringify
+        onChange={(_, checked) => setUseX509(checked)}
       />
       {useX509 === "true" ? (
         <>
