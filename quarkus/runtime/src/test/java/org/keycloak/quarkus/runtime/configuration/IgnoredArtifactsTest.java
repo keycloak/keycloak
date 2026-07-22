@@ -69,6 +69,25 @@ public class IgnoredArtifactsTest extends AbstractConfigurationTest {
 
         var ignoredArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
         assertThat(ignoredArtifacts.containsAll(IgnoredArtifacts.FIPS_ENABLED), is(true));
+        assertThat(ignoredArtifacts.contains("org.keycloak:keycloak-crypto-glassless"), is(false));
+        assertThat(ignoredArtifacts.contains("org.keycloak:keycloak-crypto-elytron"), is(false));
+        assertThat(ignoredArtifacts.contains("org.keycloak:keycloak-crypto-fips1402"), is(false));
+        assertThat(ignoredArtifacts.contains("net.glassless:glassless-provider"), is(false));
+    }
+
+    @Test
+    public void explicitProviderKeepsAutomaticSelectionArtifacts() {
+        var profile = getProfileWithEnabledFeature(Profile.Feature.FIPS);
+        assertThat(profile.isFeatureEnabled(Profile.Feature.FIPS), is(true));
+
+        setSystemProperty(NS_KEYCLOAK_PREFIX + "fips-provider", "bouncycastle", () -> {
+            var ignoredArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
+            assertThat(ignoredArtifacts.containsAll(IgnoredArtifacts.FIPS_ENABLED), is(true));
+            assertThat(ignoredArtifacts.contains("org.keycloak:keycloak-crypto-glassless"), is(false));
+            assertThat(ignoredArtifacts.contains("org.keycloak:keycloak-crypto-elytron"), is(false));
+            assertThat(ignoredArtifacts.contains("org.keycloak:keycloak-crypto-fips1402"), is(false));
+            assertThat(ignoredArtifacts.contains("net.glassless:glassless-provider"), is(false));
+        });
     }
 
     @Test

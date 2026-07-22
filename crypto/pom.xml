@@ -33,6 +33,7 @@
     <modules>
         <module>default</module>
         <module>fips1402</module>
+        <module>glassless</module>
         <module>elytron</module>
     </modules>
 </project>

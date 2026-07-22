@@ -22,7 +22,6 @@ import javax.crypto.Cipher;
 import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwe.JWEHeader.JWEHeaderBuilder;
 import org.keycloak.jose.jwe.JWEKeyStorage;
-import org.keycloak.jose.jwe.JWEKeyStorage.KeyUse;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 
@@ -34,15 +33,15 @@ public class AesKeyWrapAlgorithmProvider implements JWEAlgorithmProvider {
     @Override
     public byte[] decodeCek(byte[] encodedCek, Key encryptionKey, JWEHeader header, JWEEncryptionProvider encryptionProvider) throws Exception {
         Cipher cipher = Cipher.getInstance("AESWrap_128");
-        cipher.init(Cipher.UNWRAP_MODE, encryptionKey);
-        return cipher.unwrap(encodedCek, "AES", Cipher.SECRET_KEY).getEncoded();
+        cipher.init(Cipher.DECRYPT_MODE, encryptionKey);
+        return cipher.doFinal(encodedCek);
     }
 
     @Override
     public byte[] encodeCek(JWEEncryptionProvider encryptionProvider, JWEKeyStorage keyStorage, Key encryptionKey, JWEHeaderBuilder headerBuilder) throws Exception {
         Cipher cipher = Cipher.getInstance("AESWrap_128");
-        cipher.init(Cipher.WRAP_MODE, encryptionKey);
-        return cipher.wrap(keyStorage.getCEKKey(KeyUse.ENCRYPTION, false));
+        cipher.init(Cipher.ENCRYPT_MODE, encryptionKey);
+        return cipher.doFinal(keyStorage.getCekBytes());
     }
 
 

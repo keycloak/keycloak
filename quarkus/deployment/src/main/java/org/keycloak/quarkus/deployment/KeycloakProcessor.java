@@ -57,6 +57,7 @@ import org.keycloak.authorization.policy.provider.PolicySpi;
 import org.keycloak.authorization.policy.provider.js.DeployedScriptPolicyFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.common.crypto.FipsProvider;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.config.DatabaseOptions;
@@ -921,7 +922,10 @@ class KeycloakProcessor {
             throw new RuntimeException("FIPS mode cannot be enabled without enabling the FIPS feature --features=fips");
         }
 
-        recorder.setCryptoProvider(fipsMode);
+        FipsProvider fipsProvider = getOptionalValue(NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_PROVIDER.getKey())
+                .map(FipsProvider::valueOfOption)
+                .orElse(FipsProvider.AUTO);
+        recorder.setCryptoProvider(fipsMode, fipsProvider);
     }
 
     @BuildStep(onlyIf = IsDevelopment.class)

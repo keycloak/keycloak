@@ -120,6 +120,11 @@ Security:
                        which is by default. This option defaults to 'non-strict' when 'fips'
                        feature is enabled. Possible values are: non-strict, strict. Default:
                        disabled.
+--fips-provider <provider>
+                     The cryptographic provider used when FIPS mode is enabled. The 'auto' value
+                       uses Bouncy Castle when its FIPS provider classes are available, otherwise
+                       it uses Glassless. Possible values are: auto, bouncycastle, glassless.
+                       Default: auto.
 
 Examples:
 

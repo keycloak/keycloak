@@ -347,8 +347,9 @@ HTTP(S):
                      The password of the key store file. Default: password.
 --https-key-store-type <type>
                      The type of the key store file. If not given, the type is automatically
-                       detected based on the file extension. If 'fips-mode' is set to 'strict' and
-                       no value is set, it defaults to 'BCFKS'.
+                       detected based on the file extension. If 'fips-mode' is set to 'strict',
+                       Bouncy Castle is selected as the FIPS provider, and no value is set, it
+                       defaults to 'BCFKS'.
 --https-port <port>  The used HTTPS port. Default: 8443.
 --https-protocols <protocols>
                      The list of protocols to explicitly enable. If a value is not supported by the
@@ -361,8 +362,9 @@ HTTP(S):
                      The password of the trust store file.
 --https-trust-store-type <type>
                      The type of the trust store file. If not given, the type is automatically
-                       detected based on the file extension. If 'fips-mode' is set to 'strict' and
-                       no value is set, it defaults to 'BCFKS'.
+                       detected based on the file extension. If 'fips-mode' is set to 'strict',
+                       Bouncy Castle is selected as the FIPS provider, and no value is set, it
+                       defaults to 'BCFKS'.
 --shutdown-delay <delay>
                      Length of the pre-shutdown phase during which the server prepares for
                        shutdown. May be an ISO 8601 duration value, an integer number of seconds,

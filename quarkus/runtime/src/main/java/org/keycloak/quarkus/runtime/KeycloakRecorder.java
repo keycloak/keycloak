@@ -34,8 +34,8 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Enablement;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.common.crypto.FipsProvider;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
 import org.keycloak.config.HttpAccessLogOptions;
@@ -70,9 +70,12 @@ import liquibase.Scope;
 import liquibase.servicelocator.ServiceLocator;
 import org.hibernate.cfg.AvailableSettings;
 import org.infinispan.protostream.SerializationContextInitializer;
+import org.jboss.logging.Logger;
 
 @Recorder
 public class KeycloakRecorder {
+
+    private static final Logger LOG = Logger.getLogger(KeycloakRecorder.class);
 
     public void initConfig() {
         Config.init(new MicroProfileConfigProvider());
@@ -199,19 +202,25 @@ public class KeycloakRecorder {
         return propertyCollector -> propertyCollector.accept(AvailableSettings.DEFAULT_SCHEMA, Configuration.getConfigValue(DatabaseOptions.DB_SCHEMA).getValue());
     }
 
-    public void setCryptoProvider(FipsMode fipsMode) {
-        String cryptoProvider = fipsMode.getProviderClassName();
+    public void setCryptoProvider(FipsMode fipsMode, FipsProvider fipsProvider) {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        FipsProvider resolvedProvider = fipsProvider.resolve(classLoader);
+        String providerName = fipsMode.isFipsEnabled() ? resolvedProvider.toString() : "default";
+
+        if (fipsMode.isFipsEnabled() && fipsProvider == FipsProvider.AUTO) {
+            LOG.infof("Automatically selected FIPS provider: %s", resolvedProvider);
+        }
 
         try {
-            CryptoIntegration.setProvider(
-                    (CryptoProvider) Thread.currentThread().getContextClassLoader().loadClass(cryptoProvider).getDeclaredConstructor().newInstance());
-        } catch (ClassNotFoundException | NoClassDefFoundError cause) {
+            CryptoIntegration.init(classLoader, providerName, fipsMode);
+        } catch (RuntimeException | LinkageError cause) {
             if (fipsMode.isFipsEnabled()) {
-                throw new RuntimeException("Failed to configure FIPS. Make sure you have added the Bouncy Castle FIPS dependencies to the 'providers' directory.");
+                if (resolvedProvider == FipsProvider.BOUNCY_CASTLE) {
+                    throw new RuntimeException("Failed to configure FIPS. Make sure you have added the Bouncy Castle FIPS dependencies to the 'providers' directory.", cause);
+                }
+                throw new RuntimeException("Failed to configure Glassless. Java 25 or later is required.", cause);
             }
-            throw new RuntimeException("Unexpected error when configuring the crypto provider: " + cryptoProvider, cause);
-        } catch (Exception cause) {
-            throw new RuntimeException("Unexpected error when configuring the crypto provider: " + cryptoProvider, cause);
+            throw new RuntimeException("Unexpected error when configuring the crypto provider: " + providerName, cause);
         }
     }
 
