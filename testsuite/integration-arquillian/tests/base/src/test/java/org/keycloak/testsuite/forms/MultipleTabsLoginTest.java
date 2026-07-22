@@ -65,6 +65,7 @@ import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.MailServer;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -341,7 +342,6 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             multipleTabsParallelLogin(tabUtil);
 
             waitForAppPage(() -> loginPage.resetPassword());
-            WaitUtils.waitForPageToLoad();
             Assertions.assertTrue(oauth.parseLoginResponse().isError());
             events.skip(4);
             assertOnAppPageWithAlreadyLoggedInError(EventType.RESET_PASSWORD_ERROR);
@@ -426,9 +426,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             tabUtil.closeTab(1);
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
 
-            waitForAppPage(() -> {
-                driver.navigate().refresh();
-            });
+            waitForAppPage(() -> driver.navigate().refresh());
             Assertions.assertTrue(oauth.parseLoginResponse().isError());
             events.skip(6);
             assertOnAppPageWithAlreadyLoggedInError(EventType.LOGIN_ERROR);
@@ -1088,5 +1086,6 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             // error and being redirected to client
             htmlUnitAction.run();
         }
+        UIUtils.currentTitleEquals("AUTH_RESPONSE");
     }
 }
