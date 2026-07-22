@@ -37,6 +37,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
@@ -142,6 +143,31 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginUsernamePage.submit();
 
         assertEquals("Invalid username.", loginUsernamePage.getUsernameInputError());
+    }
+
+    @Test
+    public void testMaxLengthUserNameValidation() {
+        createOrganization();
+
+        oauth.openLoginForm();
+        assertFalse(loginPage.isPasswordInputPresent());
+        loginUsernamePage.fillLoginWithUsernameOnly("a".repeat(Validation.MAX_USERNAME_LENGTH + 1));
+        loginUsernamePage.submit();
+
+        assertEquals("Invalid username.", loginUsernamePage.getUsernameInputError());
+    }
+
+    @Test
+    public void testExactMaxLengthUserNameValidation() {
+        createOrganization();
+
+        oauth.openLoginForm();
+        assertFalse(loginPage.isPasswordInputPresent());
+        loginUsernamePage.fillLoginWithUsernameOnly("a".repeat(Validation.MAX_USERNAME_LENGTH));
+        loginUsernamePage.submit();
+
+        assertNull(loginUsernamePage.getUsernameInputError());
+        assertTrue(loginPage.isPasswordInputPresent());
     }
 
     @Test
