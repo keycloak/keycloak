@@ -26,7 +26,7 @@ public class UserUpdateConsentWorkflowEventProvider extends AbstractWorkflowEven
 
     @Override
     public boolean supports(Event event) {
-        return EventType.UPDATE_CONSENT.equals(event.getType()) || EventType.GRANT_CONSENT.equals(event.getType());
+        return EventType.UPDATE_CONSENT.equals(event.getType());
     }
 
     @Override
