@@ -32,7 +32,7 @@ public class UserUpdateCredentialWorkflowEventProvider extends AbstractWorkflowE
 
     @Override
     public boolean supports(Event event) {
-        return EventType.UPDATE_CREDENTIAL.equals(event.getType()) || EventType.RESET_PASSWORD.equals(event.getType());
+        return EventType.UPDATE_CREDENTIAL.equals(event.getType());
     }
 
     @Override
@@ -44,8 +44,8 @@ public class UserUpdateCredentialWorkflowEventProvider extends AbstractWorkflowE
         if (path == null) {
             return false;
         }
-        return RESET_PASSWORD_PATH.matcher(path).matches() 
-            || (CREDENTIALS_PATH.matcher(path).matches() && !OperationType.DELETE.equals(adminEvent.getOperationType()));
+        return (RESET_PASSWORD_PATH.matcher(path).matches() && OperationType.ACTION.equals(adminEvent.getOperationType())) 
+            || (CREDENTIALS_PATH.matcher(path).matches() && OperationType.UPDATE.equals(adminEvent.getOperationType()));
     }
 
     @Override

@@ -95,27 +95,17 @@ public class UserUpdateProfileWorkflowEventProvider extends AbstractWorkflowEven
                 return event.getDetails().containsKey("updated_" + configParameter);
             }
         } else if (originalEvent instanceof AdminEvent adminEvent) {
-            String representation = adminEvent.getRepresentation();
-            if (representation == null || representation.isBlank()) {
-                // If representation is not enabled, we cannot filter by attribute, so we fallback to true
-                return true;
+            if (adminEvent.getDetails() == null) {
+                return false;
             }
-            try {
-                UserRepresentation rep = JsonSerialization.readValue(representation, UserRepresentation.class);
-                if (rep == null) {
-                    return true;
-                }
-                if ("email".equalsIgnoreCase(configParameter)) {
-                    return rep.getEmail() != null;
-                } else if ("firstName".equalsIgnoreCase(configParameter) || "first_name".equalsIgnoreCase(configParameter)) {
-                    return rep.getFirstName() != null;
-                } else if ("lastName".equalsIgnoreCase(configParameter) || "last_name".equalsIgnoreCase(configParameter)) {
-                    return rep.getLastName() != null;
-                } else {
-                    return rep.getAttributes() != null && rep.getAttributes().containsKey(configParameter);
-                }
-            } catch (Exception e) {
-                return true;
+            if ("email".equalsIgnoreCase(configParameter)) {
+                return adminEvent.getDetails().containsKey(Details.UPDATED_EMAIL);
+            } else if ("firstName".equalsIgnoreCase(configParameter) || "first_name".equalsIgnoreCase(configParameter)) {
+                return adminEvent.getDetails().containsKey("updated_first_name");
+            } else if ("lastName".equalsIgnoreCase(configParameter) || "last_name".equalsIgnoreCase(configParameter)) {
+                return adminEvent.getDetails().containsKey("updated_last_name");
+            } else {
+                return adminEvent.getDetails().containsKey("updated_" + configParameter);
             }
         }
         

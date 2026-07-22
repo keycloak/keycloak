@@ -47,16 +47,10 @@ public class UserUpdateEmailWorkflowEventProvider extends AbstractWorkflowEventP
         if (!USER_PATH.matcher(path).matches()) {
             return false;
         }
-        String representation = adminEvent.getRepresentation();
-        if (representation != null && !representation.isBlank()) {
-            try {
-                UserRepresentation rep = JsonSerialization.readValue(representation, UserRepresentation.class);
-                return rep != null && rep.getEmail() != null;
-            } catch (Exception e) {
-                // ignore and fallback to true
-            }
+        if (adminEvent.getDetails() != null) {
+            return adminEvent.getDetails().containsKey(org.keycloak.events.Details.UPDATED_EMAIL);
         }
-        return true;
+        return false;
     }
 
     @Override
