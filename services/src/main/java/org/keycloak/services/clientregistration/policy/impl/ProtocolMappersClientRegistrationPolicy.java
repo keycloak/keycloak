@@ -86,6 +86,11 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
 				ServicesLogger.LOGGER.warn(message);
 				throw new ClientRegistrationPolicyException(message);
 			}
+			String storedMapperType = mapperModel.getProtocolMapper();
+			if (!Objects.equals(mapperType, storedMapperType)) {
+				failWithProtocolMapperTypeNotAllowedError(mapperRepresentation);
+				return;
+			}
 			Map<String, String> modelConfig = mapperModel.getConfig();
 			Map<String, String> representationConfig = mapperRepresentation.getConfig();
 			if (!Objects.equals(representationConfig, modelConfig)) {
