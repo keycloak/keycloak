@@ -40,6 +40,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 
 import static org.keycloak.services.validation.Validation.FIELD_PASSWORD;
 import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
+import static org.keycloak.services.validation.Validation.MAX_USERNAME_LENGTH;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -172,6 +173,13 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
 
         // remove leading and trailing whitespace
         username = username.trim();
+
+        if (username.length() > MAX_USERNAME_LENGTH) {
+            context.getEvent().error(Errors.USER_NOT_FOUND);
+            Response challengeResponse = challenge(context, getDefaultChallengeMessage(context), FIELD_USERNAME);
+            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
+            return null;
+        }
 
         context.getEvent().detail(Details.USERNAME, username);
         context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);

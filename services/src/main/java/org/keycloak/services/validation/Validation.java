@@ -33,6 +33,7 @@ public class Validation {
     public static final String FIELD_USERNAME = "username";
     public static final String FIELD_OTP_CODE = "totp";
     public static final String FIELD_OTP_LABEL = "userLabel";
+    public static final int MAX_USERNAME_LENGTH = 255;
 
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[\\p{IsLatin}|\\p{IsCommon}]+$");
 

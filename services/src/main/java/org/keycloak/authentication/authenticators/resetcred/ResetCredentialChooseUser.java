@@ -46,6 +46,8 @@ import org.keycloak.services.validation.Validation;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.services.validation.Validation.MAX_USERNAME_LENGTH;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -110,6 +112,14 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
         }
 
         username = username.trim();
+        if (username.length() > MAX_USERNAME_LENGTH) {
+            context.getEvent().error(Errors.USER_NOT_FOUND);
+            Response challengeResponse = context.form()
+                    .addError(new FormMessage(Validation.FIELD_USERNAME, Messages.INVALID_USER))
+                    .createPasswordReset();
+            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
+            return;
+        }
 
         RealmModel realm = context.getRealm();
         UserModel user = context.getSession().users().getUserByUsername(realm, username);
