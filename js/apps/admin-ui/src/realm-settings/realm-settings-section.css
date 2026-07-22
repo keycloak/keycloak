@@ -98,8 +98,8 @@ div#offline-session-max-label > .pf-v5-c-form__group-label {
   max-width: 1024px;
 }
 
-.pf-v5-c-form__group.kc-email-form-group {
-  display: inline-block !important;
+.pf-v5-c-form__group.kc-email-form-group[class] {
+  display: inline-block;
 }
 
 .pf-v5-c-content.kc-provide-email-text {
