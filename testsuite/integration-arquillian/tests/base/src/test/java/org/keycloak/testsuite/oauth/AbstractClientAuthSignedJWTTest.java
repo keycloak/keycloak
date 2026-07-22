@@ -70,6 +70,7 @@ import org.keycloak.crypto.ECDSAAlgorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -693,7 +694,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = doAccessTokenRequest(code, getClient2SignedJWT());
 
-            assertEquals(400, response.getStatusCode());
+            assertEquals(401, response.getStatusCode());
             assertEquals(error, response.getError());
 
             EventAssertion.assertError(events.poll()).type(EventType.CODE_TO_TOKEN_ERROR)
@@ -719,13 +720,13 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             oauth.client("client2");
             AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", getClient2SignedJWT());
 
-            assertEquals(400, response.getStatusCode());
+            assertEquals(401, response.getStatusCode());
             assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
 
             EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR)
                     .clientId("client2")
                     .sessionId(null)
-                    .error("client_credentials_setup_required")
+                    .error(Errors.INVALID_CLIENT_CREDENTIALS)
                     .userId(null);
         } finally {
             // Revert jwks_url settings
