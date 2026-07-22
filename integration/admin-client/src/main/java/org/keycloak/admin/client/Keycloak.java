@@ -19,6 +19,7 @@ package org.keycloak.admin.client;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.ServiceLoader;
+import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
 
 import jakarta.ws.rs.client.Client;
@@ -31,6 +32,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.ServerInfoResource;
 import org.keycloak.admin.client.spi.ResteasyClientProvider;
+import org.keycloak.admin.client.token.ClientAssertion;
 import org.keycloak.admin.client.token.TokenManager;
 
 import static org.keycloak.OAuth2Constants.PASSWORD;
@@ -87,8 +89,9 @@ public class Keycloak implements AutoCloseable {
     private final Client client;
     private boolean closed = false;
 
-    Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType, Client resteasyClient, String authtoken, String scope, boolean useDPoP) {
-        config = new Config(serverUrl, realm, username, password, clientId, clientSecret, grantType, scope);
+    Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret,
+             Supplier<ClientAssertion> clientAssertionSupplier, String grantType, Client resteasyClient, String authtoken, String scope, boolean useDPoP) {
+        config = new Config(serverUrl, realm, username, password, clientId, clientSecret, clientAssertionSupplier, grantType, scope);
         config.setUseDPoP(useDPoP);
         client = resteasyClient != null ? resteasyClient : newRestEasyClient(null, null, false);
         authToken = authtoken;
@@ -128,14 +131,14 @@ public class Keycloak implements AutoCloseable {
      * @return Java admin client instance
      */
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext, Object customJacksonProvider, boolean disableTrustManager, String authToken, String scope) {
-        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager), authToken, scope, false);
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, null, PASSWORD, newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager), authToken, scope, false);
     }
 
     /**
      * See {@link #getInstance(String, String, String, String, String, String, SSLContext, Object, boolean, String, String)} for the details about the parameters and their default values
      */
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext, Object customJacksonProvider, boolean disableTrustManager, String authToken) {
-        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager), authToken, null, false);
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, null, PASSWORD, newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager), authToken, null, false);
     }
 
     /**
