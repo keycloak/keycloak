@@ -428,7 +428,13 @@ public class RealmAdminResource {
     })
     public RealmRepresentation getRealm() {
         if (auth.realm().canViewRealm()) {
-            return ModelToRepresentation.toRepresentation(session, realm, false);
+            RealmRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, false);
+            List<String> filteredDefaultGroups = realm.getDefaultGroupsStream()
+                    .filter(auth.groups()::canView)
+                    .map(ModelToRepresentation::buildGroupPath)
+                    .toList();
+            rep.setDefaultGroups(filteredDefaultGroups.isEmpty() ? null : filteredDefaultGroups);
+            return rep;
         } else {
             auth.realm().requireViewRealmNameList();
 
@@ -1220,7 +1226,9 @@ public class RealmAdminResource {
     public Stream<GroupRepresentation> getDefaultGroups() {
         auth.realm().requireViewRealm();
 
-        return realm.getDefaultGroupsStream().map(ModelToRepresentation::groupToBriefRepresentation);
+        return realm.getDefaultGroupsStream()
+                .filter(auth.groups()::canView)
+                .map(ModelToRepresentation::groupToBriefRepresentation);
     }
 
     @PUT
