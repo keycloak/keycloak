@@ -1,7 +1,15 @@
 package org.keycloak.tests.oauth;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.common.Profile;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
@@ -17,6 +25,7 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -134,6 +143,77 @@ public class ResourceIndicatorsTest {
         assertErrorResponse(refreshResponse,  INVALID_TARGET, ERROR_NOT_MATCHING);
     }
 
+    @Test
+    public void testValidResourceByCustomAudience() {
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.loginForm().resource("https://custom-api").doLoginWithCookie();
+        Assertions.assertTrue(authorizationEndpointResponse.isRedirected());
+
+        AccessTokenResponse accessTokenResponse = oauth.accessTokenRequest(authorizationEndpointResponse.getCode()).resource("https://custom-api").send();
+        assertValidResponse(accessTokenResponse, "https://custom-api");
+    }
+
+    @Test
+    public void testValidResourceByOtherCustomAudience() {
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.loginForm().resource("https://custom-api-3").doLoginWithCookie();
+        Assertions.assertTrue(authorizationEndpointResponse.isRedirected());
+
+        AccessTokenResponse accessTokenResponse = oauth.accessTokenRequest(authorizationEndpointResponse.getCode()).resource("https://custom-api-3").send();
+        assertValidResponse(accessTokenResponse, "https://custom-api-3");
+    }
+
+    @Test
+    public void testInvalidResourceByCustomAudience() {
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.loginForm().resource("https://unknown-custom-api").doLoginWithCookie();
+        Assertions.assertTrue(authorizationEndpointResponse.isRedirected());
+
+        AccessTokenResponse accessTokenResponse = oauth.accessTokenRequest(authorizationEndpointResponse.getCode()).resource("https://unknown-custom-api").send();
+        assertErrorResponse(accessTokenResponse, INVALID_TARGET, ERROR_INVALID_RESOURCE);
+    }
+
+    @Test
+    public void testRefreshWithCustomAudienceResource() {
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.loginForm().resource("https://custom-api-2").doLoginWithCookie();
+        Assertions.assertTrue(authorizationEndpointResponse.isRedirected());
+
+        AccessTokenResponse accessTokenResponse = oauth.accessTokenRequest(authorizationEndpointResponse.getCode()).resource("https://custom-api-2").send();
+        Assertions.assertTrue(accessTokenResponse.isSuccess());
+
+        AccessTokenResponse refreshResponse = oauth.refreshRequest(accessTokenResponse.getRefreshToken()).send();
+        assertValidResponse(refreshResponse, "https://custom-api-2");
+    }
+
+    @Test
+    public void testRefreshWithCustomAudienceResourceExplicit() {
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.loginForm().resource("https://custom-api").doLoginWithCookie();
+        Assertions.assertTrue(authorizationEndpointResponse.isRedirected());
+
+        AccessTokenResponse accessTokenResponse = oauth.accessTokenRequest(authorizationEndpointResponse.getCode()).resource("https://custom-api").send();
+        Assertions.assertTrue(accessTokenResponse.isSuccess());
+
+        AccessTokenResponse refreshResponse = oauth.refreshRequest(accessTokenResponse.getRefreshToken()).resource("https://custom-api").send();
+        assertValidResponse(refreshResponse, "https://custom-api");
+    }
+
+    @Test
+    public void testIntrospectionWithCustomAudienceResource() throws Exception {
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.loginForm().resource("https://custom-api").doLoginWithCookie();
+        Assertions.assertTrue(authorizationEndpointResponse.isRedirected());
+
+        AccessTokenResponse accessTokenResponse = oauth.accessTokenRequest(authorizationEndpointResponse.getCode()).resource("https://custom-api").send();
+        Assertions.assertTrue(accessTokenResponse.isSuccess());
+
+        AccessToken accessToken = oauth.parseToken(accessTokenResponse.getAccessToken(), AccessToken.class);
+        MatcherAssert.assertThat(accessToken.getAudience(), Matchers.hasItemInArray("https://custom-api"));
+
+        IntrospectionResponse introspectionResponse = oauth.introspectionRequest(accessTokenResponse.getAccessToken())
+                .tokenTypeHint("access_token")
+                .client("https://custom-api", "introspection-secret")
+                .send();
+        Assertions.assertTrue(introspectionResponse.isSuccess());
+        TokenMetadataRepresentation tokenMetadata = introspectionResponse.asTokenMetadata();
+        MatcherAssert.assertThat(tokenMetadata.getAudience(), Matchers.hasItemInArray("https://custom-api"));
+    }
+
     private static final class ResourceIndicatorsRealm implements RealmConfig {
 
         @Override
@@ -146,6 +226,8 @@ public class ResourceIndicatorsTest {
 
             realm.clients(ClientBuilder.create("serviceWithoutResource"));
             realm.clientRoles("serviceWithoutResource", "myrole");
+
+            realm.clients(ClientBuilder.create("https://custom-api").secret("introspection-secret"));
 
             realm.users(UserBuilder.create("user").firstName("user").lastName("user").password("pass").email("the@email.localhost")
                     .clientRoles("theservice", "myrole")
@@ -160,8 +242,26 @@ public class ResourceIndicatorsTest {
 
         @Override
         public ClientBuilder configure(ClientBuilder client) {
-            return super.configure(client).fullScopeEnabled(true);
+            return super.configure(client).fullScopeEnabled(true)
+                    .protocolMappers(
+                            createCustomAudienceMapper("custom-audience-mapper-1", "https://custom-api"),
+                            createCustomAudienceMapper("custom-audience-mapper-2", "https://custom-api-2"),
+                            createCustomAudienceMapper("custom-audience-mapper-3", "https://custom-api-3"));
         }
+
+        private ProtocolMapperRepresentation createCustomAudienceMapper(String name, String audience) {
+            ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+            mapper.setName(name);
+            mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            mapper.setProtocolMapper(AudienceProtocolMapper.PROVIDER_ID);
+
+            Map<String, String> config = new HashMap<>();
+            config.put(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE, audience);
+            config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+            mapper.setConfig(config);
+            return mapper;
+        }
+
     }
 
     protected static final class ResourceIndicatorServerConfig implements KeycloakServerConfig {
