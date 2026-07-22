@@ -21,11 +21,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.GroupResource;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
@@ -55,6 +60,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
@@ -248,5 +254,65 @@ public class GroupResourceTypeFilteringTest extends AbstractPermissionTest {
         createGroupPermission(company, Set.of(VIEW_MEMBERS), disallowSubAdmins);
         search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1).stream().map(UserRepresentation::getUsername).toList();
         assertThat(search, containsInAnyOrder("myadmin", "sub1-admin", "department-a-member", "department-b-member"));
+    }
+
+    @Test
+    public void testDefaultGroupsFilteredByGroupPermissions() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        String realmManagement = realm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        RoleRepresentation viewRealmRole = realm.admin().clients().get(realmManagement)
+                .roles().get(AdminRoles.VIEW_REALM).toRepresentation();
+
+        realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmManagement)
+                .add(List.of(viewRealmRole));
+
+        GroupRepresentation hiddenGroup = realm.admin().groups().groups("group-0", -1, -1).get(0);
+        realm.admin().addDefaultGroup(hiddenGroup.getId());
+
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
+                .groups().group(hiddenGroup.getId()).toRepresentation());
+
+        List<GroupRepresentation> defaultGroups = realmAdminClient.realm(realm.getName())
+                .getDefaultGroups();
+        assertFalse(defaultGroups.stream().anyMatch(group -> hiddenGroup.getId().equals(group.getId())),
+                "Default groups endpoint should not disclose hidden group");
+
+        RealmRepresentation realmRepresentation = realmAdminClient.realm(realm.getName())
+                .toRepresentation();
+        assertTrue(realmRepresentation.getDefaultGroups() == null
+                        || !realmRepresentation.getDefaultGroups().contains(hiddenGroup.getPath()),
+                "Realm representation should not disclose hidden default group path");
+
+        List<RealmRepresentation> realms = realmAdminClient.realms().findAll();
+        RealmRepresentation realmFromList = realms.stream()
+                .filter(r -> realm.getName().equals(r.getRealm()))
+                .findFirst().orElse(null);
+        assertNotNull(realmFromList, "Realm should be visible in realm listing");
+        assertTrue(realmFromList.getDefaultGroups() == null
+                        || !realmFromList.getDefaultGroups().contains(hiddenGroup.getPath()),
+                "Realm listing should not disclose hidden default group path");
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,
+                "Only My Admin User Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, hiddenGroup.getId(), GROUPS_RESOURCE_TYPE, Set.of(VIEW), policy);
+
+        defaultGroups = realmAdminClient.realm(realm.getName()).getDefaultGroups();
+        assertTrue(defaultGroups.stream().anyMatch(group -> hiddenGroup.getId().equals(group.getId())),
+                "Default groups endpoint should return group when view permission is granted");
+
+        realmRepresentation = realmAdminClient.realm(realm.getName()).toRepresentation();
+        assertNotNull(realmRepresentation.getDefaultGroups());
+        assertTrue(realmRepresentation.getDefaultGroups().contains(hiddenGroup.getPath()),
+                "Realm representation should include default group path when view permission is granted");
+
+        realms = realmAdminClient.realms().findAll();
+        realmFromList = realms.stream()
+                .filter(r -> realm.getName().equals(r.getRealm()))
+                .findFirst().orElse(null);
+        assertNotNull(realmFromList);
+        assertNotNull(realmFromList.getDefaultGroups());
+        assertTrue(realmFromList.getDefaultGroups().contains(hiddenGroup.getPath()),
+                "Realm listing should include default group path when view permission is granted");
     }
 }
