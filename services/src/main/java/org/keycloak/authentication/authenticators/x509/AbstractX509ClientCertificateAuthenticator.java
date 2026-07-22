@@ -202,10 +202,10 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                             .or(userIdExtractor.getX500NameExtractor("E", subject));
                     break;
                 case SUBJECTALTNAME_EMAIL:
-                    extractor = userIdExtractor.getSubjectAltNameExtractor(1);
+                    extractor = getPatternIdentityExtractor(userIdExtractor, pattern, userIdExtractor.getSubjectAltNameExtractor(1));
                     break;
                 case SUBJECTALTNAME_OTHERNAME:
-                    extractor = userIdExtractor.getSubjectAltNameExtractor(0);
+                    extractor = getPatternIdentityExtractor(userIdExtractor, pattern, userIdExtractor.getSubjectAltNameExtractor(0));
                     break;
                 case CERTIFICATE_PEM:
                     extractor = userIdExtractor.getCertificatePemIdentityExtractor();
@@ -215,6 +215,13 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                     break;
             }
             return extractor;
+        }
+
+        private static UserIdentityExtractor getPatternIdentityExtractor(UserIdentityExtractorProvider userIdExtractor, String pattern, UserIdentityExtractor extractor) {
+            return userIdExtractor.getPatternIdentityExtractor(pattern, certs -> {
+                Object userIdentity = extractor.extractUserIdentity(certs);
+                return userIdentity == null ? null : userIdentity.toString();
+            });
         }
     }
 
