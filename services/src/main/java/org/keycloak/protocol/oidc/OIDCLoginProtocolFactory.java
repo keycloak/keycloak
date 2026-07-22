@@ -150,6 +150,11 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
     public static final String CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN = "allow-userinfo-with-lightweight-access-token";
 
+    /**
+     * @deprecated To be removed in Keycloak 27
+     */
+    public static final String CONFIG_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING = "allow-client-initiated-account-linking";
+
     private OIDCProviderConfig providerConfig;
 
     @Override
@@ -172,6 +177,12 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     "Lightweight tokens should use token introspection instead. " +
                     "Enable per-client settings and disable this option: %s=false",
                     CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN);
+        }
+
+        if (this.providerConfig.isAllowClientInitiatedAccountLinking()) {
+            logger.warnf("Legacy client-initiated account linking endpoint is enabled. This endpoint is deprecated" +
+                    "Migrate to Application Initiated Actions (AIA) with kc_action=idp_link and disable this option: %s=false",
+                    CONFIG_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING);
         }
 
         initBuiltIns();
@@ -681,6 +692,12 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     .type("boolean")
                     .helpText("Allows lightweight access tokens to be used with the UserInfo endpoint. This option is deprecated and will be removed in some future release.")
                     .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN)
+                    .add()
+                .property()
+                    .name(CONFIG_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING)
+                    .type("boolean")
+                    .helpText("Allows the deprecated client-initiated account linking endpoint (/broker/{provider}/link). This endpoint will be removed in a future release. Use AIA with kc_action=idp_link instead.")
+                    .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING)
                     .add()
                 .build();
     }
