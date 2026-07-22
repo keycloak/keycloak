@@ -1,0 +1,223 @@
+[[_ipatuura]]
+
+=== ipa-tuura Integration
+
+The FreeIPA and SSSD teams have collaborated on a project to enable Keycloak to get a unified access
+for users and groups in FreeIPA/LDAP/Active Directory. It consists of a new Keycloak user federation
+provider and a bridge service to access the identity providers (FreeIPA/AD/LDAP). The bridge project,
+Ipa-Tuura, is based on the SCIMv2 API and provides an improved integration for classic directory
+services to cloud environments with an easy deployment. The bridge can also be used in a variety of
+different scenarios, from migration to synchronization of identities across different providers.
+
+==== Prerequisites
+
+Before configuring the ipatuura provider, ensure you have:
+
+* The `ipa-tuura` bridge service running and accessible
+* Working DNS and kerberos configuration (Active Directory/FreeIPA only)
+* The `IPA_TUURA_FEDERATION` feature flag enabled in {project_name}
+
+ipa-tuura bridge service can be deployed with the `quay.io/freeipa/ipa-tuura` container using the
+below command.
+
+[source,bash,subs=+attributes]
+----
+ $ podman run --name=bridge -d --privileged \
+ --dns <IP address> --add-host <host>:<IP address> \
+ -p 8000:8000 -p 3500:3500 -p 81:81 -p 443:443 \
+ --hostname <hostname> quay.io/freeipa/ipa-tuura
+----
+
+Replacing the parameter values for:
+
+    ** DNS IP address: **--dns <IP address>**
+    ** The integration domain host, so that the bridge service can resolve the name: **--add-host <host>:<IP address>**
+    ** The hostname where the bridge is going to be deployed: **--hostname <hostname>**
+    ** The container image: **quay.io/freeipa/ipa-tuura**
+
+Check that network and DNS settings are configured and working properly to
+allow the ipa-tuura bridge, keycloak, and backend provider (AD/LDAP/FreeIPA) to all communicate
+with each other. The AD or FreeIPA Server Key Distribution Center must be reachable from the
+ipa-tuura bridge, it is helpful to validate kerberos client configuration files (**/etc/krb5.conf**).
+This allows the ipa-tuura bridge to join the AD or FreeIPA domains as an enrolled client.
+
+NOTE: All requests from keycloak to the backend LDAP server are proxied through the ipa-tuura bridge.
+
+==== Configuring an integration domain
+
+Create the **integrationdomain.json** file with your environment information
+
+* AD example
+
+[source,bash,subs=+attributes]
+----
+{
+   "name": "ad.test",
+   "description": "AD Integration Domain",
+   "integration_domain_url": "ldap://dc.ad.test",
+   "client_id": "Administrator@AD.TEST",
+   "client_secret": "Passw0rd",
+   "id_provider": "ad",
+   "user_extra_attrs": "mail, sn, givenname",
+   "users_dn": "CN=Users,DC=keycloak,DC=org",
+   "keycloak_hostname": "keycloak.ad.test"
+}
+----
+
+* FreeIPA example
+
+[source,bash,subs=+attributes]
+----
+{
+    "name": "ipa.test",
+    "description": "IPA Integration Domain",
+    "integration_domain_url": "https://master.ipa.test",
+    "client_id": "admin",
+    "client_secret": "Secret123",
+    "id_provider": "ipa",
+    "user_extra_attrs": "mail, sn, givenname",
+    "users_dn": "ou=people,dc=ipa,dc=test",
+}
+----
+
+* LDAP example
+
+[source,bash,subs=+attributes]
+----
+{
+    "name": "ldap.test",
+    "description": "LDAP Integration Domain",
+    "integration_domain_url": "ldap://rhds.ldap.test",
+    "client_id": "cn=Directory Manager",
+    "client_secret": "Secret123",
+    "id_provider": "ldap",
+    "user_extra_attrs": "mail, sn, givenname",
+    "users_dn": "ou=people,dc=ldap,dc=test",
+}
+----
+
+The JSON fields are described below:
+
+[cols="1,10,1"]
+|===
+|JSON Key |Description |Required
+
+|*name*
+|Domain name
+|Required
+
+|*description*
+|Arbitrary description
+|Required
+
+|*integration_domain_url*
+|Backend provider fully qualified domain name, prefixed with **ldap://**
+|Required
+
+|*client_id*
+|Username with administrative privileges to authenticate to domain, or bind to LDAP. **user@DOMAIN** in FreeIPA/AD case, or LDAP DN such as **cn=Directory Manager**
+|Required
+
+|*client_secret*
+|Password for **client_id** user
+|Required
+
+|*id_provider*
+|One of the following values: **ipa**, **ad**, **ldap**
+|Required
+
+|*user_extra_attrs*
+|Comma-separated list of LDAP attributes to fetch along with the usual set of user attributes. This needs to be set to at least **mail, sn, givenname**
+|Required
+
+|*users_dn*
+|Full DN of the LDAP tree where users are located
+|Required
+
+|*keycloak_hostname*
+|Fully-qualified name of the host running keycloak
+|Required
+
+|*user_object_classes*
+|objectClass attribute(s) set when users are added to backend.
+|Optional
+
+|*ldap_tls_cacert*
+|override default CA certificate filename path.
+|Optional
+|===
+
+Add the integration domain by sending a POST request with the JSON data to the ipa-tuura bridge.
+
+[source,bash,subs=+attributes]
+----
+$ curl -v -k -X POST "https://ipa-bridge.keycloak.org/domains/v1/domain/" \
+-H "accept: application/json" -H "Content-Type: application/json" \
+-H "X-CSRFToken: x1yU9RGPKs4mJdWIOzEc7wKbwbnJ0B6iTHuW6ja0gdBpEOBVacK1vIhSSYlfsnRw" \
+-d @integrationdomain.json
+----
+
+NOTE:  If `id_provider` is set to `ad` or `ipa` then the `realm join` operation will be performed on the ipa-tuura bridge at this time. If the ipatuura provider is removed in keycloak, the `realm leave` operation is performed.
+
+==== Trust Store
+
+The ipatuura provider requires use of the https://www.keycloak.org/server/keycloak-truststore[Keycloak TrustStore], to establish TLS connections with external services, This enables the keycloak provider to securely communicate over HTTPS to the ipa-tuura bridge.
+
+Retrieve the certificate from the ipa-tuura bridge and add it to a keystore file.
+
+[source,bash,subs=+attributes]
+----
+$ openssl s_client -connect bridge.ipa.test:443 2>/dev/null </dev/null |  sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /opt/keycloak/bridge.crt
+
+$ keytool -importcert -alias bridge -file /opt/keycloak/bridge.crt -keystore /opt/keycloak/keystore.jks -trustcacerts -storepass redhat -noprompt
+----
+
+The `/opt/keycloak/keystore.jks` keystore file must be copied to the keycloak system or container.
+
+==== Configuring ipatuura federation
+
+Start keycloak with the **ipa-tuura-federation** feature enabled and truststore arguments:
+
+[source,bash,subs=+attributes]
+----
+$ ./kc.sh start-dev --features=ipa-tuura-federation --spi-truststore-file-file=/opt/keycloak/keystore.jks --spi-truststore-file-password=redhat --spi-truststore-file-hostname-verification-policy=ANY
+----
+
+To configure an ipatuura federation provider:
+
+.Procedure
+. Click *User Federation* in the menu.
+. Select *ipatuura* from the provider list.
+. Configure the following required settings:
++
+[cols="1,3"]
+|===
+|Setting |Description
+
+|*Ipatuura Server URL*
+|The ipa-tuura bridge server URL in the format `ipa-bridge.keycloak.org`
+
+|*Login username*
+|Username to authenticate with the ipa-tuura bridge service
+
+|*Login password*
+|Password to authenticate with the ipa-tuura bridge service
+|===
++
+. Use `scim` and `Secret123` as the Login username and Login password, these credentials are preset by the ipa-tuura container.
++
+. Click *Save* to create the provider. At this point, the provider validates connectivity during initial configuration and will display appropriate error messages if the ipatuura server is unreachable.
+
+NOTE: At the moment searching users in the Keycloak by exact username is supported, while broad wildcard searches like the one performed by the admin console when clicking on 'Users' return an empty stream.
+
+==== Troubleshooting
+
+If you encounter issues with the ipatuura provider:
+
+* Ensure the ipa-tuura bridge service is running with `systemctl status httpd`
+* Check the keycloak journal logs for failures
+* ipa-tuura debug logging can be enabled following https://docs.djangoproject.com/en/5.2/topics/logging/[Django logging], by default operations are logged to the httpd error log (/var/log/httpd/error_log)
+* Enable apache httpcomponents logging in keycloak with `--log-level=INFO,org.apache.http.wire:debug` for detailed HTTP communication logs to the journal
+* Curl commands from https://github.com/freeipa/ipa-tuura?tab=readme-ov-file#usage[ipa-tuura README] can be used to perform certain operations for testing and troubleshooting
+* The ipatuura bridge looks up users utilizing the SSSD InfoPipe responder, if a user cannot be found as expected then check https://sssd.io/[SSSD] logs with debug_level set to a high level.
+* Use network tools like `tcpdump` to analyze HTTPS traffic if needed, decrypting SSL/TLS with wireshark as applicable.
