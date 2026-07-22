@@ -29,9 +29,25 @@ public class AdminEvent {
 
     private long time;
 
+    /**
+     * Realm associated with this admin event.
+     * It is not necessarily the realm affected by the administrative operation {@link #getTargetRealmId()}.
+     * It is not always the same as the realm where the user is authenticated {@link AuthDetails#getRealmId()}.
+     */
     private String realmId;
 
     private String realmName;
+
+    /**
+     * Realm affected by the administrative operation.
+     *
+     * Usually this is the same as the event realm {@link #getRealmId()}.
+     * However, for realm creation/deletion it differs,
+     * because those events are stored in the realm of the authenticated admin.
+     */
+    private String targetRealmId;
+
+    private String targetRealmName;
 
     private AuthDetails authDetails;
 
@@ -56,6 +72,8 @@ public class AdminEvent {
         this.time = toCopy.getTime();
         this.realmId = toCopy.getRealmId();
         this.realmName = toCopy.getRealmName();
+        this.targetRealmId = toCopy.getTargetRealmId();
+        this.targetRealmName = toCopy.getTargetRealmName();
         this.authDetails = new AuthDetails(toCopy.getAuthDetails());
         this.resourceType = toCopy.getResourceTypeAsString();
         this.operationType = toCopy.getOperationType();
@@ -103,7 +121,7 @@ public class AdminEvent {
     }
 
     /**
-     * Returns the id of the realm
+     * Returns the id of the event realm
      *
      * @return
      */
@@ -116,7 +134,7 @@ public class AdminEvent {
     }
 
     /**
-     * @return the name of the realm
+     * @return the name of the event realm
      */
     public String getRealmName() {
         return realmName;
@@ -124,6 +142,30 @@ public class AdminEvent {
 
     public void setRealmName(String realmName) {
         this.realmName = realmName;
+    }
+
+    /**
+     * Returns the id of the target realm
+     *
+     * @return
+     */
+    public String getTargetRealmId() {
+        return targetRealmId;
+    }
+
+    public void setTargetRealmId(String targetRealmId) {
+        this.targetRealmId = targetRealmId;
+    }
+
+    /**
+     * @return the name of the target realm
+     */
+    public String getTargetRealmName() {
+        return targetRealmName;
+    }
+
+    public void setTargetRealmName(String targetRealmName) {
+        this.targetRealmName = targetRealmName;
     }
 
     /**

@@ -169,7 +169,10 @@ public class RealmsAdminResource {
             // The create event is associated with the realm of the user executing the operation,
             // instead of the realm being created.
             AdminEventBuilder adminEvent = new AdminEventBuilder(auth.getRealm(), auth, session, clientConnection);
-            adminEvent.resource(ResourceType.REALM).realm(auth.getRealm()).operation(OperationType.CREATE)
+            adminEvent.resource(ResourceType.REALM)
+                    .realm(auth.getRealm())
+                    .targetRealm(realm)
+                    .operation(OperationType.CREATE)
                     .resourcePath(realm.getName())
                     .representation(ModelToRepresentation.toRepresentation(session, realm, false))
                     .success();
