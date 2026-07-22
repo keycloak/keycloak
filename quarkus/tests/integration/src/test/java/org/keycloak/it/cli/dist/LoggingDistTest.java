@@ -299,8 +299,7 @@ public class LoggingDistTest {
 
         when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
                 .statusCode(200);
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(
-                () -> assertThat(cliResult.getOutput(), containsString("{kc.realmName=master} DEBUG [org.keycloak.")));
+        cliResult.assertMessage("{kc.realmName=master} DEBUG [org.keycloak.");
         cliResult.assertStartedDevMode();
     }
 
@@ -330,10 +329,8 @@ public class LoggingDistTest {
     void httpAccessLogNotNamedPattern(CLIResult cliResult, KeycloakDistribution dist, RawDistRootPath path) {
         when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
                 .statusCode(200);
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(
-                () -> cliResult.assertMessage("[org.keycloak.http.access-log]"));
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(
-                () -> cliResult.assertMessage("127.0.0.1 GET /realms/master/.well-known/openid-configuration"));
+        cliResult.assertMessage("[org.keycloak.http.access-log]");
+        cliResult.assertMessage("127.0.0.1 GET /realms/master/.well-known/openid-configuration");
 
         when().get("http://127.0.0.1:8080/realms/master/clients/account/redirect").then()
                 .statusCode(200);
