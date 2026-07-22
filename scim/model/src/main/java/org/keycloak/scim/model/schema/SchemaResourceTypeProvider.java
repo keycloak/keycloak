@@ -13,6 +13,9 @@ import org.keycloak.models.ModelException;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.scim.model.config.ServiceProviderConfigResourceTypeProvider;
 import org.keycloak.scim.model.resourcetype.ResourceTypeProviderFactory;
+import org.keycloak.scim.model.resourcetype.definition.ScimResourceTypeDefinitions;
+import org.keycloak.scim.model.resourcetype.definition.ScimResourceTypeRepresentation;
+import org.keycloak.scim.model.resourcetype.definition.ScimResourceTypeStore;
 import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.Scim;
@@ -53,6 +56,22 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     ScimResourceTypeProvider provider = session.getProvider(ScimResourceTypeProvider.class, factory.getId());
                     return provider.getSchemas().stream();
                 }).forEach(this::buildSchema);
+
+        new ScimResourceTypeStore(session).getCustomDefinitions().forEach(this::buildCustomSchema);
+    }
+
+    /**
+     * Builds a discovery {@link Schema} for a custom resource type definition from its attribute definitions.
+     */
+    private void buildCustomSchema(ScimResourceTypeRepresentation definition) {
+        Schema rep = new Schema();
+
+        rep.setId(ScimResourceTypeDefinitions.resolveSchema(definition));
+        rep.setName(definition.getName());
+        rep.setDescription(definition.getDescription());
+        rep.setAttributes(definition.getAttributes() == null ? List.of() : List.copyOf(definition.getAttributes()));
+
+        schemas.put(rep.getId(), rep);
     }
 
     private void buildSchema(ModelSchema<?, ?> modelSchema) {
