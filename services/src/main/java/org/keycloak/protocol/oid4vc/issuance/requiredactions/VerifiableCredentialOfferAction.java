@@ -169,7 +169,7 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
         int credentialOfferLifespan = Optional.ofNullable(realm.getAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY))
                 .map(Integer::valueOf)
                 .orElse(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S);
-        int expiresAt = timeProvider.currentTimeSeconds() + credentialOfferLifespan;
+        long expiresAt = timeProvider.currentTimeSeconds() + credentialOfferLifespan;
 
         String credentialConfigurationId = actionConfig.getCredentialConfigurationId();
         event = event.clone().detail(Details.CREDENTIAL_TYPE, credentialConfigurationId);

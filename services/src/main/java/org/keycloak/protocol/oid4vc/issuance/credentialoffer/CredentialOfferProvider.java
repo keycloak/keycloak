@@ -84,6 +84,24 @@ public interface CredentialOfferProvider extends Provider {
             Integer expireAt
     );
 
+    /**
+     * Creates a credential offer with a {@code long} expiration timestamp.
+     * <p>
+     * The overload preserves compatibility with providers implementing the original {@link Integer}-based SPI. Providers
+     * that need to support expiration timestamps beyond the integer range can override this method directly.
+     */
+    default CredentialOfferState createCredentialOffer(
+            UserModel user,
+            String grantType,
+            List<String> credentialConfigurationIds,
+            String targetClientId,
+            String targetUserId,
+            long expireAt
+    ) {
+        return createCredentialOffer(user, grantType, credentialConfigurationIds, targetClientId, targetUserId,
+                Integer.valueOf(Math.toIntExact(expireAt)));
+    }
+
     @Override
     default void close() {
     }

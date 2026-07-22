@@ -86,7 +86,7 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
                     .issuer("issuer")
                     .addAudience("audience")
                     .issuedNow()
-                    .exp((long) (Time.currentTime() + 60));
+                    .exp(Time.currentTimeSeconds() + 60);
 
             // Sign to yield a valid JWT
             RealmModel realm = session.getContext().getRealm();

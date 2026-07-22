@@ -12,6 +12,7 @@ import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserVerifiableCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
@@ -44,6 +45,23 @@ public class OID4VCUtil {
     public static boolean hasVerifiableCredential(KeycloakSession session, UserModel user, CredentialScopeModel credentialScope) {
         return session.users().getVerifiableCredentialsByUser(user.getId())
                 .anyMatch(credential -> credential.getClientScopeId().equals(credentialScope.getId()));
+    }
+
+    /**
+     * Returns the timestamp exposed by the user's password credential.
+     * <p>
+     * The combined credential stream is important for federated users because providers such as LDAP expose their
+     * password modification timestamp as federated credential metadata rather than as a locally stored credential.
+     *
+     * @return the credential timestamp, {@code 0} when the credential has no timestamp, or {@code -1} when no password
+     * credential metadata is available
+     */
+    public static long getPasswordCredentialTimestamp(UserModel user) {
+        return user.credentialManager().getCredentials()
+                .filter(credential -> PasswordCredentialModel.TYPE.equals(credential.getType()))
+                .mapToLong(credential -> Optional.ofNullable(credential.getCreatedDate()).orElse(0L))
+                .max()
+                .orElse(-1L);
     }
 
     /**

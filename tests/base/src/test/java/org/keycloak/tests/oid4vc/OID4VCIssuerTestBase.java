@@ -1132,14 +1132,14 @@ public abstract class OID4VCIssuerTestBase {
     }
 
     public static class StaticTimeProvider implements TimeProvider {
-        private final int currentTimeInS;
+        private final long currentTimeInS;
 
-        public StaticTimeProvider(int currentTimeInS) {
+        public StaticTimeProvider(long currentTimeInS) {
             this.currentTimeInS = currentTimeInS;
         }
 
         @Override
-        public int currentTimeSeconds() {
+        public long currentTimeSeconds() {
             return currentTimeInS;
         }
 
