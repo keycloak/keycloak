@@ -33,7 +33,7 @@ export const CapabilityConfig = ({
   const { t } = useTranslation();
   const { control, watch, setValue } = useFormContext<FormFields>();
   const protocol = type || watch("protocol");
-  const clientAuthentication = watch("publicClient");
+  const isPublicClient = watch("publicClient");
   const authorization = watch("authorizationServicesEnabled");
   const pkceCodeChallengeMethodField = convertAttributeNameToForm<FormFields>(
     "attributes.pkce.code.challenge.method",
@@ -42,6 +42,12 @@ export const CapabilityConfig = ({
   const jwtAuthorizationGrantEnabled = watch(
     convertAttributeNameToForm<FormFields>(
       "attributes.oauth2.jwt.authorization.grant.enabled",
+    ),
+    false,
+  );
+  const standardTokenExchangeEnabled = watch(
+    convertAttributeNameToForm<FormFields>(
+      "attributes.standard.token.exchange.enabled",
     ),
     false,
   );
@@ -149,14 +155,14 @@ export const CapabilityConfig = ({
                   id="kc-authorization-switch"
                   label={t("on")}
                   labelOff={t("off")}
-                  isChecked={field.value && !clientAuthentication}
+                  isChecked={field.value && !isPublicClient}
                   onChange={(_event, value) => {
                     field.onChange(value);
                     if (value) {
                       setValue("serviceAccountsEnabled", true);
                     }
                   }}
-                  isDisabled={clientAuthentication}
+                  isDisabled={isPublicClient}
                   aria-label={t("clientAuthorization")}
                 />
               )}
@@ -260,12 +266,12 @@ export const CapabilityConfig = ({
                           id="kc-flow-service-account"
                           isChecked={
                             field.value?.toString() === "true" ||
-                            (clientAuthentication && authorization)
+                            (isPublicClient && authorization)
                           }
                           onChange={field.onChange}
                           isDisabled={
-                            (clientAuthentication && !authorization) ||
-                            (!clientAuthentication && authorization)
+                            (isPublicClient && !authorization) ||
+                            (!isPublicClient && authorization)
                           }
                         />
                       </InputGroupItem>
@@ -297,10 +303,10 @@ export const CapabilityConfig = ({
                             name="standard-token-exchange-enabled"
                             isChecked={
                               field.value.toString() === "true" &&
-                              !clientAuthentication
+                              !isPublicClient
                             }
                             onChange={field.onChange}
-                            isDisabled={clientAuthentication}
+                            isDisabled={isPublicClient}
                           />
                         </InputGroupItem>
                         <InputGroupItem>
@@ -332,10 +338,10 @@ export const CapabilityConfig = ({
                             name="jwt-authorization-grant-enabled"
                             isChecked={
                               field.value.toString() === "true" &&
-                              !clientAuthentication
+                              !isPublicClient
                             }
                             onChange={field.onChange}
-                            isDisabled={clientAuthentication}
+                            isDisabled={isPublicClient}
                           />
                         </InputGroupItem>
                         <InputGroupItem>
@@ -397,7 +403,7 @@ export const CapabilityConfig = ({
                           name="oidc.ciba.grant.enabled"
                           isChecked={field.value.toString() === "true"}
                           onChange={field.onChange}
-                          isDisabled={clientAuthentication}
+                          isDisabled={isPublicClient}
                         />
                       </InputGroupItem>
                       <InputGroupItem>
@@ -421,7 +427,7 @@ export const CapabilityConfig = ({
                 helpText={t("clientPkceRequiredHelp")}
                 fieldLabelId="pkceRequired"
                 isRecommendation={
-                  clientAuthentication && (!pkceEnabled || pkceEnabled === "")
+                  isPublicClient && (!pkceEnabled || pkceEnabled === "")
                 }
               />
             }
@@ -471,7 +477,7 @@ export const CapabilityConfig = ({
                 identityProviderType={
                   IdentityProviderType.JWT_AUTHORIZATION_GRANT
                 }
-                isDisabled={clientAuthentication}
+                isDisabled={isPublicClient}
                 realmOnly
                 stringify
               />
@@ -486,8 +492,20 @@ export const CapabilityConfig = ({
               stringify
             />
           )}
+          {isFeatureEnabled(Feature.TokenExchangeDelegation) &&
+            standardTokenExchangeEnabled?.toString() === "true" &&
+            !isPublicClient && (
+              <DefaultSwitchControl
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.client.delegation.enabled",
+                )}
+                label={t("clientDelegationEnabled")}
+                labelIcon={t("clientDelegationEnabledHelp")}
+                stringify
+              />
+            )}
           {isFeatureEnabled(Feature.IdentityBrokeringAPIV2) &&
-            !clientAuthentication && (
+            !isPublicClient && (
               <>
                 <DefaultSwitchControl
                   name={convertAttributeNameToForm<FormFields>(
@@ -513,7 +531,7 @@ export const CapabilityConfig = ({
                   )}
               </>
             )}
-          {!clientAuthentication && showSsfReceiverToggle && (
+          {!isPublicClient && showSsfReceiverToggle && (
             <DefaultSwitchControl
               name={convertAttributeNameToForm<FormFields>(
                 "attributes.ssf.enabled",
