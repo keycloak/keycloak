@@ -2,6 +2,7 @@ package org.keycloak.models.workflow.events;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
