@@ -1218,6 +1218,18 @@ public class OID4VCIssuerEndpoint {
         }
         KeyWrapper keyWrapper = matchingKeys.get(0);
 
+        String alg = header.getAlgorithm();
+        if (alg == null) {
+            throw new JWEException("Missing alg in JWE header");
+        }
+        if (!alg.equals(keyWrapper.getAlgorithm())) {
+            String errorMessage = String.format(
+                    "Key management algorithm mismatch: header alg=%s does not match key algorithm=%s for kid=%s",
+                    alg, keyWrapper.getAlgorithm(), kid);
+            LOGGER.debug(errorMessage);
+            throw new JWEException(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
+        }
+
         // Set the decryption key
         jwe.getKeyStorage().setDecryptionKey(keyWrapper.getPrivateKey());
 
