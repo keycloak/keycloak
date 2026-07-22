@@ -22,6 +22,7 @@ import java.net.URI;
 import java.security.Key;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -60,12 +61,14 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
+import org.keycloak.dom.saml.v2.assertion.AuthnContextType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResponseType;
+import org.keycloak.dom.saml.v2.protocol.AuthnContextComparisonType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
@@ -123,6 +126,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
@@ -698,6 +702,42 @@ public class SAMLEndpoint {
                         break;
                     }
                 }
+
+                // Enforce AuthnContextClassRef when comparison=exact is configured.
+                // SAML 2.0 Core §3.3.2.2.1: the SP must verify the returned class ref matches what it requested.
+                if (authn != null) {
+                    String requiredClassRefsJson = config.getAuthnContextClassRefs();
+                    if (requiredClassRefsJson != null && !requiredClassRefsJson.isEmpty()
+                            && config.getAuthnContextComparisonType() == AuthnContextComparisonType.EXACT) {
+                        List<String> requiredClassRefs;
+                        try {
+                            requiredClassRefs = Arrays.asList(
+                                    JsonSerialization.readValue(requiredClassRefsJson, String[].class));
+                        } catch (IOException e) {
+                            logger.warnf("Could not parse authnContextClassRefs config for broker '%s': %s",
+                                    config.getAlias(), e.getMessage());
+                            requiredClassRefs = Collections.emptyList();
+                        }
+                        if (!requiredClassRefs.isEmpty()) {
+                            String returnedClassRef = null;
+                            AuthnContextType authnContext = authn.getAuthnContext();
+                            if (authnContext != null && authnContext.getSequence() != null
+                                    && authnContext.getSequence().getClassRef() != null) {
+                                returnedClassRef = authnContext.getSequence().getClassRef().getValue().toString();
+                            }
+                            if (returnedClassRef == null || !requiredClassRefs.contains(returnedClassRef)) {
+                                logger.warnf("SAML broker '%s': identity provider returned AuthnContextClassRef"
+                                        + " '%s' but one of %s was required (comparison=exact). Rejecting.",
+                                        config.getAlias(), returnedClassRef, requiredClassRefs);
+                                event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                                event.error(Errors.INVALID_SAML_RESPONSE);
+                                return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST,
+                                        Messages.IDENTITY_PROVIDER_AUTHENTICATION_FAILED);
+                            }
+                        }
+                    }
+                }
+
                 if (assertion.getAttributeStatements() != null ) {
                     String email = getX500Attribute(assertion, X500SAMLProfileConstants.EMAIL);
                     if (email != null)
