@@ -131,10 +131,13 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                 .map(Integer::valueOf)
                 .orElse(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S);
         if (!isCredentialOfferLifespanValid(offerState, credentialOfferLifespan)) {
+            offerStorage.removeOfferState(offerState);
             event.error(Errors.EXPIRED_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
                     "Code expiration is outside the configured credential offer lifespan", Response.Status.BAD_REQUEST);
         }
+
+        markPreAuthCodeAsUsed(preAuthCode, offerState.getExpiresAt());
 
         validateOriginatingSession(offerState.getOriginatingUserId(), offerState.getOriginatingUserSessionId(),
                 offerState.getOriginatingUserSessionOffline(),
@@ -339,10 +342,13 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                     errorMessage, Response.Status.BAD_REQUEST);
         }
 
-        // Pre-auth code is valid, but let's prevent replay attacks (for the remaining validity period)
+        return preAuthCodeCtx;
+    }
+
+    private void markPreAuthCodeAsUsed(String code, long expiresAt) {
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         String key = getPreAuthCodeSingleObjectKey(code);
-        long expiresIn = preAuthCodeCtx.getExpiresAt() - Time.currentTimeSeconds();
+        long expiresIn = expiresAt - Time.currentTimeSeconds();
         boolean firstInsertion = singleUseStore.putIfAbsent(key, expiresIn);
         if (!firstInsertion) {
             String errorMessage = "Pre-authorized code has already been used";
@@ -350,8 +356,6 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
-
-        return preAuthCodeCtx;
     }
 
     static boolean isCredentialOfferLifespanValid(CredentialOfferState offerState, int credentialOfferLifespan) {

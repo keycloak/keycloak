@@ -1,6 +1,7 @@
 package org.keycloak.tests.oid4vc.preauth;
 
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
@@ -12,6 +13,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.preauth.JwtPreAuthCodeHandler;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.preauth.PreAuthCodeHandler;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
@@ -29,6 +31,7 @@ import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled;
 
@@ -163,6 +166,36 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
         AccessTokenResponse replayResp = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
         assertEquals(HttpStatus.SC_BAD_REQUEST, replayResp.getStatusCode());
         assertEquals("Pre-authorized code has already been used", replayResp.getErrorDescription());
+    }
+
+    @Test
+    public void mustRetireOfferStateWithExcessiveLifespan() throws JWSInputException {
+        String preAuthCode = createPreAuthOffer();
+        String offerId = new JWSInput(preAuthCode).readJsonContent(JwtPreAuthCode.class)
+                .getContext().getCredentialsOfferId();
+        String originalLifespan = getRealmAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
+
+        try {
+            setRealmAttributes(Map.of(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY, "1"));
+
+            AccessTokenResponse response = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+            assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
+            assertEquals("invalid_grant", response.getError());
+            assertEquals("Code expiration is outside the configured credential offer lifespan",
+                    response.getErrorDescription());
+            assertTrue(runOnServer.fetch(session -> session.getProvider(CredentialOfferStorage.class)
+                    .getOfferStateById(offerId) == null, Boolean.class));
+        } finally {
+            var realm = testRealm.admin().toRepresentation();
+            Map<String, String> attributes = realm.getAttributesOrEmpty();
+            if (originalLifespan == null) {
+                attributes.remove(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
+            } else {
+                attributes.put(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY, originalLifespan);
+            }
+            realm.setAttributes(attributes);
+            testRealm.admin().update(realm);
+        }
     }
 
     private String createPreAuthOffer() {
