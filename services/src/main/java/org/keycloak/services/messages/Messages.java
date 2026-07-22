@@ -199,7 +199,7 @@ public class Messages {
 
     public static final String COULD_NOT_SEND_AUTHENTICATION_REQUEST = "couldNotSendAuthenticationRequestMessage";
 
-    public static final String KERBEROS_NOT_ENABLED = "kerberosNotSetUp";
+    public static final String KERBEROS_NOT_ENABLED="kerberosNotSetUp";
 
     public static final String UNEXPECTED_ERROR_HANDLING_REQUEST = "unexpectedErrorHandlingRequestMessage";
 
@@ -251,7 +251,7 @@ public class Messages {
 
     public static final String REALM_SUPPORTS_NO_CREDENTIALS = "realmSupportsNoCredentialsMessage";
 
-    public static final String CREDENTIAL_SETUP_REQUIRED = "credentialSetupRequired";
+    public static final String CREDENTIAL_SETUP_REQUIRED ="credentialSetupRequired";
 
     public static final String READ_ONLY_USER = "readOnlyUserMessage";
 
@@ -299,11 +299,11 @@ public class Messages {
 
     public static final String FAILED_LOGOUT = "failedLogout";
 
-    public static final String CONSENT_DENIED = "consentDenied";
+    public static final String CONSENT_DENIED="consentDenied";
 
-    public static final String TERMS_AND_CONDITIONS_DECLINED = "termsAndConditionsDeclined";
+    public static final String TERMS_AND_CONDITIONS_DECLINED="termsAndConditionsDeclined";
 
-    public static final String ALREADY_LOGGED_IN = "alreadyLoggedIn";
+    public static final String ALREADY_LOGGED_IN="alreadyLoggedIn";
 
     public static final String DIFFERENT_USER_AUTHENTICATED = "differentUserAuthenticated";
 
@@ -358,7 +358,7 @@ public class Messages {
     public static final String CONFIRM_ORGANIZATION_MEMBERSHIP_TITLE = "organization.confirm-membership.title";
     public static final String REGISTER_ORGANIZATION_MEMBER = "organization.member.register.title";
 
-    // Client sessions
+   // Client sessions
     public static final String CLIENT_IDLE_REMEMBERME = "clientIdleExceedsRealmRememberMeIdle";
     public static final String CLIENT_IDLE = "clientSessionIdleTimeoutExceedsRealm";
     public static final String CLIENT_MAXLIFE_SPAN = "clientSessionMaxLifespanExceedsRealm";
