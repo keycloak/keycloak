@@ -13,9 +13,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.models.mapper.ClientModelMappers;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
+import org.keycloak.scim.filter.ScimFilterParser.FilterContext;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.query.ClientQueryException;
@@ -26,6 +26,7 @@ import org.keycloak.services.client.scim.ClientJpaQuerySchema;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientViewContext;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.utils.StringUtil;
 
 public class ScimBackedClientService implements ClientService {
 
@@ -60,19 +61,18 @@ public class ScimBackedClientService implements ClientService {
         permissions.clients().requireList();
         validateProjectionFields(projectionOptions);
 
-        boolean canView = canViewAll(realm);
         int offset = sortAndSliceOptions.offset();
         int limit = sortAndSliceOptions.limit();
 
         try {
-            var filterContext = QueryParseUtils.parse(searchOptions.query());
-            QueryParseUtils.validate(filterContext);
+            FilterContext filterContext = null;
+            if (searchOptions != null && !StringUtil.isBlank(searchOptions.query())) {
+                filterContext = QueryParseUtils.parse(searchOptions.query());
+                QueryParseUtils.validate(filterContext);
+            }
 
-            Stream<BaseClientRepresentation> stream = ClientJpaQueryExecutor.findClientIds(
-                            session, realm, filterContext, offset, limit)
-                    .map(id -> new ClientModelLazyDelegate.WithId(session, realm, id))
-                    .filter(client -> canView || permissions.clients().canView(client))
-                    .filter(client -> client.getProtocol() != null)
+            Stream<BaseClientRepresentation> stream = ClientJpaQueryExecutor.findClients(
+                            session, realm, filterContext, sortAndSliceOptions.getSortOptions(), offset, limit)
                     .map(this::mapClientWithPolicies)
                     .filter(Objects::nonNull);
 
@@ -101,8 +101,8 @@ public class ScimBackedClientService implements ClientService {
         if (!canViewAll(realm)) {
             return false;
         }
-        if (searchOptions == null || searchOptions.query() == null || searchOptions.query().isBlank()) {
-            return false;
+        if (searchOptions == null || StringUtil.isBlank(searchOptions.query())) {
+            return true;
         }
         try {
             var filterContext = QueryParseUtils.parse(searchOptions.query());

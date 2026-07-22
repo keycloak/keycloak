@@ -2,6 +2,7 @@ package org.keycloak.services.client.scim;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -10,8 +11,10 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
+import org.keycloak.admin.api.SortOption;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
@@ -28,14 +31,16 @@ public final class ClientJpaQueryExecutor {
     private ClientJpaQueryExecutor() {
     }
 
-    public static Stream<String> findClientIds(KeycloakSession session, RealmModel realm,
-                                               ScimFilterParser.FilterContext filterContext,
-                                               int offset, int limit) {
+    public static Stream<ClientModel> findClients(KeycloakSession session, RealmModel realm,
+                                                  ScimFilterParser.FilterContext filterContext,
+                                                  List<SortOption> sortOptions,
+                                                  int offset,
+                                                  int limit) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
         CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<String> query = cb.createQuery(String.class);
+        CriteriaQuery<ClientEntity> query = cb.createQuery(ClientEntity.class);
         Root<ClientEntity> root = query.from(ClientEntity.class);
-        query.select(root.get("id"));
+        query.select(root);
 
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(cb.equal(root.get("realmId"), realm.getId()));
@@ -45,10 +50,27 @@ public final class ClientJpaQueryExecutor {
 
         ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(
                 QUERY_PROVIDER, ClientJpaQuerySchema.SCHEMAS, cb, root);
-        predicates.add(evaluator.visit(filterContext).predicate());
+        if (filterContext != null) {
+            predicates.add(evaluator.visit(filterContext).predicate());
+        }
 
-        query.where(predicates.toArray(Predicate[]::new)).orderBy(cb.asc(root.get("clientId")));
+        var q = query.where(predicates.toArray(Predicate[]::new));
+        var orders = new ArrayList<>(sortOptions.stream().map(sortOption -> {
+            var field = ClientJpaQuerySchema.INSTANCE.getAttributeByPath(sortOption.field().toQueryValue())
+                    .getModelAttributeName();
+            return sortOption.isAscending() ? cb.asc(root.get(field)) : cb.desc(root.get(field));
+        }).toList());
 
-        return closing(paginateQuery(em.createQuery(query), offset, limit).getResultStream());
+        // add default sort by clientId if no sort options are provided
+        if (sortOptions.stream().noneMatch(sortOption -> "clientId".equals(sortOption.field().toQueryValue()))) {
+            orders.add(cb.asc(root.get("clientId")));
+        }
+
+        q.orderBy(orders);
+
+        return closing(paginateQuery(em.createQuery(q), offset, limit).getResultStream()
+                // Resolve through the provider to preserve adapter augmentation behavior.
+                .map(clientEntity -> session.clients().getClientById(realm, clientEntity.getId()))
+                .filter(Objects::nonNull));
     }
 }
