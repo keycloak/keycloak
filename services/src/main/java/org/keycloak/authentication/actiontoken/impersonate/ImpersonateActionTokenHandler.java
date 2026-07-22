@@ -69,17 +69,17 @@ public class ImpersonateActionTokenHandler extends AbstractActionTokenHandler<Im
         // impersonation doesn't have a required action and is instead executed immediately when the token is handled,
         // we need to invalidate the token here to prevent it from being used multiple times.
         if (!AuthenticationManager.invalidateActionToken(session, token.serializeKey(), 0L)) {
-            return handleImpersonationError(tokenContext, "Action token already used", Status.BAD_REQUEST);
+            return handleImpersonationError(tokenContext, Messages.IMPERSONATE_ERROR, Status.BAD_REQUEST);
         }
 
         if (user == null) {
-            return handleImpersonationError(tokenContext, "User not found", Status.NOT_FOUND);
+            return handleImpersonationError(tokenContext, Messages.IMPERSONATE_ERROR, Status.NOT_FOUND);
         }
         if (!user.isEnabled()) {
-            return handleImpersonationError(tokenContext, "User is disabled", Status.BAD_REQUEST);
+            return handleImpersonationError(tokenContext, Messages.IMPERSONATE_ERROR, Status.BAD_REQUEST);
         }
         if (user.getServiceAccountClientLink() != null) {
-            return handleImpersonationError(tokenContext, "Service accounts cannot be impersonated", Status.BAD_REQUEST);
+            return handleImpersonationError(tokenContext, Messages.IMPERSONATE_ERROR, Status.BAD_REQUEST);
         }
 
         // If the current user is already impersonating another user, we expire the existing session to prevent
