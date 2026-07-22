@@ -22,7 +22,8 @@ This is an alternative to the <@links.ha id="multi-cluster-v2-deploy-keycloak-ku
 * {archivedownloadurl}[{archivebasename}-{version}.zip] downloaded and extracted on each node.
 * A highly available database deployed with synchronous replication across sites, reachable from all {project_name} nodes. The following example assumes a PostgreSQL database. Any database supported by {project_name} will work.
 * TLS certificate and private key files for HTTPS.
-* A load balancer probing the URL `/lb-check` of the {project_name} nodes.
+* A load balancer probing `/health/ready` on management port 9000 of each {project_name} node.
+In the per-site topology, the global load balancer should probe `/lb-check` through each per-site load balancer.
 * The database CA certificate file for securing the database connection.
 * Network connectivity between all {project_name} nodes within each site on TCP ports 7800 and 57800 (or their configured equivalents) for cache clustering and failure detection.
 See the <@links.server id="caching" anchor="network-ports"/> {section} for details.
@@ -35,7 +36,7 @@ For a multi-site deployment, two load balancer topologies are common:
 
 Per-site load balancer with a global load balancer in front::
 Each site has its own load balancer (for example, HAProxy or NGINX) that distributes traffic across the {project_name} nodes within that site.
-A global load balancer routes client traffic to the per-site load balancers, probing `/lb-check` to detect site-level failures.
+A global load balancer routes client traffic to the per-site load balancers, probing `/lb-check` through them to detect site-level failures.
 +
 This topology provides better operational isolation: individual sites can be drained or taken offline for maintenance without affecting the global load balancer configuration.
 It also improves security, as TLS can be terminated at the site level and site-specific policies can be enforced, limiting the blast radius of a compromise.
