@@ -98,7 +98,7 @@ public class ImpersonateActionTokenHandler extends AbstractActionTokenHandler<Im
 
         AuthenticationManager.createLoginCookie(session, realm, userSession.getUser(), userSession, session.getContext().getUri(), clientConnection);
         URI redirect = URI.create(token.getRedirectUri());
-        
+
         event.event(EventType.IMPERSONATE)
                 .session(userSession)
                 .user(user)
