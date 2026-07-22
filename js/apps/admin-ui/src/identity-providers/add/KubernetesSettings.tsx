@@ -24,6 +24,12 @@ export const KubernetesSettings = () => {
         labelIcon={t("kubernetesIssuerUrlHelp")}
         label={t("kubernetesIssuerUrl")}
       />
+      <TextControl
+        name="config.jwksUrl"
+        label={t("jwksUrl")}
+        labelIcon={t("jwksUrlHelp")}
+        type="url"
+      />
       <FormGroupField label="fedClientAssertionMaxExp">
         <Controller
           name="config.fedClientAssertionMaxExp"
