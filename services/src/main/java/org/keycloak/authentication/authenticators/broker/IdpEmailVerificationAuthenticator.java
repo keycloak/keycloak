@@ -157,6 +157,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
                     .setAuthenticationSession(authSession)
                     .setUser(existingUser)
                     .setAttribute(EmailTemplateProvider.IDENTITY_PROVIDER_BROKER_CONTEXT, brokerContext)
+                    .setAttribute(Constants.CLIENT_ID, authSession.getClient().getClientId())
                     .sendConfirmIdentityBrokerLink(link, expirationInMinutes);
 
             authSession.addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
