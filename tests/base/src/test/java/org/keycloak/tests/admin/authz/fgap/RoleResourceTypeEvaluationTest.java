@@ -346,6 +346,42 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testBodylessRoleMappingDeleteFailsBeforeRemovingAnyRole() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserRepresentation targetUser = createUser("bodylessDeleteTarget");
+
+        RoleRepresentation allowedRealmRole = createRealmRole("bodylessAllowedRealmRole");
+        RoleRepresentation restrictedRealmRole = createRealmRole("bodylessRestrictedRealmRole");
+        realm.admin().users().get(targetUser.getId()).roles().realmLevel()
+                .add(List.of(allowedRealmRole, restrictedRealmRole));
+
+        ClientRepresentation targetClient = realm.admin().clients().findByClientId("myclient").get(0);
+        RoleRepresentation allowedClientRole = createClientRole(targetClient, "bodylessAllowedClientRole");
+        RoleRepresentation restrictedClientRole = createClientRole(targetClient, "bodylessRestrictedClientRole");
+        realm.admin().users().get(targetUser.getId()).roles().clientLevel(targetClient.getId())
+                .add(List.of(allowedClientRole, restrictedClientRole));
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,
+                "Bodyless Delete Admin Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, targetUser.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE,
+                Set.of(MAP_ROLES), policy);
+        createPermission(adminPermissionsClient, allowedRealmRole.getId(), rolesType, Set.of(MAP_ROLE), policy);
+        createPermission(adminPermissionsClient, allowedClientRole.getId(), rolesType, Set.of(MAP_ROLE), policy);
+
+        assertThat(bodylessRoleMappingDelete(targetUser.getId(), "realm"),
+                equalTo(Response.Status.FORBIDDEN.getStatusCode()));
+        assertThat(realm.admin().users().get(targetUser.getId()).roles().realmLevel().listAll().stream()
+                .map(RoleRepresentation::getName).toList(),
+                org.hamcrest.Matchers.hasItems(allowedRealmRole.getName(), restrictedRealmRole.getName()));
+
+        assertThat(bodylessRoleMappingDelete(targetUser.getId(), "clients", targetClient.getId()),
+                equalTo(Response.Status.FORBIDDEN.getStatusCode()));
+        assertThat(realm.admin().users().get(targetUser.getId()).roles().clientLevel(targetClient.getId()).listAll().stream()
+                .map(RoleRepresentation::getName).toList(),
+                org.hamcrest.Matchers.hasItems(allowedClientRole.getName(), restrictedClientRole.getName()));
+    }
+
+    @Test
     public void testUiExtRoleMappingDeleteRespectsPerRolePermission() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
         UserRepresentation targetUser = createUser("targetUser");
@@ -385,6 +421,39 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
             response = target.request(MediaType.APPLICATION_JSON)
                     .post(Entity.json(List.of(new RoleDeleteRequest(allowedRole.getId(), allowedRole.getName(), null))));
             assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+        }
+    }
+
+    private RoleRepresentation createRealmRole(String name) {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(name);
+        realm.admin().roles().create(role);
+        RoleRepresentation created = realm.admin().roles().get(name).toRepresentation();
+        realm.cleanup().add(r -> r.roles().get(name).remove());
+        return created;
+    }
+
+    private RoleRepresentation createClientRole(ClientRepresentation client, String name) {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(name);
+        realm.admin().clients().get(client.getId()).roles().create(role);
+        RoleRepresentation created = realm.admin().clients().get(client.getId()).roles().get(name).toRepresentation();
+        realm.cleanup().add(r -> r.clients().get(client.getId()).roles().deleteRole(name));
+        return created;
+    }
+
+    private int bodylessRoleMappingDelete(String userId, String... roleMappingPath) {
+        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            WebTarget target = httpClient.target(keycloakUrls.getBaseUrl().toString())
+                    .path("admin").path("realms").path(realm.getName())
+                    .path("users").path(userId).path("role-mappings")
+                    .register(new BearerAuthFilter(realmAdminClient.tokenManager()));
+            for (String segment : roleMappingPath) {
+                target = target.path(segment);
+            }
+            try (Response response = target.request(MediaType.APPLICATION_JSON).delete()) {
+                return response.getStatus();
+            }
         }
     }
 
