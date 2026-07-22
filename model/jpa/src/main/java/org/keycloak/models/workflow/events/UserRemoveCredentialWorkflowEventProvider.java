@@ -39,7 +39,7 @@ public class UserRemoveCredentialWorkflowEventProvider extends AbstractWorkflowE
         if (!org.keycloak.events.admin.ResourceType.USER.equals(adminEvent.getResourceType())) {
             return false;
         }
-        if (!OperationType.DELETE.equals(adminEvent.getOperationType())) {
+        if (!OperationType.ACTION.equals(adminEvent.getOperationType())) {
             return false;
         }
         String path = adminEvent.getResourcePath();
