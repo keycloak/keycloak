@@ -184,8 +184,8 @@ For granular control, you can use the **dpop-bind-enforcer** executor within Cli
 
 Standard Token Exchange supports DPoP-bound tokens as `subject_token` under specific conditions:
 
-* The client performing the token exchange request *must be the same client* that the `subject_token` was issued for (the `azp` claim must match the requester client ID).
 * The client must include a valid DPoP proof in the exchange request, signed with the same key that was used to bind the original token. {project_name} verifies that the DPoP key thumbprint matches the `cnf.jkt` claim in the subject token.
+* If a different client performs the exchange, that client must be included in the `aud` claim of the `subject_token`.
 
 The exchanged token will also be DPoP-bound if a valid DPoP proof is included in the request.
 
@@ -197,5 +197,6 @@ Token exchange with DPoP is useful when:
 * You want to down-scope or change audiences while simultaneously adding DPoP binding
 * Your backend services require DPoP but the original token was issued as Bearer
 * You need to exchange a DPoP-bound token for a new one with different audiences or scopes while maintaining the DPoP binding
+* A gateway needs to exchange a DPoP-bound token issued to another client for a narrower-audience token
 
 </@tmpl.guide>

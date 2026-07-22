@@ -157,8 +157,14 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
     protected void validateSenderConstrainedToken(AccessToken token) {
         if (isSenderConstrainedToken(token)) {
-            // Reject sender-constrained tokens (RFC 7800) as subject_token if client does not match the authorized parties claim
-            if (!token.getIssuedFor().equals(client.getClientId())) {
+            AccessToken.Confirmation cnf = token.getConfirmation();
+            boolean isDPoPBound = Profile.isFeatureEnabled(Profile.Feature.DPOP)
+                    && cnf.getKeyThumbprint() != null
+                    && (cnf.getJktType() == null || DPoPUtil.DPOP_JKT_TYPE.equals(cnf.getJktType()));
+
+            // DPoP-bound tokens can be exchanged by a different client after proof-of-possession validation below.
+            // Other sender-constrained tokens are restricted to the client identified by the authorized party claim.
+            if (!isDPoPBound && !token.getIssuedFor().equals(client.getClientId())) {
                 event.detail(Details.REASON, "Sender-constrained token exchange rejected as the token was not issued for the requesting client");
                 event.error(Errors.INVALID_REQUEST);
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
@@ -166,7 +172,6 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                       Response.Status.BAD_REQUEST);
             }
 
-            AccessToken.Confirmation cnf = token.getConfirmation();
             // Validate mTLS
             if (cnf.getCertThumbprint() != null) {
                 if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(token, session.getContext().getHttpRequest(), session)) {
@@ -174,7 +179,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                 }
             }
             // Validate DPoP
-            if (Profile.isFeatureEnabled(Profile.Feature.DPOP) && cnf.getKeyThumbprint() != null) {
+            if (isDPoPBound) {
                 DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
                 if (dPoP == null) {
                     event.detail(Details.REASON, "DPoP proof is missing");

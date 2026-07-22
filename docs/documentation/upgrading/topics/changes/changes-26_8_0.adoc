@@ -22,6 +22,11 @@ When calling {project_name}'s experimental AuthZEN endpoints, the caller now nee
 
 The Admin REST API endpoints for listing client sessions (`GET /admin/realms/\{realm}/clients/\{id}/user-sessions` and `GET /admin/realms/\{realm}/clients/\{id}/offline-sessions`) now filter out sessions belonging to users that the caller does not have permission to view. Previously, any caller with the `view-clients` role could see all user sessions for a client, potentially exposing user identities to callers without the `view-users` role. After upgrading, callers without `view-users` permission will see fewer results from these endpoints.
 
+=== Cross-client Token Exchange with DPoP-bound tokens
+
+Standard Token Exchange now accepts a DPoP-bound `subject_token` issued to a different client when the requester is included in the token's `aud` claim and provides a valid DPoP proof for the token.
+The proof must be signed with the key identified by the token's `cnf.jkt` claim.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
@@ -39,4 +44,3 @@ link:{securing_apps_token_exchange_link}[Token Exchange].
 The following features have been removed from this release.
 
 === <TODO>
-

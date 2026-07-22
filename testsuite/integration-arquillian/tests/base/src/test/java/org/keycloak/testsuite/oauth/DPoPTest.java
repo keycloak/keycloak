@@ -1177,9 +1177,17 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testDPoPTokenExchangeDifferentClient() throws Exception {
+        ProtocolMapperRepresentation audMapper = new ProtocolMapperRepresentation();
+        audMapper.setName("dpop-cross-client-audience-mapper");
+        audMapper.setProtocol("openid-connect");
+        audMapper.setProtocolMapper("oidc-audience-mapper");
+        audMapper.setConfig(Map.of("included.client.audience", "named-test-app", "access.token.claim", "true"));
+
         try (ClientAttributeUpdater ignored = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, "named-test-app")
                 .setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, Boolean.TRUE.toString())
-                .update()) {
+                .update();
+             ProtocolMappersUpdater ignoredMappers = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, TEST_CONFIDENTIAL_CLIENT_ID)
+                .protocolMappers().add(audMapper).update()) {
             AccessTokenResponse tokenResponse = getDPoPBindAccessToken(rsaKeyPair);
             String dpopProof = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST,
                     oauth.getEndpoints().getToken(), (long) Time.currentTime(), Algorithm.PS256, jwsRsaHeader,
@@ -1189,9 +1197,10 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
                     .client("named-test-app", "password")
                     .dpopProof(dpopProof).send();
 
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), exchangeResponse.getStatusCode());
-            assertEquals(OAuthErrorException.INVALID_REQUEST, exchangeResponse.getError());
-            assertTrue(exchangeResponse.getErrorDescription().contains("not issued for the requesting client"));
+            assertEquals(Status.OK.getStatusCode(), exchangeResponse.getStatusCode(), exchangeResponse.getErrorDescription());
+            assertEquals(TokenUtil.TOKEN_TYPE_DPOP, exchangeResponse.getTokenType());
+            AccessToken exchangedToken = oauth.verifyToken(exchangeResponse.getAccessToken());
+            assertEquals(jktRsa, exchangedToken.getConfirmation().getKeyThumbprint());
 
             oauth.doLogout(tokenResponse.getRefreshToken());
         }
