@@ -20,9 +20,11 @@ package org.keycloak.quarkus.runtime;
 import java.io.File;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,6 +46,7 @@ import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.OpenApiOptions;
 import org.keycloak.config.TruststoreOptions;
 import org.keycloak.marshalling.Marshalling;
+import org.keycloak.provider.GeneratedProviderRegistry;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
@@ -63,6 +66,7 @@ import io.quarkus.arc.Arc;
 import io.quarkus.arc.InstanceHandle;
 import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
 import io.quarkus.runtime.RuntimeValue;
+import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.annotations.Recorder;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
@@ -217,5 +221,35 @@ public class KeycloakRecorder {
 
     public void configureProtoStreamSchemas(List<SerializationContextInitializer> schemas) {
         Marshalling.setSchemas(schemas);
+    }
+
+    /**
+     * Resolve the @KeycloakProvider-annotated factory classes discovered at build time
+     * and install them into {@link GeneratedProviderRegistry}. Called at STATIC_INIT
+     * from the build step so the registry is populated before any
+     * {@link org.keycloak.provider.DefaultProviderLoader#load(org.keycloak.provider.Spi)} runs.
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public void installProviderRegistry(Set<String> classNames) {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        Set<Class<? extends ProviderFactory<?>>> classes = new LinkedHashSet<>(classNames.size());
+        for (String className : classNames) {
+            try {
+                Class<? extends ProviderFactory> raw = Class.forName(className, false, classLoader).asSubclass(ProviderFactory.class);
+                classes.add((Class<? extends ProviderFactory<?>>) raw);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException("@KeycloakProvider class " + className
+                        + " is not on the runtime classpath", e);
+            }
+        }
+        GeneratedProviderRegistry.install(classes);
+    }
+
+    /**
+     * Register a shutdown task that clears the provider registry so static state does not
+     * leak across hot-reloads or in-JVM application restarts.
+     */
+    public void clearProviderRegistryOnShutdown(ShutdownContext shutdown) {
+        shutdown.addShutdownTask(GeneratedProviderRegistry::clear);
     }
 }

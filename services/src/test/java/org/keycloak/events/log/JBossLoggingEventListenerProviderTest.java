@@ -21,6 +21,7 @@ import java.io.Writer;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -36,6 +37,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.GeneratedProviderRegistry;
 import org.keycloak.services.resteasy.HttpRequestImpl;
 import org.keycloak.services.resteasy.ResteasyKeycloakSession;
 import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
@@ -47,6 +49,7 @@ import org.jboss.logmanager.Logger;
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.handlers.WriterHandler;
 import org.jboss.resteasy.mock.MockHttpRequest;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -54,6 +57,14 @@ import org.junit.Test;
  * @author rmartinc
  */
 public class JBossLoggingEventListenerProviderTest {
+
+    @BeforeClass
+    public static void installProviderRegistry() {
+        // META-INF/services entry was removed when the factory adopted @KeycloakProvider.
+        // In Quarkus production augmentation does the install; in this non-Quarkus unit test
+        // we mimic it so DefaultProviderLoader can find the factory.
+        GeneratedProviderRegistry.install(Set.of(JBossLoggingEventListenerProviderFactory.class));
+    }
 
     @Test
     public void testAdminDefaultSuccessNoLog() {
