@@ -90,9 +90,15 @@ public class ReadOnlyAttributeUnchangedValidator implements SimpleValidator {
         return context;
     }
 
-    private boolean isUnchanged(String existingValue, String value) {
+    // package-private for testing
+    boolean isUnchanged(String existingValue, String value) {
         if (existingValue == null && isBlank(value)) {
             // if attribute not set to the user and value is blank/null, then pass validation
+            return true;
+        }
+
+        if (existingValue != null && value == null) {
+            // if attribute exists on the user but was not provided in the request, treat as unchanged
             return true;
         }
 
