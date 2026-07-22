@@ -98,6 +98,7 @@ public class RecoveryAuthnCodesCredentialModel extends CredentialModel {
             newModel.setId(credentialModel.getId());
             newModel.setSecretData(credentialModel.getSecretData());
             newModel.setCredentialData(credentialModel.getCredentialData());
+            newModel.setPriority(credentialModel.getPriority());
             return newModel;
         } catch (IOException e) {
             throw new RuntimeException(e);

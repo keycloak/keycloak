@@ -864,6 +864,7 @@ public class RepresentationToModel {
         model.setSecretData(cred.getSecretData());
         model.setCredentialData(cred.getCredentialData());
         model.setId(cred.getId());
+        model.setPriority(cred.getPriority());
         return model;
     }
 
