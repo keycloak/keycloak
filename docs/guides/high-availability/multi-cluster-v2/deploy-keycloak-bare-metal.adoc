@@ -22,6 +22,8 @@ This is an alternative to the <@links.ha id="multi-cluster-v2-deploy-keycloak-ku
 * TLS certificate and private key files for HTTPS.
 * A load balancer probing the URL `/lb-check` of the {project_name} nodes.
 * The database CA certificate file for securing the database connection.
+* Network connectivity between all {project_name} nodes within each site on TCP ports 7800 and 57800 (or their configured equivalents) for cache clustering and failure detection.
+See the <@links.server id="caching" anchor="network-ports"/> {section} for details.
 
 The following setup assumes a TLS passthrough setup, though this is not limited to this configuration.
 
@@ -59,6 +61,14 @@ Perform the following steps on each {project_name} node at each site:
 . Determine the sizing of the deployment using the <@links.ha id="multi-cluster-concepts-memory-and-cpu-sizing" /> {section}.
 For this setup, you might see approximately twice the CPU usage and write IOPS on your database, though your results might vary based on your use case.
 
+. Set the database credentials using environment variables to avoid exposing them in shell history or the process list:
++
+[source,bash]
+----
+export KC_DB_USERNAME=<DB_USERNAME>
+export KC_DB_PASSWORD=<DB_PASSWORD>
+----
+
 . Start {project_name} with the following command, replacing the placeholder values with your environment-specific settings:
 +
 [source,bash]
@@ -66,8 +76,6 @@ For this setup, you might see approximately twice the CPU usage and write IOPS o
 bin/kc.sh start \
     --db=postgres \
     --db-url=jdbc:postgresql://<DATABASE_URL>:5432/keycloak \
-    --db-username=<DB_USERNAME> \
-    --db-password=<DB_PASSWORD> \
     --db-pool-initial-size=30 \
     --db-pool-min-size=30 \
     --db-pool-max-size=30 \
@@ -78,6 +86,7 @@ bin/kc.sh start \
     --https-certificate-key-file=/path/to/tls.key \
     --db-tls-mode=verify-server \
     --truststore-paths=/path/to/db-ca.pem \
+    --proxy-protocol-enabled=true \
     --health-enabled=true \
     --metrics-enabled=true \
     --event-metrics-user-enabled=true \
@@ -107,6 +116,12 @@ Provide the TLS certificate and private key files for HTTPS.
 Secure the database connection.
 `--truststore-paths`::
 Specify the path to the database CA certificate file. {project_name} automatically loads certificates from the specified truststore path.
+`--proxy-protocol-enabled`::
+Enable the PROXY protocol so that {project_name} can read the real client IP address from the PROXY protocol header sent by the load balancer.
+This is strongly recommended for TLS passthrough deployments, where the load balancer cannot set HTTP forwarded headers.
+The load balancer must also be configured to send PROXY protocol headers (for example, `send-proxy-v2` in HAProxy).
+Do not set `--proxy-headers` when using TLS passthrough; the two options are mutually exclusive.
+See the <@links.server id="haproxy-passthrough"/> or <@links.server id="traefik-passthrough"/> {sections} for complete examples.
 `--health-enabled`::
 Enable the health check endpoints so that load balancers and monitoring can verify that {project_name} is ready.
 `--metrics-enabled`::
@@ -125,15 +140,8 @@ Confirm that each {project_name} node is ready by checking the health endpoint o
 curl -sk https://localhost:9000/health/ready
 ----
 
-A healthy node returns HTTP 200 with status `UP`:
-
-[source,json]
-----
-{
-    "status": "UP",
-    "checks": []
-}
-----
+A healthy node returns HTTP 200 with an overall status of `UP`.
+The `checks` array contains the readiness checks enabled for the deployment.
 
 Repeat this check for each node in each site.
 
