@@ -18,7 +18,9 @@ package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
 import java.util.List;
 
+import org.keycloak.events.Errors;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oid4vc.issuance.CredentialOfferException;
 import org.keycloak.provider.Provider;
 
 /**
@@ -98,8 +100,12 @@ public interface CredentialOfferProvider extends Provider {
             String targetUserId,
             long expireAt
     ) {
+        if (expireAt < Integer.MIN_VALUE || expireAt > Integer.MAX_VALUE) {
+            throw new CredentialOfferException(Errors.INVALID_REQUEST,
+                    "Credential offer expiration is outside the integer range supported by this provider: " + expireAt);
+        }
         return createCredentialOffer(user, grantType, credentialConfigurationIds, targetClientId, targetUserId,
-                Integer.valueOf(Math.toIntExact(expireAt)));
+                Integer.valueOf((int) expireAt));
     }
 
     @Override

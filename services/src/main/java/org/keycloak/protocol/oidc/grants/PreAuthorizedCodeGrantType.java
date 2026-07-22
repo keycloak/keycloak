@@ -68,8 +68,7 @@ import org.keycloak.utils.MediaType;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.events.Details.REASON;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.getCredentialOfferLifespan;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 import static org.keycloak.services.util.DefaultClientSessionContext.fromClientSessionAndScopeParameter;
@@ -127,9 +126,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                     "Code is expired", Response.Status.BAD_REQUEST);
         }
 
-        int credentialOfferLifespan = Optional.ofNullable(realm.getAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY))
-                .map(Integer::valueOf)
-                .orElse(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S);
+        int credentialOfferLifespan = getCredentialOfferLifespan(realm);
         if (!isCredentialOfferLifespanValid(offerState, credentialOfferLifespan)) {
             offerStorage.removeOfferState(offerState);
             event.error(Errors.EXPIRED_CODE);
@@ -139,9 +136,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
         markPreAuthCodeAsUsed(preAuthCode, offerState.getExpiresAt());
 
-        validateOriginatingSession(offerState.getOriginatingUserId(), offerState.getOriginatingUserSessionId(),
-                offerState.getOriginatingUserSessionOffline(),
-                offerState.getOriginatingUserPasswordCredentialCreatedDate());
+        validateOriginatingSession(offerState, offerStorage);
 
         String expTxCode = offerState.getTxCode();
         if (expTxCode != null) {
@@ -367,12 +362,27 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                 && offerState.getExpiresAt() - offerCreatedAt <= credentialOfferLifespan;
     }
 
-    private void validateOriginatingSession(String originatingUserId, String originatingUserSessionId,
-                                            Boolean originatingUserSessionOffline, Long passwordCredentialCreatedDate) {
+    private void validateOriginatingSession(CredentialOfferState offerState, CredentialOfferStorage offerStorage) {
+        String originatingUserId = offerState.getOriginatingUserId();
+        String originatingUserSessionId = offerState.getOriginatingUserSessionId();
+        Boolean originatingUserSessionOffline = offerState.getOriginatingUserSessionOffline();
+        Long passwordCredentialCreatedDate = offerState.getOriginatingUserPasswordCredentialCreatedDate();
+
         // Offers created by the REST endpoint are bound to the user session that authorized their creation.
         // Other offer creation mechanisms, such as the required-action flow, may run before a user session exists.
-        if (originatingUserId == null && originatingUserSessionId == null) {
-            return;
+        if (originatingUserId == null) {
+            boolean hasPartialMetadata = originatingUserSessionId != null
+                    || originatingUserSessionOffline != null
+                    || passwordCredentialCreatedDate != null;
+            if (!hasPartialMetadata) {
+                return;
+            }
+
+            offerStorage.removeOfferState(offerState);
+            String errorMessage = "Pre-authorized code has incomplete originating session metadata";
+            event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
+                    errorMessage, Response.Status.BAD_REQUEST);
         }
 
         UserModel originatingUser = session.users().getUserById(realm, originatingUserId);

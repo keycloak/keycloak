@@ -234,10 +234,24 @@ public class OID4VCIssuerEndpoint {
 
         this.credentialBuilders = loadCredentialBuilders(session);
 
-        RealmModel realm = keycloakSession.getContext().getRealm();
-        this.credentialOfferLifespan = Optional.ofNullable(realm.getAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY))
-                .map(Integer::valueOf)
-                .orElse(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S);
+        this.credentialOfferLifespan = getCredentialOfferLifespan(keycloakSession.getContext().getRealm());
+    }
+
+    /**
+     * Returns the configured credential-offer lifespan, falling back to the default for missing or malformed values.
+     */
+    public static int getCredentialOfferLifespan(RealmModel realm) {
+        String configuredLifespan = realm.getAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
+        if (configuredLifespan == null) {
+            return DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
+        }
+        try {
+            return Integer.parseInt(configuredLifespan);
+        } catch (NumberFormatException e) {
+            LOGGER.warnf("Invalid credential offer lifespan '%s' configured for realm '%s'; using default of %d seconds",
+                    configuredLifespan, realm.getName(), DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S);
+            return DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
+        }
     }
 
     /**

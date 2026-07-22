@@ -1,5 +1,6 @@
 package org.keycloak.tests.oid4vc.preauth;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -169,6 +170,22 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
     }
 
     @Test
+    public void mustUseDefaultLifespanWhenConfiguredValueIsNotNumeric() {
+        String originalLifespan = getRealmAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
+        try {
+            setRealmAttributes(Map.of(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY, "not-a-number"));
+
+            String preAuthCode = createPreAuthOffer();
+            AccessTokenResponse response = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+
+            assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+            assertNotNull(response.getAccessToken());
+        } finally {
+            restoreCredentialOfferLifespan(originalLifespan);
+        }
+    }
+
+    @Test
     public void mustRetireOfferStateWithExcessiveLifespan() throws JWSInputException {
         String preAuthCode = createPreAuthOffer();
         String offerId = new JWSInput(preAuthCode).readJsonContent(JwtPreAuthCode.class)
@@ -186,16 +203,43 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
             assertTrue(runOnServer.fetch(session -> session.getProvider(CredentialOfferStorage.class)
                     .getOfferStateById(offerId) == null, Boolean.class));
         } finally {
-            var realm = testRealm.admin().toRepresentation();
-            Map<String, String> attributes = realm.getAttributesOrEmpty();
-            if (originalLifespan == null) {
-                attributes.remove(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
-            } else {
-                attributes.put(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY, originalLifespan);
-            }
-            realm.setAttributes(attributes);
-            testRealm.admin().update(realm);
+            restoreCredentialOfferLifespan(originalLifespan);
         }
+    }
+
+    @Test
+    public void mustRetireOfferStateWithIncompleteOriginatingSessionMetadata() throws JWSInputException {
+        String preAuthCode = createPreAuthOffer();
+        String offerId = new JWSInput(preAuthCode).readJsonContent(JwtPreAuthCode.class)
+                .getContext().getCredentialsOfferId();
+        runOnServer.run(session -> {
+            CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+            var offerState = offerStorage.getOfferStateById(offerId);
+            offerState.setOriginatingUserId(null);
+            offerState.setOriginatingUserSessionId("corrupt-session");
+            offerStorage.putOfferState(offerState);
+        });
+
+        AccessTokenResponse response = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
+        assertEquals("invalid_grant", response.getError());
+        assertEquals("Pre-authorized code has incomplete originating session metadata",
+                response.getErrorDescription());
+        assertTrue(runOnServer.fetch(session -> session.getProvider(CredentialOfferStorage.class)
+                .getOfferStateById(offerId) == null, Boolean.class));
+    }
+
+    private void restoreCredentialOfferLifespan(String lifespan) {
+        var realm = testRealm.admin().toRepresentation();
+        Map<String, String> attributes = new HashMap<>(realm.getAttributesOrEmpty());
+        if (lifespan == null) {
+            attributes.remove(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
+        } else {
+            attributes.put(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY, lifespan);
+        }
+        realm.setAttributes(attributes);
+        testRealm.admin().update(realm);
     }
 
     private String createPreAuthOffer() {

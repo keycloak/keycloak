@@ -1,6 +1,7 @@
 package org.keycloak.tests.oid4vc.preauth;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -127,7 +128,7 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
             assertEquals("invalid_credential_offer_request", response.getError());
         } finally {
             var realm = testRealm.admin().toRepresentation();
-            Map<String, String> attributes = realm.getAttributesOrEmpty();
+            Map<String, String> attributes = new HashMap<>(realm.getAttributesOrEmpty());
             if (originalLifespan == null) {
                 attributes.remove(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
             } else {

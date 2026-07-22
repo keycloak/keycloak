@@ -5,6 +5,7 @@ import java.util.Arrays;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -15,6 +16,9 @@ import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.Test;
+
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.getCredentialOfferLifespan;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -27,6 +31,12 @@ public class PreAuthorizedCodeGrantTypeTest {
         CredentialOfferState offerState = createOfferState(300);
 
         assertTrue(PreAuthorizedCodeGrantType.isCredentialOfferLifespanValid(offerState, 300));
+    }
+
+    @Test
+    public void shouldUseDefaultCredentialOfferLifespanWhenRealmAttributeIsNotNumeric() {
+        assertEquals(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S,
+                getCredentialOfferLifespan(realmWithCredentialOfferLifespan("not-a-number")));
     }
 
     @Test
@@ -102,6 +112,17 @@ public class PreAuthorizedCodeGrantTypeTest {
 
     private CredentialOfferState createOfferState(int lifespan) {
         return new CredentialOfferState(new CredentialsOffer(), null, null, Time.currentTimeSeconds() + lifespan, null);
+    }
+
+    private RealmModel realmWithCredentialOfferLifespan(String lifespan) {
+        return (RealmModel) Proxy.newProxyInstance(
+                RealmModel.class.getClassLoader(),
+                new Class<?>[]{RealmModel.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "getAttribute" -> lifespan;
+                    case "getName" -> "test";
+                    default -> null;
+                });
     }
 
     private CredentialModel credential(String type, Long createdDate) {
