@@ -1,7 +1,6 @@
 package org.keycloak.quarkus.runtime.tracing;
 
 import java.util.Collection;
-import java.util.Iterator;
 
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
@@ -53,28 +52,20 @@ public class SizeLimitedBaggagePropagator implements TextMapPropagator {
             return context;
         }
 
-        Iterator<String> headers = getter.getAll(carrier, BAGGAGE_HEADER);
-        if (headers == null || !headers.hasNext()) {
+        // Uses get() instead of getAll() (added in OTel 1.45.0) — equivalent protection since
+        // OTel 1.44.x propagator itself only reads a single header
+        String header = getter.get(carrier, BAGGAGE_HEADER);
+        if (header == null || header.isEmpty()) {
             return delegate.extract(context, carrier, getter);
         }
 
-        int totalBytes = 0;
-        int totalEntries = 0;
-        while (headers.hasNext()) {
-            String header = headers.next();
-            if (header == null || header.isEmpty()) {
-                continue;
-            }
-            totalBytes += header.length();
-            if (totalBytes > MAX_BAGGAGE_BYTES) {
-                log.debugf("Dropping oversized baggage headers (%d bytes cumulative, max %d)", totalBytes, MAX_BAGGAGE_BYTES);
-                return context;
-            }
-            totalEntries += countEntries(header);
-            if (totalEntries > MAX_BAGGAGE_ENTRIES) {
-                log.debugf("Dropping baggage headers with too many entries (%d cumulative, max %d)", totalEntries, MAX_BAGGAGE_ENTRIES);
-                return context;
-            }
+        if (header.length() > MAX_BAGGAGE_BYTES) {
+            log.debugf("Dropping oversized baggage header (%d bytes, max %d)", header.length(), MAX_BAGGAGE_BYTES);
+            return context;
+        }
+        if (countEntries(header) > MAX_BAGGAGE_ENTRIES) {
+            log.debugf("Dropping baggage header with too many entries (%d, max %d)", countEntries(header), MAX_BAGGAGE_ENTRIES);
+            return context;
         }
 
         return delegate.extract(context, carrier, getter);

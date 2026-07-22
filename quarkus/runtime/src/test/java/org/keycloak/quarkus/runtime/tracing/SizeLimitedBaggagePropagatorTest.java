@@ -1,9 +1,7 @@
 package org.keycloak.quarkus.runtime.tracing;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -31,14 +29,6 @@ public class SizeLimitedBaggagePropagatorTest {
         @Override
         public String get(Map<String, String> carrier, String key) {
             return carrier.get(key);
-        }
-
-        @Override
-        public Iterator<String> getAll(Map<String, String> carrier, String key) {
-            String value = carrier.get(key);
-            return value != null
-                    ? Collections.singletonList(value).iterator()
-                    : Collections.emptyIterator();
         }
     };
 
@@ -144,37 +134,6 @@ public class SizeLimitedBaggagePropagatorTest {
     }
 
     @Test
-    public void testMultipleHeadersCumulativeEntryCountIsBlocked() {
-        MultiValueCarrier carrier = new MultiValueCarrier();
-        for (int i = 0; i < 5; i++) {
-            StringBuilder header = new StringBuilder();
-            for (int j = 0; j < 20; j++) {
-                if (j > 0) header.append(",");
-                header.append("k").append(i * 20 + j).append("=v").append(i * 20 + j);
-            }
-            carrier.add("baggage", header.toString());
-        }
-
-        Context ctx = propagator.extract(Context.root(), carrier, MULTI_GETTER);
-        Baggage baggage = Baggage.fromContext(ctx);
-
-        assertEquals("Multiple headers with 100 cumulative entries must be dropped", 0, baggage.size());
-    }
-
-    @Test
-    public void testMultipleHeadersCumulativeBytesIsBlocked() {
-        MultiValueCarrier carrier = new MultiValueCarrier();
-        String chunk = "k=" + "x".repeat(5000);
-        carrier.add("baggage", chunk);
-        carrier.add("baggage", chunk);
-
-        Context ctx = propagator.extract(Context.root(), carrier, MULTI_GETTER);
-        Baggage baggage = Baggage.fromContext(ctx);
-
-        assertEquals("Multiple headers exceeding cumulative byte limit must be dropped", 0, baggage.size());
-    }
-
-    @Test
     public void testNoBaggageHeaderPassesThrough() {
         Map<String, String> carrier = new HashMap<>();
 
@@ -182,6 +141,48 @@ public class SizeLimitedBaggagePropagatorTest {
         Baggage baggage = Baggage.fromContext(ctx);
 
         assertEquals("No baggage header must result in empty baggage", 0, baggage.size());
+    }
+
+    // On OTel 1.44.x, get() returns only the first header - extra baggage headers are ignored by both the wrapper and the delegate propagator.
+
+    @Test
+    public void testMultipleHeadersOnlyFirstIsChecked() {
+        MultiValueCarrier carrier = new MultiValueCarrier();
+        carrier.add("baggage", "tenant=acme");
+        carrier.add("baggage", "extra=ignored");
+
+        Context ctx = propagator.extract(Context.root(), carrier, MULTI_GETTER);
+        Baggage baggage = Baggage.fromContext(ctx);
+
+        assertEquals("Only first baggage header must be extracted", 1, baggage.size());
+        assertEquals("acme", baggage.getEntryValue("tenant"));
+    }
+
+    @Test
+    public void testMultipleHeadersOversizedFirstIsBlocked() {
+        MultiValueCarrier carrier = new MultiValueCarrier();
+        String oversized = "k=" + "x".repeat(SizeLimitedBaggagePropagator.MAX_BAGGAGE_BYTES);
+        carrier.add("baggage", oversized);
+        carrier.add("baggage", "safe=value");
+
+        Context ctx = propagator.extract(Context.root(), carrier, MULTI_GETTER);
+        Baggage baggage = Baggage.fromContext(ctx);
+
+        assertEquals("Oversized first baggage header must be dropped", 0, baggage.size());
+    }
+
+    @Test
+    public void testMultipleHeadersOversizedSecondIsIgnored() {
+        MultiValueCarrier carrier = new MultiValueCarrier();
+        carrier.add("baggage", "tenant=acme");
+        String oversized = "k=" + "x".repeat(SizeLimitedBaggagePropagator.MAX_BAGGAGE_BYTES);
+        carrier.add("baggage", oversized);
+
+        Context ctx = propagator.extract(Context.root(), carrier, MULTI_GETTER);
+        Baggage baggage = Baggage.fromContext(ctx);
+
+        assertEquals("Oversized second baggage header must be ignored, first must be extracted", 1, baggage.size());
+        assertEquals("acme", baggage.getEntryValue("tenant"));
     }
 
     private static class MultiValueCarrier {
@@ -202,12 +203,6 @@ public class SizeLimitedBaggagePropagatorTest {
         public String get(MultiValueCarrier carrier, String key) {
             List<String> values = carrier.headers.get(key);
             return values != null && !values.isEmpty() ? values.get(0) : null;
-        }
-
-        @Override
-        public Iterator<String> getAll(MultiValueCarrier carrier, String key) {
-            List<String> values = carrier.headers.get(key);
-            return values != null ? values.iterator() : Collections.emptyIterator();
         }
     };
 }
