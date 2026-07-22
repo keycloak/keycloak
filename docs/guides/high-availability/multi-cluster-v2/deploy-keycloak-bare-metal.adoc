@@ -8,7 +8,9 @@ tileVisible="false"
 preview="true"
 previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
 
-This {section} describes advanced {project_name} configurations for bare-metal servers or virtual machines which are load tested and will recover from single node failures or site failures.
+This {section} describes advanced {project_name} configurations for bare-metal servers or virtual machines that will recover from single node failures or site failures.
+The concepts and configuration options are equivalent to the {kubernetes}-based blueprint, which is load tested as described in the <@links.ha id="multi-cluster-v2-introduction" anchor="multi-cluster-v2-tested-configuration"/> {section}.
+You should verify the performance and failure behavior of your specific environment.
 
 These instructions are intended for use with the setup described in the <@links.ha id="multi-cluster-v2-concepts"/> {section}.
 
@@ -41,7 +43,7 @@ It also improves security, as TLS can be terminated at the site level and site-s
 Single load balancer::
 One load balancer routes directly to all {project_name} nodes across all sites.
 +
-This topology is simpler to manage, but the load balancer becomes a single point of failure.
+This topology is simpler to manage, but its shared load-balancing tier has a larger failure domain and must be deployed redundantly to avoid becoming a single point of failure.
 Per-site operational tasks such as draining a site for maintenance or isolating a failing site require reconfiguring a shared component, which increases operational risk.
 
 For production deployments, the per-site topology with a global load balancer is recommended.
@@ -87,6 +89,7 @@ bin/kc.sh start \
     --db-tls-mode=verify-server \
     --truststore-paths=/path/to/db-ca.pem \
     --proxy-protocol-enabled=true \
+    --shutdown-delay=30 \
     --health-enabled=true \
     --metrics-enabled=true \
     --event-metrics-user-enabled=true \
@@ -122,6 +125,11 @@ This is strongly recommended for TLS passthrough deployments, where the load bal
 The load balancer must also be configured to send PROXY protocol headers (for example, `send-proxy-v2` in HAProxy).
 Do not set `--proxy-headers` when using TLS passthrough; the two options are mutually exclusive.
 See the <@links.server id="haproxy-passthrough"/> or <@links.server id="traefik-passthrough"/> {sections} for complete examples.
+`--shutdown-delay`::
+With TLS passthrough, the load balancer cannot signal an HTTP connection close and relies on health check failures to detect that a node is shutting down.
+The `--shutdown-delay` keeps {project_name} running long enough for the load balancer to remove the node from rotation before it stops serving requests.
+Set this value to at least the load balancer's detection time (health check interval multiplied by the failure threshold).
+See the Graceful HTTP shutdown section in the <@links.server id="reverseproxy"/> {section} for details on tuning this value.
 `--health-enabled`::
 Enable the health check endpoints so that load balancers and monitoring can verify that {project_name} is ready.
 `--metrics-enabled`::
