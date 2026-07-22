@@ -123,5 +123,7 @@ public interface ActionTokenHandler<T extends JsonWebToken> extends Provider {
      * the check is not needed.
      * @return see above
      */
-    boolean checkIsUserValid(T token, ActionTokenContext<T> tokenContext);
+    default boolean checkIsUserValid(T token, ActionTokenContext<T> tokenContext) {
+        return true;
+    }
 }

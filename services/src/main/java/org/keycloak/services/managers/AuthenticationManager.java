@@ -1085,9 +1085,13 @@ public class AuthenticationManager {
      */
     public static boolean invalidateActionToken(KeycloakSession session, String actionTokenKeyToInvalidate, long skewSeconds) {
         SingleUseObjectKeyModel actionTokenKey = DefaultActionTokenKey.from(actionTokenKeyToInvalidate);
+        if (actionTokenKey == null) {
+            return false;
+        }
+        long lifespanSeconds = Math.max(1L, actionTokenKey.getExp() - Time.currentTimeSeconds() + skewSeconds);
         SingleUseObjectProvider singleUseObjectProvider = session.singleUseObjects();
         return singleUseObjectProvider.putIfAbsent(actionTokenKeyToInvalidate + SingleUseObjectProvider.REVOKED_KEY,
-                actionTokenKey.getExp() - Time.currentTime() + skewSeconds);
+                lifespanSeconds);
     }
 
     public static Response finishedRequiredActions(KeycloakSession session, AuthenticationSessionModel authSession, UserSessionModel userSession,

@@ -404,16 +404,13 @@ public class UserResource {
             AuthenticationManager.expireAuthSessionCookie(session);
             AuthenticationManager.backchannelLogout(session, authenticatedRealm, userSession, session.getContext().getUri(), clientConnection, headers, true);
         }
-        EventBuilder event = new EventBuilder(realm, session, clientConnection);
-
-        UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteHost(), "impersonate", false, null, null);
 
         UserModel adminUser = auth.adminAuth().getUser();
         String impersonatorId = adminUser.getId();
         String impersonator = adminUser.getUsername();
 
         URI redirect = Urls.accountBase(session.getContext().getUri().getBaseUri()).build(realm.getName());
-        int expires = Time.currentTime() + 60;
+        int expires = (int) Time.currentTimeSeconds() + 60;
 
         ImpersonateActionToken token = new ImpersonateActionToken(user.getId(), impersonator, impersonatorId, authenticatedRealm.getName(), redirect.toString(), expires);
         String impersonateAction = LoginActionsService.actionTokenProcessor(session.getContext().getUri())
