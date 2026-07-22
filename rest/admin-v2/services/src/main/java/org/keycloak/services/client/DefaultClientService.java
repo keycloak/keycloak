@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -18,6 +19,10 @@ import jakarta.validation.groups.Default;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.client.clienttype.ClientType;
+import org.keycloak.client.clienttype.ClientTypeException;
+import org.keycloak.client.clienttype.ClientTypeManager;
+import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.events.admin.v2.AdminEventV2Builder;
@@ -83,7 +88,23 @@ import static org.keycloak.utils.StringUtil.isBlank;
  */
 public class DefaultClientService implements ClientService {
     private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
+    private static final String CLIENT_TYPE_FIELD = "type";
+    private static final String LOGIN_FLOWS_FIELD = "loginFlows";
+    private static final String STANDARD_FLOW_OPTION = "standardFlowEnabled";
+    private static final String IMPLICIT_FLOW_OPTION = "implicitFlowEnabled";
+    private static final String DIRECT_ACCESS_GRANTS_OPTION = "directAccessGrantsEnabled";
+    private static final String SERVICE_ACCOUNTS_OPTION = "serviceAccountsEnabled";
+    private static final TypeControlledField FRONT_CHANNEL_LOGOUT_FIELD =
+            new TypeControlledField("frontChannelLogout", "frontchannelLogout", Boolean.class);
+    private static final List<TypeControlledField> TYPE_CONTROLLED_FIELDS = List.of(
+            new TypeControlledField("redirectUris", "redirectUris", Set.class),
+            new TypeControlledField("webOrigins", "webOrigins", Set.class),
+            new TypeControlledField("auth", "publicClient", Boolean.class),
+            FRONT_CHANNEL_LOGOUT_FIELD);
     public static final ClientModelMappers MAPPERS = new ClientModelMappers();
+
+    private record TypeControlledField(String representationField, String clientTypeOption, Class<?> optionType) {
+    }
 
     private final KeycloakSession session;
     private final AdminPermissionEvaluator permissions;
@@ -317,7 +338,7 @@ public class DefaultClientService implements ClientService {
                         // Must run before bean validation: PutClient requires a non-blank secret for client-secret methods
                         generateClientSecretIfNeeded(client, model, strategy, patchExplicitNullSecret);
                         validator.validate(client, strategy.getValidationGroup(), Default.class);
-                        var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper);
+                        var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper, model);
                         session.clientPolicy().triggerOnEvent(new AdminClientUpdateContext(proposedRepresentation, model, permissions.adminAuth()));
 
                         // Update model
@@ -341,21 +362,38 @@ public class DefaultClientService implements ClientService {
                     throw new ServiceException("uuid already exists, but with a different clientId", Response.Status.BAD_REQUEST);
                 }
                 validator.validate(client, strategy.getValidationGroup(), Default.class);
-                var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper);
+                var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper, null);
                 if (client instanceof SAMLClientRepresentation samlClient) {
                     proposedRepresentation.setStandardFlowEnabled(null);
-                    proposedRepresentation.setFrontchannelLogout(samlClient.getFrontChannelLogout());
+                    if (client.isFieldExplicitlySet(FRONT_CHANNEL_LOGOUT_FIELD.representationField())
+                            || !isControlledByType(realm, client, FRONT_CHANNEL_LOGOUT_FIELD)) {
+                        proposedRepresentation.setFrontchannelLogout(samlClient.getFrontChannelLogout());
+                    }
                 }
                 session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(proposedRepresentation, permissions.adminAuth()));
 
                 // Add basic attributes
                 model = realm.addClient(clientId);
+                if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && client.getType() != null) {
+                    ClientTypeManager manager = session.getProvider(ClientTypeManager.class);
+                    ClientType clientType = manager.getClientType(realm, client.getType());
+                    model = clientType.augment(model);
+                    model.setType(client.getType());
+                }
                 model.setProtocol(client.getProtocol());
 
                 // Generate random secret if applicable
                 generateClientSecretIfNeeded(client, model, strategy, patchExplicitNullSecret);
-                mapper.toModel(client, model);
+                mapper.toModel(client, model, getFieldsOmittedFromTypedCreation(realm, client));
                 setupClientDefaults(client, model, proposedRepresentation);
+                if (client instanceof OIDCClientRepresentation oidcClient
+                        && !oidcClient.isFieldExplicitlySet("auth")
+                        && !model.isPublicClient()
+                        && isBlank(model.getClientAuthenticatorType())) {
+                    model.setClientAuthenticatorType(Optional.ofNullable(proposedRepresentation.getClientAuthenticatorType())
+                            .orElseGet(KeycloakModelUtils::getDefaultClientAuthenticatorType));
+                    model.setSecret(KeycloakModelUtils.generateSecret(model));
+                }
 
                 // Validate the fully populated model
                 ValidationUtil.validateClient(session, model, true, r -> {
@@ -366,6 +404,8 @@ public class DefaultClientService implements ClientService {
             }
         } catch (ClientPolicyException e) {
             throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
+        } catch (ClientTypeException e) {
+            throw toServiceException(e);
         }
 
         // Setup roles
@@ -374,7 +414,11 @@ public class DefaultClientService implements ClientService {
 
         // OIDC specific
         if (client instanceof OIDCClientRepresentation oidcClient) {
-            handleServiceAccount(model, oidcClient);
+            try {
+                handleServiceAccount(model, oidcClient);
+            } catch (ClientTypeException e) {
+                throw toServiceException(e);
+            }
         }
 
         fireAdminEvent(alreadyExists ? OperationType.UPDATE : OperationType.CREATE, mapper.fromModel(model));
@@ -420,14 +464,65 @@ public class DefaultClientService implements ClientService {
      * <p>
      * For more details, see the <a href="https://github.com/keycloak/keycloak/issues/47576">keycloak#47576</a>.
      */
-    private ClientRepresentation getProposedOldRepresentation(RealmModel realm, BaseClientRepresentation client, ClientModelMapper mapper) {
+    private ClientRepresentation getProposedOldRepresentation(RealmModel realm, BaseClientRepresentation client,
+            ClientModelMapper mapper, ClientModel existingClient) {
         String clientId = client.getClientId();
-        SimpleClientModel tempModel = new SimpleClientModel("", realm);
-        mapper.toModel(client, tempModel);
+        ClientModel tempModel = new SimpleClientModel("", realm);
+        String effectiveType = client.getType();
+        if (existingClient != null && !client.isFieldExplicitlySet(CLIENT_TYPE_FIELD)) {
+            effectiveType = existingClient.getType();
+        }
+        if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && effectiveType != null) {
+            ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, effectiveType);
+            tempModel = clientType.augment(tempModel);
+            tempModel.setType(effectiveType);
+        }
+        mapper.toModel(client, tempModel,
+                existingClient == null ? getFieldsOmittedFromTypedCreation(realm, client) : Collections.emptySet());
         var proposedRepresentation = ModelToRepresentation.toRepresentation(tempModel, session);
         proposedRepresentation.setClientId(clientId);
         proposedRepresentation.setId(null);
         return proposedRepresentation;
+    }
+
+    private ServiceException toServiceException(ClientTypeException exception) {
+        return new ServiceException(exception.getMessage(), exception.getParameters(), Response.Status.BAD_REQUEST);
+    }
+
+    private Set<String> getFieldsOmittedFromTypedCreation(RealmModel realm, BaseClientRepresentation client) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) || client.getType() == null) {
+            return Collections.emptySet();
+        }
+        ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, client.getType());
+        Set<String> excluded = new HashSet<>();
+        TYPE_CONTROLLED_FIELDS.forEach(field -> excludeOmittedControlledField(client, clientType, excluded, field));
+        if (!client.isFieldExplicitlySet(LOGIN_FLOWS_FIELD) && (
+                isControlledByType(clientType, STANDARD_FLOW_OPTION, Boolean.class)
+                || isControlledByType(clientType, IMPLICIT_FLOW_OPTION, Boolean.class)
+                || isControlledByType(clientType, DIRECT_ACCESS_GRANTS_OPTION, Boolean.class))) {
+            excluded.add(LOGIN_FLOWS_FIELD);
+        }
+        return excluded;
+    }
+
+    private void excludeOmittedControlledField(BaseClientRepresentation client, ClientType clientType,
+            Set<String> excluded, TypeControlledField field) {
+        if (!client.isFieldExplicitlySet(field.representationField())
+                && isControlledByType(clientType, field.clientTypeOption(), field.optionType())) {
+            excluded.add(field.representationField());
+        }
+    }
+
+    private <T> boolean isControlledByType(ClientType clientType, String option, Class<T> optionType) {
+        return !clientType.isApplicable(option) || clientType.getTypeValue(option, optionType) != null;
+    }
+
+    private boolean isControlledByType(RealmModel realm, BaseClientRepresentation client, TypeControlledField field) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) || client.getType() == null) {
+            return false;
+        }
+        ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, client.getType());
+        return isControlledByType(clientType, field.clientTypeOption(), field.optionType());
     }
 
     private void generateClientSecretIfNeeded(BaseClientRepresentation client, ClientModel model, CreateOrUpdateStrategy strategy, boolean patchExplicitNullSecret) {
@@ -496,7 +591,13 @@ public class DefaultClientService implements ClientService {
      * routing through nested JAX-RS resources (which are not suited for in-process service calls).
      */
     protected void handleServiceAccount(ClientModel model, OIDCClientRepresentation rep) {
-        boolean serviceAccountEnabled = rep.getLoginFlows().contains(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT);
+        if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES)
+                || model.getType() == null
+                || rep.isFieldExplicitlySet(LOGIN_FLOWS_FIELD)
+                || !isServiceAccountControlledByType(model)) {
+            model.setServiceAccountsEnabled(rep.getLoginFlows().contains(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT));
+        }
+        boolean serviceAccountEnabled = model.isServiceAccountsEnabled();
 
         ClientManager.updateClientServiceAccount(session, model, serviceAccountEnabled);
 
@@ -546,6 +647,11 @@ public class DefaultClientService implements ClientService {
             permissions.roles().requireMapRole(role);
             serviceAccountUser.deleteRoleMapping(role);
         }
+    }
+
+    private boolean isServiceAccountControlledByType(ClientModel model) {
+        ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(model.getRealm(), model.getType());
+        return isControlledByType(clientType, SERVICE_ACCOUNTS_OPTION, Boolean.class);
     }
 
     protected void validateUnknownFields(BaseClientRepresentation rep) {
