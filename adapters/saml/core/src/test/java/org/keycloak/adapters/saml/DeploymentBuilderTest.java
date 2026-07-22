@@ -23,6 +23,7 @@ import java.io.InputStream;
 
 import org.keycloak.adapters.saml.config.parsers.DeploymentBuilder;
 import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
+import org.keycloak.common.enums.SslRequired;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,15 +35,33 @@ public class DeploymentBuilderTest {
 
     @Test
     public void testPropertiesBasedRoleMapper() throws Exception {
-        InputStream is = getClass().getResourceAsStream("config/parsers/keycloak-saml-pem-keys.xml");
-        SamlDeployment deployment = new DeploymentBuilder().build(is, new ResourceLoader() {
+        SamlDeployment deployment = loadDeployment("config/parsers/keycloak-saml-pem-keys.xml");
+        Assert.assertNotNull(deployment);
+        Assert.assertNotNull(deployment.getSigningKeyPair().getPrivate());
+        Assert.assertNotNull(deployment.getSigningKeyPair().getPublic());
+    }
+
+    @Test
+    public void testDeploymentBuilderMapsConfiguration() throws Exception {
+        SamlDeployment deployment = loadDeployment("config/parsers/keycloak-saml-deployment-builder-mapping.xml");
+
+        Assert.assertNotNull(deployment);
+        Assert.assertEquals("http://localhost:8081/sales-post-sig/", deployment.getEntityID());
+        Assert.assertEquals(SslRequired.ALL, deployment.getSslRequired());
+        Assert.assertEquals("urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress", deployment.getNameIDPolicyFormat());
+        Assert.assertEquals("/logout.jsp", deployment.getLogoutPage());
+        Assert.assertTrue(deployment.isForceAuthentication());
+        Assert.assertTrue(deployment.isIsPassive());
+        Assert.assertTrue(deployment.turnOffChangeSessionIdOnLogin());
+    }
+
+    private SamlDeployment loadDeployment(String resource) throws Exception {
+        InputStream is = getClass().getResourceAsStream(resource);
+        return new DeploymentBuilder().build(is, new ResourceLoader() {
             @Override
             public InputStream getResourceAsStream(String resource) {
                 return this.getClass().getClassLoader().getResourceAsStream(resource);
             }
         });
-        Assert.assertNotNull(deployment);
-        Assert.assertNotNull(deployment.getSigningKeyPair().getPrivate());
-        Assert.assertNotNull(deployment.getSigningKeyPair().getPublic());
     }
 }
