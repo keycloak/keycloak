@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCServerConfigWithPreAuthCodeEnabled.class)
 public class OID4VCActionPreAuthTest extends OID4VCIssuerTestBase {
 
     @InjectPage

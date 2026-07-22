@@ -76,7 +76,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Endpoint test with sd-jwt specific config.
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCServerConfigWithPreAuthCodeEnabled.class)
 public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
     @InjectRunOnServer

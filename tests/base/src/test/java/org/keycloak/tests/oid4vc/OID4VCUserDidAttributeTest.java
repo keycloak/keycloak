@@ -11,7 +11,6 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestServerConfig;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *
  * @author <a href="mailto:tdiesler@ibm.com">Thomas Diesler</a>
  */
-@KeycloakIntegrationTest(config = VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCUserDidAttributeTest extends OID4VCIssuerTestBase {
 
     KeyPair subjectKeyPair;

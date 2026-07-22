@@ -127,6 +127,12 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String CLIENT_SECRET_JWT = "client_secret_jwt";
     public static final String PRIVATE_KEY_JWT = "private_key_jwt";
     public static final String TLS_CLIENT_AUTH = "tls_client_auth";
+
+    /**
+     * The Authorization Server SHOULD communicate support for authentication with Attestation-Based Client Authentication
+     * using a Client Attestation PoP JWT as the PoP by using the value attest_jwt_client_auth in the
+     * token_endpoint_auth_methods_supported within its published metadata.
+     */
     public static final String ATTEST_JWT_CLIENT_AUTH = "attest_jwt_client_auth";
 
     /**

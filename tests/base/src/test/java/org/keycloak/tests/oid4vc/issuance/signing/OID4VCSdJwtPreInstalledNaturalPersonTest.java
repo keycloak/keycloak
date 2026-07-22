@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * OID4VCI testing for the pre-installed oid4vc_natural_person
  *
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCSdJwtPreInstalledNaturalPersonTest extends OID4VCIssuerEndpointTest {
 
     @InjectRunOnServer

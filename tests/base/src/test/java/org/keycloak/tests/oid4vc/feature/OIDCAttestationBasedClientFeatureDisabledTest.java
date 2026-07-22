@@ -14,12 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.tests.oid4vc;
+package org.keycloak.tests.oid4vc.feature;
 
 import java.util.List;
 
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,8 +29,10 @@ import static org.keycloak.protocol.oidc.OIDCLoginProtocol.ATTEST_JWT_CLIENT_AUT
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
-public class OIDCAuthorizationMetadataTest extends OID4VCIssuerTestBase {
+
+
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCMinimalServerConfig.class)
+public class OIDCAttestationBasedClientFeatureDisabledTest extends OID4VCIssuerTestBase {
 
     @Test
     public void testTokenEndpointAuthMethods() {

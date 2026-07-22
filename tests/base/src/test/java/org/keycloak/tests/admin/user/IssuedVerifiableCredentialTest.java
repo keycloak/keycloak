@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 
 
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class IssuedVerifiableCredentialTest extends AbstractUserTest {
 
     private static final String CREDENTIAL_TYPE_1 = jwtTypeNaturalPersonScopeName;

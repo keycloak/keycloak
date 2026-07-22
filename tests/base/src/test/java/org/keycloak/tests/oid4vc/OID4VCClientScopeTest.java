@@ -84,7 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author Pascal Knüppel
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
 
     @DisplayName("Verify default values are correctly set")

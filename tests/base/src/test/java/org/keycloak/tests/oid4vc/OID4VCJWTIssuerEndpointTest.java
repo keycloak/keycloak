@@ -109,7 +109,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithRestCredentialOfferEnabled.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
     @InjectRunOnServer
@@ -562,7 +562,6 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 .getOidcConfiguration();
 
         assertNotNull(openidConfig.getTokenEndpoint(), "A token endpoint should be included.");
-        assertFalse(openidConfig.getGrantTypesSupported().contains(PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE), "The pre-authorized code should not be supported.");
 
         // 5. Get the credential using credential_identifier (required when authorization_details are present)
         credConfigIds.stream()

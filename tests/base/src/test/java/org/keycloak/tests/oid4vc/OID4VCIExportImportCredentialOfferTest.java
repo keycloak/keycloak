@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the {@code OID4VC_VCI_REST_CREDENTIAL_OFFER} feature is enabled, and that the role survives
  * a full export/import round-trip without causing a {@code ModelDuplicateException}.
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithRestCredentialOfferEnabled.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCIExportImportCredentialOfferTest extends OID4VCIssuerTestBase {
 
     @InjectRealm(attachTo = "master", ref = "master")

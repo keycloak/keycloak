@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>Empty-config handling — mappers with missing required config are silently ignored.</li>
  * </ul>
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
 
     // ---- Functional tests ----

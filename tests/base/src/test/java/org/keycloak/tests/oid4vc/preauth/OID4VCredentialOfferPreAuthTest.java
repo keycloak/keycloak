@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * | yes      | yes      | yes     | Pre-auth for a specific target user.                 |
  * +----------+----------+---------+------------------------------------------------------+
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCServerConfigWithPreAuthCodeEnabled.class)
 public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
     @Test

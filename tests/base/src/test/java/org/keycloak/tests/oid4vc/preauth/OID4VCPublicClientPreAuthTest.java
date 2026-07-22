@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * An external wallet would generally not be trusted to keep the client_secret
  * oid4vci clients should be configured as public with pkce enabled
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCServerConfigWithPreAuthCodeEnabled.class)
 public class OID4VCPublicClientPreAuthTest extends OID4VCIssuerTestBase {
 
     @BeforeEach

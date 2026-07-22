@@ -34,7 +34,7 @@ import static org.keycloak.exportimport.ExportImportConfig.REALM_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCExportImportTest extends OID4VCIssuerTestBase {
 
     private static String tempDir;

@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 // LDP_VC format is intentionally disabled to keep scope limited to supported formats.
 @Disabled("LDP_VC format is currently not supported and providers are disabled.")
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class LDCredentialSignerTest extends OID4VCIssuerTestBase {
 
     @InjectRunOnServer

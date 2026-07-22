@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * SD-JWT variant: ensure realm-level rounding of issuanceDate propagates to iat when mapper sources from VC.
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCTimeNormalizationSdJwtTest extends OID4VCTimeNormalizationTestBase {
 
     @Test

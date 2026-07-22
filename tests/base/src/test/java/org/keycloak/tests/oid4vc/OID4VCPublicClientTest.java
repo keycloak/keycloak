@@ -29,7 +29,6 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCBasicWallet.AuthorizationEndpointRequest;
-import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestServerConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
@@ -50,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * An external wallet would generally not be trusted to keep the client_secret
  * oid4vci clients should be configured as public with pkce enabled
  */
-@KeycloakIntegrationTest(config = VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCDefaultServerConfig.class)
 public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
 
     @BeforeEach
