@@ -78,6 +78,11 @@ public class RootAuthenticationSessionEntity extends SessionEntity {
         this.authenticationSessions = authenticationSessions;
     }
 
+    public boolean hasAuthenticationSessionForUser(String userId) {
+        return authenticationSessions.values().stream()
+                .anyMatch(authSession -> Objects.equals(authSession.getAuthUserId(), userId));
+    }
+
     @Override
     public boolean shouldEvaluateRemoval() {
         return true;

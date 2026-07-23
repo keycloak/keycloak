@@ -56,6 +56,7 @@ import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -134,6 +135,36 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
     @Test
     public void resetPasswordLogoutSessionsNotChecked() {
         resetPassword(false);
+    }
+
+    @Test
+    public void resetPasswordLogoutSessionsInvalidatesInProgressAuthSession() {
+        requireUpdatePassword();
+        UserResource testUser = managedRealm.admin().users().get(findUser("test-user@localhost").getId());
+
+        // Browser attacker: authenticate with the current password and stop on the update-password screen.
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);
+        oauth2.openLoginForm();
+        driver2.findElement(By.id("username")).sendKeys("test-user@localhost");
+        driver2.findElement(By.id("password")).sendKeys("password");
+        driver2.findElement(By.id("password")).submit();
+        MatcherAssert.assertThat("Browser 2 should be parked on the update-password page",
+                driver2.findElements(By.id("password-new")).isEmpty(), Matchers.is(false));
+
+        // Browser victim: reset the password and choose to sign out of other devices.
+        oauth.openLoginForm();
+        loginPage.login("test-user@localhost", "password");
+        changePasswordPage.assertCurrent();
+        changePasswordPage.checkLogoutSessions();
+        changePasswordPage.changePassword("new-password", "new-password");
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertEquals(1, testUser.getUserSessions().size());
+
+        // Browser attacker: try to finish the parked flow. Its in-progress authentication session was deleted by the reset, so it must not be able to complete and must not create a user session.
+        driver2.findElement(By.id("password-new")).sendKeys("attacker-password");
+        driver2.findElement(By.id("password-confirm")).sendKeys("attacker-password");
+        driver2.findElement(By.id("password-confirm")).submit();
+        assertEquals(1, testUser.getUserSessions().size());
     }
 
     private void resetPassword(boolean logoutOtherSessions) {
