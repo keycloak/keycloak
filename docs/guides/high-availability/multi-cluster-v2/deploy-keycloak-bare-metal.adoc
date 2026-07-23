@@ -32,17 +32,16 @@ Each site has its own load balancer (for example, HAProxy or NGINX) that distrib
 A global load balancer routes client traffic to the per-site load balancers, probing `/lb-check` through them to detect site-level failures.
 +
 This topology provides better operational isolation: individual sites can be drained or taken offline for maintenance without affecting the global load balancer configuration.
-It also improves security, as TLS can be terminated at the site level and site-specific policies can be enforced, limiting the blast radius of a compromise.
 
 Single load balancer::
 One load balancer routes directly to all {project_name} nodes across all sites, probing `/health/ready` on management port 9000 of each node.
 +
-This topology is simpler to manage, but its shared load-balancing tier has a larger failure domain and must be deployed redundantly to avoid becoming a single point of failure.
+This topology is simpler to manage.
 Per-site operational tasks such as draining a site for maintenance or isolating a failing site require reconfiguring a shared component, which increases operational risk.
 
-For production deployments, the per-site topology with a global load balancer is recommended.
+The following example assumes a per-site topology with a global load balancer.
 
-With the `stateless` feature, {project_name} does not store session data in memory, so configuring sticky sessions on the load balancer is not required.
+With the `stateless` feature, {project_name} does not store session data in memory, so configuring sticky sessions on the load balancer is no longer recommended as it will not provide a performance benefit.
 
 See the <@links.server id="reverseproxy"/> {section} for details on configuring a reverse proxy with {project_name}.
 
@@ -102,7 +101,8 @@ This option is only available if the `stateless` feature is enabled.
 <6> Provide the TLS certificate and private key files for HTTPS.
 <7> Secure the database connection. Specify the path to the database CA certificate file. {project_name} automatically loads certificates from the specified truststore path.
 <8> Enable the PROXY protocol so that {project_name} can read the real client IP address from the PROXY protocol header sent by the load balancer.
-The load balancer must also be configured to send PROXY protocol headers (for example, `send-proxy-v2` in HAProxy).
+To use this option, the load balancer must also be configured to send PROXY protocol headers (for example, `send-proxy-v2` in HAProxy).
+If your load balancer does not support the PROXY protocol, remove this option to use plain HTTPS.
 Do not set `--proxy-headers` when using TLS passthrough; the two options are mutually exclusive.
 See the <@links.server id="haproxy-passthrough"/> or <@links.server id="traefik-passthrough"/> {sections} for complete examples.
 The `--shutdown-delay` keeps {project_name} running long enough for the load balancer to detect the shutdown via health check failures and remove the node from rotation.
@@ -119,13 +119,20 @@ Confirm that each {project_name} node is ready by checking the health endpoint o
 
 [source,bash]
 ----
-curl -sk https://localhost:9000/health/ready
+curl -sk -w '\n%{http_code}\n' https://localhost:9000/health/ready
 ----
 
 A healthy node returns HTTP 200 with an overall status of `UP`.
 The `checks` array contains the readiness checks enabled for the deployment.
 
 Repeat this check for each node in each site.
+
+Additionally, verify that `/lb-check` per site returns `200 OK` with status `UP`:
+
+[source,bash]
+----
+curl -sk -w '\n%{http_code}\n' https://<SITE_LB_HOSTNAME>/lb-check
+----
 
 Finally, verify that the external load balancer routes traffic to both sites.
 
