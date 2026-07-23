@@ -154,7 +154,7 @@
         <cnpg.major-minor-version>1.29</cnpg.major-minor-version>
         <cnpg.patch-version>0</cnpg.patch-version>
         <cnpg.version>${cnpg.major-minor-version}.${cnpg.patch-version}</cnpg.version>
-        <postgresql-jdbc.version>42.7.11</postgresql-jdbc.version>
+        <postgresql-jdbc.version>42.7.12</postgresql-jdbc.version>
         <mariadb.version>11.8</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
         <mariadb-jdbc.version>3.5.7</mariadb-jdbc.version>
