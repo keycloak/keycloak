@@ -78,6 +78,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -104,14 +106,10 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         confApp.setAttributes(Map.of(Constants.SUPPORT_JWT_CLAIM_IN_INTROSPECTION_RESPONSE_ENABLED,"true"));
 
         ProtocolMapperRepresentation audienceMapper = ModelToRepresentation.toRepresentation(
-            AudienceProtocolMapper.createClaimMapper(
-                "audience-mapper-confidential",
-                "test-app",
-                null,
-                true,
-                false,
-                false
-            )
+            AudienceProtocolMapper.builder("audience-mapper-confidential")
+                .clientAudience("test-app")
+                .includeIn(ACCESS_TOKEN)
+                .build()
         );
 
         confApp.setProtocolMappers(List.of(audienceMapper));

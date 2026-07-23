@@ -40,11 +40,12 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.ProtocolMapperUtils;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
 import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -255,21 +256,17 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         return Boolean.parseBoolean(model.getConfig().getOrDefault(ADD_ORGANIZATION_DOMAIN, Boolean.FALSE.toString()));
     }
 
-    public static ProtocolMapperModel create(String name, boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
-        ProtocolMapperModel mapper = new ProtocolMapperModel();
-        mapper.setName(name);
-        mapper.setProtocolMapper(PROVIDER_ID);
-        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<>();
-        if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
-        if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        if (introspectionEndpoint) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
-        config.put(TOKEN_CLAIM_NAME, OAuth2Constants.ORGANIZATION);
-        config.put(JSON_TYPE, "String");
-        config.put(ProtocolMapperUtils.MULTIVALUED, Boolean.TRUE.toString());
-        mapper.setConfig(config);
+    public static class Builder extends OIDCProtocolMapperBuilder<Builder> {
+        private Builder(String name) {
+            super(name, PROVIDER_ID);
+            claimName(OAuth2Constants.ORGANIZATION);
+            type(ClaimType.STRING);
+            multivalued();
+        }
+    }
 
-        return mapper;
+    public static Builder builder(String name) {
+        return new Builder(name);
     }
 
     @Override

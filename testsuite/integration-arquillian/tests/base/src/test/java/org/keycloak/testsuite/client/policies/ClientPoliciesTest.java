@@ -125,6 +125,7 @@ import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.OAuth2Constants.SCOPE_PHONE;
 import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_REFRESH_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ID_TOKEN;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.AdminApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
@@ -1316,7 +1317,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         ClientResource app = findClientResourceByClientId(adminClient.realm("test"), clientId);
         assert app != null;
         ProtocolMappersResource res = app.getProtocolMappers();
-        res.createMapper(ModelToRepresentation.toRepresentation(ClaimsParameterWithValueIdTokenMapper.createMapper("claimsParameterWithValueIdTokenMapper", "openbanking_intent_id", true))).close();
+        res.createMapper(ModelToRepresentation.toRepresentation(ClaimsParameterWithValueIdTokenMapper.builder("claimsParameterWithValueIdTokenMapper")
+                .attributeValue("openbanking_intent_id").includeIn(ID_TOKEN).build())).close();
 
         // register a binding of an intent with different client
         String intentId = "123abc456xyz";

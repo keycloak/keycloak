@@ -104,6 +104,7 @@ import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ID_TOKEN;
 import static org.keycloak.testsuite.admin.AdminApiUtil.findClientResourceByClientId;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -1239,7 +1240,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
             ProtocolMappersResource res = app.getProtocolMappers();
-            res.createMapper(ModelToRepresentation.toRepresentation(ClaimsParameterTokenMapper.createMapper("claimsParameterTokenMapper", true, false))).close();
+            res.createMapper(ModelToRepresentation.toRepresentation(ClaimsParameterTokenMapper.builder("claimsParameterTokenMapper")
+                    .includeIn(ID_TOKEN).build())).close();
 
             Map<String, Object> claims = ImmutableMap.of(
                 "id_token", ImmutableMap.of(

@@ -84,21 +84,15 @@ public class ParameterizedScopeUserPropertyMapper extends ParameterizedScopeMapp
         }
     }
 
-    public static ProtocolMapperModel create(String name, String userAttribute,
-                                              String tokenClaimName, String claimType,
-                                              boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
-        return create(name, userAttribute, tokenClaimName, claimType, accessToken, idToken, introspectionEndpoint, false);
+    public static class Builder extends ParameterizedScopeMapper.Builder<Builder> {
+        private Builder(String name) {
+            super(name, PROVIDER_ID);
+        }
+
     }
 
-    public static ProtocolMapperModel create(String name, String userAttribute,
-                                              String tokenClaimName, String claimType,
-                                              boolean accessToken, boolean idToken, boolean introspectionEndpoint,
-                                              boolean multivalued) {
-        ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(
-                name, userAttribute, tokenClaimName, claimType,
-                accessToken, idToken, false, introspectionEndpoint,
-                PROVIDER_ID);
-        mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, Boolean.toString(multivalued));
-        return mapper;
+    public static Builder builder(String name) {
+        return new Builder(name);
     }
+
 }

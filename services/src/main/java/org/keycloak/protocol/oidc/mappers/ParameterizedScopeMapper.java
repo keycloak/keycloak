@@ -118,12 +118,17 @@ public class ParameterizedScopeMapper extends AbstractOIDCProtocolMapper
         return Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES);
     }
 
-    public static ProtocolMapperModel create(String name, String tokenClaimName, String claimType,
-                                              boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
-        ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(
-                name, null, tokenClaimName, claimType,
-                accessToken, idToken, false, introspectionEndpoint,
-                PROVIDER_ID);
-        return mapper;
+    public static class Builder<B extends Builder<B>> extends OIDCProtocolMapperBuilder<B> {
+        protected Builder(String name, String providerId) {
+            super(name, providerId);
+        }
+
+        private Builder(String name) {
+            super(name, PROVIDER_ID);
+        }
+    }
+
+    public static Builder<?> builder(String name) {
+        return new Builder<>(name);
     }
 }

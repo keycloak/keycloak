@@ -29,6 +29,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.representations.IDToken;
 import org.keycloak.storage.UserStoragePrivateUtil;
@@ -45,6 +46,11 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
+
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ID_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.INTROSPECTION;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.USERINFO;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -96,8 +102,12 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             ldapClient.addRedirectUri("/ldap-portal");
             ldapClient.addRedirectUri("/ldap-portal/*");
             ldapClient.setManagementUrl("/ldap-portal");
-            ldapClient.addProtocolMapper(UserAttributeMapper.createClaimMapper("postalCode", "postal_code", "postal_code", "String", true, true, true, true));
-            ldapClient.addProtocolMapper(UserAttributeMapper.createClaimMapper("street", "street", "street", "String", true, true, true, false));
+            ldapClient.addProtocolMapper(UserAttributeMapper.builder("postalCode")
+                    .userAttribute("postal_code").claimName("postal_code").type(ClaimType.STRING)
+                    .includeIn(ACCESS_TOKEN, ID_TOKEN, USERINFO, INTROSPECTION).multivalued().build());
+            ldapClient.addProtocolMapper(UserAttributeMapper.builder("street")
+                    .userAttribute("street").claimName("street").type(ClaimType.STRING)
+                    .includeIn(ACCESS_TOKEN, ID_TOKEN, USERINFO, INTROSPECTION).build());
             ldapClient.addScopeMapping(appRealm.getRole("user"));
             ldapClient.setSecret("password");
         });

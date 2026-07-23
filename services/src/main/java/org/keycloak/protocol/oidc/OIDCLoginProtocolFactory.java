@@ -46,6 +46,7 @@ import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.AllowedWebOriginsProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.FullNameMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
 import org.keycloak.protocol.oidc.mappers.ParameterizedScopeUserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.SubMapper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
@@ -72,6 +73,10 @@ import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_R
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_REQ_TOKEN_PARAMS_FAIL_FAST;
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE;
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ID_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.INTROSPECTION;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.USERINFO;
 import static org.keycloak.representations.IDToken.MAY_ACT;
 import static org.keycloak.representations.JsonWebToken.SUBJECT;
 
@@ -191,111 +196,173 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
     void initBuiltIns() {
         ProtocolMapperModel model;
-        model = UserAttributeMapper.createClaimMapper(USERNAME,
-                "username",
-                "preferred_username", String.class.getSimpleName(),
-                true, true, true);
+        model = UserAttributeMapper.builder(USERNAME)
+                .userAttribute("username")
+                .claimName("preferred_username")
+                .type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, USERINFO, INTROSPECTION)
+                .build();
         builtins.put(USERNAME, model);
 
-        model = UserAttributeMapper.createClaimMapper(EMAIL,
-                "email",
-                "email", "String",
-                true, true, true);
+        model = UserAttributeMapper.builder(EMAIL)
+                .userAttribute("email")
+                .claimName("email")
+                .type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, USERINFO, INTROSPECTION)
+                .build();
         builtins.put(EMAIL, model);
 
-        model = UserAttributeMapper.createClaimMapper(GIVEN_NAME,
-                "firstName",
-                "given_name", "String",
-                true, true, true);
+        model = UserAttributeMapper.builder(GIVEN_NAME)
+                .userAttribute("firstName")
+                .claimName("given_name")
+                .type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, USERINFO, INTROSPECTION)
+                .build();
         builtins.put(GIVEN_NAME, model);
 
-        model = UserAttributeMapper.createClaimMapper(FAMILY_NAME,
-                "lastName",
-                "family_name", "String",
-                true, true, true);
+        model = UserAttributeMapper.builder(FAMILY_NAME)
+                .userAttribute("lastName")
+                .claimName("family_name")
+                .type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, USERINFO, INTROSPECTION)
+                .build();
         builtins.put(FAMILY_NAME, model);
 
-        createUserAttributeMapper(MIDDLE_NAME, "middleName", IDToken.MIDDLE_NAME, "String");
-        createUserAttributeMapper(NICKNAME, "nickname", IDToken.NICKNAME, "String");
-        createUserAttributeMapper(PROFILE_CLAIM, "profile", IDToken.PROFILE, "String");
-        createUserAttributeMapper(PICTURE, "picture", IDToken.PICTURE, "String");
-        createUserAttributeMapper(WEBSITE, "website", IDToken.WEBSITE, "String");
-        createUserAttributeMapper(GENDER, "gender", IDToken.GENDER, "String");
-        createUserAttributeMapper(BIRTHDATE, "birthdate", IDToken.BIRTHDATE, "String");
-        createUserAttributeMapper(ZONEINFO, "zoneinfo", IDToken.ZONEINFO, "String");
-        createUserAttributeMapper(UPDATED_AT, "updatedAt", IDToken.UPDATED_AT, "long");
-        createUserAttributeMapper(LOCALE, "locale", IDToken.LOCALE, "String");
+        createUserAttributeMapper(MIDDLE_NAME, "middleName", IDToken.MIDDLE_NAME, ClaimType.STRING);
+        createUserAttributeMapper(NICKNAME, "nickname", IDToken.NICKNAME, ClaimType.STRING);
+        createUserAttributeMapper(PROFILE_CLAIM, "profile", IDToken.PROFILE, ClaimType.STRING);
+        createUserAttributeMapper(PICTURE, "picture", IDToken.PICTURE, ClaimType.STRING);
+        createUserAttributeMapper(WEBSITE, "website", IDToken.WEBSITE, ClaimType.STRING);
+        createUserAttributeMapper(GENDER, "gender", IDToken.GENDER, ClaimType.STRING);
+        createUserAttributeMapper(BIRTHDATE, "birthdate", IDToken.BIRTHDATE, ClaimType.STRING);
+        createUserAttributeMapper(ZONEINFO, "zoneinfo", IDToken.ZONEINFO, ClaimType.STRING);
+        createUserAttributeMapper(UPDATED_AT, "updatedAt", IDToken.UPDATED_AT, ClaimType.LONG);
+        createUserAttributeMapper(LOCALE, "locale", IDToken.LOCALE, ClaimType.STRING);
 
-        createUserAttributeMapper(PHONE_NUMBER, "phoneNumber", IDToken.PHONE_NUMBER, "String");
-        createUserAttributeMapper(PHONE_NUMBER_VERIFIED, "phoneNumberVerified", IDToken.PHONE_NUMBER_VERIFIED, "boolean");
+        createUserAttributeMapper(PHONE_NUMBER, "phoneNumber", IDToken.PHONE_NUMBER, ClaimType.STRING);
+        createUserAttributeMapper(PHONE_NUMBER_VERIFIED, "phoneNumberVerified", IDToken.PHONE_NUMBER_VERIFIED, ClaimType.BOOLEAN);
 
-        model = UserPropertyMapper.createClaimMapper(EMAIL_VERIFIED,
-                "emailVerified",
-                "email_verified", "boolean",
-                true, true, true);
+        model = UserPropertyMapper.builder(EMAIL_VERIFIED)
+                .userAttribute("emailVerified")
+                .claimName("email_verified")
+                .type(ClaimType.BOOLEAN)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, USERINFO, INTROSPECTION)
+                .build();
         builtins.put(EMAIL_VERIFIED, model);
 
-        ProtocolMapperModel fullName = FullNameMapper.create(FULL_NAME, true, true, true, true);
-        builtins.put(FULL_NAME, fullName);
+        model = FullNameMapper.builder(FULL_NAME)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, USERINFO, INTROSPECTION)
+                .build();
+        builtins.put(FULL_NAME, model);
 
-        ProtocolMapperModel address = AddressMapper.createAddressMapper();
-        builtins.put(ADDRESS, address);
+        model = AddressMapper.builder(ADDRESS)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, USERINFO, INTROSPECTION)
+                .build();
+        builtins.put(ADDRESS, model);
 
-        model = UserSessionNoteMapper.createClaimMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
-                KerberosConstants.GSS_DELEGATION_CREDENTIAL,
-                KerberosConstants.GSS_DELEGATION_CREDENTIAL, "String",
-                true, false, true);
+        model = UserSessionNoteMapper.builder(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME, KerberosConstants.GSS_DELEGATION_CREDENTIAL)
+                .claimName(KerberosConstants.GSS_DELEGATION_CREDENTIAL)
+                .type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, INTROSPECTION)
+                .build();
         builtins.put(KerberosConstants.GSS_DELEGATION_CREDENTIAL, model);
 
-        model = UserRealmRoleMappingMapper.create(null, REALM_ROLES, "realm_access.roles", true, false, true, true);
+        model = UserRealmRoleMappingMapper.builder(REALM_ROLES)
+                .claimName("realm_access.roles")
+                .type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, INTROSPECTION)
+                .multivalued()
+                .realmRolePrefix(null)
+                .build();
         builtins.put(REALM_ROLES, model);
 
-        model = UserClientRoleMappingMapper.create(null, null, CLIENT_ROLES, "resource_access.${client_id}.roles", true, false, true, true);
+        model = UserClientRoleMappingMapper.builder(CLIENT_ROLES)
+                .claimName("resource_access.${client_id}.roles")
+                .type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, INTROSPECTION)
+                .multivalued()
+                .clientId(null)
+                .clientRolePrefix(null)
+                .build();
         builtins.put(CLIENT_ROLES, model);
 
-        model = AudienceResolveProtocolMapper.createClaimMapper(AUDIENCE_RESOLVE, true, true);
+        model = AudienceResolveProtocolMapper.builder(AUDIENCE_RESOLVE)
+                .includeIn(ACCESS_TOKEN, INTROSPECTION)
+                .build();
         builtins.put(AUDIENCE_RESOLVE, model);
 
-        model = AllowedWebOriginsProtocolMapper.createClaimMapper(ALLOWED_WEB_ORIGINS, true, true);
+        model = AllowedWebOriginsProtocolMapper.builder(ALLOWED_WEB_ORIGINS)
+                .includeIn(ACCESS_TOKEN, INTROSPECTION)
+                .build();
         builtins.put(ALLOWED_WEB_ORIGINS, model);
 
-        builtins.put(IMPERSONATOR_ID.getDisplayName(), UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_ID));
-        builtins.put(IMPERSONATOR_USERNAME.getDisplayName(), UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_USERNAME));
+        builtins.put(IMPERSONATOR_ID.getDisplayName(), UserSessionNoteMapper.builder(IMPERSONATOR_ID.getDisplayName(), IMPERSONATOR_ID.toString())
+                .claimName(IMPERSONATOR_ID.getTokenClaim())
+                .type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION)
+                .build());
 
-        model = UserAttributeMapper.createClaimMapper(UPN, "username",
-                "upn", "String",
-                true, true, true);
+        builtins.put(IMPERSONATOR_USERNAME.getDisplayName(), UserSessionNoteMapper.builder(IMPERSONATOR_USERNAME.getDisplayName(), IMPERSONATOR_USERNAME.toString())
+                .claimName(IMPERSONATOR_USERNAME.getTokenClaim())
+                .type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION)
+                .build());
+
+        model = UserAttributeMapper.builder(UPN)
+                .userAttribute("username")
+                .claimName("upn")
+                .type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, USERINFO, INTROSPECTION)
+                .build();
         builtins.put(UPN, model);
 
-        model = UserRealmRoleMappingMapper.create(null, GROUPS, GROUPS, true, true, true, true);
+        model = UserRealmRoleMappingMapper.builder(GROUPS)
+                .claimName(GROUPS)
+                .type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION)
+                .multivalued()
+                .realmRolePrefix(null)
+                .build();
         builtins.put(GROUPS, model);
 
         if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
-            model = AcrProtocolMapper.create(ACR, true, true, true);
+            model = AcrProtocolMapper.builder(ACR)
+                    .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION)
+                    .build();
             builtins.put(ACR, model);
         }
 
         if (Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_DELEGATION)) {
-            model = ParameterizedScopeUserPropertyMapper.create(
-                    DELEGATION_MAY_ACT_SUB, "id", MAY_ACT + "." + SUBJECT, "String", true, true, true);
+            model = ParameterizedScopeUserPropertyMapper.builder(DELEGATION_MAY_ACT_SUB)
+                    .userAttribute("id")
+                    .claimName(MAY_ACT + "." + SUBJECT)
+                    .type(ClaimType.STRING)
+                    .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION)
+                    .multivalued(false)
+                    .build();
             builtins.put(DELEGATION_MAY_ACT_SUB, model);
         }
 
-        model = UserSessionNoteMapper.createClaimMapper(IDToken.AUTH_TIME, AuthenticationManager.AUTH_TIME,
-                IDToken.AUTH_TIME, "long",
-                true, true, false, true);
+        model = UserSessionNoteMapper.builder(IDToken.AUTH_TIME, AuthenticationManager.AUTH_TIME)
+                .claimName(IDToken.AUTH_TIME)
+                .type(ClaimType.LONG)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION)
+                .build();
         builtins.put(IDToken.AUTH_TIME, model);
 
-        model = SubMapper.create(IDToken.SUBJECT,true, true);
+        model = SubMapper.builder(IDToken.SUBJECT)
+                .includeIn(ACCESS_TOKEN, INTROSPECTION)
+                .build();
         builtins.put(IDToken.SUBJECT, model);
     }
 
-    private void createUserAttributeMapper(String name, String attrName, String claimName, String type) {
-        ProtocolMapperModel model = UserAttributeMapper.createClaimMapper(name,
-                attrName,
-                claimName, type,
-                true, true, true, false);
-        builtins.put(name, model);
+    private void createUserAttributeMapper(String name, String attrName, String claimName, ClaimType type) {
+        builtins.put(name, UserAttributeMapper.builder(name)
+                .userAttribute(attrName)
+                .claimName(claimName)
+                .type(type)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, USERINFO, INTROSPECTION)
+                .build());
     }
 
     @Override
@@ -376,7 +443,9 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             organizationScope.setConsentScreenText(ORGANIZATION_SCOPE_CONSENT_TEXT);
             organizationScope.setIncludeInTokenScope(true);
             organizationScope.setProtocol(getId());
-            organizationScope.addProtocolMapper(OrganizationMembershipMapper.create(ORGANIZATION, true, true, true));
+            organizationScope.addProtocolMapper(OrganizationMembershipMapper.builder(ORGANIZATION)
+                    .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION)
+                    .build());
             newRealm.addDefaultClientScope(organizationScope, false);
         }
 
@@ -517,18 +586,21 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             serviceAccountScope.setDisplayOnConsentScreen(false);
             serviceAccountScope.setIncludeInTokenScope(false);
             serviceAccountScope.setProtocol(getId());
-            serviceAccountScope.addProtocolMapper(UserSessionNoteMapper.createClaimMapper(ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER,
-                    ServiceAccountConstants.CLIENT_ID,
-                    ServiceAccountConstants.CLIENT_ID, "String",
-                    true, true, true));
-            serviceAccountScope.addProtocolMapper(UserSessionNoteMapper.createClaimMapper(ServiceAccountConstants.CLIENT_HOST_PROTOCOL_MAPPER,
-                    ServiceAccountConstants.CLIENT_HOST,
-                    ServiceAccountConstants.CLIENT_HOST, "String",
-                    true, true, true));
-            serviceAccountScope.addProtocolMapper(UserSessionNoteMapper.createClaimMapper(ServiceAccountConstants.CLIENT_ADDRESS_PROTOCOL_MAPPER,
-                    ServiceAccountConstants.CLIENT_ADDRESS,
-                    ServiceAccountConstants.CLIENT_ADDRESS, "String",
-                    true, true, true));
+            serviceAccountScope.addProtocolMapper(UserSessionNoteMapper.builder(ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER, ServiceAccountConstants.CLIENT_ID)
+                    .claimName(ServiceAccountConstants.CLIENT_ID)
+                    .type(ClaimType.STRING)
+                    .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION)
+                    .build());
+            serviceAccountScope.addProtocolMapper(UserSessionNoteMapper.builder(ServiceAccountConstants.CLIENT_HOST_PROTOCOL_MAPPER, ServiceAccountConstants.CLIENT_HOST)
+                    .claimName(ServiceAccountConstants.CLIENT_HOST)
+                    .type(ClaimType.STRING)
+                    .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION)
+                    .build());
+            serviceAccountScope.addProtocolMapper(UserSessionNoteMapper.builder(ServiceAccountConstants.CLIENT_ADDRESS_PROTOCOL_MAPPER, ServiceAccountConstants.CLIENT_ADDRESS)
+                    .claimName(ServiceAccountConstants.CLIENT_ADDRESS)
+                    .type(ClaimType.STRING)
+                    .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION)
+                    .build());
 
             logger.debugf("Client scope '%s' created in the realm '%s'.", ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE, newRealm.getName());
         } else {

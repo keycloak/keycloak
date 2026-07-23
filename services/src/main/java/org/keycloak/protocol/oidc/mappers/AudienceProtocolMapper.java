@@ -18,15 +18,12 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 
@@ -112,35 +109,21 @@ public class AudienceProtocolMapper extends AbstractOIDCProtocolMapper implement
         token.addAudience(audienceValue);
     }
 
-    public static ProtocolMapperModel createClaimMapper(String name,
-                                                        String includedClientAudience,
-                                                        String includedCustomAudience,
-                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
-        return createClaimMapper(name, includedClientAudience, includedCustomAudience, accessToken, idToken, introspectionEndpoint, false);
+    public static class Builder extends OIDCProtocolMapperBuilder<Builder> {
+        private Builder(String name) {
+            super(name, PROVIDER_ID);
+        }
+
+        public Builder clientAudience(String clientId) {
+            return config(INCLUDED_CLIENT_AUDIENCE, clientId);
+        }
+
+        public Builder customAudience(String audience) {
+            return config(INCLUDED_CUSTOM_AUDIENCE, audience);
+        }
     }
 
-    public static ProtocolMapperModel createClaimMapper(String name,
-                                                        String includedClientAudience,
-                                                        String includedCustomAudience,
-                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint, boolean lightweightAccessToken) {
-        ProtocolMapperModel mapper = new ProtocolMapperModel();
-        mapper.setName(name);
-        mapper.setProtocolMapper(PROVIDER_ID);
-        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-
-        Map<String, String> config = new HashMap<>();
-        if (includedClientAudience != null) {
-            config.put(INCLUDED_CLIENT_AUDIENCE, includedClientAudience);
-        }
-        if (includedCustomAudience != null) {
-            config.put(INCLUDED_CUSTOM_AUDIENCE, includedCustomAudience);
-        }
-
-        if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
-        if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        if (introspectionEndpoint) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
-        if (lightweightAccessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN, "true");
-        mapper.setConfig(config);
-        return mapper;
+    public static Builder builder(String name) {
+        return new Builder(name);
     }
 }

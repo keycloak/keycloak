@@ -98,23 +98,18 @@ public class UserRealmRoleMappingMapper extends AbstractUserRoleMappingMapper {
         AbstractUserRoleMappingMapper.setClaim(token, mappingModel, access.getRoles(),null, rolePrefix);
     }
 
-    public static ProtocolMapperModel create(String realmRolePrefix,
-                                             String name,
-                                             String tokenClaimName, boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
+    public static class Builder extends OIDCProtocolMapperBuilder<Builder> {
+        private Builder(String name) {
+            super(name, PROVIDER_ID);
+        }
 
-        return create(realmRolePrefix, name, tokenClaimName, accessToken, idToken, introspectionEndpoint, false);
+        public Builder realmRolePrefix(String prefix) {
+            return config(ProtocolMapperUtils.USER_MODEL_REALM_ROLE_MAPPING_ROLE_PREFIX, prefix);
+        }
     }
 
-    public static ProtocolMapperModel create(String realmRolePrefix,
-                                             String name,
-                                             String tokenClaimName, boolean accessToken, boolean idToken, boolean introspectionEndpoint, boolean multiValued) {
-        ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, "foo",
-                tokenClaimName, "String",
-                accessToken, idToken, false, introspectionEndpoint,
-                PROVIDER_ID);
-
-        mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, String.valueOf(multiValued));
-        mapper.getConfig().put(ProtocolMapperUtils.USER_MODEL_REALM_ROLE_MAPPING_ROLE_PREFIX, realmRolePrefix);
-        return mapper;
+    public static Builder builder(String name) {
+        return new Builder(name);
     }
+
 }
