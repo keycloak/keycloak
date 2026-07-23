@@ -1,14 +1,24 @@
 import AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import AuthenticatorConfigRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
+import {
+  DndContext,
+  DragEndEvent,
+  DragMoveEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { getEventCoordinates } from "@dnd-kit/utilities";
+import { snapCenterToCursor } from "./drag-modifiers";
 import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DragDrop,
   DropdownItem,
-  Droppable,
   Label,
   PageSection,
   ToggleGroup,
@@ -17,9 +27,15 @@ import {
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { DomainIcon, TableIcon } from "@patternfly/react-icons";
+import {
+  CodeBranchIcon,
+  CogIcon,
+  DomainIcon,
+  GripVerticalIcon,
+  TableIcon,
+} from "@patternfly/react-icons";
 import { Table, Tbody } from "@patternfly/react-table";
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
@@ -39,6 +55,8 @@ import { FlowRow } from "./components/FlowRow";
 import { AddStepModal } from "./components/modals/AddStepModal";
 import { AddSubFlowModal, Flow } from "./components/modals/AddSubFlowModal";
 import {
+  DropInfo,
+  DropVertical,
   ExecutionList,
   ExpandableExecution,
   IndexChange,
@@ -50,6 +68,159 @@ import { toFlow, type FlowParams } from "./routes/Flow";
 export const providerConditionFilter = (
   value: AuthenticationProviderRepresentation,
 ) => value.displayName?.startsWith("Condition ");
+
+const SUBFLOW_EXPAND_DELAY_MS = 400;
+const ROW_EDGE_ZONE_RATIO = 0.25;
+
+type HoveredRow = {
+  hoverId: string;
+  rect: DOMRect;
+  isSubflow: boolean;
+  level: number;
+};
+
+type ExecutionMoveSnapshot = {
+  config: AuthenticatorConfigRepresentation;
+  children: ExecutionMoveSnapshot[];
+};
+
+const executionLabel = (
+  execution?: Pick<ExpandableExecution, "displayName" | "alias" | "id">,
+) => execution?.displayName || execution?.alias || execution?.id || "";
+
+const rowFromElement = (
+  element: Element | null,
+  activeId: string,
+): HoveredRow | null => {
+  const row = element?.closest("tr[data-execution-id]");
+  if (!row) {
+    return null;
+  }
+
+  const executionId = row.getAttribute("data-execution-id");
+  if (!executionId || executionId === activeId) {
+    return null;
+  }
+
+  return {
+    hoverId: executionId,
+    rect: row.getBoundingClientRect(),
+    isSubflow: row.getAttribute("data-is-subflow") === "true",
+    level: Number.parseInt(row.getAttribute("data-level") || "0", 10),
+  };
+};
+
+const getPointerCoordinates = (
+  event: DragMoveEvent,
+): { x: number; y: number } | null => {
+  const start = getEventCoordinates(event.activatorEvent);
+  if (start) {
+    return {
+      x: start.x + event.delta.x,
+      y: start.y + event.delta.y,
+    };
+  }
+
+  if (event.activatorEvent instanceof PointerEvent) {
+    return {
+      x: event.activatorEvent.clientX + event.delta.x,
+      y: event.activatorEvent.clientY + event.delta.y,
+    };
+  }
+
+  return null;
+};
+
+const findHoveredRow = (
+  rows: readonly Element[],
+  activeId: string,
+  pointerX: number,
+  pointerY: number,
+): HoveredRow | null => {
+  const fromPoint = rowFromElement(
+    document.elementFromPoint(pointerX, pointerY),
+    activeId,
+  );
+  if (fromPoint) {
+    return fromPoint;
+  }
+
+  let match: HoveredRow | null = null;
+
+  for (const row of rows) {
+    if (!row.isConnected) {
+      continue;
+    }
+
+    const rect = row.getBoundingClientRect();
+    if (
+      pointerX < rect.left ||
+      pointerX > rect.right ||
+      pointerY < rect.top ||
+      pointerY > rect.bottom
+    ) {
+      continue;
+    }
+
+    const executionId = row.getAttribute("data-execution-id");
+    if (!executionId || executionId === activeId) {
+      continue;
+    }
+
+    const level = Number.parseInt(row.getAttribute("data-level") || "0", 10);
+    if (!match || level >= match.level) {
+      match = {
+        hoverId: executionId,
+        rect,
+        isSubflow: row.getAttribute("data-is-subflow") === "true",
+        level,
+      };
+    }
+  }
+
+  return match;
+};
+
+const emptyDropInfo = (): DropInfo => ({
+  targetId: null,
+  mode: "reorder",
+  targetLevel: 0,
+  targetParentId: null,
+  insertIndex: -1,
+});
+
+const dropModeToVertical = (mode: DropInfo["mode"]): DropVertical => {
+  if (mode === "reorder-before") {
+    return "before";
+  }
+  if (mode === "drop-into") {
+    return "into";
+  }
+  return "after";
+};
+
+const DragOverlayContent = ({
+  execution,
+  text,
+}: {
+  execution: ExpandableExecution;
+  text: string;
+}) => {
+  const isSubflow = execution.authenticationFlow;
+  return (
+    <div className="keycloak__authentication__drag-overlay">
+      <span className="keycloak__authentication__drag-overlay-handle">
+        <GripVerticalIcon />
+      </span>
+      <span className="keycloak__authentication__drag-overlay-icon">
+        {isSubflow ? <CodeBranchIcon /> : <CogIcon />}
+      </span>
+      <div className="keycloak__authentication__drag-overlay-text">
+        {text || executionLabel(execution)}
+      </div>
+    </div>
+  );
+};
 
 export default function FlowDetails() {
   const { adminClient } = useAdminClient();
@@ -75,6 +246,410 @@ export default function FlowDetails() {
   const [open, toggleOpen, setOpen] = useToggle();
   const [edit, setEdit] = useState(false);
   const [bindFlowOpen, toggleBindFlow] = useToggle();
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [dropInfo, setDropInfo] = useState<DropInfo>(emptyDropInfo());
+  const [pendingExpandId, setPendingExpandId] = useState<string | null>(null);
+
+  const collapseSnapshotRef = useRef<Map<string, boolean>>(new Map());
+  const autoExpandedIdsRef = useRef<Set<string>>(new Set());
+  const expandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingExpandIdRef = useRef<string | null>(null);
+  const collapseRafRef = useRef<number | null>(null);
+  const dropInfoRef = useRef<DropInfo>(emptyDropInfo());
+  const dragRowsRef = useRef<Element[]>([]);
+
+  const refreshDragRows = useCallback(() => {
+    dragRowsRef.current = Array.from(
+      document.querySelectorAll("tr[data-execution-id]"),
+    );
+  }, []);
+
+  const updateDropInfo = useCallback((info: DropInfo) => {
+    dropInfoRef.current = info;
+    setDropInfo(info);
+  }, []);
+
+  const visualIndexById = useMemo(() => {
+    const map = new Map<string, number>();
+    executionList?.order().forEach((ex, index) => {
+      if (ex.id) {
+        map.set(ex.id, index);
+      }
+    });
+    return map;
+  }, [executionList]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+  );
+
+  const findExecutionById = useCallback(
+    (
+      id: string,
+      list?: ExpandableExecution[],
+    ): ExpandableExecution | undefined => {
+      const searchList = list || executionList?.expandableList || [];
+      for (const ex of searchList) {
+        if (ex.id === id) {
+          return ex;
+        }
+        if (ex.executionList) {
+          const found = findExecutionById(id, ex.executionList);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    },
+    [executionList],
+  );
+
+  const activeExecution = useMemo(
+    () => (activeId ? findExecutionById(activeId) : undefined),
+    [activeId, findExecutionById],
+  );
+
+  const getDragDestinationText = useCallback(
+    (dragged: ExpandableExecution, info: DropInfo): string => {
+      const draggedName = executionLabel(dragged);
+      const destinationParent = info.targetParentId
+        ? findExecutionById(info.targetParentId)
+        : undefined;
+      const destinationParentName =
+        executionLabel(destinationParent) || flow?.alias || t("flows");
+      const siblings =
+        destinationParent?.executionList ?? executionList?.expandableList ?? [];
+      const siblingsWithoutDragged = siblings.filter(
+        (child) => child.id !== dragged.id,
+      );
+
+      let belowTargetName = "";
+
+      if (info.targetId && info.mode === "drop-into") {
+        belowTargetName = executionLabel(siblingsWithoutDragged.at(-1));
+      } else if (info.targetId) {
+        const targetIndex = siblingsWithoutDragged.findIndex(
+          (child) => child.id === info.targetId,
+        );
+        if (targetIndex >= 0) {
+          belowTargetName = executionLabel(
+            info.mode === "reorder-before"
+              ? siblingsWithoutDragged[targetIndex - 1]
+              : siblingsWithoutDragged[targetIndex],
+          );
+        }
+      }
+
+      if (belowTargetName) {
+        return t("onDragMoveIntoSubflowBelow", {
+          item: draggedName,
+          subflow: destinationParentName,
+          target: belowTargetName,
+        });
+      }
+
+      return t("onDragMoveIntoSubflow", {
+        item: draggedName,
+        subflow: destinationParentName,
+      });
+    },
+    [executionList, findExecutionById, flow?.alias, t],
+  );
+
+  const dragOverlayText = useMemo(() => {
+    if (!activeExecution) {
+      return "";
+    }
+
+    return getDragDestinationText(activeExecution, dropInfo);
+  }, [activeExecution, dropInfo, getDragDestinationText]);
+
+  const clearExpandTimer = useCallback(() => {
+    if (expandTimerRef.current) {
+      clearTimeout(expandTimerRef.current);
+      expandTimerRef.current = null;
+    }
+    pendingExpandIdRef.current = null;
+    setPendingExpandId(null);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearExpandTimer();
+      if (collapseRafRef.current !== null) {
+        cancelAnimationFrame(collapseRafRef.current);
+      }
+    };
+  }, [clearExpandTimer]);
+
+  const restoreDragState = useCallback(() => {
+    clearExpandTimer();
+    if (collapseRafRef.current !== null) {
+      cancelAnimationFrame(collapseRafRef.current);
+      collapseRafRef.current = null;
+    }
+    autoExpandedIdsRef.current.clear();
+    if (executionList) {
+      executionList.restoreCollapseState(collapseSnapshotRef.current);
+      setExecutionList(executionList.clone());
+    }
+  }, [clearExpandTimer, executionList]);
+
+  const syncAutoExpandedPath = useCallback(
+    (subflowId: string, expandTarget: boolean) => {
+      if (!executionList) {
+        return;
+      }
+
+      const subflow = findExecutionById(subflowId);
+      if (!subflow?.executionList?.length) {
+        return;
+      }
+
+      const ancestorIds = executionList.ancestorPathIds(subflowId);
+      let changed = false;
+
+      for (const id of [...autoExpandedIdsRef.current]) {
+        const keepExpanded =
+          ancestorIds.has(id) || (expandTarget && id === subflowId);
+        if (keepExpanded) {
+          continue;
+        }
+        const node = findExecutionById(id);
+        if (node?.executionList?.length && !node.isCollapsed) {
+          node.isCollapsed = true;
+          changed = true;
+        }
+        autoExpandedIdsRef.current.delete(id);
+      }
+
+      for (const ancestorId of ancestorIds) {
+        const ancestor = findExecutionById(ancestorId);
+        if (ancestor?.executionList?.length) {
+          if (ancestor.isCollapsed) {
+            ancestor.isCollapsed = false;
+            changed = true;
+          }
+          autoExpandedIdsRef.current.add(ancestorId);
+        }
+      }
+
+      if (expandTarget) {
+        if (subflow.isCollapsed) {
+          subflow.isCollapsed = false;
+          changed = true;
+        }
+        autoExpandedIdsRef.current.add(subflowId);
+      }
+
+      if (changed) {
+        setExecutionList(executionList.clone());
+        requestAnimationFrame(() => {
+          refreshDragRows();
+        });
+      }
+    },
+    [executionList, findExecutionById, refreshDragRows],
+  );
+
+  const scheduleSubflowExpand = useCallback(
+    (subflowId: string) => {
+      if (pendingExpandIdRef.current === subflowId) {
+        return;
+      }
+
+      clearExpandTimer();
+      syncAutoExpandedPath(subflowId, false);
+      pendingExpandIdRef.current = subflowId;
+      setPendingExpandId(subflowId);
+
+      expandTimerRef.current = setTimeout(() => {
+        expandTimerRef.current = null;
+        pendingExpandIdRef.current = null;
+        setPendingExpandId(null);
+        syncAutoExpandedPath(subflowId, true);
+      }, SUBFLOW_EXPAND_DELAY_MS);
+    },
+    [clearExpandTimer, syncAutoExpandedPath],
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const draggedId = active.id as string;
+    setActiveId(draggedId);
+
+    if (!executionList) {
+      return;
+    }
+
+    const item = findExecutionById(draggedId);
+    if (!item) {
+      return;
+    }
+
+    setLiveText(t("onDragStart", { item: item.displayName }));
+    collapseSnapshotRef.current = executionList.snapshotCollapseState();
+    autoExpandedIdsRef.current.clear();
+
+    if (collapseRafRef.current !== null) {
+      cancelAnimationFrame(collapseRafRef.current);
+    }
+    collapseRafRef.current = requestAnimationFrame(() => {
+      collapseRafRef.current = null;
+      executionList.collapseAllSubflows();
+      setExecutionList(executionList.clone());
+      requestAnimationFrame(() => {
+        refreshDragRows();
+      });
+    });
+  };
+
+  const handleDragMove = (event: DragMoveEvent) => {
+    const pointer = getPointerCoordinates(event);
+    if (!executionList || !pointer) {
+      return;
+    }
+
+    const { active } = event;
+    const { x: pointerX, y: pointerY } = pointer;
+    const hoveredRow = findHoveredRow(
+      dragRowsRef.current,
+      active.id as string,
+      pointerX,
+      pointerY,
+    );
+
+    let hoverId: string | null = null;
+    let vertical: DropVertical = "after";
+
+    if (hoveredRow) {
+      hoverId = hoveredRow.hoverId;
+      const { rect, isSubflow } = hoveredRow;
+      const rowHeight = rect.height;
+      const relativeY = pointerY - rect.top;
+      const edgeZone = rowHeight * ROW_EDGE_ZONE_RATIO;
+
+      if (relativeY < edgeZone) {
+        vertical = "before";
+        clearExpandTimer();
+      } else if (relativeY > rowHeight - edgeZone) {
+        vertical = "after";
+        clearExpandTimer();
+      } else if (isSubflow) {
+        vertical = "into";
+        const subflow = findExecutionById(hoveredRow.hoverId);
+        if (subflow?.isCollapsed) {
+          scheduleSubflowExpand(hoveredRow.hoverId);
+        } else {
+          clearExpandTimer();
+          syncAutoExpandedPath(hoveredRow.hoverId, true);
+        }
+      } else {
+        vertical = "after";
+        clearExpandTimer();
+      }
+    } else {
+      clearExpandTimer();
+    }
+
+    const dragged = findExecutionById(active.id as string);
+
+    if (hoverId) {
+      const resolved = executionList.resolveDropTarget(
+        active.id as string,
+        hoverId,
+        vertical,
+      );
+      if (resolved) {
+        updateDropInfo(resolved.preview);
+        if (dragged) {
+          setLiveText(getDragDestinationText(dragged, resolved.preview));
+        }
+      } else {
+        updateDropInfo(emptyDropInfo());
+        if (dragged) {
+          setLiveText(getDragDestinationText(dragged, emptyDropInfo()));
+        }
+      }
+    } else {
+      updateDropInfo(emptyDropInfo());
+      if (dragged) {
+        setLiveText(getDragDestinationText(dragged, emptyDropInfo()));
+      }
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active } = event;
+    setActiveId(null);
+
+    const currentDropInfo = dropInfoRef.current;
+    updateDropInfo(emptyDropInfo());
+
+    if (!executionList) {
+      restoreDragState();
+      setLiveText(t("onDragCancel"));
+      return;
+    }
+
+    const activeId = active.id as string;
+    const dragged = findExecutionById(activeId);
+
+    if (!dragged) {
+      restoreDragState();
+      setLiveText(t("onDragCancel"));
+      return;
+    }
+
+    if (!currentDropInfo.targetId) {
+      restoreDragState();
+      setLiveText(t("onDragCancel"));
+      return;
+    }
+
+    const resolved = executionList.resolveDropTarget(
+      activeId,
+      currentDropInfo.targetId,
+      dropModeToVertical(currentDropInfo.mode),
+    );
+
+    if (!resolved) {
+      restoreDragState();
+      setLiveText(t("onDragCancel"));
+      return;
+    }
+
+    const { change } = resolved;
+    const currentParent = executionList.findParentOf(activeId);
+    const isNoOp =
+      (change instanceof IndexChange &&
+        change.oldIndex === change.newIndex &&
+        resolved.kind === "reorder") ||
+      (change instanceof LevelChange &&
+        change.oldIndex === change.newIndex &&
+        resolved.kind === "level-change" &&
+        currentParent?.id === change.parent?.id);
+
+    if (isNoOp) {
+      restoreDragState();
+      setLiveText(t("onDragCancel"));
+      return;
+    }
+
+    restoreDragState();
+    setLiveText(t("onDragFinish", { list: dragged.displayName }));
+    void executeChange(dragged, change);
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+    updateDropInfo(emptyDropInfo());
+    restoreDragState();
+    setLiveText(t("onDragCancel"));
+  };
 
   useFetch(
     async () => {
@@ -97,26 +672,67 @@ export default function FlowDetails() {
     [key],
   );
 
+  const snapshotExecutionSubtree = async (
+    execution: ExpandableExecution,
+  ): Promise<ExecutionMoveSnapshot> => {
+    let config: AuthenticatorConfigRepresentation = {};
+    if (execution.authenticationConfig) {
+      config = await adminClient.authenticationManagement.getConfig({
+        id: execution.authenticationConfig as string,
+      });
+    }
+    const children = execution.executionList
+      ? await Promise.all(
+          execution.executionList.map((child) =>
+            snapshotExecutionSubtree(child),
+          ),
+        )
+      : [];
+    return { config, children };
+  };
+
+  const restoreExecutionRequirement = async (
+    executionId: string,
+    requirement: string,
+  ) => {
+    const executions = await adminClient.authenticationManagement.getExecutions(
+      {
+        flow: flow?.alias!,
+      },
+    );
+    const execution = executions.find((item) => item.id === executionId);
+    if (!execution) {
+      return;
+    }
+    await adminClient.authenticationManagement.updateExecution(
+      { flow: flow?.alias! },
+      { ...execution, requirement },
+    );
+  };
+
   const executeChange = async (
     ex: AuthenticationFlowRepresentation | ExpandableExecution,
     change: LevelChange | IndexChange,
+    options: { silent?: boolean; snapshot?: ExecutionMoveSnapshot } = {},
   ) => {
+    const { silent = false, snapshot } = options;
     try {
       let id = ex.id!;
+      const originalRequirement =
+        "requirement" in ex ? ex.requirement : undefined;
+
       if ("parent" in change) {
-        let config: AuthenticatorConfigRepresentation = {};
-        if ("authenticationConfig" in ex) {
-          config = await adminClient.authenticationManagement.getConfig({
-            id: ex.authenticationConfig as string,
-          });
-        }
+        const subtreeSnapshot =
+          snapshot ??
+          (await snapshotExecutionSubtree(ex as ExpandableExecution));
+        const config = subtreeSnapshot.config;
 
         try {
           await adminClient.authenticationManagement.delExecution({ id });
         } catch {
           // skipping already deleted execution
         }
-        if ("authenticationFlow" in ex) {
+        if ("authenticationFlow" in ex && ex.authenticationFlow) {
           const executionFlow = ex as ExpandableExecution;
           const result =
             await adminClient.authenticationManagement.addFlowToFlow({
@@ -127,13 +743,21 @@ export default function FlowDetails() {
               type: "basic-flow",
             });
           id = result.id!;
-          ex.executionList?.forEach((e, i) =>
-            executeChange(e, {
-              parent: { ...ex, id: result.id },
-              newIndex: i,
-              oldIndex: i,
-            }),
-          );
+
+          if (executionFlow.executionList?.length) {
+            const parentForChildren = { ...executionFlow, id: result.id };
+            for (const [i, child] of executionFlow.executionList.entries()) {
+              await executeChange(
+                child,
+                {
+                  parent: parentForChildren,
+                  newIndex: i,
+                  oldIndex: i,
+                },
+                { silent: true, snapshot: subtreeSnapshot.children[i] },
+              );
+            }
+          }
         } else {
           const result =
             await adminClient.authenticationManagement.addExecutionToFlow({
@@ -152,6 +776,10 @@ export default function FlowDetails() {
 
           id = result.id!;
         }
+
+        if (originalRequirement) {
+          await restoreExecutionRequirement(id, originalRequirement);
+        }
       }
       const times = change.newIndex - change.oldIndex;
       for (let index = 0; index < Math.abs(times); index++) {
@@ -165,9 +793,14 @@ export default function FlowDetails() {
           });
         }
       }
-      refresh();
-      addAlert(t("updateFlowSuccess"), AlertVariant.success);
+      if (!silent) {
+        refresh();
+        addAlert(t("updateFlowSuccess"), AlertVariant.success);
+      }
     } catch (error) {
+      if (silent) {
+        throw error;
+      }
       addError("updateFlowError", error);
     }
   };
@@ -409,74 +1042,58 @@ export default function FlowDetails() {
             </Toolbar>
             <DeleteConfirm />
             {tableView && (
-              <DragDrop
-                onDrag={({ index }) => {
-                  const item = executionList.findExecution(index)!;
-                  setLiveText(t("onDragStart", { item: item.displayName }));
-                  if (!item.isCollapsed) {
-                    item.isCollapsed = true;
-                    setExecutionList(executionList.clone());
-                  }
-                  return true;
-                }}
-                onDragMove={({ index }) => {
-                  const dragged = executionList.findExecution(index);
-                  setLiveText(t("onDragMove", { item: dragged?.displayName }));
-                }}
-                onDrop={(source, dest) => {
-                  if (dest) {
-                    if (source.index === dest.index) {
-                      return false;
-                    }
-
-                    const dragged = executionList.findExecution(source.index)!;
-                    const order = executionList.order().map((ex) => ex.id!);
-                    setLiveText(
-                      t("onDragFinish", { list: dragged.displayName }),
-                    );
-
-                    const [removed] = order.splice(source.index, 1);
-                    order.splice(dest.index, 0, removed);
-                    const change = executionList.getChange(dragged, order);
-                    void executeChange(dragged, change);
-                    return true;
-                  } else {
-                    setLiveText(t("onDragCancel"));
-                    return false;
-                  }
-                }}
+              <DndContext
+                sensors={sensors}
+                onDragStart={handleDragStart}
+                onDragMove={handleDragMove}
+                onDragEnd={handleDragEnd}
+                onDragCancel={handleDragCancel}
               >
-                <Droppable hasNoWrapper>
-                  <Table aria-label={t("flows")} isTreeTable>
-                    <FlowHeader />
-                    <>
-                      {executionList.expandableList.map((execution) => (
-                        <Tbody draggable key={execution.id}>
-                          <FlowRow
-                            builtIn={!!builtIn}
-                            execution={execution}
-                            onRowClick={(execution) => {
-                              execution.isCollapsed = !execution.isCollapsed;
-                              setExecutionList(executionList.clone());
-                            }}
-                            onRowChange={update}
-                            onAddExecution={(execution, type) =>
-                              addExecution(execution.displayName!, type)
-                            }
-                            onAddFlow={(execution, flow) =>
-                              addFlow(execution.displayName!, flow)
-                            }
-                            onDelete={(execution) => {
-                              setSelectedExecution(execution);
-                              toggleDeleteDialog();
-                            }}
-                          />
-                        </Tbody>
-                      ))}
-                    </>
-                  </Table>
-                </Droppable>
-              </DragDrop>
+                <Table aria-label={t("flows")} isTreeTable>
+                  <FlowHeader />
+                  <>
+                    {executionList.expandableList.map((execution) => (
+                      <Tbody key={execution.id}>
+                        <FlowRow
+                          builtIn={!!builtIn}
+                          execution={execution}
+                          dropInfo={dropInfo}
+                          visualIndexById={visualIndexById}
+                          activeId={activeId}
+                          pendingExpandId={pendingExpandId}
+                          onRowClick={(execution) => {
+                            execution.isCollapsed = !execution.isCollapsed;
+                            setExecutionList(executionList.clone());
+                          }}
+                          onRowChange={update}
+                          onAddExecution={(execution, type) =>
+                            addExecution(execution.displayName!, type)
+                          }
+                          onAddFlow={(execution, flow) =>
+                            addFlow(execution.displayName!, flow)
+                          }
+                          onDelete={(execution) => {
+                            setSelectedExecution(execution);
+                            toggleDeleteDialog();
+                          }}
+                        />
+                      </Tbody>
+                    ))}
+                  </>
+                </Table>
+                <DragOverlay
+                  dropAnimation={null}
+                  modifiers={[snapCenterToCursor]}
+                  style={{ pointerEvents: "none" }}
+                >
+                  {activeExecution ? (
+                    <DragOverlayContent
+                      execution={activeExecution}
+                      text={dragOverlayText}
+                    />
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
             )}
             {flow && (
               <>
