@@ -291,6 +291,15 @@ public class DescriptionConverter {
             configWrapper.setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, clientOIDC.getDefaultAcrValues());
         }
 
+        // application_type - default is "web" per OIDC Dynamic Client Registration 1.0 spec
+        String applicationType = clientOIDC.getApplicationType();
+        if (applicationType == null) {
+            applicationType = "web";
+        } else if (!"web".equals(applicationType) && !"native".equals(applicationType)) {
+            throw new ClientRegistrationException("Invalid application_type parameter value");
+        }
+        configWrapper.setApplicationType(applicationType);
+
         return client;
     }
 
@@ -496,6 +505,10 @@ public class DescriptionConverter {
         List<String> defaultAcrValues = config.getAttributeMultivalued(Constants.DEFAULT_ACR_VALUES);
         if (!defaultAcrValues.isEmpty()) {
             response.setDefaultAcrValues(defaultAcrValues);
+        }
+
+        if (config.getApplicationType() != null) {
+            response.setApplicationType(config.getApplicationType());
         }
 
         return response;
