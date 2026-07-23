@@ -21,6 +21,10 @@ To speed up the build process, the following build flag can be used to disable t
 
     -Dskip.npm
 
+## Dependencies and security
+
+See [MANAGING_DEPENDENCIES.md](MANAGING_DEPENDENCIES.md) for CVE triage, `pnpm audit`, overrides, release-branch fixes.
+
 ## Contributing
 
 If you want to contribute please look at the [coding guidelines](CODING_GUIDELINES.md)
