@@ -138,6 +138,6 @@ Therefore, tradeoffs exist between high availability and consistency. The focus 
 
 == Next steps
 
-Continue reading the blueprint at <@links.ha id="multi-cluster-v2-deploy-keycloak-kubernetes" />.
+Continue reading the blueprints at <@links.ha id="multi-cluster-v2-deploy-keycloak-kubernetes" /> or <@links.ha id="multi-cluster-v2-deploy-keycloak-bare-metal" />.
 
 </@tmpl.guide>

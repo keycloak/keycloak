@@ -1,0 +1,139 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Deploying {project_name} for HA on bare-metal or virtual machines (v2)"
+summary="Deploy {project_name} for multi-cluster HA (stateless) on bare-metal or virtual machines as a building block."
+tileVisible="false"
+preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
+
+This {section} describes advanced {project_name} configurations for bare-metal servers or virtual machines that will recover from single node failures or site failures.
+These instructions are intended for use with the setup described in the <@links.ha id="multi-cluster-v2-concepts"/> {section}.
+You should verify the performance and failure behavior of your specific environment.
+
+== Prerequisites
+
+* https://openjdk.java.net/[OpenJDK {jdk_version_latest}] installed on each node.
+* {archivedownloadurl}[{archivebasename}-{version}.zip] downloaded and extracted on each node.
+* A highly available database deployed with synchronous replication across sites, reachable from all {project_name} nodes. The following example assumes a PostgreSQL database. Any database supported by {project_name} will work.
+* TLS certificate and private key files for HTTPS.
+* A load balancer in front of the {project_name} nodes.
+* The database CA certificate file for securing the database connection.
+* Network connectivity between all {project_name} nodes within each site for cache clustering and failure detection (TCP ports 7800 and 57800 by default).
+See the <@links.server id="caching" anchor="network-ports"/> {section} for details.
+
+== Load balancer topology
+
+For a multi-site deployment, two load balancer topologies are common:
+
+Per-site load balancer with a global load balancer in front::
+Each site has its own load balancer (for example, HAProxy or NGINX) that distributes traffic across the {project_name} nodes within that site, probing `/health/ready` on management port 9000 of each node.
+A global load balancer routes client traffic to the per-site load balancers, probing `/lb-check` through them to detect site-level failures.
++
+This topology provides better operational isolation: individual sites can be drained or taken offline for maintenance without affecting the global load balancer configuration.
+
+Single load balancer::
+One load balancer routes directly to all {project_name} nodes across all sites, probing `/health/ready` on management port 9000 of each node.
++
+This topology is simpler to manage.
+Per-site operational tasks such as draining a site for maintenance or isolating a failing site require reconfiguring a shared component, which increases operational risk.
+
+The following example assumes a per-site topology with a global load balancer.
+
+With the `stateless` feature, {project_name} does not store session data in memory, so configuring sticky sessions on the load balancer is no longer recommended as it will not provide a performance benefit.
+
+See the <@links.server id="reverseproxy"/> {section} for details on configuring a reverse proxy with {project_name}.
+
+== Procedure
+
+The following setup assumes a TLS passthrough setup, though this is not limited to this configuration.
+This procedure assumes one {project_name} instance per host.
+Running multiple instances on the same host requires additional port configuration and is not covered by this {section}.
+
+Perform the following steps on each {project_name} node at each site:
+
+. Determine the sizing of the deployment using the <@links.ha id="multi-cluster-concepts-memory-and-cpu-sizing" /> {section}.
+For this setup, you might see approximately twice the CPU usage and write IOPS on your database, though your results might vary based on your use case.
+
+. Set the database credentials using environment variables to avoid exposing them in shell history or the process list:
++
+[source,bash]
+----
+export KC_DB_USERNAME=<DB_USERNAME>
+export KC_DB_PASSWORD=<DB_PASSWORD>
+----
+
+. Start {project_name} with the following command, replacing the placeholder values with your environment-specific settings:
++
+[source,bash]
+----
+bin/kc.sh start \
+    --db=postgres \ # <1>
+    --db-url=jdbc:postgresql://<DATABASE_URL>:5432/keycloak \ # <1>
+    --db-pool-initial-size=30 \ # <2>
+    --db-pool-min-size=30 \ # <2>
+    --db-pool-max-size=30 \ # <2>
+    --features=stateless \ # <3>
+    --spi-cache-embedded--default--cluster-name=<CLUSTER_NAME> \ # <4>
+    --hostname=<KEYCLOAK_HOSTNAME> \ # <5>
+    --https-certificate-file=/path/to/tls.crt \ # <6>
+    --https-certificate-key-file=/path/to/tls.key \ # <6>
+    --db-tls-mode=verify-server \ # <7>
+    --truststore-paths=/path/to/db-ca.pem \ # <7>
+    --proxy-protocol-enabled=true \ # <8>
+    --shutdown-delay=30 \ # <8>
+    --health-enabled=true \
+    --metrics-enabled=true \ # <9>
+    --event-metrics-user-enabled=true \
+    --log-console-output=json \
+    --http-max-queued-requests=1000 # <10>
+----
+<1> Set the database vendor and URL.
+<2> The database connection pool initial, max and min size should be identical to allow statement caching for the database.
+Adjust this number to meet the needs of your system.
+With the `stateless` feature, authentication sessions and action tokens are stored in the database, which increases database load compared to setups with an external {jdgserver_name} cluster. Adjust the pool size accordingly.
+See the <@links.ha id="multi-cluster-concepts-database-connections" /> {section} for details.
+<3> Enable the `stateless` feature to remove the requirement for an external {jdgserver_name} cluster.
+<4> Set a unique cluster name that identifies this cluster. Each cluster must have a distinct name; no two clusters may share the same name.
+This option is only available if the `stateless` feature is enabled.
+<5> Set the hostname clients use to connect to {project_name}. This should match the hostname configured on the load balancer.
+<6> Provide the TLS certificate and private key files for HTTPS.
+<7> Secure the database connection. Specify the path to the database CA certificate file. {project_name} automatically loads certificates from the specified truststore path.
+<8> Enable the PROXY protocol so that {project_name} can read the real client IP address from the PROXY protocol header sent by the load balancer.
+To use this option, the load balancer must also be configured to send PROXY protocol headers (for example, `send-proxy-v2` in HAProxy).
+If your load balancer does not support the PROXY protocol, remove this option to use plain HTTPS.
+Do not set `--proxy-headers` when using TLS passthrough; the two options are mutually exclusive.
+See the <@links.server id="haproxy-passthrough"/> or <@links.server id="traefik-passthrough"/> {sections} for complete examples.
+The `--shutdown-delay` keeps {project_name} running long enough for the load balancer to detect the shutdown via health check failures and remove the node from rotation.
+Set this value to at least the load balancer's detection time (health check interval multiplied by the failure threshold).
+See the Graceful HTTP shutdown section in the <@links.server id="reverseproxy"/> {section} for details.
+<9> To be able to analyze the system under load, enable the metrics endpoint.
+<10> Limit the number of queued requests for load shedding. All exceeding requests are served with an HTTP 503.
+See the <@links.ha id="multi-cluster-concepts-threads" anchor="multi-cluster-load-shedding"/> {section} about load shedding for details.
+
+[#multi-cluster-v2-bare-metal-verify-deployment]
+== Verify the deployment
+
+Confirm that each {project_name} node is ready by checking the health endpoint on the management port:
+
+[source,bash]
+----
+curl -sk -w '\n%{http_code}\n' https://localhost:9000/health/ready
+----
+
+A healthy node returns HTTP 200 with an overall status of `UP`.
+The `checks` array contains the readiness checks enabled for the deployment.
+
+Repeat this check for each node in each site.
+
+Additionally, verify that `/lb-check` per site returns `200 OK` with status `UP`:
+
+[source,bash]
+----
+curl -sk -w '\n%{http_code}\n' https://<SITE_LB_HOSTNAME>/lb-check
+----
+
+Finally, verify that the external load balancer routes traffic to both sites.
+
+</@tmpl.guide>
