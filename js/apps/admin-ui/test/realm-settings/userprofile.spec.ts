@@ -1,7 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
-import { assertFieldError, selectItem, switchOn } from "../utils/form.ts";
+import {
+  assertFieldError,
+  selectItem,
+  switchOff,
+  switchOn,
+} from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { confirmModal } from "../utils/modal.ts";
@@ -32,6 +37,29 @@ test.describe.serial("User profile tabs", () => {
   const group = `realm-settings-group-${uuid()}`;
 
   const realmName = `sessions-realm-user-profile-${uuid()}`;
+  const userProfilePermissions = {
+    view: ["admin", "user"],
+    edit: ["admin", "user"],
+  };
+
+  const addMultiselectCheckboxAttribute = async (
+    attributeName: string,
+    optionValues: string[],
+    multivalued = true,
+  ) => {
+    await adminClient.addUserProfile(realmName, {
+      attributes: [
+        {
+          name: attributeName,
+          displayName: attributeName,
+          permissions: userProfilePermissions,
+          multivalued,
+          annotations: { inputType: "multiselect-checkboxes" },
+          validations: { options: { options: optionValues } },
+        },
+      ],
+    });
+  };
 
   test.beforeAll(async () => {
     await adminClient.createRealm(realmName);
@@ -258,5 +286,79 @@ test.describe.serial("User profile tabs", () => {
     await page.getByTestId("no-users-found-empty-action").click();
 
     await expect(page.getByRole("heading", { name: group })).toBeVisible();
+  });
+
+  test("Persists multivalued switch state when editing a configured attribute", async ({
+    page,
+  }) => {
+    const suffix = uuid().slice(0, 8);
+    const attributeName = `multivalued-switch-${suffix}`;
+
+    await addMultiselectCheckboxAttribute(attributeName, [
+      `option-a-${suffix}`,
+      `option-b-${suffix}`,
+    ]);
+    await goToRealmSettings(page);
+    await goToUserProfileTab(page);
+    await goToAttributesTab(page);
+    await assertRowExists(page, attributeName, true);
+
+    await clickTableRowItem(page, attributeName);
+    await expect(page.locator("#multivalued")).toBeChecked();
+
+    await switchOff(page, "#multivalued");
+    await clickSaveAttribute(page);
+    await assertNotificationMessage(
+      page,
+      "Success! User Profile configuration has been saved.",
+    );
+
+    await clickTableRowItem(page, attributeName);
+    await expect(page.locator("#multivalued")).not.toBeChecked();
+  });
+
+  test("Uses inputType precedence over multivalued switch for multiselect-checkboxes rendering", async ({
+    page,
+  }) => {
+    const suffix = uuid().slice(0, 8);
+    const attributeName = `multivalued-render-${suffix}`;
+    const optionOne = `option-one-${suffix}`;
+    const optionTwo = `option-two-${suffix}`;
+
+    await addMultiselectCheckboxAttribute(attributeName, [
+      optionOne,
+      optionTwo,
+    ]);
+    await goToRealmSettings(page);
+    await goToUserProfileTab(page);
+    await goToAttributesTab(page);
+    await assertRowExists(page, attributeName, true);
+
+    await goToUsers(page);
+    await page.getByTestId("no-users-found-empty-action").click();
+    await expect(page.getByTestId(optionOne)).toBeVisible();
+    await expect(page.getByTestId(optionTwo)).toBeVisible();
+    await expect(page.getByTestId(`attributes.${attributeName}0`)).toHaveCount(
+      0,
+    );
+
+    await goToRealmSettings(page);
+    await goToUserProfileTab(page);
+    await goToAttributesTab(page);
+    await clickTableRowItem(page, attributeName);
+    await switchOff(page, "#multivalued");
+    await clickSaveAttribute(page);
+    await assertNotificationMessage(
+      page,
+      "Success! User Profile configuration has been saved.",
+    );
+
+    await goToUsers(page);
+    await page.getByTestId("no-users-found-empty-action").click();
+    await expect(page.getByTestId(optionOne)).toBeVisible();
+    await expect(page.getByTestId(optionTwo)).toBeVisible();
+    await expect(page.getByTestId(`attributes.${attributeName}0`)).toHaveCount(
+      0,
+    );
   });
 });
