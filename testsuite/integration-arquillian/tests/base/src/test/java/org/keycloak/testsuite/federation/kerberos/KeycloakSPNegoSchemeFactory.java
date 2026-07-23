@@ -121,7 +121,9 @@ public class KeycloakSPNegoSchemeFactory extends SPNegoSchemeFactory {
                 GSSContext gssContext = manager.createContext(
                         serverName.canonicalize(oid), oid, null, GSSContext.DEFAULT_LIFETIME);
                 gssContext.requestMutualAuth(true);
-                gssContext.requestCredDeleg(true);
+                // Kerby KDC doesn't set the FORWARDED flag on TGS-REP (DIRKRB-458), causing
+                // JDK's KrbKdcRep.check() to reject the response with "Message stream modified (41)".
+                gssContext.requestCredDeleg(false);
                 byte[] outputToken = gssContext.initSecContext(token, 0, token.length);
 
                 ByteArrayHolder result = new ByteArrayHolder();
