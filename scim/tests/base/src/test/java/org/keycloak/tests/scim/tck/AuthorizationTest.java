@@ -612,6 +612,14 @@ public class AuthorizationTest extends AbstractScimTest {
         groupPermission.addPolicy(policy.getName());
         permissionClient.authorization().permissions().scope().create(groupPermission).close();
 
+        // Grant VIEW permission on the users resource so the client can resolve the user
+        ScopePermissionRepresentation userPermission = new ScopePermissionRepresentation();
+        userPermission.setName("Allow SCIM view users");
+        userPermission.setResourceType(AdminPermissionsSchema.USERS_RESOURCE_TYPE);
+        userPermission.setScopes(Set.of(AdminPermissionsSchema.VIEW));
+        userPermission.addPolicy(policy.getName());
+        permissionClient.authorization().permissions().scope().create(userPermission).close();
+
         // Verify the client CAN patch non-member attributes (e.g., displayName)
         noAccessClient.groups().patch(group.getId(), PatchRequest.create()
                 .add("displayName", "updated name")
@@ -652,6 +660,14 @@ public class AuthorizationTest extends AbstractScimTest {
         groupPermission.setScopes(Set.of(AdminPermissionsSchema.MANAGE, AdminPermissionsSchema.VIEW));
         groupPermission.addPolicy(policy.getName());
         permissionClient.authorization().permissions().scope().create(groupPermission).close();
+
+        // Grant VIEW permission on the users resource so the client can resolve the user
+        ScopePermissionRepresentation userPermission = new ScopePermissionRepresentation();
+        userPermission.setName("Allow SCIM view users");
+        userPermission.setResourceType(AdminPermissionsSchema.USERS_RESOURCE_TYPE);
+        userPermission.setScopes(Set.of(AdminPermissionsSchema.VIEW));
+        userPermission.addPolicy(policy.getName());
+        permissionClient.authorization().permissions().scope().create(userPermission).close();
 
         // Verify the client CANNOT remove members without manage-membership scope
         assertAccessDenied(() -> noAccessClient.groups().patch(group.getId(), PatchRequest.create()
