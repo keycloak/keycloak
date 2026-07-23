@@ -22,9 +22,13 @@ export async function clickAddClientScope(page: Page) {
   ];
 
   for (const action of directAction) {
-    if ((await action.count()) > 0) {
-      await action.first().click();
-      return;
+    const actionCount = await action.count();
+    for (let i = 0; i < actionCount; i++) {
+      const candidate = action.nth(i);
+      if (await candidate.isVisible()) {
+        await candidate.click();
+        return;
+      }
     }
   }
 

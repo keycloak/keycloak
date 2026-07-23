@@ -57,11 +57,11 @@ export async function clickPostBinding(page: Page) {
     (await postBindingSwitch.getAttribute("readonly")) !== null;
 
   if (isReadOnly || !(await postBindingSwitch.isEnabled())) {
-    // Some generated SAML clients expose this setting as read-only.
-    return;
+    return "read-only";
   }
 
   await switchOff(page, postBindingSwitch);
+  return "toggled";
 }
 
 export async function saveSamlSettings(page: Page) {
