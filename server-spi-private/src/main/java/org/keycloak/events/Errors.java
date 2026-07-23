@@ -62,6 +62,7 @@ public interface Errors {
     String INVALID_SAML_LOGOUT_RESPONSE = "invalid_logout_response";
     String INVALID_SAML_ARTIFACT = "invalid_artifact";
     String INVALID_SAML_ARTIFACT_RESPONSE = "invalid_artifact_response";
+    String INVALID_SCOPE = "invalid_scope";
     String SAML_TOKEN_NOT_FOUND = "saml_token_not_found";
     String INVALID_SIGNATURE = "invalid_signature";
     String INVALID_REGISTRATION = "invalid_registration";
@@ -128,6 +129,7 @@ public interface Errors {
     String INVALID_OAUTH2_USER_CODE = "invalid_oauth2_user_code";
     String SLOW_DOWN = "slow_down";
     String GENERIC_AUTHENTICATION_ERROR= "generic_authentication_error";
+    String GENERIC= "generic";
 
     String CREDENTIAL_NOT_FOUND = "credential_not_found";
     String MISSING_CREDENTIAL_ID = "missing_credential_id";

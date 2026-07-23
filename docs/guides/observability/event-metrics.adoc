@@ -41,6 +41,11 @@ The following example limits the events collected to `LOGIN` and `LOGOUT` events
 
 <@kc.start parameters="... --event-metrics-user-events=login,logout ..."/>
 
+By default, the `clientId` and and `error` tags are limited to 10000 unique entries to avoid a metrics explosion which can lead to out-of-memory problems in {project_name} or resource exhaustion in downstream observability tools.
+Once that limit is reached, {project_name} logs a warning once and no metrics with additional tag values are created after that.
+Existing metrics will still count events.
+To change the limit, use the SPI options of the `micrometer-user-event-metrics` provider.
+
 See <@links.observability id="metrics-for-troubleshooting-keycloak"/> for a description of the metrics collected.
 
 </@tmpl.guide>
