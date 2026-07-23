@@ -228,10 +228,20 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- Apache DS -->
+        <!-- Apache DS for embedded LDAP, Apache Kerby for KDC (AM27 removed apacheds-protocol-kerberos) -->
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-util-embedded-ldap</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kerby</groupId>
+            <artifactId>kerb-simplekdc</artifactId>
+            <version>2.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kerby</groupId>
+            <artifactId>ldap-backend</artifactId>
+            <version>2.1.0</version>
         </dependency>
 
         <dependency>
