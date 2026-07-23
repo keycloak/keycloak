@@ -65,7 +65,7 @@ describe("identityProviderRedirectUrl", () => {
     );
   });
 
-  it("accepts an uppercase scheme the server normalizes", () => {
+  it("uses (and preserves) an uppercase scheme the server accepts", () => {
     const result = identityProviderRedirectUrl(
       "oidc",
       "my-realm",
@@ -74,7 +74,20 @@ describe("identityProviderRedirectUrl", () => {
     );
 
     expect(result).toBe(
-      "https://auth.tenant.example.com/realms/my-realm/broker/oidc/endpoint",
+      "HTTPS://auth.tenant.example.com/realms/my-realm/broker/oidc/endpoint",
+    );
+  });
+
+  it("preserves dot segments instead of canonicalizing them", () => {
+    const result = identityProviderRedirectUrl(
+      "oidc",
+      "my-realm",
+      "https://sso.example.com",
+      "https://auth.tenant.example.com/a/../public",
+    );
+
+    expect(result).toBe(
+      "https://auth.tenant.example.com/a/../public/realms/my-realm/broker/oidc/endpoint",
     );
   });
 
