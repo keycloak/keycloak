@@ -342,6 +342,15 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void resetPasswordDoesNotSetEmailVerified() throws IOException {
+        assertFalse(managedRealm.admin().users().get(userId).toRepresentation().isEmailVerified());
+
+        resetPassword("login-test");
+
+        assertFalse(managedRealm.admin().users().get(userId).toRepresentation().isEmailVerified());
+    }
+
+    @Test
     public void resetPasswordTwice() throws IOException {
         String changePasswordUrl = resetPassword("login-test");
         events.clear();

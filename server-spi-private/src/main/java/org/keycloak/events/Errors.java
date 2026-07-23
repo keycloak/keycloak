@@ -48,6 +48,7 @@ public interface Errors {
     String USERNAME_IN_USE = "username_in_use";
     String EMAIL_IN_USE = "email_in_use";
     String EMAIL_ALREADY_VERIFIED = "email_already_verified";
+    String IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY = "identity_provider_link_confirmed_already";
     String ORG_NOT_FOUND = "org_not_found";
     String ORG_DISABLED = "org_disabled";
     String USER_ORG_MEMBER_ALREADY = "user_org_member_already";

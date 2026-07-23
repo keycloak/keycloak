@@ -22,6 +22,15 @@ When calling {project_name}'s experimental AuthZEN endpoints, the caller now nee
 
 The Admin REST API endpoints for listing client sessions (`GET /admin/realms/\{realm}/clients/\{id}/user-sessions` and `GET /admin/realms/\{realm}/clients/\{id}/offline-sessions`) now filter out sessions belonging to users that the caller does not have permission to view. Previously, any caller with the `view-clients` role could see all user sessions for a client, potentially exposing user identities to callers without the `view-users` role. After upgrading, callers without `view-users` permission will see fewer results from these endpoints.
 
+=== Email is no longer marked as verified by other flows
+
+Previously, some flows marked the email of a user as verified even though their purpose was not email verification.
+This could make an account registered by a different party than the owner of the email address look trusted.
+An email is now marked as verified only when the user completes an email verification.
+This changes the behavior of identity provider account linking by email, of admin-initiated action emails that do not include the *Verify Email* action,
+and of the verifiable credential offer emails of the experimental OID4VCI feature.
+The *Trust Email* setting of identity providers and LDAP federation is not affected, as it is an explicit decision of the administrator to trust the email from the external source.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
@@ -39,4 +48,3 @@ link:{securing_apps_token_exchange_link}[Token Exchange].
 The following features have been removed from this release.
 
 === <TODO>
-
