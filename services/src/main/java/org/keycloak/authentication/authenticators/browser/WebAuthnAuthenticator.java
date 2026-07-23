@@ -259,7 +259,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         try {
             result = user.credentialManager().isValid(cred);
         } catch (WebAuthnException wae) {
-            logger.warnv("WebAuthn authentication verification failed. {0}", wae.getMessage());
+            logger.debug("WebAuthn authentication verification failed.", wae);
             setErrorResponse(context, WEBAUTHN_ERROR_AUTH_VERIFICATION, wae.getMessage());
             return;
         }
@@ -318,14 +318,14 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         return (WebAuthnCredentialProvider)session.getProvider(CredentialProvider.class, WebAuthnCredentialProviderFactory.PROVIDER_ID);
     }
 
-    protected void setErrorResponse(AuthenticationFlowContext context, final String errorCase, final String errorMessage) {
+    protected void setErrorResponse(AuthenticationFlowContext context, final String errorCase, final String errorMessage, Object... parameters) {
         Response errorResponse = null;
         switch (errorCase) {
         case WEBAUTHN_ERROR_REGISTRATION:
             context.getEvent()
                 .detail(AUTH_ERR_LABEL, errorCase)
                 .error(Errors.INVALID_USER_CREDENTIALS);
-            errorResponse = createErrorResponse(context, errorCase);
+            errorResponse = createErrorResponse(context, errorCase, parameters);
             context.failure(AuthenticationFlowError.INVALID_CREDENTIALS, errorResponse);
             break;
         case WEBAUTHN_ERROR_API_GET:
@@ -333,12 +333,11 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         case WEBAUTHN_ERROR_API_INVALID_STATE:
         case WEBAUTHN_ERROR_API_SECURITY:
         case WEBAUTHN_ERROR_UNSUPPORTED_BROWSER:
-            logger.warnv("Error returned from navigator.credentials.get(). {0}", errorMessage);
             context.getEvent()
                 .detail(AUTH_ERR_LABEL, errorCase)
                 .detail(AUTH_ERR_DETAIL_LABEL, errorMessage)
                 .error(Errors.NOT_ALLOWED);
-            errorResponse = createErrorResponse(context, errorCase);
+            errorResponse = createErrorResponse(context, errorCase, parameters);
             context.failure(AuthenticationFlowError.INVALID_USER, errorResponse);
             break;
         case WEBAUTHN_ERROR_DIFFERENT_USER:
@@ -354,7 +353,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
                 .detail(AUTH_ERR_LABEL, errorCase)
                 .detail(AUTH_ERR_DETAIL_LABEL, errorMessage)
                 .error(Errors.INVALID_USER_CREDENTIALS);
-            errorResponse = createErrorResponse(context, errorCase);
+            errorResponse = createErrorResponse(context, errorCase, parameters);
             context.failure(AuthenticationFlowError.INVALID_USER, errorResponse);
             break;
         case WEBAUTHN_ERROR_USER_NOT_FOUND:
@@ -362,7 +361,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
             context.getEvent()
                     .detail(AUTH_ERR_LABEL, errorCase)
                     .error(Errors.USER_NOT_FOUND);
-            errorResponse = createErrorResponse(context, errorCase);
+            errorResponse = createErrorResponse(context, errorCase, parameters);
             context.failure(AuthenticationFlowError.UNKNOWN_USER, errorResponse);
             break;
         default:
@@ -370,8 +369,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         }
     }
 
-    protected Response createErrorResponse(AuthenticationFlowContext context, final String errorCase) {
-        LoginFormsProvider provider = context.form().setError(errorCase, "");
+    protected Response createErrorResponse(AuthenticationFlowContext context, final String errorCase, Object... parameters) {
+        LoginFormsProvider provider = context.form().setError(errorCase, parameters);
         UserModel user = context.getUser();
         if (user != null) {
             WebAuthnMetadataService metadataService = getCredentialProvider(context.getSession()).getMetadataService();

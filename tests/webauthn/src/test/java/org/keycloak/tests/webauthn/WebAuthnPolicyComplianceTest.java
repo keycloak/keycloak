@@ -33,7 +33,7 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
 
         registerAndExpectError("attach-tamper",
                 tamperFormField("authenticatorAttachment", "platform"),
-                "Your organization requires a different type of security key. Please use the correct type.");
+                "Your organization requires a different type of security key (invalid Authenticator Attachment 'platform'). Please use the correct type.");
     }
 
     @Test
@@ -43,7 +43,7 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
 
         registerAndExpectError("attach-invalid",
                 tamperFormField("authenticatorAttachment", "not-a-real-value"),
-                "Your organization requires a different type of security key. Please use the correct type.");
+                "Your organization requires a different type of security key (invalid Authenticator Attachment 'not-a-real-value'). Please use the correct type.");
     }
 
     @Test

@@ -181,7 +181,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
             registerDefaultUser();
 
             webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), containsString("This security key model is not allowed. Please use a different security key."));
+            assertThat(webAuthnErrorPage.getError(), containsString("This security key model is not allowed (AAGUID " + CHROME_AAGUID + "). Please use a different security key."));
         } finally {
             testingClient.testing().reenableTruststoreSpi();
         }

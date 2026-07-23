@@ -344,6 +344,7 @@ public class Messages {
     public static final String WEBAUTHN_ERROR_API_INVALID_STATE = "webauthn-error-api-invalid-state";
     public static final String WEBAUTHN_ERROR_API_SECURITY = "webauthn-error-api-security";
     public static final String WEBAUTHN_ERROR_UNSUPPORTED_BROWSER = "webauthn-unsupported-browser-text";
+    public static final String WEBAUTHN_ERROR_DUPLICATED_DEVICE = "webauthn-error-duplicated-device";
 
     // Conditions in Conditional Flow
     public static final String ACCESS_DENIED = "access-denied";
