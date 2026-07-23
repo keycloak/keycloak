@@ -9,12 +9,8 @@ preview="true"
 previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
 
 This {section} describes advanced {project_name} configurations for bare-metal servers or virtual machines that will recover from single node failures or site failures.
-The concepts and configuration options are equivalent to the {kubernetes}-based blueprint, which is load tested as described in the <@links.ha id="multi-cluster-v2-introduction" anchor="multi-cluster-v2-tested-configuration"/> {section}.
-You should verify the performance and failure behavior of your specific environment.
-
 These instructions are intended for use with the setup described in the <@links.ha id="multi-cluster-v2-concepts"/> {section}.
-
-This is an alternative to the <@links.ha id="multi-cluster-v2-deploy-keycloak-kubernetes" /> {section} for environments that do not use {kubernetes}.
+You should verify the performance and failure behavior of your specific environment.
 
 == Prerequisites
 
@@ -22,40 +18,37 @@ This is an alternative to the <@links.ha id="multi-cluster-v2-deploy-keycloak-ku
 * {archivedownloadurl}[{archivebasename}-{version}.zip] downloaded and extracted on each node.
 * A highly available database deployed with synchronous replication across sites, reachable from all {project_name} nodes. The following example assumes a PostgreSQL database. Any database supported by {project_name} will work.
 * TLS certificate and private key files for HTTPS.
-* A load balancer probing `/health/ready` on management port 9000 of each {project_name} node.
-In the per-site topology, the global load balancer should probe `/lb-check` through each per-site load balancer.
+* A load balancer in front of the {project_name} nodes.
 * The database CA certificate file for securing the database connection.
-* Network connectivity between all {project_name} nodes within each site on TCP ports 7800 and 57800 (or their configured equivalents) for cache clustering and failure detection.
+* Network connectivity between all {project_name} nodes within each site for cache clustering and failure detection (TCP ports 7800 and 57800 by default).
 See the <@links.server id="caching" anchor="network-ports"/> {section} for details.
-
-The following setup assumes a TLS passthrough setup, though this is not limited to this configuration.
 
 == Load balancer topology
 
 For a multi-site deployment, two load balancer topologies are common:
 
 Per-site load balancer with a global load balancer in front::
-Each site has its own load balancer (for example, HAProxy or NGINX) that distributes traffic across the {project_name} nodes within that site.
+Each site has its own load balancer (for example, HAProxy or NGINX) that distributes traffic across the {project_name} nodes within that site, probing `/health/ready` on management port 9000 of each node.
 A global load balancer routes client traffic to the per-site load balancers, probing `/lb-check` through them to detect site-level failures.
 +
 This topology provides better operational isolation: individual sites can be drained or taken offline for maintenance without affecting the global load balancer configuration.
 It also improves security, as TLS can be terminated at the site level and site-specific policies can be enforced, limiting the blast radius of a compromise.
 
 Single load balancer::
-One load balancer routes directly to all {project_name} nodes across all sites.
+One load balancer routes directly to all {project_name} nodes across all sites, probing `/health/ready` on management port 9000 of each node.
 +
 This topology is simpler to manage, but its shared load-balancing tier has a larger failure domain and must be deployed redundantly to avoid becoming a single point of failure.
 Per-site operational tasks such as draining a site for maintenance or isolating a failing site require reconfiguring a shared component, which increases operational risk.
 
 For production deployments, the per-site topology with a global load balancer is recommended.
 
-With the `stateless` feature, {project_name} does not store session data in memory, so sticky sessions (session affinity) on the load balancer are not required.
-Disabling sticky sessions improves load distribution across {project_name} nodes and avoids concentrating traffic on a single node.
+With the `stateless` feature, {project_name} does not store session data in memory, so configuring sticky sessions on the load balancer is not required.
 
 See the <@links.server id="reverseproxy"/> {section} for details on configuring a reverse proxy with {project_name}.
 
 == Procedure
 
+The following setup assumes a TLS passthrough setup, though this is not limited to this configuration.
 This procedure assumes one {project_name} instance per host.
 Running multiple instances on the same host requires additional port configuration and is not covered by this {section}.
 
@@ -77,66 +70,46 @@ export KC_DB_PASSWORD=<DB_PASSWORD>
 [source,bash]
 ----
 bin/kc.sh start \
-    --db=postgres \
-    --db-url=jdbc:postgresql://<DATABASE_URL>:5432/keycloak \
-    --db-pool-initial-size=30 \
-    --db-pool-min-size=30 \
-    --db-pool-max-size=30 \
-    --features=stateless \
-    --spi-cache-embedded--default--cluster-name=<CLUSTER_NAME> \
-    --hostname=<KEYCLOAK_HOSTNAME> \
-    --https-certificate-file=/path/to/tls.crt \
-    --https-certificate-key-file=/path/to/tls.key \
-    --db-tls-mode=verify-server \
-    --truststore-paths=/path/to/db-ca.pem \
-    --proxy-protocol-enabled=true \
-    --shutdown-delay=30 \
+    --db=postgres \ # <1>
+    --db-url=jdbc:postgresql://<DATABASE_URL>:5432/keycloak \ # <1>
+    --db-pool-initial-size=30 \ # <2>
+    --db-pool-min-size=30 \ # <2>
+    --db-pool-max-size=30 \ # <2>
+    --features=stateless \ # <3>
+    --spi-cache-embedded--default--cluster-name=<CLUSTER_NAME> \ # <4>
+    --hostname=<KEYCLOAK_HOSTNAME> \ # <5>
+    --https-certificate-file=/path/to/tls.crt \ # <6>
+    --https-certificate-key-file=/path/to/tls.key \ # <6>
+    --db-tls-mode=verify-server \ # <7>
+    --truststore-paths=/path/to/db-ca.pem \ # <7>
+    --proxy-protocol-enabled=true \ # <8>
+    --shutdown-delay=30 \ # <8>
     --health-enabled=true \
-    --metrics-enabled=true \
+    --metrics-enabled=true \ # <9>
     --event-metrics-user-enabled=true \
     --log-console-output=json \
-    --http-max-queued-requests=1000
+    --http-max-queued-requests=1000 # <10>
 ----
-+
-The following list explains the key options:
-+
-`--db` and `--db-url`::
-Set the database vendor and JDBC URL.
-`--db-pool-initial-size`, `--db-pool-min-size`, `--db-pool-max-size`::
-The database connection pool initial, max and min size should be identical to allow statement caching for the database.
+<1> Set the database vendor and URL.
+<2> The database connection pool initial, max and min size should be identical to allow statement caching for the database.
 Adjust this number to meet the needs of your system.
 With the `stateless` feature, authentication sessions and action tokens are stored in the database, which increases database load compared to setups with an external {jdgserver_name} cluster. Adjust the pool size accordingly.
 See the <@links.ha id="multi-cluster-concepts-database-connections" /> {section} for details.
-`--features=stateless`::
-Enable the `stateless` feature to remove the requirement for an external {jdgserver_name} cluster.
-`--spi-cache-embedded--default--cluster-name`::
-Set a unique cluster name that identifies this cluster. Each cluster must have a distinct name; no two clusters may share the same name.
+<3> Enable the `stateless` feature to remove the requirement for an external {jdgserver_name} cluster.
+<4> Set a unique cluster name that identifies this cluster. Each cluster must have a distinct name; no two clusters may share the same name.
 This option is only available if the `stateless` feature is enabled.
-`--hostname`::
-Set the hostname clients use to connect to {project_name}. This should match the hostname configured on the load balancer.
-`--https-certificate-file` and `--https-certificate-key-file`::
-Provide the TLS certificate and private key files for HTTPS.
-`--db-tls-mode`::
-Secure the database connection.
-`--truststore-paths`::
-Specify the path to the database CA certificate file. {project_name} automatically loads certificates from the specified truststore path.
-`--proxy-protocol-enabled`::
-Enable the PROXY protocol so that {project_name} can read the real client IP address from the PROXY protocol header sent by the load balancer.
-This is strongly recommended for TLS passthrough deployments, where the load balancer cannot set HTTP forwarded headers.
+<5> Set the hostname clients use to connect to {project_name}. This should match the hostname configured on the load balancer.
+<6> Provide the TLS certificate and private key files for HTTPS.
+<7> Secure the database connection. Specify the path to the database CA certificate file. {project_name} automatically loads certificates from the specified truststore path.
+<8> Enable the PROXY protocol so that {project_name} can read the real client IP address from the PROXY protocol header sent by the load balancer.
 The load balancer must also be configured to send PROXY protocol headers (for example, `send-proxy-v2` in HAProxy).
 Do not set `--proxy-headers` when using TLS passthrough; the two options are mutually exclusive.
 See the <@links.server id="haproxy-passthrough"/> or <@links.server id="traefik-passthrough"/> {sections} for complete examples.
-`--shutdown-delay`::
-With TLS passthrough, the load balancer cannot signal an HTTP connection close and relies on health check failures to detect that a node is shutting down.
-The `--shutdown-delay` keeps {project_name} running long enough for the load balancer to remove the node from rotation before it stops serving requests.
+The `--shutdown-delay` keeps {project_name} running long enough for the load balancer to detect the shutdown via health check failures and remove the node from rotation.
 Set this value to at least the load balancer's detection time (health check interval multiplied by the failure threshold).
-See the Graceful HTTP shutdown section in the <@links.server id="reverseproxy"/> {section} for details on tuning this value.
-`--health-enabled`::
-Enable the health check endpoints so that load balancers and monitoring can verify that {project_name} is ready.
-`--metrics-enabled`::
-To be able to analyze the system under load, enable the metrics endpoint.
-`--http-max-queued-requests`::
-Limit the number of queued requests for load shedding. All exceeding requests are served with an HTTP 503.
+See the Graceful HTTP shutdown section in the <@links.server id="reverseproxy"/> {section} for details.
+<9> To be able to analyze the system under load, enable the metrics endpoint.
+<10> Limit the number of queued requests for load shedding. All exceeding requests are served with an HTTP 503.
 See the <@links.ha id="multi-cluster-concepts-threads" anchor="multi-cluster-load-shedding"/> {section} about load shedding for details.
 
 [#multi-cluster-v2-bare-metal-verify-deployment]
@@ -154,6 +127,6 @@ The `checks` array contains the readiness checks enabled for the deployment.
 
 Repeat this check for each node in each site.
 
-Afterward, verify that the external load balancer routes traffic to both sites by accessing the {project_name} hostname configured on the load balancer.
+Finally, verify that the external load balancer routes traffic to both sites.
 
 </@tmpl.guide>
