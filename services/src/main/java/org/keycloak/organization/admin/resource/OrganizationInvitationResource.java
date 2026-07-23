@@ -384,8 +384,6 @@ public class OrganizationInvitationResource {
         rep.setOrganizationId(model.getOrganizationId());
         rep.setSentDate(model.getCreatedAt());
         rep.setExpiresAt(model.getExpiresAt());
-        rep.setInviteLink(model.getInviteLink());
-
         OrganizationInvitationRepresentation.Status dynamicStatus = model.isExpired() ?
                 EXPIRED :
                 PENDING;

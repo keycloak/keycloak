@@ -33,6 +33,16 @@ Proprietary {project_name} extension to invoke introspection endpoint with the H
 deprecated now. In case you have lightweight access token, which you want to exchange for the proper access token, it is instead recommended to use the
 link:{securing_apps_token_exchange_link}[Token Exchange].
 
+=== Organization invitation link no longer exposed in API responses
+
+The `inviteLink` field in `OrganizationInvitationRepresentation` is deprecated and is no longer returned in Admin REST API responses from the organization invitation endpoints.
+
+Previously, the invitation link containing the signed registration token was stored and returned in the representation. The invitation link is still sent via email to the intended recipient.
+
+The `getInviteLink()` and `setInviteLink()` methods on `OrganizationInvitationRepresentation` are deprecated and will be removed in a future major version. If your code reads `inviteLink` from invitation API responses, it will now receive `null`.
+
+The "Copy invite link" action has also been removed from the admin console invitations management UI.
+
 // ------------------------ Removed features ------------------------ //
 == Removed features
 
