@@ -24,20 +24,23 @@ import java.util.UUID;
 
 import org.keycloak.OID4VCConstants;
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderConfig;
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.annotations.TestSetup;
+import org.keycloak.tests.oid4vc.OID4VCTestContext;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vpDirectPostResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vpRequestObjectResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SIGNING_ALG;
@@ -50,31 +53,19 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SIGNING_ALG;
 @KeycloakIntegrationTest(config = PresentationServerConfig.class)
 public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
 
-    @BeforeEach
-    void registerVerifier() {
+    @Override
+    @TestSetup
+    public void configureTestRealm() {
+        super.configureTestRealm();
         createVerifierIdp(Map.of(
                 OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, realmSigningJwks(),
                 OID4VPIdentityProviderConfig.DCQL_QUERY, dcqlQuery(),
                 OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "email"));
     }
 
-    private static String dcqlQuery() {
-        return """
-                {
-                  "credentials": [
-                    {
-                      "id": "identity",
-                      "format": "dc+sd-jwt",
-                      "meta": { "vct_values": ["%s"] },
-                      "claims": [{ "path": ["email"] }, { "path": ["lastName"] }]
-                    }
-                  ]
-                }""".formatted(sdJwtTypeCredentialVct);
-    }
-
     @Test
     public void requestObjectIsSignedByRealmKeyAndWellFormed() throws Exception {
-        JWSInput signedRequest = new JWSInput(fetchRequestObject(requestUri(openWalletPage())));
+        JWSInput signedRequest = new JWSInput(wallet.fetchRequestObject(wallet.requestUri(openWalletPage())).getRequestObject());
 
         JWSHeader header = signedRequest.getHeader();
         Assertions.assertEquals(OID4VCConstants.REQUEST_OBJECT_TYPE, header.getType());
@@ -95,19 +86,20 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
 
     @Test
     public void happyFlowVerifiesPresentationAndContinuesLogin() throws Exception {
-        IssuedCredential credential = issueCredential();
+        OID4VCTestContext credential = issueCredential();
         JsonNode request = requestObject();
-        String completeAuth = directPost(request, present(credential, request), 200).path("redirect_uri").asText();
+        Oid4vpDirectPostResponse response = wallet.directPost(request, wallet.present(credential, request));
+        assertNotCacheable(response);
 
-        driver.open(completeAuth);
+        driver.open(response.getRedirectUri());
         assertLoginContinued();
     }
 
     @Test
     public void completeAuthRejectsUnknownResponseCode() throws Exception {
-        IssuedCredential credential = issueCredential();
+        OID4VCTestContext credential = issueCredential();
         JsonNode request = requestObject();
-        String completeAuth = directPost(request, present(credential, request), 200).path("redirect_uri").asText();
+        String completeAuth = wallet.directPost(request, wallet.present(credential, request)).getRedirectUri();
 
         driver.open(completeAuth.replaceAll("response_code=[^&]+", "response_code=" + UUID.randomUUID()));
         assertLoginRejected();
@@ -115,9 +107,9 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
 
     @Test
     public void completeAuthRejectsMismatchedBrowserSession() throws Exception {
-        IssuedCredential credential = issueCredential();
+        OID4VCTestContext credential = issueCredential();
         JsonNode request = requestObject();
-        String completeAuth = directPost(request, present(credential, request), 200).path("redirect_uri").asText();
+        String completeAuth = wallet.directPost(request, wallet.present(credential, request)).getRedirectUri();
 
         driver.cookies().deleteAll();
         driver.open(completeAuth);
@@ -126,9 +118,9 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
 
     @Test
     public void completeAuthResponseCodeIsSingleUse() throws Exception {
-        IssuedCredential credential = issueCredential();
+        OID4VCTestContext credential = issueCredential();
         JsonNode request = requestObject();
-        String completeAuth = directPost(request, present(credential, request), 200).path("redirect_uri").asText();
+        String completeAuth = wallet.directPost(request, wallet.present(credential, request)).getRedirectUri();
 
         driver.open(completeAuth);
         assertLoginContinued();
@@ -138,46 +130,45 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
 
     @Test
     public void directPostRejectsPresentationWithWrongNonce() throws Exception {
-        IssuedCredential credential = issueCredential();
+        OID4VCTestContext credential = issueCredential();
         JsonNode request = requestObject();
 
-        JsonNode body = directPost(request, present(credential, request, "not-the-issued-nonce"), 400);
-        Assertions.assertEquals("access_denied", body.path("error").asText());
+        Oid4vpDirectPostResponse response = wallet.directPost(request, wallet.present(credential, request, "not-the-issued-nonce"));
+        Assertions.assertEquals(400, response.getStatusCode());
+        Assertions.assertEquals("access_denied", response.getError());
     }
 
     @Test
     public void requestObjectRejectsUnknownState() throws Exception {
-        String unknownStateUri = requestUri(openWalletPage()).replaceAll("[^/]+$", UUID.randomUUID().toString());
+        String unknownStateUri = wallet.requestUri(openWalletPage()).replaceAll("[^/]+$", UUID.randomUUID().toString());
 
-        try (CloseableHttpResponse response = httpClient.execute(new HttpGet(unknownStateUri))) {
-            Assertions.assertEquals(400, response.getStatusLine().getStatusCode());
-            JsonNode body = JsonSerialization.readValue(EntityUtils.toByteArray(response.getEntity()), JsonNode.class);
-            Assertions.assertEquals("invalid_request", body.path("error").asText());
-        }
+        Oid4vpRequestObjectResponse response = wallet.fetchRequestObject(unknownStateUri);
+        Assertions.assertEquals(400, response.getStatusCode());
+        Assertions.assertEquals("invalid_request", response.getError());
     }
 
     @Test
     public void directPostRejectsMissingParameters() throws Exception {
         JsonNode request = requestObject();
 
-        HttpPost post = new HttpPost(request.path("response_uri").asText());
-        try (CloseableHttpResponse response = httpClient.execute(post)) {
-            Assertions.assertEquals(400, response.getStatusLine().getStatusCode());
-            JsonNode body = JsonSerialization.readValue(EntityUtils.toByteArray(response.getEntity()), JsonNode.class);
-            Assertions.assertEquals("invalid_request", body.path("error").asText());
-        }
+        Oid4vpDirectPostResponse response = oauth.oid4vc()
+                .oid4vpDirectPostRequest(request.path("response_uri").asText()).send();
+        Assertions.assertEquals(400, response.getStatusCode());
+        Assertions.assertEquals("invalid_request", response.getError());
     }
 
     @Test
     public void directPostRejectsUnsupportedSignatureAlgorithm() throws Exception {
-        setCredentialScopeAttributes(sdJwtTypeCredentialScope, Map.of(VC_SIGNING_ALG, Algorithm.RS256));
-        IssuedCredential credential = issueCredential();
+        testRealm.updateClientScope(sdJwtTypeCredentialScope.getId(),
+                scope -> scope.attribute(VC_SIGNING_ALG, Algorithm.RS256));
+        OID4VCTestContext credential = issueCredential();
         JsonNode request = requestObject();
 
-        JsonNode body = directPost(request, present(credential, request), 400);
-        Assertions.assertEquals("access_denied", body.path("error").asText());
-        Assertions.assertTrue(body.path("error_description").asText().contains("algorithm"),
-                "Expected an unsupported algorithm error, was: " + body);
+        Oid4vpDirectPostResponse response = wallet.directPost(request, wallet.present(credential, request));
+        Assertions.assertEquals(400, response.getStatusCode());
+        Assertions.assertEquals("access_denied", response.getError());
+        Assertions.assertTrue(response.getErrorDescription().contains("algorithm"),
+                "Expected an unsupported algorithm error, was: " + response.getErrorDescription());
     }
 
     @Test
@@ -191,12 +182,12 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
 
     @Test
     public void configuredSigningKeyIdPinsTheRequestSigningKey() throws Exception {
-        IssuedCredential credential = issueCredential();
+        OID4VCTestContext credential = issueCredential();
         updateIdpConfig(OID4VPIdentityProviderConfig.SIGNING_KEY_ID, verifierSigningKeyKid());
         disableVerifierSigningKey();
         addActiveEs256KeyWithoutCertificate();
 
-        JWSInput signedRequest = new JWSInput(fetchRequestObject(requestUri(openWalletPage())));
+        JWSInput signedRequest = new JWSInput(wallet.fetchRequestObject(wallet.requestUri(openWalletPage())).getRequestObject());
         X509Certificate leaf = PemUtils.decodeCertificate(signedRequest.getHeader().getX5c().get(0));
         Assertions.assertEquals(verifierSigningKeyPublicKeyPem(), PemUtils.encodeKey(leaf.getPublicKey()),
                 "Request object is not signed with the pinned signing key");
@@ -204,7 +195,7 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
                 "Request object signature does not match the certificate in x5c");
 
         JsonNode request = JsonSerialization.readValue(signedRequest.getContent(), JsonNode.class);
-        String completeAuth = directPost(request, present(credential, request), 200).path("redirect_uri").asText();
+        String completeAuth = wallet.directPost(request, wallet.present(credential, request)).getRedirectUri();
 
         driver.open(completeAuth);
         assertLoginContinued();
@@ -220,13 +211,31 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
     }
 
     @Test
-    public void directPostRejectsMultipleCredentials() throws Exception {
-        IssuedCredential credential = issueCredential();
+    public void directPostRejectsEncryptedResponseForPlainFlow() throws Exception {
+        OID4VCTestContext credential = issueCredential();
         JsonNode request = requestObject();
-        String vpToken = present(credential, request);
+        String state = request.path("state").asText();
 
-        JsonNode body = directPost(request, "[\"" + vpToken + "\",\"" + vpToken + "\"]", 400);
-        Assertions.assertEquals("access_denied", body.path("error").asText());
+        // The flow never advertised an encryption key, so a JWE naming its state as kid must not
+        // resolve one.
+        JWK attackerKey = JWKBuilder.create().kid(state).algorithm("ECDH-ES")
+                .ec(KeyUtils.generateEcKeyPair("secp256r1").getPublic(), KeyUse.ENC);
+        String encrypted = wallet.encryptResponse(request, wallet.present(credential, request), state,
+                JsonSerialization.mapper.valueToTree(attackerKey), state);
+        Oid4vpDirectPostResponse response = wallet.directPostJwt(request, encrypted);
+        Assertions.assertEquals(400, response.getStatusCode());
+        Assertions.assertEquals("invalid_request", response.getError());
+    }
+
+    @Test
+    public void directPostRejectsMultipleCredentials() throws Exception {
+        OID4VCTestContext credential = issueCredential();
+        JsonNode request = requestObject();
+        String vpToken = wallet.present(credential, request);
+
+        Oid4vpDirectPostResponse response = wallet.directPost(request, "[\"" + vpToken + "\",\"" + vpToken + "\"]");
+        Assertions.assertEquals(400, response.getStatusCode());
+        Assertions.assertEquals("access_denied", response.getError());
     }
 
     @Test
@@ -234,19 +243,14 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
         // address is an object claim, so configuring it as the principal must be rejected rather than
         // mapped onto an empty user id.
         updatePrincipalAttribute("address");
-        IssuedCredential credential = issueCredential();
+        OID4VCTestContext credential = issueCredential();
         JsonNode request = requestObject();
 
-        JsonNode body = directPost(request, present(credential, request), 400);
-        Assertions.assertEquals("access_denied", body.path("error").asText());
-        Assertions.assertTrue(body.path("error_description").asText().contains("principal attribute"),
-                "Expected a principal attribute error, was: " + body);
-    }
-
-    private void assertLoginContinued() {
-        // TODO assert the presented claims (email, given and family name) were mapped to the user
-        Assertions.assertTrue(driver.driver().getCurrentUrl().contains("login-actions"),
-                "Expected to continue into the login flow, was: " + driver.driver().getCurrentUrl());
+        Oid4vpDirectPostResponse response = wallet.directPost(request, wallet.present(credential, request));
+        Assertions.assertEquals(400, response.getStatusCode());
+        Assertions.assertEquals("access_denied", response.getError());
+        Assertions.assertTrue(response.getErrorDescription().contains("principal attribute"),
+                "Expected a principal attribute error, was: " + response.getErrorDescription());
     }
 
     private void assertLoginRejected() {
