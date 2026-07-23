@@ -29,6 +29,8 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import org.jboss.logging.Logger;
 
@@ -176,11 +178,40 @@ class AuthenticationSelectionResolver {
 
         Authenticator localAuthenticator = processor.getSession().getProvider(Authenticator.class, execution.getAuthenticator());
         if (!(localAuthenticator instanceof CredentialValidator)) {
-            nonCredentialExecutions.add(execution);
+            if (isSelectableForCurrentUser(processor, execution, localAuthenticator)) {
+                nonCredentialExecutions.add(execution);
+            }
         } else {
             CredentialValidator<?> cv = (CredentialValidator<?>) localAuthenticator;
             typeAuthExecMap.put(cv.getType(processor.getSession()), execution);
         }
+    }
+
+    /**
+     * A non-CredentialValidator authenticator that requires a user should only be offered as a
+     * selectable alternative if it's actually usable by that user: either already configured for
+     * them, or the factory allows the user to configure it on the spot. Without this check,
+     * "Try another way" lists authenticators that throw CREDENTIAL_SETUP_REQUIRED the moment
+     * they're picked.
+     */
+    // package-private so AuthenticationSelectionResolverTest can exercise it directly
+    static boolean isSelectableForCurrentUser(AuthenticationProcessor processor, AuthenticationExecutionModel execution, Authenticator authenticator) {
+        if (!authenticator.requiresUser()) {
+            return true;
+        }
+
+        AuthenticationSessionModel authSession = processor.getAuthenticationSession();
+        UserModel authUser = authSession == null ? null : authSession.getAuthenticatedUser();
+        if (authUser == null) {
+            return true;
+        }
+
+        if (authenticator.configuredFor(processor.getSession(), processor.getRealm(), authUser)) {
+            return true;
+        }
+
+        AuthenticatorFactory factory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, execution.getAuthenticator());
+        return factory != null && factory.isUserSetupAllowed();
     }
 
 
