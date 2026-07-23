@@ -5,7 +5,7 @@ import { login } from "../utils/login.ts";
 import { goToClientScopes, goToClients, goToRealm } from "../utils/sidebar.ts";
 import { clickTableToolbarItem, getRowByCellText } from "../utils/table.ts";
 import { clickSaveButton, selectItem } from "../utils/form.ts";
-import { toClients } from "../../src/clients/routes/Clients.tsx";
+import { toClients } from "../utils/routes.ts";
 import { createClient, continueNext, save as saveClient } from "./utils.ts";
 
 test("OIDC client can assign OID4VCI client scopes", async ({ page }) => {
