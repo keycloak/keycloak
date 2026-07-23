@@ -15,7 +15,7 @@ public final class ClientJpaQuerySchema implements ModelSchema<Model, ClientQuer
     public static final ClientJpaQuerySchema INSTANCE = new ClientJpaQuerySchema();
 
     public static final Set<String> JPA_FIELDS = Set.of(
-            "clientId", "enabled", "description", "displayName", "protocol", "appUrl");
+            "clientId", "enabled", "description", "displayName", "protocol", "appUrl", "createdTimestamp", "updatedTimestamp");
 
     public static final List<ModelSchema<Model, ClientQueryRepresentation>> SCHEMAS = List.of(INSTANCE);
 
@@ -31,6 +31,8 @@ public final class ClientJpaQuerySchema implements ModelSchema<Model, ClientQuer
         map.put("displayName", stringAttribute("displayName", "name"));
         map.put("protocol", stringAttribute("protocol", "protocol"));
         map.put("appUrl", stringAttribute("appUrl", "baseUrl"));
+        map.put("createdTimestamp", timeAttribute("createdTimestamp", "createdTimestamp"));
+        map.put("updatedTimestamp", timeAttribute("updatedTimestamp", "lastModifiedTimestamp"));
         this.attributes = Map.copyOf(map);
     }
 
@@ -45,6 +47,14 @@ public final class ClientJpaQuerySchema implements ModelSchema<Model, ClientQuer
         return Attribute.<Model, ClientQueryRepresentation>simple(queryField)
                 .modelAttributeResolver(attribute -> entityField)
                 .bool()
+                .build()
+                .get(0);
+    }
+
+    private static Attribute<Model, ClientQueryRepresentation> timeAttribute(String queryField, String entityField) {
+        return Attribute.<Model, ClientQueryRepresentation>simple(queryField)
+                .modelAttributeResolver(attribute -> entityField)
+                .timestamp()
                 .build()
                 .get(0);
     }
