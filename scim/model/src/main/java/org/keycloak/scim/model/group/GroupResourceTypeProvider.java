@@ -23,11 +23,13 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.Time;
+import org.keycloak.common.util.TriFunction;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
@@ -199,7 +201,14 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
                     return false;
                 }
                 UserModel user = session.users().getUserById(realm, value);
-                return user != null && permissions.hasPermission(user, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
+                if (user != null) {
+                    return  permissions.hasPermission(user, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
+                }
+                GroupModel group = session.groups().getGroupById(realm, value);
+                if (group != null) {
+                    return permissions.hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
+                }
+                return false;
             }
             return true;
         };
@@ -226,6 +235,30 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
             return join.get("user").get("id");
         }
         return null;
+    }
+
+    @Override
+    public Predicate createAttributePredicate(Attribute<?, ?> attribute, String operation, Object value,
+            CriteriaBuilder cb, Root<?> root,
+            BiFunction<Class<?>, Supplier<Join<?, ?>>, Join<?, ?>> joinResolver,
+            TriFunction<CriteriaBuilder, Expression, Object, Predicate> operator) {
+        if (!"members".equals(attribute.getName())) {
+            return null;
+        }
+
+        // members.value includes both user members and child groups; OR both sources so filters stay consistent with GET
+        Join<?, ?> userMembership = joinResolver.apply(UserGroupMembershipEntity.class,
+                () -> root.join(UserGroupMembershipEntity.class, JoinType.LEFT));
+        userMembership.on(cb.equal(root.get("id"), userMembership.get("groupId")));
+
+        Join<?, ?> childGroup = joinResolver.apply(GroupEntity.class,
+                () -> root.join(GroupEntity.class, JoinType.LEFT));
+        childGroup.on(cb.equal(root.get("id"), childGroup.get("parentId")));
+
+        return cb.or(
+                operator.apply(cb, userMembership.get("user").get("id"), value),
+                operator.apply(cb, childGroup.get("id"), value)
+        );
     }
 
     @Override
