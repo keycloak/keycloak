@@ -77,6 +77,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserLoginFailureModel;
@@ -93,7 +94,6 @@ import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oid4vc.resources.admin.UserVerifiableCredentialResource;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -304,18 +304,20 @@ public class UserResource {
         List<String> reqActions = rep.getRequiredActions();
 
         if (reqActions != null) {
-            session.getKeycloakSessionFactory()
-                    .getProviderFactoriesStream(RequiredActionProvider.class)
-                    .map(ProviderFactory::getId)
-                    .distinct()
-                    .sorted()
-                    .forEach(action -> {
-                        if (reqActions.contains(action)) {
-                            user.addRequiredAction(action);
-                        } else if (removeMissingRequiredActions) {
-                            user.removeRequiredAction(action);
-                        }
-                    });
+            if (removeMissingRequiredActions) {
+                user.getRequiredActionsStream().toList().forEach(user::removeRequiredAction);
+            }
+
+            reqActions.stream()
+                    .filter(action -> {
+                        // Required-action values stored on a user are realm aliases, which are not
+                        // necessarily equal to the provider factory id. Resolve the realm model by
+                        // alias first, then validate that its provider id maps to a registered factory.
+                        RequiredActionProviderModel model = session.getContext().getRealm().getRequiredActionProviderByAlias(action);
+                        return model != null && session.getKeycloakSessionFactory()
+                                .getProviderFactory(RequiredActionProvider.class, model.getProviderId()) != null;
+                    })
+                    .forEach(user::addRequiredAction);
         }
 
         List<CredentialRepresentation> credentials = rep.getCredentials();
