@@ -19,6 +19,9 @@ final class SecurityPropertyMappers implements PropertyMapperGrouping {
         return List.of(
                 fromOption(SecurityOptions.FIPS_MODE).transformer(SecurityPropertyMappers::resolveFipsMode)
                         .paramLabel("mode")
+                        .build(),
+                fromOption(SecurityOptions.FIPS_PROVIDER)
+                        .paramLabel("provider")
                         .build()
         );
     }

@@ -66,7 +66,10 @@ public class IgnoredArtifacts {
             "org.bouncycastle:bc-fips",
             "org.bouncycastle:bctls-fips",
             "org.bouncycastle:bcpkix-fips",
-            "org.bouncycastle:bcutil-fips"
+            "org.bouncycastle:bcutil-fips",
+            "net.glassless:glassless-provider",
+            "org.keycloak:keycloak-crypto-glassless",
+            "org.keycloak:keycloak-crypto-elytron"
     );
 
     private static Set<String> fips() {

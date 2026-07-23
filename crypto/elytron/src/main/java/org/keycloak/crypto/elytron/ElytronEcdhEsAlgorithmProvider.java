@@ -77,8 +77,8 @@ public class ElytronEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
             return derivedKey;
         } else {
             Cipher cipher = Cipher.getInstance(getAesWrapAlgorithm(header.getAlgorithm()));
-            cipher.init(Cipher.UNWRAP_MODE, new SecretKeySpec(derivedKey, "AES"));
-            return cipher.unwrap(encodedCek, "AES", Cipher.SECRET_KEY).getEncoded();
+            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(derivedKey, "AES"));
+            return cipher.doFinal(encodedCek);
         }
     }
 
@@ -110,9 +110,8 @@ public class ElytronEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
             return new byte[0];
         } else {
             Cipher cipher = Cipher.getInstance(getAesWrapAlgorithm(header.getAlgorithm()));
-            cipher.init(Cipher.WRAP_MODE, new SecretKeySpec(derivedKey, "AES"));
-            byte[] cekBytes = keyStorage.getCekBytes();
-            return cipher.wrap(new SecretKeySpec(cekBytes, "AES"));
+            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(derivedKey, "AES"));
+            return cipher.doFinal(keyStorage.getCekBytes());
         }
     }
 

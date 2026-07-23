@@ -21,6 +21,16 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-quarkus-server</artifactId>
         </dependency>
+        <dependency>
+            <groupId>net.glassless</groupId>
+            <artifactId>glassless-provider</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-crypto-elytron</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <!-- Only necessary for proper Maven build order - if explicitly added, deployment JARs will not be part of /lib/deployment folder -->
         <dependency>
             <groupId>org.keycloak</groupId>

@@ -10,6 +10,7 @@ import java.util.Optional;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.common.crypto.FipsProvider;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.ManagementOptions;
 import org.keycloak.config.Option;
@@ -33,6 +34,7 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isSet;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromFeature;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
@@ -324,10 +326,14 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
 
     private static String resolveKeyStoreType(String value,
             ConfigSourceInterceptorContext configSourceInterceptorContext) {
-        if (FipsMode.STRICT.toString().equals(value)) {
-            return "BCFKS";
+        if (!FipsMode.STRICT.toString().equals(value)) {
+            return null;
         }
-        return null;
+
+        var provider = configSourceInterceptorContext.restart(NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_PROVIDER.getKey());
+        FipsProvider resolvedProvider = provider == null ? FipsProvider.AUTO : FipsProvider.valueOfOption(provider.getValue());
+        resolvedProvider = resolvedProvider.resolve(Thread.currentThread().getContextClassLoader());
+        return resolvedProvider == FipsProvider.BOUNCY_CASTLE ? "BCFKS" : null;
     }
 
     private static String resolveMaxThreads(String value,

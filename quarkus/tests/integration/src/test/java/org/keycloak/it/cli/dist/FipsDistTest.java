@@ -45,6 +45,7 @@ public class FipsDistTest {
             cliResult.assertStarted();
             // Not shown as FIPS is not a preview anymore
             cliResult.assertMessageWasShownExactlyNumberOfTimes("Preview features enabled: fips:v1", 0);
+            cliResult.assertMessage("Automatically selected FIPS provider: bouncycastle");
             cliResult.assertMessage("FIPS1402Provider created: KC(" + BCFIPS_VERSION + ", FIPS-JVM: " + FIPS1402Provider.isSystemFipsEnabled() + ")");
         });
     }
@@ -67,7 +68,7 @@ public class FipsDistTest {
     }
 
     @Test
-    @Launch({ "start", "--fips-mode=non-strict" })
+    @Launch({ "start", "--fips-mode=non-strict", "--fips-provider=bouncycastle" })
     void failStartDueToMissingFipsDependencies(CLIResult cliResult) {
         cliResult.assertError("Failed to configure FIPS. Make sure you have added the Bouncy Castle FIPS dependencies to the 'providers' directory.");
     }

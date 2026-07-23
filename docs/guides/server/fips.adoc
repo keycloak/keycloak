@@ -9,8 +9,8 @@ includedOptions="">
 
 The Federal Information Processing Standard Publication 140-2, (FIPS 140-2), is a U.S. government computer security standard used to approve cryptographic modules. {project_name} supports running in FIPS 140-2 compliant mode. In this case, {project_name} will use only FIPS approved cryptography algorithms for its functionality.
 
-NOTE: {project_name} FIPS 140-2 integration is tested with OpenJDK 25, however the underlying BouncyCastle
-FIPS library is not officially validated with OpenJDK 25. Hence for FIPS 140-2 compliance, it is still recommended to use
+NOTE: The Bouncy Castle FIPS integration is tested with OpenJDK 25. However, the underlying Bouncy Castle
+FIPS library is not officially validated with OpenJDK 25. Therefore, for FIPS 140-2 compliance, it is still recommended to use
 {project_name} on OpenJDK 21.
 
 To run in FIPS 140-2, {project_name} should run on a FIPS 140-2 enabled system. This requirement usually assumes RHEL or Fedora where FIPS was enabled during installation.
@@ -32,6 +32,124 @@ If the system is not in FIPS mode, you can enable it with the following command,
 fips-mode-setup --enable
 ----
 
+== Choosing the cryptographic provider
+
+Glassless is included in the {project_name} distribution and is selected by default when the `fips` feature is enabled.
+
+The `fips-provider` build option defaults to `auto`. In this mode, {project_name} checks whether the Bouncy Castle FIPS provider class is available. If it is available, {project_name} selects Bouncy Castle. Otherwise, {project_name} selects Glassless. Therefore, adding the supported Bouncy Castle FIPS JAR files to the `KEYCLOAK_HOME/providers` directory before building the server is enough to switch to Bouncy Castle.
+
+You can override automatic selection with one of the following values:
+
+`bouncycastle`:: Uses the Bouncy Castle FIPS libraries. Add all the supported Bouncy Castle FIPS JAR files before building the server.
+
+`glassless`:: Uses Glassless to make OpenSSL cryptographic algorithms available through the Java Cryptography Architecture.
+
+Automatic selection avoids requiring a provider option in the normal case. Use an explicit value only when you need to override the provider detected from the available libraries.
+
+=== Configuring Glassless
+
+Glassless delegates cryptographic operations to OpenSSL. When you select Glassless, {project_name} registers it as the highest priority Java security provider.
+
+Glassless is a bridge to OpenSSL, not the validated cryptographic module. The FIPS validation and certificate come from the OpenSSL FIPS module supplied by your operating system vendor. Verify that this module meets the compliance requirements for your deployment.
+
+In `non-strict` mode, {project_name} does not require an OpenSSL FIPS provider. In `strict` mode, {project_name} starts only when Glassless reports that FIPS mode is enabled and an OpenSSL FIPS provider is available. This validation does not enable FIPS mode on the operating system or configure OpenSSL.
+
+Glassless ${properties["glassless.version"]} requires Java 25 or later, OpenSSL 3 or later, and native access to the Foreign Function and Memory API.
+
+[#installing-glassless]
+==== Installing Glassless
+
+. Configure and activate the OpenSSL FIPS provider for your operating system.
++
+If your OpenSSL installation does not already activate the FIPS provider, create an OpenSSL configuration such as the following example:
++
+[source]
+----
+openssl_conf = openssl_init
+
+[openssl_init]
+providers = provider_sect
+alg_section = algorithm_sect
+
+[provider_sect]
+base = base_sect
+fips = fips_sect
+
+[base_sect]
+activate = 1
+
+[fips_sect]
+activate = 1
+
+[algorithm_sect]
+default_properties = fips=yes
+----
++
+The OpenSSL module location and any additional configuration are specific to your operating system. Use the FIPS module and configuration supplied by the operating system vendor.
+
+. Set `OPENSSL_CONF` if the configuration is not in the default OpenSSL location:
++
+[source,bash]
+----
+export OPENSSL_CONF=/path/to/openssl-fips.cnf
+----
+
+. Enable native access for both the build and start commands:
++
+[source,bash]
+----
+export JAVA_OPTS_APPEND="--enable-native-access=ALL-UNNAMED"
+----
++
+When using Glassless ${properties["glassless.version"]} with OpenSSL 3.5, also configure a finite field TLS group:
++
+[source,bash]
+----
+export JAVA_OPTS_APPEND="--enable-native-access=ALL-UNNAMED -Djdk.tls.namedGroups=ffdhe2048"
+----
++
+This setting avoids an EC ephemeral key generation limitation in this Glassless and OpenSSL combination. It does not change the keystore format or the server certificate algorithm.
+
+. Build an optimized server with Glassless in strict mode:
++
+[source,bash]
+----
+$KEYCLOAK_HOME/bin/kc.sh build --features=fips --fips-mode=strict
+----
+
+. Start the optimized server. The FIPS options must match the optimized build:
++
+<@kc.start parameters="--optimized --features=fips --fips-mode=strict"/>
+
+For information about configuring a container, see <<fips-containers,Running {project_name} in FIPS mode in containers>>.
+
+==== Verifying the Glassless configuration
+
+Before starting {project_name}, you can run the Glassless provider JAR to check the OpenSSL FIPS status:
+
+[source,bash]
+----
+java --enable-native-access=ALL-UNNAMED -jar $KEYCLOAK_HOME/lib/lib/main/net.glassless.glassless-provider-${properties["glassless.version"]}.jar
+----
+
+For strict mode, verify that the command reports the following values:
+
+[source]
+----
+FIPS Mode: ENABLED
+FIPS Provider Available: true
+OpenSSL FIPS Enabled: true
+----
+
+After {project_name} starts, verify that the startup log contains an entry similar to the following example:
+
+[source]
+----
+GlasslessCryptoProvider created: KC(GlaSSLess version ${properties["glassless.version"]} [..., FIPS], FIPS mode: enabled, FIPS provider available: true)
+----
+
+For more information about activating and verifying the provider, see the https://glassless.net/fips/[Glassless FIPS documentation].
+
 == BouncyCastle library
 
 {project_name} internally uses the BouncyCastle library for many cryptography utilities. Please note that the default version of the BouncyCastle library that shipped with {project_name} is not FIPS compliant;
@@ -49,27 +167,42 @@ BouncyCastle FIPS can be downloaded from the https://www.bouncycastle.org/downlo
 * bcpkix-fips version ${properties["bouncycastle.pkixfips.version"]}.
 * bcutil-fips version ${properties["bouncycastle.bcutilfips.version"]}.
 
+When these JAR files are present, {project_name} automatically selects Bouncy Castle during the next build. You can also set `--fips-provider=bouncycastle` to require Bouncy Castle explicitly. An explicit selection fails at startup if the required libraries are not available.
+
 == Generating keystore
 
-You can create either `pkcs12` or `bcfks` keystore to be used for the {project_name} server SSL.
+The keystore type depends on the selected cryptographic provider. Use a `pkcs12` keystore with Glassless. With Bouncy Castle, use a `bcfks` keystore in strict mode. You can also use a `pkcs12` keystore with Bouncy Castle in non-strict mode.
 
 === PKCS12 keystore
 
-The `p12` (or `pkcs12`) keystore (and/or truststore) works well in BCFIPS non-approved mode.
+The `p12` or `pkcs12` keystore and truststore work with Glassless. They also work in BCFIPS non-approved mode.
 
-PKCS12 keystore can be generated with OpenJDK 21 Java on RHEL 9 in the standard way. For instance, the following command can be used to generate the keystore:
+Generate a PKCS12 keystore with the Java version required by the selected cryptographic provider. Use Java 25 or later with Glassless. For example:
 
 [source,bash]
 ----
-keytool -genkeypair -sigalg SHA512withRSA -keyalg RSA -storepass passwordpassword \
-  -keystore $KEYCLOAK_HOME/conf/server.keystore \
+keytool -genkeypair -storetype PKCS12 -keyalg RSA -keysize 2048 \
+  -sigalg SHA512withRSA -storepass passwordpassword \
+  -keystore $KEYCLOAK_HOME/conf/server.p12 \
   -alias localhost \
   -dname CN=localhost -keypass passwordpassword
 ----
 
-The `pkcs12` keystores in FIPS mode *do not* manage secret (symmetric) keys. This limitation is imposed by the `BCFIPS` provider which does not allow this type of keys inside the `pkcs12` keystore type.
+When using BCFIPS, `pkcs12` keystores in FIPS mode *do not* manage secret (symmetric) keys. This limitation is imposed by the `BCFIPS` provider, which does not allow this type of key in a `pkcs12` keystore.
 
 When the system is in FIPS mode, the default `java.security` file is changed in order to use FIPS enabled security providers, so no additional configuration is needed. Additionally, in the PKCS12 keystore, you can store PBE (password-based encryption) keys simply by using the keytool command, which makes it ideal for using it with {project_name} KeyStore Vault and/or to store configuration properties in the KeyStore Config Source. For more details, see the <@links.server id="configuration"/> and the <@links.server id="vault"/>.
+
+==== Why PKCS12 can be used with Glassless
+
+BCFKS is a keystore implementation supplied by Bouncy Castle. BCFKS is required with the Bouncy Castle provider in strict mode because BCFIPS approved mode does not support JKS or PKCS12 keystores. This restriction is specific to BCFIPS. It is not a general requirement of FIPS strict mode.
+
+Glassless does not provide the BCFKS keystore implementation. PKCS12 is the default and recommended JDK keystore format, and Glassless can use the keys stored in it. Therefore, PKCS12 is a suitable interoperable format when the security policy for your deployment permits it.
+
+The Java 25 `keytool` command in the previous section uses PBES2 with PBKDF2, HMAC SHA-256, and AES-256 to encrypt the private key and certificate contents. Glassless provides the PBES2 operations when it is the highest priority provider. Do not reuse a legacy PKCS12 file that is protected with algorithms such as Triple DES, RC2, or SHA-1. Recreate the keystore with a current Java version instead.
+
+WARNING: Using the PKCS12 format does not by itself establish FIPS compliance. The JDK provider implements the PKCS12 parser and, with the standard Java 25 provider configuration, SunJCE performs the whole file integrity MAC. This operation is outside the Glassless and OpenSSL FIPS module boundary. RHEL 9 also documents PKCS12 processing as not FIPS compliant because the KDF used for this MAC is not FIPS approved. If your policy requires every key protection operation to occur inside a validated cryptographic module, use a keystore or external key management solution approved by your platform vendor instead of PKCS12.
+
+Glassless remains the highest priority provider for the cryptographic algorithms that it supports and for TLS operations that use the loaded key. Verify the keystore protection requirements against the security policy and certificate of the OpenSSL FIPS module supplied by your operating system vendor. For the RHEL limitation, see the https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/security_hardening/switching-rhel-to-fips-mode_security-hardening[RHEL security hardening guide].
 
 === BCFKS keystore
 
@@ -102,7 +235,7 @@ WARNING: Using self-signed certificates is for demonstration purposes only, so r
 
 Similar options are needed when you are doing any other manipulation with keystore/truststore of `bcfks` type.
 
-== Running the server.
+== Running the server
 
 To run the server with BCFIPS in non-approved mode, enter the following command::
 
@@ -115,14 +248,16 @@ NOTE: You can disable logging in production if everything works as expected.
 
 == Strict mode
 
-There is the `fips-mode` option, which is automatically set to `non-strict` when the `fips` feature is enabled. This means to run BCFIPS in the "non-approved mode".
-The more secure alternative is to use `--features=fips --fips-mode=strict` in which case BouncyCastle FIPS will use "approved mode".
-Using that option results in stricter security requirements on cryptography and security algorithms.
+The `fips-mode` option defaults to `non-strict` when the `fips` feature is enabled. With Bouncy Castle, `non-strict` uses BCFIPS non-approved mode and `strict` uses BCFIPS approved mode. With Glassless, `non-strict` does not require an OpenSSL FIPS provider. Glassless strict mode requires an active OpenSSL FIPS provider.
 
-NOTE: In strict mode, the default keystore type (as well as default truststore type) is BCFKS. If you want to use a different keystore type
+Use `--features=fips --fips-mode=strict` to enable the stricter security requirements for the selected provider.
+
+NOTE: In strict mode with the Bouncy Castle provider, the default keystore type (as well as default truststore type) is BCFKS. If you want to use a different keystore type
 it is required to use the option `--https-key-store-type` with appropriate type. A similar command might be needed for the truststore as well if you want to use it.
 
-When starting the server, you can check that the startup log contains `KC` provider with the note about `Approved Mode` such as the following:
+NOTE: Glassless does not use BCFKS as the default keystore type. Use a `pkcs12` keystore and specify `--https-key-store-type=pkcs12` when {project_name} cannot detect the type from the file extension.
+
+When using Bouncy Castle, verify that the startup log contains the `KC` provider with the `Approved Mode` note, such as the following:
 
 [source]
 ----
@@ -131,10 +266,9 @@ FIPS1402Provider created: KC(BCFIPS version 2.0102 Approved Mode, FIPS-JVM: enab
 
 === Cryptography restrictions in strict mode
 
-* As mentioned in the previous section, strict mode may not work with `pkcs12` keystore. It is required to use another keystore (like `bcfks`) as mentioned earlier. Also `jks` and `pkcs12` keystores are not
-supported in {project_name} when using strict mode. Some examples are importing or generating a keystore of an OIDC or SAML client in the Admin Console or for a `java-keystore` provider in the realm keys.
+* When using Bouncy Castle, strict mode does not support `jks` and `pkcs12` keystores. Use a `bcfks` keystore instead. This restriction applies, for example, when importing or generating an OIDC or SAML client keystore in the Admin Console or when configuring a `java-keystore` realm key provider. This BCFKS requirement does not apply when using Glassless.
 
-* User passwords must be 14 characters or longer. {project_name} uses PBKDF2 based password encoding by default. BCFIPS approved mode requires passwords to be at least 112 bits
+* When using Bouncy Castle, user passwords must be 14 characters or longer. {project_name} uses PBKDF2 based password encoding by default. BCFIPS approved mode requires passwords to be at least 112 bits
 (effectively 14 characters) with PBKDF2 algorithm. If you want to allow a shorter password, set the property `max-padding-length` of provider `pbkdf2-sha512` of SPI `password-hashing`
 to 14 to provide additional padding when verifying a hash created by this algorithm. This setting is also backwards compatible with previously stored passwords.
 For example, if the user's database is in a non-FIPS environment and you have shorter passwords and you want to verify them now with {project_name} using BCFIPS in approved mode, the passwords should work.
@@ -158,7 +292,7 @@ the older `pbkdf2-sha256` can log in because their passwords may be shorter than
 the OIDC notation), then your client secrets should be at least 14 characters long. Note that for good security, it is recommended to use client secrets generated by the {project_name} server, which
 always fulfils this requirement.
 
-* The bc-fips version 1.0.2.4 deals with the end of the transition period for PKCS 1.5 RSA encryption. Therefore JSON Web Encryption (JWE) with algorithm `RSA1_5` is not allowed in strict mode by default (BC provides the system property `-Dorg.bouncycastle.rsa.allow_pkcs15_enc=true` as backward compatibility option for the moment). `RSA-OAEP` and `RSA-OAEP-256` are still available as before.
+* When using Bouncy Castle, the bc-fips version 1.0.2.4 deals with the end of the transition period for PKCS 1.5 RSA encryption. Therefore JSON Web Encryption (JWE) with algorithm `RSA1_5` is not allowed in strict mode by default (BC provides the system property `-Dorg.bouncycastle.rsa.allow_pkcs15_enc=true` as backward compatibility option for the moment). `RSA-OAEP` and `RSA-OAEP-256` are still available as before.
 
 == Other restrictions
 
@@ -192,10 +326,10 @@ For Kerberos/SPNEGO, the security provider `SunJGSS` is not yet fully FIPS compl
 if you want to be FIPS compliant. The `KERBEROS` feature is disabled by default in {project_name} when it is executed on FIPS platform and when security provider is not
 available. Details are in the https://bugzilla.redhat.com/show_bug.cgi?id=2051628[bugzilla].
 
-== Run the CLI on the FIPS host
+== Running the CLI on the FIPS host
 
-If you want to run Client Registration CLI (`kcreg.sh|bat` script) or Admin CLI (`kcadm.sh|bat` script),
- the CLI must also use the BouncyCastle FIPS dependencies instead of plain BouncyCastle dependencies. To achieve this, you may copy the
+The `fips-provider` option configures the server. When using Bouncy Castle, the Client Registration CLI (`kcreg.sh|bat` script) and Admin CLI (`kcadm.sh|bat` script)
+must also use the Bouncy Castle FIPS dependencies instead of plain Bouncy Castle dependencies. To achieve this, you may copy the
 jars to the CLI library folder and that is enough. CLI tool will automatically use BCFIPS dependencies instead of plain BC when
 it detects that corresponding BCFIPS jars are present (see above for the versions used). For example, use command such as the following before running the CLI:
 
@@ -216,17 +350,22 @@ fips.keystore.type=bcfks" > /tmp/kcadm.java.security
 export KC_OPTS="-Djava.security.properties=/tmp/kcadm.java.security"
 ----
 
-== {project_name} server in FIPS mode in containers
+[#fips-containers]
+== Running {project_name} in FIPS mode in containers
 
 When you want {project_name} in FIPS mode to be executed inside a container, your "host" must be using FIPS mode as well. The container
 will then "inherit" FIPS mode from the parent host.
 See https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/security_hardening/using-the-system-wide-cryptographic-policies_security-hardening#enabling-fips-mode-in-a-container_using-the-system-wide-cryptographic-policies[this section]
 in the RHEL documentation for the details.
 
-The {project_name} container image will automatically be in fips mode when executed from the host in FIPS mode.
-However, make sure that the {project_name} container also uses BCFIPS jars (instead of BC jars) and proper options when started.
+The {project_name} container image will automatically be in FIPS mode when executed from the host in FIPS mode.
+The container must also include the libraries and runtime required by the selected cryptographic provider.
 
-Regarding this, it is best to build your own container image as described in the <@links.server id="containers"/> and tweak it to use BCFIPS etc.
+=== Using Bouncy Castle in a container
+
+Make sure that the container uses the BCFIPS JAR files instead of the non-FIPS Bouncy Castle JAR files and that the proper options are used when starting {project_name}.
+
+Build your own container image as described in the <@links.server id="containers"/> and add the BCFIPS configuration to that image.
 
 For example in the current directory, you can create sub-directory `files` and add:
 
@@ -258,6 +397,36 @@ ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
 
 Then build FIPS as an optimized Docker image and start it as described in the <@links.server id="containers"/>. These steps require that you use arguments as described above when starting the image.
 
+=== Using Glassless in a container
+
+A container that uses Glassless must provide Java 25 or later, OpenSSL 3 or later, and an OpenSSL FIPS provider. Use a base image that meets these requirements when building the custom image.
+
+Before running the {project_name} build command in the container image, complete the following steps:
+
+. Install Java, OpenSSL, and the OpenSSL FIPS module in the image.
+. Set `JAVA_OPTS_APPEND=--enable-native-access=ALL-UNNAMED`. When the image uses OpenSSL 3.5, also add `-Djdk.tls.namedGroups=ffdhe2048` as described in <<installing-glassless,Installing Glassless>>.
+. Configure OpenSSL to activate the FIPS provider. If you use a custom OpenSSL configuration, set `OPENSSL_CONF` to its location.
+. Build the optimized server:
++
+[source,dockerfile]
+----
+RUN /opt/keycloak/bin/kc.sh build --features=fips --fips-mode=strict
+----
+
+Keep `JAVA_OPTS_APPEND` and `OPENSSL_CONF` in the final image because Glassless uses them at runtime.
+
+Start the image with the same FIPS build options:
+
+[source,bash]
+----
+podman|docker run --name mykeycloak <IMAGE> \
+  start --optimized \
+  --features=fips \
+  --fips-mode=strict
+----
+
+Glassless is bundled, so no provider JAR or `fips-provider` option is needed. If Bouncy Castle FIPS JAR files are added to `/opt/keycloak/providers` before the build, {project_name} selects Bouncy Castle instead. If the OpenSSL FIPS provider is missing or inactive, {project_name} fails to start in strict Glassless mode.
+
 == Migration from non-fips environment
 
 If you previously used {project_name} in a non-fips environment, it is possible to migrate it to a FIPS environment including its data. However, restrictions and considerations exist as
@@ -268,7 +437,7 @@ with `argon2`, they will not be able to login after switch to the FIPS environme
 Password policy for your realm from the beginning (before any users are created) and override the default algorithm for example to `pbkdf2-sha512`, which is FIPS compliant. This strategy helps to make the
 migration to the FIPS environment to be smooth. Otherwise, if your users are already on `argon2` passwords, simply ask users to reset the password after migrating to the FIPS
 environment.  For instance, ask users to use "Forget password" or send the email for reset-password to all users.
-* Make sure all the {project_name} functionality relying on keystores uses only supported keystore types. This differs based on whether strict or non-strict mode is used.
+* Make sure all the {project_name} functionality relying on keystores uses only the types supported by the selected cryptographic provider and FIPS mode.
 * Kerberos authentication may not work. If your authentication flow uses `Kerberos` authenticator, this authenticator will be automatically switched to `DISABLED` when migrated to FIPS
 environment. It is recommended to remove any `Kerberos` user storage providers from your realm and disable `Kerberos` related functionality in LDAP providers before switching to FIPS environment.
 

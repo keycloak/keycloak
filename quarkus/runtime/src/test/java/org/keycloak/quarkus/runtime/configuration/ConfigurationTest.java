@@ -635,7 +635,13 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testHttpTrustStoreType() {
         ConfigArgsConfigSource.setCliArgs("--fips-mode=strict");
+        assertNull(createConfig().getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE).getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--fips-mode=strict", "--fips-provider=bouncycastle");
         assertEquals("BCFKS", createConfig().getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE).getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--fips-mode=strict", "--fips-provider=glassless");
+        assertNull(createConfig().getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE).getValue());
 
         ConfigArgsConfigSource.setCliArgs("--https-trust-store-type=jks");
         assertEquals("jks", createConfig().getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE).getValue());
