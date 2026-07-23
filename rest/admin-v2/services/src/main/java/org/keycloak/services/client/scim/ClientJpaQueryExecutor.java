@@ -20,6 +20,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
+import org.keycloak.services.client.ClientField;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -33,7 +34,7 @@ public final class ClientJpaQueryExecutor {
 
     public static Stream<ClientModel> findClients(KeycloakSession session, RealmModel realm,
                                                   ScimFilterParser.FilterContext filterContext,
-                                                  List<SortOption> sortOptions,
+                                                  List<SortOption<ClientField>> sortOptions,
                                                   int offset,
                                                   int limit) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
