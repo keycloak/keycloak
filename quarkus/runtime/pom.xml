@@ -217,6 +217,10 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-crypto-elytron</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi</artifactId>
             <exclusions>
                 <exclusion>

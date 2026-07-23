@@ -458,6 +458,29 @@ BUILD SUCCESS
 
 The complete 55 module distribution reactor was additionally built with OpenJDK 21. This proves that bundling the Java 25 Glassless artifact does not prevent a normal Java 21 Keycloak distribution build. On Java 21, users enabling FIPS must provide Bouncy Castle FIPS JAR files because Glassless itself requires Java 25.
 
+### Current pull request CI remediation
+
+The Ubuntu and Windows Quarkus unit test jobs from workflow run `29988221565` failed for the same Glassless related reason. The Quarkus runtime exposed `GlasslessCryptoProviderFactory` to `ServiceLoader`, but its wildcard dependency exclusions removed `keycloak-crypto-elytron`. Loading the Glassless factory therefore failed with `NoClassDefFoundError: org/keycloak/crypto/elytron/WildFlyElytronProvider` before the default provider could be selected. The failing aggregate Keycloak CI status was only a consequence of those two jobs.
+
+The Quarkus runtime now declares its Elytron crypto dependency directly. The Glassless dependency can continue excluding all transitives, which keeps the Java 25 Glassless provider JAR out of consumers that only need the Keycloak runtime module, while every classpath that exposes the Glassless factory also contains its Keycloak base implementation.
+
+The exact Quarkus unit test command from CI was rerun:
+
+```text
+./mvnw test -f quarkus/pom.xml -pl '!tests,!tests/junit5,!tests/integration,!dist'
+Reactor modules: 5
+Failures: 0
+Errors: 0
+BUILD SUCCESS
+```
+
+The two classes that failed on both CI platforms now pass:
+
+```text
+KeycloakMetricsConfigurationTest: 2 tests, 0 failures, 0 errors
+KeycloakPathConfigurationTest: 5 tests, 0 failures, 0 errors
+```
+
 ## Container construction
 
 ### Container contents
