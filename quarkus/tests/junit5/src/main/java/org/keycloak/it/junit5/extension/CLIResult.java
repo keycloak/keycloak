@@ -24,12 +24,15 @@ import static org.testcontainers.shaded.org.hamcrest.MatcherAssert.assertThat;
 import static org.testcontainers.shaded.org.hamcrest.Matchers.*;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.awaitility.Awaitility;
 
 public interface CLIResult extends LaunchResult {
 
@@ -41,8 +44,17 @@ public interface CLIResult extends LaunchResult {
             }
 
             @Override
+            public String getOutput() {
+                synchronized (outputStream) {
+                    return String.join("\n", outputStream);            
+                }
+            }
+
+            @Override
             public String getErrorOutput() {
-                return String.join("\n", errStream).replace("\r","");
+                synchronized (errStream) {
+                    return String.join("\n", errStream).replace("\r","");            
+                }
             }
 
             @Override
@@ -57,6 +69,20 @@ public interface CLIResult extends LaunchResult {
         };
     }
 
+    private static void awaitOutput(String reason, String message, Supplier<String> supplier, CLIResult result) {
+        if (result.exitCode() == -1) {
+            Awaitility.await(reason)
+                .atMost(5, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertThat(reason, supplier.get(), containsString(message)));
+        } else {
+            assertThat(reason, supplier.get(), containsString(message));
+        }
+    }
+    
+    private static void noOutput(String reason, String message, Supplier<String> supplier, CLIResult result) {
+        assertThat(reason, supplier.get(), not(containsString(message)));
+    }
+    
     default void assertStarted() {
         assertThat("The standard output should not contain a warning about log queue overrun.",
                 getOutput(), not(containsString("The delayed handler's queue was overrun and log record(s) were lost (Did you forget to configure logging?)")));
@@ -76,13 +102,11 @@ public interface CLIResult extends LaunchResult {
     }
 
     default void assertError(String msg) {
-        assertThat("The error output does not contain: " + msg,
-                getErrorOutput(), containsString(msg));
+        awaitOutput("The error output does not contain: " + msg, msg, this::getErrorOutput, this);
     }
 
     default void assertNoError(String msg) {
-        assertThat("The error output contains: " + msg,
-                getErrorOutput(), not(containsString(msg)));
+        noOutput("The error output contains: " + msg, msg, this::getErrorOutput, this);
     }
 
     default void assertWarning(String msg) {
@@ -94,11 +118,11 @@ public interface CLIResult extends LaunchResult {
     }
 
     default void assertMessage(String message) {
-        assertThat(getOutput(), containsString(message));
+        awaitOutput("The standard output does not contain: " + message, message, this::getOutput, this);
     }
 
     default void assertNoMessage(String message) {
-        assertThat(getOutput(), not(containsString(message)));
+        noOutput("The standard output contains: " + message, message, this::getOutput, this);
     }
 
     default void assertMessageWasShownExactlyNumberOfTimes(String message, long numberOfShownTimes) {
