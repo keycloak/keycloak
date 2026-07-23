@@ -82,6 +82,7 @@ import static org.keycloak.tests.oid4vc.OID4VCTestContext.AUTHORIZATION_SERVER_M
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.AttachmentKey;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CLIENT_ATTESTER_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_RESPONSE_ATTACHMENT_KEY;
+import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_URI_REQUEST_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_URI_RESPONSE_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_RESPONSE_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.ISSUER_METADATA_ATTACHMENT_KEY;
@@ -137,9 +138,9 @@ public class OID4VCBasicWallet {
         CredentialOfferUriResponse credOfferUriRes;
         try {
             String credConfigId = ctx.getCredentialConfigurationId();
-            var uriRequest = credentialOfferUriRequest(ctx, credConfigId);
-            consumer.accept(uriRequest.bearerToken(issToken));
-            credOfferUriRes = uriRequest.send();
+            var credOfferUriRequest = credentialOfferUriRequest(ctx, credConfigId);
+            consumer.accept(credOfferUriRequest.bearerToken(issToken));
+            credOfferUriRes = credOfferUriRequest.send();
         } finally {
             logout(ctx.getIssuer());
         }
@@ -155,6 +156,11 @@ public class OID4VCBasicWallet {
         // Create CredentialOfferURI
         //
         CredentialOfferURI credOfferUri = createCredentialOfferUri(ctx, consumer);
+
+        if (ctx.getAttachment(CREDENTIALS_OFFER_URI_REQUEST_ATTACHMENT_KEY).hasTxCode()) {
+            String txCode = credOfferUri.getTxCode();
+            assertNotNull(txCode, "No TxCode");
+        }
 
         // Fetch the CredentialsOffer
         //
@@ -374,13 +380,17 @@ public class OID4VCBasicWallet {
     }
 
     public PreAuthorizedCodeGrantRequest accessTokenRequestPreAuth(OID4VCTestContext ctx, String preAuthCode) {
+        return accessTokenRequestPreAuth(ctx, preAuthCode, null);
+    }
+
+    public PreAuthorizedCodeGrantRequest accessTokenRequestPreAuth(OID4VCTestContext ctx, String preAuthCode, String txCode) {
         PreAuthorizedCodeGrantRequest request = new PreAuthorizedCodeGrantRequest(oauth, preAuthCode) {
             public AccessTokenResponse send() {
                 AccessTokenResponse response = super.send();
                 ctx.putAttachment(ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY, response);
                 return response;
             }
-        };
+        }.txCode(txCode);
         return request;
     }
 
@@ -392,6 +402,7 @@ public class OID4VCBasicWallet {
                 return response;
             }
         };
+        ctx.putAttachment(CREDENTIALS_OFFER_URI_REQUEST_ATTACHMENT_KEY, request);
         return request;
     }
 
@@ -423,11 +434,15 @@ public class OID4VCBasicWallet {
     }
 
     public Oid4vcCredentialResponse fetchCredentialByOffer(OID4VCTestContext ctx, CredentialsOffer offer) {
+        return fetchCredentialByOffer(ctx, offer, null);
+    }
+
+    public Oid4vcCredentialResponse fetchCredentialByOffer(OID4VCTestContext ctx, CredentialsOffer offer, String txCode) {
 
         AccessTokenResponse tokenResponse;
         if (offer.hasPreAuthorizedGrant()) {
 
-            tokenResponse = accessTokenRequestPreAuth(ctx, offer.getPreAuthorizedCode()).send();
+            tokenResponse = accessTokenRequestPreAuth(ctx, offer.getPreAuthorizedCode(), txCode).send();
 
         } else {
 

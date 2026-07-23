@@ -230,8 +230,9 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     .addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode("the-code"))
                     .setCredentialConfigurationIds(List.of("credential-configuration-id"));
 
+            long expiresAt = Time.currentTimeSeconds() + 60;
             CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
-            CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, Time.currentTime() + 60, null);
+            CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, expiresAt, false, null);
             offerStorage.putOfferState(offerState);
             return offerState.getNonce();
             // The cache transactions need to be committed

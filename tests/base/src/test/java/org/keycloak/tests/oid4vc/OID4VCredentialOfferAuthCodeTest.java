@@ -236,17 +236,25 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
             req.targetUser(ctx.getHolder());
         });
 
+        CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
+        assertNotNull(offerURI, "No CredentialOfferURI");
+
         String issuerState = credOffer.getIssuerState();
         assertNotNull(issuerState, "No IssuerState");
 
+        // Fetch credential offer again
+        // https://github.com/keycloak/keycloak/issues/48014
+        credOffer = wallet.credentialsOfferRequest(ctx, offerURI).send().getCredentialsOffer();
+        assertNotNull(credOffer, "No credOffer");
+
         // Send AuthorizationRequest
         //
-        AuthorizationEndpointResponse authResponse = wallet
+        String authCode = wallet
                 .authorizationRequest()
                 .scope(ctx.getScope())
                 .issuerState(issuerState)
-                .send(ctx.getHolder(), TEST_PASSWORD);
-        String authCode = authResponse.getCode();
+                .send(ctx.getHolder(), TEST_PASSWORD)
+                .getCode();
         assertNotNull(authCode, "No authCode");
 
         // Build and send AccessTokenRequest

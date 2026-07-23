@@ -16,6 +16,7 @@
  */
 package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -42,16 +43,21 @@ public class CredentialOfferState {
     private long expiresAt;
     private List<OID4VCAuthorizationDetail> authDetails;
 
+    private static final SecureRandom TX_CODE_RANDOM = new SecureRandom();
+    private static final char[] TX_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+    private static final int TX_CODE_LENGTH = 6;
+
     /**
      * Create a new CredentialOfferState.
      * <p>
      * This should only be called from the configured  {@code CredentialOfferProvider}.
      * The constructor is public for testing purposes only.
      *
-     * @param credOffer   The credential offer
-     * @param clientId    The target client_id
-     * @param userId      The target user id
-     * @param expiresAt    The expiry date of the offer in seconds
+     * @param credOffer           The credential offer
+     * @param clientId            The target client_id
+     * @param userId              The target user id
+     * @param expiresAt           The expiry date of the offer in seconds
+     * @param withTxCode          A flag to indicate whether a tx_code should be generated
      * @param authDetailsProvider A provider function for authorization details, (optionally) one for each credential_configuration_id
      */
     public CredentialOfferState(
@@ -59,6 +65,7 @@ public class CredentialOfferState {
             String clientId,
             String userId,
             long expiresAt,
+            Boolean withTxCode,
             Function<String, List<OID4VCAuthorizationDetail>> authDetailsProvider
     ) {
         this.credentialsOfferId = Base64Url.encode(RandomSecret.createRandomSecret(64));
@@ -68,6 +75,9 @@ public class CredentialOfferState {
         this.expiresAt = expiresAt;
         String nonceSecret = Base64Url.encode(RandomSecret.createRandomSecret(64));
         this.nonce = CredentialOfferLookupKey.embed(nonceSecret, credentialsOfferId);
+        if (withTxCode == Boolean.TRUE) { // Allow null for authorization_code grant
+            this.txCode = generateTxCode();
+        }
         if (authDetailsProvider != null) {
             this.authDetails = authDetailsProvider.apply(credentialsOfferId);
         }
@@ -148,12 +158,22 @@ public class CredentialOfferState {
 
     // Private ---------------------------------------------------------------------------------------------------------
 
-    // For json serialization
+    // For JSON serialization
     private CredentialOfferState() {
     }
 
-    // For json serialization
+    // For JSON serialization
     private void setAuthorizationDetails(List<OID4VCAuthorizationDetail> authDetails) {
         this.authDetails = authDetails;
+    }
+
+    private String generateTxCode() {
+        int alphabetLength = TX_CODE_ALPHABET.length;
+        var sb = new StringBuilder(TX_CODE_LENGTH);
+        for (int i = 0; i < TX_CODE_LENGTH; i++) {
+            int idx = TX_CODE_RANDOM.nextInt(alphabetLength);
+            sb.append(TX_CODE_ALPHABET[idx]);
+        }
+        return sb.toString();
     }
 }
