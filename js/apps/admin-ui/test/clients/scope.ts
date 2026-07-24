@@ -1,5 +1,4 @@
 import { type Page, expect } from "@playwright/test";
-import { clickTableToolbarItem } from "../utils/table.ts";
 import { selectItem } from "../utils/form.ts";
 
 export async function goToClientScopesTab(page: Page) {
@@ -11,7 +10,45 @@ export async function goToClientScopeEvaluateTab(page: Page) {
 }
 
 export async function clickAddClientScope(page: Page) {
-  await clickTableToolbarItem(page, "Add client scope");
+  const toolbar = page.getByTestId("table-toolbar");
+  await expect(toolbar).toBeVisible();
+  const directAction = [
+    toolbar.getByRole("button", { name: /Add client scope/i }),
+    toolbar.getByRole("link", { name: /Add client scope/i }),
+    toolbar.getByRole("button", { name: /Add scope/i }),
+    toolbar.getByRole("link", { name: /Add scope/i }),
+    toolbar.getByRole("button", { name: /^Add$/i }),
+    toolbar.getByRole("link", { name: /^Add$/i }),
+  ];
+
+  for (const action of directAction) {
+    const actionCount = await action.count();
+    for (let i = 0; i < actionCount; i++) {
+      const candidate = action.nth(i);
+      if (await candidate.isVisible()) {
+        await candidate.click();
+        return;
+      }
+    }
+  }
+
+  if ((await toolbar.getByTestId("kebab").count()) > 0) {
+    await toolbar.getByTestId("kebab").first().click();
+    const menuAction = [
+      page.getByRole("menuitem", { name: /Add client scope/i }),
+      page.getByRole("menuitem", { name: /Add scope/i }),
+      page.getByRole("menuitem", { name: /^Add$/i }),
+    ];
+    for (const action of menuAction) {
+      if ((await action.count()) > 0) {
+        await action.first().click();
+        return;
+      }
+    }
+  }
+  throw new Error(
+    `Could not find add scope action in toolbar: ${await toolbar.textContent()}`,
+  );
 }
 
 export async function clickAddScope(page: Page, option: string) {

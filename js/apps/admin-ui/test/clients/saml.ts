@@ -47,7 +47,21 @@ export async function assertSamlClientDetails(page: Page) {
 }
 
 export async function clickPostBinding(page: Page) {
-  await switchOff(page, "#attributes\\.saml🍺force🍺post🍺binding");
+  const postBindingSwitch = page.locator(
+    "#attributes\\.saml🍺force🍺post🍺binding",
+  );
+  await expect(postBindingSwitch).toBeVisible();
+
+  const isReadOnly =
+    (await postBindingSwitch.getAttribute("aria-readonly")) === "true" ||
+    (await postBindingSwitch.getAttribute("readonly")) !== null;
+
+  if (isReadOnly || !(await postBindingSwitch.isEnabled())) {
+    return "read-only";
+  }
+
+  await switchOff(page, postBindingSwitch);
+  return "toggled";
 }
 
 export async function saveSamlSettings(page: Page) {

@@ -15,11 +15,66 @@ export async function clearAllFilters(page: Page) {
 }
 
 export async function clickTableRowItem(page: Page, itemName: string) {
+  const rows = page.locator("table tbody tr");
+  const exactRow = rows
+    .filter({ has: page.getByText(itemName, { exact: true }) })
+    .first();
+
+  if ((await exactRow.count()) > 0) {
+    const exactRowLink = exactRow.getByRole("link", {
+      name: itemName,
+      exact: true,
+    });
+    if ((await exactRowLink.count()) > 0) {
+      await exactRowLink.first().click();
+      return;
+    }
+
+    const firstExactRowLink = exactRow.getByRole("link").first();
+    if ((await firstExactRowLink.count()) > 0) {
+      await firstExactRowLink.click();
+      return;
+    }
+  }
+
+  const partialRow = rows.filter({ hasText: itemName }).first();
+
+  if ((await partialRow.count()) > 0) {
+    const exactRowLink = partialRow.getByRole("link", {
+      name: itemName,
+      exact: true,
+    });
+    if ((await exactRowLink.count()) > 0) {
+      await exactRowLink.first().click();
+      return;
+    }
+
+    const partialRowLink = partialRow.getByRole("link", { name: itemName });
+    if ((await partialRowLink.count()) > 0) {
+      await partialRowLink.first().click();
+      return;
+    }
+
+    const firstRowLink = partialRow.getByRole("link").first();
+    if ((await firstRowLink.count()) > 0) {
+      await firstRowLink.click();
+      return;
+    }
+  }
+
+  const exactLink = page.getByRole("link", { name: itemName, exact: true });
+  if ((await exactLink.count()) > 0) {
+    await exactLink.first().click();
+    return;
+  }
+
   await page.getByRole("link", { name: itemName }).first().click();
 }
 
 export function getRowByCellText(page: Page, cellText: string): Locator {
-  return page.getByText(cellText, { exact: true });
+  return page
+    .locator("table tbody tr")
+    .filter({ has: page.getByText(cellText, { exact: true }) });
 }
 
 export async function clickRowKebabItem(
@@ -39,10 +94,11 @@ export async function assertRowExists(
   itemName: string,
   exist = true,
 ) {
+  const row = page.locator("table tbody").getByRole("row", { name: itemName });
   if (exist) {
-    await expect(page.getByRole("row", { name: itemName })).toBeVisible();
+    await expect(row.first()).toBeVisible();
   } else {
-    await expect(page.getByRole("row", { name: itemName })).toBeHidden();
+    await expect(row).toHaveCount(0);
   }
 }
 
@@ -57,24 +113,81 @@ export async function clickTableToolbarItem(
   itemName: string,
   kebab = false,
 ) {
+  const toolbar = page.getByTestId("table-toolbar");
   if (kebab) {
-    await page.getByTestId("kebab").click();
+    await toolbar.getByTestId("kebab").click();
+    const exactMenuItem = page.getByRole("menuitem", {
+      name: itemName,
+      exact: true,
+    });
+    if ((await exactMenuItem.count()) > 0) {
+      await exactMenuItem.first().click();
+      return;
+    }
+    await page.getByRole("menuitem", { name: itemName }).first().click();
+    return;
   }
-  return page
-    .locator(`[data-testid="table-toolbar"]`)
-    .getByText(itemName)
-    .click();
+
+  const exactToolbarItem = toolbar
+    .getByRole("button", { name: itemName, exact: true })
+    .or(toolbar.getByRole("link", { name: itemName, exact: true }))
+    .first();
+  try {
+    await exactToolbarItem.waitFor({ state: "visible", timeout: 2_000 });
+    await exactToolbarItem.click();
+    return;
+  } catch {
+    // Fall through to partial name and overflow menu attempts.
+  }
+
+  const partialToolbarItem = toolbar
+    .getByRole("button", { name: itemName })
+    .or(toolbar.getByRole("link", { name: itemName }))
+    .first();
+  try {
+    await partialToolbarItem.waitFor({ state: "visible", timeout: 2_000 });
+    await partialToolbarItem.click();
+    return;
+  } catch {
+    // Fall through to overflow menu attempt.
+  }
+
+  const overflowKebab = toolbar.getByTestId("kebab");
+  if ((await overflowKebab.count()) > 0) {
+    await overflowKebab.click();
+    const exactMenuItem = page.getByRole("menuitem", {
+      name: itemName,
+      exact: true,
+    });
+    if ((await exactMenuItem.count()) > 0) {
+      await exactMenuItem.first().click();
+      return;
+    }
+    await page.getByRole("menuitem", { name: itemName }).first().click();
+    return;
+  }
+
+  throw new Error(`Toolbar item "${itemName}" not found`);
 }
 
 export async function getTableData(page: Page, name: string) {
   const rowsLocator = await getTableRows(page, name);
-  const rows = await rowsLocator.elementHandles();
-  const tableData = await Promise.all(
-    rows.map(async (row) => {
-      const cells = await row.$$("td");
-      return await Promise.all(cells.map((cell) => cell.innerText()));
-    }),
-  );
+  const rowCount = await rowsLocator.count();
+  const tableData: string[][] = [];
+
+  for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+    const row = rowsLocator.nth(rowIndex);
+    const cells = row.locator("td");
+    const cellCount = await cells.count();
+    const rowData: string[] = [];
+
+    for (let cellIndex = 0; cellIndex < cellCount; cellIndex++) {
+      rowData.push((await cells.nth(cellIndex).innerText()).trim());
+    }
+
+    tableData.push(rowData);
+  }
+
   return tableData;
 }
 

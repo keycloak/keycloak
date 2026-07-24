@@ -16,6 +16,7 @@ import {
   clickAddValidator,
   clickCancelAttribute,
   clickCreateAttribute,
+  fillEmailAndOptionalUsername,
   clickSaveAttribute,
   clickSaveValidator,
   fillAttributeForm,
@@ -169,7 +170,11 @@ test.describe.serial("User profile tabs", () => {
 
     await goToUsers(page);
     await page.getByTestId("no-users-found-empty-action").click();
-    await page.getByTestId("email").fill("testuser8@gmail.com");
+    await fillEmailAndOptionalUsername(
+      page,
+      "testuser8@gmail.com",
+      "testuser8",
+    );
     await expect(page.getByTestId(attrName)).toBeHidden();
     await page.getByTestId("user-creation-save").click();
     await assertNotificationMessage(page, "The user has been created");
