@@ -64,6 +64,7 @@ import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
+import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.SupportedProofTypeData;
@@ -73,7 +74,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
 
-import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
 import static org.keycloak.services.clientpolicy.executor.FapiConstant.ALLOWED_ALGORITHMS;
 
 /**
@@ -98,8 +98,10 @@ public class AttestationValidatorUtil {
      *                                        {@code jwt} proof type (embedded {@code key_attestation} header).
      * @param proofTypeKeyForSigningAlgPolicy {@link org.keycloak.protocol.oid4vc.model.ProofType} value
      *                                        ({@code jwt} or {@code attestation}) to resolve
-     *                                        {@code proof_signing_alg_values_supported}; if {@code null}, only
-     *                                        FAPI {@code ALLOWED_ALGORITHMS} is enforced.
+     *                                        {@code proof_signing_alg_values_supported} and
+     *                                        {@code key_attestations_required}; if {@code null}, falls back to
+     *                                        {@code ProofType.JWT} for attestation requirements and FAPI
+     *                                        {@code ALLOWED_ALGORITHMS} for signing algorithms.
      */
     public static KeyAttestationJwtBody validateAttestationJwt(
             String attestationJwt,
@@ -162,7 +164,7 @@ public class AttestationValidatorUtil {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Could not verify signature of attestation JWT");
         }
 
-        validateAttestationPayload(keycloakSession, vcIssuanceContext, attestationBody, requireExpForJwtProof);
+        validateAttestationPayload(keycloakSession, vcIssuanceContext, attestationBody, requireExpForJwtProof, proofTypeKeyForSigningAlgPolicy);
 
         if (attestationBody.getAttestedKeys() == null) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing required attested_keys claim in attestation");
@@ -175,7 +177,8 @@ public class AttestationValidatorUtil {
             KeycloakSession keycloakSession,
             VCIssuanceContext vcIssuanceContext,
             KeyAttestationJwtBody attestationBody,
-            boolean requireExpForJwtProof) throws VCIssuerException, VerificationException {
+            boolean requireExpForJwtProof,
+            String proofTypeKey) throws VCIssuerException, VerificationException {
 
         if (attestationBody.getIat() == null) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing 'iat' claim in attestation");
@@ -191,7 +194,7 @@ public class AttestationValidatorUtil {
         }
 
         // Get resistance level requirements from configuration
-        KeyAttestationsRequired attestationRequirements = getAttestationRequirements(vcIssuanceContext);
+        KeyAttestationsRequired attestationRequirements = getAttestationRequirements(vcIssuanceContext, proofTypeKey);
         validateResistanceLevel(attestationBody, attestationRequirements);
 
         KeycloakContext keycloakContext = keycloakSession.getContext();
@@ -222,17 +225,20 @@ public class AttestationValidatorUtil {
         }
     }
 
-    private static KeyAttestationsRequired getAttestationRequirements(VCIssuanceContext vcIssuanceContext) {
+    static KeyAttestationsRequired getAttestationRequirements(VCIssuanceContext vcIssuanceContext, String proofTypeKey) {
         if (vcIssuanceContext.getCredentialConfig() == null ||
                 vcIssuanceContext.getCredentialConfig().getProofTypesSupported() == null ||
                 vcIssuanceContext.getCredentialConfig().getProofTypesSupported().getSupportedProofTypes() == null) {
             return null;
         }
 
+        // Fall back to "jwt" when proofTypeKey is null (backward compatibility).
+        String effectiveKey = proofTypeKey != null ? proofTypeKey : ProofType.JWT;
+
         SupportedProofTypeData proofTypeData = vcIssuanceContext.getCredentialConfig()
                 .getProofTypesSupported()
                 .getSupportedProofTypes()
-                .get(JWT);
+                .get(effectiveKey);
 
         return proofTypeData != null ? proofTypeData.getKeyAttestationsRequired() : null;
     }
