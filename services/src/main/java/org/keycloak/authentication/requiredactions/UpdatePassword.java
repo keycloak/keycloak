@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication.requiredactions;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -145,7 +146,22 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         }
 
         try {
+            PasswordCredentialProvider passwordProvider = (PasswordCredentialProvider) context.getSession().getProvider(CredentialProvider.class, PasswordCredentialProviderFactory.PROVIDER_ID);
+            PasswordCredentialModel oldPassword = passwordProvider.getPassword(context.getRealm(), user);
+
             user.credentialManager().updateCredential(UserCredentialModel.password(passwordNew, false));
+
+            // updateCredential returns only a boolean, so it cannot tell whether the update was handled by a
+            // federated CredentialInputUpdater (e.g. LDAP in WRITABLE edit mode) or by the local store. Emit the
+            // credential ID only when the local password row actually changed: a local write creates a new row
+            // or re-stamps createdDate, while a purely federated write leaves any local row untouched.
+            PasswordCredentialModel password = passwordProvider.getPassword(context.getRealm(), user);
+            if (password != null && (oldPassword == null
+                    || !password.getId().equals(oldPassword.getId())
+                    || !Objects.equals(password.getCreatedDate(), oldPassword.getCreatedDate()))) {
+                event.detail(Details.CREDENTIAL_ID, password.getId());
+            }
+
             context.success();
             deprecatedEvent.success();
         } catch (ModelException me) {
