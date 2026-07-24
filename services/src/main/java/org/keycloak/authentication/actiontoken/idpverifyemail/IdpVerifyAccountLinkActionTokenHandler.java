@@ -135,7 +135,6 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
                     .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, token.getIdentityProviderAlias(), token.getIdentityProviderUsername())
-                    .setAttribute(Constants.SKIP_LINK, true)
                     .createInfoPage();
         }
 
