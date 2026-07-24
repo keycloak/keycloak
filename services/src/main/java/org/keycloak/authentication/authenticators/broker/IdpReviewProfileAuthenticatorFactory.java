@@ -39,6 +39,7 @@ public class IdpReviewProfileAuthenticatorFactory implements AuthenticatorFactor
     static IdpReviewProfileAuthenticator SINGLETON = new IdpReviewProfileAuthenticator();
 
     public static final String UPDATE_PROFILE_ON_FIRST_LOGIN = "update.profile.on.first.login";
+    public static final String TERMS_AND_CONDITIONS = "terms_and_conditions";
 
     @Override
     public Authenticator create(KeycloakSession session) {
@@ -110,7 +111,13 @@ public class IdpReviewProfileAuthenticatorFactory implements AuthenticatorFactor
                 + " page for reviewing profile will be displayed and user can review and update his profile. Value 'off' means that page won't be displayed."
                 + " Value 'missing' means that page is displayed just when some required attribute is missing (wasn't downloaded from identity provider). Value 'missing' is the default one."
                 + " WARN: In case that user clicks 'Review profile info' on link duplications page, the update page will be always displayed. You would need to disable this authenticator to never display the page.");
-
+        configProperties.add(property);
+        property = new ProviderConfigProperty();
+        property.setName(TERMS_AND_CONDITIONS);
+        property.setLabel("Accept Terms and Conditions");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setHelpText("Enable this option to require users to accept terms and conditions before their profile is recorded."
+                + "This ensures compliance with data regulation frameworks like GDPR on first login. You also need to enable the 'Terms and Conditions' Required action for this to take effect.");
         configProperties.add(property);
     }
 
