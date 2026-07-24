@@ -135,6 +135,133 @@ jobs:
               -Dtest.operator.custom.image=custom-keycloak:${{ env.version_remote }} \
               --no-transfer-progress -Dtest.operator.deployment=remote ${PARAMS["${{ matrix.suite }}"]}
 
+  test-helm:
+    name: Helm chart lint and smoke render
+    if: needs.conditional.outputs.operator == 'true'
+    runs-on: ubuntu-latest
+    needs: conditional
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Setup Java
+        uses: ./.github/actions/java-setup
+
+      - name: Install Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v3.14.4
+
+      - name: Generate the Helm chart
+        # The Helm chart installs the Operator cluster-wide (see docs). Build it with
+        # the cluster-wide profile so the generated RBAC watches all namespaces.
+        run: ./mvnw -B -Poperator -Pcluster-wide -pl :keycloak-operator -am package -DskipTests
+
+      - name: helm lint
+        run: helm lint operator/target/helm/kubernetes/keycloak-operator
+
+      - name: helm template — default
+        run: |
+          set -euo pipefail
+          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator)
+          # Default install ships one CRD per CR class (Keycloak, KeycloakRealmImport,
+          # KeycloakOIDCClient, KeycloakSAMLClient) plus the operator's Deployment.
+          crds=$(echo "$out" | grep -cE '^kind: "?CustomResourceDefinition"?$' || true)
+          if [ "$crds" -ne 4 ]; then echo "expected 4 CRDs, got $crds"; exit 1; fi
+          echo "$out" | grep -qE '^kind: Deployment$'
+          # Cluster-wide install binds the controllers via ClusterRoleBinding.
+          echo "$out" | grep -qE '^kind: ClusterRoleBinding$'
+          # No resource should be rendered twice (kind+name+namespace must be unique).
+          dupes=$(echo "$out" | awk '
+            /^kind:/{k=$2} /^  name:/{n=$2} /^  namespace:/{ns=$2}
+            /^---/{if(k&&n)print k"/"ns"/"n; k=n=ns=""}
+            END{if(k&&n)print k"/"ns"/"n}' | sort | uniq -d)
+          if [ -n "$dupes" ]; then echo "duplicate resources rendered:"; echo "$dupes"; exit 1; fi
+
+      - name: helm template — crds.enabled=false
+        run: |
+          set -euo pipefail
+          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator --set crds.enabled=false)
+          # CRDs are excluded; everything else still renders.
+          if echo "$out" | grep -qE '^kind: "?CustomResourceDefinition"?$'; then
+            echo "expected no CRDs with crds.enabled=false"; exit 1
+          fi
+          echo "$out" | grep -cE '^kind: Deployment$' | grep -q '^1$'
+
+      - name: helm template — resource overrides
+        run: |
+          set -euo pipefail
+          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator \
+            --set-string operator.resources.limits.cpu=1500m \
+            --set-string operator.resources.limits.memory=1Gi)
+          echo "$out" | grep -A4 'resources:' | grep -q 'cpu: 1500m'
+          echo "$out" | grep -A4 'resources:' | grep -q 'memory: 1Gi'
+
+  test-helm-install:
+    name: Helm chart install on Kubernetes
+    if: needs.conditional.outputs.operator == 'true'
+    runs-on: ubuntu-latest
+    needs: conditional
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Setup Java
+        uses: ./.github/actions/java-setup
+
+      - name: Install Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v3.14.4
+
+      - name: Setup Minikube-Kubernetes
+        uses: manusa/actions-setup-minikube@b65276017fdec6f1e6498129fb740e34e260dc55 # v2.18.0
+        with:
+          minikube version: ${{ env.MINIKUBE_VERSION }}
+          kubernetes version: ${{ env.KUBERNETES_VERSION }}
+          github token: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker
+          start args: --memory=${{ env.MINIKUBE_MEMORY }} --cpus=max
+
+      - name: Build the operator image and Helm chart
+        # Build the chart cluster-wide (see test-helm) and the operator image in
+        # one reactor run, inside minikube's docker daemon so the cluster can use
+        # the image without a registry push. image-pull-policy=IfNotPresent makes
+        # the kubelet use the local image instead of pulling.
+        run: |
+          eval $(minikube -p minikube docker-env)
+          ./mvnw -B -Poperator -Pcluster-wide -pl :keycloak-operator -am package -DskipTests \
+            -Dquarkus.container-image.build=true \
+            -Dquarkus.container-image.tag=ci \
+            -Dquarkus.kubernetes.image-pull-policy=IfNotPresent
+
+      - name: helm install
+        # A real API-server install validates what `helm template` cannot: the
+        # ClusterRoleBinding ServiceAccount subjects must carry a namespace or
+        # the API server rejects them. --wait blocks until the Deployment is
+        # Available, so a crash-looping or unschedulable operator fails the job.
+        run: |
+          set -euo pipefail
+          kubectl create namespace keycloak-operator
+          helm install kc-op operator/target/helm/kubernetes/keycloak-operator \
+            --namespace keycloak-operator \
+            --set operator.image=keycloak/keycloak-operator:ci \
+            --wait --timeout 5m
+
+      - name: Verify the operator is running
+        run: |
+          set -euo pipefail
+          kubectl -n keycloak-operator rollout status deployment/keycloak-operator --timeout=300s
+          for crd in keycloaks keycloakrealmimports keycloakoidcclients keycloaksamlclients; do
+            kubectl get crd "${crd}.k8s.keycloak.org"
+          done
+          kubectl -n keycloak-operator get pods
+
+      - name: Dump operator diagnostics on failure
+        if: failure()
+        run: |
+          kubectl -n keycloak-operator get all || true
+          kubectl -n keycloak-operator describe deployment/keycloak-operator || true
+          kubectl -n keycloak-operator logs deployment/keycloak-operator --tail=300 || true
+
   test-olm:
     name: Test OLM installation
     runs-on: ubuntu-latest
@@ -364,6 +491,8 @@ jobs:
       - build
       - test-local-apiserver
       - test-remote
+      - test-helm
+      - test-helm-install
       - test-olm
       - test-kustomize
     runs-on: ubuntu-latest
