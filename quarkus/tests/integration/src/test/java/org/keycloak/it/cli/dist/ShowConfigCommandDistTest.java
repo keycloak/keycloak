@@ -103,6 +103,15 @@ public class ShowConfigCommandDistTest {
     }
 
     @Test
+    @Launch({ ShowConfig.NAME })
+    @WithEnvVars({"KC_VAULT_PASS", "vault-secret"})
+    void testShowConfigCommandHidesVaultPassword(LaunchResult result) {
+        String output = result.getOutput();
+        assertThat(output, containsString("kc.vault-pass =  " + PropertyMappers.VALUE_MASK));
+        assertThat(output, not(containsString("vault-secret")));
+    }
+
+    @Test
     @RawDistOnly(reason = "Containers are immutable")
     void testConfigSourceNames(KeycloakRunner runner) {
         CLIResult result = runner.run("build");
