@@ -21,9 +21,14 @@ import java.io.File;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import javax.naming.Context;
+import javax.naming.ldap.InitialLdapContext;
+import javax.naming.ldap.StartTlsRequest;
+import javax.naming.ldap.StartTlsResponse;
 
 import org.keycloak.common.util.FindFile;
 import org.keycloak.common.util.StreamUtil;
@@ -223,6 +228,62 @@ public class LDAPEmbeddedServer {
             throw new RuntimeException("Failed to start the LDAP server!");
         } else if (!ldapServer.getDirectoryService().isStarted()) {
             throw new RuntimeException("Failed to start the directory service for the LDAP server!");
+        }
+
+        if (enableStartTLS) {
+            warmUpStartTls();
+        }
+    }
+
+    /**
+     * Issue a throwaway StartTLS handshake so the server eagerly initializes its TLS resources.
+     * Without this, the first real StartTLS request from a test may time out under CI load.
+     */
+    private void warmUpStartTls() {
+        log.info("Warming up StartTLS...");
+        Hashtable<String, String> env = new Hashtable<>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(Context.PROVIDER_URL, "ldap://" + this.bindHost + ":" + this.bindPort);
+
+        try {
+            InitialLdapContext ctx = new InitialLdapContext(env, null);
+            try {
+                StartTlsResponse tls = (StartTlsResponse) ctx.extendedOperation(new StartTlsRequest());
+                // Accept any certificate — this is a local test server.
+                tls.negotiate(new javax.net.ssl.SSLSocketFactory() {
+                    private final javax.net.ssl.SSLSocketFactory delegate = trustAllContext().getSocketFactory();
+
+                    @Override public String[] getDefaultCipherSuites() { return delegate.getDefaultCipherSuites(); }
+                    @Override public String[] getSupportedCipherSuites() { return delegate.getSupportedCipherSuites(); }
+                    @Override public java.net.Socket createSocket(java.net.Socket s, String host, int port, boolean autoClose) throws java.io.IOException { return delegate.createSocket(s, host, port, autoClose); }
+                    @Override public java.net.Socket createSocket(String host, int port) throws java.io.IOException { return delegate.createSocket(host, port); }
+                    @Override public java.net.Socket createSocket(String host, int port, java.net.InetAddress localHost, int localPort) throws java.io.IOException { return delegate.createSocket(host, port, localHost, localPort); }
+                    @Override public java.net.Socket createSocket(java.net.InetAddress host, int port) throws java.io.IOException { return delegate.createSocket(host, port); }
+                    @Override public java.net.Socket createSocket(java.net.InetAddress address, int port, java.net.InetAddress localAddress, int localPort) throws java.io.IOException { return delegate.createSocket(address, port, localAddress, localPort); }
+                });
+                tls.close();
+                log.info("StartTLS warm-up completed.");
+            } finally {
+                ctx.close();
+            }
+        } catch (Exception e) {
+            log.warn("StartTLS warm-up failed (non-fatal): " + e.getMessage());
+        }
+    }
+
+    private static javax.net.ssl.SSLContext trustAllContext() {
+        try {
+            javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("TLS");
+            sc.init(null, new javax.net.ssl.TrustManager[]{
+                    new javax.net.ssl.X509TrustManager() {
+                        public java.security.cert.X509Certificate[] getAcceptedIssuers() { return null; }
+                        public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) {}
+                        public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) {}
+                    }
+            }, null);
+            return sc;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
