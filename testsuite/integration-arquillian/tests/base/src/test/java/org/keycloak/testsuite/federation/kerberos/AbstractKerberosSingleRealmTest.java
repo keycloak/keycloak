@@ -44,6 +44,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.ietf.jgss.GSSCredential;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
@@ -173,12 +174,11 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
     }
 
 
+    @Ignore("Credential delegation not supported: embedded Kerby KDC lacks FORWARDED flag (DIRKRB-458), " +
+            "and invokeLdap hardcodes localhost — needs rework for external KDCs")
     @Test
     public void credentialDelegationTest() throws Exception {
         Assume.assumeTrue("Ignoring test as the embedded server is not started", getKerberosRule().isStartEmbeddedLdapServer());
-        // TODO: credential delegation requires the FORWARDED ticket flag, which Kerby's KDC does not support (DIRKRB-458).
-        //  Re-enable once Kerby adds FORWARDED handling in TicketIssuer.makeEncTicketPart().
-        Assume.assumeTrue("Credential delegation not supported with Kerby KDC", false);
         // Add kerberos delegation credential mapper
         ProtocolMapperModel protocolMapper = UserSessionNoteMapper.createClaimMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
                 KerberosConstants.GSS_DELEGATION_CREDENTIAL,
