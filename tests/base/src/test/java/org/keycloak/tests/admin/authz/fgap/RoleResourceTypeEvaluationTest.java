@@ -267,6 +267,83 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testDeleteCompositeRoleRequiresMapCompositePermission() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        String myclientId = myclient.getId();
+
+        // create client sub-roles on myclient (using client roles avoids manage-realm bypassing canMapComposite)
+        RoleRepresentation allowedSubRole = new RoleRepresentation();
+        allowedSubRole.setName("allowedSubRole");
+        realm.admin().clients().get(myclientId).roles().create(allowedSubRole);
+        allowedSubRole = realm.admin().clients().get(myclientId).roles().get("allowedSubRole").toRepresentation();
+
+        RoleRepresentation restrictedSubRole = new RoleRepresentation();
+        restrictedSubRole.setName("restrictedSubRole");
+        realm.admin().clients().get(myclientId).roles().create(restrictedSubRole);
+        restrictedSubRole = realm.admin().clients().get(myclientId).roles().get("restrictedSubRole").toRepresentation();
+
+        // create parent realm role (for endpoint 1) and parent client role (for endpoints 2 & 3)
+        RoleRepresentation parentRealmRole = new RoleRepresentation();
+        parentRealmRole.setName("parentRealmRole");
+        realm.admin().roles().create(parentRealmRole);
+        parentRealmRole = realm.admin().roles().get("parentRealmRole").toRepresentation();
+        realm.cleanup().add(r -> r.roles().get("parentRealmRole").remove());
+
+        RoleRepresentation parentClientRole = new RoleRepresentation();
+        parentClientRole.setName("parentClientRole");
+        realm.admin().clients().get(myclientId).roles().create(parentClientRole);
+        parentClientRole = realm.admin().clients().get(myclientId).roles().get("parentClientRole").toRepresentation();
+
+        // grant myadmin manage-realm (required for realm role endpoint's requireManage(RealmModel))
+        String realmMgmtId = realm.admin().clients().findByClientId("realm-management").get(0).getId();
+        RoleRepresentation manageRealmRole = realm.admin().clients().get(realmMgmtId).roles().get("manage-realm").toRepresentation();
+        realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmMgmtId).add(List.of(manageRealmRole));
+        realmAdminClient.tokenManager().grantToken();
+
+        // grant FGAP MANAGE on myclient (for client role endpoints' requireManage)
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, myclientId, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, Set.of(MANAGE), policy);
+
+        // grant MAP_ROLE_COMPOSITE only on allowedSubRole
+        createPermission(adminPermissionsClient, allowedSubRole.getId(), rolesType, Set.of(MAP_ROLE_COMPOSITE), policy);
+
+        // as full admin, add both sub-roles as composites of both parent roles
+        realm.admin().roles().get("parentRealmRole").addComposites(List.of(allowedSubRole, restrictedSubRole));
+        realm.admin().clients().get(myclientId).roles().get("parentClientRole").addComposites(List.of(allowedSubRole, restrictedSubRole));
+
+        // --- Endpoint 1: DELETE /admin/realms/{realm}/roles/{role-name}/composites ---
+        try {
+            realmAdminClient.realm(realm.getName()).roles().get("parentRealmRole").deleteComposites(List.of(restrictedSubRole));
+            fail("Should not be able to delete composite without MAP_ROLE_COMPOSITE permission");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+        realmAdminClient.realm(realm.getName()).roles().get("parentRealmRole").deleteComposites(List.of(allowedSubRole));
+
+        // --- Endpoint 3: DELETE /admin/realms/{realm}/clients/{id}/roles/{role-name}/composites ---
+        try {
+            realmAdminClient.realm(realm.getName()).clients().get(myclientId).roles().get("parentClientRole").deleteComposites(List.of(restrictedSubRole));
+            fail("Should not be able to delete composite without MAP_ROLE_COMPOSITE permission");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+        realmAdminClient.realm(realm.getName()).clients().get(myclientId).roles().get("parentClientRole").deleteComposites(List.of(allowedSubRole));
+
+        // --- Endpoint 2: DELETE /admin/realms/{realm}/roles-by-id/{role-id}/composites ---
+        // re-add allowedSubRole as composite (was removed above)
+        realm.admin().clients().get(myclientId).roles().get("parentClientRole").addComposites(List.of(allowedSubRole));
+
+        try {
+            realmAdminClient.realm(realm.getName()).rolesById().deleteComposites(parentClientRole.getId(), List.of(restrictedSubRole));
+            fail("Should not be able to delete composite without MAP_ROLE_COMPOSITE permission");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+        realmAdminClient.realm(realm.getName()).rolesById().deleteComposites(parentClientRole.getId(), List.of(allowedSubRole));
+    }
+
+    @Test
     public void testMapRoleOnlySpecificRole() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
 
