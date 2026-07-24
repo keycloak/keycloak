@@ -135,6 +135,45 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    public void searchUserWithQueryParameter() {
+        createUsers();
+
+        String query = mapToSearchQuery(Map.of("test", "test1"));
+        assertThat(managedRealm.admin().users().searchByAttributes(query), hasSize(1));
+        List<UserRepresentation> users = managedRealm.admin().users().search("username", null, null, null, null, null, null, query);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getUsername(), is("username1"));
+        assertThat(managedRealm.admin().users().count("username", null, null, null, null, null, null, query), is(1));
+
+        users = managedRealm.admin().users().search("username", null, null, null, true, null, false, query);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getUsername(), is("username1"));
+        assertThat(managedRealm.admin().users().count("username", null, null, null, true, null, false, query), is(1));
+
+        assertThat(managedRealm.admin().users().search("username2", null, null, null, null, null, null, query), hasSize(0));
+        assertThat(managedRealm.admin().users().count("username2", null, null, null, null, null, null, query), is(0));
+
+        users = managedRealm.admin().users().search("username:username1", null, null, null, null, null, null, query);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getUsername(), is("username1"));
+        assertThat(managedRealm.admin().users().count("username:username1", null, null, null, null, null, null, query), is(1));
+        assertThat(managedRealm.admin().users().search("username:username2", null, null, null, null, null, null, query), hasSize(0));
+        assertThat(managedRealm.admin().users().count("username:username2", null, null, null, null, null, null, query), is(0));
+
+        String standardParameterQuery = mapToSearchQuery(Map.of(UserModel.EMAIL_VERIFIED, "false"));
+        assertThat(managedRealm.admin().users().search("username:username1", null, null, null, null, null, null,
+                standardParameterQuery), hasSize(1));
+        assertThat(managedRealm.admin().users().count("username:username1", null, null, null, null, null, null,
+                standardParameterQuery), is(1));
+
+        standardParameterQuery = mapToSearchQuery(Map.of(UserModel.EMAIL_VERIFIED, "true"));
+        assertThat(managedRealm.admin().users().search("username:username1", null, null, null, null, null, null,
+                standardParameterQuery), hasSize(0));
+        assertThat(managedRealm.admin().users().count("username:username1", null, null, null, null, null, null,
+                standardParameterQuery), is(0));
+    }
+
+    @Test
     public void searchByMultipleAttributes() {
         createUsers();
 

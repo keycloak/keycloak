@@ -1126,6 +1126,23 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     }
 
     @Test
+    public void testSearchWithCustomAttributes() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "combinedsearch1", "Combined1", "Search1", "combined1@email.org", null, "13101");
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "combinedsearch2", "Combined2", "Search2", "combined2@email.org", null, "13102");
+
+            Map<String, String> matching = Map.of(UserModel.SEARCH, "combinedsearch", "postal_code", "13101");
+            Assertions.assertEquals(1, session.users().searchForUserStream(appRealm, matching).count());
+
+            Map<String, String> disjoint = Map.of(UserModel.SEARCH, "combinedsearch2", "postal_code", "13101");
+            Assertions.assertEquals(0, session.users().searchForUserStream(appRealm, disjoint).count());
+        });
+    }
+
+    @Test
     public void testSearchWithCustomLDAPFilter() {
         // Add custom filter for searching users
         testingClient.server().run(session -> {

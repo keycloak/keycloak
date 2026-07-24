@@ -398,10 +398,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
      */
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults) {
-        String search = params.get(UserModel.SEARCH);
-        Stream<LDAPObject> result = search != null ?
-                searchLDAP(realm, search, firstResult, maxResults) :
-                searchLDAPByAttributes(realm, params, firstResult, maxResults);
+        Stream<LDAPObject> result = searchLDAPByAttributes(realm, params, firstResult, maxResults);
 
         if (model.isImportEnabled()) {
             result = result.filter(filterLocalUsers(realm));
@@ -554,7 +551,9 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
             for (Map.Entry<String, String> entry : attributes.entrySet()) {
                 String attrName = entry.getKey();
-                if (LDAPConstants.LDAP_ID.equals(attrName)) {
+                if (UserModel.SEARCH.equals(attrName)) {
+                    addSearchConditions(ldapQuery, conditionsBuilder, entry.getValue());
+                } else if (LDAPConstants.LDAP_ID.equals(attrName)) {
                     String uuidLDAPAttributeName = this.ldapIdentityStore.getConfig().getUuidLDAPAttributeName();
                     Condition usernameCondition = conditionsBuilder.equal(uuidLDAPAttributeName, entry.getValue());
                     ldapQuery.addWhereCondition(usernameCondition);
@@ -593,45 +592,25 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
     }
 
-    /**
-     * Searches LDAP using logical disjunction of params. It supports
-     * <ul>
-     *     <li>{@link UserModel#FIRST_NAME}</li>
-     *     <li>{@link UserModel#LAST_NAME}</li>
-     *     <li>{@link UserModel#EMAIL}</li>
-     *     <li>{@link UserModel#USERNAME}</li>
-     * </ul>
-     *
-     * It uses multiple LDAP calls and results are combined together with respect to firstResult and maxResults
-     *
-     * This method serves for {@code search} param of {@link org.keycloak.services.resources.admin.UsersResource#getUsers}
-     */
-    private Stream<LDAPObject> searchLDAP(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-
-        try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
-            LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
-
-            for (String s : search.split("\\s+")) {
-                boolean equals = false;
-                List<Condition> conditions = new LinkedList<>();
-                if (s.startsWith("\"") && s.endsWith("\"")) {
-                    // exact search
-                    s = s.substring(1, s.length() - 1);
-                    equals = true;
-                } else if (!s.endsWith("*")) {
-                    // default to prefix search
-                    s += "*";
-                }
-
-                conditions.add(createSearchCondition(conditionsBuilder, UserModel.USERNAME, equals, s));
-                conditions.add(createSearchCondition(conditionsBuilder, UserModel.EMAIL, equals, s));
-                conditions.add(createSearchCondition(conditionsBuilder, UserModel.FIRST_NAME, equals, s));
-                conditions.add(createSearchCondition(conditionsBuilder, UserModel.LAST_NAME, equals, s));
-
-                ldapQuery.addWhereCondition(conditionsBuilder.orCondition(conditions.toArray(Condition[]::new)));
+    private void addSearchConditions(LDAPQuery ldapQuery, LDAPQueryConditionsBuilder conditionsBuilder, String search) {
+        for (String s : search.split("\\s+")) {
+            boolean equals = false;
+            List<Condition> conditions = new LinkedList<>();
+            if (s.startsWith("\"") && s.endsWith("\"")) {
+                // exact search
+                s = s.substring(1, s.length() - 1);
+                equals = true;
+            } else if (!s.endsWith("*")) {
+                // default to prefix search
+                s += "*";
             }
 
-            return paginatedSearchLDAP(ldapQuery, firstResult, maxResults);
+            conditions.add(createSearchCondition(conditionsBuilder, UserModel.USERNAME, equals, s));
+            conditions.add(createSearchCondition(conditionsBuilder, UserModel.EMAIL, equals, s));
+            conditions.add(createSearchCondition(conditionsBuilder, UserModel.FIRST_NAME, equals, s));
+            conditions.add(createSearchCondition(conditionsBuilder, UserModel.LAST_NAME, equals, s));
+
+            ldapQuery.addWhereCondition(conditionsBuilder.orCondition(conditions.toArray(Condition[]::new)));
         }
     }
 

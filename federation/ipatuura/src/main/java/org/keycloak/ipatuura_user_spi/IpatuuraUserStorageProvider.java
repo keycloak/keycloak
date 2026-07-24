@@ -59,6 +59,10 @@ import org.jboss.logging.Logger;
  */
 public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLookupProvider, CredentialInputValidator,
         CredentialAuthentication, UserRegistrationProvider, UserQueryProvider, ImportedUserValidation {
+    private static final Set<String> SUPPORTED_USER_QUERY_PARAMETERS = Set.of(
+            UserModel.SEARCH,
+            UserModel.INCLUDE_SERVICE_ACCOUNT);
+
     protected KeycloakSession session;
     protected ComponentModel model;
     protected Ipatuura ipatuura;
@@ -287,7 +291,7 @@ public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLoo
             Integer maxResults) {
         String search = params.get(UserModel.SEARCH);
         /* only supports searching by username */
-        if (search == null)
+        if (search == null || params.keySet().stream().anyMatch(key -> !SUPPORTED_USER_QUERY_PARAMETERS.contains(key)))
             return Stream.empty();
         return performSearch(realm, search);
     }
