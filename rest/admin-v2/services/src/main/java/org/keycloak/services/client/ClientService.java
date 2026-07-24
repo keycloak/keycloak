@@ -89,6 +89,10 @@ public interface ClientService extends Service {
                     .reduce(Comparator::thenComparing)
                     .orElseThrow();
         }
+
+        public List<SortOption<ClientField>> getSortOptions() {
+            return sortOptions;
+        }
     }
 
     record CreateOrUpdateResult(BaseClientRepresentation representation, boolean created) {}
