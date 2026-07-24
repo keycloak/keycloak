@@ -19,12 +19,17 @@ package org.keycloak.representations.idm.authorization;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class PolicyRepresentation extends AbstractPolicyRepresentation {
 
-    private Map<String, String> config = new HashMap();
+    @JsonSerialize(using = PolicyConfigSerializer.class)
+    @JsonDeserialize(using = PolicyConfigDeserializer.class)
+    private Map<String, String> config = new HashMap<>();
 
     public Map<String, String> getConfig() {
         return this.config;
