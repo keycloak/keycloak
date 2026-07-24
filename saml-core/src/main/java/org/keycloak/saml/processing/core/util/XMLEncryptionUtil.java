@@ -30,6 +30,7 @@ import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StringUtil;
+import org.keycloak.models.KeycloakSession;
 
 import org.apache.xml.security.algorithms.JCEMapper;
 import org.apache.xml.security.encryption.EncryptedData;
@@ -88,16 +89,14 @@ public class XMLEncryptionUtil {
      * </p>
      *
      * @param document
-     * @param keyToBeEncrypted Symmetric Key (SecretKey)
+     * @param keyToBeEncrypted          Symmetric Key (SecretKey)
      * @param keyUsedToEncryptSecretKey Asymmetric Key (Public Key)
-     *
      * @return
-     *
      * @throws org.keycloak.saml.common.exceptions.ProcessingException
      */
     private static EncryptedKey encryptKey(Document document, SecretKey keyToBeEncrypted, PublicKey keyUsedToEncryptSecretKey,
-                                          String keyEncryptionAlgorithm, String keyEncryptionDigestMethod,
-                                          String keyEncryptionMgfAlgorithm) throws ProcessingException {
+                                           String keyEncryptionAlgorithm, String keyEncryptionDigestMethod,
+                                           String keyEncryptionMgfAlgorithm) throws ProcessingException {
         XMLCipher keyCipher;
 
         try {
@@ -142,18 +141,17 @@ public class XMLEncryptionUtil {
      * Given an element in a Document, encrypt the element and replace the element in the document with the encrypted
      * data
      *
-     * @param elementQName QName of the element that we like to encrypt
-     * @param document The document with the element to encrypt
-     * @param publicKey The public Key to wrap the secret key
-     * @param secretKey The secret key to use for encryption
-     * @param keySize The size of the public key
-     * @param wrappingElementQName A QName of an element that will wrap the encrypted element
-     * @param addEncryptedKeyInKeyInfo Need for the EncryptedKey to be placed in ds:KeyInfo
-     * @param encryptionAlgorithm The encryption algorithm
-     * @param keyEncryptionAlgorithm The wrap algorithm for the secret key (can be null, default is used depending the publicKey type)
+     * @param elementQName              QName of the element that we like to encrypt
+     * @param document                  The document with the element to encrypt
+     * @param publicKey                 The public Key to wrap the secret key
+     * @param secretKey                 The secret key to use for encryption
+     * @param keySize                   The size of the public key
+     * @param wrappingElementQName      A QName of an element that will wrap the encrypted element
+     * @param addEncryptedKeyInKeyInfo  Need for the EncryptedKey to be placed in ds:KeyInfo
+     * @param encryptionAlgorithm       The encryption algorithm
+     * @param keyEncryptionAlgorithm    The wrap algorithm for the secret key (can be null, default is used depending the publicKey type)
      * @param keyEncryptionDigestMethod An optional digestMethod to use (can be null)
      * @param keyEncryptionMgfAlgorithm The xenc11 MGF Algorithm to use (can be null)
-     *
      * @throws ProcessingException
      */
     public static void encryptElement(QName elementQName, Document document, PublicKey publicKey, SecretKey secretKey,
@@ -186,7 +184,7 @@ public class XMLEncryptionUtil {
         if ((XMLCipher.RSA_OAEP.equals(keyEncryptionAlgorithm) || XMLCipher.RSA_OAEP_11.equals(keyEncryptionAlgorithm))) {
             if (keyEncryptionDigestMethod == null) {
                 keyEncryptionDigestMethod = XMLCipher.SHA256; // default digest method to SHA256
-            } else if (XMLCipher.SHA1.equals(keyEncryptionDigestMethod)){
+            } else if (XMLCipher.SHA1.equals(keyEncryptionDigestMethod)) {
                 keyEncryptionDigestMethod = null; // default by spec
             }
         } else {
@@ -234,7 +232,7 @@ public class XMLEncryptionUtil {
         // Create the wrapping element and set its attribute NS
         Element wrappingElement = encryptedDoc.createElementNS(wrappingElementQName.getNamespaceURI(), wrappingElementName);
 
-        if (! StringUtil.isNullOrEmpty(wrappingElementPrefix)) {
+        if (!StringUtil.isNullOrEmpty(wrappingElementPrefix)) {
             wrappingElement.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:" + wrappingElementPrefix, wrappingElementQName.getNamespaceURI());
         }
 
@@ -274,14 +272,31 @@ public class XMLEncryptionUtil {
      * succeed it throws {@link ProcessingException}.
      *
      * @param documentWithEncryptedElement document containing encrypted element
-     * @param decryptionKeyLocator decryption key locator
-     *
+     * @param decryptionKeyLocator         decryption key locator
      * @return the document with the encrypted element replaced by the data element
-     *
      * @throws ProcessingException when decrypting was not successful
      */
     public static Element decryptElementInDocument(Document documentWithEncryptedElement, DecryptionKeyLocator decryptionKeyLocator)
             throws ProcessingException {
+        return decryptElementInDocument(documentWithEncryptedElement, decryptionKeyLocator, null);
+    }
+
+    /**
+     * Decrypts an encrypted element inside a document. When a {@link KeycloakSession} is provided,
+     * it attempts to use the configured {@link SamlDecryptionProvider} for key unwrapping.
+     * If no provider is available or no session is provided, it falls back to the legacy
+     * {@link DecryptionKeyLocator} behavior.
+     *
+     * @param documentWithEncryptedElement document containing encrypted element
+     * @param decryptionKeyLocator         decryption key locator (used as fallback)
+     * @param session                      optional KeycloakSession for SPI-based decryption (may be null)
+     * @return the document with the encrypted element replaced by the data element
+     * @throws DecryptionException when decrypting was not successful
+     */
+    public static Element decryptElementInDocument(Document documentWithEncryptedElement,
+                                                   DecryptionKeyLocator decryptionKeyLocator,
+                                                   KeycloakSession session)
+            throws DecryptionException {
         if (documentWithEncryptedElement == null)
             throw logger.nullArgumentError("Input document is null");
 
@@ -318,129 +333,170 @@ public class XMLEncryptionUtil {
         if (encryptedData != null && encryptedKey != null) {
             boolean success = false;
             final Exception enclosingThrowable = new RuntimeException("Cannot decrypt element in document");
-            List<PrivateKey> encryptionKeys;
-            encryptionKeys = decryptionKeyLocator.getKeys(encryptedData);
 
-            if (encryptionKeys == null || encryptionKeys.isEmpty()) {
-                throw logger.nullValueError("Key for EncryptedData not found.");
+            try {
+                // Attempt SPI-based decryption when session is available
+                if (session != null) {
+                    // Populate session with decryption keys from the locator so the
+                    // DefaultSamlDecryptionProviderFactory can access them.
+                    // Custom providers (e.g., KMS-backed) may ignore these attributes.
+                    List<PrivateKey> locatedKeys = decryptionKeyLocator.getKeys(encryptedData);
+                    if (locatedKeys != null && !locatedKeys.isEmpty()) {
+                        session.setAttribute("saml.decryption.keys", locatedKeys);
+                    }
+
+                    SamlDecryptionProvider provider = session.getProvider(SamlDecryptionProvider.class);
+                    if (provider != null) {
+                        String algorithm = encryptedKey.getEncryptionMethod().getAlgorithm();
+                        String digestAlgorithm = encryptedKey.getEncryptionMethod().getDigestAlgorithm();
+                        String mgfAlgorithm = encryptedKey.getEncryptionMethod().getMGFAlgorithm();
+
+                        byte[] encryptedBytes = Base64.decodeBase64(
+                                encryptedKey.getCipherData().getCipherValue().getValue());
+                        byte[] decryptedKeyBytes = provider.unwrapKey(algorithm, encryptedBytes, digestAlgorithm, mgfAlgorithm);
+
+                        SecretKeySpec secretKey = new SecretKeySpec(decryptedKeyBytes, 0, decryptedKeyBytes.length, "AES");
+                        cipher = XMLCipher.getInstance();
+                        cipher.init(XMLCipher.DECRYPT_MODE, secretKey);
+                        decryptedDoc = cipher.doFinal(documentWithEncryptedElement, encDataElement);
+                        success = true;
+                    }
+                }
+            } catch (Exception e) {
+                // When a session-provided SPI provider fails, propagate immediately
+                // without falling back to legacy logic
+                throw new DecryptionException(e);
             }
 
-            for (PrivateKey privateKey : encryptionKeys) {
-                try {
+            try {
+                // Fall back to legacy DecryptionKeyLocator logic only when no session/provider was used
+                if (!success) {
                     String encAlgoURL = encryptedData.getEncryptionMethod().getAlgorithm();
-                    XMLCipher keyCipher = XMLCipher.getInstance();
-                    keyCipher.init(XMLCipher.UNWRAP_MODE, privateKey);
-                    Key encryptionKey = keyCipher.decryptKey(encryptedKey, encAlgoURL);
-                    cipher = XMLCipher.getInstance();
-                    cipher.init(XMLCipher.DECRYPT_MODE, encryptionKey);
+                    List<PrivateKey> encryptionKeys = decryptionKeyLocator.getKeys(encryptedData);
 
-                    decryptedDoc = cipher.doFinal(documentWithEncryptedElement, encDataElement);
-                    success = true;
-                    break;
-                } catch (Exception e) {
-                    enclosingThrowable.addSuppressed(e);
+                    if (encryptionKeys == null || encryptionKeys.isEmpty()) {
+                        throw logger.nullValueError("Key for EncryptedData not found.");
+                    }
+
+                    for (PrivateKey privateKey : encryptionKeys) {
+                        try {
+                            String encAlgoURL = encryptedData.getEncryptionMethod().getAlgorithm();
+                            XMLCipher keyCipher = XMLCipher.getInstance();
+                            keyCipher.init(XMLCipher.UNWRAP_MODE, privateKey);
+                            Key encryptionKey = keyCipher.decryptKey(encryptedKey, encAlgoURL);
+                            cipher = XMLCipher.getInstance();
+                            cipher.init(XMLCipher.DECRYPT_MODE, encryptionKey);
+
+                            decryptedDoc = cipher.doFinal(documentWithEncryptedElement, encDataElement);
+                            success = true;
+                            break;
+                        } catch (Exception e) {
+                            enclosingThrowable.addSuppressed(e);
+                        }
+                    }
+
+                    if (!success) {
+                        throw logger.processingError(enclosingThrowable);
+                    }
+                }
+
+                if (decryptedDoc == null) {
+                    throw logger.nullValueError("decryptedDoc");
+                }
+
+                Element decryptedRoot = decryptedDoc.getDocumentElement();
+                Element dataElement = getNextElementNode(decryptedRoot.getFirstChild());
+                if (dataElement == null)
+                    throw logger.nullValueError("Data Element after encryption is null");
+
+                decryptedRoot.removeChild(dataElement);
+                decryptedDoc.replaceChild(dataElement, decryptedRoot);
+
+                return decryptedDoc.getDocumentElement();
+            } catch (Exception e) {
+                enclosingThrowable.addSuppressed(e);
+            }
+        }
+
+        /**
+         * Locates the EncryptedKey element once the EncryptedData element is found.
+         * A exception is thrown if not found.
+         *
+         * @param encDataElement The EncryptedData element found
+         * @return The EncryptedKey element
+         */
+        private static Element locateEncryptedKeyElement (Element encDataElement){
+            // Look at siblings for the key
+            Element encKeyElement = getNextElementNode(encDataElement.getNextSibling());
+            if (encKeyElement == null) {
+                // Search the enc data element for enc key
+                NodeList nodeList = encDataElement.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_ENCRYPTEDKEY);
+
+                if (nodeList == null || nodeList.getLength() == 0)
+                    throw logger.nullValueError("Encrypted Key not found in the enc data");
+
+                encKeyElement = (Element) nodeList.item(0);
+            }
+            return encKeyElement;
+        }
+
+        /**
+         * From the secret key, get the W3C XML Encryption URL
+         *
+         * @param publicKeyAlgo
+         * @param keySize
+         *
+         * @return
+         */
+        private static String getXMLEncryptionURLForKeyUnwrap (String publicKeyAlgo,int keySize){
+            if ("AES".equals(publicKeyAlgo)) {
+                switch (keySize) {
+                    case 192:
+                        return XMLCipher.AES_192_KeyWrap;
+                    case 256:
+                        return XMLCipher.AES_256_KeyWrap;
+                    default:
+                        return XMLCipher.AES_128_KeyWrap;
                 }
             }
+            if (publicKeyAlgo.contains("RSA"))
+                return RSA_ENCRYPTION_SCHEME;
+            throw logger.unsupportedType("unsupported publicKey Algo:" + publicKeyAlgo);
+        }
 
-            if (!success) {
-                throw logger.processingError(enclosingThrowable);
+        /**
+         * From the secret key, get the W3C XML Encryption URL
+         *
+         * @param secretKey
+         * @param keySize
+         *
+         * @return
+         */
+        private static String getXMLEncryptionURL (String algo,int keySize){
+            if ("AES".equals(algo)) {
+                switch (keySize) {
+                    case 192:
+                        return XMLCipher.AES_192;
+                    case 256:
+                        return XMLCipher.AES_256;
+                    default:
+                        return XMLCipher.AES_128;
+                }
             }
+            if (algo.contains("RSA"))
+                return XMLCipher.RSA_v1dot5;
+            throw logger.unsupportedType("Secret Key with unsupported algo:" + algo);
         }
 
-        if (decryptedDoc == null) {
-            throw logger.nullValueError("decryptedDoc");
-        }
-
-        Element decryptedRoot = decryptedDoc.getDocumentElement();
-        Element dataElement = getNextElementNode(decryptedRoot.getFirstChild());
-        if (dataElement == null)
-            throw logger.nullValueError("Data Element after encryption is null");
-
-        decryptedRoot.removeChild(dataElement);
-        decryptedDoc.replaceChild(dataElement, decryptedRoot);
-
-        return decryptedDoc.getDocumentElement();
-    }
-
-    /**
-     * Locates the EncryptedKey element once the EncryptedData element is found.
-     * A exception is thrown if not found.
-     *
-     * @param encDataElement The EncryptedData element found
-     * @return The EncryptedKey element
-     */
-    private static Element locateEncryptedKeyElement(Element encDataElement) {
-        // Look at siblings for the key
-        Element encKeyElement = getNextElementNode(encDataElement.getNextSibling());
-        if (encKeyElement == null) {
-            // Search the enc data element for enc key
-            NodeList nodeList = encDataElement.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_ENCRYPTEDKEY);
-
-            if (nodeList == null || nodeList.getLength() == 0)
-                throw logger.nullValueError("Encrypted Key not found in the enc data");
-
-            encKeyElement = (Element) nodeList.item(0);
-        }
-        return encKeyElement;
-    }
-
-    /**
-     * From the secret key, get the W3C XML Encryption URL
-     *
-     * @param publicKeyAlgo
-     * @param keySize
-     *
-     * @return
-     */
-    private static String getXMLEncryptionURLForKeyUnwrap(String publicKeyAlgo, int keySize) {
-        if ("AES".equals(publicKeyAlgo)) {
-            switch (keySize) {
-                case 192:
-                    return XMLCipher.AES_192_KeyWrap;
-                case 256:
-                    return XMLCipher.AES_256_KeyWrap;
-                default:
-                    return XMLCipher.AES_128_KeyWrap;
+        /**
+         * Returns the next Element node.
+         */
+        private static Element getNextElementNode (Node node){
+            while (node != null) {
+                if (Node.ELEMENT_NODE == node.getNodeType())
+                    return (Element) node;
+                node = node.getNextSibling();
             }
+            return null;
         }
-        if (publicKeyAlgo.contains("RSA"))
-            return RSA_ENCRYPTION_SCHEME;
-        throw logger.unsupportedType("unsupported publicKey Algo:" + publicKeyAlgo);
     }
-
-    /**
-     * From the secret key, get the W3C XML Encryption URL
-     *
-     * @param secretKey
-     * @param keySize
-     *
-     * @return
-     */
-    private static String getXMLEncryptionURL(String algo, int keySize) {
-        if ("AES".equals(algo)) {
-            switch (keySize) {
-                case 192:
-                    return XMLCipher.AES_192;
-                case 256:
-                    return XMLCipher.AES_256;
-                default:
-                    return XMLCipher.AES_128;
-            }
-        }
-        if (algo.contains("RSA"))
-            return XMLCipher.RSA_v1dot5;
-        throw logger.unsupportedType("Secret Key with unsupported algo:" + algo);
-    }
-
-    /**
-     * Returns the next Element node.
-     */
-    private static Element getNextElementNode(Node node) {
-        while (node != null) {
-            if (Node.ELEMENT_NODE == node.getNodeType())
-                return (Element) node;
-            node = node.getNextSibling();
-        }
-        return null;
-    }
-}
