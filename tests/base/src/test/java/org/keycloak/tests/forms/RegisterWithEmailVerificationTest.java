@@ -9,11 +9,15 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.authentication.forms.RegistrationPassword;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -32,13 +36,17 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.InfoPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginPasswordResetPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
+import org.keycloak.testframework.ui.page.ProceedPage;
 import org.keycloak.testframework.ui.page.RegisterPage;
 import org.keycloak.testframework.ui.page.VerifyEmailPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
@@ -77,6 +85,9 @@ public class RegisterWithEmailVerificationTest {
     @InjectMailServer
     MailServer mailServer;
 
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
     @InjectPage(ref = "loginPage", webDriverRef = "driver")
     LoginPage loginPage;
 
@@ -109,6 +120,12 @@ public class RegisterWithEmailVerificationTest {
 
     @InjectPage(ref = "changePasswordPage2", webDriverRef = "driver2")
     protected LoginPasswordUpdatePage changePasswordPage2;
+
+    @InjectPage(ref = "proceedPage2", webDriverRef = "driver2")
+    ProceedPage proceedPage2;
+
+    @InjectPage(ref = "infoPage2", webDriverRef = "driver2")
+    InfoPage infoPage2;
 
     @Test
     public void registerUserSuccessWithEmailVerification() {
@@ -362,6 +379,89 @@ public class RegisterWithEmailVerificationTest {
                 realm.admin().users().delete(userId).close();
             }
         }
+    }
+
+    // Issue 51088 - Verify email link opened in a fresh browser (e.g. incognito tab) after Keycloak was restarted,
+    // so the original root authentication session no longer exists.
+    @Test
+    public void registerUserSuccessWithEmailVerificationInFreshBrowserAfterRestart() throws Exception {
+        String authConfigId = enableAlwaysSetPasswordOnRegisterForm();
+        realm.updateWithCleanup((realmm) -> realmm.verifyEmail(true));
+        String userId = null;
+        try {
+            oauth.openLoginForm();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            registerPage.register("firstName", "lastName", "registerUserSuccessWithEmailVerification@email", "registerUserSuccessWithEmailVerification", generatePassword());
+            verifyEmailPage.assertCurrent();
+
+            EventRepresentation registerEvent = events.poll();
+            EventAssertion.assertSuccess(registerEvent)
+                    .clientId("test-app-oauth")
+                    .details(Details.USERNAME, "registerUserSuccessWithEmailVerification")
+                    .details(Details.EMAIL, "registerUserSuccessWithEmailVerification@email")
+                    .details(Details.REGISTER_METHOD, "form")
+                    .type(EventType.REGISTER);
+            userId = registerEvent.getUserId();
+
+            EventRepresentation sendVerifyEmailEvent = events.poll();
+            EventAssertion.assertSuccess(sendVerifyEmailEvent)
+                    .details(Details.EMAIL, "registerUserSuccessWithEmailVerification@email".toLowerCase())
+                    .userId(userId)
+                    .type(EventType.SEND_VERIFY_EMAIL);
+
+            MimeMessage message = mailServer.getReceivedMessages()[0];
+            String link = MailUtils.getPasswordResetEmailLink(message);
+
+            // Simulate a Keycloak restart before the user clicks the link: the in-memory root authentication
+            // session created during registration is lost.
+            removeRootAuthenticationSession();
+
+            // Open the verification link in a fresh browser (e.g. an incognito tab) without any auth session cookie.
+            // As the original authentication session is gone, a confirmation page asking to proceed is shown.
+            driver2.open(link);
+            proceedPage2.assertCurrent();
+            proceedPage2.clickProceedLink();
+
+            // Before the fix this failed with a NullPointerException because the original root authentication
+            // session referenced by the token no longer existed. Now the email is verified successfully.
+            infoPage2.assertCurrent();
+            assertThat(infoPage2.getInfo(), is("Your email address has been verified."));
+
+            EventRepresentation reqActionEmailEvent = events.poll();
+            EventAssertion.assertSuccess(reqActionEmailEvent)
+                    .details(Details.EMAIL, "registerUserSuccessWithEmailVerification@email".toLowerCase())
+                    .userId(userId)
+                    .type(EventType.VERIFY_EMAIL);
+
+            assertTrue(getUser(userId).isEmailVerified());
+        } finally {
+            disableAlwaysSetPasswordOnRegisterForm(authConfigId);
+            if (userId != null) {
+                realm.admin().users().delete(userId).close();
+            }
+        }
+    }
+
+    /**
+     * Removes the root authentication session held by the first browser on the server, simulating the loss of
+     * in-memory authentication sessions that happens when Keycloak is restarted.
+     */
+    private void removeRootAuthenticationSession() {
+        String encodedAuthSessionId = driver.driver().manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName()).getValue();
+        String realmId = realm.getId();
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realmModel);
+
+            AuthenticationSessionManager authenticationSessionManager = new AuthenticationSessionManager(session);
+            String rootAuthSessionId = authenticationSessionManager.decodeBase64AndValidateSignature(encodedAuthSessionId);
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realmModel, rootAuthSessionId);
+            if (rootAuthSession != null) {
+                session.authenticationSessions().removeRootAuthenticationSession(realmModel, rootAuthSession);
+            }
+        });
     }
 
     private void updatePasswordOnChangePasswordPage(String userId) {
