@@ -18,7 +18,10 @@ package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
@@ -27,6 +30,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.clientpolicy.CredentialOfferPolicyContext;
+import org.keycloak.protocol.oid4vc.clientpolicy.PreAuthorizedOfferAllowedExecutorFactory;
+import org.keycloak.protocol.oid4vc.clientpolicy.PredicateCredentialClientPolicy;
 import org.keycloak.protocol.oid4vc.issuance.CredentialOfferException;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
@@ -38,10 +44,13 @@ import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthCodeCtx;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.util.Strings;
 
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
+import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_PREAUTH_ALLOWED;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 import static org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils.findCredentialScopeModelByConfigurationId;
 
@@ -81,7 +90,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             throw new CredentialOfferException(Errors.INVALID_REQUEST, "No credentialConfigurationIds");
         }
 
-        RealmModel realmModel = this.session.getContext().getRealm();
+        RealmModel realmModel = session.getContext().getRealm();
 
         // Validate the target user
         //
@@ -91,9 +100,9 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
         String targetUserId = targetUser == null ? null : targetUser.getId();
 
         // Validate the target client
-        if (targetClientId != null) {
-            validateTargetClient(realmModel, targetClientId);
-        }
+        ClientModel targetClient = Optional.ofNullable(targetClientId)
+                .map(it -> validateTargetClient(realmModel, it))
+                .orElse(null);
 
         // Create the CredentialsOffer
         //
@@ -101,20 +110,19 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
                 .setCredentialIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
                 .setCredentialConfigurationIds(credentialConfigurationIds);
 
+        Map<String, CredentialScopeModel> credScopeMapping = credentialConfigurationIds.stream()
+                .distinct()
+                .collect(Collectors.toMap(Function.identity(), this::requireCredentialScopeForConfigurationId));
+
         // Create the CredentialOfferState
         //
         CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, expireAt, credOffersId -> {
             List<OID4VCAuthorizationDetail> authDetails = new ArrayList<>();
             for (String credConfigId : credentialConfigurationIds) {
-                CredentialScopeModel credScope = findCredentialScopeModelByConfigurationId(
-                        realmModel, () -> session.clientScopes().getClientScopesStream(realmModel), credConfigId);
-                if (credScope == null) {
-                    throw new CredentialOfferException(Errors.INVALID_REQUEST, "No credential scope model for: " + credConfigId);
-                }
+                CredentialScopeModel credScope = credScopeMapping.get(credConfigId);
                 if (targetUser != null && !OID4VCUtil.hasVerifiableCredential(session, targetUser, credScope)) {
                     throw new CredentialOfferException(Errors.INVALID_REQUEST, "User '" + targetUser.getUsername() + "' does not have verifiable credential '" + credConfigId + "'.");
                 }
-
                 OID4VCAuthorizationDetailsProcessor authDetailsProcessor = new OID4VCAuthorizationDetailsProcessor(session);
                 authDetails.add(authDetailsProcessor.generateResponseAuthorizationDetails(credScope, credOffersId));
             }
@@ -129,10 +137,47 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             credOffer.addGrant(new AuthorizationCodeGrant().setIssuerState(issuerState.encodeToString()));
         }
 
+        // Check credential client policies for pre-authorized offers
+        //
+        if (preAuthorized) {
+            for (String credConfigId : credentialConfigurationIds) {
+
+                PredicateCredentialClientPolicy preAuthPolicy = VC_POLICY_CREDENTIAL_PREAUTH_ALLOWED;
+
+                CredentialScopeModel credScope = credScopeMapping.get(credConfigId);
+                var context = new CredentialOfferPolicyContext(
+                        ClientPolicyEvent.CREDENTIAL_OFFER_CREATE, targetClient, credScope, offerState);
+
+                // Trigger ClientPolicyExecutors
+                //
+                try {
+                    session.clientPolicy().triggerOnEvent(context);
+                } catch (ClientPolicyException e) {
+                    throw new CredentialOfferException(e.getError(), e.getErrorDetail());
+                }
+
+                // Allowed by client when policy is installed and enabled
+                if (!context.wasEvaluatedBy(PreAuthorizedOfferAllowedExecutorFactory.PROVIDER_ID)) {
+                    throw new CredentialOfferException(Errors.NOT_ALLOWED,
+                            "Pre-Authorized code grant rejected by policy " + preAuthPolicy.getName() + " for client " + targetClientId);
+                }
+            }
+        }
+
         return offerState;
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
+
+    private CredentialScopeModel requireCredentialScopeForConfigurationId(String credConfigId) {
+        RealmModel realmModel = session.getContext().getRealm();
+        CredentialScopeModel credScope = findCredentialScopeModelByConfigurationId(
+                realmModel, () -> session.clientScopes().getClientScopesStream(realmModel), credConfigId);
+        if (credScope == null) {
+            throw new CredentialOfferException(Errors.INVALID_REQUEST, "No credential scope model for: " + credConfigId);
+        }
+        return credScope;
+    }
 
     private UserModel validateTargetUser(KeycloakSession session, RealmModel realmModel, UserModel loginUserModel, String targetUser) {
         UserModel targetUserModel = session.users().getUserByUsername(realmModel, targetUser);
@@ -163,18 +208,19 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
         return targetUserModel;
     }
 
-    private void validateTargetClient(RealmModel realm, String clientId) {
-        ClientModel client = session.clients().getClientByClientId(realm, clientId);
-        if (client == null) {
+    private ClientModel validateTargetClient(RealmModel realm, String clientId) {
+        ClientModel clientModel = session.clients().getClientByClientId(realm, clientId);
+        if (clientModel == null) {
             throw new CredentialOfferException(Errors.CLIENT_NOT_FOUND, "Client '" + clientId + "' not found");
         }
-        if (!client.isEnabled()) {
+        if (!clientModel.isEnabled()) {
             throw new CredentialOfferException(Errors.CLIENT_DISABLED, "Client '" + clientId + "' disabled");
         }
-        boolean oid4vciEnabled = Boolean.parseBoolean(client.getAttributes().get(OID4VCI_ENABLED_ATTRIBUTE_KEY));
+        boolean oid4vciEnabled = Boolean.parseBoolean(clientModel.getAttributes().get(OID4VCI_ENABLED_ATTRIBUTE_KEY));
         if (!oid4vciEnabled) {
             throw new CredentialOfferException(Errors.INVALID_CLIENT, "Client '" + clientId + "' is not enabled for OID4VCI features.");
         }
+        return clientModel;
     }
 
     /**

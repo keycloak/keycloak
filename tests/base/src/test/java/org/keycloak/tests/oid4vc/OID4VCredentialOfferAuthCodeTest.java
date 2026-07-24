@@ -226,7 +226,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testAuthCodeOffer_Targeted() throws Exception {
+    public void testAuthCodeOffer_TargetUser() throws Exception {
 
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
 

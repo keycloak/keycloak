@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.keycloak.constants.OID4VCIConstants;
@@ -317,6 +318,16 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
 
     public String getAttribute(String key) {
         return attributes != null ? attributes.get(key) : null;
+    }
+
+    public CredentialScopeRepresentation putAttributes(Map<String, String> otherAttributes) {
+        if (otherAttributes != null) {
+            if (attributes == null) {
+                attributes = new LinkedHashMap<>();
+            }
+            attributes.putAll(otherAttributes);
+        }
+        return this;
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
