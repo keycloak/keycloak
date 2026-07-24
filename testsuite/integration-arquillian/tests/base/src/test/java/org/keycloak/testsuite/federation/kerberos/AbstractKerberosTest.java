@@ -155,7 +155,11 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
         getKerberosRule().setKrb5ConfPath(testingClient.testing());
 
-        spnegoSchemeFactory = new KeycloakSPNegoSchemeFactory(getKerberosConfig());
+        // Kerby KDC doesn't set the FORWARDED flag on TGS-REP (DIRKRB-458), causing
+        // JDK's KrbKdcRep.check() to reject the response with "Message stream modified (41)".
+        // Disable credential delegation when using the embedded Kerby KDC; external KDCs (e.g. MSAD) support it.
+        boolean credDelegEnabled = !getKerberosRule().isStartEmbeddedLdapServer();
+        spnegoSchemeFactory = new KeycloakSPNegoSchemeFactory(getKerberosConfig(), credDelegEnabled);
         initHttpClient(true);
         removeAllUsers();
 

@@ -125,8 +125,8 @@
         <org.snakeyaml.snakeyaml-engine.version>2.6</org.snakeyaml.snakeyaml-engine.version>
 
         <!-- Others -->
-        <apacheds.version>2.0.0.AM26</apacheds.version>
-        <apacheds.codec.version>2.0.0</apacheds.codec.version>
+        <apacheds.version>2.0.0.AM27</apacheds.version>
+        <apacheds.codec.version>2.1.8</apacheds.codec.version>
         <google.zxing.version>3.4.0</google.zxing.version>
         <freemarker.version>2.3.32</freemarker.version>
         <sundrio.version>0.200.0</sundrio.version>
@@ -717,10 +717,13 @@
                 <artifactId>apacheds-server-annotations</artifactId>
                 <version>${apacheds.version}</version>
             </dependency>
+            <!-- POM import to align all API module versions at 2.1.8. -->
             <dependency>
                 <groupId>org.apache.directory.api</groupId>
-                <artifactId>api-ldap-codec-standalone</artifactId>
+                <artifactId>api-parent</artifactId>
                 <version>${apacheds.codec.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.jmeter</groupId>
