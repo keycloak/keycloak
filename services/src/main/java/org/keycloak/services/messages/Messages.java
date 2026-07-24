@@ -363,4 +363,7 @@ public class Messages {
     public static final String CLIENT_IDLE = "clientSessionIdleTimeoutExceedsRealm";
     public static final String CLIENT_MAXLIFE_SPAN = "clientSessionMaxLifespanExceedsRealm";
     public static final String CLIENT_MAXLIFESPAN_REMEMBERME = "clientSessionMaxLifespanExceedsRealmRememberMeMaxSpan";
+
+    // Impersonation
+    public static final String IMPERSONATE_ERROR = "impersonateError";
 }
