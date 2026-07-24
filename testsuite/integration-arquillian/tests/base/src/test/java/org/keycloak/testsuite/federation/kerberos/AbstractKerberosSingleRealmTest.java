@@ -175,10 +175,10 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
 
     @Test
     public void credentialDelegationTest() throws Exception {
-        Assume.assumeTrue("Ignoring test as the embedded server is not started", getKerberosRule().isStartEmbeddedLdapServer());
-        // TODO: credential delegation requires the FORWARDED ticket flag, which Kerby's KDC does not support (DIRKRB-458).
-        //  Re-enable once Kerby adds FORWARDED handling in TicketIssuer.makeEncTicketPart().
-        Assume.assumeTrue("Credential delegation not supported with Kerby KDC", false);
+        // Credential delegation requires the FORWARDED ticket flag, which Kerby's embedded KDC
+        // does not support (DIRKRB-458). Skip when using embedded server; run against external KDCs (e.g. MSAD).
+        Assume.assumeTrue("Credential delegation not supported with embedded Kerby KDC",
+                !getKerberosRule().isStartEmbeddedLdapServer());
         // Add kerberos delegation credential mapper
         ProtocolMapperModel protocolMapper = UserSessionNoteMapper.createClaimMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
                 KerberosConstants.GSS_DELEGATION_CREDENTIAL,
