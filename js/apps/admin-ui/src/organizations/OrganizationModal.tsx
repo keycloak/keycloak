@@ -53,7 +53,7 @@ export const OrganizationModal = ({
             onClose();
           }}
         >
-          {isJoin ? t("join") : t("send")}
+          {isJoin ? t("join") : t("next")}
         </Button>,
         <Button
           data-testid="cancel"
