@@ -42,6 +42,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
+import static org.keycloak.services.validation.Validation.MAX_USERNAME_LENGTH;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -54,12 +55,23 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         String username = retrieveUsername(context);
-        if (username == null) {
+        if (username == null || username.isEmpty()) {
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "Missing parameter: username");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
+
+        // remove leading and trailing whitespace
+        username = username.trim();
+
+        if (username.length() > MAX_USERNAME_LENGTH) {
+            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
+            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "Invalid user credentials");
+            context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
+            return;
+        }
+
         context.getEvent().detail(Details.USERNAME, username);
         context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 

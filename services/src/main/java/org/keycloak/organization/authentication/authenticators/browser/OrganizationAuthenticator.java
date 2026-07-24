@@ -70,6 +70,7 @@ import static org.keycloak.organization.utils.Organizations.getEmailDomain;
 import static org.keycloak.organization.utils.Organizations.getMatchingDomain;
 import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
 import static org.keycloak.organization.utils.Organizations.resolveHomeBroker;
+import static org.keycloak.services.validation.Validation.MAX_USERNAME_LENGTH;
 import static org.keycloak.utils.StringUtil.isBlank;
 
 public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
@@ -139,7 +140,16 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             });
             return;
         }
+        // remove leading and trailing whitespace
+        username = username.trim();
 
+        if (username.length() > MAX_USERNAME_LENGTH) {
+            initialChallenge(context, form -> {
+                form.addError(new FormMessage(UserModel.USERNAME, Messages.INVALID_USERNAME));
+                return form.createLoginUsername();
+            });
+            return;
+        }
         action(context, username);
     }
 
