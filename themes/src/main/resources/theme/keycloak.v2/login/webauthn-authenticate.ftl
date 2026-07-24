@@ -120,7 +120,7 @@
                 <@buttons.button id="authenticateWebAuthnButton" label="webauthn-doAuthenticate" autofocus="autofocus"/>
             </@buttons.actionGroup>
         </div>
-    <script type="module">
+    <script type="module" nonce="${nonce.value}">
         <#outputformat "JavaScript">
         import { authenticateByWebAuthn } from "${url.resourcesPath}/js/webauthnAuthenticate.js";
         const authButton = document.getElementById('authenticateWebAuthnButton');
