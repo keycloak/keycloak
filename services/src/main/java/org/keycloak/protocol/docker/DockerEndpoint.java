@@ -64,6 +64,14 @@ public class DockerEndpoint extends AuthorizationEndpointBase {
         checkService();
 
         final AuthorizationEndpointRequest authRequest = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params, AuthorizationEndpointRequestParserProcessor.EndpointType.DOCKER_ENDPOINT);
+        
+        if (authRequest.getInvalidRequestMessage() != null) {
+            event.detail(Details.REASON, authRequest.getInvalidRequestMessage());
+            event.error(Errors.INVALID_REQUEST);
+
+            throw new ErrorResponseException("invalid_request", authRequest.getInvalidRequestMessage(), Response.Status.BAD_REQUEST);
+        }
+
         authenticationSession = createAuthenticationSession(client, authRequest.getState());
 
         updateAuthenticationSession();
