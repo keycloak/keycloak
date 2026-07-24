@@ -100,17 +100,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 @KeycloakIntegrationTest
 public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
-    private static final String CLIENT_ID = "test-client";
-    private static final String CLIENT_SECRET = "test-client-secret";
-
-    private ClientRepresentation buildClient() {
-    	ClientRepresentation client = new ClientRepresentation();
-        client.setClientId(CLIENT_ID);
-        client.setSecret(CLIENT_SECRET);
-
-        return client;
-    }
-
     private ClientRepresentation registerClient(boolean cleanup) throws ClientRegistrationException {
     	return registerClient(buildClient(), cleanup);
     }
