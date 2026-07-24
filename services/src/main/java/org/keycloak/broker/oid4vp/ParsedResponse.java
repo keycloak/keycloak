@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,28 +15,18 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.auth.page.login;
+package org.keycloak.broker.oid4vp;
 
-import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEHeader;
 
 /**
- *
- * @author tkyjovsk
+ * A {@code direct_post.jwt} response JWE with its parsed header. The header carries the kid that
+ * locates the ephemeral decryption key, so it must be readable before the response can be decrypted.
  */
-public class OIDCLogin extends Login {
+public record ParsedResponse(JWE jwe, JWEHeader header) {
 
-    public OIDCLogin() {
-        setProtocol(OIDC);
+    public String keyId() {
+        return header.getKeyId();
     }
-
-    @Override
-    public boolean isCurrent() {
-        String realm = "test";
-        return isCurrent(realm);
-    }
-
-    public boolean isCurrent(String realm) {
-        return DroneUtils.getCurrentDriver().getTitle().equals("Sign in to " + realm) || DroneUtils.getCurrentDriver().getTitle().equals("Anmeldung bei " + realm);
-    }
-
 }

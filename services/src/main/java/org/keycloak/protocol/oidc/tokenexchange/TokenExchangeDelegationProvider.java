@@ -1,0 +1,185 @@
+/*
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
+ *  and other contributors as indicated by the @author tags.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+package org.keycloak.protocol.oidc.tokenexchange;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
+import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.TokenExchangeContext;
+import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.UserSessionManager;
+
+/**
+ *
+ * @author rmartinc
+ */
+public class TokenExchangeDelegationProvider extends StandardTokenExchangeProvider {
+
+    private AccessToken actorAccessToken;
+    private AccessToken subjectAccessToken;
+
+    @Override
+    public boolean supports(TokenExchangeContext context) {
+        if(!OIDCAdvancedConfigWrapper.fromClientModel(context.getClient()).isStandardTokenExchangeEnabled()) {
+            context.setUnsupportedReason("Standard token exchange is not enabled for the requested client");
+            return false;
+        }
+
+        // Subject delegation request needs the actor token
+        String actorToken = context.getParams().getActorToken();
+        if (actorToken != null) {
+            return true;
+        }
+
+        context.setUnsupportedReason("Token exchange delegation not used because no actor_token sent");
+        return false;
+    }
+
+    @Override
+    protected Response tokenExchange() {
+        // validate subject token
+        AuthenticationManager.AuthResult subjectAuthResult = processSubjectToken();
+        UserModel subjectUser = subjectAuthResult.user();
+        subjectAccessToken = subjectAuthResult.token();
+
+        // validate actor token
+        String actorToken = context.getParams().getActorToken();
+        String actorTokenType = context.getParams().getActorTokenType();
+        if (!OAuth2Constants.ACCESS_TOKEN_TYPE.equals(actorTokenType)) {
+            event.detail(Details.REASON, "actor_token_type invalid");
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid actor token type", Response.Status.BAD_REQUEST);
+        }
+
+        AuthenticationManager.AuthResult actorAuthResult = AuthenticationManager.verifyIdentityToken(session, realm, session.getContext().getUri(), clientConnection, true, true, null,
+                false, actorToken, context.getHeaders(), verifier -> {});
+        if (actorAuthResult == null) {
+            event.detail(Details.REASON, "actor_token validation failure");
+            event.error(Errors.INVALID_TOKEN);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid actor token", Response.Status.BAD_REQUEST);
+        }
+        UserModel actorUser = actorAuthResult.user();
+        UserSessionModel actorSession = actorAuthResult.session();
+        actorAccessToken = actorAuthResult.token();
+
+        event.detail(Details.ACTOR_ID, actorUser.getId());
+        event.detail(Details.ACTOR, actorUser.getUsername());
+        if (actorAccessToken.getSessionId() != null) {
+            event.detail(Details.ACTOR_SESSION_ID, actorSession.getId());
+        }
+
+        validateSenderConstrainedToken(actorAccessToken);
+        if (!client.equals(realm.getClientByClientId(actorAccessToken.getIssuedFor()))) {
+            forbiddenIfClientIsNotWithinTokenAudience(actorAccessToken);
+        }
+
+        // validate the subject token allows the actor in the "may_act" claim
+        validateMayAct(subjectAccessToken, subjectUser, actorUser);
+
+        // always create a transient session for delegation (no refresh token allowed)
+        UserSessionModel tokenSession = new UserSessionManager(session).createUserSession(
+                KeycloakModelUtils.generateId(), realm, subjectUser, subjectUser.getUsername(), clientConnection.getRemoteHost(),
+                ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
+
+        return exchangeClientToClient(subjectUser, tokenSession, subjectAccessToken, true);
+    }
+
+    @Override
+    protected String getRequestedTokenType() {
+        // only access token type is supported for token exchange delegation
+        String requestedTokenType = params.getRequestedTokenType();
+        if (requestedTokenType == null) {
+            requestedTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
+            return requestedTokenType;
+        }
+        if (requestedTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)) {
+            return requestedTokenType;
+        }
+
+        event.detail(Details.REASON, "requested_token_type unsupported");
+        event.error(Errors.INVALID_REQUEST);
+        throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
+    }
+
+    protected void validateMayAct(AccessToken subjectAccessToken, UserModel subjectUser, UserModel actorUser) {
+        if (subjectUser.getId().equals(actorUser.getId())) {
+            event.detail(Details.REASON, "Actor and subject user cannot be the same user");
+            event.error(Errors.INVALID_TOKEN);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Actor and subject user cannot be the same user", Response.Status.BAD_REQUEST);
+        }
+
+        Object mayActObject = subjectAccessToken.getOtherClaims().get(IDToken.MAY_ACT);
+        if (!(mayActObject instanceof Map mayActMap)) {
+            event.detail(Details.REASON, "Invalid may_act claim in the subject_token");
+            event.error(Errors.INVALID_TOKEN);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid may_act claim in the subject_token", Response.Status.BAD_REQUEST);
+        }
+
+        Object issObject = mayActMap.get(OIDCLoginProtocol.ISSUER);
+        if (issObject != null && !issObject.equals(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()))) {
+            event.detail(Details.REASON, "Invalid issuer in the may_act claim of the subject_token");
+            event.error(Errors.INVALID_TOKEN);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid issuer in the may_act claim of the subject_token", Response.Status.BAD_REQUEST);
+        }
+
+        Object subjectObject = mayActMap.get(JsonWebToken.SUBJECT);
+        if (!(subjectObject instanceof String subject)) {
+            event.detail(Details.REASON, "Invalid may_act claim in the subject_token");
+            event.error(Errors.INVALID_TOKEN);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid may_act claim in the subject_token", Response.Status.BAD_REQUEST);
+        }
+
+        if (!actorUser.getId().equals(subject)) {
+            event.detail(Details.REASON, "Actor user is not allowed by the may_act claim inside the subject_token");
+            event.error(Errors.INVALID_TOKEN);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Actor user is not allowed by the may_act claim inside the subject_token", Response.Status.BAD_REQUEST);
+        }
+    }
+
+    @Override
+    protected void checkRequestedAudiences(TokenManager.AccessTokenResponseBuilder responseBuilder) {
+        super.checkRequestedAudiences(responseBuilder);
+
+        // add the "act" claim using the "may_act" claim sent in the subjectToken, chain current actor if present
+        Map act = new HashMap((Map) subjectAccessToken.getOtherClaims().get(IDToken.MAY_ACT)); // should be present at this point
+        Object prevAct = actorAccessToken.getOtherClaims().get(IDToken.ACT);
+        if (prevAct != null) {
+            act.put(IDToken.ACT, prevAct);
+        }
+        responseBuilder.getAccessToken().getOtherClaims().put(IDToken.ACT, act);
+    }
+}

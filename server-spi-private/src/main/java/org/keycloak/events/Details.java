@@ -45,6 +45,9 @@ public interface Details {
     String IDENTITY_PROVIDER_BROKER_SESSION_ID = "identity_provider_broker_session_id";
     String REGISTER_METHOD = "register_method";
     String USERNAME = "username";
+    String ACTOR = "actor";
+    String ACTOR_ID = "actor_id";
+    String ACTOR_SESSION_ID = "actor_session_id";
     String FIRST_NAME = "first_name";
     String LAST_NAME = "last_name";
     String PREVIOUS_FIRST_NAME = PREF_PREVIOUS + "first_name";
@@ -57,6 +60,7 @@ public interface Details {
     String TOKEN_ISSUED_FOR = "token_issued_for";
     String ORG_ID = "org_id";
     String REFRESH_TOKEN_ID = "refresh_token_id";
+    String REFRESH_TOKEN_PROVIDER_ID = "refresh_token_provider_id";
     String REFRESH_TOKEN_TYPE = "refresh_token_type";
     String REFRESH_TOKEN_SUB = "refresh_token_sub";
     String CLIENT_ASSERTION_ID = "client_assertion_id";

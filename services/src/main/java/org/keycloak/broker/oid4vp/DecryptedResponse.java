@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +15,11 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.auth.page.login;
+package org.keycloak.broker.oid4vp;
 
 /**
- * @author rmartinc
+ * The response parameters unsealed from a {@code direct_post.jwt} JWE, together with the request
+ * context they were resolved against.
  */
-public class SAMLPostLoginTenant2 extends Login {
-    SAMLPostLoginTenant2() {
-        setProtocol(LOGIN_ACTION);
-        setAuthRealm("tenant2");
-    }
+public record DecryptedResponse(String vpToken, String state, RequestContext context) {
 }

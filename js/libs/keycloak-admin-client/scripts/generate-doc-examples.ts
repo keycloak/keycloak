@@ -166,6 +166,7 @@ writeFileSync(
     {
       extends: "../../../tsconfig.json",
       include: ["admin-v2-doc-examples-check.ts"],
+      exclude: [],
       compilerOptions: { noEmit: true },
     },
     null,

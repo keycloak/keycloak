@@ -1,5 +1,6 @@
 package org.keycloak.protocol.oid4vc.refresh;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -163,9 +164,80 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
 
     @Override
     protected void afterRefreshTokenGenerated(RefreshTokenContext ctx, TokenManager.AccessTokenResponseBuilder responseBuilder) {
-        // Nothing needed for OID4VCI refresh tokens
+        ClientSessionContext clientSessionCtx = responseBuilder.getClientSessionCtx();
+        List<AuthorizationDetailsJSONRepresentation> authzDetails = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
+
+        if (authzDetails == null) {
+            return;
+        }
+
+        List<AuthorizationDetailsJSONRepresentation> clearedDetails = new ArrayList<>(authzDetails.size());
+        for (AuthorizationDetailsJSONRepresentation d : authzDetails) {
+            if (OPENID_CREDENTIAL.equals(d.getType())) {
+                OID4VCAuthorizationDetail typed = d.asSubtype(OID4VCAuthorizationDetail.class);
+                typed.setCredentialsOfferId(null);
+                clearedDetails.add(typed);
+            } else {
+                clearedDetails.add(d);
+            }
+        }
+
+        responseBuilder.getAccessToken().setAuthorizationDetails(clearedDetails);
+        if (responseBuilder.getRefreshToken() != null) {
+            responseBuilder.getRefreshToken().setAuthorizationDetails(clearedDetails);
+        }
+
+        clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, clearedDetails);
     }
 
+    @Override
+    public void revokeToken(AccessToken token, UserModel user, ClientModel client, EventBuilder event) {
+        // Revoke the issued verifiable credential associated with this refresh token
+        List<AuthorizationDetailsJSONRepresentation> authorizationDetails = token.getAuthorizationDetails();
+        if (authorizationDetails == null || authorizationDetails.isEmpty()) {
+            logger.warnf("OID4VCI refresh token revoked but authorization_details is missing. " +
+                            "Realm: %s, client: %s, user: %s",
+                    session.getContext().getRealm().getName(), client.getClientId(), user.getUsername());
+            return;
+        }
+
+        for (AuthorizationDetailsJSONRepresentation detail : authorizationDetails) {
+            if (!OPENID_CREDENTIAL.equals(detail.getType())) {
+                continue;
+            }
+            OID4VCAuthorizationDetail oid4VCDetail = detail.asSubtype(OID4VCAuthorizationDetail.class);
+            String issuedCredentialId = oid4VCDetail.getIssuedCredentialId();
+            if (issuedCredentialId == null) {
+                continue;
+            }
+            boolean ownedByUserAndClient = session.users().getIssuedVerifiableCredentialsStreamByUser(user.getId())
+                    .anyMatch(issued -> issuedCredentialId.equals(issued.getId()) && client.getId().equals(issued.getClientId()));
+
+            if (!ownedByUserAndClient) {
+                logger.warnf("Issued verifiable credential '%s' referenced by revoked refresh token is not associated with current user/client. Realm: %s, client: %s, user: %s",
+                        issuedCredentialId, session.getContext().getRealm().getName(), client.getClientId(), user.getUsername());
+                continue;
+            }
+
+            boolean removed = session.users().removeIssuedVerifiableCredential(issuedCredentialId);
+
+            if (!removed) {
+                logger.warnf("Failed to remove issued verifiable credential '%s' on refresh token revocation. Realm: %s, client: %s, user: %s",
+                        issuedCredentialId, session.getContext().getRealm().getName(), client.getClientId(), user.getUsername());
+                continue;
+            }
+
+            logger.debugf("Removed issued verifiable credential '%s' on refresh token revocation. " +
+                            "Realm: %s, client: %s, user: %s",
+                    issuedCredentialId, session.getContext().getRealm().getName(),
+                    client.getClientId(), user.getUsername());
+        }
+    }
+
+    @Override
+    public String getProviderId() {
+        return OID4VCIRefreshTokenProviderFactory.PROVIDER_ID;
+    }
 
     // Might eventually be overridden for scenarios where a user is not available in the Keycloak DB
     protected UserModel getUser(RealmModel realm, RefreshToken oldToken) {

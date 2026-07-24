@@ -19,7 +19,9 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientPoliciesPoliciesResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.profile.CommaSeparatedListProfileConfigResolver;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -60,6 +62,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -107,6 +110,11 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
             TimeUnit.MINUTES.toSeconds(10)).intValue();
     private static final int DEFAULT_REMAIN_EXPIRATION_PERIOD = Long.valueOf(
             TimeUnit.MINUTES.toSeconds(30)).intValue();
+
+    @BeforeClass
+    public static void beforeAll() {
+        Profile.configure(new CommaSeparatedListProfileConfigResolver(Feature.CLIENT_SECRET_ROTATION.getVersionedKey(), ""));
+    }
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -644,6 +652,30 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
             assertThat(e, instanceOf(ClientPolicyException.class));
         }
         // no police must have been created due to the above error
+        ClientPoliciesPoliciesResource policiesResource = adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource();
+        ClientPoliciesRepresentation policies = policiesResource.getPolicies();
+        assertThat(policies.getPolicies(), is(empty()));
+    }
+
+    @Test
+    public void createExecutorConfigurationWithMissingConfigDoesNotCauseNPE() throws Exception {
+        ClientSecretRotationExecutor.Configuration missingExpirationPeriod = getClientProfileConfiguration(60, 30, 20);
+        missingExpirationPeriod.setExpirationPeriod(null);
+        ClientSecretRotationExecutor.Configuration missingRotatedExpirationPeriod = getClientProfileConfiguration(60, 30, 20);
+        missingRotatedExpirationPeriod.setRotatedExpirationPeriod(null);
+        ClientSecretRotationExecutor.Configuration missingRemainExpirationPeriod = getClientProfileConfiguration(60, 30, 20);
+        missingRemainExpirationPeriod.setRemainExpirationPeriod(null);
+
+        for (ClientSecretRotationExecutor.Configuration config : Arrays.asList(
+                missingExpirationPeriod, missingRotatedExpirationPeriod, missingRemainExpirationPeriod)) {
+            try {
+                doConfigProfileAndPolicy(new ClientProfileBuilder(), config);
+                fail("Should have rejected configuration with a missing period");
+            } catch (ClientPolicyException e) {
+                assertThat(e.getErrorDetail(), is(Status.BAD_REQUEST.getReasonPhrase()));
+            }
+        }
+
         ClientPoliciesPoliciesResource policiesResource = adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource();
         ClientPoliciesRepresentation policies = policiesResource.getPolicies();
         assertThat(policies.getPolicies(), is(empty()));

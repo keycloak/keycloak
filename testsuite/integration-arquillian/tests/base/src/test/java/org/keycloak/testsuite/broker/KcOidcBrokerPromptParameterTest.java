@@ -26,7 +26,8 @@ public class KcOidcBrokerPromptParameterTest extends AbstractBrokerTest {
     @Override
     protected void loginUser() {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         driver.navigate().to(driver.getCurrentUrl() + "&" + OIDCLoginProtocol.PROMPT_PARAM + "=" + PROMPT_CONSENT);
 

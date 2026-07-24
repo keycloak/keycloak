@@ -87,9 +87,6 @@ public abstract class AbstractSAMLAdapterClusteredTest extends AbstractAdapterCl
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealmSAMLPostLoginPage.setAuthRealm(DEMO);
-        loginPage.setAuthRealm(DEMO);
-        loginActionsPage.setAuthRealm(DEMO);
     }
 
     @Override

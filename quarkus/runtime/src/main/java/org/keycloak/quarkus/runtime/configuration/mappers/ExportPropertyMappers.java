@@ -96,6 +96,10 @@ public final class ExportPropertyMappers implements PropertyMapperGrouping {
     @Override
     public void validateConfig(Picocli picocli) {
         if (picocli.getParsedCommand().orElse(null) instanceof Export && getOptionalValue(EXPORTER_PROPERTY).isEmpty() && System.getProperty(PROVIDER) == null) {
+            if (!isBlank(ExportOptions.FILE) && !isBlank(ExportOptions.DIR)) {
+                throw new PropertyException("Only one of the --dir or --file options can be specified.");
+            }
+
             throw new PropertyException("Must specify either --dir or --file options.");
         }
     }

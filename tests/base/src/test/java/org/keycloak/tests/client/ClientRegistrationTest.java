@@ -43,7 +43,6 @@ import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.common.constants.ServiceAccountConstants;
-import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -73,6 +72,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
 import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
@@ -299,13 +299,13 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         Set<String> requestedClientScopes = new HashSet<>(optionalClientScopes);
         Set<String> registeredClientScopes = new HashSet<>(createdClient.getOptionalClientScopes());
         assertEquals(requestedClientScopes, registeredClientScopes);
-        assertTrue(CollectionUtil.collectionEquals(createdClient.getDefaultClientScopes(), Set.of("basic")));
+        MatcherAssert.assertThat(createdClient.getDefaultClientScopes(), Matchers.containsInAnyOrder("web-origins", "basic", "acr", "roles", "profile", "email"));
 
         authManageClients();
         ClientRepresentation obtainedClient = reg.get(CLIENT_ID);
         registeredClientScopes = new HashSet<>(obtainedClient.getOptionalClientScopes());
         assertEquals(requestedClientScopes, registeredClientScopes);
-        assertTrue(CollectionUtil.collectionEquals(obtainedClient.getDefaultClientScopes(), Set.of("basic")));
+        MatcherAssert.assertThat(obtainedClient.getDefaultClientScopes(), Matchers.containsInAnyOrder("web-origins", "basic", "acr", "roles", "profile", "email"));
 
 
         optionalClientScopes = new ArrayList<>(List.of("address", "phone"));
@@ -314,7 +314,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         requestedClientScopes = new HashSet<>(optionalClientScopes);
         registeredClientScopes = new HashSet<>(updatedClient.getOptionalClientScopes());
         assertEquals(requestedClientScopes, registeredClientScopes);
-        assertTrue(CollectionUtil.collectionEquals(updatedClient.getDefaultClientScopes(), Set.of("basic")));
+        MatcherAssert.assertThat(updatedClient.getDefaultClientScopes(), Matchers.containsInAnyOrder("web-origins", "basic", "acr", "roles", "profile", "email"));
     }
 
     @Test
@@ -783,7 +783,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         Set<String> requestedClientScopes = new HashSet<>(optionalClientScopes);
         Set<String> registeredClientScopes = new HashSet<>(client.getOptionalClientScopes());
         assertTrue(requestedClientScopes.equals(registeredClientScopes));
-        assertTrue(CollectionUtil.collectionEquals(client.getDefaultClientScopes(), Set.of("basic")));
+        MatcherAssert.assertThat(client.getDefaultClientScopes(), Matchers.containsInAnyOrder("web-origins", "basic", "acr", "roles", "profile", "email"));
     }
 
     @Test

@@ -78,7 +78,8 @@ Disadvantages::
 
 === Multi-cluster deployments (v2)
 
-<#include "/templates/experimental-feature.adoc">
+WARNING: This section is describing a feature which is currently in preview.
+Please provide your feedback by link:https://github.com/keycloak/keycloak/discussions/50640[joining this discussion] while we’re continuing to work on this.
 
 Connect two or more {project_name} clusters without an external {jdgserver_name} cluster using <@links.ha id="multi-cluster-v2-introduction" />.
 

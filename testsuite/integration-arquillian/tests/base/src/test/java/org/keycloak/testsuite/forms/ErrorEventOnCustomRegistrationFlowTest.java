@@ -39,7 +39,7 @@ public class ErrorEventOnCustomRegistrationFlowTest extends AbstractFlowTest {
     public void setup() {
     }
 
-        @Page
+    @Page
     protected LoginPasswordResetPage resetPasswordPage;
 
     @Rule

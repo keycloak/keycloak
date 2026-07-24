@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.auth.page.login;
+package org.keycloak.scim.resource.spi;
 
 /**
- * @author rmartinc
+ * Exception thrown when a PATCH request exceeds the maximum allowed number of operations.
  */
-public class SAMLPostLoginTenant1 extends Login {
-    SAMLPostLoginTenant1() {
-        setProtocol(LOGIN_ACTION);
-        setAuthRealm("tenant1");
+public class ScimPatchException extends RuntimeException {
+
+    public ScimPatchException(String message) {
+        super(message);
     }
 }
