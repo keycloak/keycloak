@@ -43,14 +43,16 @@ import org.ietf.jgss.Oid;
 public class KeycloakSPNegoSchemeFactory extends SPNegoSchemeFactory {
 
     private final CommonKerberosConfig kerberosConfig;
+    private final boolean credDelegEnabled;
 
     private String username;
     private String password;
 
 
-    public KeycloakSPNegoSchemeFactory(CommonKerberosConfig kerberosConfig) {
+    public KeycloakSPNegoSchemeFactory(CommonKerberosConfig kerberosConfig, boolean credDelegEnabled) {
         super(true, false);
         this.kerberosConfig = kerberosConfig;
+        this.credDelegEnabled = credDelegEnabled;
     }
 
 
@@ -121,9 +123,7 @@ public class KeycloakSPNegoSchemeFactory extends SPNegoSchemeFactory {
                 GSSContext gssContext = manager.createContext(
                         serverName.canonicalize(oid), oid, null, GSSContext.DEFAULT_LIFETIME);
                 gssContext.requestMutualAuth(true);
-                // Kerby KDC doesn't set the FORWARDED flag on TGS-REP (DIRKRB-458), causing
-                // JDK's KrbKdcRep.check() to reject the response with "Message stream modified (41)".
-                gssContext.requestCredDeleg(false);
+                gssContext.requestCredDeleg(credDelegEnabled);
                 byte[] outputToken = gssContext.initSecContext(token, 0, token.length);
 
                 ByteArrayHolder result = new ByteArrayHolder();
