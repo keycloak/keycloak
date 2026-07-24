@@ -186,8 +186,9 @@ public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
         kdcConfig.setBoolean(KdcConfigKey.KDC_ALLOW_TCP, true);
         kdcConfig.setInt(KdcConfigKey.KDC_TCP_PORT, this.kdcPort);
         kdcConfig.setBoolean(KdcConfigKey.KDC_ALLOW_UDP, true);
-        kdcConfig.setInt(KdcConfigKey.MAXIMUM_TICKET_LIFETIME, 60000 * 1440);
-        kdcConfig.setInt(KdcConfigKey.MAXIMUM_RENEWABLE_LIFETIME, 60000 * 10080);
+        // Kerby expects seconds (multiplies by 1000 internally in TicketIssuer).
+        kdcConfig.setInt(KdcConfigKey.MAXIMUM_TICKET_LIFETIME, 86400);
+        kdcConfig.setInt(KdcConfigKey.MAXIMUM_RENEWABLE_LIFETIME, 604800);
         kdcConfig.setBoolean(KdcConfigKey.PA_ENC_TIMESTAMP_REQUIRED, false);
         kdcConfig.setString(KdcConfigKey.ENCRYPTION_TYPES, this.kdcEncryptionTypes);
 
