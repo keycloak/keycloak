@@ -85,7 +85,7 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
 
             // it timeouts after create timeout
             webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), containsString("The operation either timed out or was not allowed."));
+            assertThat(webAuthnErrorPage.getError(), containsString("The Passkey operation was not allowed or timed out."));
         }
     }
 
