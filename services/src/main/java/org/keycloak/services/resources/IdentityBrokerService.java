@@ -752,6 +752,11 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             return performAccountLinking(authenticationSession, context, federatedIdentityModel, federatedUser);
         }
 
+        if (Booleans.isTrue(identityProviderConfig.isLinkOnly())) {
+            event.error(Errors.NOT_ALLOWED);
+            return redirectToErrorPage(authenticationSession, Response.Status.BAD_REQUEST, Messages.COULD_NOT_SEND_AUTHENTICATION_REQUEST, providerAlias);
+        }
+
         if (federatedUser == null) {
 
             logger.debugf("Federated user not found for provider '%s' and broker username '%s'", providerAlias, context.getUsername());
