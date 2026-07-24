@@ -75,6 +75,26 @@ public class KcSamlParseIdPDescriptorTest extends AbstractKeycloakTest {
         Assert.assertEquals("true", response.get(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE));
     }
 
+    @Test
+    public void testIdPDescriptorWithKeyDescriptorWithoutUseAttribute() throws IOException {
+        // metadata with WantAuthnRequestsSigned=false and KeyDescriptor without use attribute should still
+        // enable signature validation - the KeyDescriptor cert should be used as both signing and encryption
+        String descriptor = readSamlIdPDescriptor();
+
+        // set WantAuthnRequestsSigned to false and remove use="signing" from KeyDescriptor
+        descriptor = descriptor.replaceFirst("WantAuthnRequestsSigned=\"true\"", "WantAuthnRequestsSigned=\"false\"");
+        descriptor = descriptor.replaceAll("use=\"signing\"", "");
+
+        MultipartFormDataOutput output = new MultipartFormDataOutput();
+        output.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
+        output.addFormData("file", descriptor, MediaType.TEXT_XML_TYPE);
+        Map<String, String> response = adminClient.realm("test").identityProviders().importFrom(output);
+        Assert.assertNotNull(response.get(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY));
+        Assert.assertNotNull(response.get(SAMLIdentityProviderConfig.ENCRYPTION_PUBLIC_KEY));
+        Assert.assertEquals("false", response.get(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED));
+        Assert.assertEquals("true", response.get(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE));
+    }
+
     private String readSamlIdPDescriptor() throws IOException {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpGet httpGet = new HttpGet(authServerPage.toString() + "/realms/test/protocol/saml/descriptor");
