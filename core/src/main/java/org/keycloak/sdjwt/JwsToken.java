@@ -78,7 +78,9 @@ public abstract class JwsToken {
 
     public void verifySignature(SignatureVerifierContext verifier) throws VerificationException {
         Objects.requireNonNull(verifier, "verifier must not be null");
-        String headerAlgorithm = jwsHeader == null ? null : jwsHeader.getRawAlgorithm();
+        String headerAlgorithm = jwsHeader == null || jwsHeader.getAlgorithm() == null
+                ? null
+                : jwsHeader.getRawAlgorithm();
         String verifierAlgorithm = verifier.getAlgorithm();
         if (headerAlgorithm == null || verifierAlgorithm == null || !headerAlgorithm.equals(verifierAlgorithm)) {
             throw new VerificationException(String.format(

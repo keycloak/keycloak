@@ -104,6 +104,26 @@ public abstract class SdJwtVerificationTest {
     }
 
     @Test
+    public void sdJwtVerificationShouldFail_WhenHeaderAlgorithmIsMissing() {
+        SdJwt signedSdJwt = SdJwt.builder()
+                .withIssuerSignedJwt(exampleFlatSdJwtV1().build())
+                .withIssuerSigningContext(testSettings.issuerSigContext)
+                .build();
+        String jwsWithoutAlgorithm = TestUtils.removeAlgorithmFromJwsHeader(
+                signedSdJwt.getIssuerSignedJWT().getJws());
+        SdJwt sdJwt = new SdJwt(new IssuerSignedJWT(jwsWithoutAlgorithm), null);
+
+        VerificationException exception = assertThrows(
+                VerificationException.class,
+                () -> sdJwt.verify(
+                        defaultIssuerVerifyingKeys(),
+                        optionalTimeClaimVerificationOpts().build())
+        );
+
+        assertEquals("Invalid Issuer-Signed JWT: Signature could not be verified", exception.getMessage());
+    }
+
+    @Test
     public void testSdJwtVerification_EnforceIdempotence() throws VerificationException {
         IssuerSignedJWT issuerSignedJWT = exampleFlatSdJwtV1().build();
         SdJwt sdJwt = SdJwt.builder().withIssuerSignedJwt(issuerSignedJWT)

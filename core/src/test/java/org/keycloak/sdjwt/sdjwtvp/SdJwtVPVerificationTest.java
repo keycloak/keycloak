@@ -212,6 +212,31 @@ public abstract class SdJwtVPVerificationTest {
     }
 
     @Test
+    public void testShouldFail_IfKeyBindingHeaderAlgorithmIsMissing() {
+        KeyBindingJWT keyBindingJWT = KeyBindingJWT.builder()
+                .withPayload(exampleKbPayload())
+                .withSignerContext(testSettings.holderSigContext)
+                .build();
+        String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s20.1-sdjwt+kb.txt");
+        String sdJwtWithoutKb = sdJwtVPString.substring(
+                0, sdJwtVPString.lastIndexOf(OID4VCConstants.SDJWT_DELIMITER) + 1);
+        SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtWithoutKb
+                + TestUtils.removeAlgorithmFromJwsHeader(keyBindingJWT.getJws()));
+
+        VerificationException exception = assertThrows(
+                VerificationException.class,
+                () -> sdJwtVP.verify(
+                        defaultIssuerVerifyingKeys(),
+                        defaultIssuerSignedJwtVerificationOpts().build(),
+                        defaultKeyBindingJwtVerificationOpts().build())
+        );
+
+        assertEquals("Key binding JWT invalid", exception.getMessage());
+        assertEquals("JWS header algorithm 'null' does not match verifier algorithm 'ES256'",
+                exception.getCause().getMessage());
+    }
+
+    @Test
     public void testShouldFail_IfNoCnfClaim() {
         testShouldFailGeneric(
                 // This test vector has no cnf claim in Issuer-signed JWT

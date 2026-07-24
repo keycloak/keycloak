@@ -22,6 +22,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Objects;
 
+import org.keycloak.common.util.Base64Url;
+
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
@@ -59,6 +61,22 @@ public class TestUtils {
             result.append(input, i, end).append("\n");
         }
         return result.toString();
+    }
+
+    public static String removeAlgorithmFromJwsHeader(String jws) {
+        String[] parts = jws.split("\\.", -1);
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("Expected a compact JWS with three parts");
+        }
+
+        try {
+            ObjectNode header = (ObjectNode) SdJwtUtils.mapper.readTree(Base64Url.decode(parts[0]));
+            header.remove("alg");
+            parts[0] = Base64Url.encode(SdJwtUtils.mapper.writeValueAsBytes(header));
+            return String.join(".", parts);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Could not rewrite JWS header", e);
+        }
     }
 
 }
