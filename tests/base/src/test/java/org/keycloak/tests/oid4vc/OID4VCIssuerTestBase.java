@@ -478,7 +478,7 @@ public abstract class OID4VCIssuerTestBase {
     protected void setRealmAttributes(Map<String, String> extraAttributes) {
         RealmResource realmResource = testRealm.admin();
         RealmRepresentation realm = realmResource.toRepresentation();
-        Map<String, String> attributes = realm.getAttributesOrEmpty();
+        Map<String, String> attributes = new HashMap<>(realm.getAttributesOrEmpty());
         attributes.putAll(extraAttributes);
         realm.setAttributes(attributes);
         realmResource.update(realm);
@@ -1132,14 +1132,14 @@ public abstract class OID4VCIssuerTestBase {
     }
 
     public static class StaticTimeProvider implements TimeProvider {
-        private final int currentTimeInS;
+        private final long currentTimeInS;
 
-        public StaticTimeProvider(int currentTimeInS) {
+        public StaticTimeProvider(long currentTimeInS) {
             this.currentTimeInS = currentTimeInS;
         }
 
         @Override
-        public int currentTimeSeconds() {
+        public long currentTimeSeconds() {
             return currentTimeInS;
         }
 
