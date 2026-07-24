@@ -244,6 +244,34 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     }
 
     @Test
+    public void testAuthorizationDetailsParserPreservesMdocClaimPaths() throws IOException {
+        OID4VCAuthorizationDetail authDetail = createValidAuthorizationDetail();
+
+        ClaimsDescription claim1 = new ClaimsDescription();
+        claim1.setPath(Arrays.asList("org.iso.18013.5.1", "given_name"));
+        claim1.setMandatory(true);
+
+        ClaimsDescription claim2 = new ClaimsDescription();
+        claim2.setPath(Arrays.asList("org.iso.18013.5.1", "address", "street"));
+        claim2.setMandatory(false);
+
+        authDetail.setClaims(Arrays.asList(claim1, claim2));
+
+        AuthorizationDetailsJSONRepresentation genericDetail = convertToResponseType(authDetail);
+        OID4VCAuthorizationDetail parsedAuthDetail = genericDetail.asSubtype(OID4VCAuthorizationDetail.class);
+
+        assertEquals("Should have exactly two claims", 2, parsedAuthDetail.getClaims().size());
+
+        ClaimsDescription firstClaim = parsedAuthDetail.getClaims().get(0);
+        assertEquals(Arrays.asList("org.iso.18013.5.1", "given_name"), firstClaim.getPath());
+        assertTrue(firstClaim.isMandatory());
+
+        ClaimsDescription secondClaim = parsedAuthDetail.getClaims().get(1);
+        assertEquals(Arrays.asList("org.iso.18013.5.1", "address", "street"), secondClaim.getPath());
+        assertFalse(secondClaim.isMandatory());
+    }
+
+    @Test
     public void testAuthorizationDetailWithNullClaims() {
         // Test null claims handling
         OID4VCAuthorizationDetail authDetail = createValidAuthorizationDetail();

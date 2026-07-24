@@ -1,6 +1,5 @@
 package org.keycloak.tests.oid4vc.issuance.signing;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -51,8 +50,8 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCAuthorizationC
     }
 
     @Override
-    protected String getExpectedClaimPath() {
-        return "family_name";
+    protected List<Object> getExpectedClaimPath() {
+        return List.of("credentialSubject", "family_name");
     }
 
     @Override
@@ -87,7 +86,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCAuthorizationC
 
         // Create authorization details with claims
         ClaimsDescription claim = new ClaimsDescription();
-        List<Object> claimPath = Arrays.asList("credentialSubject", getExpectedClaimPath());
+        List<Object> claimPath = getExpectedClaimPath();
         claim.setPath(claimPath);
         claim.setMandatory(true);
 
@@ -212,7 +211,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCAuthorizationC
 
         // Create authorization details with claims
         ClaimsDescription claim = new ClaimsDescription();
-        List<Object> claimPath = Arrays.asList("credentialSubject", getExpectedClaimPath());
+        List<Object> claimPath = getExpectedClaimPath();
         claim.setPath(claimPath);
         claim.setMandatory(true);
 
