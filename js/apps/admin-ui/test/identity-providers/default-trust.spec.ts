@@ -34,6 +34,7 @@ test.describe.serial("Default Trust identity provider test", () => {
     await page.goto(addDefaultTrustProviderUrl);
 
     await expect(page.getByTestId("alias")).toHaveValue(alias);
+    await expect(page.getByTestId("config.useX509")).not.toBeChecked();
     await expect(page.getByTestId("config.useJwksUrl")).toBeChecked();
     await expect(page.getByTestId("config.jwksUrl")).toBeVisible();
 
@@ -52,6 +53,16 @@ test.describe.serial("Default Trust identity provider test", () => {
       page.getByTestId("config.publicKeySignatureVerifierKeyId"),
     ).toBeVisible();
     await expect(page.getByTestId("import-certificate-button")).toBeVisible();
+
+    await page.getByTestId("config.useX509").click({ force: true });
+    await expect(page.getByTestId("config.useJwksUrl")).toBeHidden();
+    await expect(page.getByTestId("config.trustedCertificates")).toBeVisible();
+    await expect(
+      page.getByTestId("config.attestationExtendedKeyUsages"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("config.certificateRevocationEnabled"),
+    ).toBeChecked();
   });
 
   test("should create and edit a Default Trust provider", async ({ page }) => {
@@ -66,6 +77,21 @@ test.describe.serial("Default Trust identity provider test", () => {
     await expect(page.getByTestId("config.clientId")).toBeHidden();
     await expect(page.getByTestId("config.clientSecret")).toBeHidden();
     await expect(page.getByTestId("mappers-tab")).toBeHidden();
+
+    await page.getByTestId("config.useX509").click({ force: true });
+    await page
+      .getByTestId("config.trustedCertificates")
+      .fill("stale certificate");
+    await page
+      .getByTestId("config.attestationExtendedKeyUsages")
+      .fill("1.2.3.4");
+    await page
+      .getByTestId("config.certificateRevocationEnabled")
+      .click({ force: true });
+    await page.getByTestId("config.useX509").click({ force: true });
+    await clickSaveButton(page);
+
+    await assertNotificationMessage(page, "Provider successfully updated");
 
     await page.getByTestId("config.useJwksUrl").click({ force: true });
     await page.getByTestId("config.publicKeySignatureVerifier").fill(jwks);

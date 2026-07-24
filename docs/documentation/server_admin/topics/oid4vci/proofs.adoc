@@ -24,7 +24,7 @@ This section documents the proof types supported by OpenID for Verifiable Creden
 
 When a credential requires cryptographic holder binding, the client must provide a proof of an appropriate type. The issuer validates the proof and extracts the binding key, which is then included in the issued credential.
 
-==== Configuring Trusted Attester Keys
+==== Configuring Trusted Attesters
 
 {project_name} supports JWT proofs that can optionally include key attestations, and the `attestation` proof type. To validate these attestations, configure the trusted attester keys through trust-material identity providers and link those identity providers to the OID4VCI client.
 
@@ -32,7 +32,10 @@ Trusted attester keys are configured per client because different wallets can re
 
 ===== Admin Console
 
-. Create or configure a trust-material identity provider, such as **Default Trust**, that exposes the trusted attester public keys. The identity provider must be configured with either a JWKS URL or a validating public key.
+. Create or configure a trust-material identity provider, such as **Default Trust**, that exposes the trusted attester public keys or X.509 trust anchors.
+** For `kid`-based attestations, configure a JWKS URL or validating public key.
+** For `x5c`-based attestations, enable **Use X.509 attestation trust**, provide a PEM bundle containing only self-signed device-vendor attestation CA roots, and list the Extended Key Usage OIDs allowed for attestation end-entity certificates.
+** Certificate revocation checking is enabled by default. Disable it only when the attestation ecosystem uses a separate mandatory revocation mechanism that is enforced elsewhere.
 . Go to *Clients* and select the wallet client that requests credentials.
 . Open the *Advanced* tab.
 . In the *OpenID Verifiable Credentials* section, enable **Enable OID4VCI**.
@@ -51,7 +54,7 @@ The **OID4VCI Attester Trust Identity Providers** option is only shown when **En
 
 | `oid4vci.attester_trust_idps`
 | none
-| Comma-separated aliases of trust-material identity providers containing trusted attester public keys for OID4VCI key attestation validation.
+| Comma-separated aliases of trust-material identity providers containing trusted attester public keys or X.509 attestation roots for OID4VCI key attestation validation.
 
 |===
 
@@ -72,7 +75,9 @@ curl -X PUT "https://localhost:8443/admin/realms/{realm}/clients/{client-uuid}" 
       }'
 ----
 
-For a JWT proof with a `key_attestation` JOSE header, or for an `attestation` proof, {project_name} resolves the attester signing key from the configured identity providers. Key resolution can use the attestation JWT header and payload, including the `kid`, `alg`, and `iss` values. If no configured identity provider exposes a matching trusted key, proof validation fails.
+For a JWT proof with a `key_attestation` JOSE header, or for an `attestation` proof, {project_name} resolves the attester signing key from the configured identity providers. Key resolution can use the attestation JWT header and payload, including the `kid`, `alg`, and `iss` values. If the attestation contains `x5c`, {project_name} builds the certificate path independently against each configured attestation trust provider and enforces the provider's EKU and revocation policy. The signing certificate must be an end-entity certificate, and configured trust anchors must be self-signed CA roots. A root included in the presented chain does not become trusted merely by being present; it must match a configured trust anchor. The JVM system truststore is never used as attestation trust. If no configured identity provider trusts the key or certificate chain, proof validation fails.
+
+Do not place public Web PKI roots or the general {project_name} TLS truststore in an attestation trust provider. Each provider should represent one device-vendor trust domain so its roots and certificate policy cannot be combined with another provider accidentally.
 
 ==== Creating and Sending JWT Proofs
 

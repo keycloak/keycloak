@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.jose.jwk.JWK;
@@ -33,4 +34,12 @@ public interface AttestationKeyResolver {
      * Returns null if the key cannot be resolved or is not trusted.
      */
     JWK resolveKey(String kid, Map<String, Object> header, Map<String, Object> payload);
+
+    /**
+     * Resolves and validates an attestation certificate chain. Returning {@code null} means that none of the
+     * configured trust sources trusts the chain.
+     */
+    default JWK resolveX5c(List<String> x5c, Map<String, Object> header, Map<String, Object> payload) {
+        return null;
+    }
 }
