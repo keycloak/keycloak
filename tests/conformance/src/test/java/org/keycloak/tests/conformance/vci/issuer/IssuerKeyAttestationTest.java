@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.vci;
+package org.keycloak.tests.conformance.vci.issuer;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -34,6 +33,9 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.conformance.runner.BrowserInteraction;
 import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.tests.conformance.runner.ConformanceResult;
+import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
+import org.keycloak.tests.conformance.vci.VciAttesterKey;
+import org.keycloak.tests.conformance.vci.VciConformanceRealmConfig;
 
 /**
  * Issues a credential whose configuration requires key attestations, so the suite includes a valid key attestation
@@ -48,10 +50,8 @@ public class IssuerKeyAttestationTest extends AbstractVciConformanceTest {
     @Override
     protected Stream<ConformanceModuleVariant> moduleVariants() {
         return discoverModuleVariants(
-                "oid4vci-1_0-issuer-haip-test-plan",
-                Map.of(
-                        "credential_format", "sd_jwt_vc",
-                        "vci_authorization_code_flow_variant", "wallet_initiated"),
+                HAIP_PLAN,
+                WALLET_INITIATED,
                 "oid4vci-1_0-issuer-happy-flow",
                 ConformanceResult.PASSED,
                 BrowserInteraction.LOGIN);
