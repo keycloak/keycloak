@@ -49,6 +49,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -87,12 +88,16 @@ import com.webauthn4j.verifier.attestation.statement.tpm.TPMAttestationStatement
 import com.webauthn4j.verifier.attestation.statement.u2f.FIDOU2FAttestationStatementVerifier;
 import com.webauthn4j.verifier.attestation.trustworthiness.certpath.CertPathTrustworthinessVerifier;
 import com.webauthn4j.verifier.attestation.trustworthiness.self.DefaultSelfAttestationTrustworthinessVerifier;
+import com.webauthn4j.verifier.exception.UserNotPresentException;
+import com.webauthn4j.verifier.exception.UserNotVerifiedException;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.WebAuthnConstants.REG_ERR_DETAIL_LABEL;
 import static org.keycloak.WebAuthnConstants.REG_ERR_LABEL;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_REGISTER_VERIFICATION;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_REGISTRATION;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_USER_NOT_PRESENT;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_USER_NOT_VERIFIED;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_REGISTER_TITLE;
 
 /**
@@ -319,7 +324,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             context.success();
         } catch (WebAuthnException wae) {
             if (logger.isDebugEnabled()) logger.debug(wae.getMessage(), wae);
-            setErrorResponse(context, WEBAUTHN_ERROR_REGISTRATION, wae.getMessage(), originalEventType);
+            setErrorResponse(context, WEBAUTHN_ERROR_REGISTRATION, wae.getMessage(), getWebAuthnErrorMessageKey(wae), originalEventType);
             return;
         } catch (Exception e) {
             if (logger.isDebugEnabled()) logger.debug(e.getMessage(), e);
@@ -451,7 +456,25 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         // NOP
     }
 
+    private static String getWebAuthnErrorMessageKey(WebAuthnException exception) {
+        // Only map exceptions that represent a single failure reason in WebAuthn4J. Other exception types can
+        // represent multiple reasons and cannot be translated to one accurate user-facing message.
+        if (exception instanceof UserNotPresentException) {
+            return WEBAUTHN_ERROR_USER_NOT_PRESENT;
+        } else if (exception instanceof UserNotVerifiedException) {
+            return WEBAUTHN_ERROR_USER_NOT_VERIFIED;
+        }
+        return null;
+    }
+
     private void setErrorResponse(RequiredActionContext context, final String errorCase, final String errorMessage, @Deprecated final EventType originalEventType) {
+        setErrorResponse(context, errorCase, errorMessage, null, originalEventType);
+    }
+
+    private void setErrorResponse(RequiredActionContext context, final String errorCase, final String errorMessage, final String userFacingErrorMessageKey,
+                                  @Deprecated final EventType originalEventType) {
+        LoginFormsProvider form = context.form();
+        String userFacingErrorMessage = userFacingErrorMessageKey == null ? errorMessage : form.getMessage(userFacingErrorMessageKey);
         Response errorResponse = null;
         switch (errorCase) {
         case WEBAUTHN_ERROR_REGISTER_VERIFICATION:
@@ -462,7 +485,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             EventBuilder deprecatedRegisterVerificationEvent = registerVerificationEvent.clone().event(originalEventType);
             registerVerificationEvent.error(Errors.INVALID_USER_CREDENTIALS);
             deprecatedRegisterVerificationEvent.error(Errors.INVALID_USER_CREDENTIALS);
-            errorResponse = context.form()
+            errorResponse = form
                 .setError(errorCase, errorMessage)
                 .setAttribute(WEB_AUTHN_TITLE_ATTR, WEBAUTHN_REGISTER_TITLE)
                 .createWebAuthnErrorPage();
@@ -476,8 +499,8 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             EventBuilder deprecatedRegistrationEvent = registrationEvent.clone().event(originalEventType);
             deprecatedRegistrationEvent.error(Errors.INVALID_REGISTRATION);
             registrationEvent.error(Errors.INVALID_REGISTRATION);
-            errorResponse = context.form()
-                .setError(errorCase, errorMessage)
+            errorResponse = form
+                .setError(errorCase, userFacingErrorMessage)
                 .setAttribute(WEB_AUTHN_TITLE_ATTR, WEBAUTHN_REGISTER_TITLE)
                 .createWebAuthnErrorPage();
             context.challenge(errorResponse);
