@@ -7,7 +7,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.Profile;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -62,6 +64,7 @@ public class ParameterizedScopeMapperTest {
     private static final String DEFAULT_USERNAME = "test-user@localhost";
     private static final String DEFAULT_PASSWORD = "password";
     private static final String TARGET_USERNAME = "target-user";
+    private static final String UNPRIVILEGED_USERNAME = "unprivileged-user";
     private static final String RAW_PARAM_CLAIM = "param_value";
     private static final String USER_ID_CLAIM = "resolved_user_id";
     private static final String USER_EMAIL_CLAIM = "resolved_user_email";
@@ -81,6 +84,9 @@ public class ParameterizedScopeMapperTest {
 
     @InjectUser(config = SecondTargetUserConfig.class, ref = "secondTarget")
     ManagedUser secondTargetUser;
+
+    @InjectUser(config = UnprivilegedUserConfig.class, ref = "unprivileged")
+    ManagedUser unprivilegedUser;
 
     @InjectEvents
     Events events;
@@ -107,16 +113,18 @@ public class ParameterizedScopeMapperTest {
 
     @AfterEach
     public void afterEach() {
-        try {
-            AccountHelper.logout(realm.admin(), DEFAULT_USERNAME);
-        } catch (Exception ignored) {
-        }
-        try {
-            List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(realm.admin(), DEFAULT_USERNAME);
-            if (userConsents.stream().anyMatch(m -> CLIENT_ID.equals(m.get("clientId")))) {
-                AccountHelper.revokeConsents(realm.admin(), DEFAULT_USERNAME, CLIENT_ID);
+        for (String username : List.of(DEFAULT_USERNAME, UNPRIVILEGED_USERNAME)) {
+            try {
+                AccountHelper.logout(realm.admin(), username);
+            } catch (Exception ignored) {
             }
-        } catch (Exception ignored) {
+            try {
+                List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(realm.admin(), username);
+                if (userConsents.stream().anyMatch(m -> CLIENT_ID.equals(m.get("clientId")))) {
+                    AccountHelper.revokeConsents(realm.admin(), username, CLIENT_ID);
+                }
+            } catch (Exception ignored) {
+            }
         }
     }
 
@@ -150,6 +158,37 @@ public class ParameterizedScopeMapperTest {
         AccessToken token = loginWithScopeParam("nonexistent");
         assertRawParamClaim(token, "nonexistent");
         assertNoUserClaims(token);
+    }
+
+    @Test
+    public void userPropertyMapperWithViewUsersPermission() {
+        addUsernameScopeWithUserPropertyMapper("authz-scope", false);
+
+        AccessTokenResponse res = loginAndGetResponse("authz-scope:" + TARGET_USERNAME);
+        AccessToken token = oauth.verifyToken(res.getAccessToken());
+
+        assertUserIdClaim(token, targetUser.getId());
+    }
+
+    @Test
+    public void userPropertyMapperSuppressedWithoutViewUsersPermission() {
+        addUsernameScopeWithUserPropertyMapper("authz-scope-denied", false);
+
+        AccessTokenResponse res = loginAndGetResponse("authz-scope-denied:" + TARGET_USERNAME, UNPRIVILEGED_USERNAME);
+        AccessToken token = oauth.verifyToken(res.getAccessToken());
+
+        Assertions.assertNull(token.getOtherClaims().get(USER_ID_CLAIM),
+                "User id claim should not be present without view-users permission");
+    }
+
+    @Test
+    public void userPropertyMapperAllowedWithAllowUserDataAccess() {
+        addUsernameScopeWithUserPropertyMapper("allow-data-scope", true);
+
+        AccessTokenResponse res = loginAndGetResponse("allow-data-scope:" + TARGET_USERNAME, UNPRIVILEGED_USERNAME);
+        AccessToken token = oauth.verifyToken(res.getAccessToken());
+
+        assertUserIdClaim(token, targetUser.getId());
     }
 
     @Test
@@ -265,10 +304,14 @@ public class ParameterizedScopeMapperTest {
     }
 
     private AccessTokenResponse loginAndGetResponse(String scope) {
+        return loginAndGetResponse(scope, DEFAULT_USERNAME);
+    }
+
+    private AccessTokenResponse loginAndGetResponse(String scope, String username) {
         oauth.client(CLIENT_ID, "password");
         oauth.scope(scope);
         oauth.openLoginForm();
-        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        oauth.fillLoginForm(username, DEFAULT_PASSWORD);
         grantPage.assertCurrent();
         grantPage.accept();
         events.poll();
@@ -291,6 +334,29 @@ public class ParameterizedScopeMapperTest {
                 .alwaysConsent(false)
                 .build();
         return ApiUtil.getCreatedId(realm.admin().clientScopes().create(scope));
+    }
+
+    private String createUsernameTypeScope(String name, boolean allowUserDataAccess) {
+        ClientScopeRepresentation scope = create(name)
+                .parameterizedScopeType("username")
+                .isRepeatableScope(false)
+                .allowUserDataAccess(allowUserDataAccess)
+                .displayOnConsentScreen(true)
+                .alwaysConsent(false)
+                .build();
+        return ApiUtil.getCreatedId(realm.admin().clientScopes().create(scope));
+    }
+
+    private String addUsernameScopeWithUserPropertyMapper(String name, boolean allowUserDataAccess) {
+        String scopeId = createUsernameTypeScope(name, allowUserDataAccess);
+        addMapper(scopeId, ParameterizedScopeUserPropertyMapper.create(
+                "username-user-id-mapper", "id", USER_ID_CLAIM, "String", true, false, true));
+        client.admin().addOptionalClientScope(scopeId);
+        realm.cleanup().add(r -> {
+            r.clients().get(client.getId()).removeOptionalClientScope(scopeId);
+            r.clientScopes().get(scopeId).remove();
+        });
+        return scopeId;
     }
 
     private String createNonParameterizedScopeWithMappers() {
@@ -364,7 +430,8 @@ public class ParameterizedScopeMapperTest {
                     .name("Test", "User")
                     .emailVerified(true)
                     .password(DEFAULT_PASSWORD)
-                    .enabled(true));
+                    .enabled(true)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_USERS));
         }
     }
 
@@ -398,6 +465,16 @@ public class ParameterizedScopeMapperTest {
                     .password(DEFAULT_PASSWORD)
                     .email("second-target@localhost")
                     .name("Second", "Target");
+        }
+    }
+
+    static class UnprivilegedUserConfig implements UserConfig {
+        @Override
+        public UserBuilder configure(UserBuilder user) {
+            return user.username(UNPRIVILEGED_USERNAME)
+                    .password(DEFAULT_PASSWORD)
+                    .email("unprivileged@localhost")
+                    .name("Unprivileged", "User");
         }
     }
 }

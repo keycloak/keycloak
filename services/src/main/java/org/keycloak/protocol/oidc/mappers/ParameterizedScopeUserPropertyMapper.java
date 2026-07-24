@@ -5,17 +5,25 @@ import java.util.Collection;
 import java.util.List;
 
 import org.keycloak.common.util.CollectionUtil;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeProvider;
+import org.keycloak.protocol.oidc.scope.UsernameScopeType;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 import org.keycloak.utils.StringUtil;
 
+import org.jboss.logging.Logger;
+
 public class ParameterizedScopeUserPropertyMapper extends ParameterizedScopeMapper {
+
+    private static final Logger logger = Logger.getLogger(ParameterizedScopeUserPropertyMapper.class);
 
     public static final String PROVIDER_ID = "oidc-parameterized-scope-user-property-mapper";
 
@@ -54,26 +62,36 @@ public class ParameterizedScopeUserPropertyMapper extends ParameterizedScopeMapp
 
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession,
-                            KeycloakSession keycloakSession, List<String> parameterValues) {
+                            KeycloakSession keycloakSession, ClientScopeModel clientScope, List<String> parameterValues) {
         String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
         if (StringUtil.isBlank(attributeName)) {
             return;
         }
 
+        ParameterizedScopeTypeProvider scopeType = keycloakSession.getProvider(ParameterizedScopeTypeProvider.class, clientScope.getParameterizedScopeType());
+        RealmModel realm = userSession.getRealm();
+
         List<Object> resolvedValues = new ArrayList<>();
         for (String parameterValue : parameterValues) {
-            UserModel user = keycloakSession.users().getUserByUsername(userSession.getRealm(), parameterValue);
-            if (user == null) {
+            UserModel targetUser = keycloakSession.users().getUserByUsername(realm, parameterValue);
+            if (targetUser == null) {
                 continue;
             }
 
-            Collection<String> attributeValue = KeycloakModelUtils.resolveAttribute(user, attributeName, false);
+            boolean accessDenied = scopeType instanceof UsernameScopeType usernameType && !usernameType.canAccessTargetUser(clientScope, userSession.getUser(), targetUser);
+            if (accessDenied) {
+                logger.debugf("Skipping user property claim for target user '%s' — authenticated user '%s' is not authorized to access the target user's data",
+                        parameterValue, userSession.getUser().getUsername());
+                continue;
+            }
+
+            Collection<String> attributeValue = KeycloakModelUtils.resolveAttribute(targetUser, attributeName, false);
             if (CollectionUtil.isNotEmpty(attributeValue)) {
                 resolvedValues.addAll(attributeValue);
                 continue;
             }
 
-            String propertyValue = ProtocolMapperUtils.getUserModelValue(user, attributeName);
+            String propertyValue = ProtocolMapperUtils.getUserModelValue(targetUser, attributeName);
             if (propertyValue != null) {
                 resolvedValues.add(propertyValue);
             }

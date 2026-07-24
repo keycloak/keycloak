@@ -6,6 +6,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.utils.StringUtil;
 
 /**
@@ -33,6 +34,16 @@ public class UsernameScopeType implements ParameterizedScopeTypeProvider {
     @Override
     public ParameterizedScopeTypeProvider create(KeycloakSession session) {
         return new UsernameScopeType(session);
+    }
+
+    /**
+     * Checks whether the authenticated user is allowed to access the target user's data for this scope.
+     */
+    public boolean canAccessTargetUser(ClientScopeModel scope, UserModel currentUser, UserModel targetUser) {
+        if (scope.isAllowUserDataAccess()) {
+            return true;
+        }
+        return AdminPermissions.evaluator(session, scope.getRealm(), scope.getRealm(), currentUser).users().canView(targetUser);
     }
 
     @Override
