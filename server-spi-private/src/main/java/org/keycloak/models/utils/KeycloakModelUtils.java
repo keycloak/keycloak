@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -61,6 +62,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.deployment.DeployedConfigurationsManager;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -344,6 +346,57 @@ public final class KeycloakModelUtils {
         }
 
         return session.users().getUserByUsername(realm, username);
+    }
+
+    /**
+     * Enlists a task that will run in a new, independent transaction when the current
+     * transaction rolls back. The task is a no-op if the current transaction commits normally.
+     *
+     * <p>Use this for cleanup operations that must persist even when an error response
+     * causes the main transaction to roll back (e.g., session invalidation on token reuse).
+     * The task receives a {@link SessionLookup} backed by a fresh session
+     * with realm/client context cloned from the current one.</p>
+     *
+     * @see #enlistAfterCompletion(KeycloakSession, Consumer)
+     */
+    public static void enlistAfterRollback(KeycloakSession currentSession, Consumer<SessionLookup> task) {
+        enlistAfterCompletion(currentSession, task, false);
+    }
+
+    /**
+     * Enlists a task that will run in a new, independent transaction after the current
+     * transaction completes, regardless of whether it commits or rolls back.
+     *
+     * <p>Use this for operations that must persist in both success and error paths
+     * (e.g., creating UMA permission tickets).</p>
+     *
+     * @see #enlistAfterRollback(KeycloakSession, Consumer)
+     */
+    public static void enlistAfterCompletion(KeycloakSession currentSession, Consumer<SessionLookup> task) {
+        enlistAfterCompletion(currentSession, task, true);
+    }
+
+    private static void enlistAfterCompletion(KeycloakSession currentSession, Consumer<SessionLookup> task, boolean runOnCommit) {
+        KeycloakSessionFactory factory = currentSession.getKeycloakSessionFactory();
+        KeycloakContext context = currentSession.getContext();
+
+        currentSession.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                if (runOnCommit) {
+                    execute();
+                }
+            }
+
+            @Override
+            protected void rollbackImpl() {
+                execute();
+            }
+
+            private void execute() {
+                runJobInTransaction(factory, context, sub -> task.accept(new SessionLookup(sub)));
+            }
+        });
     }
 
     /**

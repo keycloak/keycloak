@@ -183,7 +183,12 @@ public class TokenManager {
 
                 // Revoke timed out offline userSession
                 if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-                    sessionManager.revokeOfflineUserSession(userSession);
+                    UserSessionModel offlineSession = userSession;
+                    // Revocation must persist even when the error response rolls back the main tx.
+                    KeycloakModelUtils.enlistAfterRollback(session, ctx -> {
+                        UserSessionModel us = ctx.findUserSession(offlineSession);
+                        if (us != null) new UserSessionManager(ctx.session()).revokeOfflineUserSession(us);
+                    });
                     throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Offline session not active", "Offline session not active");
                 }
 
@@ -194,7 +199,16 @@ public class TokenManager {
             // Find userSession regularly for online tokens
             userSession = session.sessions().getUserSession(realm, oldToken.getSessionState());
             if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-                AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
+                if (userSession != null) {
+                    UserSessionModel onlineSession = userSession;
+                    // Logout must persist even when the error response rolls back the main tx.
+                    KeycloakModelUtils.enlistAfterRollback(session, ctx -> {
+                        UserSessionModel us = ctx.findUserSession(onlineSession);
+                        if (us != null) {
+                            AuthenticationManager.backchannelLogout(ctx.session(), ctx.realm(), us, uriInfo, connection, headers, true);
+                        }
+                    });
+                }
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
             }
         }
@@ -223,7 +237,12 @@ public class TokenManager {
 
         if (!AuthenticationManager.isClientSessionValid(realm, client, userSession, clientSession)) {
             logger.debug("Client session not active");
-            userSession.removeAuthenticatedClientSessions(Collections.singletonList(client.getId()));
+            UserSessionModel currentSession = userSession;
+            // Removal must persist even when the error response rolls back the main tx.
+            KeycloakModelUtils.enlistAfterRollback(session, ctx -> {
+                UserSessionModel us = ctx.findUserSession(currentSession);
+                if (us != null) us.removeAuthenticatedClientSessions(Collections.singletonList(client.getId()));
+            });
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Client session not active");
         }
 
