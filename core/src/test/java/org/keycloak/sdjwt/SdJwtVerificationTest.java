@@ -25,6 +25,7 @@ import java.util.function.Function;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jws.JWSHeader;
@@ -79,6 +80,27 @@ public abstract class SdJwtVerificationTest {
                 optionalTimeClaimVerificationOpts().build()
             );
         }
+    }
+
+    @Test
+    public void sdJwtVerificationShouldFail_WhenHeaderAlgorithmDiffersFromVerifierAlgorithm() {
+        SdJwt sdJwt = SdJwt.builder()
+                .withIssuerSignedJwt(exampleFlatSdJwtV1().build())
+                .withIssuerSigningContext(TestSettings.signerWithReportedAlgorithm(
+                        testSettings.issuerSigContext, Algorithm.ES384))
+                .build();
+
+        assertEquals(Algorithm.ES384, sdJwt.getIssuerSignedJWT().getJwsHeader().getRawAlgorithm());
+        assertEquals(Algorithm.ES256, testSettings.issuerVerifierContext.getAlgorithm());
+
+        VerificationException exception = assertThrows(
+                VerificationException.class,
+                () -> sdJwt.verify(
+                        defaultIssuerVerifyingKeys(),
+                        optionalTimeClaimVerificationOpts().build())
+        );
+
+        assertEquals("Invalid Issuer-Signed JWT: Signature could not be verified", exception.getMessage());
     }
 
     @Test
