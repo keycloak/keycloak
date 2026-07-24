@@ -8,6 +8,7 @@ import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepres
 import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyMode;
+import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition;
 import org.keycloak.services.clientpolicy.condition.ClientScopesCondition;
 import org.keycloak.services.clientpolicy.condition.GrantTypeCondition;
 import org.keycloak.services.clientpolicy.condition.IdentityProviderCondition;
@@ -56,6 +57,13 @@ public class ClientPolicyBuilder extends Builder<ClientPolicyRepresentation> {
         config.setNegativeLogic(negativeLogic);
         config.setType(type);
         config.setScopes(List.of(scopes));
+        return config;
+    }
+
+    public static ClientAccessTypeCondition.Configuration clientAccessTypeCondition(boolean negativeLogic, String... types) {
+        ClientAccessTypeCondition.Configuration config = new ClientAccessTypeCondition.Configuration();
+        config.setNegativeLogic(negativeLogic);
+        config.setType(List.of(types));
         return config;
     }
 
