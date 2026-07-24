@@ -342,7 +342,7 @@ class KeycloakProcessor {
     @Consume(ConfigBuildItem.class)
     @Consume(CryptoProviderInitBuildItem.class) // ensures the Providers are loaded prior to handle the keystore #49359
     void configureTruststore(KeycloakRecorder recorder) {
-        recorder.configureTruststore();
+        recorder.configureTruststore(getFipsMode());
     }
 
     /**
@@ -908,6 +908,10 @@ class KeycloakProcessor {
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
     void setCryptoProvider(KeycloakRecorder recorder) {
+        recorder.setCryptoProvider(getFipsMode());
+    }
+
+    private FipsMode getFipsMode() {
         FipsMode fipsMode = getOptionalValue(NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey())
                 .map(FipsMode::valueOfOption)
                 .orElse(FipsMode.DISABLED);
@@ -917,8 +921,7 @@ class KeycloakProcessor {
         } else if (fipsMode.isFipsEnabled() && !Profile.isFeatureEnabled(Profile.Feature.FIPS)) {
             throw new RuntimeException("FIPS mode cannot be enabled without enabling the FIPS feature --features=fips");
         }
-
-        recorder.setCryptoProvider(fipsMode);
+        return fipsMode;
     }
 
     @BuildStep(onlyIf = IsDevelopment.class)

@@ -39,6 +39,7 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.common.util.KeystoreUtil.TruststoreFormat;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
 import org.keycloak.config.HostnameV2Options;
@@ -164,7 +165,7 @@ public class KeycloakRecorder {
         }
     }
 
-    public void configureTruststore() {
+    public void configureTruststore(FipsMode fipsMode) {
         List<String> truststores = new ArrayList<>();
         Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
                 .ifPresent(s -> Stream.of(s.split(",")).forEach(truststores::add));
@@ -185,7 +186,9 @@ public class KeycloakRecorder {
             return; // nothing to configure, we'll just use the system default
         }
 
-        TruststoreBuilder.setSystemTruststore(truststores.toArray(String[]::new), true, dataDir.orElseThrow());
+        TruststoreFormat truststoreType = fipsMode == FipsMode.STRICT ? TruststoreFormat.BCFKS : null;
+
+        TruststoreBuilder.setSystemTruststore(truststores.toArray(String[]::new), true, dataDir.orElseThrow(), truststoreType);
     }
 
     public void configureLiquibase(Map<String, List<String>> services) {
