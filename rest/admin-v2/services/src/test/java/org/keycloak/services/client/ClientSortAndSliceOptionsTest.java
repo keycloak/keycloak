@@ -4,7 +4,6 @@ import java.lang.reflect.Field;
 import java.util.Comparator;
 import java.util.List;
 
-import org.keycloak.admin.api.ClientField;
 import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.SortOption;
 import org.keycloak.admin.api.SortOrder;

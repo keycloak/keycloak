@@ -96,7 +96,10 @@ request results in a `400 Bad Request` error. Use the `PATCH` method to manage g
 
 == Partially updating a group
 
-To modify specific group attributes, use a `PATCH` request:
+To modify specific group attributes, use a `PATCH` request.
+
+NOTE: A single PATCH request can contain at most 100 operations. Requests exceeding this limit are rejected with
+a `400 Bad Request` response and `scimType: "tooMany"`.
 
 [source,bash]
 ----

@@ -263,7 +263,8 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     @Before
     public void before() throws Exception {
         setInitialAccessTokenForDynamicClientRegistration();
-        adminClient.realm(REALM_NAME).clientScopes().create(ClientScopeBuilder.create().name(SAMPLE_CLIENT_SCOPE).protocol(OIDCLoginProtocol.LOGIN_PROTOCOL).build());
+        Response response = adminClient.realm(REALM_NAME).clientScopes().create(ClientScopeBuilder.create().name(SAMPLE_CLIENT_SCOPE).protocol(OIDCLoginProtocol.LOGIN_PROTOCOL).build());
+        response.close();
     }
 
     protected void setInitialAccessTokenForDynamicClientRegistration() {
@@ -1580,7 +1581,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     @NotNull
     protected ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
-            int expirationPeriod, int rotatedExpirationPeriod, int remainExpirationPeriod) {
+            long expirationPeriod, long rotatedExpirationPeriod, long remainExpirationPeriod) {
         ClientSecretRotationExecutor.Configuration profileConfig = new ClientSecretRotationExecutor.Configuration();
         profileConfig.setExpirationPeriod(expirationPeriod);
         profileConfig.setRotatedExpirationPeriod(rotatedExpirationPeriod);

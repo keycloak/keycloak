@@ -79,7 +79,7 @@ public interface OrganizationMembersResource {
      *
      * @param first index of the first element (pagination offset).
      * @param max the maximum number of results.
-     * @param briefRepresentation if false, return the full representation. Otherwise, only the basic fields are returned. It is true by default.
+     * @param briefRepresentation if false, return the full representation. Otherwise, only the basic fields are returned. It is true by default. This parameter is available since Keycloak server 26.7.0
      * @return a list containing organization members.
      * @since Keycloak server 26.7
      */
@@ -102,6 +102,7 @@ public interface OrganizationMembersResource {
      * @param max the maximum number of results.
      * @return a list containing the matched organization members. Returns brief user representations by default.
      *         Use {@link #search(String, Boolean, Integer, Integer, boolean)} to control the representation type.
+     * @since Keycloak server 26.7.0
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -121,7 +122,7 @@ public interface OrganizationMembersResource {
      *              the method returns all members with at least one main attribute partially matching the {@code search} param.
      * @param first index of the first element (pagination offset).
      * @param max the maximum number of results.
-     * @param briefRepresentation if false, return the full representation. Otherwise, only the basic fields are returned. It is true by default.
+     * @param briefRepresentation if false, return the full representation. Otherwise, only the basic fields are returned. It is true by default. This parameter is available since Keycloak server 26.7.0
      * @return a list containing the matched organization members.
      * @since Keycloak server 26.7
      */

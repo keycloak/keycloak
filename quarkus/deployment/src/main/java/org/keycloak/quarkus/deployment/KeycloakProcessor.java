@@ -161,6 +161,7 @@ import io.quarkus.vertx.http.deployment.HttpRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.ManagementInterfaceFilterBuildItem;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
+import io.quarkus.vertx.http.deployment.VertxWebRouterBuildItem;
 import io.quarkus.vertx.http.runtime.security.SecurityHandlerPriorities;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.health.Readiness;
@@ -269,9 +270,9 @@ class KeycloakProcessor {
     @Produce(ProfileBuildItem.class)
     void configureProfile(KeycloakRecorder recorder) {
         Profile profile = getCurrentOrCreateFeatureProfile();
-
+        Profile.getInstance().logUnsupportedFeatures();
         // record the features so that they are not calculated again at runtime
-        recorder.configureProfile(profile.getName(), profile.getFeatures());
+        recorder.configureProfile(profile.getName(), profile.getFeatures(), profile.getEnablements());
     }
 
     @Record(ExecutionTime.STATIC_INIT)
@@ -291,24 +292,20 @@ class KeycloakProcessor {
                 );
     }
 
-    @Record(ExecutionTime.STATIC_INIT)
+    @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
     @Consume(ConfigBuildItem.class)
-    void filterAllRequests(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder) {
-        var filter = recorder.getRejectNonNormalizedPathFilter();
-        if (filter != null) {
-            filters.produce(new FilterBuildItem(filter, SecurityHandlerPriorities.CORS + 1));
-        }
+    void filterAllRequests(VertxWebRouterBuildItem vertxWebRouterBuildItem, KeycloakRecorder recorder) {
+        recorder.rejectNonNormalizedPathFilter(vertxWebRouterBuildItem.getHttpRouter());
+
+        recorder.misdirectedRequestFilter(vertxWebRouterBuildItem.getHttpRouter());
     }
 
-    @Record(ExecutionTime.STATIC_INIT)
+    @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep(onlyIf = IsManagementEnabled.class)
     @Consume(ConfigBuildItem.class)
-    void filterAllManagementRequests(BuildProducer<ManagementInterfaceFilterBuildItem> filters, KeycloakRecorder recorder) {
-        var filter = recorder.getRejectNonNormalizedPathFilter();
-        if (filter != null) {
-            filters.produce(new ManagementInterfaceFilterBuildItem(filter, SecurityHandlerPriorities.CORS + 1));
-        }
+    void filterAllManagementRequests(VertxWebRouterBuildItem vertxWebRouterBuildItem, BuildProducer<ManagementInterfaceFilterBuildItem> filters, KeycloakRecorder recorder) {
+        recorder.rejectNonNormalizedPathFilter(vertxWebRouterBuildItem.getManagementRouter());
     }
 
     @BuildStep(onlyIfNot = IsKeycloakDevMode.class)
@@ -880,7 +877,7 @@ class KeycloakProcessor {
                     AdminRoot.class.getName())), false));
         }
 
-        if (!MultiSiteUtils.isMultiSiteEnabled()) {
+        if (!MultiSiteUtils.isMultiSiteEnabled() && !Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
             buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
                     LoadBalancerResource.class.getName())), false));
         }

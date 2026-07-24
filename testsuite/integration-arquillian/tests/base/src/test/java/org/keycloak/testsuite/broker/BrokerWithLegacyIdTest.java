@@ -31,6 +31,7 @@ import org.keycloak.testsuite.broker.oidc.LegacyIdIdentityProviderFactory;
 import org.keycloak.testsuite.util.AccountHelper;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
@@ -87,14 +88,14 @@ public class BrokerWithLegacyIdTest extends AbstractInitializedBaseBrokerTest {
         logInAsUserInIDP();
         // id should be migrated to new one
         assertEquals(userId, getFederatedIdentity().getUserId());
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         // try to login again to double check the new ID works
         logInAsUserInIDP();
         assertEquals(userId, getFederatedIdentity().getUserId());
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     private FederatedIdentityRepresentation getFederatedIdentity() {

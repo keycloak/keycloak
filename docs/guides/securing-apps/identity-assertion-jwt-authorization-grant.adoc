@@ -1,0 +1,192 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/features.adoc" as features>
+
+<@tmpl.guide
+title="Identity Assertion JWT Authorization Grant"
+priority=140
+summary="Guide for the draft about Identity Assertion JWT Authorization Grant (ID-JAG).">
+
+<#include "/templates/experimental-feature.adoc">
+
+The Identity Assertion JWT Authorization Grant (ID-JAG), also known as Cross-App Access (XAA), is an OAuth 2.0 extension designed to extend SSO patterns by enabling a centralized enterprise identity provider to *control access* between two applications.
+
+This guide outlines how to establish an identity-chained trust relationship using ID-JAG (XAA) between the Issuer and the Receiver.
+
+[NOTE]
+====
+The ID-JAG specification is currently an active IETF draft. This guide is based on link:https://datatracker.ietf.org/doc/draft-ietf-oauth-identity-assertion-authz-grant/01/[draft-ietf-oauth-identity-assertion-authz-grant-01].
+====
+
+== Overview and Context
+
+While Keycloak already supports identity chaining through features like Token Exchange (RFC 8693) and the standard JWT Authorization Grant (RFC 7523), ID-JAG introduces a standardized, formal extension to streamline Cross-App Access (XAA).
+
+**Why ID-JAG?**
+Unlike traditional identity chaining where applications might rely on proprietary logic or complex Token Exchange configurations to pass context, ID-JAG standardizes the issuance and validation of an "Identity Assertion." This places the centralized Enterprise IdP firmly in control, eliminating the need for applications to establish direct trust with each other and removing friction such as repetitive user consent prompts or static API keys.
+
+**What is an Identity Assertion (ID-JAG)?**
+Technically, an Identity Assertion in this context is a specifically formatted JSON Web Token (JWT) issued by the Centralized Identity Provider. It represents the authenticated user (via the `sub` claim) and is explicitly targeted at the receiving application (via the `aud` claim). It must be cryptographically signed by the Issuer so the Receiver can securely validate its authenticity before exchanging it for a local access token.
+
+**Current Implementation Status in Keycloak**
+As this is an evolving draft, Keycloak's implementation of ID-JAG is being delivered in phases:
+* **Implemented (Receiver Side):** Keycloak can currently act as the *Receiver* (Domain B), successfully accepting an ID-JAG Identity Assertion from an external Issuer and granting a local access token.
+* **Not Yet Implemented (Issuer Side):** Native, out-of-the-box support for Keycloak to act as the *Issuer* (generating the specific ID-JAG Identity Assertion on demand) is not yet fully implemented.
+
+== Use Case Example: MCP (Model Context Protocol)
+
+A primary use case for ID-JAG is securing interactions in AI ecosystems, such as those using the **Model Context Protocol (MCP)**. 
+In this scenario, an AI Assistant (Client App A / MCP Client) needs to access a backend resource or tool (Client App B / MCP Authorization Server and MCP Resource Server) on behalf of an authenticated user. Instead of sharing credentials or prompting the user again, the MCP Client uses ID-JAG to seamlessly securely exchange its identity assertion for an access token scoped for the MCP Resource Server.
+
+== Architecture Flow (ID-JAG / Cross-App Access)
+
+ID-JAG (XAA) places the centralized enterprise identity provider at the center of the trust relationship. Instead of applications establishing direct trust with each other, the IdP acts as the central control plane.
+
+image::idjag-components.svg[ID-JAG Architecture Diagram]
+
+1. ***SSO & ID Token Issuance (Steps 1-2):*** Client App A authenticates the user with the Identity Provider via OpenID Connect and receives an ID Token.
+2. ***Identity Assertion (ID-JAG) Issuance (Steps 3-4):*** Client App A performs a `Token Exchange` with the Identity Provider, using the ID Token to request and receive a new Identity Assertion (ID-JAG).
+3. ***Access Token Request (Steps 5-7):*** Client App A presents the ID-JAG assertion to Client App B's token endpoint using the `JWT Authorization Grant`. Client App B validates the assertion against the Identity Provider (Step 6) and returns a local Access Token to Client App A.
+4. ***Protected Resource Access (Implied):*** Client App A uses the newly obtained Access Token to make secure API calls to the Resource Server part of Client App B.
+
+== Configuring the Issuer
+
+This section details how to configure your Keycloak instance as the Identity Provider to generate and issue the signed ID-JAG JWT assertion representing the authenticated user.
+
+[NOTE]
+====
+*Status: TBD* +
+The specific configuration steps and implementation details for the ID-JAG Issuer side will be updated here once the implementation is fully completed. +
+====
+
+=== Prerequisites for Issuer
+
+// To be updated when implementation is complete
+Configuration for the Issuer side is not yet available and will be documented once the implementation is complete.
+
+=== Configuration Steps
+
+// To be updated when implementation is complete
+Configuration steps for the Issuer side will be added once the implementation is complete.
+
+== Configuring the Receiver
+
+This section describes how to configure your Keycloak instance as the receiver to accept and process the ID-JAG (XAA) assertion.
+
+[NOTE]
+====
+The example configuration below uses the `keycloak-oidc` broker type and Keycloak-style OIDC endpoints. If your external Issuer is not Keycloak, adjust the provider type and endpoint URLs (or use OIDC discovery) according to your IdP's OpenID Provider metadata.
+====
+
+=== Prerequisites for Receiver
+
+Before configuring Keycloak as the Receiver, ensure you have the following:
+
+* Administrative access to the receiving Keycloak instance.
+* **The `identity-assertion-jwt` feature is enabled on the Keycloak server.**
++
+[NOTE]
+====
+Because the Identity Assertion JWT Authorization Grant functionality is an experimental feature in Keycloak, you must explicitly enable it when starting your Keycloak server.
+
+To enable this feature, start Keycloak using the `--features` option:
+[source,bash]
+----
+# For production mode
+bin/kc.sh start --features=identity-assertion-jwt
+
+# For development/testing mode
+bin/kc.sh start-dev --features=identity-assertion-jwt
+----
+====
+
+* The network connectivity allows Keycloak to reach the OIDC Discovery (`.well-known/openid-configuration`) and JWKS (`certs`) endpoints of the external Issuer.
+* You are authenticated with the Keycloak Admin CLI (`kcadm.sh`) to your Keycloak server.
+
+=== Register the External ID-JAG as an Identity Provider
+
+Run the following command to register the external Identity Provider as an OIDC Identity Provider in Keycloak with the JWT Authorization Grant feature enabled.
+
+[source,bash]
+----
+./kcadm.sh create identity-provider/instances -r target-realm \
+  -s alias=id-jag \
+  -s providerId=keycloak-oidc \
+  -s enabled=true \
+  -s displayName="ID-JAG Issuer" \
+  -s 'config.issuer="https://<external-idp-domain>"' \
+  -s 'config.authorizationUrl="https://<external-idp-domain>/protocol/openid-connect/auth"' \
+  -s 'config.tokenUrl="https://<external-idp-domain>/protocol/openid-connect/token"' \
+  -s 'config.jwksUrl="https://<external-idp-domain>/protocol/openid-connect/certs"' \
+  -s 'config.jwtAuthorizationGrantEnabled="true"' \
+  -s 'config.useJwksUrl="true"' \
+  -s 'config.clientId="receiver-keycloak-client"' \
+  -s 'config.clientSecret="issuer-side-secret"' \
+  -s 'config.jwtAuthorizationGrantAssertionReuseAllowed="false"' \
+  -s 'config.jwtAuthorizationGrantMaxAllowedAssertionExpiration="300"'
+----
+
+=== Configure the Client for JWT Authorization Grant
+
+Create the confidential client (Client App B) that will request the local access token using the presented assertion.
+
+[source,bash]
+----
+./kcadm.sh create clients -r target-realm \
+  -s clientId=backend-client \
+  -s enabled=true \
+  -s serviceAccountsEnabled=true \
+  -s publicClient=false \
+  -s secret=backend-client-secret-123 \
+  -s consentRequired=false \
+  -s 'attributes."oauth2.jwt.authorization.grant.enabled"="true"' \
+  -s 'attributes."oauth2.jwt.authorization.grant.idp"="id-jag"'
+----
+
+=== User Account Mapping & Provisioning
+
+Link an existing local user account in Keycloak to the external identity provided by the external IdP. Replace `test-user-id` with your existing Keycloak user's uuid and `external-id-999` with the subject (`sub`) claim value that will be sent in the ID-JAG assertion from the external IdP.
+
+[source,bash]
+----
+./kcadm.sh create users/<test-user-id>/federated-identity/id-jag \
+  -r target-realm \
+  -s userId=external-id-999 \
+  -s userName=test-user
+----
+
+== Obtaining an Access Token via ID-JAG
+
+Once configured, the requesting application (Client App A / MCP Client) can use the ID-JAG-issued Identity Assertion JWT to obtain a local, scoped Access Token from Keycloak.
+
+[WARNING]
+====
+*Note:* The Keycloak server (Receiver) must be running with `--features=identity-assertion-jwt` enabled.
+====
+
+To obtain the token, send a POST request to Keycloak's token endpoint using the `urn:ietf:params:oauth:grant-type:jwt-bearer` grant type. Ensure you request the appropriate scope (e.g., `openid profile` or specific API scopes).
+
+[source,bash]
+----
+curl -s -X POST \
+  --location https://<your-keycloak-domain>/realms/<realm-name>/protocol/openid-connect/token \
+  --header "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode "client_id=backend-client" \
+  --data-urlencode "client_secret=<your-backend-client-secret>" \
+  --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer" \
+  --data-urlencode "scope=openid profile" \
+  --data-urlencode "assertion=<JWT_ASSERTION_FROM_EXTERNAL_IDP>"
+----
+
+*Expected Response:*
+
+A successful response will return a JSON object containing the newly issued local access token, which can then be used to access protected resources on Client App B (MCP Server).
+
+== Additional Resources
+
+* https://oauth.net/cross-app-access/[oauth.net: Cross-App Access (XAA) Overview]
+* https://datatracker.ietf.org/doc/draft-ietf-oauth-identity-assertion-authz-grant/[IETF draft: Identity Assertion JWT Authorization Grant (ID-JAG)]
+* https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523: JSON Web Token (JWT) Profile for OAuth 2.0 Client Authentication and Authorization Grants]
+* https://www.keycloak.org/securing-apps/oauth-identity-authorization-chaining-across-domains[Keycloak Documentation: OAuth Identity and Authorization Chaining Across Domains]
+
+</@tmpl.guide>

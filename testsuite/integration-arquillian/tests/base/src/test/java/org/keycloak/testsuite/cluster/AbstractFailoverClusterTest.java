@@ -23,7 +23,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
@@ -46,7 +45,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
 
@@ -60,9 +58,6 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
 
     @Page
     protected LoginPage loginPage;
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LogoutConfirmPage logoutConfirmPage;
@@ -131,9 +126,9 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
 
     protected Cookie login() {
         oauth.openLoginForm();
-        assertTrue(loginPage.isCurrent());
+        loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
-        assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         Cookie sessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
         assertNotNull(sessionCookie);
         return sessionCookie;
@@ -157,8 +152,8 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
         assertNotNull(sessionCookieOnRealmPath);
         assertEquals(sessionCookieOnRealmPath.getValue(), sessionCookieForVerification.getValue());
         // verify on target page
-        appPage.open();
-        assertTrue(appPage.isCurrent());
+        driver.navigate().to(oauth.getRedirectUri());
+        Assertions.assertEquals(driver.getCurrentUrl(), oauth.getRedirectUri());
         Cookie sessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
         assertNotNull(sessionCookie);
         assertEquals(sessionCookie.getValue(), sessionCookieForVerification.getValue());
@@ -169,7 +164,7 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
         // verify on target page
         oauth.openLoginForm();
         driver.navigate().refresh();
-        assertTrue(loginPage.isCurrent());
+        loginPage.assertCurrent();
         Cookie sessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
         assertNull(sessionCookie);
     }

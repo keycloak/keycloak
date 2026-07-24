@@ -131,7 +131,14 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokeToken() throws Exception {
         AccessTokenResponse tokenResponse1 = login("test-app", "test-user@localhost", "password");
-        AccessTokenResponse tokenResponse2 = login("test-app-scope", "test-user@localhost", "password");
+
+        oauth.client("test-app-scope", "password");
+        oauth.openLoginForm();
+
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code);
 
         UserResource testUser = realm.users().get(realm.users().search("test-user@localhost").get(0).getId());
         List<UserSessionRepresentation> userSessions = testUser.getUserSessions();
@@ -212,7 +219,14 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
         // Offline login of same client in same SSO session as previous login
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        AccessTokenResponse tokenResponse2 = login("test-app", "test-user@localhost", "password");
+
+        oauth.client("test-app", "password");
+        oauth.openLoginForm();
+
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code);
 
         // Session IDs of "offline" and online session are same for now. This may change in the future
         Assertions.assertEquals(tokenResponse1.getSessionState(), tokenResponse2.getSessionState());
@@ -333,9 +347,10 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     private AccessTokenResponse login(String clientId, String username, String password) {
         oauth.client(clientId, "password");
         oauth.openLoginForm();
-        if (loginPage.isCurrent()) {
-            loginPage.login(username, password);
-        }
+
+        loginPage.assertCurrent();
+        loginPage.login(username, password);
+
         String code = oauth.parseLoginResponse().getCode();
         return oauth.doAccessTokenRequest(code);
     }

@@ -20,7 +20,6 @@ import java.io.Closeable;
 import java.io.IOException;
 
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
 
@@ -28,6 +27,7 @@ import com.webauthn4j.data.AuthenticatorAttachment;
 import com.webauthn4j.data.UserVerificationRequirement;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_BLE;
@@ -84,7 +84,7 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
             webAuthnRegisterPage.assertCurrent();
 
             // it timeouts after create timeout
-            WaitUtils.waitUntilPageIsCurrent(webAuthnErrorPage);
+            webAuthnErrorPage.assertCurrent();
             assertThat(webAuthnErrorPage.getError(), containsString("The operation either timed out or was not allowed."));
         }
     }
@@ -104,10 +104,7 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
             assertThat(realmData.getAuthenticatorAttachment(), is(attachment.getValue()));
 
             registerDefaultUser(shouldSuccess);
-
-            displayErrorMessageIfPresent();
-
-            assertThat(webAuthnErrorPage.isCurrent(), is(!shouldSuccess));
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } catch (IOException e) {
             throw new RuntimeException(e.getCause());
         }

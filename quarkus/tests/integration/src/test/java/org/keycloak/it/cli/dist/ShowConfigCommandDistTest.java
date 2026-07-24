@@ -80,8 +80,8 @@ public class ShowConfigCommandDistTest {
         // keystore is shared with QuarkusPropertiesDistTest#testSmallRyeKeyStoreConfigSource
         CLIResult result = runner.run(
                 String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak-keystore.conf").toAbsolutePath().normalize()),
-                "--config-keystore=" + Paths.get("src/test/resources/keystore").toAbsolutePath().normalize(),
-                ShowConfig.NAME, "all");
+                ShowConfig.NAME, "all",
+                "--config-keystore=" + Paths.get("src/test/resources/keystore").toAbsolutePath().normalize());
         String output = result.getOutput();
         assertThat(output, containsString("kc.config-keystore-password =  " + PropertyMappers.VALUE_MASK));
         assertThat(output, containsString("kc.log-level =  " + PropertyMappers.VALUE_MASK));
@@ -113,8 +113,9 @@ public class ShowConfigCommandDistTest {
 
         result = runner.run(
                 String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak-keystore.conf").toAbsolutePath().normalize()),
+                ShowConfig.NAME, "all",
                 "--config-keystore=" + Paths.get("src/test/resources/keystore").toAbsolutePath().normalize(),
-                ShowConfig.NAME, "all", "--db=dev-file");
+                "--db=dev-file");
 
         result.assertMessage("(CLI)");
         result.assertMessage("(ENV)");

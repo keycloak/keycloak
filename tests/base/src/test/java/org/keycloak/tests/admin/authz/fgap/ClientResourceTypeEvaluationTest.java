@@ -31,9 +31,12 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -160,7 +163,11 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         createPermission(adminPermissionsClient, myclient.getId(), clientsType, Set.of(VIEW, MANAGE), onlyMyAdminUserPolicy);
 
         // the caller can view myclient
-        clientResource.toRepresentation();
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+
+        // client representation should not expose client scopes without view-client-scopes permission
+        assertThat(clientRep.getDefaultClientScopes(), empty());
+        assertThat(clientRep.getOptionalClientScopes(), empty());
 
         // the caller can list myclient
         List<ClientRepresentation> allClients = realmAdminClient.realm(realm.getName()).clients().findAll();
@@ -170,16 +177,27 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         myclient.setName("somethingNew");
         clientResource.update(myclient);
 
-        // can view client scopes
-        List<ClientScopeRepresentation> defaultClientScopes = clientResource.getDefaultClientScopes();
-        assertThat(defaultClientScopes, not(empty()));
+        // can't view default or optional client scopes without view-client-scopes permission
+        assertThat(clientResource.getDefaultClientScopes(), empty());
+        assertThat(clientResource.getOptionalClientScopes(), empty());
 
-        // can remove a default client scope
-        ClientScopeRepresentation clientScopeRep = defaultClientScopes.get(1);
-        clientResource.removeDefaultClientScope(clientScopeRep.getId());
+        // can't remove a default client scope without manage-client-scopes permission
+        List<ClientScopeRepresentation> adminDefaultScopes = realm.admin().clients().get(myclient.getId()).getDefaultClientScopes();
+        ClientScopeRepresentation clientScopeRep = adminDefaultScopes.get(1);
+        try {
+            clientResource.removeDefaultClientScope(clientScopeRep.getId());
+            fail("Expected exception wasn't thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
 
-        // can add an optional client scope
-        clientResource.addOptionalClientScope(clientScopeRep.getId());
+        // can't add an optional client scope without manage-client-scopes permission
+        try {
+            clientResource.addOptionalClientScope(clientScopeRep.getId());
+            fail("Expected exception wasn't thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
 
         // can't update a different client
         ClientRepresentation realmClientRep = realm.admin().clients().get(realmClient.getId()).toRepresentation();
@@ -190,6 +208,71 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         } catch (Exception ex) {
             assertThat(ex, instanceOf(ForbiddenException.class));
         }
+    }
+
+    @Test
+    public void testClientScopeAssignmentRequiresManageClientScopes() {
+        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, myclient.getId(), clientsType, Set.of(VIEW, MANAGE), onlyMyAdminUserPolicy);
+
+        ClientResource clientResource = realmAdminClient.realm(realm.getName()).clients().get(myclient.getId());
+
+        // per-client MANAGE is not enough to view or manage client scopes
+        assertThat(clientResource.getDefaultClientScopes(), empty());
+        assertThat(clientResource.getOptionalClientScopes(), empty());
+
+        List<ClientScopeRepresentation> adminDefaultScopes = realm.admin().clients().get(myclient.getId()).getDefaultClientScopes();
+        assertThat(adminDefaultScopes, not(empty()));
+        ClientScopeRepresentation defaultScopeRep = adminDefaultScopes.get(1);
+
+        List<ClientScopeRepresentation> adminOptionalScopes = realm.admin().clients().get(myclient.getId()).getOptionalClientScopes();
+        assertThat(adminOptionalScopes, not(empty()));
+        ClientScopeRepresentation optionalScopeRep = adminOptionalScopes.get(0);
+
+        try {
+            clientResource.removeDefaultClientScope(defaultScopeRep.getId());
+            fail("Expected exception wasn't thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+
+        try {
+            clientResource.addDefaultClientScope(defaultScopeRep.getId());
+            fail("Expected exception wasn't thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+
+        try {
+            clientResource.removeOptionalClientScope(optionalScopeRep.getId());
+            fail("Expected exception wasn't thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+
+        try {
+            clientResource.addOptionalClientScope(optionalScopeRep.getId());
+            fail("Expected exception wasn't thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+
+        // grant type-level MANAGE on all Clients — implies manage-client-scopes
+        createAllPermission(adminPermissionsClient, clientsType, onlyMyAdminUserPolicy, Set.of(VIEW, MANAGE));
+
+        // now all client scope operations succeed
+        List<ClientScopeRepresentation> defaultClientScopes = clientResource.getDefaultClientScopes();
+        assertThat(defaultClientScopes, not(empty()));
+        List<ClientScopeRepresentation> optionalClientScopes = clientResource.getOptionalClientScopes();
+        assertThat(optionalClientScopes, not(empty()));
+
+        clientResource.removeDefaultClientScope(defaultScopeRep.getId());
+        clientResource.addDefaultClientScope(defaultScopeRep.getId());
+        clientResource.removeOptionalClientScope(optionalScopeRep.getId());
+        clientResource.addOptionalClientScope(optionalScopeRep.getId());
     }
 
     @Test
@@ -479,5 +562,71 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         // can update myResourceServer because manage also implies managing authorization service settings
         myResourceServer.setName("somethingNew");
         clientResource.update(myResourceServer);
+    }
+
+    @Test
+    public void testRoleGroupMembersFilteredByGroupPermissions() {
+        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        String myclientId = myclient.getId();
+
+        // create a client role
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName("visible-role");
+        role.setClientRole(true);
+        realm.admin().clients().get(myclientId).roles().create(role);
+        role = realm.admin().clients().get(myclientId).roles().get("visible-role").toRepresentation();
+
+        // create two groups and assign the role to both
+        GroupRepresentation visibleGroup = createGroup("visible-group");
+        GroupRepresentation hiddenGroup = createGroup("hidden-group");
+
+        realm.admin().groups().group(visibleGroup.getId()).roles().clientLevel(myclientId).add(List.of(role));
+        realm.admin().groups().group(hiddenGroup.getId()).roles().clientLevel(myclientId).add(List.of(role));
+
+        // create a realm role and assign it to both groups
+        RoleRepresentation realmRole = new RoleRepresentation();
+        realmRole.setName("visible-realm-role");
+        realm.admin().roles().create(realmRole);
+        realmRole = realm.admin().roles().get("visible-realm-role").toRepresentation();
+
+        realm.admin().groups().group(visibleGroup.getId()).roles().realmLevel().add(List.of(realmRole));
+        realm.admin().groups().group(hiddenGroup.getId()).roles().realmLevel().add(List.of(realmRole));
+
+        // grant limited-admin view permission on the client only
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, myclientId, clientsType, Set.of(VIEW), policy);
+
+        // grant view permission on visible-group only
+        createGroupPermission(visibleGroup, Set.of(AdminPermissionsSchema.VIEW), policy);
+
+        // grant view-realm role so the limited admin can access realm-level roles endpoint
+        String realmMgmtClientId = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        RoleRepresentation viewRealmRole = realm.admin().clients().get(realmMgmtClientId).roles().get(AdminRoles.VIEW_REALM).toRepresentation();
+        realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmMgmtClientId).add(List.of(viewRealmRole));
+        realm.cleanup().add(r -> r.users().get(myadmin.getId()).roles().clientLevel(realmMgmtClientId).remove(List.of(viewRealmRole)));
+
+        // limited admin can view the client and its role
+        realmAdminClient.realm(realm.getName()).clients().get(myclientId).toRepresentation();
+        realmAdminClient.realm(realm.getName()).clients().get(myclientId).roles().get("visible-role").toRepresentation();
+
+        // limited admin cannot directly access hidden-group
+        try {
+            realmAdminClient.realm(realm.getName()).groups().group(hiddenGroup.getId()).toRepresentation();
+            fail("Should not be able to access hidden group directly");
+        } catch (ForbiddenException expected) {
+        }
+
+        // client role group members should only return the visible group, not the hidden one
+        Set<GroupRepresentation> roleGroups = realmAdminClient.realm(realm.getName()).clients().get(myclientId)
+                .roles().get("visible-role").getRoleGroupMembers();
+        assertThat(roleGroups, hasSize(1));
+        assertEquals("visible-group", roleGroups.iterator().next().getName());
+
+        // realm role group members should also be filtered by group permissions
+        Set<GroupRepresentation> realmRoleGroups = realmAdminClient.realm(realm.getName()).roles()
+                .get("visible-realm-role").getRoleGroupMembers();
+        assertThat(realmRoleGroups, hasSize(1));
+        assertEquals("visible-group", realmRoleGroups.iterator().next().getName());
     }
 }

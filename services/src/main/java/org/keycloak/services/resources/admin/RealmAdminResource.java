@@ -651,7 +651,7 @@ public class RealmAdminResource {
 
     @Path("workflows")
     public WorkflowsResource workflows() {
-        return new WorkflowsResource(session, auth);
+        return new WorkflowsResource(session, auth, adminEvent);
     }
 
     @Path("{extension}")

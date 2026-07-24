@@ -53,8 +53,9 @@ public class ErrorPage extends LanguageComboboxAwarePage {
         }
     }
 
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver) != null && PageUtils.getPageTitle(driver).equals("We are sorry...");
+    @Override
+    public String getExpectedPageId() {
+        return "login-error";
     }
 
 }

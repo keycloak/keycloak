@@ -50,11 +50,11 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.runonserver.ExportImportHelper;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -223,7 +223,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         openIdentityFirstLoginPage(email, true, null, false, false);
         // login to the organization identity provider and run the configured first broker login flow
         loginPage.login(email, bc.getUserPassword());
-        assertThat(appPage.getRequestType(),is(AppPage.RequestType.AUTH_RESPONSE));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         AuthenticationManagementResource flows = managedRealm.admin().flows();
         List<AuthenticationExecutionInfoRepresentation> executions = flows.getExecutions(DefaultAuthenticationFlows.BROWSER_FLOW);

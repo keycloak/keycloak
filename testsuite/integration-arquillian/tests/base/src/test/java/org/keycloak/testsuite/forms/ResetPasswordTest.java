@@ -69,8 +69,6 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.federation.kerberos.AbstractKerberosTest;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -158,9 +156,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     public MailServer mail = new MailServer();
 
     @Page
-    protected AppPage appPage;
-
-    @Page
     protected LoginPage loginPage;
 
     @Page
@@ -193,12 +188,10 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         AccountHelper.logout(managedRealm.admin(), username);
         WaitUtils.waitForPageToLoad();
 
-        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage);
         testAppHelper.login(username, "resetPassword");
 
-        appPage.assertCurrent();
-
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -216,12 +209,10 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         AccountHelper.logout(managedRealm.admin(), username);
         WaitUtils.waitForPageToLoad();
 
-        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage);
         testAppHelper.login(username, "resetPassword");
 
-        appPage.assertCurrent();
-
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     // Starts by opening "reset-password-url". Then go through the successful reset-password flow for the particular user. After user confirms new password, this method ends.
@@ -310,7 +301,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         openResetPasswordUrlAndDoFlow(resetUri, "test-app", oauth.getRedirectUri(), false);
 
         // Should be directly redirected to application because of "redirect_uri" parameter
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -459,9 +450,14 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         assertThat(driver2.getPageSource(), Matchers.containsString("Back to Application"));
 
         // Updating the password in the first browser should now fail.
-        updatePasswordPage.changePassword(password, password);
+        updatePasswordPage.changePassword("invalid-new-password", "invalid-new-password");
         errorPage.assertCurrent();
         assertEquals("Action expired. Please continue with login now.", errorPage.getError());
+
+        // check the password works
+        oauth.openLoginForm();
+        loginPage.login(username, "resetPassword");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     public void assertSecondPasswordResetFails(String changePasswordUrl, String clientId) {
@@ -581,7 +577,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             loginPage.assertCurrent();
         } else {
             // continue to app because it is the same browser and auth session exists
-            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, username.trim()).getEvent();
             String sessionId = loginEvent.getSessionId();
@@ -598,7 +594,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test").getEvent();
             sessionId = loginEvent.getSessionId();
 
-            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
@@ -1214,7 +1210,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId).details(Details.USERNAME, "login-test");
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId).details(Details.USERNAME, "login-test");
 
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
 
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test").getEvent();
@@ -1229,7 +1225,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("login-test", "resetPasswordWithPasswordPolicy");
 
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
     }
@@ -1456,7 +1452,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         resetPasswordPage.changePassword(username);
 
-        loginPage.assertCurrent();
+        errorPage.assertCurrent();
         assertEquals("Invalid username or password.", errorPage.getError());
     }
 
@@ -1611,9 +1607,8 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
                     .userId(user.getId()).details(Details.USERNAME, user.getUsername());
 
             // User should be authenticated in current tab (tab2)
-            WaitUtils.waitUntilElement(appPage.getAccountLink()).is().clickable();
-            appPage.assertCurrent();
-            assertThat(driver.getCurrentUrl(), Matchers.containsString(redirectUri));
+            WaitUtils.waitForPageToLoad();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             // Close tab2
             assertThat(browserTabUtil.getCountOfTabs(), Matchers.equalTo(2));
@@ -1631,8 +1626,8 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             }
 
             // User should be automatically authenticated in tab1 as well (due authChecker.js on real browsers like FF or Chrome)
-            WaitUtils.waitUntilElement(appPage.getAccountLink()).is().clickable();
-            appPage.assertCurrent();
+            WaitUtils.waitForPageToLoad();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         }
     }
 }

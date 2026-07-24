@@ -3,6 +3,7 @@ import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/s
 import { type Page, expect } from "@playwright/test";
 import { clickRowKebabItem, getRowByCellText } from "../utils/table.ts";
 import { confirmModal } from "../utils/modal.ts";
+import { selectClient } from "../utils/form.ts";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation.js";
 
 export async function goToAuthorizationTab(page: Page) {
@@ -110,9 +111,7 @@ export async function deletePolicy(page: Page, policyName: string) {
 }
 
 export async function inputClient(page: Page, clientName: string) {
-  await page.getByLabel("Type to filter").click();
-  await page.getByLabel("Type to filter").fill(clientName);
-  await page.getByRole("option", { name: clientName }).click();
+  await selectClient(page, clientName);
 }
 
 export async function goToPermissionsSubTab(page: Page) {

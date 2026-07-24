@@ -41,6 +41,7 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.CredentialBuilder;
 import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -75,25 +76,25 @@ public abstract class AbstractOrganizationTest {
     }
 
     protected OrganizationRepresentation createOrganization(String name, String... orgDomains) {
-        return createOrganization(realm.admin(), name, orgDomains);
+        return createOrganization(realm, name, orgDomains);
     }
 
-    protected OrganizationRepresentation createOrganization(RealmResource realmResource, String name, String... orgDomains) {
-        return createOrganization(realmResource, name, createOrgBroker(name), orgDomains);
+    protected OrganizationRepresentation createOrganization(ManagedRealm managedRealm, String name, String... orgDomains) {
+        return createOrganization(managedRealm, name, createOrgBroker(name), orgDomains);
     }
 
     protected OrganizationRepresentation createOrganization(String name, boolean isBrokerPublic) {
         IdentityProviderRepresentation broker = createOrgBroker(name);
         broker.setHideOnLogin(!isBrokerPublic);
-        return createOrganization(realm.admin(), name, broker, name + ".org");
+        return createOrganization(realm, name, broker, name + ".org");
     }
 
-    protected OrganizationRepresentation createOrganization(RealmResource realmResource, String name,
+    protected OrganizationRepresentation createOrganization(ManagedRealm managedRealm, String name,
                                                             IdentityProviderRepresentation broker, String... orgDomains) {
         OrganizationRepresentation org = createRepresentation(name, orgDomains);
         String id;
 
-        try (Response response = realmResource.organizations().create(org)) {
+        try (Response response = managedRealm.admin().organizations().create(org)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
             id = ApiUtil.getCreatedId(response);
         }
@@ -102,22 +103,22 @@ public abstract class AbstractOrganizationTest {
             broker.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomains[0]);
             broker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
         }
-        realmResource.identityProviders().create(broker).close();
+        managedRealm.admin().identityProviders().create(broker).close();
 
-        String brokerAlias = broker.getAlias();
-        realm.cleanup().add(r -> {
-            try {
-                r.identityProviders().get(brokerAlias).remove();
-            } catch (NotFoundException ignored) {}
-        });
-
-        realmResource.organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
-        org = realmResource.organizations().get(id).toRepresentation();
+        managedRealm.admin().organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
+        org = managedRealm.admin().organizations().get(id).toRepresentation();
 
         String orgId = id;
-        realm.cleanup().add(r -> {
+        // org deletion must run before IdP removal — removing an IdP linked to an org may fail
+        managedRealm.cleanup().add(r -> {
             try {
                 r.organizations().get(orgId).delete().close();
+            } catch (NotFoundException ignored) {}
+        });
+        String brokerAlias = broker.getAlias();
+        managedRealm.cleanup().add(r -> {
+            try {
+                r.identityProviders().get(brokerAlias).remove();
             } catch (NotFoundException ignored) {}
         });
 
@@ -174,7 +175,11 @@ public abstract class AbstractOrganizationTest {
         }
 
         String userId = expected.getId();
-        realm.cleanup().add(r -> r.users().get(userId).remove());
+        realm.cleanup().add(r -> {
+            try {
+                r.users().get(userId).remove();
+            } catch (NotFoundException ignored) {}
+        });
 
         try (Response response = organization.members().addMember(userId)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
@@ -244,6 +249,35 @@ public abstract class AbstractOrganizationTest {
                 .build();
     }
 
+    public static void setUpOrgBroker(ManagedRealm providerRealm, ManagedRealm consumerRealm, String orgDomain) {
+        IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
+        idp.setAlias(IDP_ALIAS);
+        idp.setProviderId("keycloak-oidc");
+        idp.setEnabled(true);
+        idp.setStoreToken(false);
+        idp.setTrustEmail(true);
+
+        String providerBaseUrl = providerRealm.getBaseUrl();
+        idp.setConfig(Map.of(
+                "clientId", CLIENT_ID,
+                "clientSecret", CLIENT_SECRET,
+                "authorizationUrl", providerBaseUrl + "/protocol/openid-connect/auth",
+                "tokenUrl", providerBaseUrl + "/protocol/openid-connect/token",
+                "userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo",
+                "defaultScope", "email profile",
+                "syncMode", "IMPORT",
+                OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomain,
+                IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString()
+        ));
+
+        consumerRealm.admin().identityProviders().create(idp).close();
+        consumerRealm.cleanup().add(r -> {
+            try {
+                r.identityProviders().get(IDP_ALIAS).remove();
+            } catch (Exception ignored) {}
+        });
+    }
+
     /**
      * Realm configuration with organizations enabled.
      */
@@ -251,6 +285,23 @@ public abstract class AbstractOrganizationTest {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             return realm.organizationsEnabled(true);
+        }
+    }
+
+    public static final String IDP_ALIAS = "org-identity-provider";
+    public static final String CLIENT_ID = "broker-app";
+    public static final String CLIENT_SECRET = "broker-secret";
+
+    public static class ProviderRealmConf implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return realm.clients(
+                    ClientBuilder.create(CLIENT_ID)
+                            .name(CLIENT_ID)
+                            .secret(CLIENT_SECRET)
+                            .redirectUris("*")
+                            .directAccessGrantsEnabled()
+            );
         }
     }
 }

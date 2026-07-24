@@ -1,0 +1,50 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Client scope assignment now enforces client scope permissions
+
+The client scope assignment endpoints on a specific client now require the caller to have `manage` permission on client scopes, in addition to the existing `manage` permission on the target client.
+The listing endpoints for default and optional client scopes now return an empty list if the caller lacks `view` permission on client scopes.
+
+If you have delegated administrators that assign client scopes using Fine-Grained Admin Permissions, ensure they also have the `manage-clients` realm admin role or a type-level `manage` permission on the Clients resource type.
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+=== AuthZEN changes
+
+When calling {project_name}'s experimental AuthZEN endpoints, the caller now needs to be an authenticated confidential client's access token. Previously, it could be called with a user's access token.
+
+=== Client session listings filter sessions by user visibility
+
+The Admin REST API endpoints for listing client sessions (`GET /admin/realms/\{realm}/clients/\{id}/user-sessions` and `GET /admin/realms/\{realm}/clients/\{id}/offline-sessions`) now filter out sessions belonging to users that the caller does not have permission to view. Previously, any caller with the `view-clients` role could see all user sessions for a client, potentially exposing user identities to callers without the `view-users` role. After upgrading, callers without `view-users` permission will see fewer results from these endpoints.
+
+=== Redesigned identity provider buttons on the login page
+
+The social identity provider section on the login page has been redesigned with updated icons and layout.
+For details, see the https://github.com/keycloak/keycloak/issues/50992[GitHub issue].
+Custom login themes that override `social-providers.ftl` or apply CSS targeting the identity provider icons may render incorrectly after upgrading.
+
+Test your custom login theme to ensure the identity provider buttons display correctly.
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== Introspection endpoint 'jwt' extension
+
+Proprietary {project_name} extension to invoke introspection endpoint with the HTTP header `Accept: application/jwt` instead of `Accept: application/json` is
+deprecated now. In case you have lightweight access token, which you want to exchange for the proper access token, it is instead recommended to use the
+link:{securing_apps_token_exchange_link}[Token Exchange].
+
+// ------------------------ Removed features ------------------------ //
+== Removed features
+
+The following features have been removed from this release.
+
+=== <TODO>
+

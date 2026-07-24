@@ -2,7 +2,6 @@ package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.util.UIUtils;
 
-import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -71,28 +70,8 @@ public class LoginUsernameOnlyPage extends LoginPage {
         throw new UnsupportedOperationException("Not supported - password field not available");
     }
 
-
     @Override
-    public boolean isCurrent(String realm) {
-        if (!super.isCurrent(realm)) {
-            return false;
-        }
-
-        // Check there is username field
-        try {
-            driver.findElement(By.id("username"));
-        } catch (NoSuchElementException nfe) {
-            return false;
-        }
-
-        // Check there is NO password field
-        try {
-            driver.findElement(By.id("password"));
-            return false;
-        } catch (NoSuchElementException nfe) {
-            // Expected
-        }
-
-        return true;
+    public String getExpectedPageId() {
+        return "login-login-username";
     }
 }

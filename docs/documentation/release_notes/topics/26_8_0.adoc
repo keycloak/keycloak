@@ -1,0 +1,10 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+= Themes
+
+== Redesigned identity provider buttons on the login page
+
+The social identity provider section on the login page has been refreshed with updated icons, a new divider layout, and improved button labels.
+
+If you have a custom login theme, see the link:{upgradingguide_link}[{upgradingguide_name}] for details on what changed.

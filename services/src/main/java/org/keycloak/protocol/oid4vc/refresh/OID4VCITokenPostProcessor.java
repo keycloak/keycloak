@@ -1,6 +1,7 @@
 package org.keycloak.protocol.oid4vc.refresh;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.protocol.oidc.token.TokenPostProcessor;
@@ -31,7 +32,9 @@ public class OID4VCITokenPostProcessor implements TokenPostProcessor {
             accessToken.setSessionId(null);
         }
 
-        // TODO: Should possibly update "aud" of the access token to Keycloak issuer URL. Other updates?
+        // Limit the audience to only the credential endpoint URL.
+        String credentialEndpoint = OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
+        accessToken.audience(credentialEndpoint);
     }
 
 

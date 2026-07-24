@@ -57,6 +57,8 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.util.JsonSerialization;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -149,7 +151,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         OIDCClientRepresentation client = createRep();
         client.setRedirectUris(Arrays.asList("http://localhost/auth", "http://localhost/auth#fragment", "http://localhost/auth*"));
 
-        assertCreateFail(client, 400, "URI fragment");
+        assertCreateFail(client, 400, "URL fragment");
     }
 
     @Test
@@ -160,7 +162,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertNotNull(response.getClientIdIssuedAt());
         assertNotNull(response.getClientId());
         assertNotNull(response.getClientSecret());
-        assertEquals(0, response.getClientSecretExpiresAt().longValue());
+        assertEquals(0, response.getClientSecretExpiresAt().intValue());
         assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + response.getClientId(), response.getRegistrationClientUri());
         assertEquals("RegistrationAccessTokenTest", response.getClientName());
         assertEquals("http://root", response.getClientUri());
@@ -185,7 +187,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertTrue(CollectionUtil.collectionEquals(Arrays.asList("code", "none"), response.getResponseTypes()));
         assertTrue(CollectionUtil.collectionEquals(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.REFRESH_TOKEN), response.getGrantTypes()));
         assertNotNull(response.getClientSecret());
-        assertEquals(0, response.getClientSecretExpiresAt().longValue());
+        assertEquals(0, response.getClientSecretExpiresAt().intValue());
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, response.getTokenEndpointAuthMethod());
         assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + response.getClientId(), response.getRegistrationClientUri());
     }
@@ -225,7 +227,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertNotNull(response.getClientIdIssuedAt());
         assertNotNull(response.getClientId());
         assertNotNull(response.getClientSecret());
-        assertEquals(0, response.getClientSecretExpiresAt().longValue());
+        assertEquals(0, response.getClientSecretExpiresAt().intValue());
         assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + response.getClientId(), response.getRegistrationClientUri());
         assertEquals("RegistrationAccessTokenTest", response.getClientName());
         assertEquals("http://root", response.getClientUri());
@@ -815,8 +817,8 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
 
     @Test
     public void testClientWithScope() throws Exception {
-        OIDCClientRepresentation clientRep = null;
-        OIDCClientRepresentation response = null;
+        OIDCClientRepresentation clientRep;
+        OIDCClientRepresentation response;
         String clientScope = "phone address";
 
         clientRep = createRep();
@@ -828,7 +830,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertTrue(clientScopes.equals(registeredClientScopes));
 
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(response.getClientId());
-        assertTrue(CollectionUtil.collectionEquals(clientResource.toRepresentation().getDefaultClientScopes(), Set.of("basic")));
+        MatcherAssert.assertThat(clientResource.toRepresentation().getDefaultClientScopes(), Matchers.containsInAnyOrder("web-origins", "acr", "profile", "roles", "basic", "email"));
     }
 
     @Test
