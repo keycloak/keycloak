@@ -35,7 +35,9 @@ import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 
 /**
@@ -104,6 +106,11 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
     // Factory Global Setting
     protected ClientIdMetadataDocumentExecutorFactoryProviderConfig providerConfig;
+
+    private static final ObjectMapper IGNORING_UNKNOWN_PROPERTIES_MAPPER =
+            JsonSerialization.mapper
+                    .copy()
+                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     protected abstract Logger getLogger();
 
@@ -563,7 +570,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                                                                            ClientIdMetadataDocumentProvider provider) throws ClientPolicyException {
         String clientId = clientIdURI.toString();
 
-        SimpleHttpRequest simpleHttp = SimpleHttp.create(session).withMaxConsumedResponseSize(providerConfig.getUpperLimitMetadataBytes()).doGet(clientId);
+        SimpleHttpRequest simpleHttp = SimpleHttp.create(session).withMaxConsumedResponseSize(providerConfig.getUpperLimitMetadataBytes()).withObjectMapper(IGNORING_UNKNOWN_PROPERTIES_MAPPER).doGet(clientId);
 
         OIDCClientRepresentation clientOIDC;
         try (SimpleHttpResponse response = simpleHttp.asResponse()) {
