@@ -16,6 +16,7 @@
  */
 package org.keycloak.tests.admin.authz.rbac;
 
+import java.util.List;
 import java.util.Set;
 
 import org.keycloak.Config;
@@ -28,6 +29,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 @KeycloakIntegrationTest
@@ -119,6 +122,47 @@ public class InternalClientManagementTest extends AbstractAdminRBACTest {
                 String roleName = client.realm(masterRealm.getName()).roles().get(name).toRepresentation().getName();
                 assertNotEquals(null, roleName);
             }
+        });
+    }
+
+    @Test
+    public void testMasterRealmManageRealmAdminCannotDeleteCompositesFromAdminRealmRoleViaNameBasedEndpoint() {
+        grantMasterRealmManagementRole(Config.getAdminRealm(), masterUser.getUsername(), AdminRoles.MANAGE_REALM);
+
+        runAs(masterRealm.getName(), masterUser.getUsername(), client -> {
+            Set<RoleRepresentation> composites = client.realm(masterRealm.getName()).roles()
+                    .get(AdminRoles.ADMIN).getRoleComposites();
+            int compositesBefore = composites.size();
+            RoleRepresentation targetComposite = composites.iterator().next();
+
+            assertForbidden("master-realm manage-realm admin must not delete composites from the 'admin' realm role via name-based endpoint",
+                    () -> client.realm(masterRealm.getName()).roles().get(AdminRoles.ADMIN)
+                            .deleteComposites(List.of(targetComposite)));
+
+            int compositesAfter = client.realm(masterRealm.getName()).roles()
+                    .get(AdminRoles.ADMIN).getRoleComposites().size();
+            assertEquals(compositesBefore, compositesAfter);
+        });
+    }
+
+    @Test
+    public void testMasterRealmManageRealmAdminCannotAddCompositesToAdminRealmRoleViaNameBasedEndpoint() {
+        grantMasterRealmManagementRole(Config.getAdminRealm(), masterUser.getUsername(), AdminRoles.MANAGE_REALM);
+
+        runAs(masterRealm.getName(), masterUser.getUsername(), client -> {
+            adminClient.realm(masterRealm.getName()).roles().create(
+                    new RoleRepresentation(TEMP_ROLE_NAME, "temp", false));
+            RoleRepresentation tempRole = adminClient.realm(masterRealm.getName()).roles()
+                    .get(TEMP_ROLE_NAME).toRepresentation();
+
+            assertForbidden("master-realm manage-realm admin must not add composites to the 'admin' realm role via name-based endpoint",
+                    () -> client.realm(masterRealm.getName()).roles().get(AdminRoles.ADMIN)
+                            .addComposites(List.of(tempRole)));
+
+            boolean compositeAdded = client.realm(masterRealm.getName()).roles()
+                    .get(AdminRoles.ADMIN).getRoleComposites().stream()
+                    .anyMatch(r -> TEMP_ROLE_NAME.equals(r.getName()));
+            assertFalse(compositeAdded);
         });
     }
 
